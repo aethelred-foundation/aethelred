@@ -24,9 +24,9 @@ builds:
       - -X github.com/aethelred/aethelred/version.Commit={{.Commit}}
       - -X github.com/aethelred/aethelred/version.BuildDate={{.Date}}
 
-  - id: aeth
-    main: ./tools/cli/aeth
-    binary: aeth
+  - id: aethel
+    main: ./tools/cli/aethel
+    binary: aethel
     env:
       - CGO_ENABLED=0
     goos:
@@ -84,7 +84,7 @@ brews:
       name: homebrew-tap
     install: |
       bin.install "aethelredd"
-      bin.install "aeth"
+      bin.install "aethel"
 
 dockers:
   - image_templates:

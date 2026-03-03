@@ -60,7 +60,7 @@ production-grade libraries during the pre-audit hardening pass:
 | Python Dilithium | `sdk/python/.../dilithium.py` | SHAKE-256 simulation | `liboqs` oqs.Signature (+ fallback) |
 | Python Kyber | `sdk/python/.../kyber.py` | SHAKE-256 simulation | `liboqs` oqs.KeyEncapsulation (+ fallback) |
 | Python ECDSA (Wallet) | `sdk/python/.../wallet.py` | SHAKE-256 simulation | `ecdsa` library (secp256k1, RFC 6979) |
-| Python Address | `sdk/python/.../wallet.py` | Hex encoding | Bech32 encoding (`aeth1...`) |
+| Python Address | `sdk/python/.../wallet.py` | Hex encoding | Bech32 encoding (`aethel1...`) |
 | Python Key Export | `sdk/python/.../wallet.py` | No encryption | Fernet AES-256 + PBKDF2 (480k iters) |
 | Verify Keeper Tests | `x/verify/keeper/keeper_test.go` | No tests | 20+ unit tests (all pass) |
 

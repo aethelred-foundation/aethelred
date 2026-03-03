@@ -1,6 +1,6 @@
 //! # Hardware Command - Enterprise-Grade TEE & GPU Simulation
 //!
-//! The `aeth hardware` command provides comprehensive hardware environment
+//! The `aethel hardware` command provides comprehensive hardware environment
 //! simulation and detection for Aethelred development. It enables developers
 //! to test TEE enclaves, GPU compute, and attestation flows without requiring
 //! actual specialized hardware.
@@ -700,7 +700,7 @@ fn display_tee_capabilities(tee: &TeeCapabilities, detailed: bool) {
         println!(
             "  {} Use {} to simulate TEE environment",
             "💡".cyan(),
-            "aeth hardware simulate".green()
+            "aethel hardware simulate".green()
         );
         return;
     }

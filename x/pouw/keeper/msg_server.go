@@ -33,7 +33,7 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// Default fee to the module base fee if configured; fallback to zero if parsing fails.
-	fee := sdk.NewCoin("uaeth", sdkmath.NewInt(0))
+	fee := sdk.NewCoin("uaethel", sdkmath.NewInt(0))
 	if params, err := k.GetParams(ctx); err == nil && params.BaseJobFee != "" {
 		if parsed, err := sdk.ParseCoinNormalized(params.BaseJobFee); err == nil {
 			fee = parsed

@@ -58,8 +58,8 @@ export interface AethelredTokenInterface extends Interface {
       | "PAUSER_ROLE()"
       | "TOTAL_SUPPLY_CAP"
       | "TOTAL_SUPPLY_CAP()"
-      | "UAETH_TO_WEI_SCALE"
-      | "UAETH_TO_WEI_SCALE()"
+      | "UAETHEL_TO_WEI_SCALE"
+      | "UAETHEL_TO_WEI_SCALE()"
       | "UPGRADER_ROLE"
       | "UPGRADER_ROLE()"
       | "UPGRADE_INTERFACE_VERSION"
@@ -297,11 +297,11 @@ export interface AethelredTokenInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "UAETH_TO_WEI_SCALE",
+    functionFragment: "UAETHEL_TO_WEI_SCALE",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "UAETH_TO_WEI_SCALE()",
+    functionFragment: "UAETHEL_TO_WEI_SCALE()",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -810,11 +810,11 @@ export interface AethelredTokenInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "UAETH_TO_WEI_SCALE",
+    functionFragment: "UAETHEL_TO_WEI_SCALE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "UAETH_TO_WEI_SCALE()",
+    functionFragment: "UAETHEL_TO_WEI_SCALE()",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -1553,9 +1553,9 @@ export interface AethelredToken extends BaseContract {
 
   "TOTAL_SUPPLY_CAP()": TypedContractMethod<[], [bigint], "view">;
 
-  UAETH_TO_WEI_SCALE: TypedContractMethod<[], [bigint], "view">;
+  UAETHEL_TO_WEI_SCALE: TypedContractMethod<[], [bigint], "view">;
 
-  "UAETH_TO_WEI_SCALE()": TypedContractMethod<[], [bigint], "view">;
+  "UAETHEL_TO_WEI_SCALE()": TypedContractMethod<[], [bigint], "view">;
 
   UPGRADER_ROLE: TypedContractMethod<[], [string], "view">;
 
@@ -2182,10 +2182,10 @@ export interface AethelredToken extends BaseContract {
     nameOrSignature: "TOTAL_SUPPLY_CAP()"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "UAETH_TO_WEI_SCALE"
+    nameOrSignature: "UAETHEL_TO_WEI_SCALE"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "UAETH_TO_WEI_SCALE()"
+    nameOrSignature: "UAETHEL_TO_WEI_SCALE()"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "UPGRADER_ROLE"

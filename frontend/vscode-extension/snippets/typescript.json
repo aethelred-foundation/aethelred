@@ -1,6 +1,6 @@
 {
   "Aethelred Client": {
-    "prefix": "aeth-client",
+    "prefix": "aethel-client",
     "body": [
       "import { AethelredClient } from '@aethelred/sdk';",
       "",
@@ -10,7 +10,7 @@
     "description": "Create Aethelred client"
   },
   "Submit Job": {
-    "prefix": "aeth-submit-job",
+    "prefix": "aethel-submit-job",
     "body": [
       "const { jobId, txHash } = await client.jobs.submit({",
       "  modelHash: '${1:0x...}',",
@@ -24,7 +24,7 @@
     "description": "Submit compute job"
   },
   "Verify Seal": {
-    "prefix": "aeth-verify-seal",
+    "prefix": "aethel-verify-seal",
     "body": [
       "const result = await client.seals.verify('${1:seal_id}');",
       "if (result.valid) {",
@@ -37,7 +37,7 @@
     "description": "Verify digital seal"
   },
   "Register Model": {
-    "prefix": "aeth-register-model",
+    "prefix": "aethel-register-model",
     "body": [
       "const { modelHash, txHash } = await client.models.register({",
       "  modelHash: '${1:0x...}',",

@@ -328,7 +328,7 @@ impl Default for RouterConfig {
             max_fast_lane_size: 10_000,
             max_compute_lane_size: 1_000,
             useful_work_ratio: 0.80, // 80% useful work
-            min_compute_bounty: 1_000_000, // Minimum 0.001 AETH
+            min_compute_bounty: 1_000_000, // Minimum 0.001 AETHEL
             max_parallel_jobs: 64,
             block_time_target: Duration::from_millis(400),
         }

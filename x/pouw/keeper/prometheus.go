@@ -176,13 +176,13 @@ func (pe *PrometheusExporter) exportModuleMetrics(sb *strings.Builder) {
 		pe.metrics.CollusionDetected.Get())
 
 	// Economics metrics
-	pe.writeCounter(sb, "fees_collected_uaeth_total", "Total fees collected in uaeth",
+	pe.writeCounter(sb, "fees_collected_uaethel_total", "Total fees collected in uaethel",
 		pe.metrics.FeesCollected.Get())
-	pe.writeCounter(sb, "fees_distributed_uaeth_total", "Total fees distributed in uaeth",
+	pe.writeCounter(sb, "fees_distributed_uaethel_total", "Total fees distributed in uaethel",
 		pe.metrics.FeesDistributed.Get())
-	pe.writeCounter(sb, "tokens_burned_uaeth_total", "Total tokens burned in uaeth",
+	pe.writeCounter(sb, "tokens_burned_uaethel_total", "Total tokens burned in uaethel",
 		pe.metrics.TokensBurned.Get())
-	pe.writeCounter(sb, "rewards_distributed_uaeth_total", "Total rewards distributed in uaeth",
+	pe.writeCounter(sb, "rewards_distributed_uaethel_total", "Total rewards distributed in uaethel",
 		pe.metrics.RewardsDistributed.Get())
 
 	// Validator gauges

@@ -39,7 +39,7 @@ AI job arrives → Validator TEE executes → zkML proof generated
 | [aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | 🐍 Python SDK |
 | [aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | 🔵 Go SDK |
 | [aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | 🦀 Rust SDK |
-| [aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | ⌨️ `aeth` CLI |
+| [aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | ⌨️ `aethel` CLI |
 | [vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | 🧩 VS Code extension (unique in L1 space) |
 | [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | 📚 Documentation site |
 | [AIPs](https://github.com/AethelredFoundation/AIPs) | 📋 Aethelred Improvement Proposals |

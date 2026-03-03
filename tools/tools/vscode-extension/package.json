@@ -287,7 +287,7 @@
         "aethelred.cli.path": {
           "type": "string",
           "default": "",
-          "description": "Custom path to the 'aeth' CLI binary. Leave empty for auto-detect."
+          "description": "Custom path to the 'aethel' CLI binary. Leave empty for auto-detect."
         },
         "aethelred.cli.timeout": {
           "type": "number",

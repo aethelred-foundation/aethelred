@@ -25,9 +25,9 @@ aethelredd tx pouw stake --amount 100000aethel --from <key-name> --chain-id <cha
 ```
 
 Notes:
-- `aethel` and `uaeth` are accepted in `--amount`.
-- Amount is normalized to `uaeth`.
-- The command enforces the hard minimum of `100000aethel` (`100000000000uaeth`) before broadcast.
+- `aethel` and `uaethel` are accepted in `--amount`.
+- Amount is normalized to `uaethel`.
+- The command enforces the hard minimum of `100000aethel` (`100000000000uaethel`) before broadcast.
 - If `--validator` is omitted, the command defaults to your own `valoper` address.
 
 ### 2) Register PCR0 Measurement

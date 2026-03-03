@@ -923,7 +923,7 @@ func TestCB6_UpdateParams_Success(t *testing.T) {
 
 	// Valid update: change VerificationReward
 	params := *currentParams
-	params.VerificationReward = "200uaeth"
+	params.VerificationReward = "200uaethel"
 
 	resp, err := keeper.UpdateParamsForTest(k, ctx, &keeper.MsgUpdateParams{
 		Authority: authority,
@@ -935,7 +935,7 @@ func TestCB6_UpdateParams_Success(t *testing.T) {
 	// Verify the change was applied
 	updated, err := k.GetParams(ctx)
 	require.NoError(t, err)
-	require.Equal(t, "200uaeth", updated.VerificationReward)
+	require.Equal(t, "200uaethel", updated.VerificationReward)
 }
 
 // ---------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ func TestCB6_DistributeJobFee_ZeroFee(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 0), []string{"val1"})
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 0), []string{"val1"})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "positive")
 }
@@ -1307,7 +1307,7 @@ func TestCB6_DistributeJobFee_NoValidators(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 1000), nil)
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 1000), nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "at least one validator")
 }
@@ -1317,7 +1317,7 @@ func TestCB6_DistributeJobFee_EmptyValidatorList(t *testing.T) {
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 
 	// Distribute with empty validator list -- should return error
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 10000), []string{})
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 10000), []string{})
 	require.Error(t, err)
 }
 
@@ -1330,7 +1330,7 @@ func TestCB6_CollectJobFee_ZeroFee(t *testing.T) {
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 
 	submitter := sdk.AccAddress([]byte("submitter-addr-001"))
-	err := fd.CollectJobFee(ctx, submitter, sdk.NewInt64Coin("uaeth", 0))
+	err := fd.CollectJobFee(ctx, submitter, sdk.NewInt64Coin("uaethel", 0))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "positive")
 }
@@ -1342,7 +1342,7 @@ func TestCB6_CollectJobFee_NilBankKeeper(t *testing.T) {
 	// CollectJobFee with nil bank keeper should panic -- verify we reach the function
 	require.Panics(t, func() {
 		submitter := sdk.AccAddress([]byte("submitter-addr-001"))
-		_ = fd.CollectJobFee(cb6Ctx(), submitter, sdk.NewInt64Coin("uaeth", 1000))
+		_ = fd.CollectJobFee(cb6Ctx(), submitter, sdk.NewInt64Coin("uaethel", 1000))
 	})
 }
 
@@ -1545,8 +1545,8 @@ func TestCB6_ValidateBlockTimeConfig_ZeroTarget(t *testing.T) {
 
 func TestCB6_ValidateVestingSchedules_DuplicateCategories(t *testing.T) {
 	schedules := []keeper.VestingSchedule{
-		{Category: "pool1", TotalUAETH: 1000, VestingBlocks: 1200, CliffBlocks: 300},
-		{Category: "pool1", TotalUAETH: 2000, VestingBlocks: 1200, CliffBlocks: 300}, // duplicate
+		{Category: "pool1", TotalUAETHEL: 1000, VestingBlocks: 1200, CliffBlocks: 300},
+		{Category: "pool1", TotalUAETHEL: 2000, VestingBlocks: 1200, CliffBlocks: 300}, // duplicate
 	}
 	err := keeper.ValidateVestingSchedules(schedules)
 	require.Error(t, err)
@@ -1555,7 +1555,7 @@ func TestCB6_ValidateVestingSchedules_DuplicateCategories(t *testing.T) {
 
 func TestCB6_ValidateVestingSchedules_CliffExceedsVesting(t *testing.T) {
 	schedules := []keeper.VestingSchedule{
-		{Category: "pool1", TotalUAETH: 1000, VestingBlocks: 600, CliffBlocks: 1200},
+		{Category: "pool1", TotalUAETHEL: 1000, VestingBlocks: 600, CliffBlocks: 1200},
 	}
 	err := keeper.ValidateVestingSchedules(schedules)
 	require.Error(t, err)
@@ -1564,7 +1564,7 @@ func TestCB6_ValidateVestingSchedules_CliffExceedsVesting(t *testing.T) {
 
 func TestCB6_ValidateVestingSchedules_NegativeAmount(t *testing.T) {
 	schedules := []keeper.VestingSchedule{
-		{Category: "pool1", TotalUAETH: -100, VestingBlocks: 1200, CliffBlocks: 300},
+		{Category: "pool1", TotalUAETHEL: -100, VestingBlocks: 1200, CliffBlocks: 300},
 	}
 	err := keeper.ValidateVestingSchedules(schedules)
 	require.Error(t, err)
@@ -1572,7 +1572,7 @@ func TestCB6_ValidateVestingSchedules_NegativeAmount(t *testing.T) {
 
 func TestCB6_ValidateVestingSchedules_ZeroAmount(t *testing.T) {
 	schedules := []keeper.VestingSchedule{
-		{Category: "pool1", TotalUAETH: 0, VestingBlocks: 1200, CliffBlocks: 300},
+		{Category: "pool1", TotalUAETHEL: 0, VestingBlocks: 1200, CliffBlocks: 300},
 	}
 	err := keeper.ValidateVestingSchedules(schedules)
 	require.Error(t, err)
@@ -1580,7 +1580,7 @@ func TestCB6_ValidateVestingSchedules_ZeroAmount(t *testing.T) {
 
 func TestCB6_ValidateVestingSchedules_ZeroVestingBlocks(t *testing.T) {
 	schedules := []keeper.VestingSchedule{
-		{Category: "pool1", TotalUAETH: 1000, VestingBlocks: 0, CliffBlocks: 0},
+		{Category: "pool1", TotalUAETHEL: 1000, VestingBlocks: 0, CliffBlocks: 0},
 	}
 	err := keeper.ValidateVestingSchedules(schedules)
 	require.Error(t, err)
@@ -1950,7 +1950,7 @@ func TestCB6_ValidateFeeMarketConfig_Valid(t *testing.T) {
 
 func TestCB6_ValidateFeeMarketConfig_ZeroBaseFee(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
-	config.BaseFeeUAETH = 0
+	config.BaseFeeUAETHEL = 0
 	err := keeper.ValidateFeeMarketConfig(config)
 	require.Error(t, err)
 }
@@ -2360,19 +2360,19 @@ func TestCB6_EarmarkStore_RecordAndGet(t *testing.T) {
 	// The test keeper from keeper_test package cannot set the unexported
 	// storeService field, so earmark operations return "store service not
 	// configured". Verify the error is properly surfaced.
-	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaeth", 1000))
+	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaethel", 1000))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	err = k.RecordInsuranceFundEarmark(ctx, sdk.NewInt64Coin("uaeth", 500))
+	err = k.RecordInsuranceFundEarmark(ctx, sdk.NewInt64Coin("uaethel", 500))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	_, err = k.GetTreasuryEarmarkedBalance(ctx, "uaeth")
+	_, err = k.GetTreasuryEarmarkedBalance(ctx, "uaethel")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	_, err = k.GetInsuranceFundEarmarkedBalance(ctx, "uaeth")
+	_, err = k.GetInsuranceFundEarmarkedBalance(ctx, "uaethel")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 }
@@ -2382,11 +2382,11 @@ func TestCB6_EarmarkStore_CumulativeAddition(t *testing.T) {
 
 	// Without storeService (unexported, not settable from keeper_test package),
 	// earmark operations return an error.
-	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaeth", 100))
+	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaethel", 100))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	err = k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaeth", 200))
+	err = k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaethel", 200))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 }

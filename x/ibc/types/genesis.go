@@ -23,7 +23,7 @@ type Params struct {
 	// MaxRelayPacketSize is the maximum IBC packet size in bytes
 	MaxRelayPacketSize int `json:"max_relay_packet_size"`
 
-	// RelayFee is the fee charged for relaying a proof (in uaeth)
+	// RelayFee is the fee charged for relaying a proof (in uaethel)
 	RelayFee string `json:"relay_fee"`
 
 	// AllowedVerificationTypes restricts which verification types can be relayed
@@ -71,7 +71,7 @@ func DefaultParams() *Params {
 	return &Params{
 		MinConsensusThreshold:    67, // 2/3 majority
 		MaxRelayPacketSize:       1024 * 1024, // 1MB
-		RelayFee:                 "100uaeth",
+		RelayFee:                 "100uaethel",
 		AllowedVerificationTypes: []string{"tee", "zkml", "hybrid"},
 		RequireBLSAggregate:      false, // Can be enabled once all validators support BLS
 	}

@@ -111,13 +111,13 @@ func TestCB5_GetInsuranceModuleAccountAddress(t *testing.T) {
 func TestCB5_DistributeVerificationRewards_ZeroReward(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	// Zero reward should return nil (no-op)
-	err := k.DistributeVerificationRewards(ctx, []string{"validator1"}, sdk.NewCoin("uaeth", sdkmath.NewInt(0)))
+	err := k.DistributeVerificationRewards(ctx, []string{"validator1"}, sdk.NewCoin("uaethel", sdkmath.NewInt(0)))
 	require.NoError(t, err)
 }
 
 func TestCB5_BurnTokens_ZeroAmount(t *testing.T) {
 	k, ctx := newTestKeeper(t)
-	err := k.BurnTokens(ctx, sdk.NewCoin("uaeth", sdkmath.NewInt(0)))
+	err := k.BurnTokens(ctx, sdk.NewCoin("uaethel", sdkmath.NewInt(0)))
 	require.NoError(t, err)
 }
 
@@ -144,7 +144,7 @@ func TestCB5_RewardScaleByReputation(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			base := sdk.NewCoin("uaeth", sdkmath.NewInt(tc.baseAmount))
+			base := sdk.NewCoin("uaethel", sdkmath.NewInt(tc.baseAmount))
 			result := keeper.RewardScaleByReputation(base, tc.reputation)
 			require.True(t, result.Amount.GTE(sdkmath.NewInt(0)))
 		})
@@ -161,8 +161,8 @@ func TestCB5_ValidatePositiveCoin(t *testing.T) {
 		raw     string
 		wantErr bool
 	}{
-		{"valid", "100uaeth", false},
-		{"zero", "0uaeth", true},
+		{"valid", "100uaethel", false},
+		{"zero", "0uaethel", true},
 		{"empty", "", true},
 		{"invalid", "not-a-coin", true},
 	}
@@ -1137,12 +1137,12 @@ func TestCB5_AuditReport_Accessors(t *testing.T) {
 
 func TestCB5_FeeEarmarkStore_ZeroEarmarks(t *testing.T) {
 	k, ctx := newTestKeeper(t)
-	treasury, err := k.GetTreasuryEarmarkedBalance(ctx, "uaeth")
+	treasury, err := k.GetTreasuryEarmarkedBalance(ctx, "uaethel")
 	// May error if earmark store not initialized; exercise the path
 	if err == nil {
 		require.True(t, treasury.IsZero())
 	}
-	insurance, err := k.GetInsuranceFundEarmarkedBalance(ctx, "uaeth")
+	insurance, err := k.GetInsuranceFundEarmarkedBalance(ctx, "uaethel")
 	if err == nil {
 		require.True(t, insurance.IsZero())
 	}

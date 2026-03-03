@@ -14,7 +14,7 @@ func DefaultGenesis() *GenesisState {
 func DefaultParams() *Params {
 	return &Params{
 		MinValidatorAttestations:   3,
-		SealCreationFee:            "1000uaeth",
+		SealCreationFee:            "1000uaethel",
 		DefaultRetentionPeriodDays: 365 * 7, // 7 years for regulatory compliance
 		AllowedPurposes: []string{
 			"credit_scoring",

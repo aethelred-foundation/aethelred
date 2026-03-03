@@ -352,7 +352,7 @@ func auditFeeDistributionConservation(_ sdk.Context, _ Keeper) []AuditFinding {
 	}
 
 	for _, tc := range edgeCases {
-		fee := sdk.NewInt64Coin("uaeth", tc.amount)
+		fee := sdk.NewInt64Coin("uaethel", tc.amount)
 		result := CalculateFeeBreakdown(fee, config, tc.validatorCount)
 
 		perValTotal := result.PerValidatorReward.Amount.MulRaw(int64(tc.validatorCount))

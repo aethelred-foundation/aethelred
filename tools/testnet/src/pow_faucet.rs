@@ -57,9 +57,9 @@ impl Default for PoWFaucetConfig {
 
         Self {
             challenges: WorkChallenge::default_challenges(),
-            base_reward: 10_000_000_000_000_000_000, // 10 tAETH
+            base_reward: 10_000_000_000_000_000_000, // 10 tAETHEL
             difficulty_multipliers,
-            max_daily_rewards: 1000_000_000_000_000_000_000, // 1000 tAETH/day
+            max_daily_rewards: 1000_000_000_000_000_000_000, // 1000 tAETHEL/day
             verification_strictness: VerificationStrictness::Standard,
             learning_path_enabled: true,
             achievements_enabled: true,

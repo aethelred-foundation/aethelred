@@ -16,7 +16,7 @@ import {
     Jurisdiction,
     Regulation,
 } from '../types';
-import { aethCli } from '../services/cli';
+import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
 
@@ -210,7 +210,7 @@ export class ComplianceLinter {
             const regulations = configManager.getRegulations();
 
             // Execute CLI
-            const result = await aethCli.checkCompliance(
+            const result = await aethelCli.checkCompliance(
                 document.fileName,
                 jurisdiction,
                 regulations,
@@ -298,7 +298,7 @@ export class ComplianceLinter {
         const tokenSource = new vscode.CancellationTokenSource();
 
         try {
-            const result = await aethCli.checkWorkspaceCompliance(
+            const result = await aethelCli.checkWorkspaceCompliance(
                 jurisdiction,
                 regulations,
                 { cancellation: tokenSource.token }

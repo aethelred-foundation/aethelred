@@ -4,9 +4,9 @@ This guide covers the local-first developer tooling stack for Aethelred protocol
 
 ## Tooling Components
 
-### 1. `aeth` CLI (Developer Operations)
+### 1. `aethel` CLI (Developer Operations)
 
-Location: `$AETHELRED_REPO_ROOT/cli/aeth`
+Location: `$AETHELRED_REPO_ROOT/cli/aethel`
 
 Key capabilities:
 
@@ -20,13 +20,13 @@ Key capabilities:
 Examples:
 
 ```bash
-aeth status --network local
-aeth diagnostics doctor --network local
-aeth validator list --network local
-aeth seal verify-file ./examples/seal-export.json
-aeth wallet balance aeth1developer --network local
-aeth wallet send --from aeth1from --to aeth1to --amount 1000000uaeth --out tx-send.json
-aeth local up --build
+aethel status --network local
+aethel diagnostics doctor --network local
+aethel validator list --network local
+aethel seal verify-file ./examples/seal-export.json
+aethel wallet balance aethel1developer --network local
+aethel wallet send --from aethel1from --to aethel1to --amount 1000000uaethel --out tx-send.json
+aethel local up --build
 ```
 
 ### 2. `seal-verifier` (Standalone Offline Verification)
@@ -101,7 +101,7 @@ Switch to the real validator-backed profile:
 ```bash
 AETHELRED_LOCAL_TESTNET_PROFILE=real-node ./scripts/devtools-local-testnet.sh up
 # or
-aeth local up --profile real-node
+aethel local up --profile real-node
 ```
 
 ### 5. `model-registry` CLI (Local-First Model Registry Workflow)
@@ -166,6 +166,6 @@ seal-verifier verify-file artifacts/latest-seal.json --strict --require-tee-nonc
 Use the local testnet stack in developer smoke tests:
 
 ```bash
-aeth local up --build
-aeth diagnostics doctor --network local
+aethel local up --build
+aethel diagnostics doctor --network local
 ```

@@ -227,7 +227,7 @@ max_entries = 7
 historical_entries = 10000
 
 # Bond denomination
-bond_denom = "uaeth"
+bond_denom = "uaethel"
 
 # ===========================================================================
 # Slashing Configuration

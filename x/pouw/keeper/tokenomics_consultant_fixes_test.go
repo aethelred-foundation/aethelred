@@ -220,7 +220,7 @@ func TestFeeDistributor_PersistsTreasuryAndInsuranceEarmarks(t *testing.T) {
 	val2 := sdk.AccAddress(bytes.Repeat([]byte{0x02}, 20)).String()
 	validatorAddrs := []string{val1, val2}
 
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 	expectedSingle := keeper.CalculateFeeBreakdown(fee, config, len(validatorAddrs))
 
 	_, err := fd.DistributeJobFee(ctx, fee, validatorAddrs)
@@ -250,7 +250,7 @@ func TestFeeDistributor_UsesDedicatedTreasuryAndInsuranceModuleAccounts(t *testi
 	val2 := sdk.AccAddress(bytes.Repeat([]byte{0x12}, 20)).String()
 	validatorAddrs := []string{val1, val2}
 
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 	expected := keeper.CalculateFeeBreakdown(fee, keeper.DefaultFeeDistributionConfig(), len(validatorAddrs))
 
 	_, err := fd.DistributeJobFee(ctx, fee, validatorAddrs)

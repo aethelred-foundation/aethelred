@@ -21,7 +21,7 @@ README_SDK_GO_ROW_RE = re.compile(
     r"^\|\s*\[`sdk-go`\]\(\./go\)\s*\|[^|]*\|\s*([^|]+)\|", re.MULTILINE
 )
 README_CLI_ROW_RE = re.compile(
-    r"^\|\s*\[`aeth`\]\(\./cli/aeth\)\s*\|\s*([^|]+)\|", re.MULTILINE
+    r"^\|\s*\[`aethel`\]\(\./cli/aethel\)\s*\|\s*([^|]+)\|", re.MULTILINE
 )
 
 

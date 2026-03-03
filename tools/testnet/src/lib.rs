@@ -191,7 +191,7 @@ impl Default for TestnetConfig {
             api_base_url: "https://api.testnet.aethelred.ai".to_string(),
             block_time_ms: 2000,
             block_gas_limit: 30_000_000,
-            native_token_symbol: "tAETH".to_string(),
+            native_token_symbol: "tAETHEL".to_string(),
             native_token_decimals: 18,
             weekly_reset_enabled: true,
             reset_day: 0, // Sunday
@@ -572,6 +572,6 @@ mod tests {
         let info = testnet.connection_info();
 
         assert!(!info.rpc_endpoints.is_empty());
-        assert_eq!(info.native_token.symbol, "tAETH");
+        assert_eq!(info.native_token.symbol, "tAETHEL");
     }
 }

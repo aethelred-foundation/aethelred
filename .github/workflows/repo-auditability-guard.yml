@@ -5,14 +5,14 @@ on:
     paths:
       - 'docs/governance/repo-auditability-registry.json'
       - 'scripts/validate-repo-auditability.py'
-      - 'docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md'
+      - 'docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md'
       - '.github/workflows/repo-auditability-guard.yml'
   push:
     branches: [main, master]
     paths:
       - 'docs/governance/repo-auditability-registry.json'
       - 'scripts/validate-repo-auditability.py'
-      - 'docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md'
+      - 'docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md'
       - '.github/workflows/repo-auditability-guard.yml'
   workflow_dispatch:
 
@@ -31,4 +31,4 @@ jobs:
       - name: Ensure rollout matrix is up to date
         run: |
           set -euo pipefail
-          git diff --exit-code -- docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md
+          git diff --exit-code -- docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md

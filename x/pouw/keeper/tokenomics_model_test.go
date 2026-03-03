@@ -123,7 +123,7 @@ func TestEmissionSchedule_SupplyGrowsBounded(t *testing.T) {
 	require.Len(t, schedule, 20)
 
 	// Year 20 supply should not exceed 2x initial (given 8% starting, decaying)
-	maxReasonable := int64(float64(keeper.InitialSupplyUAETH) * 2.0)
+	maxReasonable := int64(float64(keeper.InitialSupplyUAETHEL) * 2.0)
 	require.Less(t, schedule[19].CumulativeSupply, maxReasonable,
 		"supply after 20 years should not exceed 2x initial")
 }
@@ -140,7 +140,7 @@ func TestEmissionSchedule_StakingYieldPositive(t *testing.T) {
 
 func TestEmissionSchedule_MaxSupplyCap(t *testing.T) {
 	config := keeper.DefaultEmissionConfig()
-	config.MaxSupplyCap = keeper.InitialSupplyUAETH + 50_000_000_000_000 // +50M AETH
+	config.MaxSupplyCap = keeper.InitialSupplyUAETHEL + 50_000_000_000_000 // +50M AETHEL
 	schedule := keeper.ComputeEmissionSchedule(config, 20)
 
 	for _, entry := range schedule {
@@ -157,7 +157,7 @@ func TestDefaultStakingConfig(t *testing.T) {
 	config := keeper.DefaultStakingConfig()
 	require.NoError(t, keeper.ValidateStakingConfig(config))
 	require.Equal(t, 100, config.MaxValidators)
-	require.Equal(t, int64(1_000_000_000), config.MinStakeUAETH)
+	require.Equal(t, int64(1_000_000_000), config.MinStakeUAETHEL)
 }
 
 func TestStakingConfig_ValidationBounds(t *testing.T) {
@@ -167,7 +167,7 @@ func TestStakingConfig_ValidationBounds(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid default", func(c *keeper.StakingConfig) {}, false},
-		{"min stake too low", func(c *keeper.StakingConfig) { c.MinStakeUAETH = 100 }, true},
+		{"min stake too low", func(c *keeper.StakingConfig) { c.MinStakeUAETHEL = 100 }, true},
 		{"max commission < min", func(c *keeper.StakingConfig) { c.MaxCommissionBps = 100; c.MinCommissionBps = 500 }, true},
 		{"min commission too low", func(c *keeper.StakingConfig) { c.MinCommissionBps = 50 }, true},
 		{"max commission too high", func(c *keeper.StakingConfig) { c.MaxCommissionBps = 6000 }, true},
@@ -236,7 +236,7 @@ func TestValidatorEconomics_SlashingExposure(t *testing.T) {
 func TestDefaultFeeMarketConfig(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	require.NoError(t, keeper.ValidateFeeMarketConfig(config))
-	require.Equal(t, int64(1000), config.BaseFeeUAETH)
+	require.Equal(t, int64(1000), config.BaseFeeUAETHEL)
 	require.Len(t, config.PriorityFeeTiers, 3)
 }
 
@@ -247,7 +247,7 @@ func TestFeeMarketConfig_ValidationBounds(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid default", func(c *keeper.FeeMarketConfig) {}, false},
-		{"base fee zero", func(c *keeper.FeeMarketConfig) { c.BaseFeeUAETH = 0 }, true},
+		{"base fee zero", func(c *keeper.FeeMarketConfig) { c.BaseFeeUAETHEL = 0 }, true},
 		{"multiplier too low", func(c *keeper.FeeMarketConfig) { c.MaxMultiplierBps = 5000 }, true},
 		{"congestion too low", func(c *keeper.FeeMarketConfig) { c.CongestionThresholdBps = 1000 }, true},
 		{"no tiers", func(c *keeper.FeeMarketConfig) { c.PriorityFeeTiers = nil }, true},
@@ -270,26 +270,26 @@ func TestFeeMarketConfig_ValidationBounds(t *testing.T) {
 func TestDynamicFee_BelowThreshold(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	fee := keeper.ComputeDynamicFee(config, 0, 25)
-	require.Equal(t, config.BaseFeeUAETH, fee)
+	require.Equal(t, config.BaseFeeUAETHEL, fee)
 }
 
 func TestDynamicFee_AtThreshold(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	fee := keeper.ComputeDynamicFee(config, 175, 25)
-	require.Equal(t, config.BaseFeeUAETH, fee)
+	require.Equal(t, config.BaseFeeUAETHEL, fee)
 }
 
 func TestDynamicFee_AboveThreshold(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	fee := keeper.ComputeDynamicFee(config, 200, 25)
-	require.Greater(t, fee, config.BaseFeeUAETH,
+	require.Greater(t, fee, config.BaseFeeUAETHEL,
 		"fee should increase above congestion threshold")
 }
 
 func TestDynamicFee_MaxCapped(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	fee := keeper.ComputeDynamicFee(config, 10000, 25)
-	maxFee := config.BaseFeeUAETH * config.MaxMultiplierBps / 10000
+	maxFee := config.BaseFeeUAETHEL * config.MaxMultiplierBps / 10000
 	require.LessOrEqual(t, fee, maxFee,
 		"fee should not exceed max multiplier")
 }
@@ -297,7 +297,7 @@ func TestDynamicFee_MaxCapped(t *testing.T) {
 func TestDynamicFee_ZeroCapacity(t *testing.T) {
 	config := keeper.DefaultFeeMarketConfig()
 	fee := keeper.ComputeDynamicFee(config, 100, 0)
-	require.Equal(t, config.BaseFeeUAETH, fee)
+	require.Equal(t, config.BaseFeeUAETHEL, fee)
 }
 
 // =============================================================================
@@ -364,7 +364,7 @@ func TestSlashing_DeterrenceAboveOne(t *testing.T) {
 	staking := keeper.DefaultStakingConfig()
 
 	for _, tier := range config.Tiers {
-		slash := keeper.ComputeSlashAmount(tier, staking.MinStakeUAETH)
+		slash := keeper.ComputeSlashAmount(tier, staking.MinStakeUAETHEL)
 		ratio := keeper.DeterrenceRatio(slash, 1000*keeper.BlocksPerDay)
 
 		if tier.Name == "minor_fault" {
@@ -399,7 +399,7 @@ func TestTreasuryConfig_ValidationBounds(t *testing.T) {
 		{"allocation too low", func(c *keeper.TreasuryConfig) { c.AllocationFromEmissionBps = 100 }, true},
 		{"allocation too high", func(c *keeper.TreasuryConfig) { c.AllocationFromEmissionBps = 6000 }, true},
 		{"grant quorum too low", func(c *keeper.TreasuryConfig) { c.GrantQuorumBps = 1000 }, true},
-		{"zero max grant", func(c *keeper.TreasuryConfig) { c.MaxGrantSizeUAETH = 0 }, true},
+		{"zero max grant", func(c *keeper.TreasuryConfig) { c.MaxGrantSizeUAETHEL = 0 }, true},
 	}
 
 	for _, tt := range tests {
@@ -464,10 +464,10 @@ func TestVestingSchedules_TotalAllocated(t *testing.T) {
 
 	total := int64(0)
 	for _, s := range schedules {
-		total += s.TotalUAETH
+		total += s.TotalUAETHEL
 	}
 
-	require.Equal(t, keeper.InitialSupplyUAETH, total,
+	require.Equal(t, keeper.InitialSupplyUAETHEL, total,
 		"vesting allocations should sum to initial supply")
 }
 
@@ -484,7 +484,7 @@ func TestVestingSchedules_UniqueCategories(t *testing.T) {
 func TestVestedAmount_BeforeCliff(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "team",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
@@ -500,7 +500,7 @@ func TestVestedAmount_BeforeCliff_WithTGEUnlock(t *testing.T) {
 	// Ecosystem-grants pattern: 5% TGE, 6-month cliff, 5-year vest.
 	schedule := keeper.VestingSchedule{
 		Category:         "ecosystem",
-		TotalUAETH:       1_500_000_000,
+		TotalUAETHEL:       1_500_000_000,
 		TGEUnlockBps:     500, // 5% at TGE
 		CliffBlocks:      keeper.BlocksPerYear / 2,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
@@ -521,7 +521,7 @@ func TestVestedAmount_BeforeCliff_WithTGEUnlock(t *testing.T) {
 func TestVestedAmount_AtCliff(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "partners",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 3,
@@ -538,7 +538,7 @@ func TestVestedAmount_AtCliff_WithTGE(t *testing.T) {
 	// Core-contributor pattern with both TGE and cliff.
 	schedule := keeper.VestingSchedule{
 		Category:         "contributors",
-		TotalUAETH:       2_000_000_000,
+		TotalUAETHEL:       2_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
@@ -555,7 +555,7 @@ func TestVestedAmount_TGEUnlockOnly(t *testing.T) {
 	// Public sale pattern: 22.5% TGE, no cliff, 2-year vest.
 	schedule := keeper.VestingSchedule{
 		Category:         "public",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     2250, // 22.5% at TGE
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 2,
@@ -570,13 +570,13 @@ func TestVestedAmount_TGEUnlockOnly(t *testing.T) {
 
 	// Fully vested.
 	vested = keeper.VestedAmount(schedule, keeper.BlocksPerYear*3)
-	require.Equal(t, schedule.TotalUAETH, vested, "should be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, vested, "should be fully vested")
 }
 
 func TestVestedAmount_FullyVested(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "community",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 2,
@@ -585,7 +585,7 @@ func TestVestedAmount_FullyVested(t *testing.T) {
 	}
 
 	vested := keeper.VestedAmount(schedule, keeper.BlocksPerYear*3)
-	require.Equal(t, schedule.TotalUAETH, vested, "should be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, vested, "should be fully vested")
 }
 
 func TestVestedAmount_ZeroBlock(t *testing.T) {
@@ -692,7 +692,7 @@ func TestSimulation_EmissionSchedule(t *testing.T) {
 	result := keeper.RunDefaultSimulation()
 
 	require.Len(t, result.EmissionSchedule, 10)
-	require.Greater(t, result.Year10Supply, keeper.InitialSupplyUAETH,
+	require.Greater(t, result.Year10Supply, keeper.InitialSupplyUAETHEL,
 		"year 10 supply should exceed initial")
 }
 
@@ -779,7 +779,7 @@ func TestFullTokenomicsValidation(t *testing.T) {
 	require.NotEmpty(t, simReport)
 
 	t.Logf("10-year supply growth: %d -> %d",
-		keeper.InitialSupplyUAETH, result.Year10Supply)
+		keeper.InitialSupplyUAETHEL, result.Year10Supply)
 	t.Logf("Max deterrence: %.1fx", result.MaxDeterrenceRatio)
 }
 
@@ -793,6 +793,6 @@ func TestTokenomicsModelWithKeeper(t *testing.T) {
 	model := keeper.DefaultTokenomicsModel()
 	require.Empty(t, keeper.ValidateTokenomicsModel(model))
 
-	t.Logf("Validator annual revenue: %d uaeth", econ.AnnualRevenue)
-	t.Logf("Slashing exposure: %d uaeth", econ.SlashingExposure)
+	t.Logf("Validator annual revenue: %d uaethel", econ.AnnualRevenue)
+	t.Logf("Slashing exposure: %d uaethel", econ.SlashingExposure)
 }

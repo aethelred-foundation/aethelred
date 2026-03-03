@@ -6,7 +6,7 @@
     "chainName": "Aethelred DevNet",
     "nativeToken": {
       "name": "Aethelred",
-      "symbol": "AETH",
+      "symbol": "AETHEL",
       "decimals": 18,
       "totalSupply": "1000000000000000000000000000"
     }
@@ -29,7 +29,7 @@
     "quantumThreatLevel": 0
   },
   "staking": {
-    "bondDenom": "uaeth",
+    "bondDenom": "uaethel",
     "unbondingTime": "259200s",
     "maxValidators": 100,
     "maxEntries": 7,
@@ -39,7 +39,7 @@
   "governance": {
     "minDeposit": [
       {
-        "denom": "uaeth",
+        "denom": "uaethel",
         "amount": "10000000000000000000"
       }
     ],
@@ -132,33 +132,33 @@
   },
   "accounts": [
     {
-      "address": "aeth1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5xhkxw",
+      "address": "aethel1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5xhkxw",
       "name": "Treasury",
       "balances": [
         {
-          "denom": "uaeth",
+          "denom": "uaethel",
           "amount": "500000000000000000000000000"
         }
       ],
       "type": "SYSTEM"
     },
     {
-      "address": "aeth1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxjq9xd",
+      "address": "aethel1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxjq9xd",
       "name": "Rewards Pool",
       "balances": [
         {
-          "denom": "uaeth",
+          "denom": "uaethel",
           "amount": "100000000000000000000000000"
         }
       ],
       "type": "SYSTEM"
     },
     {
-      "address": "aeth1devnet0000000000000000000000001zkv7mg",
+      "address": "aethel1devnet0000000000000000000000001zkv7mg",
       "name": "DevNet Faucet",
       "balances": [
         {
-          "denom": "uaeth",
+          "denom": "uaethel",
           "amount": "100000000000000000000000000"
         }
       ],
@@ -168,7 +168,7 @@
   "validators": [
     {
       "name": "validator-1",
-      "operatorAddress": "aethvaloper1devnetval1000000000000000001xz0v8g",
+      "operatorAddress": "aethelvaloper1devnetval1000000000000000001xz0v8g",
       "consensusPubkey": {
         "type": "tendermint/PubKeyEd25519",
         "value": "PLACEHOLDER_VALIDATOR_1_PUBKEY"
@@ -198,7 +198,7 @@
     },
     {
       "name": "validator-2",
-      "operatorAddress": "aethvaloper1devnetval2000000000000000002yqfsgf",
+      "operatorAddress": "aethelvaloper1devnetval2000000000000000002yqfsgf",
       "consensusPubkey": {
         "type": "tendermint/PubKeyEd25519",
         "value": "PLACEHOLDER_VALIDATOR_2_PUBKEY"
@@ -228,7 +228,7 @@
     },
     {
       "name": "validator-3",
-      "operatorAddress": "aethvaloper1devnetval3000000000000000003fv3z4x",
+      "operatorAddress": "aethelvaloper1devnetval3000000000000000003fv3z4x",
       "consensusPubkey": {
         "type": "tendermint/PubKeyEd25519",
         "value": "PLACEHOLDER_VALIDATOR_3_PUBKEY"

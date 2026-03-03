@@ -1,6 +1,6 @@
 # Aethelred Multi-Repo Security Audit (Strict Auditor-Style Snapshot)
 
-> Status update (post-snapshot remediation): `aethelred-rust-node` has since been converted into a buildable/testable Rust crate baseline in the local remediation clone (`Cargo.toml` + CI + passing offline tests). Treat `AETH-MR-002` below as snapshot evidence, not current status.
+> Status update (post-snapshot remediation): `aethelred-rust-node` has since been converted into a buildable/testable Rust crate baseline in the local remediation clone (`Cargo.toml` + CI + passing offline tests). Treat `AETHEL-MR-002` below as snapshot evidence, not current status.
 
 Date: 2026-02-24
 Reviewer: Codex (simulated independent auditor-style review; not an official Trail of Bits / OpenZeppelin / Hecken / CertiK engagement)
@@ -39,7 +39,7 @@ Limitations:
 
 ### Critical Findings
 
-#### AETH-MR-001: Duplicate chain repositories with the same Go module path create patch-drift and release ambiguity
+#### AETHEL-MR-001: Duplicate chain repositories with the same Go module path create patch-drift and release ambiguity
 Severity: Critical
 Impact: Security fixes can land in one chain repo and not the other, while both appear authoritative to partners/integrators.
 
@@ -60,7 +60,7 @@ Recommendation:
 - Deprecate/archive the other or convert it to a mirror with automated sync and explicit bannering.
 - Publish a repo authority policy and release provenance statement.
 
-#### AETH-MR-002: `aethelred-rust-node` is a conceptual, non-buildable repo presented alongside implementation repos
+#### AETHEL-MR-002: `aethelred-rust-node` is a conceptual, non-buildable repo presented alongside implementation repos
 Severity: Critical
 Impact: Security claims may be inferred from a repo that cannot be built/tested, increasing diligence and misrepresentation risk.
 
@@ -79,7 +79,7 @@ Recommendation:
 - Either archive/mark as research-only, or convert into a proper crate (`Cargo.toml`, CI, tests, docs, security scope statement).
 - Add a top-level disclaimer if it remains conceptual.
 
-#### AETH-MR-003: Public repo-level audit evidence is fragmented outside the repos under review
+#### AETHEL-MR-003: Public repo-level audit evidence is fragmented outside the repos under review
 Severity: Critical
 Impact: Third-party auditors reviewing the listed GitHub repos cannot reproduce security claims if CI/guards/evidence live only in a separate umbrella workspace.
 
@@ -100,7 +100,7 @@ Recommendation:
 
 ### High Findings
 
-#### AETH-MR-004: Absolute local workstation paths are still present in public docs across SDKs and tooling repos
+#### AETHEL-MR-004: Absolute local workstation paths are still present in public docs across SDKs and tooling repos
 Severity: High
 Impact: Leaks developer environment details, reduces portability, and signals unreconciled internal documentation in public-facing materials.
 
@@ -113,7 +113,7 @@ Evidence:
 - `sdk/README.md:57`
 - `docs/sdk/official-sdks.md:22`
 - `docs/sdk/official-sdks.md:40`
-- `aethelred-developer-tools/cli/aeth/README.md:14`
+- `aethelred-developer-tools/cli/aethel/README.md:14`
 - `aethelred-integrations-repo/apps/fastapi-verifier/README.md:21`
 - `docs/sdk/developer-tools.md:9`
 
@@ -122,7 +122,7 @@ Recommendation:
 - Replace absolute paths with repo-relative paths and copy-paste-safe commands.
 - Add a docs hygiene CI check that blocks `/Users/` and similar local path patterns.
 
-#### AETH-MR-005: SDK documentation still explicitly marks several packages as source-first / pending public publication
+#### AETHEL-MR-005: SDK documentation still explicitly marks several packages as source-first / pending public publication
 Severity: High (go-to-market / operational risk), Medium (security)
 Impact: Installability and supply-chain provenance claims can be overstated if public registry releases are not yet authoritative.
 
@@ -141,7 +141,7 @@ Recommendation:
 - Publish canonical artifacts (PyPI, npm, crates.io, Go module path) before making broad “production-ready SDK” claims.
 - Add release signatures/provenance and a public release verification guide.
 
-#### AETH-MR-006: Central security scan workflow appears to target stale contract paths (`contracts/ethereum`)
+#### AETHEL-MR-006: Central security scan workflow appears to target stale contract paths (`contracts/ethereum`)
 Severity: High
 Impact: Security CI may produce false confidence if scans run against nonexistent paths or fail silently in a non-blocking manner.
 
@@ -158,7 +158,7 @@ Recommendation:
 - Fix path targets and add a preflight step that asserts all scan target paths exist.
 - Fail fast if any configured scan root is missing.
 
-#### AETH-MR-007: Threat model / SBOM / published security artifacts are not visible in most public repos
+#### AETHEL-MR-007: Threat model / SBOM / published security artifacts are not visible in most public repos
 Severity: High
 Impact: External auditors and counterparties cannot validate trust boundaries, dependency risk posture, or incident assumptions from repo-local evidence.
 
@@ -174,7 +174,7 @@ Recommendation:
 
 ### Medium Findings
 
-#### AETH-MR-008: Dashboard sets baseline security headers but lacks an explicit Content Security Policy (CSP)
+#### AETHEL-MR-008: Dashboard sets baseline security headers but lacks an explicit Content Security Policy (CSP)
 Severity: Medium (potentially High depending feature set and third-party scripts)
 Impact: XSS blast radius is larger without CSP, even when other headers are present.
 
@@ -187,7 +187,7 @@ Recommendation:
 
 - Add a CSP (nonce- or hash-based where needed) and prefer `frame-ancestors` in CSP over legacy-only clickjacking controls.
 
-#### AETH-MR-009: Test coverage maturity is uneven across repos (strong in chain/SDK/contracts, weak in tools/integrations/rust-node)
+#### AETHEL-MR-009: Test coverage maturity is uneven across repos (strong in chain/SDK/contracts, weak in tools/integrations/rust-node)
 Severity: Medium
 Impact: Security regressions are more likely in operational tooling and integration surfaces where automated coverage is sparse or absent.
 
@@ -201,7 +201,7 @@ Recommendation:
 - Prioritize tests for CLI parsing, devnet orchestration, deploy templates, and example app security defaults.
 - Add repo-local CI to enforce minimum test execution on PRs.
 
-#### AETH-MR-010: `nitro-sdk` quality gate is significantly improved, but `full-sdk` still emits one warning (docs lint)
+#### AETHEL-MR-010: `nitro-sdk` quality gate is significantly improved, but `full-sdk` still emits one warning (docs lint)
 Severity: Low security impact / Medium engineering quality impact
 Impact: Low direct exploitability, but warning-free targets improve audit confidence and reduce signal loss.
 

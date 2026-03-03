@@ -18,11 +18,11 @@ const baseSeal = {
   outputCommitment: "0x2222",
   modelCommitment: "0x3333",
   status: "SEAL_STATUS_ACTIVE",
-  requester: "aeth1requester",
+  requester: "aethel1requester",
   createdAt: "2026-02-23T00:00:00Z",
   validators: [
-    { validatorAddress: "aethval1", signature: "0xsig1", votingPower: "34" },
-    { validatorAddress: "aethval2", signature: "0xsig2", votingPower: "33" },
+    { validatorAddress: "aethelval1", signature: "0xsig1", votingPower: "34" },
+    { validatorAddress: "aethelval2", signature: "0xsig2", votingPower: "33" },
   ],
   consensus: {
     totalVotingPower: "100",
@@ -46,7 +46,7 @@ describe("verifySealOffline", () => {
       trustedEnclaveHashes: ["0xenclave"],
       trustedPcr0Values: ["0xpcr0"],
       expectedModelHash: "0xaaaabbbb",
-      expectedRequester: "aeth1requester",
+      expectedRequester: "aethel1requester",
     });
 
     expect(result.valid).toBe(true);
@@ -110,7 +110,7 @@ describe("verifySealOffline", () => {
   it("reports requester mismatch when expectedRequester differs", () => {
     const result = verifySealOffline(baseSeal, {
       now: new Date("2026-02-23T00:10:00Z"),
-      expectedRequester: "aeth1different",
+      expectedRequester: "aethel1different",
     });
     expect(result.valid).toBe(false);
     expect(result.checks.find((c) => c.id === "binding:requester")?.ok).toBe(false);

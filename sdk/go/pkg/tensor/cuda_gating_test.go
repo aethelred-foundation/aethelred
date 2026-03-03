@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewTensorRejectsSimulatedGPUWithoutFlag(t *testing.T) {
-	t.Setenv("AETH_SDK_ALLOW_SIMULATED_GPU", "0")
+	t.Setenv("AETHEL_SDK_ALLOW_SIMULATED_GPU", "0")
 	device := runtimepkg.NewSimulatedGPUDevice(0)
 
 	_, err := NewTensor([]int{2, 2}, Float32, device)
@@ -17,7 +17,7 @@ func TestNewTensorRejectsSimulatedGPUWithoutFlag(t *testing.T) {
 }
 
 func TestNewTensorAllowsSimulatedGPUWithExplicitFlag(t *testing.T) {
-	t.Setenv("AETH_SDK_ALLOW_SIMULATED_GPU", "1")
+	t.Setenv("AETHEL_SDK_ALLOW_SIMULATED_GPU", "1")
 	device := runtimepkg.NewSimulatedGPUDevice(0)
 
 	tensor, err := NewTensor([]int{2, 2}, Float32, device)

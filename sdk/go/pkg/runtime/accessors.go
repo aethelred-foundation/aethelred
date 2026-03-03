@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-const simulatedGPUEnv = "AETH_SDK_ALLOW_SIMULATED_GPU"
+const simulatedGPUEnv = "AETHEL_SDK_ALLOW_SIMULATED_GPU"
 
 // NewRuntime returns the singleton runtime instance.
 func NewRuntime() *Runtime {
@@ -31,7 +31,7 @@ func CPU() *Device {
 //
 // If no physical GPU device exists, the returned device will be marked unavailable.
 // Tensor allocation on this device will fail closed unless simulated GPU mode is
-// explicitly enabled via AETH_SDK_ALLOW_SIMULATED_GPU=1.
+// explicitly enabled via AETHEL_SDK_ALLOW_SIMULATED_GPU=1.
 func GPU(index int) *Device {
 	rt := Instance()
 	if !rt.IsInitialized() {

@@ -369,8 +369,8 @@ aethelred-cli benchmark run \
 
 | Node Type | Minimum Stake | Recommended Stake |
 |-----------|---------------|-------------------|
-| Standard Validator | 100,000 AETH | 500,000 AETH |
-| Compute Prover | 250,000 AETH | 1,000,000 AETH |
+| Standard Validator | 100,000 AETHEL | 500,000 AETHEL |
+| Compute Prover | 250,000 AETHEL | 1,000,000 AETHEL |
 
 ---
 

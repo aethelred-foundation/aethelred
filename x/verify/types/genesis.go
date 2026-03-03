@@ -25,10 +25,10 @@ func DefaultParams() *Params {
 		MaxCircuitSize:         100 * 1024 * 1024,  // 100 MB
 		DefaultTeeQuoteMaxAge:  durationpb.New(1 * time.Hour),
 		RequireTeeForHighValue: true,
-		HighValueThreshold:     "1000000uaeth", // 1 AETH
+		HighValueThreshold:     "1000000uaethel", // 1 AETHEL
 		SupportedProofSystems:  []string{"ezkl", "risc0", "plonky2", "halo2"},
 		SupportedTeePlatforms:  []string{"aws-nitro", "intel-sgx", "intel-tdx", "amd-sev"},
-		VerificationFee:        "100uaeth",
+		VerificationFee:        "100uaethel",
 		ZkVerifierEndpoint:     "",
 		AllowSimulated:         false,
 	}

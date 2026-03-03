@@ -358,7 +358,7 @@ impl ApiKeyManager {
     /// Create new API key
     pub fn create_key(&mut self, owner: &str, name: &str, tier: &str, permissions: Vec<Permission>) -> (String, ApiKey) {
         let key_id = format!("ak_{}", generate_id());
-        let raw_key = format!("aeth_{}_{}", tier, generate_id());
+        let raw_key = format!("aethel_{}_{}", tier, generate_id());
         let key_hash = hash_key(&raw_key);
 
         let api_key = ApiKey {

@@ -866,7 +866,7 @@ impl ResetProcess {
             }
             9 => {
                 // Refill faucets
-                Ok("Faucets refilled with 100,000,000 AETH".to_string())
+                Ok("Faucets refilled with 100,000,000 AETHEL".to_string())
             }
             10 => {
                 // Start validators

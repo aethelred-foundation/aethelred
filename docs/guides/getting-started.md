@@ -48,13 +48,13 @@
 curl -sSL https://get.aethelred.io | bash
 
 # Or via Homebrew (macOS)
-brew install aethelred/tap/aeth
+brew install aethelred/tap/aethel
 
 # Or via cargo (Rust users)
 cargo install aethelred-cli
 
 # Verify installation
-aeth --version
+aethel --version
 # aethelred-cli 2.0.0 (rustc 1.75.0)
 ```
 
@@ -77,7 +77,7 @@ python -c "import aethelred; print(aethelred.__version__)"
 
 ```bash
 # Create a new wallet
-aeth account create --name developer
+aethel account create --name developer
 
 # Sample output:
 # ✓ Created account 'developer'
@@ -93,7 +93,7 @@ aeth account create --name developer
 
 ```bash
 # Claim tokens from the testnet faucet
-aeth faucet claim --network testnet
+aethel faucet claim --network testnet
 
 # Sample output:
 # ✓ Claimed 100 tAETHEL to aethelred1a2b3c4d5e6f7g8h9i0j...
@@ -112,7 +112,7 @@ aeth faucet claim --network testnet
 
 ```bash
 # Create a new Aethelred project
-aeth init hello-sovereign --template basic
+aethel init hello-sovereign --template basic
 cd hello-sovereign
 
 # Project structure:
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
 ```bash
 # Run in local simulation mode (no real TEE)
-aeth run src/main.py --mode simulate
+aethel run src/main.py --mode simulate
 
 # Sample output:
 # ⚙️  Starting local TEE simulator...
@@ -207,7 +207,7 @@ aeth run src/main.py --mode simulate
 
 ```bash
 # Deploy and run on testnet
-aeth run src/main.py --network testnet
+aethel run src/main.py --network testnet
 
 # Sample output:
 # 📡 Connecting to testnet-rpc.aethelred.io...
@@ -221,12 +221,12 @@ aeth run src/main.py --network testnet
 #
 # ✓ Digital Seal created!
 #
-# Seal ID:     aeth-seal-0x1234567890abcdef...
+# Seal ID:     aethel-seal-0x1234567890abcdef...
 # Block:       #1,234,567
 # Validator:   aethelredval1abc...
 # Attestation: Intel SGX (DCAP)
 #
-# View seal: https://testnet.aethelred.io/seal/aeth-seal-0x1234567890abcdef
+# View seal: https://testnet.aethelred.io/seal/aethel-seal-0x1234567890abcdef
 ```
 
 ---
@@ -297,7 +297,7 @@ Every sovereign function execution produces a **Digital Seal**. This is the core
 from aethelred import get_seal
 
 # Retrieve the seal for verification
-seal = get_seal("aeth-seal-0x1234567890abcdef...")
+seal = get_seal("aethel-seal-0x1234567890abcdef...")
 
 print(f"Seal ID: {seal.id}")
 print(f"Created: {seal.timestamp}")
@@ -429,7 +429,7 @@ if __name__ == "__main__":
 
 ```bash
 # Run on testnet (will find UAE-capable validator)
-aeth run src/credit_scoring.py --network testnet
+aethel run src/credit_scoring.py --network testnet
 
 # Sample output:
 # 📡 Connecting to testnet-rpc.aethelred.io...
@@ -444,7 +444,7 @@ aeth run src/credit_scoring.py --network testnet
 #
 # ✓ Digital Seal created!
 #
-# Seal ID:     aeth-seal-0xabcd1234...
+# Seal ID:     aethel-seal-0xabcd1234...
 # Block:       #1,234,890
 # Validator:   aethelredval1uae...
 # Hardware:    NVIDIA H100 Confidential Computing
@@ -452,7 +452,7 @@ aeth run src/credit_scoring.py --network testnet
 # Compliance:  UAE-DPL, GDPR
 # ZK Proof:    ✓ Verified
 #
-# View seal: https://testnet.aethelred.io/seal/aeth-seal-0xabcd1234
+# View seal: https://testnet.aethelred.io/seal/aethel-seal-0xabcd1234
 ```
 
 ---
@@ -536,7 +536,7 @@ def process_data(data: dict, origin: str) -> SovereignData:
 from aethelred import verify_jurisdiction
 
 # Verify a seal was processed in the correct jurisdiction
-seal = get_seal("aeth-seal-0x...")
+seal = get_seal("aethel-seal-0x...")
 
 # This will raise an error if the seal was created by a non-UAE validator
 verify_jurisdiction(seal, expected=Jurisdiction.UAE)
@@ -559,14 +559,14 @@ Visit the Aethelred block explorer to view your seals:
 
 ```bash
 # Get seal details
-aeth seal get aeth-seal-0x1234567890abcdef
+aethel seal get aethel-seal-0x1234567890abcdef
 
 # Sample output:
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │                           DIGITAL SEAL                                      │
 # ├─────────────────────────────────────────────────────────────────────────────┤
 # │                                                                             │
-# │  Seal ID:      aeth-seal-0x1234567890abcdef...                              │
+# │  Seal ID:      aethel-seal-0x1234567890abcdef...                              │
 # │  Created:      2026-02-08T12:34:56Z                                         │
 # │  Block:        #1,234,567                                                   │
 # │                                                                             │
@@ -596,11 +596,11 @@ aeth seal get aeth-seal-0x1234567890abcdef
 # └─────────────────────────────────────────────────────────────────────────────┘
 
 # Verify a seal
-aeth seal verify aeth-seal-0x1234567890abcdef
+aethel seal verify aethel-seal-0x1234567890abcdef
 # ✓ Seal is valid and attestation verified
 
 # Export audit report
-aeth seal export aeth-seal-0x1234567890abcdef --format pdf
+aethel seal export aethel-seal-0x1234567890abcdef --format pdf
 # ✓ Exported to seal-audit-0x1234567890abcdef.pdf
 ```
 
@@ -613,7 +613,7 @@ from aethelred import AethelredClient, verify_seal
 client = AethelredClient(network="testnet")
 
 # Fetch and verify seal
-seal = client.get_seal("aeth-seal-0x1234567890abcdef")
+seal = client.get_seal("aethel-seal-0x1234567890abcdef")
 
 # Full verification
 verification = verify_seal(seal)

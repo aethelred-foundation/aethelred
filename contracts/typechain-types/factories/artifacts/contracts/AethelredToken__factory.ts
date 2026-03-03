@@ -896,7 +896,7 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "UAETH_TO_WEI_SCALE",
+    name: "UAETHEL_TO_WEI_SCALE",
     outputs: [
       {
         internalType: "uint256",

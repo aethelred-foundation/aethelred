@@ -137,8 +137,8 @@ func RatioToPercentForTest(numerator, denominator sdkmath.Int) float64 {
 	return ratioToPercent(numerator, denominator)
 }
 
-// FormatAETHForTest wraps formatAETH for testing.
-func FormatAETHForTest(uaeth int64) string { return formatAETH(uaeth) }
+// FormatAETHELForTest wraps formatAETHEL for testing.
+func FormatAETHELForTest(uaethel int64) string { return formatAETHEL(uaethel) }
 
 // FormatWithCommasForTest wraps formatWithCommas for testing.
 func FormatWithCommasForTest(n int64) string { return formatWithCommas(n) }

@@ -230,7 +230,7 @@ The following must **never** appear in logs:
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Block production uptime | 99.9% | Blocks produced / expected blocks |
-| Bridge processing latency | < 15 minutes (ETH->AETH) | Deposit to mint time |
+| Bridge processing latency | < 15 minutes (ETH->AETHEL) | Deposit to mint time |
 | RPC availability | 99.95% | Successful RPC responses |
 | Alert response time (P0) | < 5 minutes | PagerDuty acknowledgement |
 | Alert response time (P1) | < 30 minutes | PagerDuty acknowledgement |

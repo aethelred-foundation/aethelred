@@ -18,7 +18,7 @@ func TestParseStakeAmount(t *testing.T) {
 	})
 
 	t.Run("accepts base denom", func(t *testing.T) {
-		coin, err := parseStakeAmount("100000000000uaeth")
+		coin, err := parseStakeAmount("100000000000uaethel")
 		require.NoError(t, err)
 		require.Equal(t, stakeBaseDenom, coin.Denom)
 		require.Equal(t, sdkmath.NewInt(100000000000), coin.Amount)

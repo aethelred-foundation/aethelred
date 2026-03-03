@@ -1,6 +1,6 @@
 {
   "Aethelred Client": {
-    "prefix": "aeth-client",
+    "prefix": "aethel-client",
     "body": [
       "from aethelred import AethelredClient",
       "",
@@ -10,7 +10,7 @@
     "description": "Create Aethelred client"
   },
   "Async Client": {
-    "prefix": "aeth-async-client",
+    "prefix": "aethel-async-client",
     "body": [
       "from aethelred import AsyncAethelredClient",
       "",
@@ -20,7 +20,7 @@
     "description": "Create async Aethelred client"
   },
   "Submit Job": {
-    "prefix": "aeth-submit-job",
+    "prefix": "aethel-submit-job",
     "body": [
       "response = await client.jobs.submit(",
       "    model_hash=b'${1:...}',",

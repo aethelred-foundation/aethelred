@@ -75,8 +75,8 @@ impl JobConfig {
     /// Mainnet configuration
     pub fn mainnet() -> Self {
         Self {
-            min_bid: 100_000_000_000_000_000,         // 0.1 AETH
-            max_bid: 100_000_000_000_000_000_000_000, // 100,000 AETH
+            min_bid: 100_000_000_000_000_000,         // 0.1 AETHEL
+            max_bid: 100_000_000_000_000_000_000_000, // 100,000 AETHEL
             default_sla_timeout: 3600,                // 1 hour
             min_sla_timeout: 60,                      // 1 minute
             max_sla_timeout: 86400,                   // 24 hours
@@ -91,8 +91,8 @@ impl JobConfig {
     /// Testnet configuration
     pub fn testnet() -> Self {
         Self {
-            min_bid: 1_000_000_000_000_000,         // 0.001 AETH
-            max_bid: 1_000_000_000_000_000_000_000, // 1000 AETH
+            min_bid: 1_000_000_000_000_000,         // 0.001 AETHEL
+            max_bid: 1_000_000_000_000_000_000_000, // 1000 AETHEL
             default_sla_timeout: 600,               // 10 minutes
             min_sla_timeout: 30,
             max_sla_timeout: 7200,

@@ -42,7 +42,7 @@ func TestAssignedJobsForValidator_HaltedByCrisisReturnsNoAssignments(t *testing.
 	crisisKeeper := sovereigncrisiskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		"aeth1gov",
+		"aethel1gov",
 	)
 
 	cfg := sovereigncrisistypes.SecurityCouncilConfig{
@@ -57,7 +57,7 @@ func TestAssignedJobsForValidator_HaltedByCrisisReturnsNoAssignments(t *testing.
 			{Address: "auditor-2", Role: sovereigncrisistypes.RoleAuditor},
 		},
 	}
-	require.NoError(t, crisisKeeper.SetSecurityCouncilConfig(ctx, "aeth1gov", cfg))
+	require.NoError(t, crisisKeeper.SetSecurityCouncilConfig(ctx, "aethel1gov", cfg))
 	require.NoError(t, crisisKeeper.MsgHaltNetwork(ctx, sovereigncrisistypes.MsgHaltNetwork{
 		Requester: "validator-1",
 		Reason:    "emergency response test",

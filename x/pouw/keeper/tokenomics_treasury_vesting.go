@@ -17,8 +17,8 @@ type TreasuryConfig struct {
 	// GrantsAllocationBps is the % of treasury allocated to grants.
 	GrantsAllocationBps int64
 
-	// MaxGrantSizeUAETH is the maximum single grant amount.
-	MaxGrantSizeUAETH int64
+	// MaxGrantSizeUAETHEL is the maximum single grant amount.
+	MaxGrantSizeUAETHEL int64
 
 	// GrantVotingPeriodBlocks is the voting period for grant proposals.
 	GrantVotingPeriodBlocks int64
@@ -35,7 +35,7 @@ func DefaultTreasuryConfig() TreasuryConfig {
 	return TreasuryConfig{
 		AllocationFromEmissionBps: 1500,           // 15% of emissions
 		GrantsAllocationBps:       4000,           // 40% of treasury for grants
-		MaxGrantSizeUAETH:         10_000_000_000, // 10,000 AETH per grant
+		MaxGrantSizeUAETHEL:         10_000_000_000, // 10,000 AETHEL per grant
 		GrantVotingPeriodBlocks:   BlocksPerWeek,  // 1 week
 		GrantQuorumBps:            3300,           // 33%
 		InsuranceReserveBps:       2000,           // 20% of treasury for insurance
@@ -52,8 +52,8 @@ func ValidateTreasuryConfig(config TreasuryConfig) error {
 		return fmt.Errorf("grants allocation must be in [0, 8000] BPS, got %d",
 			config.GrantsAllocationBps)
 	}
-	if config.MaxGrantSizeUAETH <= 0 {
-		return fmt.Errorf("max grant size must be positive, got %d", config.MaxGrantSizeUAETH)
+	if config.MaxGrantSizeUAETHEL <= 0 {
+		return fmt.Errorf("max grant size must be positive, got %d", config.MaxGrantSizeUAETHEL)
 	}
 	if config.GrantQuorumBps < 2000 || config.GrantQuorumBps > 8000 {
 		return fmt.Errorf("grant quorum must be in [2000, 8000] BPS, got %d", config.GrantQuorumBps)
@@ -124,7 +124,7 @@ func ProjectTreasuryGrowth(emissionConfig EmissionConfig, treasuryConfig Treasur
 // VestingSchedule defines a token vesting configuration.
 type VestingSchedule struct {
 	Category         string
-	TotalUAETH       int64
+	TotalUAETHEL       int64
 	TGEUnlockBps     int64 // % released at TGE (genesis), before any cliff (BPS)
 	CliffBlocks      int64 // Cliff period in blocks
 	VestingBlocks    int64 // Total vesting period in blocks
@@ -150,7 +150,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 	return []VestingSchedule{
 		{
 			Category:         "compute_pouw_rewards",
-			TotalUAETH:       3_000_000_000_000_000, // 30% of supply — H100 validator incentives
+			TotalUAETHEL:       3_000_000_000_000_000, // 30% of supply — H100 validator incentives
 			TGEUnlockBps:     0,                     // No TGE unlock
 			CliffBlocks:      0,                     // No cliff — rewards from genesis
 			VestingBlocks:    BlocksPerYear * 10,    // 10-year linear release (120 months)
@@ -159,7 +159,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "core_contributors",
-			TotalUAETH:       2_000_000_000_000_000, // 20% of supply — Team alignment
+			TotalUAETHEL:       2_000_000_000_000_000, // 20% of supply — Team alignment
 			TGEUnlockBps:     0,                     // No TGE unlock
 			CliffBlocks:      BlocksPerYear,         // 12-month cliff
 			VestingBlocks:    BlocksPerYear * 4,     // 4-year total vest (48 months)
@@ -168,7 +168,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "ecosystem_grants",
-			TotalUAETH:       1_500_000_000_000_000, // 15% of supply — Developer adoption, dApp incentives
+			TotalUAETHEL:       1_500_000_000_000_000, // 15% of supply — Developer adoption, dApp incentives
 			TGEUnlockBps:     500,                   // 5% at TGE (75M tokens)
 			CliffBlocks:      BlocksPerYear / 2,     // 6-month cliff
 			VestingBlocks:    BlocksPerYear * 5,     // 5-year total vest (60 months)
@@ -177,7 +177,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "aethelred_labs_treasury",
-			TotalUAETH:       1_000_000_000_000_000, // 10% of supply — Operational runway
+			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply — Operational runway
 			TGEUnlockBps:     0,                     // No TGE unlock
 			CliffBlocks:      BlocksPerYear,         // 12-month cliff
 			VestingBlocks:    BlocksPerYear * 5,     // 5-year total vest (60 months)
@@ -186,7 +186,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "public_sale_community",
-			TotalUAETH:       1_000_000_000_000_000, // 10% of supply — Echo + Exchange + Airdrop
+			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply — Echo + Exchange + Airdrop
 			TGEUnlockBps:     2250,                  // 22.5% at TGE (225M tokens)
 			CliffBlocks:      0,                     // No cliff
 			VestingBlocks:    BlocksPerYear * 2,     // 2-year total vest (24 months)
@@ -195,7 +195,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "strategic_investors",
-			TotalUAETH:       500_000_000_000_000, // 5% of supply — Seed + Strategic + Binance
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Seed + Strategic + Binance
 			TGEUnlockBps:     0,                   // No TGE unlock
 			CliffBlocks:      BlocksPerYear,       // 12-month cliff
 			VestingBlocks:    BlocksPerYear * 4,   // 4-year total vest (48 months)
@@ -204,7 +204,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "insurance_stability",
-			TotalUAETH:       500_000_000_000_000, // 5% of supply — Slashing appeals, bridge indemnification
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Slashing appeals, bridge indemnification
 			TGEUnlockBps:     1000,                // 10% at TGE (50M tokens)
 			CliffBlocks:      0,                   // No cliff
 			VestingBlocks:    BlocksPerYear * 5 / 2, // 2.5-year linear (30 months)
@@ -213,7 +213,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "foundation_reserve",
-			TotalUAETH:       500_000_000_000_000, // 5% of supply — Future initiatives, strategic partnerships
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Future initiatives, strategic partnerships
 			TGEUnlockBps:     0,                   // No TGE unlock
 			CliffBlocks:      BlocksPerYear,       // 12-month cliff
 			VestingBlocks:    BlocksPerYear * 5,   // 5-year total vest (60 months)
@@ -237,7 +237,7 @@ func ValidateVestingSchedules(schedules []VestingSchedule) error {
 		}
 		categories[s.Category] = true
 
-		if s.TotalUAETH <= 0 {
+		if s.TotalUAETHEL <= 0 {
 			return fmt.Errorf("category %q: total must be positive", s.Category)
 		}
 		if s.VestingBlocks <= 0 {
@@ -262,12 +262,12 @@ func ValidateVestingSchedules(schedules []VestingSchedule) error {
 			return fmt.Errorf("category %q: TGE (%d) + cliff (%d) must not exceed 8000 BPS",
 				s.Category, s.TGEUnlockBps, s.CliffPercent)
 		}
-		totalAllocated += s.TotalUAETH
+		totalAllocated += s.TotalUAETHEL
 	}
 
-	if totalAllocated > InitialSupplyUAETH {
+	if totalAllocated > InitialSupplyUAETHEL {
 		return fmt.Errorf("total vesting allocation (%d) exceeds initial supply (%d)",
-			totalAllocated, InitialSupplyUAETH)
+			totalAllocated, InitialSupplyUAETHEL)
 	}
 
 	return nil
@@ -280,7 +280,7 @@ func ValidateVestingSchedules(schedules []VestingSchedule) error {
 // Linear vesting covers the remainder after TGE + cliff.
 //
 // Audit fix [C-01]: All intermediate arithmetic uses math/big to prevent
-// silent int64 overflow. With TotalUAETH up to 3*10^15 and elapsed up to
+// silent int64 overflow. With TotalUAETHEL up to 3*10^15 and elapsed up to
 // 5.256*10^7 blocks, naive int64 multiplication overflows 2^63 (~9.2*10^18).
 //
 // Audit fix [H-03]: Genesis block (blockHeight == 0) now returns TGE amount
@@ -293,7 +293,7 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 		return 0
 	}
 
-	total := big.NewInt(schedule.TotalUAETH)
+	total := big.NewInt(schedule.TotalUAETHEL)
 	bpsBase := big.NewInt(BpsBase)
 
 	// TGE unlock is available from the genesis block (height 0).
@@ -313,7 +313,7 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 
 	if !schedule.LinearAfterCliff {
 		if blockHeight >= schedule.VestingBlocks {
-			return schedule.TotalUAETH
+			return schedule.TotalUAETHEL
 		}
 		result := new(big.Int).Add(tgeAmount, cliffAmount)
 		return result.Int64()
@@ -321,7 +321,7 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 
 	// Fully vested.
 	if blockHeight >= schedule.VestingBlocks {
-		return schedule.TotalUAETH
+		return schedule.TotalUAETHEL
 	}
 
 	// Linear vesting after cliff for the remainder.
@@ -331,7 +331,7 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 
 	vestingAfterCliff := schedule.VestingBlocks - schedule.CliffBlocks
 	if vestingAfterCliff <= 0 {
-		return schedule.TotalUAETH
+		return schedule.TotalUAETHEL
 	}
 
 	elapsed := blockHeight - schedule.CliffBlocks
@@ -347,7 +347,7 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 
 	// Clamp to total (safety invariant: never vest more than allocated).
 	if result.Cmp(total) > 0 {
-		return schedule.TotalUAETH
+		return schedule.TotalUAETHEL
 	}
 
 	return result.Int64()

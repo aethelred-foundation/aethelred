@@ -306,7 +306,7 @@ func TestCB_AuditLogger_ConvenienceMethods(t *testing.T) {
 	require.NotNil(t, logger)
 
 	logger.AuditConsensusFailed(ctx, "job-1", 2, 5)
-	logger.AuditFeeDistributed(ctx, "job-1", "100uaeth", "60uaeth", "20uaeth", "10uaeth", "10uaeth")
+	logger.AuditFeeDistributed(ctx, "job-1", "100uaethel", "60uaethel", "20uaethel", "10uaethel", "10uaethel")
 	logger.AuditValidatorRegistered(ctx, "cosmos1validator", 10, true)
 
 	records := logger.GetRecords()
@@ -408,7 +408,7 @@ func TestCB_StringSliceEqual(t *testing.T) {
 // =============================================================================
 
 func TestCB_RewardScaleByReputation(t *testing.T) {
-	baseCoin := sdk.NewInt64Coin("uaeth", 1000)
+	baseCoin := sdk.NewInt64Coin("uaethel", 1000)
 
 	result := keeper.RewardScaleByReputation(baseCoin, 0)
 	require.Equal(t, int64(500), result.Amount.Int64())
@@ -835,8 +835,8 @@ func TestCB_NewValidatorSelector(t *testing.T) {
 // STAKE SECURITY
 // =============================================================================
 
-func TestCB_MinimumValidatorStakeUAETH(t *testing.T) {
-	stake := keeper.MinimumValidatorStakeUAETH()
+func TestCB_MinimumValidatorStakeUAETHEL(t *testing.T) {
+	stake := keeper.MinimumValidatorStakeUAETHEL()
 	require.True(t, stake.IsPositive())
 }
 
@@ -945,7 +945,7 @@ func TestCB_SafeMulDiv(t *testing.T) {
 func TestCB_ValidateBondingCurveConfig(t *testing.T) {
 	require.NoError(t, keeper.ValidateBondingCurveConfig(keeper.DefaultBondingCurveConfig()))
 	cfg := keeper.DefaultBondingCurveConfig()
-	cfg.BasePriceUAETH = sdkmath.NewInt(0)
+	cfg.BasePriceUAETHEL = sdkmath.NewInt(0)
 	require.Error(t, keeper.ValidateBondingCurveConfig(cfg))
 }
 
@@ -965,7 +965,7 @@ func TestCB_ComputeEmissionScheduleSafe(t *testing.T) {
 }
 
 func TestCB_ComputeValidatorRewardSafe(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1000000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1000000)
 	valReward, delReward, err := keeper.ComputeValidatorRewardSafe(baseReward, 80, 1000)
 	require.NoError(t, err)
 	require.True(t, valReward.IsPositive())
@@ -1027,10 +1027,10 @@ func TestCB_ValidateAntiAbuseConfig(t *testing.T) {
 	require.Error(t, keeper.ValidateAntiAbuseConfig(cfg))
 }
 
-func TestCB_FormatAETH(t *testing.T) {
-	require.Equal(t, "1", keeper.FormatAETHForTest(1_000_000))
-	require.Equal(t, "1,000", keeper.FormatAETHForTest(1_000_000_000))
-	require.Contains(t, keeper.FormatAETHForTest(500), "0.") // fractional AETH
+func TestCB_FormatAETHEL(t *testing.T) {
+	require.Equal(t, "1", keeper.FormatAETHELForTest(1_000_000))
+	require.Equal(t, "1,000", keeper.FormatAETHELForTest(1_000_000_000))
+	require.Contains(t, keeper.FormatAETHELForTest(500), "0.") // fractional AETHEL
 }
 
 func TestCB_FormatWithCommas(t *testing.T) {
@@ -1058,7 +1058,7 @@ func TestCB_ValidateVestingSchedules_Empty(t *testing.T) {
 }
 
 func TestCB_ValidateVestingSchedules_Invalid(t *testing.T) {
-	schedules := []keeper.VestingSchedule{{Category: "test", TotalUAETH: -1, VestingBlocks: 1000}}
+	schedules := []keeper.VestingSchedule{{Category: "test", TotalUAETHEL: -1, VestingBlocks: 1000}}
 	require.Error(t, keeper.ValidateVestingSchedules(schedules))
 }
 

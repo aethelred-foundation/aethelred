@@ -3,8 +3,8 @@
 ✓ fastapi-health ready (http://127.0.0.1:8000/health)
 ✓ nextjs-health ready (http://127.0.0.1:3000/api/health)
 ✓ dashboard-devtools ready (http://127.0.0.1:3101/devtools)
-== CLI smoke: aeth status ==
-+ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aeth/dist/index.js --rpc-url http://127.0.0.1:26657 status
+== CLI smoke: aethel status ==
++ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aethel/dist/index.js --rpc-url http://127.0.0.1:26657 status
 Aethelred Network Status
 RPC URL: http://127.0.0.1:26657
 Latency: 32 ms
@@ -12,8 +12,8 @@ Moniker: aethelred-mock-rpc
 Chain ID: aethelred-local-devtools-1
 Latest block: 123458
 Health: ok
-== CLI smoke: aeth diagnostics doctor ==
-+ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aeth/dist/index.js --rpc-url http://127.0.0.1:26657 diagnostics doctor
+== CLI smoke: aethel diagnostics doctor ==
++ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aethel/dist/index.js --rpc-url http://127.0.0.1:26657 diagnostics doctor
 ✓ docker-daemon: Docker daemon reachable
 ✓ local-testnet-compose: /Users/rameshtamilselvan/Downloads/aethelred/integrations/deploy/docker/docker-compose.local-testnet.yml
 ✓ rpc-health: http://127.0.0.1:26657 (25 ms)

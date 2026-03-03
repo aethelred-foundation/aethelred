@@ -408,7 +408,7 @@ impl AethelredClient {
                         burn_id,
                         burner,
                         eth_recipient,
-                        token_type: TokenType::NativeAETH,
+                        token_type: TokenType::NativeAETHEL,
                         amount,
                         nonce: 0, // Placeholder: actual nonce fetched from on-chain state
                         block_height: height,

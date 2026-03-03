@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Default consensus threshold raised from 51% to **67%** (BFT-safe floor enforced on-chain)
-- `UaethToWeiScaleFactor = 10^12` canonical conversion (audit fix C-02)
+- `UaethelToWeiScaleFactor = 10^12` canonical conversion (audit fix C-02)
 - Validator commission floor raised to 5% minimum
 
 ---

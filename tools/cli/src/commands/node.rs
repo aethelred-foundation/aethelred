@@ -7,7 +7,7 @@ use crate::config::Config;
 use crate::NodeArgs;
 
 pub async fn run(args: NodeArgs, _config: &Config) -> Result<()> {
-    let binary = std::env::var("AETH_NODE_BINARY").unwrap_or_else(|_| "aethelredd".to_string());
+    let binary = std::env::var("AETHEL_NODE_BINARY").unwrap_or_else(|_| "aethelredd".to_string());
     let mut command = Command::new(&binary);
 
     command.arg("start");

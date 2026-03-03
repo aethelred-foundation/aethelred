@@ -100,9 +100,9 @@ const (
 	// Name is the name of the application
 	Name = "aethelred"
 	// AccountAddressPrefix is the prefix for account addresses
-	AccountAddressPrefix = "aeth"
+	AccountAddressPrefix = "aethel"
 	// BondDenom is the staking token denomination
-	BondDenom = "uaeth"
+	BondDenom = "uaethel"
 )
 
 var (

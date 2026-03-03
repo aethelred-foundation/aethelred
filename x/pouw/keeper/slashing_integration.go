@@ -115,7 +115,7 @@ func DefaultSlashingAdapterConfig() SlashingAdapterConfig {
 		CollusionJailDuration:       365 * 24 * time.Hour,
 		FakeAttestationJailDuration: 365 * 24 * time.Hour,
 
-		MinSlashableTokens: sdkmath.NewInt(1000), // 1000 uaeth minimum
+		MinSlashableTokens: sdkmath.NewInt(1000), // 1000 uaethel minimum
 		EnableTombstoning:  true,
 		EnableBurning:      true,
 	}

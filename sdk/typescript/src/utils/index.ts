@@ -2,26 +2,26 @@
  * Utility functions for Aethelred SDK.
  */
 
-const AETH_DECIMALS = 18;
-const UAETH_MULTIPLIER = BigInt(10 ** AETH_DECIMALS);
+const AETHEL_DECIMALS = 18;
+const UAETHEL_MULTIPLIER = BigInt(10 ** AETHEL_DECIMALS);
 
-export function toUaeth(aeth: number | string): bigint {
-  const value = typeof aeth === 'string' ? parseFloat(aeth) : aeth;
-  return BigInt(Math.floor(value * Number(UAETH_MULTIPLIER)));
+export function toUaethel(aethel: number | string): bigint {
+  const value = typeof aethel === 'string' ? parseFloat(aethel) : aethel;
+  return BigInt(Math.floor(value * Number(UAETHEL_MULTIPLIER)));
 }
 
-export function fromUaeth(uaeth: bigint | string): number {
-  const value = typeof uaeth === 'string' ? BigInt(uaeth) : uaeth;
-  return Number(value) / Number(UAETH_MULTIPLIER);
+export function fromUaethel(uaethel: bigint | string): number {
+  const value = typeof uaethel === 'string' ? BigInt(uaethel) : uaethel;
+  return Number(value) / Number(UAETHEL_MULTIPLIER);
 }
 
-export function formatAeth(uaeth: bigint | string, decimals = 6): string {
-  const value = fromUaeth(uaeth);
-  return value.toFixed(decimals) + ' AETH';
+export function formatAethel(uaethel: bigint | string, decimals = 6): string {
+  const value = fromUaethel(uaethel);
+  return value.toFixed(decimals) + ' AETHEL';
 }
 
 export function isValidAddress(address: string): boolean {
-  return /^aeth1[a-z0-9]{38,58}$/.test(address);
+  return /^aethel1[a-z0-9]{38,58}$/.test(address);
 }
 
 export function sleep(ms: number): Promise<void> {

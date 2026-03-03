@@ -46,7 +46,7 @@ func TestScheduler_PersistsVRFAssignmentMetadataChainBacked(t *testing.T) {
 		testAddr(3),
 		types.ProofTypeTEE,
 		"vrf_test",
-		sdk.NewInt64Coin("uaeth", 1000),
+		sdk.NewInt64Coin("uaethel", 1000),
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
@@ -109,7 +109,7 @@ func TestScheduler_ProductionModeBlocksLegacyEntropyFallback(t *testing.T) {
 		testAddr(3),
 		types.ProofTypeTEE,
 		"prod_entropy_fail_closed",
-		sdk.NewInt64Coin("uaeth", 1000),
+		sdk.NewInt64Coin("uaethel", 1000),
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
@@ -159,7 +159,7 @@ func TestScheduler_UsesDKGBeaconEntropyAndPersistsBeaconMetadata(t *testing.T) {
 		testAddr(3),
 		types.ProofTypeTEE,
 		"dkg_entropy",
-		sdk.NewInt64Coin("uaeth", 1000),
+		sdk.NewInt64Coin("uaethel", 1000),
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)
@@ -225,7 +225,7 @@ func TestScheduler_StrictDKGModeRejectsMissingBeaconEntropy(t *testing.T) {
 		testAddr(3),
 		types.ProofTypeTEE,
 		"strict_dkg",
-		sdk.NewInt64Coin("uaeth", 1000),
+		sdk.NewInt64Coin("uaethel", 1000),
 		ctx.BlockHeight(),
 		ctx.BlockTime(),
 	)

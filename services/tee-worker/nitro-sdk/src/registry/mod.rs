@@ -169,7 +169,7 @@ pub struct ModelMetadata {
 pub struct ModelLicense {
     /// License type
     pub license_type: LicenseType,
-    /// Price per inference (in AETH)
+    /// Price per inference (in AETHEL)
     pub price_per_inference: u64,
     /// Price per month (for subscription)
     pub price_per_month: Option<u64>,

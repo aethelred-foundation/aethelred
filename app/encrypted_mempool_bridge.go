@@ -62,7 +62,7 @@ func NewEncryptedMempoolBridge(logger log.Logger, cfg EncryptedMempoolBridgeConf
 
 // encryptedTxPrefix is the magic byte prefix that identifies encrypted transactions
 // in the mempool. Regular transactions do not start with this prefix.
-// 0xAE 0x77 0xE0 = "aeth" encrypted marker.
+// 0xAE 0x77 0xE0 = "aethel" encrypted marker.
 var encryptedTxPrefix = []byte{0xAE, 0x77, 0xE0}
 
 // SetBlockKey sets the symmetric key for decrypting transactions in the

@@ -14,18 +14,18 @@ name = "aethelred_sdk"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-name = "aeth"
-path = "src/bin/aeth.rs"
+name = "aethel"
+path = "src/bin/aethel.rs"
 required-features = ["full-sdk"]
 
 [[bin]]
-name = "aeth-seal"
-path = "src/bin/aeth_seal.rs"
+name = "aethel-seal"
+path = "src/bin/aethel_seal.rs"
 required-features = ["full-sdk"]
 
 [[bin]]
-name = "aeth-registry"
-path = "src/bin/aeth_registry.rs"
+name = "aethel-registry"
+path = "src/bin/aethel_registry.rs"
 required-features = ["full-sdk"]
 
 [dependencies]

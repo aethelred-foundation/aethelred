@@ -152,8 +152,8 @@ func (sm *SafeMath) SafeBpsMultiply(value sdkmath.Int, bps int64) (sdkmath.Int, 
 
 // BondingCurveConfig defines the parameters for the bonding curve.
 type BondingCurveConfig struct {
-	// BasePriceUAETH is the initial token price in uaeth
-	BasePriceUAETH sdkmath.Int
+	// BasePriceUAETHEL is the initial token price in uaethel
+	BasePriceUAETHEL sdkmath.Int
 
 	// ScaleFactor determines how quickly price increases with supply
 	// Higher value = slower price increase
@@ -181,10 +181,10 @@ type BondingCurveConfig struct {
 // DefaultBondingCurveConfig returns the default bonding curve configuration.
 func DefaultBondingCurveConfig() BondingCurveConfig {
 	return BondingCurveConfig{
-		BasePriceUAETH:  sdkmath.NewInt(100),                 // 0.0001 AETH base price
-		ScaleFactor:     sdkmath.NewInt(100_000_000_000),     // 100K AETH scale
+		BasePriceUAETHEL:  sdkmath.NewInt(100),                 // 0.0001 AETHEL base price
+		ScaleFactor:     sdkmath.NewInt(100_000_000_000),     // 100K AETHEL scale
 		ExponentScaled:  1500,                                // 1.5 (between linear and quadratic)
-		MaxSupply:       sdkmath.NewInt(100_000_000_000_000), // 100M AETH max via curve
+		MaxSupply:       sdkmath.NewInt(100_000_000_000_000), // 100M AETHEL max via curve
 		ReserveRatioBps: 5000,                                // 50% reserve
 		Enabled:         true,
 	}
@@ -227,7 +227,7 @@ func isSupportedBondingCurveExponent(exponentScaled int64) bool {
 
 // ValidateBondingCurveConfig validates bonding curve parameters.
 func ValidateBondingCurveConfig(config BondingCurveConfig) error {
-	if config.BasePriceUAETH.LTE(sdkmath.ZeroInt()) {
+	if config.BasePriceUAETHEL.LTE(sdkmath.ZeroInt()) {
 		return fmt.Errorf("base price must be positive")
 	}
 	if config.ScaleFactor.LTE(sdkmath.ZeroInt()) {
@@ -279,7 +279,7 @@ func (bc *BondingCurve) getPriceAtSupply(supply sdkmath.Int) (sdkmath.Int, error
 	}
 
 	if supply.IsZero() {
-		return bc.config.BasePriceUAETH, nil
+		return bc.config.BasePriceUAETHEL, nil
 	}
 
 	// Calculate (1 + supply/scaleFactor) scaled by 1e18 for precision
@@ -321,7 +321,7 @@ func (bc *BondingCurve) getPriceAtSupply(supply sdkmath.Int) (sdkmath.Int, error
 	}
 
 	// Calculate final price
-	price, err := bc.safeMath.SafeMulDiv(bc.config.BasePriceUAETH, priceMultiplier, scaledOne)
+	price, err := bc.safeMath.SafeMulDiv(bc.config.BasePriceUAETHEL, priceMultiplier, scaledOne)
 	if err != nil {
 		return sdkmath.ZeroInt(), err
 	}
@@ -403,7 +403,7 @@ func (bc *BondingCurve) CalculatePurchaseCost(tokenAmount sdkmath.Int) (sdkmath.
 		currentSupplyStep = currentSupplyStep.Add(stepSize)
 	}
 
-	// Scale to uaeth (costs were in price * tokens, need to divide by 1e6 for uaeth)
+	// Scale to uaethel (costs were in price * tokens, need to divide by 1e6 for uaethel)
 	totalCost = totalCost.QuoRaw(1_000_000)
 
 	return totalCost, nil
@@ -631,7 +631,7 @@ func ComputeEmissionScheduleSafe(config EmissionConfig, years int, blockTimeConf
 	safeMath := NewSafeMath()
 	schedule := make([]EmissionScheduleEntry, 0, years)
 
-	supply := sdkmath.NewInt(InitialSupplyUAETH)
+	supply := sdkmath.NewInt(InitialSupplyUAETHEL)
 
 	for year := 1; year <= years; year++ {
 		inflationBps := computeInflationForYear(config, year)

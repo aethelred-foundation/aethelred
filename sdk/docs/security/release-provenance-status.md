@@ -1,7 +1,7 @@
 # SDK Release Provenance Status
 
 Date: 2026-02-24
-Purpose: Machine-generated status for `AETH-MR-005` release provenance controls in the SDK monorepo.
+Purpose: Machine-generated status for `AETHEL-MR-005` release provenance controls in the SDK monorepo.
 
 ## Repo-Level Controls
 - OK `README.md`

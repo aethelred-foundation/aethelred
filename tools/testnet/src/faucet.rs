@@ -56,19 +56,19 @@ pub struct TokenConfig {
 impl Default for FaucetConfig {
     fn default() -> Self {
         FaucetConfig {
-            drip_amount: "10000000000000000000".to_string(), // 10 tAETH
-            max_daily_per_address: "100000000000000000000".to_string(), // 100 tAETH
-            max_daily_per_ip: "500000000000000000000".to_string(), // 500 tAETH
+            drip_amount: "10000000000000000000".to_string(), // 10 tAETHEL
+            max_daily_per_address: "100000000000000000000".to_string(), // 100 tAETHEL
+            max_daily_per_ip: "500000000000000000000".to_string(), // 500 tAETHEL
             cooldown_seconds: 60, // 1 minute
             require_captcha: true,
             require_social: false,
             developer_tier_enabled: true,
-            developer_drip_amount: "100000000000000000000".to_string(), // 100 tAETH
+            developer_drip_amount: "100000000000000000000".to_string(), // 100 tAETHEL
             bulk_requests_enabled: true,
             max_bulk_count: 10,
             supported_tokens: vec![
                 TokenConfig {
-                    symbol: "tAETH".to_string(),
+                    symbol: "tAETHEL".to_string(),
                     name: "Testnet Aethelred Token".to_string(),
                     contract_address: None,
                     drip_amount: "10000000000000000000".to_string(),
@@ -403,7 +403,7 @@ impl Faucet {
             return Err(FaucetError::AlreadyRegistered);
         }
 
-        let api_key = format!("aeth_test_{}", uuid::Uuid::new_v4().to_string().replace("-", ""));
+        let api_key = format!("aethel_test_{}", uuid::Uuid::new_v4().to_string().replace("-", ""));
 
         let new_profile = DeveloperProfile {
             api_key: api_key.clone(),
@@ -720,7 +720,7 @@ mod tests {
             id: "test-1".to_string(),
             address: "0x1234567890123456789012345678901234567890".to_string(),
             amount: "10000000000000000000".to_string(),
-            token: "tAETH".to_string(),
+            token: "tAETHEL".to_string(),
             ip_address: "127.0.0.1".to_string(),
             timestamp: Faucet::current_timestamp(),
             tx_hash: None,
@@ -746,7 +746,7 @@ mod tests {
             id: "test-1".to_string(),
             address: "0x1234567890123456789012345678901234567890".to_string(),
             amount: "10000000000000000000".to_string(),
-            token: "tAETH".to_string(),
+            token: "tAETHEL".to_string(),
             ip_address: "127.0.0.1".to_string(),
             timestamp: Faucet::current_timestamp(),
             tx_hash: None,
@@ -762,7 +762,7 @@ mod tests {
             id: "test-2".to_string(),
             address: "0x1234567890123456789012345678901234567890".to_string(),
             amount: "10000000000000000000".to_string(),
-            token: "tAETH".to_string(),
+            token: "tAETHEL".to_string(),
             ip_address: "127.0.0.1".to_string(),
             timestamp: Faucet::current_timestamp(),
             tx_hash: None,
@@ -794,6 +794,6 @@ mod tests {
 
         let result = faucet.register_developer(profile);
         assert!(result.is_ok());
-        assert!(result.unwrap().starts_with("aeth_test_"));
+        assert!(result.unwrap().starts_with("aethel_test_"));
     }
 }

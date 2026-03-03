@@ -6,7 +6,7 @@ metadata:
 data:
   chain_id: "aethelred-mainnet-1"
   persistent_peers: ""
-  min_gas_price: "0.025uaeth"
+  min_gas_price: "0.025uaethel"
 
 ---
 apiVersion: v1
@@ -17,7 +17,7 @@ metadata:
 data:
   app.toml: |
     # Aethelred Validator Configuration
-    minimum-gas-prices = "0.025uaeth"
+    minimum-gas-prices = "0.025uaethel"
     pruning = "nothing"
     pruning-keep-recent = "0"
     pruning-keep-every = "0"

@@ -40,9 +40,9 @@ use serde::{Deserialize, Serialize};
 // Token Economics
 // ============================================================================
 
-/// AETH Token Configuration
+/// AETHEL Token Configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AETHTokenConfig {
+pub struct AETHELTokenConfig {
     /// Total initial supply (in smallest unit)
     pub total_supply: u128,
     /// Decimals
@@ -59,12 +59,12 @@ pub struct AETHTokenConfig {
     pub burn_params: QuadraticBurnParams,
 }
 
-impl Default for AETHTokenConfig {
+impl Default for AETHELTokenConfig {
     fn default() -> Self {
-        AETHTokenConfig {
-            total_supply: 1_000_000_000 * 10u128.pow(18), // 1 billion AETH
+        AETHELTokenConfig {
+            total_supply: 1_000_000_000 * 10u128.pow(18), // 1 billion AETHEL
             decimals: 18,
-            symbol: "AETH".to_string(),
+            symbol: "AETHEL".to_string(),
             max_burn_rate: 0.50, // 50% max burn at full load
             min_burn_rate: 0.01, // 1% minimum burn
             target_inflation_rate: 0.02, // 2% annual inflation for staking
@@ -305,7 +305,7 @@ impl CongestionTracker {
 /// The quadratic fee burn engine
 pub struct QuadraticBurnEngine {
     /// Token configuration
-    token_config: AETHTokenConfig,
+    token_config: AETHELTokenConfig,
     /// Congestion tracker
     congestion: CongestionTracker,
     /// Burn statistics
@@ -318,7 +318,7 @@ const BURN_RATE_SCALE: u128 = 1_000_000_000; // 1e9 fixed-point for burn rates [
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BurnStatistics {
-    /// Total AETH burned all time
+    /// Total AETHEL burned all time
     pub total_burned: u128,
     /// Burned in last 24 hours
     pub burned_24h: u128,
@@ -349,7 +349,7 @@ pub struct BurnRecord {
 }
 
 impl QuadraticBurnEngine {
-    pub fn new(token_config: AETHTokenConfig) -> Self {
+    pub fn new(token_config: AETHELTokenConfig) -> Self {
         QuadraticBurnEngine {
             token_config,
             congestion: CongestionTracker::new(CongestionConfig::default()),
@@ -516,14 +516,14 @@ impl QuadraticBurnEngine {
 ║                                                                                ║
 ║  BURN SCHEDULE (Quadratic):                                                    ║
 ║  ┌────────────────────────────────────────────────────────────────────────┐   ║
-║  │  Network Load   │  Burn Rate   │  If 1M AETH Fees/Day                 │   ║
+║  │  Network Load   │  Burn Rate   │  If 1M AETHEL Fees/Day                 │   ║
 ║  │  ───────────────┼──────────────┼──────────────────────────────────────│   ║
-║  │      10%        │     1.5%     │    15,000 AETH burned                │   ║
-║  │      30%        │     5.5%     │    55,000 AETH burned                │   ║
-║  │      50%        │    13.5%     │   135,000 AETH burned                │   ║
-║  │      70%        │    25.5%     │   255,000 AETH burned                │   ║
-║  │      90%        │    41.5%     │   415,000 AETH burned                │   ║
-║  │     100%        │    50.0%     │   500,000 AETH burned                │   ║
+║  │      10%        │     1.5%     │    15,000 AETHEL burned                │   ║
+║  │      30%        │     5.5%     │    55,000 AETHEL burned                │   ║
+║  │      50%        │    13.5%     │   135,000 AETHEL burned                │   ║
+║  │      70%        │    25.5%     │   255,000 AETHEL burned                │   ║
+║  │      90%        │    41.5%     │   415,000 AETHEL burned                │   ║
+║  │     100%        │    50.0%     │   500,000 AETHEL burned                │   ║
 ║  └────────────────────────────────────────────────────────────────────────┘   ║
 ║                                                                                ║
 ║  COMPARISON WITH COMPETITORS:                                                  ║
@@ -557,7 +557,7 @@ impl QuadraticBurnEngine {
 ║  CURRENT STATUS:                                                               ║
 ║  • Network Load: {:.1}%                                                        ║
 ║  • Current Burn Rate: {:.2}%                                                   ║
-║  • Total Burned: {} AETH                                                       ║
+║  • Total Burned: {} AETHEL                                                       ║
 ║  • Est. Annual Deflation: {:.2}%                                               ║
 ║                                                                                ║
 ║  IF AETHELRED BECOMES THE GLOBAL AI LAYER:                                     ║
@@ -715,7 +715,7 @@ pub struct FeeEstimate {
 /// Staking reward calculator
 pub struct StakingRewardCalculator {
     /// Token configuration
-    token_config: AETHTokenConfig,
+    token_config: AETHELTokenConfig,
     /// Total staked amount
     total_staked: u128,
     /// Circulating supply
@@ -723,7 +723,7 @@ pub struct StakingRewardCalculator {
 }
 
 impl StakingRewardCalculator {
-    pub fn new(token_config: AETHTokenConfig, circulating_supply: u128) -> Self {
+    pub fn new(token_config: AETHELTokenConfig, circulating_supply: u128) -> Self {
         StakingRewardCalculator {
             token_config,
             total_staked: 0,
@@ -787,7 +787,7 @@ mod tests {
 
     #[test]
     fn test_burn_rate_calculation() {
-        let engine = QuadraticBurnEngine::new(AETHTokenConfig::default());
+        let engine = QuadraticBurnEngine::new(AETHELTokenConfig::default());
 
         // Test quadratic scaling
         let rate_10 = engine.calculate_burn_rate(0.10);
@@ -826,7 +826,7 @@ mod tests {
 
     #[test]
     fn test_burn_processing() {
-        let mut engine = QuadraticBurnEngine::new(AETHTokenConfig::default());
+        let mut engine = QuadraticBurnEngine::new(AETHELTokenConfig::default());
 
         let block = BlockGasUsage {
             block_number: 1,
@@ -846,7 +846,7 @@ mod tests {
 
     #[test]
     fn test_burn_processing_uses_fixed_point_integer_math_for_fractional_rate() {
-        let mut engine = QuadraticBurnEngine::new(AETHTokenConfig::default());
+        let mut engine = QuadraticBurnEngine::new(AETHELTokenConfig::default());
 
         // Preload congestion history to avoid relying on ad hoc floating-path assertions.
         let block = BlockGasUsage {
@@ -871,7 +871,7 @@ mod tests {
 
     #[test]
     fn test_burn_rate_to_fixed_rejects_non_finite_values() {
-        let engine = QuadraticBurnEngine::new(AETHTokenConfig::default());
+        let engine = QuadraticBurnEngine::new(AETHELTokenConfig::default());
 
         assert_eq!(engine.burn_rate_to_fixed(f64::NAN), 0);
         assert_eq!(engine.burn_rate_to_fixed(f64::INFINITY), 0);
@@ -911,7 +911,7 @@ mod tests {
     #[test]
     fn test_net_inflation() {
         let calculator = StakingRewardCalculator::new(
-            AETHTokenConfig::default(),
+            AETHELTokenConfig::default(),
             1_000_000_000 * 10u128.pow(18),
         );
 

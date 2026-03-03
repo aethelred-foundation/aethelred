@@ -134,7 +134,7 @@ export class AethelredClient {
           {
             gasPrice: {
               amount: this.config.gasPrice?.replace(/[^0-9.]/g, '') || '0.025',
-              denom: 'uaeth',
+              denom: 'uaethel',
             },
           }
         );
@@ -183,7 +183,7 @@ export class AethelredClient {
       return null;
     }
 
-    const balance = await this.queryClient.getBalance(address, 'uaeth');
+    const balance = await this.queryClient.getBalance(address, 'uaethel');
 
     return {
       address: account.address,

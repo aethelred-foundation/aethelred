@@ -11,7 +11,7 @@ import (
 
 const (
 	// BaseUnitsPerAETHEL is the denomination conversion factor.
-	// 1 AETHEL = 1,000,000 uaeth.
+	// 1 AETHEL = 1,000,000 uaethel.
 	BaseUnitsPerAETHEL int64 = 1_000_000
 
 	// AprilTestnetMinValidatorStakeAETHEL is the hardcoded minimum stake
@@ -19,8 +19,8 @@ const (
 	AprilTestnetMinValidatorStakeAETHEL int64 = 100_000
 )
 
-// MinimumValidatorStakeUAETH returns the hardcoded minimum bonded stake in uaeth.
-func MinimumValidatorStakeUAETH() sdkmath.Int {
+// MinimumValidatorStakeUAETHEL returns the hardcoded minimum bonded stake in uaethel.
+func MinimumValidatorStakeUAETHEL() sdkmath.Int {
 	return sdkmath.NewInt(AprilTestnetMinValidatorStakeAETHEL * BaseUnitsPerAETHEL)
 }
 
@@ -39,11 +39,11 @@ func (k Keeper) hasMinimumValidatorStake(ctx context.Context, validatorAddr stri
 		return false
 	}
 
-	return stake.GTE(MinimumValidatorStakeUAETH())
+	return stake.GTE(MinimumValidatorStakeUAETHEL())
 }
 
 // getValidatorBondedStake resolves a validator address to staking state and
-// returns its bonded stake in uaeth.
+// returns its bonded stake in uaethel.
 func (k Keeper) getValidatorBondedStake(ctx context.Context, validatorAddr string) (sdkmath.Int, bool) {
 	if k.stakingKeeper == nil || validatorAddr == "" {
 		return sdkmath.ZeroInt(), false

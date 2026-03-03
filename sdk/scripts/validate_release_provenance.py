@@ -192,7 +192,7 @@ def render_status(registry: dict, rows: list[dict], wf_controls: dict[str, bool]
     lines.append("# SDK Release Provenance Status")
     lines.append("")
     lines.append(f"Date: {registry.get('effective_date', 'unknown')}")
-    lines.append("Purpose: Machine-generated status for `AETH-MR-005` release provenance controls in the SDK monorepo.")
+    lines.append("Purpose: Machine-generated status for `AETHEL-MR-005` release provenance controls in the SDK monorepo.")
     lines.append("")
     lines.append("## Repo-Level Controls")
     for rel in registry["required_repo_docs"]:

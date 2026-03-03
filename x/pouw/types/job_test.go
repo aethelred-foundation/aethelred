@@ -23,7 +23,7 @@ func makeTestJob(status types.JobStatus) *types.ComputeJob {
 	modelHash := sha256.Sum256([]byte("test-model"))
 	inputHash := sha256.Sum256([]byte("test-input"))
 
-	fee := sdk.NewInt64Coin("uaeth", 1000)
+	fee := sdk.NewInt64Coin("uaethel", 1000)
 	blockTime := time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -44,7 +44,7 @@ func makeTestJobAtHeight(height int64) *types.ComputeJob {
 	modelHash := sha256.Sum256([]byte("test-model"))
 	inputHash := sha256.Sum256([]byte("test-input"))
 
-	fee := sdk.NewInt64Coin("uaeth", 1000)
+	fee := sdk.NewInt64Coin("uaethel", 1000)
 	blockTime := time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)
 
 	return types.NewComputeJobWithBlockTime(
@@ -304,7 +304,7 @@ func TestStateMachine_TransitionTo_UpdatesTimestamp(t *testing.T) {
 func TestNewComputeJobWithBlockTime_Deterministic(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model-A"))
 	inputHash := sha256.Sum256([]byte("input-B"))
-	fee := sdk.NewInt64Coin("uaeth", 500)
+	fee := sdk.NewInt64Coin("uaethel", 500)
 	blockTime := time.Date(2025, 6, 1, 10, 30, 0, 0, time.UTC)
 	requester := testRequester()
 
@@ -325,7 +325,7 @@ func TestNewComputeJobWithBlockTime_Deterministic(t *testing.T) {
 func TestNewComputeJobWithBlockTime_DifferentHeight_DifferentID(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model-A"))
 	inputHash := sha256.Sum256([]byte("input-B"))
-	fee := sdk.NewInt64Coin("uaeth", 500)
+	fee := sdk.NewInt64Coin("uaethel", 500)
 	blockTime := time.Date(2025, 6, 1, 10, 30, 0, 0, time.UTC)
 	requester := testRequester()
 
@@ -346,7 +346,7 @@ func TestNewComputeJobWithBlockTime_DifferentHeight_DifferentID(t *testing.T) {
 func TestNewComputeJobWithBlockTime_DifferentTime_DifferentID(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model-A"))
 	inputHash := sha256.Sum256([]byte("input-B"))
-	fee := sdk.NewInt64Coin("uaeth", 500)
+	fee := sdk.NewInt64Coin("uaethel", 500)
 	blockTime1 := time.Date(2025, 6, 1, 10, 30, 0, 0, time.UTC)
 	blockTime2 := time.Date(2025, 6, 1, 10, 30, 1, 0, time.UTC) // 1 second later
 	requester := testRequester()
@@ -368,7 +368,7 @@ func TestNewComputeJobWithBlockTime_DifferentTime_DifferentID(t *testing.T) {
 func TestNewComputeJobWithBlockTime_StatusIsPending(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -385,7 +385,7 @@ func TestNewComputeJobWithBlockTime_StatusIsPending(t *testing.T) {
 func TestNewComputeJobWithBlockTime_CreatedAtFromBlockTime(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 3, 15, 14, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -406,7 +406,7 @@ func TestNewComputeJobWithBlockTime_CreatedAtFromBlockTime(t *testing.T) {
 func TestNewComputeJobWithBlockTime_ExpiresAt24Hours(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 3, 15, 14, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -472,7 +472,7 @@ func TestIsExpiredAtHeight_ZeroHeight(t *testing.T) {
 func TestIsExpiredAt_NotExpired(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -491,7 +491,7 @@ func TestIsExpiredAt_NotExpired(t *testing.T) {
 func TestIsExpiredAt_JustExpired(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(
@@ -542,7 +542,7 @@ func TestGenerateID_Length(t *testing.T) {
 func TestGenerateID_DifferentRequesters(t *testing.T) {
 	modelHash := sha256.Sum256([]byte("model"))
 	inputHash := sha256.Sum256([]byte("input"))
-	fee := sdk.NewInt64Coin("uaeth", 100)
+	fee := sdk.NewInt64Coin("uaethel", 100)
 	bt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	addrA := sdk.AccAddress([]byte("requester-addr-aaa1")).String()

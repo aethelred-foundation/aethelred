@@ -14,7 +14,7 @@ import {
     Regulation,
     SovereignFunctionInfo,
 } from '../types';
-import { aethCli } from '../services/cli';
+import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
 
@@ -210,7 +210,7 @@ export class AethelredHoverProvider implements vscode.HoverProvider {
             md.appendMarkdown(`### 💰 Execution Estimate\n\n`);
             md.appendMarkdown(`| Metric | Value |\n`);
             md.appendMarkdown(`|--------|-------|\n`);
-            md.appendMarkdown(`| **Cost** | \`${estimate.costAeth.toFixed(2)} AETH\` |\n`);
+            md.appendMarkdown(`| **Cost** | \`${estimate.costAethel.toFixed(2)} AETHEL\` |\n`);
             md.appendMarkdown(`| **Power** | \`${estimate.powerWatts} W\` |\n`);
             md.appendMarkdown(`| **Time** | \`${estimate.executionTimeMs} ms\` |\n`);
             md.appendMarkdown(`| **Memory** | \`${estimate.memoryMb} MB\` |\n`);
@@ -272,7 +272,7 @@ export class AethelredHoverProvider implements vscode.HoverProvider {
         }
 
         // Get from CLI
-        const result = await aethCli.estimateCost(filePath, undefined, {
+        const result = await aethelCli.estimateCost(filePath, undefined, {
             cancellation: token,
             timeout: 5000,
         });

@@ -657,7 +657,7 @@ enum AccountCommands {
         amount: String,
 
         /// Token denomination
-        #[arg(short, long, default_value = "uaeth")]
+        #[arg(short, long, default_value = "uaethel")]
         denom: String,
     },
 

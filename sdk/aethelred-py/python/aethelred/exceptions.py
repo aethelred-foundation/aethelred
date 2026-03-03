@@ -107,14 +107,14 @@ class AethelredError(Exception):
     Example:
         >>> raise AethelredError(
         ...     message="Operation failed",
-        ...     error_code="AETH-1001",
+        ...     error_code="AETHEL-1001",
         ...     severity=ErrorSeverity.ERROR,
         ...     recovery_suggestion="Retry with valid credentials",
         ... )
     """
 
     # Default error code prefix
-    ERROR_PREFIX = "AETH"
+    ERROR_PREFIX = "AETHEL"
 
     # Default category
     CATEGORY = ErrorCategory.UNKNOWN
@@ -134,7 +134,7 @@ class AethelredError(Exception):
 
         Args:
             message: Human-readable error message
-            error_code: Unique error code (e.g., "AETH-1001")
+            error_code: Unique error code (e.g., "AETHEL-1001")
             severity: Error severity level
             recovery_suggestion: Suggested action to resolve
             context: Rich error context
@@ -207,7 +207,7 @@ class AethelredError(Exception):
 class AttestationError(AethelredError):
     """Base exception for attestation-related errors."""
 
-    ERROR_PREFIX = "AETH-ATT"
+    ERROR_PREFIX = "AETHEL-ATT"
     CATEGORY = ErrorCategory.ATTESTATION
 
 
@@ -239,7 +239,7 @@ class AttestationNotAvailableError(AttestationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-ATT-001",
+            error_code="AETHEL-ATT-001",
             recovery_suggestion=(
                 "Deploy to TEE-enabled hardware or use dev mode with "
                 "AETHELRED_DEV_MODE=true for development/testing."
@@ -274,7 +274,7 @@ class AttestationVerificationError(AttestationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-ATT-002",
+            error_code="AETHEL-ATT-002",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Verify enclave measurement matches expected value. "
@@ -299,7 +299,7 @@ class AttestationExpiredError(AttestationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-ATT-003",
+            error_code="AETHEL-ATT-003",
             recovery_suggestion="Generate a fresh attestation report.",
             **kwargs,
         )
@@ -321,7 +321,7 @@ class EnclaveInitializationError(AttestationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-ATT-004",
+            error_code="AETHEL-ATT-004",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Check TEE driver installation and enclave configuration. "
@@ -338,7 +338,7 @@ class EnclaveInitializationError(AttestationError):
 class ComplianceError(AethelredError):
     """Base exception for compliance-related errors."""
 
-    ERROR_PREFIX = "AETH-CMP"
+    ERROR_PREFIX = "AETHEL-CMP"
     CATEGORY = ErrorCategory.COMPLIANCE
 
 
@@ -373,7 +373,7 @@ class ComplianceViolationError(ComplianceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CMP-001",
+            error_code="AETHEL-CMP-001",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 f"Review {regulation} requirements and ensure data handling "
@@ -411,7 +411,7 @@ class DataTransferBlockedError(ComplianceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CMP-002",
+            error_code="AETHEL-CMP-002",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Use data residency-compliant infrastructure or obtain "
@@ -436,7 +436,7 @@ class ConsentRequiredError(ComplianceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CMP-003",
+            error_code="AETHEL-CMP-003",
             recovery_suggestion="Obtain explicit consent from data subject.",
             **kwargs,
         )
@@ -457,7 +457,7 @@ class RetentionPeriodExceededError(ComplianceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CMP-004",
+            error_code="AETHEL-CMP-004",
             recovery_suggestion=(
                 "Delete or anonymize data that has exceeded its retention period."
             ),
@@ -472,7 +472,7 @@ class RetentionPeriodExceededError(ComplianceError):
 class JurisdictionError(AethelredError):
     """Base exception for jurisdiction-related errors."""
 
-    ERROR_PREFIX = "AETH-JUR"
+    ERROR_PREFIX = "AETHEL-JUR"
     CATEGORY = ErrorCategory.JURISDICTION
 
 
@@ -504,7 +504,7 @@ class JurisdictionViolationError(JurisdictionError):
 
         super().__init__(
             message=message,
-            error_code="AETH-JUR-001",
+            error_code="AETHEL-JUR-001",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 f"Access this data from a TEE located in {required_jurisdiction}. "
@@ -531,7 +531,7 @@ class DataLocalizationError(JurisdictionError):
 
         super().__init__(
             message=message,
-            error_code="AETH-JUR-002",
+            error_code="AETHEL-JUR-002",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 f"Process this data in {required_region}-located infrastructure."
@@ -555,7 +555,7 @@ class JurisdictionNotSupportedError(JurisdictionError):
 
         super().__init__(
             message=message,
-            error_code="AETH-JUR-003",
+            error_code="AETHEL-JUR-003",
             recovery_suggestion=(
                 "Contact support to request additional jurisdiction support."
             ),
@@ -570,7 +570,7 @@ class JurisdictionNotSupportedError(JurisdictionError):
 class HardwareError(AethelredError):
     """Base exception for hardware-related errors."""
 
-    ERROR_PREFIX = "AETH-HW"
+    ERROR_PREFIX = "AETHEL-HW"
     CATEGORY = ErrorCategory.HARDWARE
 
 
@@ -594,7 +594,7 @@ class HardwareNotAvailableError(HardwareError):
 
         super().__init__(
             message=message,
-            error_code="AETH-HW-001",
+            error_code="AETHEL-HW-001",
             recovery_suggestion=(
                 "Deploy to infrastructure with required hardware capabilities."
             ),
@@ -619,7 +619,7 @@ class HardwareCapabilityError(HardwareError):
 
         super().__init__(
             message=message,
-            error_code="AETH-HW-002",
+            error_code="AETHEL-HW-002",
             recovery_suggestion=(
                 "Upgrade to hardware with higher security level."
             ),
@@ -640,7 +640,7 @@ class GPUNotAvailableError(HardwareError):
 
         super().__init__(
             message=message,
-            error_code="AETH-HW-003",
+            error_code="AETHEL-HW-003",
             recovery_suggestion=(
                 "Deploy to GPU-enabled infrastructure."
             ),
@@ -655,7 +655,7 @@ class GPUNotAvailableError(HardwareError):
 class CryptographyError(AethelredError):
     """Base exception for cryptography-related errors."""
 
-    ERROR_PREFIX = "AETH-CRY"
+    ERROR_PREFIX = "AETHEL-CRY"
     CATEGORY = ErrorCategory.CRYPTOGRAPHY
 
 
@@ -672,7 +672,7 @@ class EncryptionError(CryptographyError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CRY-001",
+            error_code="AETHEL-CRY-001",
             recovery_suggestion="Check encryption key and algorithm configuration.",
             **kwargs,
         )
@@ -694,7 +694,7 @@ class DecryptionError(CryptographyError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CRY-002",
+            error_code="AETHEL-CRY-002",
             recovery_suggestion=(
                 "Verify decryption key matches encryption key. "
                 "Check for data corruption."
@@ -716,7 +716,7 @@ class SignatureVerificationError(CryptographyError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CRY-003",
+            error_code="AETHEL-CRY-003",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Verify the signature was created with the correct key. "
@@ -736,7 +736,7 @@ class KeyDerivationError(CryptographyError):
     ):
         super().__init__(
             message=message,
-            error_code="AETH-CRY-004",
+            error_code="AETHEL-CRY-004",
             recovery_suggestion="Check key derivation parameters.",
             **kwargs,
         )
@@ -755,7 +755,7 @@ class ProofGenerationError(CryptographyError):
 
         super().__init__(
             message=message,
-            error_code="AETH-CRY-005",
+            error_code="AETHEL-CRY-005",
             recovery_suggestion=(
                 "Check circuit constraints and input validity."
             ),
@@ -773,7 +773,7 @@ class ProofVerificationError(CryptographyError):
     ):
         super().__init__(
             message=message,
-            error_code="AETH-CRY-006",
+            error_code="AETHEL-CRY-006",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Verify proof was generated correctly. "
@@ -790,7 +790,7 @@ class ProofVerificationError(CryptographyError):
 class NetworkError(AethelredError):
     """Base exception for network-related errors."""
 
-    ERROR_PREFIX = "AETH-NET"
+    ERROR_PREFIX = "AETHEL-NET"
     CATEGORY = ErrorCategory.NETWORK
 
     def is_retryable(self) -> bool:
@@ -813,7 +813,7 @@ class ConnectionError(NetworkError):
 
         super().__init__(
             message=message,
-            error_code="AETH-NET-001",
+            error_code="AETHEL-NET-001",
             recovery_suggestion=(
                 "Check network connectivity and endpoint configuration."
             ),
@@ -836,7 +836,7 @@ class TimeoutError(NetworkError):
 
         super().__init__(
             message=message,
-            error_code="AETH-NET-002",
+            error_code="AETHEL-NET-002",
             recovery_suggestion=(
                 "Increase timeout or check network latency."
             ),
@@ -862,7 +862,7 @@ class RPCError(NetworkError):
 
         super().__init__(
             message=message,
-            error_code="AETH-NET-003",
+            error_code="AETHEL-NET-003",
             recovery_suggestion="Check RPC endpoint and parameters.",
             **kwargs,
         )
@@ -886,7 +886,7 @@ class TransactionError(NetworkError):
 
         super().__init__(
             message=message,
-            error_code="AETH-NET-004",
+            error_code="AETHEL-NET-004",
             recovery_suggestion=(
                 "Check transaction parameters and account balance."
             ),
@@ -901,7 +901,7 @@ class TransactionError(NetworkError):
 class AuthorizationError(AethelredError):
     """Base exception for authorization-related errors."""
 
-    ERROR_PREFIX = "AETH-AUTH"
+    ERROR_PREFIX = "AETHEL-AUTH"
     CATEGORY = ErrorCategory.AUTHORIZATION
 
 
@@ -923,7 +923,7 @@ class PermissionDeniedError(AuthorizationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-AUTH-001",
+            error_code="AETHEL-AUTH-001",
             recovery_suggestion=(
                 "Request appropriate permissions from data owner."
             ),
@@ -946,7 +946,7 @@ class AccessControlError(AuthorizationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-AUTH-002",
+            error_code="AETHEL-AUTH-002",
             recovery_suggestion="Review and update access control policies.",
             **kwargs,
         )
@@ -962,7 +962,7 @@ class InvalidCredentialsError(AuthorizationError):
     ):
         super().__init__(
             message=message,
-            error_code="AETH-AUTH-003",
+            error_code="AETHEL-AUTH-003",
             recovery_suggestion="Check API key or authentication token.",
             **kwargs,
         )
@@ -975,7 +975,7 @@ class InvalidCredentialsError(AuthorizationError):
 class ValidationError(AethelredError):
     """Base exception for validation-related errors."""
 
-    ERROR_PREFIX = "AETH-VAL"
+    ERROR_PREFIX = "AETHEL-VAL"
     CATEGORY = ErrorCategory.VALIDATION
 
 
@@ -999,7 +999,7 @@ class InvalidInputError(ValidationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-VAL-001",
+            error_code="AETHEL-VAL-001",
             recovery_suggestion="Check input format and constraints.",
             **kwargs,
         )
@@ -1018,7 +1018,7 @@ class SchemaValidationError(ValidationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-VAL-002",
+            error_code="AETHEL-VAL-002",
             recovery_suggestion="Fix schema validation errors.",
             **kwargs,
         )
@@ -1040,7 +1040,7 @@ class ModelNotFoundError(ValidationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-VAL-003",
+            error_code="AETHEL-VAL-003",
             recovery_suggestion="Check model ID and registry.",
             **kwargs,
         )
@@ -1062,7 +1062,7 @@ class SealNotFoundError(ValidationError):
 
         super().__init__(
             message=message,
-            error_code="AETH-VAL-004",
+            error_code="AETHEL-VAL-004",
             recovery_suggestion="Check seal ID and block height.",
             **kwargs,
         )
@@ -1075,7 +1075,7 @@ class SealNotFoundError(ValidationError):
 class ResourceError(AethelredError):
     """Base exception for resource-related errors."""
 
-    ERROR_PREFIX = "AETH-RES"
+    ERROR_PREFIX = "AETHEL-RES"
     CATEGORY = ErrorCategory.RESOURCE
 
 
@@ -1094,7 +1094,7 @@ class ResourceExhaustedError(ResourceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-RES-001",
+            error_code="AETHEL-RES-001",
             recovery_suggestion="Increase resource limits or reduce usage.",
             **kwargs,
         )
@@ -1120,7 +1120,7 @@ class QuotaExceededError(ResourceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-RES-002",
+            error_code="AETHEL-RES-002",
             recovery_suggestion="Request quota increase or wait for reset.",
             **kwargs,
         )
@@ -1139,7 +1139,7 @@ class MemoryError(ResourceError):
 
         super().__init__(
             message=message,
-            error_code="AETH-RES-003",
+            error_code="AETHEL-RES-003",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion=(
                 "Reduce memory usage or increase available memory."
@@ -1155,7 +1155,7 @@ class MemoryError(ResourceError):
 class InternalError(AethelredError):
     """Base exception for internal errors."""
 
-    ERROR_PREFIX = "AETH-INT"
+    ERROR_PREFIX = "AETHEL-INT"
     CATEGORY = ErrorCategory.INTERNAL
 
 
@@ -1172,7 +1172,7 @@ class ConfigurationError(InternalError):
 
         super().__init__(
             message=message,
-            error_code="AETH-INT-001",
+            error_code="AETHEL-INT-001",
             recovery_suggestion="Check configuration file and environment.",
             **kwargs,
         )
@@ -1188,7 +1188,7 @@ class StateError(InternalError):
     ):
         super().__init__(
             message=message,
-            error_code="AETH-INT-002",
+            error_code="AETHEL-INT-002",
             severity=ErrorSeverity.CRITICAL,
             recovery_suggestion="Restart the application. Report if persistent.",
             **kwargs,
@@ -1211,7 +1211,7 @@ class NotImplementedError(InternalError):
 
         super().__init__(
             message=message,
-            error_code="AETH-INT-003",
+            error_code="AETHEL-INT-003",
             recovery_suggestion="Check roadmap for feature availability.",
             **kwargs,
         )

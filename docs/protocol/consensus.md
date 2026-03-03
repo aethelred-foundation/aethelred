@@ -333,7 +333,7 @@ Aethelred uses CometBFT's ABCI++ interface to integrate Proof of Useful Work int
 │  │  compute jobs as Vote Extensions:                                   │    │
 │  │                                                                      │    │
 │  │  VoteExtension {                                                    │    │
-│  │      validator_addr: "aethval1abc...",                              │    │
+│  │      validator_addr: "aethelval1abc...",                              │    │
 │  │      completed_jobs: [                                              │    │
 │  │          JobResult { job_id, proof, signature },                    │    │
 │  │          JobResult { job_id, proof, signature },                    │    │

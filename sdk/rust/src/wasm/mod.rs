@@ -615,7 +615,7 @@ impl OfflineTransactionBuilder {
             }],
             "fee": {
                 "amount": [{
-                    "denom": "uaeth",
+                    "denom": "uaethel",
                     "amount": fee_amount
                 }],
                 "gas_limit": "200000",

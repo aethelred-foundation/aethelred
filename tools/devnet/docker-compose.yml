@@ -261,7 +261,7 @@ services:
       - VALIDATOR_RPC_URL=http://validator-1:26657
       - FAUCET_MNEMONIC=${FAUCET_MNEMONIC:-}
       - FAUCET_AMOUNT=10000000000000000000
-      - FAUCET_DENOM=uaeth
+      - FAUCET_DENOM=uaethel
       - RATE_LIMIT_SECONDS=3600
       - REDIS_URL=redis://redis:6379
     networks:

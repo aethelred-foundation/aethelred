@@ -43,7 +43,7 @@ AETHELRED_ZKML_LISTEN_ADDR=:8546
 # Get test tokens from faucet
 curl -X POST http://localhost:8000/faucet \
   -H "Content-Type: application/json" \
-  -d '{"address": "aeth1..."}'
+  -d '{"address": "aethel1..."}'
 
 # Check node status
 curl http://localhost:26657/status

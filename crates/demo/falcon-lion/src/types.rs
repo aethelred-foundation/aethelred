@@ -302,7 +302,7 @@ impl Currency {
             Self::Jpy => "¥",
             Self::Cny => "¥",
             Self::Hkd => "HK$",
-            Self::Aethel => "AETH",
+            Self::Aethel => "AETHEL",
         }
     }
 }

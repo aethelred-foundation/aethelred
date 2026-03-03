@@ -375,7 +375,7 @@ export class EnhancedAethelredClient {
       {
         gasPrice: {
           amount: this.config.gasPrice?.replace(/[^0-9.]/g, '') || '0.025',
-          denom: 'uaeth',
+          denom: 'uaethel',
         },
       }
     );
@@ -615,7 +615,7 @@ export class EnhancedAethelredClient {
     const account = await this.queryClient.getAccount(address);
     if (!account) return null;
 
-    const balance = await this.queryClient.getBalance(address, 'uaeth');
+    const balance = await this.queryClient.getBalance(address, 'uaethel');
 
     const info: EnhancedAccountInfo = {
       address: account.address,
@@ -910,7 +910,7 @@ export class EnhancedAethelredClient {
    */
   private formatBalance(amount: string): string {
     const value = parseInt(amount) / 1_000_000;
-    return `${value.toLocaleString()} AETH`;
+    return `${value.toLocaleString()} AETHEL`;
   }
 }
 

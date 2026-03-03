@@ -134,7 +134,7 @@ export function validateJobId(jobId: string): ValidationResult {
 }
 
 /**
- * Validate amount (AETH)
+ * Validate amount (AETHEL)
  */
 export function validateAmount(
   amount: string | number,

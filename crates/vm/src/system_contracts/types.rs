@@ -274,9 +274,9 @@ impl StakeRole {
     /// Get minimum stake for this role
     pub fn min_stake(&self) -> TokenAmount {
         match self {
-            StakeRole::Validator => 10_000_000_000_000_000_000_000, // 10,000 AETH
-            StakeRole::ComputeNode => 50_000_000_000_000_000_000_000, // 50,000 AETH
-            StakeRole::Delegator => 100_000_000_000_000_000_000,    // 100 AETH
+            StakeRole::Validator => 10_000_000_000_000_000_000_000, // 10,000 AETHEL
+            StakeRole::ComputeNode => 50_000_000_000_000_000_000_000, // 50,000 AETHEL
+            StakeRole::Delegator => 100_000_000_000_000_000_000,    // 100 AETHEL
         }
     }
 }

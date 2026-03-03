@@ -4,7 +4,7 @@
   "description": "Official CLI for Aethelred AI Blockchain",
   "type": "module",
   "bin": {
-    "aeth": "./dist/index.js"
+    "aethel": "./dist/index.js"
   },
   "main": "dist/index.js",
   "exports": {

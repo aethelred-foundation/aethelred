@@ -1,4 +1,4 @@
-# `aeth` Developer CLI
+# `aethel` Developer CLI
 
 Developer-oriented Aethelred CLI for:
 
@@ -14,7 +14,7 @@ Developer-oriented Aethelred CLI for:
 cd $AETHELRED_REPO_ROOT/sdk/typescript
 npm install && npm run build
 
-cd $AETHELRED_REPO_ROOT/cli/aeth
+cd $AETHELRED_REPO_ROOT/cli/aethel
 npm install && npm run build
 node dist/index.js status --network local
 ```
@@ -22,11 +22,11 @@ node dist/index.js status --network local
 ## Common Commands
 
 ```bash
-aeth status --network local
-aeth diagnostics doctor --network local
-aeth validator list --network local
-aeth local up --build
-aeth seal verify-file ./seal.json
-aeth wallet send --from aeth1... --to aeth1... --amount 1000000uaeth --out tx-send.json
+aethel status --network local
+aethel diagnostics doctor --network local
+aethel validator list --network local
+aethel local up --build
+aethel seal verify-file ./seal.json
+aethel wallet send --from aethel1... --to aethel1... --amount 1000000uaethel --out tx-send.json
 ```
 

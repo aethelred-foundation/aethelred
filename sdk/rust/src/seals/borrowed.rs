@@ -77,18 +77,18 @@ mod tests {
             "outputCommitment": "0x2222",
             "modelCommitment": "0x3333",
             "status": "SEAL_STATUS_ACTIVE",
-            "requester": "aeth1developer",
+            "requester": "aethel1developer",
             "createdAt": "2026-02-23T00:00:00Z",
             "expiresAt": "2026-12-31T00:00:00Z",
             "validators": [
               {
-                "validatorAddress": "aethvaloper1abc",
+                "validatorAddress": "aethelvaloper1abc",
                 "signature": "0xsig1",
                 "timestamp": "2026-02-23T00:00:01Z",
                 "votingPower": "34"
               },
               {
-                "validatorAddress": "aethvaloper1def",
+                "validatorAddress": "aethelvaloper1def",
                 "signature": "0xsig2",
                 "timestamp": "2026-02-23T00:00:02Z",
                 "votingPower": "33"
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(parsed.seal.validators.len(), 2);
         assert_eq!(
             parsed.seal.validators[0].validator_address,
-            "aethvaloper1abc"
+            "aethelvaloper1abc"
         );
         assert_eq!(
             parsed.seal.tee_attestation.as_ref().unwrap().platform,

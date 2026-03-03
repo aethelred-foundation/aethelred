@@ -69,7 +69,7 @@ impl Default for GasConfig {
     fn default() -> Self {
         Self {
             limit: 200000,
-            price: "0.025uaeth".to_string(),
+            price: "0.025uaethel".to_string(),
             adjustment: 1.3,
         }
     }

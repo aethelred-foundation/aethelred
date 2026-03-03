@@ -1,4 +1,4 @@
-# AETH-MR-003 Repo Auditability Rollout Matrix
+# AETHEL-MR-003 Repo Auditability Rollout Matrix
 
 Date: 2026-02-24
 Purpose: Track repo-local auditability/CI baseline presence and rollout readiness across the public Aethelred repos.

@@ -42,8 +42,8 @@ fn main() {
     let session2 = ctf.start_challenge(&player2, "compliance_maze").unwrap();
 
     // Player 2 gets it right first!
-    println!("🔑 ZKMLHacker tries: 'AETH{{found_the_route}}'");
-    let result = ctf.submit_flag(&session2, "AETH{found_the_route}").unwrap();
+    println!("🔑 ZKMLHacker tries: 'AETHEL{{found_the_route}}'");
+    let result = ctf.submit_flag(&session2, "AETHEL{found_the_route}").unwrap();
     println!("   Result: {}", result.message);
     println!("   Points earned: {}", result.points_earned);
     if result.first_blood {
@@ -52,17 +52,17 @@ fn main() {
 
     // Player 1 finally solves their challenge
     let session3 = ctf.start_challenge(&player1, "q_day_prep").unwrap();
-    println!("🔑 CryptoNinja42 tries: 'AETH{{dilithium3_saved_us}}'");
+    println!("🔑 CryptoNinja42 tries: 'AETHEL{{dilithium3_saved_us}}'");
     let result = ctf
-        .submit_flag(&session3, "AETH{dilithium3_saved_us}")
+        .submit_flag(&session3, "AETHEL{dilithium3_saved_us}")
         .unwrap();
     println!("   Result: {}", result.message);
     println!("   Points earned: {}\n", result.points_earned);
 
     // Player 3 joins late
     let session4 = ctf.start_challenge(&player3, "compliance_maze").unwrap();
-    println!("🔑 QuantumSleuth tries: 'AETH{{uae_sg_route}}'");
-    let result = ctf.submit_flag(&session4, "AETH{uae_sg_route}").unwrap();
+    println!("🔑 QuantumSleuth tries: 'AETHEL{{uae_sg_route}}'");
+    let result = ctf.submit_flag(&session4, "AETHEL{uae_sg_route}").unwrap();
     println!("   Result: {}", result.message);
     println!(
         "   Points earned: {} (no first blood bonus)\n",

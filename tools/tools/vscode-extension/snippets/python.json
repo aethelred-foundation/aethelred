@@ -1,6 +1,6 @@
 {
   "Sovereign Function": {
-    "prefix": ["@sovereign", "sovereign", "aeth-func"],
+    "prefix": ["@sovereign", "sovereign", "aethel-func"],
     "body": [
       "@sovereign(",
       "    hardware=Hardware.${1|TEE_REQUIRED,TEE_PREFERRED,INTEL_SGX,AMD_SEV,AWS_NITRO,NVIDIA_H100|},",
@@ -45,7 +45,7 @@
     "description": "Create SovereignTensor with full sovereignty settings"
   },
   "Aethelred Import": {
-    "prefix": ["import-aethelred", "aeth-import"],
+    "prefix": ["import-aethelred", "aethel-import"],
     "body": [
       "from aethelred import (",
       "    sovereign,",
@@ -61,7 +61,7 @@
     "description": "Import common Aethelred modules"
   },
   "Aethelred Client": {
-    "prefix": ["AethelredClient", "aeth-client"],
+    "prefix": ["AethelredClient", "aethel-client"],
     "body": [
       "async with AethelredClient(",
       "    network=Network.${1|TESTNET,MAINNET,DEVNET|},",
@@ -72,7 +72,7 @@
     "description": "Create Aethelred client context"
   },
   "Submit Compute Job": {
-    "prefix": ["submit-job", "aeth-job"],
+    "prefix": ["submit-job", "aethel-job"],
     "body": [
       "job = await client.submit_job(",
       "    model_id=\"${1:model-id}\",",
@@ -131,7 +131,7 @@
     "description": "Create sovereign execution context"
   },
   "UAE Finance Template": {
-    "prefix": ["uae-finance", "aeth-uae"],
+    "prefix": ["uae-finance", "aethel-uae"],
     "body": [
       "from aethelred import sovereign, SovereignData, Jurisdiction",
       "from aethelred.hardware import Hardware, Compliance",
@@ -153,7 +153,7 @@
     "description": "UAE-compliant financial processing template"
   },
   "Healthcare HIPAA Template": {
-    "prefix": ["hipaa-template", "aeth-hipaa"],
+    "prefix": ["hipaa-template", "aethel-hipaa"],
     "body": [
       "from aethelred import sovereign, SovereignData, Jurisdiction",
       "from aethelred.hardware import Hardware, Compliance, DataClassification",
@@ -177,7 +177,7 @@
     "description": "HIPAA-compliant healthcare template"
   },
   "AI Model Inference": {
-    "prefix": ["ai-inference", "aeth-ml"],
+    "prefix": ["ai-inference", "aethel-ml"],
     "body": [
       "from aethelred import sovereign, SovereignTensor, with_seal",
       "from aethelred.hardware import Hardware, Compliance",

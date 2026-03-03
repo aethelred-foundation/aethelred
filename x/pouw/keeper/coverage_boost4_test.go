@@ -896,7 +896,7 @@ func TestCB4_ValidateParams_ZeroMinValidators(t *testing.T) {
 
 func TestCB4_ValidateParams_NegativeReward(t *testing.T) {
 	params := types.DefaultParams()
-	params.VerificationReward = "-1uaeth"
+	params.VerificationReward = "-1uaethel"
 
 	err := keeper.ValidateParams(params)
 	require.Error(t, err)
@@ -1274,7 +1274,7 @@ func TestCB4_AuditLogger_AllEventTypes(t *testing.T) {
 	logger.AuditJobFailed(ctx, "j2", "timeout")
 	logger.AuditConsensusReached(ctx, "j1", 5, 7)
 	logger.AuditConsensusFailed(ctx, "j3", 2, 5)
-	logger.AuditSlashingApplied(ctx, "val1", "double-sign", "critical", "1000uaeth", "j1")
+	logger.AuditSlashingApplied(ctx, "val1", "double-sign", "critical", "1000uaethel", "j1")
 	logger.AuditEvidenceDetected(ctx, "val2", "invalid-output", "system", "j2")
 	logger.AuditParamChange(ctx, "cosmos1authority", []keeper.ParamFieldChange{
 		{Field: "MinValidators", OldValue: "3", NewValue: "5"},

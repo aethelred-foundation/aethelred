@@ -124,9 +124,9 @@ impl StakingConfig {
     /// Devnet configuration
     pub fn devnet() -> Self {
         Self {
-            min_validator_stake: 1_000_000_000_000_000_000, // 1 AETH
-            min_compute_stake: 1_000_000_000_000_000_000,   // 1 AETH
-            min_delegator_stake: 100_000_000_000_000_000,   // 0.1 AETH
+            min_validator_stake: 1_000_000_000_000_000_000, // 1 AETHEL
+            min_compute_stake: 1_000_000_000_000_000_000,   // 1 AETHEL
+            min_delegator_stake: 100_000_000_000_000_000,   // 0.1 AETHEL
             unbonding_period: 60,                           // 1 minute
             base_burn_rate_bps: 500,
             max_burn_rate_bps: 1500,
@@ -838,7 +838,7 @@ mod tests {
         {
             let mut b = bank.write();
             b.mint([1u8; 32], 1_000_000_000_000_000_000_000_000)
-                .expect("mint should succeed"); // 1M AETH
+                .expect("mint should succeed"); // 1M AETHEL
         }
 
         let manager = StakingManager::new(StakingConfig::devnet(), bank.clone());

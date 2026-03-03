@@ -19,9 +19,9 @@ func DefaultParams() *Params {
 		MinValidators:                  3,
 		ConsensusThreshold:             67,  // 2/3 majority
 		JobTimeoutBlocks:               100, // ~10 minutes with 6s blocks
-		BaseJobFee:                     "1000uaeth",
-		VerificationReward:             "100uaeth",
-		SlashingPenalty:                "10000uaeth",
+		BaseJobFee:                     "1000uaethel",
+		VerificationReward:             "100uaethel",
+		SlashingPenalty:                "10000uaethel",
 		MaxJobsPerBlock:                10,
 		AllowedProofTypes:              []string{"tee", "zkml", "hybrid"},
 		RequireTeeAttestation:          true,

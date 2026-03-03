@@ -34,7 +34,7 @@ func testSchedulerWithConfig(cfg keeper.SchedulerConfig) *keeper.JobScheduler {
 func makeJob(id string, priority int64, proofType types.ProofType) *types.ComputeJob {
 	modelHash := sha256.Sum256([]byte("model-" + id))
 	inputHash := sha256.Sum256([]byte("input-" + id))
-	fee := sdk.NewInt64Coin("uaeth", 1000)
+	fee := sdk.NewInt64Coin("uaethel", 1000)
 	bt := time.Date(2025, 1, 15, 12, 0, 0, 0, time.UTC)
 
 	job := types.NewComputeJobWithBlockTime(

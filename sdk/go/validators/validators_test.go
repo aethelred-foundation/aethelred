@@ -50,18 +50,18 @@ func TestGetStats(t *testing.T) {
 	t.Parallel()
 
 	mc := &mockClient{getResp: types.ValidatorStats{
-		Address: "aeth1val", JobsCompleted: 100, ReputationScore: 0.95,
+		Address: "aethel1val", JobsCompleted: 100, ReputationScore: 0.95,
 	}}
 	m := NewModule(mc)
 
-	stats, err := m.GetStats(context.Background(), "aeth1val")
+	stats, err := m.GetStats(context.Background(), "aethel1val")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if stats.JobsCompleted != 100 {
 		t.Fatalf("JobsCompleted = %d", stats.JobsCompleted)
 	}
-	if mc.lastPath != "/aethelred/pouw/v1/validators/aeth1val/stats" {
+	if mc.lastPath != "/aethelred/pouw/v1/validators/aethel1val/stats" {
 		t.Fatalf("path = %s", mc.lastPath)
 	}
 }
@@ -91,7 +91,7 @@ func TestRegisterCapability(t *testing.T) {
 	mc := &mockClient{}
 	m := NewModule(mc)
 
-	err := m.RegisterCapability(context.Background(), "aeth1val", types.HardwareCapability{
+	err := m.RegisterCapability(context.Background(), "aethel1val", types.HardwareCapability{
 		TEEPlatforms:   []types.TEEPlatform{types.TEEPlatformIntelSGX},
 		MaxModelSizeMB: 4096,
 		GPUMemoryGB:    80,
@@ -99,7 +99,7 @@ func TestRegisterCapability(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mc.lastPath != "/aethelred/pouw/v1/validators/aeth1val/capability" {
+	if mc.lastPath != "/aethelred/pouw/v1/validators/aethel1val/capability" {
 		t.Fatalf("path = %s", mc.lastPath)
 	}
 }

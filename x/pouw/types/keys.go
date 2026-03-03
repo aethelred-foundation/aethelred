@@ -27,7 +27,7 @@ const (
 
 	// DefaultDenom is the expected fee denom for all job fee operations.
 	// Enforced in fee distribution to prevent unexpected IBC or foreign denoms (FD-01).
-	DefaultDenom = "uaeth"
+	DefaultDenom = "uaethel"
 )
 
 var (

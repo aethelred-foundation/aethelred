@@ -113,7 +113,7 @@ docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:112:- `/Use
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:113:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:57`
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:114:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:22`
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:115:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:40`
-docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:116:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aeth/README.md:14`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:116:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aethel/README.md:14`
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:117:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/apps/fastapi-verifier/README.md:21`
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:118:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/developer-tools.md:9`
 docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:123:- Add a docs hygiene CI check that blocks `/Users/` and similar local path patterns.
@@ -196,13 +196,13 @@ docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:91:   - `/Us
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:92:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:94:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/governance/repo-auditability-registry.json`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:96:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-repo-auditability.py`
-docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:97:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:97:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:99:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/repo-auditability-guard.yml`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:126:- Replaced `/Users/rameshtamilselvan/Downloads/AethelredMVP/...` path references with `$AETHELRED_REPO_ROOT/...` in public markdown docs across SDK + developer-tools + integrations docs.
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:135:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:136:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:137:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/developer-tools.md`
-docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:138:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aeth/README.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:138:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aethel/README.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:139:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/apps/fastapi-verifier/README.md`
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:142:1. Add docs hygiene CI (`rg '/Users/'`) to all public repos.
 docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:143:2. Extend to Windows/macOS local path patterns (`C:\\`, `/home/`, `/var/folders/`).

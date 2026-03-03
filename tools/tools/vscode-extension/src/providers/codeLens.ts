@@ -13,7 +13,7 @@ import {
     Jurisdiction,
 } from '../types';
 import { ComplianceLinter } from '../diagnostics/linter';
-import { aethCli } from '../services/cli';
+import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
 

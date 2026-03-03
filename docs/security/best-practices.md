@@ -84,7 +84,7 @@ Before deploying to production, ensure:
 
 ```bash
 # Verify SDK installation
-aeth version --security-check
+aethel version --security-check
 
 # Expected output:
 # ✓ aethelred-cli 2.0.0
@@ -94,7 +94,7 @@ aeth version --security-check
 # ✓ No known vulnerabilities
 
 # Verify network connectivity
-aeth network diagnose --network mainnet
+aethel network diagnose --network mainnet
 
 # Expected output:
 # ✓ RPC endpoint reachable (50ms latency)

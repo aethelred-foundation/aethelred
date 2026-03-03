@@ -1,6 +1,6 @@
 {
   "Sovereign Function": {
-    "prefix": ["#[sovereign]", "sovereign", "aeth-func"],
+    "prefix": ["#[sovereign]", "sovereign", "aethel-func"],
     "body": [
       "#[sovereign(",
       "    hardware = HardwareType::${1|TeeRequired,IntelSgx,AmdSev,AwsNitro,NvidiaH100|},",
@@ -41,7 +41,7 @@
     "description": "Create SovereignData with jurisdiction"
   },
   "Aethelred Use": {
-    "prefix": ["use-aethelred", "aeth-use"],
+    "prefix": ["use-aethelred", "aethel-use"],
     "body": [
       "use aethelred::{",
       "    sovereign,",
@@ -57,7 +57,7 @@
     "description": "Import common Aethelred types"
   },
   "Attestation Provider": {
-    "prefix": ["AttestationProvider", "aeth-attest"],
+    "prefix": ["AttestationProvider", "aethel-attest"],
     "body": [
       "let provider = AttestationProvider::detect()?;",
       "let report = provider.get_attestation().await?;",
@@ -70,7 +70,7 @@
     "description": "Get attestation from hardware"
   },
   "Compliance Engine": {
-    "prefix": ["ComplianceEngine", "aeth-compliance"],
+    "prefix": ["ComplianceEngine", "aethel-compliance"],
     "body": [
       "let engine = ComplianceEngine::new(&[",
       "    Compliance::${1|Gdpr,Hipaa,UaeDataResidency|},",
@@ -86,7 +86,7 @@
     "description": "Create compliance engine"
   },
   "Digital Seal": {
-    "prefix": ["DigitalSeal", "aeth-seal"],
+    "prefix": ["DigitalSeal", "aethel-seal"],
     "body": [
       "let seal = DigitalSeal::create(",
       "    &model_commitment,",
@@ -102,7 +102,7 @@
     "description": "Create and verify digital seal"
   },
   "Execution Context": {
-    "prefix": ["ExecutionContext", "aeth-ctx"],
+    "prefix": ["ExecutionContext", "aethel-ctx"],
     "body": [
       "let ctx = ExecutionContext::new()",
       "    .with_jurisdiction(Jurisdiction::${1|Uae,Eu,Us|})",
@@ -117,7 +117,7 @@
     "description": "Create execution context"
   },
   "Sovereign Module": {
-    "prefix": ["sovereign-module", "aeth-mod"],
+    "prefix": ["sovereign-module", "aethel-mod"],
     "body": [
       "//! ${1:Module description}",
       "",
@@ -137,7 +137,7 @@
     "description": "Create a sovereign module template"
   },
   "UAE Finance Implementation": {
-    "prefix": ["uae-finance", "aeth-uae"],
+    "prefix": ["uae-finance", "aethel-uae"],
     "body": [
       "use aethelred::{",
       "    sovereign, SovereignData, Jurisdiction,",

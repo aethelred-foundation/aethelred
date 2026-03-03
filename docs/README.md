@@ -54,11 +54,11 @@ Aethelred is a **Layer-1 blockchain** purpose-built for **Verifiable AI Computat
 curl -sSL https://get.aethelred.io | bash
 
 # Verify installation
-aeth --version
+aethel --version
 # aethelred-cli 2.0.0 (rustc 1.75.0)
 
 # Initialize your first project
-aeth init my-sovereign-app --template finance
+aethel init my-sovereign-app --template finance
 cd my-sovereign-app
 ```
 
@@ -90,13 +90,13 @@ print(f"Seal ID: {result.seal_id}")  # Cryptographic proof on-chain
 
 ```bash
 # Configure your wallet
-aeth account create --name developer
+aethel account create --name developer
 
 # Get testnet tokens (requires proof-of-work)
-aeth faucet claim --network testnet
+aethel faucet claim --network testnet
 
 # Deploy and run
-aeth run src/main.py --network testnet --hardware aws-nitro
+aethel run src/main.py --network testnet --hardware aws-nitro
 ```
 
 ---

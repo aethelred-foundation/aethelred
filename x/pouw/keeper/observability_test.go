@@ -325,7 +325,7 @@ func TestMetrics_ModuleMetrics_Snapshot(t *testing.T) {
 	require.Equal(t, int64(5), snap.JobsFailed)
 	require.Equal(t, int64(50), snap.ConsensusRounds)
 	require.Equal(t, int64(48), snap.ConsensusReached)
-	require.Equal(t, int64(1000000), snap.TokensBurnedUaeth)
+	require.Equal(t, int64(1000000), snap.TokensBurnedUaethel)
 	require.Equal(t, int64(3), snap.ActiveValidators)
 }
 
@@ -745,7 +745,7 @@ func TestAudit_ConvenienceHelpers(t *testing.T) {
 	al.AuditJobCompleted(sdkCtx, "job-1", "seal-1", "output-hash", 3)
 	al.AuditJobFailed(sdkCtx, "job-2", "timeout")
 	al.AuditConsensusReached(sdkCtx, "job-1", 3, 3)
-	al.AuditSlashingApplied(sdkCtx, "validator-1", "invalid_output", "high", "10000uaeth", "job-3")
+	al.AuditSlashingApplied(sdkCtx, "validator-1", "invalid_output", "high", "10000uaethel", "job-3")
 	al.AuditParamChange(sdkCtx, "gov-authority", []keeper.ParamFieldChange{
 		{Field: "min_validators", OldValue: "3", NewValue: "5"},
 	})
@@ -1025,7 +1025,7 @@ func BenchmarkMetrics_HistogramSummary(b *testing.B) {
 
 func BenchmarkFeeBreakdown(b *testing.B) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1000000)
+	fee := sdk.NewInt64Coin("uaethel", 1000000)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = keeper.CalculateFeeBreakdown(fee, config, 5)

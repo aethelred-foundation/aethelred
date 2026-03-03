@@ -106,11 +106,11 @@ func CmdQueryPoUWStatus() *cobra.Command {
 				ValidatorAddress: validatorAddr,
 				OperatorAddress:  operatorAddr,
 				BondedStake:      "0" + stakeBaseDenom,
-				MinimumStake:     minimumStakeUAETH().String() + stakeBaseDenom,
+				MinimumStake:     minimumStakeUAETHEL().String() + stakeBaseDenom,
 				Notes:            []string{},
 			}
 
-			minimumStake := minimumStakeUAETH()
+			minimumStake := minimumStakeUAETHEL()
 			pouwQuery := types.NewQueryClient(clientCtx)
 			stakingQuery := stakingtypes.NewQueryClient(clientCtx)
 

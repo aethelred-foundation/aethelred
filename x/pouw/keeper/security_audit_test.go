@@ -381,7 +381,7 @@ func TestSecurityProperty_FeeConservation(t *testing.T) {
 
 	for amount := int64(1); amount <= 100; amount++ {
 		for valCount := 1; valCount <= 10; valCount++ {
-			fee := sdk.NewInt64Coin("uaeth", amount)
+			fee := sdk.NewInt64Coin("uaethel", amount)
 			result := keeper.CalculateFeeBreakdown(fee, config, valCount)
 
 			perValTotal := result.PerValidatorReward.Amount.MulRaw(int64(valCount))
@@ -487,7 +487,7 @@ func TestSecurityProperty_BPSSumTo10000(t *testing.T) {
 
 func TestSecurityProperty_ReputationScaling(t *testing.T) {
 	// SP-10: Reputation-scaled rewards
-	reward := sdk.NewInt64Coin("uaeth", 1000)
+	reward := sdk.NewInt64Coin("uaethel", 1000)
 
 	// Score 0 → 50% reward
 	scaled0 := keeper.RewardScaleByReputation(reward, 0)
@@ -641,7 +641,7 @@ func TestAttackSurface_FeeConservationStress(t *testing.T) {
 	for exp := 0; exp < 40; exp++ {
 		amount := int64(1) << exp
 		for _, vc := range []int{1, 2, 3, 7, 13, 100} {
-			fee := sdk.NewInt64Coin("uaeth", amount)
+			fee := sdk.NewInt64Coin("uaethel", amount)
 			result := keeper.CalculateFeeBreakdown(fee, config, vc)
 
 			perValTotal := result.PerValidatorReward.Amount.MulRaw(int64(vc))

@@ -149,7 +149,7 @@ export function buildMsgSubmitJob(params: {
       input_hash: params.inputHash,
       proof_type: `PROOF_TYPE_${params.proofType}`,
       purpose: params.purpose,
-      fee: params.fee || { denom: 'uaeth', amount: '1000' },
+      fee: params.fee || { denom: 'uaethel', amount: '1000' },
       priority: params.priority || 0,
     },
   };
@@ -242,7 +242,7 @@ export class OfflineTransactionBuilder {
   constructor(chainId: string, defaultFee?: Fee) {
     this.chainId = chainId;
     this.fee = defaultFee || {
-      amount: [{ denom: 'uaeth', amount: '5000' }],
+      amount: [{ denom: 'uaethel', amount: '5000' }],
       gasLimit: '200000',
     };
   }
@@ -619,7 +619,7 @@ export function calculateFee(gas: string, gasPrice: string = '0.025'): Fee {
   const amount = (gasNum * BigInt(priceNum)) / BigInt(1000000);
 
   return {
-    amount: [{ denom: 'uaeth', amount: amount.toString() }],
+    amount: [{ denom: 'uaethel', amount: amount.toString() }],
     gasLimit: gas,
   };
 }

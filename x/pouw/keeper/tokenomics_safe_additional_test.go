@@ -136,7 +136,7 @@ func TestBlockTimeAndEmissionSafeCalculations(t *testing.T) {
 }
 
 func TestComputeValidatorRewardSafe(t *testing.T) {
-	base := sdk.NewInt64Coin("uaeth", 1_000_000)
+	base := sdk.NewInt64Coin("uaethel", 1_000_000)
 	validatorReward, delegatorReward, err := ComputeValidatorRewardSafe(base, 80, 1000) // 10% commission
 	require.NoError(t, err)
 	require.Equal(t, base.Denom, validatorReward.Denom)

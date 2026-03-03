@@ -933,7 +933,7 @@ async fn handle_validator_command(
             ]));
             table.add_row(Row::new(vec![
                 Cell::new("validator-1"),
-                Cell::new("aethval1abc..."),
+                Cell::new("aethelval1abc..."),
                 Cell::new("1000000"),
                 Cell::new("99.9%").style_spec("Fg"),
             ]));
@@ -961,10 +961,10 @@ async fn handle_account_command(
         Some("balance") | None => {
             println!("{}", "Account Balance".bold().underline());
             println!();
-            println!("  {} {}", "Address:".bold(), "aeth1abc123...".cyan());
-            println!("  {} {} AETH", "Balance:".bold(), "1,234.56".green());
-            println!("  {} {} AETH", "Staked:".bold(), "500.00".cyan());
-            println!("  {} {} AETH", "Rewards:".bold(), "12.34".cyan());
+            println!("  {} {}", "Address:".bold(), "aethel1abc123...".cyan());
+            println!("  {} {} AETHEL", "Balance:".bold(), "1,234.56".green());
+            println!("  {} {} AETHEL", "Staked:".bold(), "500.00".cyan());
+            println!("  {} {} AETHEL", "Rewards:".bold(), "12.34".cyan());
         }
         Some("send") => {
             if args.len() >= 3 {
@@ -972,7 +972,7 @@ async fn handle_account_command(
                 let amount = args[2];
 
                 if Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt(format!("Send {} AETH to {}?", amount, to))
+                    .with_prompt(format!("Send {} AETHEL to {}?", amount, to))
                     .default(false)
                     .interact()?
                 {

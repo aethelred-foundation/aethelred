@@ -127,7 +127,7 @@ endpoint = "{{ .TEE.Endpoint }}"
 			Endpoint: "",
 		},
 	}
-	customAppConfig.MinGasPrices = "0.001uaeth"
+	customAppConfig.MinGasPrices = "0.001uaethel"
 
 	return customAppTemplate, customAppConfig
 }

@@ -22,18 +22,18 @@ import (
 // =============================================================================
 
 // TestC01_VestedAmount_LargeValues_NoOverflow verifies that VestedAmount
-// correctly handles large token amounts (up to 3*10^15 uAETH) multiplied by
+// correctly handles large token amounts (up to 3*10^15 uAETHEL) multiplied by
 // large elapsed block counts (up to ~5.256*10^7) without silent int64 overflow.
 //
-// Bug (C-01): Naive int64 multiplication of totalUAETH * elapsed could exceed
+// Bug (C-01): Naive int64 multiplication of totalUAETHEL * elapsed could exceed
 // 2^63 (~9.2*10^18), causing silent wraparound to negative values.
 // Fix: All intermediate arithmetic uses math/big.
 func TestC01_VestedAmount_LargeValues_NoOverflow(t *testing.T) {
-	// Use the largest real-world allocation: 3,000,000,000,000,000 uAETH (3B AETH)
+	// Use the largest real-world allocation: 3,000,000,000,000,000 uAETHEL (3B AETHEL)
 	// with 5-year vesting (~26,280,000 blocks).
 	schedule := keeper.VestingSchedule{
 		Category:         "large-allocation",
-		TotalUAETH:       3_000_000_000_000_000,
+		TotalUAETHEL:       3_000_000_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 5, // ~26.28M blocks
@@ -50,18 +50,18 @@ func TestC01_VestedAmount_LargeValues_NoOverflow(t *testing.T) {
 	// which WOULD overflow int64 without big.Int.
 	require.Greater(t, vested, int64(0), "vested must be positive (no overflow wraparound)")
 	require.InDelta(t,
-		float64(schedule.TotalUAETH)/2.0,
+		float64(schedule.TotalUAETHEL)/2.0,
 		float64(vested),
-		float64(schedule.TotalUAETH)*0.01, // Within 1% tolerance
+		float64(schedule.TotalUAETHEL)*0.01, // Within 1% tolerance
 		"halfway vesting should yield ~50% of total",
 	)
 }
 
 func TestC01_VestedAmount_MaxSupplyWithTGE_NoOverflow(t *testing.T) {
-	// Max total supply (10B AETH in uAETH) with TGE + cliff + linear
+	// Max total supply (10B AETHEL in uAETHEL) with TGE + cliff + linear
 	schedule := keeper.VestingSchedule{
 		Category:         "max-supply-stress",
-		TotalUAETH:       10_000_000_000_000_000, // Full 10B AETH
+		TotalUAETHEL:       10_000_000_000_000_000, // Full 10B AETHEL
 		TGEUnlockBps:     2250,                   // 22.5% TGE
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
@@ -85,7 +85,7 @@ func TestC01_VestedAmount_MaxSupplyWithTGE_NoOverflow(t *testing.T) {
 
 	vested = keeper.VestedAmount(schedule, at75pct)
 	require.Greater(t, vested, expected, "75% into linear should exceed cliff-only vested")
-	require.Less(t, vested, schedule.TotalUAETH, "should not be fully vested yet")
+	require.Less(t, vested, schedule.TotalUAETHEL, "should not be fully vested yet")
 }
 
 func TestC01_VestedAmount_Monotonically_Increasing(t *testing.T) {
@@ -93,7 +93,7 @@ func TestC01_VestedAmount_Monotonically_Increasing(t *testing.T) {
 	// This catches overflow-induced negative delta or wraparound.
 	schedule := keeper.VestingSchedule{
 		Category:         "monotonic-check",
-		TotalUAETH:       2_500_000_000_000_000, // 2.5B AETH
+		TotalUAETHEL:       2_500_000_000_000_000, // 2.5B AETHEL
 		TGEUnlockBps:     500,                   // 5% TGE
 		CliffBlocks:      keeper.BlocksPerYear / 2,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
@@ -114,14 +114,14 @@ func TestC01_VestedAmount_Monotonically_Increasing(t *testing.T) {
 		require.GreaterOrEqual(t, vested, int64(0),
 			"vested amount must never be negative at block %d", blockHeight,
 		)
-		require.LessOrEqual(t, vested, schedule.TotalUAETH,
+		require.LessOrEqual(t, vested, schedule.TotalUAETHEL,
 			"vested amount must never exceed total at block %d", blockHeight,
 		)
 		prevVested = vested
 	}
 
 	// Final block should be fully vested
-	require.Equal(t, schedule.TotalUAETH, prevVested, "final block must be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, prevVested, "final block must be fully vested")
 }
 
 // =============================================================================
@@ -137,7 +137,7 @@ func TestC01_VestedAmount_Monotonically_Increasing(t *testing.T) {
 func TestH03_VestedAmount_GenesisBlock_ReturnsTGE(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "public-sale",
-		TotalUAETH:       1_000_000_000_000_000, // 1B AETH
+		TotalUAETHEL:       1_000_000_000_000_000, // 1B AETHEL
 		TGEUnlockBps:     2250,                  // 22.5%
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 2,
@@ -147,7 +147,7 @@ func TestH03_VestedAmount_GenesisBlock_ReturnsTGE(t *testing.T) {
 
 	// At genesis block (height 0): must return TGE amount
 	vestedAtGenesis := keeper.VestedAmount(schedule, 0)
-	expectedTGE := int64(1_000_000_000_000_000 * 2250 / 10000) // 225B uAETH
+	expectedTGE := int64(1_000_000_000_000_000 * 2250 / 10000) // 225B uAETHEL
 
 	require.Greater(t, vestedAtGenesis, int64(0),
 		"genesis block must return non-zero TGE amount (H-03 regression)")
@@ -159,7 +159,7 @@ func TestH03_VestedAmount_GenesisBlock_WithCliff_ReturnsTGE(t *testing.T) {
 	// Ecosystem grants: 5% TGE, 6-month cliff
 	schedule := keeper.VestingSchedule{
 		Category:         "ecosystem",
-		TotalUAETH:       1_500_000_000_000_000,
+		TotalUAETHEL:       1_500_000_000_000_000,
 		TGEUnlockBps:     500, // 5%
 		CliffBlocks:      keeper.BlocksPerYear / 2,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
@@ -169,7 +169,7 @@ func TestH03_VestedAmount_GenesisBlock_WithCliff_ReturnsTGE(t *testing.T) {
 
 	// At genesis: should get TGE (5%), NOT zero
 	vestedAtGenesis := keeper.VestedAmount(schedule, 0)
-	expectedTGE := int64(1_500_000_000_000_000 * 500 / 10000) // 75B uAETH
+	expectedTGE := int64(1_500_000_000_000_000 * 500 / 10000) // 75B uAETHEL
 
 	require.Equal(t, expectedTGE, vestedAtGenesis,
 		"genesis block with cliff must return TGE amount (H-03 regression)")
@@ -178,7 +178,7 @@ func TestH03_VestedAmount_GenesisBlock_WithCliff_ReturnsTGE(t *testing.T) {
 func TestH03_VestedAmount_NegativeBlockHeight_ReturnsZero(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "test",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     2250,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear,
@@ -195,7 +195,7 @@ func TestH03_VestedAmount_NegativeBlockHeight_ReturnsZero(t *testing.T) {
 func TestH03_VestedAmount_Block1_SameAsGenesis_WithNoCliff(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "no-cliff",
-		TotalUAETH:       1_000_000_000_000_000,
+		TotalUAETHEL:       1_000_000_000_000_000,
 		TGEUnlockBps:     1000, // 10%
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
@@ -326,11 +326,11 @@ func TestSupplyInvariant_AllSchedulesSumToTotalSupply(t *testing.T) {
 
 	totalAllocated := int64(0)
 	for _, s := range schedules {
-		totalAllocated += s.TotalUAETH
+		totalAllocated += s.TotalUAETHEL
 	}
 
-	require.Equal(t, keeper.InitialSupplyUAETH, totalAllocated,
-		"all vesting categories must sum to exactly InitialSupplyUAETH (10B AETH)")
+	require.Equal(t, keeper.InitialSupplyUAETHEL, totalAllocated,
+		"all vesting categories must sum to exactly InitialSupplyUAETHEL (10B AETHEL)")
 }
 
 func TestSupplyInvariant_FullyVestedEqualsTotal(t *testing.T) {
@@ -343,12 +343,12 @@ func TestSupplyInvariant_FullyVestedEqualsTotal(t *testing.T) {
 
 	for _, s := range schedules {
 		vested := keeper.VestedAmount(s, farFutureBlock)
-		require.Equal(t, s.TotalUAETH, vested,
+		require.Equal(t, s.TotalUAETHEL, vested,
 			"category %s must be fully vested at far future block", s.Category)
 		totalVested += vested
 	}
 
-	require.Equal(t, keeper.InitialSupplyUAETH, totalVested,
+	require.Equal(t, keeper.InitialSupplyUAETHEL, totalVested,
 		"sum of fully vested amounts must equal total supply")
 }
 
@@ -358,9 +358,9 @@ func TestSupplyInvariant_NoScheduleExceedsTotalAtAnyPoint(t *testing.T) {
 	for _, s := range schedules {
 		for block := int64(0); block <= s.VestingBlocks+keeper.BlocksPerYear; block += keeper.BlocksPerYear / 12 {
 			vested := keeper.VestedAmount(s, block)
-			require.LessOrEqual(t, vested, s.TotalUAETH,
+			require.LessOrEqual(t, vested, s.TotalUAETHEL,
 				"category %s: vested (%d) exceeds total (%d) at block %d",
-				s.Category, vested, s.TotalUAETH, block)
+				s.Category, vested, s.TotalUAETHEL, block)
 			require.GreaterOrEqual(t, vested, int64(0),
 				"category %s: vested negative at block %d", s.Category, block)
 		}
@@ -405,10 +405,10 @@ func TestEmissionSchedule_AllModels_ProduceValidSchedules(t *testing.T) {
 // VESTED AMOUNT EDGE CASES
 // =============================================================================
 
-func TestVestedAmount_ZeroTotalUAETH(t *testing.T) {
+func TestVestedAmount_ZeroTotalUAETHEL(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "zero-total",
-		TotalUAETH:       0,
+		TotalUAETHEL:       0,
 		TGEUnlockBps:     2250,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear,
@@ -424,11 +424,11 @@ func TestVestedAmount_ZeroTotalUAETH(t *testing.T) {
 }
 
 func TestVestedAmount_ZeroVestingBlocks(t *testing.T) {
-	// When VestingBlocks is 0, any positive block height should return TotalUAETH
+	// When VestingBlocks is 0, any positive block height should return TotalUAETHEL
 	// because blockHeight >= VestingBlocks triggers the fully-vested branch.
 	schedule := keeper.VestingSchedule{
 		Category:         "zero-vesting",
-		TotalUAETH:       1_000_000_000,
+		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     1000,
 		CliffBlocks:      0,
 		VestingBlocks:    0,
@@ -438,14 +438,14 @@ func TestVestedAmount_ZeroVestingBlocks(t *testing.T) {
 
 	// blockHeight >= 0 means fully vested since VestingBlocks == 0
 	vested := keeper.VestedAmount(schedule, 0)
-	require.Equal(t, schedule.TotalUAETH, vested,
+	require.Equal(t, schedule.TotalUAETHEL, vested,
 		"zero vesting blocks should be fully vested at genesis")
 }
 
 func TestVestedAmount_TGEOnly_NoCliff_NoLinear(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "tge-only",
-		TotalUAETH:       1_000_000_000_000_000,
+		TotalUAETHEL:       1_000_000_000_000_000,
 		TGEUnlockBps:     5000, // 50% TGE
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
@@ -464,13 +464,13 @@ func TestVestedAmount_TGEOnly_NoCliff_NoLinear(t *testing.T) {
 
 	// Fully vested at end
 	vestedEnd := keeper.VestedAmount(schedule, keeper.BlocksPerYear*5)
-	require.Equal(t, schedule.TotalUAETH, vestedEnd, "at vesting end should be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, vestedEnd, "at vesting end should be fully vested")
 }
 
 func TestVestedAmount_CliffOnly_NoTGE_NoLinear(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "cliff-only",
-		TotalUAETH:       500_000_000_000_000,
+		TotalUAETHEL:       500_000_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
@@ -494,13 +494,13 @@ func TestVestedAmount_CliffOnly_NoTGE_NoLinear(t *testing.T) {
 
 	// At vesting end
 	vestedEnd := keeper.VestedAmount(schedule, keeper.BlocksPerYear*4)
-	require.Equal(t, schedule.TotalUAETH, vestedEnd, "at vesting end should be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, vestedEnd, "at vesting end should be fully vested")
 }
 
 func TestVestedAmount_LinearOnly_NoTGE_NoCliff(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "linear-only",
-		TotalUAETH:       3_000_000_000_000_000,
+		TotalUAETHEL:       3_000_000_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear * 10,
@@ -514,12 +514,12 @@ func TestVestedAmount_LinearOnly_NoTGE_NoCliff(t *testing.T) {
 
 	// At 50%: should get ~50% linearly
 	vestedHalf := keeper.VestedAmount(schedule, keeper.BlocksPerYear*5)
-	require.InDelta(t, float64(schedule.TotalUAETH)/2, float64(vestedHalf),
-		float64(schedule.TotalUAETH)*0.001, "50% through linear should be ~50%")
+	require.InDelta(t, float64(schedule.TotalUAETHEL)/2, float64(vestedHalf),
+		float64(schedule.TotalUAETHEL)*0.001, "50% through linear should be ~50%")
 
 	// At end: fully vested
 	vestedEnd := keeper.VestedAmount(schedule, keeper.BlocksPerYear*10)
-	require.Equal(t, schedule.TotalUAETH, vestedEnd, "at end should be fully vested")
+	require.Equal(t, schedule.TotalUAETHEL, vestedEnd, "at end should be fully vested")
 }
 
 func TestVestedAmount_AllCategories_BlockZero(t *testing.T) {
@@ -528,7 +528,7 @@ func TestVestedAmount_AllCategories_BlockZero(t *testing.T) {
 	for _, s := range schedules {
 		t.Run(s.Category, func(t *testing.T) {
 			vested := keeper.VestedAmount(s, 0)
-			expectedTGE := s.TotalUAETH * s.TGEUnlockBps / 10000
+			expectedTGE := s.TotalUAETHEL * s.TGEUnlockBps / 10000
 			require.Equal(t, expectedTGE, vested,
 				"category %s: at block 0 should return TGE amount", s.Category)
 		})
@@ -541,11 +541,11 @@ func TestVestedAmount_AllCategories_FullyVested(t *testing.T) {
 	for _, s := range schedules {
 		t.Run(s.Category, func(t *testing.T) {
 			vested := keeper.VestedAmount(s, s.VestingBlocks)
-			require.Equal(t, s.TotalUAETH, vested,
+			require.Equal(t, s.TotalUAETHEL, vested,
 				"category %s: at vesting end should be fully vested", s.Category)
 
 			vestedBeyond := keeper.VestedAmount(s, s.VestingBlocks+keeper.BlocksPerYear)
-			require.Equal(t, s.TotalUAETH, vestedBeyond,
+			require.Equal(t, s.TotalUAETHEL, vestedBeyond,
 				"category %s: beyond vesting period should be fully vested", s.Category)
 		})
 	}
@@ -561,21 +561,21 @@ func TestVestedAmount_HalfwayPoint_AllSchedules(t *testing.T) {
 
 			require.GreaterOrEqual(t, vested, int64(0),
 				"halfway vested must be non-negative")
-			require.LessOrEqual(t, vested, s.TotalUAETH,
+			require.LessOrEqual(t, vested, s.TotalUAETHEL,
 				"halfway vested must not exceed total")
 
 			// Must be at least the TGE amount
-			tge := s.TotalUAETH * s.TGEUnlockBps / 10000
+			tge := s.TotalUAETHEL * s.TGEUnlockBps / 10000
 			require.GreaterOrEqual(t, vested, tge,
 				"halfway vested must be at least TGE amount")
 		})
 	}
 }
 
-func TestVestedAmount_SmallAmount_1UAETH(t *testing.T) {
+func TestVestedAmount_SmallAmount_1UAETHEL(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "tiny",
-		TotalUAETH:       1, // Smallest possible allocation
+		TotalUAETHEL:       1, // Smallest possible allocation
 		TGEUnlockBps:     5000,
 		CliffBlocks:      0,
 		VestingBlocks:    keeper.BlocksPerYear,
@@ -589,13 +589,13 @@ func TestVestedAmount_SmallAmount_1UAETH(t *testing.T) {
 
 	// Fully vested
 	vestedEnd := keeper.VestedAmount(schedule, keeper.BlocksPerYear)
-	require.Equal(t, int64(1), vestedEnd, "at end should be fully vested even for 1 uaeth")
+	require.Equal(t, int64(1), vestedEnd, "at end should be fully vested even for 1 uaethel")
 }
 
 func TestVestedAmount_ExactCliffBoundary(t *testing.T) {
 	schedule := keeper.VestingSchedule{
 		Category:         "cliff-boundary",
-		TotalUAETH:       2_000_000_000_000_000,
+		TotalUAETHEL:       2_000_000_000_000_000,
 		TGEUnlockBps:     0,
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
@@ -677,7 +677,7 @@ func TestEmissionSchedule_ExponentialDecay_100Years(t *testing.T) {
 	lastYear := schedule[len(schedule)-1]
 	require.GreaterOrEqual(t, lastYear.InflationBps, config.TargetInflationBps,
 		"year 100: inflation must not go below floor")
-	require.Greater(t, lastYear.CumulativeSupply, keeper.InitialSupplyUAETH,
+	require.Greater(t, lastYear.CumulativeSupply, keeper.InitialSupplyUAETHEL,
 		"cumulative supply must exceed initial after 100 years")
 }
 
@@ -727,7 +727,7 @@ func TestEmissionSchedule_SingleYear(t *testing.T) {
 	entry := schedule[0]
 	require.Equal(t, 1, entry.Year)
 	require.Greater(t, entry.AnnualEmission, int64(0))
-	require.Greater(t, entry.CumulativeSupply, keeper.InitialSupplyUAETH)
+	require.Greater(t, entry.CumulativeSupply, keeper.InitialSupplyUAETHEL)
 }
 
 func TestEmissionSchedule_CumulativeSupply_AlwaysIncreasing(t *testing.T) {
@@ -803,7 +803,7 @@ func TestBondingCurve_LinearExponent_PurchaseAndSale(t *testing.T) {
 	config.ExponentScaled = 1000 // linear
 	bc := keeper.NewBondingCurve(config)
 
-	purchaseAmount := sdkmath.NewInt(1_000_000) // 1 AETH
+	purchaseAmount := sdkmath.NewInt(1_000_000) // 1 AETHEL
 	cost, err := bc.ExecutePurchase(purchaseAmount)
 	require.NoError(t, err)
 	require.True(t, cost.IsPositive(), "purchase cost must be positive")
@@ -952,12 +952,12 @@ func TestBondingCurve_ZeroPurchase(t *testing.T) {
 func TestSafeMath_Add_LargeValues(t *testing.T) {
 	sm := keeper.NewSafeMath()
 
-	a := sdkmath.NewInt(keeper.InitialSupplyUAETH)
-	b := sdkmath.NewInt(keeper.InitialSupplyUAETH)
+	a := sdkmath.NewInt(keeper.InitialSupplyUAETHEL)
+	b := sdkmath.NewInt(keeper.InitialSupplyUAETHEL)
 
 	result, err := sm.SafeAdd(a, b)
 	require.NoError(t, err)
-	require.Equal(t, sdkmath.NewInt(2*keeper.InitialSupplyUAETH), result,
+	require.Equal(t, sdkmath.NewInt(2*keeper.InitialSupplyUAETHEL), result,
 		"adding two large values should succeed")
 }
 
@@ -1154,7 +1154,7 @@ func TestFeeBreakdown_DefaultConfig(t *testing.T) {
 
 func TestFeeBreakdown_AllComponentsPositive(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 10)
 
@@ -1166,7 +1166,7 @@ func TestFeeBreakdown_AllComponentsPositive(t *testing.T) {
 
 func TestFeeBreakdown_SumsToTotal(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 10)
 
@@ -1182,7 +1182,7 @@ func TestFeeBreakdown_SumsToTotal(t *testing.T) {
 
 func TestFeeBreakdown_SingleValidator(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 1)
 
@@ -1193,7 +1193,7 @@ func TestFeeBreakdown_SingleValidator(t *testing.T) {
 
 func TestFeeBreakdown_ManyValidators(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 10_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 10_000_000)
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 100)
 
@@ -1209,7 +1209,7 @@ func TestFeeBreakdown_ManyValidators(t *testing.T) {
 
 func TestFeeBreakdown_SmallFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 10) // Very small fee
+	fee := sdk.NewInt64Coin("uaethel", 10) // Very small fee
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 3)
 
@@ -1224,7 +1224,7 @@ func TestFeeBreakdown_SmallFee(t *testing.T) {
 
 func TestFeeBreakdown_LargeFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000_000_000) // 1M AETH
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000_000_000) // 1M AETHEL
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 50)
 
@@ -1238,7 +1238,7 @@ func TestFeeBreakdown_LargeFee(t *testing.T) {
 
 func TestFeeBreakdown_ZeroValidators(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 
 	result := keeper.CalculateFeeBreakdown(fee, config, 0)
 
@@ -1262,7 +1262,7 @@ func TestFeeBreakdown_ZeroValidators(t *testing.T) {
 // =============================================================================
 
 func TestValidatorReward_ZeroCommission(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1_000_000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1_000_000)
 	valReward, delReward, err := keeper.ComputeValidatorRewardSafe(baseReward, 50, 0)
 	require.NoError(t, err)
 
@@ -1272,7 +1272,7 @@ func TestValidatorReward_ZeroCommission(t *testing.T) {
 }
 
 func TestValidatorReward_MaxCommission(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1_000_000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1_000_000)
 	// Max 20% commission = 2000 BPS
 	valReward, delReward, err := keeper.ComputeValidatorRewardSafe(baseReward, 50, 2000)
 	require.NoError(t, err)
@@ -1286,7 +1286,7 @@ func TestValidatorReward_MaxCommission(t *testing.T) {
 }
 
 func TestValidatorReward_SplitConsistency(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1_000_000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1_000_000)
 	commissions := []int64{500, 1000, 1500, 2000}
 
 	for _, comm := range commissions {
@@ -1309,7 +1309,7 @@ func TestValidatorReward_SplitConsistency(t *testing.T) {
 }
 
 func TestValidatorReward_SmallReward(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1) // 1 uaeth
+	baseReward := sdk.NewInt64Coin("uaethel", 1) // 1 uaethel
 	valReward, delReward, err := keeper.ComputeValidatorRewardSafe(baseReward, 50, 1000)
 	require.NoError(t, err)
 
@@ -1319,7 +1319,7 @@ func TestValidatorReward_SmallReward(t *testing.T) {
 }
 
 func TestValidatorReward_LargeReward(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1_000_000_000_000) // 1M AETH
+	baseReward := sdk.NewInt64Coin("uaethel", 1_000_000_000_000) // 1M AETHEL
 	valReward, delReward, err := keeper.ComputeValidatorRewardSafe(baseReward, 100, 1500)
 	require.NoError(t, err)
 
@@ -1328,7 +1328,7 @@ func TestValidatorReward_LargeReward(t *testing.T) {
 }
 
 func TestValidatorReward_MultiplePerformanceLevels(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1_000_000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1_000_000)
 	scores := []int64{0, 25, 50, 75, 100}
 
 	prevTotal := sdkmath.ZeroInt()
@@ -1426,12 +1426,12 @@ func TestCrossModel_EmissionThenVesting_Consistent(t *testing.T) {
 	}
 
 	// All vesting should be fully vested by year 10
-	require.Equal(t, keeper.InitialSupplyUAETH, totalVested,
+	require.Equal(t, keeper.InitialSupplyUAETHEL, totalVested,
 		"all vesting must be complete by year 10")
 
 	// Cumulative supply from emissions should exceed initial supply
 	year10Supply := schedule[9].CumulativeSupply
-	require.Greater(t, year10Supply, keeper.InitialSupplyUAETH,
+	require.Greater(t, year10Supply, keeper.InitialSupplyUAETHEL,
 		"10-year supply must exceed initial supply due to emissions")
 }
 
@@ -1535,7 +1535,7 @@ func TestCrossModel_FeeDistribution_AllConfigs(t *testing.T) {
 		}},
 	}
 
-	fee := sdk.NewInt64Coin("uaeth", 1_000_000)
+	fee := sdk.NewInt64Coin("uaethel", 1_000_000)
 
 	for _, tc := range configs {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1588,7 +1588,7 @@ func TestCrossModel_VestingSchedule_MonotonicAllCategories(t *testing.T) {
 
 				require.GreaterOrEqual(t, vested, prevVested,
 					"category %s: vested must be monotonic at block %d", s.Category, block)
-				require.LessOrEqual(t, vested, s.TotalUAETH,
+				require.LessOrEqual(t, vested, s.TotalUAETHEL,
 					"category %s: vested must not exceed total at block %d", s.Category, block)
 
 				prevVested = vested
@@ -1613,9 +1613,9 @@ func TestProperty_VestedAmount_NeverExceedsTotal_1000Samples(t *testing.T) {
 
 				require.GreaterOrEqual(t, vested, int64(0),
 					"category %s: vested must be non-negative at block %d", s.Category, block)
-				require.LessOrEqual(t, vested, s.TotalUAETH,
+				require.LessOrEqual(t, vested, s.TotalUAETHEL,
 					"category %s: vested (%d) must not exceed total (%d) at block %d",
-					s.Category, vested, s.TotalUAETH, block)
+					s.Category, vested, s.TotalUAETHEL, block)
 			}
 		})
 	}
@@ -1698,8 +1698,8 @@ func TestProperty_SafeMath_NoOverflow_LargeInputs(t *testing.T) {
 	sm := keeper.NewSafeMath()
 
 	largeValues := []int64{
-		keeper.InitialSupplyUAETH,
-		keeper.InitialSupplyUAETH / 2,
+		keeper.InitialSupplyUAETHEL,
+		keeper.InitialSupplyUAETHEL / 2,
 		keeper.BlocksPerYear * 100,
 		9_223_372_036_854_775_807 / 2, // near max int64 / 2
 	}
@@ -1720,7 +1720,7 @@ func TestProperty_SafeMath_NoOverflow_LargeInputs(t *testing.T) {
 
 func TestProperty_FeeBreakdown_Deterministic(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	fee := sdk.NewInt64Coin("uaeth", 7_777_777)
+	fee := sdk.NewInt64Coin("uaethel", 7_777_777)
 
 	// Run the same calculation 100 times — must produce identical results
 	first := keeper.CalculateFeeBreakdown(fee, config, 17)
@@ -1781,7 +1781,7 @@ func TestProperty_VestingCategories_IndependentCalculation(t *testing.T) {
 	// Modify one schedule and verify others remain unaffected
 	for modIdx := range schedules {
 		modifiedSchedule := schedules[modIdx]
-		modifiedSchedule.TotalUAETH = modifiedSchedule.TotalUAETH / 2
+		modifiedSchedule.TotalUAETHEL = modifiedSchedule.TotalUAETHEL / 2
 
 		modifiedResult := keeper.VestedAmount(modifiedSchedule, block)
 		require.NotEqual(t, baseResults[modIdx], modifiedResult,

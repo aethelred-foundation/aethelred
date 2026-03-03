@@ -60,7 +60,7 @@ func TestComputeJobJSON(t *testing.T) {
 	now := time.Now()
 	job := ComputeJob{
 		ID:        "job_1",
-		Creator:   "aeth1creator",
+		Creator:   "aethel1creator",
 		ModelHash: "abc123",
 		InputHash: "def456",
 		Status:    JobStatusPending,
@@ -94,7 +94,7 @@ func TestDigitalSealJSON(t *testing.T) {
 		JobID:     "job_1",
 		ModelHash: "abc",
 		Status:    SealStatusActive,
-		Requester: "aeth1req",
+		Requester: "aethel1req",
 	}
 
 	data, err := json.Marshal(seal)
@@ -143,7 +143,7 @@ func TestValidatorStatsJSON(t *testing.T) {
 	t.Parallel()
 
 	stats := ValidatorStats{
-		Address:         "aeth1val",
+		Address:         "aethel1val",
 		JobsCompleted:   100,
 		ReputationScore: 0.95,
 	}

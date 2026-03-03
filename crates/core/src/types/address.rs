@@ -64,11 +64,11 @@ impl AddressType {
     /// Get bech32 prefix
     pub fn prefix(&self) -> &'static str {
         match self {
-            Self::User => "aeth",
-            Self::Contract => "aethc",
-            Self::Validator => "aethv",
-            Self::System => "aeths",
-            Self::Oracle => "aetho",
+            Self::User => "aethel",
+            Self::Contract => "aethelc",
+            Self::Validator => "aethelv",
+            Self::System => "aethels",
+            Self::Oracle => "aethelo",
         }
     }
 }
@@ -210,14 +210,14 @@ impl Address {
 
         // Determine address type from prefix
         let address_type = match prefix {
-            "aeth" => AddressType::User,
-            "aethc" => AddressType::Contract,
-            "aethv" => AddressType::Validator,
-            "aeths" => AddressType::System,
-            "aetho" => AddressType::Oracle,
+            "aethel" => AddressType::User,
+            "aethelc" => AddressType::Contract,
+            "aethelv" => AddressType::Validator,
+            "aethels" => AddressType::System,
+            "aethelo" => AddressType::Oracle,
             _ => {
                 return Err(AddressError::InvalidPrefix {
-                    expected: "aeth/aethc/aethv/aeths/aetho".into(),
+                    expected: "aethel/aethelc/aethelv/aethels/aethelo".into(),
                     actual: prefix.into(),
                 })
             }
@@ -319,7 +319,7 @@ mod tests {
         let bytes = [0x42u8; ADDRESS_SIZE];
         let addr = Address::from_bytes(bytes, AddressType::User);
         let bech32 = addr.to_bech32();
-        assert!(bech32.starts_with("aeth1"));
+        assert!(bech32.starts_with("aethel1"));
 
         let recovered = Address::from_bech32(&bech32).unwrap();
         assert_eq!(addr, recovered);
@@ -342,9 +342,9 @@ mod tests {
 
     #[test]
     fn test_address_types() {
-        assert_eq!(AddressType::User.prefix(), "aeth");
-        assert_eq!(AddressType::Contract.prefix(), "aethc");
-        assert_eq!(AddressType::Validator.prefix(), "aethv");
+        assert_eq!(AddressType::User.prefix(), "aethel");
+        assert_eq!(AddressType::Contract.prefix(), "aethelc");
+        assert_eq!(AddressType::Validator.prefix(), "aethelv");
     }
 
     #[test]

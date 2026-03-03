@@ -147,8 +147,8 @@ pub enum TokenType {
     WrappedETH,
     /// Wrapped ERC20 (with token address)
     WrappedERC20([u8; 20]),
-    /// Native AETH token
-    NativeAETH,
+    /// Native AETHEL token
+    NativeAETHEL,
 }
 
 /// Withdrawal status
@@ -519,8 +519,8 @@ mod tests {
         let eth_addr = parse_eth_address(eth_hex).unwrap();
         assert_eq!(eth_address_to_hex(&eth_addr), eth_hex);
 
-        let aeth_hex = "0x1234567890123456789012345678901234567890123456789012345678901234";
-        let aeth_addr = parse_aethelred_address(aeth_hex).unwrap();
-        assert_eq!(aethelred_address_to_hex(&aeth_addr), aeth_hex);
+        let aethel_hex = "0x1234567890123456789012345678901234567890123456789012345678901234";
+        let aethel_addr = parse_aethelred_address(aethel_hex).unwrap();
+        assert_eq!(aethelred_address_to_hex(&aethel_addr), aethel_hex);
     }
 }

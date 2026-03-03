@@ -43,7 +43,7 @@ import (
 const MainnetChainID = "aethelred-1"
 
 // MainnetDenom is the staking denomination for the Aethelred mainnet.
-const MainnetDenom = "uaeth"
+const MainnetDenom = "uaethel"
 
 // MainnetParams returns the locked mainnet parameter set.
 // These values have been validated against BFT safety, performance benchmarks,
@@ -70,16 +70,16 @@ func MainnetParams() *types.Params {
 
 		// --- Economics ---
 		// Base fee for submitting a compute verification job.
-		// 1000 uaeth = 0.001 AETH at 1M uaeth/AETH.
-		BaseJobFee: "1000uaeth",
+		// 1000 uaethel = 0.001 AETHEL at 1M uaethel/AETHEL.
+		BaseJobFee: "1000uaethel",
 
 		// Reward paid to each validator that correctly verifies a computation.
-		// 100 uaeth per validator × 5 validators = 500 uaeth total verification cost.
-		VerificationReward: "100uaeth",
+		// 100 uaethel per validator × 5 validators = 500 uaethel total verification cost.
+		VerificationReward: "100uaethel",
 
 		// Penalty for producing incorrect verification results.
 		// 10x the base fee to strongly discourage Byzantine behavior.
-		SlashingPenalty: "10000uaeth",
+		SlashingPenalty: "10000uaethel",
 
 		// --- Proof types ---
 		// All three proof types enabled. TEE is primary, zkML is fallback,
@@ -178,7 +178,7 @@ func MainnetParamLockRegistry() []ParamLockEntry {
 		{
 			Field:       "base_job_fee",
 			Status:      ParamMutable,
-			LockedValue: "1000uaeth",
+			LockedValue: "1000uaethel",
 			Reason:      "Economic parameter, adjustable via governance",
 			CanOverride: true,
 			MinQuorum:   67,
@@ -186,7 +186,7 @@ func MainnetParamLockRegistry() []ParamLockEntry {
 		{
 			Field:       "verification_reward",
 			Status:      ParamMutable,
-			LockedValue: "100uaeth",
+			LockedValue: "100uaethel",
 			Reason:      "Economic parameter, adjustable via governance",
 			CanOverride: true,
 			MinQuorum:   67,
@@ -194,7 +194,7 @@ func MainnetParamLockRegistry() []ParamLockEntry {
 		{
 			Field:       "slashing_penalty",
 			Status:      ParamLocked,
-			LockedValue: "10000uaeth",
+			LockedValue: "10000uaethel",
 			Reason:      "Security-critical: must maintain deterrence ratio (10x base fee)",
 			CanOverride: true,
 			MinQuorum:   80,

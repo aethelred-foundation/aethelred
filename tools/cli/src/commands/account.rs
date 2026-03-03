@@ -48,7 +48,7 @@ fn create_account(config: &Config, name: &str) -> Result<()> {
     let mut hasher = Sha256::new();
     hasher.update(seed);
     let digest = hasher.finalize();
-    let address = format!("aeth1{}", hex::encode(&digest[..20]));
+    let address = format!("aethel1{}", hex::encode(&digest[..20]));
 
     store.accounts.push(StoredAccount {
         name: name.to_string(),
@@ -75,7 +75,7 @@ fn import_account(config: &Config, name: &str) -> Result<()> {
         return Err(anyhow!("account '{name}' already exists"));
     }
 
-    let mnemonic = std::env::var("AETH_MNEMONIC").unwrap_or_else(|_| {
+    let mnemonic = std::env::var("AETHEL_MNEMONIC").unwrap_or_else(|_| {
         Input::<String>::new()
             .with_prompt("Enter mnemonic")
             .interact_text()
@@ -88,7 +88,7 @@ fn import_account(config: &Config, name: &str) -> Result<()> {
     let mut hasher = Sha256::new();
     hasher.update(mnemonic.as_bytes());
     let digest = hasher.finalize();
-    let address = format!("aeth1{}", hex::encode(&digest[..20]));
+    let address = format!("aethel1{}", hex::encode(&digest[..20]));
 
     store.accounts.push(StoredAccount {
         name: name.to_string(),

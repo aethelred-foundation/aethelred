@@ -58,7 +58,7 @@ validator:
     - --log_format=json
   env:
     logLevel: info
-    minGasPrice: 0.025uaeth
+    minGasPrice: 0.025uaethel
   resources:
     requests:
       cpu: "4"
@@ -177,7 +177,7 @@ updateStrategy:
 
 configFiles:
   appToml: |
-    minimum-gas-prices = "0.025uaeth"
+    minimum-gas-prices = "0.025uaethel"
     pruning = "nothing"
     pruning-keep-recent = "0"
     pruning-keep-every = "0"

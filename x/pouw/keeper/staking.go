@@ -47,7 +47,7 @@ type ValidatorSelectionCriteria struct {
 	// MinReputationScore required
 	MinReputationScore int64
 
-	// MinStake required (in uaeth)
+	// MinStake required (in uaethel)
 	MinStake int64
 
 	// PreferredPlatforms for TEE jobs
@@ -72,7 +72,7 @@ func DefaultSelectionCriteria(proofType types.ProofType) ValidatorSelectionCrite
 	return ValidatorSelectionCriteria{
 		ProofType:          proofType,
 		MinReputationScore: 30,
-		MinStake:           MinimumValidatorStakeUAETH().Int64(), // 100,000 AETHEL (April 1 testnet hardening)
+		MinStake:           MinimumValidatorStakeUAETHEL().Int64(), // 100,000 AETHEL (April 1 testnet hardening)
 		MaxValidators:      100,
 	}
 }
@@ -278,7 +278,7 @@ func (vs *ValidatorSelector) getValidatorStakingPower(ctx context.Context, addr 
 	if err == nil {
 		// Derive a power score from reputation and job history
 		// This ensures validators with good track records get selected
-		basePower := int64(1000000) // 1 AETH minimum
+		basePower := int64(1000000) // 1 AETHEL minimum
 		reputationBonus := stats.ReputationScore * 10000
 		return basePower + reputationBonus
 	}

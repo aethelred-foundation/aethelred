@@ -168,7 +168,7 @@ verifiable AI compute (Proof of Useful Work). This threat model covers:
 | T-B3 | Ethereum reorg invalidates deposits | High | 64-block confirmation depth (L-02 fix) | Fixed |
 | T-B4 | Rate limit exhaustion DoS | Medium | clearExpiredRateLimitState() gas refund (M-03 fix) | Fixed |
 | T-B5 | Emergency pause bypass | Medium | Circuit breaker with 24h-14d bounded timelock (M-07) | Active |
-| T-B6 | Cross-layer denomination mismatch | Critical | UAETH_TO_WEI_SCALE constants at both layers (C-02 fix) | Fixed |
+| T-B6 | Cross-layer denomination mismatch | Critical | UAETHEL_TO_WEI_SCALE constants at both layers (C-02 fix) | Fixed |
 
 ### 5.3 Token & Vesting Layer
 

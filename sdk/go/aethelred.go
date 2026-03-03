@@ -5,7 +5,7 @@
 //
 // GPU execution is fail-closed by default. Native GPU dispatch is available
 // only in builds that opt into the `aethelred_gpu_native` build tag.
-// Simulation mode is development-only and requires AETH_SDK_ALLOW_SIMULATED_GPU=1.
+// Simulation mode is development-only and requires AETHEL_SDK_ALLOW_SIMULATED_GPU=1.
 //
 // # Features
 //

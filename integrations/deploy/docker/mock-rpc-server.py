@@ -60,7 +60,7 @@ class Handler(BaseHTTPRequestHandler):
             address = path.rsplit("/", 1)[-1]
             return self._send(200, {
                 "balances": [
-                    {"denom": "uaeth", "amount": "1000000000"},
+                    {"denom": "uaethel", "amount": "1000000000"},
                     {"denom": "aethel", "amount": "500000000"},
                 ],
                 "pagination": {"total": "2"},
@@ -84,7 +84,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {
                 "validators": [
                     {
-                        "address": "aethvaloper1alpha",
+                        "address": "aethelvaloper1alpha",
                         "jobsCompleted": 1024,
                         "jobsFailed": 3,
                         "averageLatencyMs": 812,
@@ -94,7 +94,7 @@ class Handler(BaseHTTPRequestHandler):
                         "slashingEvents": 0,
                     },
                     {
-                        "address": "aethvaloper1beta",
+                        "address": "aethelvaloper1beta",
                         "jobsCompleted": 873,
                         "jobsFailed": 5,
                         "averageLatencyMs": 941,
@@ -129,12 +129,12 @@ class Handler(BaseHTTPRequestHandler):
                     "outputCommitment": "0x2222",
                     "modelCommitment": "0x3333",
                     "status": "SEAL_STATUS_ACTIVE",
-                    "requester": "aeth1developer",
+                    "requester": "aethel1developer",
                     "createdAt": now_utc,
                     "expiresAt": "2026-12-31T00:00:00Z",
                     "validators": [
-                        {"validatorAddress": "aethvaloper1alpha", "signature": "0xsig1", "votingPower": "34"},
-                        {"validatorAddress": "aethvaloper1beta", "signature": "0xsig2", "votingPower": "33"},
+                        {"validatorAddress": "aethelvaloper1alpha", "signature": "0xsig1", "votingPower": "34"},
+                        {"validatorAddress": "aethelvaloper1beta", "signature": "0xsig2", "votingPower": "33"},
                     ],
                     "consensus": {"totalVotingPower": "100", "attestedVotingPower": "67", "thresholdBps": 6700},
                     "teeAttestation": {

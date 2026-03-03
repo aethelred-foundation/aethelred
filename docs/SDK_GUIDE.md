@@ -433,7 +433,7 @@ func main() {
 
 ## CLI Tools
 
-### Aethelred CLI (`aeth`)
+### Aethelred CLI (`aethel`)
 
 The main CLI for interacting with Aethelred.
 
@@ -442,22 +442,22 @@ The main CLI for interacting with Aethelred.
 npm install -g @aethelred/cli
 
 # Configure
-aeth config set-network testnet
-aeth config set-wallet ./wallet.json
+aethel config set-network testnet
+aethel config set-wallet ./wallet.json
 
 # Job commands
-aeth job submit --model <hash> --input <hash> --proof-type tee
-aeth job status <job-id>
-aeth job list --status pending
+aethel job submit --model <hash> --input <hash> --proof-type tee
+aethel job status <job-id>
+aethel job list --status pending
 
 # Seal commands
-aeth seal create --job <job-id>
-aeth seal verify <seal-id>
-aeth seal export <seal-id> --format pdf
+aethel seal create --job <job-id>
+aethel seal verify <seal-id>
+aethel seal export <seal-id> --format pdf
 
 # Network info
-aeth network info
-aeth network stats
+aethel network info
+aethel network stats
 ```
 
 ### Seal Verifier (`seal-verifier`)
@@ -569,19 +569,19 @@ curl http://localhost:1317/aethelred/seal/v1/seals
 ### Snippets
 
 ```typescript
-// Type 'aeth-client' for:
+// Type 'aethel-client' for:
 const client = new AethelredClient({
   rpcUrl: 'https://rpc.testnet.aethelred.org'
 });
 
-// Type 'aeth-job' for:
+// Type 'aethel-job' for:
 const job = await client.jobs.submit({
   modelHash: modelHash,
   inputHash: inputHash,
   proofType: ProofType.TEE
 });
 
-// Type 'aeth-seal' for:
+// Type 'aethel-seal' for:
 const seal = await client.seals.create({
   jobId: 'job_id'
 });

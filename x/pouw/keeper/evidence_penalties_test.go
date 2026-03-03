@@ -52,7 +52,7 @@ func sampleValAddr() string {
 func TestEvidenceCollectorApplySlashingPenalties_SuccessAndErrors(t *testing.T) {
 	t.Run("success path applies send and burn", func(t *testing.T) {
 		bank := &slashingBankKeeper{
-			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1_000_000_000)),
+			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1_000_000_000)),
 		}
 		k, ctx := newFeeDistKeeperWithBank(t, nil, bank)
 		ec := keeper.NewEvidenceCollector(log.NewNopLogger(), &k)
@@ -78,7 +78,7 @@ func TestEvidenceCollectorApplySlashingPenalties_SuccessAndErrors(t *testing.T) 
 
 	t.Run("invalid bech32 address is rejected", func(t *testing.T) {
 		bank := &slashingBankKeeper{
-			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1_000_000_000)),
+			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1_000_000_000)),
 		}
 		k, ctx := newFeeDistKeeperWithBank(t, nil, bank)
 		ec := keeper.NewEvidenceCollector(log.NewNopLogger(), &k)
@@ -130,7 +130,7 @@ func TestEvidenceCollectorApplySlashingPenalties_SuccessAndErrors(t *testing.T) 
 
 	t.Run("send failure", func(t *testing.T) {
 		bank := &slashingBankKeeper{
-			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1_000_000_000)),
+			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1_000_000_000)),
 			sendErr:   errors.New("send failed"),
 		}
 		k, ctx := newFeeDistKeeperWithBank(t, nil, bank)
@@ -157,7 +157,7 @@ func TestEvidenceCollectorApplySlashingPenalties_SuccessAndErrors(t *testing.T) 
 
 	t.Run("burn failure", func(t *testing.T) {
 		bank := &slashingBankKeeper{
-			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1_000_000_000)),
+			spendable: sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1_000_000_000)),
 			burnErr:   errors.New("burn failed"),
 		}
 		k, ctx := newFeeDistKeeperWithBank(t, nil, bank)
@@ -185,7 +185,7 @@ func TestEvidenceCollectorApplySlashingPenalties_SuccessAndErrors(t *testing.T) 
 
 func TestEvidenceCollectorApplySlashingPenalties_InvalidParamFallback(t *testing.T) {
 	bank := &slashingBankKeeper{
-		spendable: sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1_000_000_000)),
+		spendable: sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1_000_000_000)),
 	}
 	k, ctx := newFeeDistKeeperWithBank(t, nil, bank)
 	params := types.DefaultParams()

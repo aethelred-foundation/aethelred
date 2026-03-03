@@ -221,10 +221,10 @@ type ModuleMetrics struct {
 	CollusionDetected        AtomicCounter
 
 	// --- Economics ---
-	FeesCollected    AtomicCounter // cumulative uaeth collected
-	FeesDistributed  AtomicCounter // cumulative uaeth distributed
-	TokensBurned     AtomicCounter // cumulative uaeth burned
-	RewardsDistributed AtomicCounter // cumulative uaeth to validators
+	FeesCollected    AtomicCounter // cumulative uaethel collected
+	FeesDistributed  AtomicCounter // cumulative uaethel distributed
+	TokensBurned     AtomicCounter // cumulative uaethel burned
+	RewardsDistributed AtomicCounter // cumulative uaethel to validators
 
 	// --- Timing ---
 	JobCompletionTime    *TimingHistogram // time from submission to completion
@@ -342,10 +342,10 @@ type MetricsSnapshot struct {
 	CollusionDetected        int64 `json:"collusion_detected"`
 
 	// Economics
-	FeesCollectedUaeth    int64 `json:"fees_collected_uaeth"`
-	FeesDistributedUaeth  int64 `json:"fees_distributed_uaeth"`
-	TokensBurnedUaeth     int64 `json:"tokens_burned_uaeth"`
-	RewardsDistributedUaeth int64 `json:"rewards_distributed_uaeth"`
+	FeesCollectedUaethel    int64 `json:"fees_collected_uaethel"`
+	FeesDistributedUaethel  int64 `json:"fees_distributed_uaethel"`
+	TokensBurnedUaethel     int64 `json:"tokens_burned_uaethel"`
+	RewardsDistributedUaethel int64 `json:"rewards_distributed_uaethel"`
 
 	// Validators
 	ActiveValidators int64 `json:"active_validators"`
@@ -418,10 +418,10 @@ func (m *ModuleMetrics) Snapshot(blockHeight int64, blockTime time.Time) Metrics
 		DoubleSignsDetected:      m.DoubleSignsDetected.Get(),
 		CollusionDetected:        m.CollusionDetected.Get(),
 
-		FeesCollectedUaeth:      m.FeesCollected.Get(),
-		FeesDistributedUaeth:    m.FeesDistributed.Get(),
-		TokensBurnedUaeth:       m.TokensBurned.Get(),
-		RewardsDistributedUaeth: m.RewardsDistributed.Get(),
+		FeesCollectedUaethel:      m.FeesCollected.Get(),
+		FeesDistributedUaethel:    m.FeesDistributed.Get(),
+		TokensBurnedUaethel:       m.TokensBurned.Get(),
+		RewardsDistributedUaethel: m.RewardsDistributed.Get(),
 
 		ActiveValidators: m.ActiveValidators.Get(),
 		TotalValidators:  m.TotalValidators.Get(),
@@ -456,8 +456,8 @@ func (m *ModuleMetrics) EmitMetricsEvent(ctx sdk.Context) {
 			sdk.NewAttribute("consensus_reached", strconv.FormatInt(snap.ConsensusReached, 10)),
 			sdk.NewAttribute("evidence_records", strconv.FormatInt(snap.EvidenceRecordsCreated, 10)),
 			sdk.NewAttribute("slashing_applied", strconv.FormatInt(snap.SlashingPenaltiesApplied, 10)),
-			sdk.NewAttribute("fees_collected_uaeth", strconv.FormatInt(snap.FeesCollectedUaeth, 10)),
-			sdk.NewAttribute("tokens_burned_uaeth", strconv.FormatInt(snap.TokensBurnedUaeth, 10)),
+			sdk.NewAttribute("fees_collected_uaethel", strconv.FormatInt(snap.FeesCollectedUaethel, 10)),
+			sdk.NewAttribute("tokens_burned_uaethel", strconv.FormatInt(snap.TokensBurnedUaethel, 10)),
 			sdk.NewAttribute("active_validators", strconv.FormatInt(snap.ActiveValidators, 10)),
 		),
 	)

@@ -61,7 +61,7 @@ func setupKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		"aeth1gov",
+		"aethel1gov",
 	)
 
 	return k, ctx

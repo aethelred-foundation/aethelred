@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import { ComplianceLinter } from '../diagnostics/linter';
-import { aethCli } from '../services/cli';
+import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
 import { ExtensionStatus, Jurisdiction, ComplianceSummary } from '../types';
@@ -85,8 +85,8 @@ export class StatusBarManager {
         this.log.info('Initializing status bar...');
 
         // Check CLI availability
-        this.status.cliAvailable = aethCli.isAvailable();
-        this.status.cliVersion = aethCli.getCachedVersion() ?? undefined;
+        this.status.cliAvailable = aethelCli.isAvailable();
+        this.status.cliVersion = aethelCli.getCachedVersion() ?? undefined;
 
         // Get jurisdiction
         this.status.jurisdiction = configManager.getJurisdiction();

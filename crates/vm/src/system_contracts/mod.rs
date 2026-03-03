@@ -573,7 +573,7 @@ impl GenesisConfig {
                 block_time_ms: 6000,
                 epoch_length: 43200,
                 max_block_gas: 30_000_000,
-                min_tx_fee: 1_000_000_000_000, // 0.001 AETH
+                min_tx_fee: 1_000_000_000_000, // 0.001 AETHEL
             },
         }
     }

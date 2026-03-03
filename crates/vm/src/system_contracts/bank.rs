@@ -32,7 +32,7 @@ pub struct BankConfig {
 impl Default for BankConfig {
     fn default() -> Self {
         Self {
-            symbol: "AETH".into(),
+            symbol: "AETHEL".into(),
             name: "Aethelred Token".into(),
             decimals: 18,
             initial_supply: 1_000_000_000_000_000_000_000_000_000, // 1 billion

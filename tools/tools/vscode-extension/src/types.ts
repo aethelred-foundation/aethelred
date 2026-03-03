@@ -354,8 +354,8 @@ export interface HardwareInfo {
  * Cost estimate for executing on hardware.
  */
 export interface CostEstimate {
-    /** Estimated cost in AETH tokens */
-    costAeth: number;
+    /** Estimated cost in AETHEL tokens */
+    costAethel: number;
 
     /** Power consumption in watts */
     powerWatts: number;

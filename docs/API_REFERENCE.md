@@ -66,7 +66,7 @@ GET /v1/jobs/{job_id}
 ```json
 {
   "id": "job_abc123def456",
-  "creator": "aeth1...",
+  "creator": "aethel1...",
   "model_hash": "base64...",
   "input_hash": "base64...",
   "output_hash": "base64...",
@@ -77,7 +77,7 @@ GET /v1/jobs/{job_id}
   "timeout_blocks": 100,
   "created_at": "2024-01-15T10:30:00Z",
   "completed_at": "2024-01-15T10:30:45Z",
-  "validator_address": "aethvaloper1...",
+  "validator_address": "aethelvaloper1...",
   "metadata": {}
 }
 ```
@@ -85,7 +85,7 @@ GET /v1/jobs/{job_id}
 ### List Jobs
 
 ```http
-GET /v1/jobs?status=pending&creator=aeth1...&limit=20&offset=0&sort=created_at:desc
+GET /v1/jobs?status=pending&creator=aethel1...&limit=20&offset=0&sort=created_at:desc
 ```
 
 **Query Parameters:**
@@ -118,7 +118,7 @@ DELETE /v1/jobs/{job_id}
 ```json
 {
   "tx_hash": "0x...",
-  "refunded_amount": "1000000uaeth"
+  "refunded_amount": "1000000uaethel"
 }
 ```
 
@@ -187,10 +187,10 @@ GET /v1/seals/{seal_id}
   "output_commitment": "base64...",
   "model_commitment": "base64...",
   "status": "SEAL_STATUS_ACTIVE",
-  "requester": "aeth1...",
+  "requester": "aethel1...",
   "validators": [
     {
-      "validator_address": "aethvaloper1...",
+      "validator_address": "aethelvaloper1...",
       "signature": "base64...",
       "timestamp": "2024-01-15T10:30:45Z",
       "voting_power": 100000
@@ -218,7 +218,7 @@ GET /v1/seals/{seal_id}
 ### List Seals
 
 ```http
-GET /v1/seals?status=active&requester=aeth1...&limit=20
+GET /v1/seals?status=active&requester=aethel1...&limit=20
 ```
 
 ### Verify Seal
@@ -297,7 +297,7 @@ GET /v1/models/{model_hash}
 {
   "model_hash": "base64...",
   "name": "Credit Scorer v1",
-  "owner": "aeth1...",
+  "owner": "aethel1...",
   "architecture": "XGBoost",
   "version": "1.0.0",
   "category": "UTILITY_CATEGORY_FINANCIAL",
@@ -331,7 +331,7 @@ GET /v1/validators?limit=50&sort=voting_power:desc
 {
   "validators": [
     {
-      "address": "aethvaloper1...",
+      "address": "aethelvaloper1...",
       "moniker": "Validator One",
       "voting_power": 500000,
       "commission": 0.05,
@@ -340,7 +340,7 @@ GET /v1/validators?limit=50&sort=voting_power:desc
       "average_latency_ms": 150,
       "uptime_percentage": 99.9,
       "reputation_score": 9.5,
-      "total_rewards": "1000000000uaeth",
+      "total_rewards": "1000000000uaethel",
       "slashing_events": 0,
       "hardware_capabilities": {
         "tee_platforms": ["TEE_PLATFORM_AWS_NITRO", "TEE_PLATFORM_INTEL_SGX"],
@@ -481,7 +481,7 @@ ws.send(JSON.stringify({
   channel: 'jobs',
   filters: {
     status: ['pending', 'computing'],
-    creator: 'aeth1...'
+    creator: 'aethel1...'
   }
 }));
 

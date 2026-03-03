@@ -16,9 +16,9 @@ func ensureBech32() {
 	bech32Once.Do(func() {
 		defer func() { _ = recover() }()
 		cfg := sdk.GetConfig()
-		cfg.SetBech32PrefixForAccount("aeth", "aethpub")
-		cfg.SetBech32PrefixForValidator("aethvaloper", "aethvaloperpub")
-		cfg.SetBech32PrefixForConsensusNode("aethvalcons", "aethvalconspub")
+		cfg.SetBech32PrefixForAccount("aethel", "aethelpub")
+		cfg.SetBech32PrefixForValidator("aethelvaloper", "aethelvaloperpub")
+		cfg.SetBech32PrefixForConsensusNode("aethelvalcons", "aethelvalconspub")
 		cfg.Seal()
 	})
 }

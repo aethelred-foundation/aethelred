@@ -1,7 +1,7 @@
 /**
  * Aethelred VS Code Extension - CLI Service
  *
- * Enterprise-grade wrapper for the 'aeth' Rust CLI binary.
+ * Enterprise-grade wrapper for the 'aethel' Rust CLI binary.
  * Provides type-safe access to all CLI commands with proper
  * error handling, caching, and cancellation support.
  */
@@ -56,10 +56,10 @@ interface CacheEntry<T> {
 }
 
 /**
- * Enterprise-grade CLI service for interacting with the aeth binary.
+ * Enterprise-grade CLI service for interacting with the aethel binary.
  */
-export class AethCli {
-    private static instance: AethCli | null = null;
+export class AethelCli {
+    private static instance: AethelCli | null = null;
 
     private readonly log: CategoryLogger;
     private cliPath: string | null = null;
@@ -75,11 +75,11 @@ export class AethCli {
     /**
      * Get the singleton instance.
      */
-    static getInstance(): AethCli {
-        if (!AethCli.instance) {
-            AethCli.instance = new AethCli();
+    static getInstance(): AethelCli {
+        if (!AethelCli.instance) {
+            AethelCli.instance = new AethelCli();
         }
-        return AethCli.instance;
+        return AethelCli.instance;
     }
 
     // =========================================================================
@@ -124,19 +124,19 @@ export class AethCli {
         // Check common locations
         const searchPaths = [
             // In project
-            path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '', 'target', 'release', 'aeth'),
-            path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '', 'target', 'debug', 'aeth'),
+            path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '', 'target', 'release', 'aethel'),
+            path.join(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '', 'target', 'debug', 'aethel'),
             // In user's cargo bin
-            path.join(process.env.HOME ?? '', '.cargo', 'bin', 'aeth'),
+            path.join(process.env.HOME ?? '', '.cargo', 'bin', 'aethel'),
             // In system PATH
-            'aeth',
+            'aethel',
         ];
 
         for (const searchPath of searchPaths) {
             try {
-                if (searchPath === 'aeth') {
+                if (searchPath === 'aethel') {
                     // Check if in PATH
-                    const { stdout } = await execAsync('which aeth 2>/dev/null || where aeth 2>nul');
+                    const { stdout } = await execAsync('which aethel 2>/dev/null || where aethel 2>nul');
                     if (stdout.trim()) {
                         return stdout.trim().split('\n')[0];
                     }
@@ -164,7 +164,7 @@ export class AethCli {
         }
 
         // Parse from stdout
-        const match = result.stdout.match(/aeth\s+(\d+\.\d+\.\d+)/);
+        const match = result.stdout.match(/aethel\s+(\d+\.\d+\.\d+)/);
         return match?.[1] ?? 'unknown';
     }
 
@@ -721,9 +721,9 @@ export class AethCli {
     dispose(): void {
         this.cancelAll();
         this.cache.clear();
-        AethCli.instance = null;
+        AethelCli.instance = null;
     }
 }
 
 // Export singleton accessor
-export const aethCli = AethCli.getInstance();
+export const aethelCli = AethelCli.getInstance();

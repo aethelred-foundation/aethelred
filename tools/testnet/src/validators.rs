@@ -163,8 +163,8 @@ impl Default for ValidatorsConfig {
         ValidatorsConfig {
             max_validators: 100,
             max_validators_per_user: 5,
-            min_stake: "1000000000000000000000".to_string(), // 1000 tAETH
-            max_stake: "10000000000000000000000000".to_string(), // 10M tAETH
+            min_stake: "1000000000000000000000".to_string(), // 1000 tAETHEL
+            max_stake: "10000000000000000000000000".to_string(), // 10M tAETHEL
             default_commission: 0.05,
             epoch_length_blocks: 100,
             unbonding_period_seconds: 86400, // 1 day
@@ -300,7 +300,7 @@ impl SandboxValidators {
                 name: name.to_string(),
                 validator_type: vtype,
                 status: ValidatorStatus::Active,
-                stake: "10000000000000000000000".to_string(), // 10000 tAETH
+                stake: "10000000000000000000000".to_string(), // 10000 tAETHEL
                 commission_rate: 0.05,
                 created_at: Self::current_timestamp(),
                 uptime_percentage: 99.9,

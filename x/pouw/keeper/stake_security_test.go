@@ -12,7 +12,7 @@ import (
 )
 
 func TestRegisterValidatorCapability_RejectsBelowMinimumBondedStake(t *testing.T) {
-	minStake := keeper.MinimumValidatorStakeUAETH()
+	minStake := keeper.MinimumValidatorStakeUAETHEL()
 	validator := stakingtypes.Validator{
 		Status: stakingtypes.Bonded,
 		Tokens: minStake.Sub(sdkmath.NewInt(1)),
@@ -32,7 +32,7 @@ func TestRegisterValidatorCapability_RejectsBelowMinimumBondedStake(t *testing.T
 }
 
 func TestRegisterValidatorCapability_AllowsAtOrAboveMinimumBondedStake(t *testing.T) {
-	minStake := keeper.MinimumValidatorStakeUAETH()
+	minStake := keeper.MinimumValidatorStakeUAETHEL()
 	validator := stakingtypes.Validator{
 		Status: stakingtypes.Bonded,
 		Tokens: minStake,

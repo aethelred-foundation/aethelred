@@ -244,7 +244,7 @@ No seal is issued for:
 If a validator is discovered to have submitted forged attestations or
 proofs:
 
-1. **Immediate**: Slash the validator's stake by `SlashingPenalty` (default 10000 uaeth).
+1. **Immediate**: Slash the validator's stake by `SlashingPenalty` (default 10000 uaethel).
 2. **Block-level**: Invalid vote extensions are rejected at `VerifyVoteExtension`, preventing the data from reaching consensus.
 3. **Network-level**: Validators with consistently failed verifications have their reputation score degraded, reducing job assignment priority.
 

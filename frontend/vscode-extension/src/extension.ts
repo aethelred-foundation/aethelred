@@ -163,7 +163,7 @@ export function activate(context: vscode.ExtensionContext) {
                         ['inputCommitment', '"0x..."'],
                         ['outputCommitment', '"0x..."'],
                         ['status', '"SEAL_STATUS_ACTIVE"'],
-                        ['requester', '"aeth1..."'],
+                        ['requester', '"aethel1..."'],
                         ['createdAt', `"${new Date().toISOString()}"`],
                         ['validators', '[]'],
                         ['teeAttestation', '{}'],

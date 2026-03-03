@@ -373,7 +373,7 @@ func (ec *EvidenceCollector) ApplySlashingPenalties(
 	basePenalty, parseErr := sdk.ParseCoinNormalized(params.SlashingPenalty)
 	if parseErr != nil {
 		// If the penalty string is unparseable, use a sensible default.
-		basePenalty = sdk.NewInt64Coin("uaeth", 10000)
+		basePenalty = sdk.NewInt64Coin("uaethel", 10000)
 		ec.logger.Warn("Failed to parse slashing penalty from params, using default",
 			"error", parseErr,
 			"default", basePenalty.String(),

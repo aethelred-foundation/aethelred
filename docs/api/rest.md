@@ -126,7 +126,7 @@ GET /v1/compute/jobs/{job_id}
   "started_at": "2026-02-08T12:00:01Z",
   "completed_at": "2026-02-08T12:00:03Z",
   "execution_time_ms": 2150,
-  "seal_id": "aeth-seal-0xabcd1234...",
+  "seal_id": "aethel-seal-0xabcd1234...",
   "encrypted_result": "base64-encoded-encrypted-result",
   "attestation": {
     "type": "INTEL_SGX_DCAP",
@@ -187,7 +187,7 @@ GET /v1/compute/jobs?account={address}&status={status}&limit={limit}&offset={off
       "status": "COMPLETED",
       "model_id": "credit-score-v3",
       "submitted_at": "2026-02-08T12:00:00Z",
-      "seal_id": "aeth-seal-0xabcd1234..."
+      "seal_id": "aethel-seal-0xabcd1234..."
     }
   ],
   "pagination": {
@@ -255,7 +255,7 @@ GET /v1/seals/{seal_id}
 
 ```json
 {
-  "seal_id": "aeth-seal-0xabcd1234567890ef",
+  "seal_id": "aethel-seal-0xabcd1234567890ef",
   "version": 1,
   "created_at": "2026-02-08T12:00:03Z",
   "block_height": 1234567,
@@ -324,7 +324,7 @@ POST /v1/seals/{seal_id}/verify
 
 ```json
 {
-  "seal_id": "aeth-seal-0xabcd1234567890ef",
+  "seal_id": "aethel-seal-0xabcd1234567890ef",
   "verification_result": {
     "overall_valid": true,
     "checks": {
@@ -375,7 +375,7 @@ GET /v1/seals?model_id={model_id}&validator={address}&jurisdiction={jurisdiction
 {
   "seals": [
     {
-      "seal_id": "aeth-seal-0xabcd1234...",
+      "seal_id": "aethel-seal-0xabcd1234...",
       "created_at": "2026-02-08T12:00:03Z",
       "model_id": "credit-score-v3",
       "validator": "aethelredval1abc...",
@@ -412,7 +412,7 @@ GET /v1/seals/{seal_id}/audit?format={format}
 ```json
 {
   "audit_report": {
-    "seal_id": "aeth-seal-0xabcd1234...",
+    "seal_id": "aethel-seal-0xabcd1234...",
     "generated_at": "2026-02-08T12:00:15Z",
     "report_version": "2.0",
 

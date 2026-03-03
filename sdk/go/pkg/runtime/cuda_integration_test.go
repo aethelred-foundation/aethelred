@@ -6,8 +6,8 @@ import (
 )
 
 func TestGPUHardwareProbeIntegration(t *testing.T) {
-	if os.Getenv("AETH_SDK_RUN_GPU_INTEGRATION") != "1" {
-		t.Skip("set AETH_SDK_RUN_GPU_INTEGRATION=1 to run GPU hardware integration checks")
+	if os.Getenv("AETHEL_SDK_RUN_GPU_INTEGRATION") != "1" {
+		t.Skip("set AETHEL_SDK_RUN_GPU_INTEGRATION=1 to run GPU hardware integration checks")
 	}
 	if !HasPhysicalGPU() {
 		t.Skip("no GPU hardware detected on host")
@@ -22,7 +22,7 @@ func TestGPUHardwareProbeIntegration(t *testing.T) {
 	}
 
 	// Enforce native backend only when explicitly required by the operator.
-	if os.Getenv("AETH_SDK_REQUIRE_NATIVE_GPU") == "1" && !device.NativeBackend {
+	if os.Getenv("AETHEL_SDK_REQUIRE_NATIVE_GPU") == "1" && !device.NativeBackend {
 		t.Fatalf("native GPU backend required but not enabled")
 	}
 	if !device.NativeBackend {

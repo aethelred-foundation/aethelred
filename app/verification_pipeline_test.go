@@ -199,7 +199,7 @@ func TestOrchestratorBridge_MetadataPopulated(t *testing.T) {
 		ModelHash:    make([]byte, 32),
 		InputHash:    make([]byte, 32),
 		ProofType:    pouwtypes.ProofTypeTEE,
-		RequestedBy:  "aeth1abc123",
+		RequestedBy:  "aethel1abc123",
 		Purpose:      "credit_scoring",
 		InputDataUri: "ipfs://Qm...",
 	}

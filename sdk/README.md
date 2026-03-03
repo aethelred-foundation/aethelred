@@ -86,7 +86,7 @@ Notes:
 
 | Tool | Version | Notes |
 |---|---:|---|
-| [`aeth`](./cli/aeth) | 2.0.0 | Developer CLI / local testnet / diagnostics |
+| [`aethel`](./cli/aethel) | 2.0.0 | Developer CLI / local testnet / diagnostics |
 
 ## Per-SDK READMEs
 

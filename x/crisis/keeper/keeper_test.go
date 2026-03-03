@@ -44,7 +44,7 @@ func setupKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		"aeth1gov",
+		"aethel1gov",
 	)
 
 	return k, ctx
@@ -67,7 +67,7 @@ func baseCouncil() types.SecurityCouncilConfig {
 
 func TestMsgHaltNetwork_ValidFiveOfSeven(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aeth1gov", baseCouncil()))
+	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aethel1gov", baseCouncil()))
 
 	err := k.MsgHaltNetwork(ctx, types.MsgHaltNetwork{
 		Requester: "validator-1",
@@ -92,7 +92,7 @@ func TestMsgHaltNetwork_ValidFiveOfSeven(t *testing.T) {
 
 func TestMsgHaltNetwork_RejectsInsufficientSignatures(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aeth1gov", baseCouncil()))
+	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aethel1gov", baseCouncil()))
 
 	err := k.MsgHaltNetwork(ctx, types.MsgHaltNetwork{
 		Requester: "validator-1",
@@ -110,7 +110,7 @@ func TestMsgHaltNetwork_RejectsInsufficientSignatures(t *testing.T) {
 
 func TestMsgHaltNetwork_RejectsNonMemberSigner(t *testing.T) {
 	k, ctx := setupKeeper(t)
-	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aeth1gov", baseCouncil()))
+	require.NoError(t, k.SetSecurityCouncilConfig(ctx, "aethel1gov", baseCouncil()))
 
 	err := k.MsgHaltNetwork(ctx, types.MsgHaltNetwork{
 		Requester: "validator-1",

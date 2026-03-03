@@ -15,14 +15,14 @@
  * - Network connectivity and seal management
  *
  * Architecture:
- * The extension uses the 'aeth' CLI as its brain, spawning it in the
+ * The extension uses the 'aethel' CLI as its brain, spawning it in the
  * background for all compliance checks and operations.
  */
 
 import * as vscode from 'vscode';
 
 // Services
-import { aethCli, AethCli } from './services/cli';
+import { aethelCli, AethelCli } from './services/cli';
 
 // Diagnostics
 import { ComplianceLinter } from './diagnostics/linter';
@@ -67,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     try {
         // Initialize CLI
-        const cliAvailable = await aethCli.initialize();
+        const cliAvailable = await aethelCli.initialize();
         if (!cliAvailable) {
             logger.warn('Aethelred CLI not found. Some features will be limited.');
             vscode.window.showWarningMessage(
@@ -86,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
         // Initialize status bar
         statusBar = new StatusBarManager(linter);
-        statusBar.setCliAvailable(cliAvailable, aethCli.getCachedVersion() ?? undefined);
+        statusBar.setCliAvailable(cliAvailable, aethelCli.getCachedVersion() ?? undefined);
         context.subscriptions.push(statusBar);
 
         // Register providers
@@ -122,10 +122,10 @@ export function deactivate(): void {
     logger.info('Deactivating Aethelred Sovereign Copilot...');
 
     // Cancel any running CLI commands
-    aethCli.cancelAll();
+    aethelCli.cancelAll();
 
     // Dispose components
-    aethCli.dispose();
+    aethelCli.dispose();
     Logger.getInstance().dispose();
     ConfigManager.getInstance().dispose();
 
@@ -372,7 +372,7 @@ async function simulateHardware(): Promise<void> {
             cancellable: false,
         },
         async () => {
-            const result = await aethCli.startSimulator(hardware.value as any);
+            const result = await aethelCli.startSimulator(hardware.value as any);
 
             if (result.success && result.data) {
                 statusBar.setTeeSimulatorRunning(true);
@@ -483,7 +483,7 @@ async function initProject(): Promise<void> {
             title: 'Initializing Aethelred project...',
         },
         async () => {
-            const result = await aethCli.initProject(
+            const result = await aethelCli.initProject(
                 template.value,
                 jurisdiction.value as Jurisdiction,
                 { cwd: folder.uri.fsPath }
@@ -529,7 +529,7 @@ async function connectToNetwork(): Promise<void> {
             title: `Connecting to Aethelred ${chain}...`,
         },
         async () => {
-            const result = await aethCli.getNetworkStatus();
+            const result = await aethelCli.getNetworkStatus();
 
             if (result.success && result.data) {
                 statusBar.setNetworkConnected(true);

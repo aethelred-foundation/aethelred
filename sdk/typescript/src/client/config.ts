@@ -17,7 +17,7 @@ export interface AethelredConfig {
   /** Chain ID */
   chainId: string;
 
-  /** Gas price in uaeth */
+  /** Gas price in uaethel */
   gasPrice?: string;
 
   /** Default gas limit */
@@ -46,21 +46,21 @@ export const Networks: Record<string, NetworkConfig> = {
     rpcUrl: 'https://rpc.aethelred.io',
     restUrl: 'https://api.aethelred.io',
     chainId: 'aethelred-1',
-    gasPrice: '0.025uaeth',
+    gasPrice: '0.025uaethel',
     explorer: 'https://explorer.aethelred.io',
   },
   testnet: {
     rpcUrl: 'https://testnet-rpc.aethelred.io',
     restUrl: 'https://testnet-api.aethelred.io',
     chainId: 'aethelred-testnet-1',
-    gasPrice: '0.001uaeth',
+    gasPrice: '0.001uaethel',
     explorer: 'https://testnet-explorer.aethelred.io',
   },
   local: {
     rpcUrl: 'http://127.0.0.1:26657',
     restUrl: 'http://127.0.0.1:1317',
     chainId: 'aethelred-local',
-    gasPrice: '0.001uaeth',
+    gasPrice: '0.001uaethel',
   },
 };
 
@@ -71,7 +71,7 @@ export const Networks: Record<string, NetworkConfig> = {
  * Alias for DefaultConfig
  */
 export const DEFAULT_CONFIG: Partial<AethelredConfig> = {
-  gasPrice: '0.025uaeth',
+  gasPrice: '0.025uaethel',
   defaultGasLimit: 200000,
   timeout: 30000,
   debug: false,
@@ -82,7 +82,7 @@ export const DEFAULT_CONFIG: Partial<AethelredConfig> = {
  * @deprecated Use DEFAULT_CONFIG instead
  */
 export const DefaultConfig: Partial<AethelredConfig> = {
-  gasPrice: '0.025uaeth',
+  gasPrice: '0.025uaethel',
   defaultGasLimit: 200000,
   timeout: 30000,
   debug: false,

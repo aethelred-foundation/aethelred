@@ -186,7 +186,7 @@ pub struct CommonsConfig {
 impl Default for CommonsConfig {
     fn default() -> Self {
         CommonsConfig {
-            proposal_threshold: 10_000 * 10u128.pow(18), // 10,000 AETH
+            proposal_threshold: 10_000 * 10u128.pow(18), // 10,000 AETHEL
             quorum_percentage: 0.04, // 4% of total supply
             voting_period_blocks: 50_400, // ~7 days at 12s blocks
             timelock_blocks: 14_400, // ~2 days
@@ -550,7 +550,7 @@ impl Default for SenateConfig {
             security_threshold: 0.67, // Supermajority for security
             member_addition_threshold: 0.67, // Supermajority to add members
             max_term_length: 2 * 365 * 24 * 3600, // 2 years
-            min_stake: 100_000 * 10u128.pow(18), // 100,000 AETH
+            min_stake: 100_000 * 10u128.pow(18), // 100,000 AETHEL
         }
     }
 }
@@ -883,7 +883,7 @@ impl BicameralGovernance {
 ║  │                                                                          │ ║
 ║  │  HOUSE OF TOKENS (The Commons)                                          │ ║
 ║  │  ┌─────────────────────────────────────────────────────────────────┐    │ ║
-║  │  │  Who: All AETH token holders                                    │    │ ║
+║  │  │  Who: All AETHEL token holders                                    │    │ ║
 ║  │  │  Power: Vote on economic parameters                             │    │ ║
 ║  │  │  • Fee rates                                                    │    │ ║
 ║  │  │  • Burn parameters                                              │    │ ║

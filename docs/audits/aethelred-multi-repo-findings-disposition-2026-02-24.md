@@ -1,9 +1,9 @@
-# Aethelred Multi-Repo Findings Disposition (AETH-MR-001..010)
+# Aethelred Multi-Repo Findings Disposition (AETHEL-MR-001..010)
 
 Date: 2026-02-24
 Purpose: One-by-one disposition for the strict multi-repo snapshot findings, distinguishing code/doc fixes from governance/process actions.
 
-## AETH-MR-001 — Duplicate chain repos with same Go module path
+## AETHEL-MR-001 — Duplicate chain repos with same Go module path
 Status: Partially Remediated (Authority registry/manifests/docs pushed to both repos; workflow push/enablement + Foundation ratification still pending)
 Severity: Critical
 
@@ -34,8 +34,8 @@ What was implemented now:
    - `/tmp/aethelred-core-audit/docs/governance/core-disposition-ratification.md`
    - `/tmp/aethelred-core-audit/.github/workflows/mirror-drift-check.yml`
 9. Workflow-free authority/disposition branches were pushed to both public repos (docs/manifests/security scope only):
-   - `AethelredFoundation/aethelred-cosmos-node`: `codex/repo-authority-aeth-mr-001-noworkflows-20260224`
-   - `AethelredFoundation/aethelred-core`: `codex/repo-authority-aeth-mr-001-noworkflows-20260224`
+   - `AethelredFoundation/aethelred-cosmos-node`: `codex/repo-authority-aethel-mr-001-noworkflows-20260224`
+   - `AethelredFoundation/aethelred-core`: `codex/repo-authority-aethel-mr-001-noworkflows-20260224`
 
 Remaining required action:
 1. Ratify ADR-0001 at Foundation/org level (human sign-off; cannot be automated from this workspace).
@@ -46,7 +46,7 @@ Remaining required action:
 What can be automated later:
 - Cross-repo tag/version registry check that blocks duplicate semantic versions across both repos.
 
-## AETH-MR-002 — `aethelred-rust-node` conceptual/non-buildable repo
+## AETHEL-MR-002 — `aethelred-rust-node` conceptual/non-buildable repo
 Status: Remediated Locally (crate baseline created; build/test/CI enabled in local clone)
 Severity: Critical
 
@@ -75,7 +75,7 @@ Remaining action:
 2. Add `clippy` and coverage gates after baseline warning cleanup.
 3. Define runtime/networking scope if this repo is intended to evolve into a validator node implementation (vs protocol simulation crate).
 
-## AETH-MR-003 — Repo-level audit evidence fragmented outside public repos
+## AETHEL-MR-003 — Repo-level audit evidence fragmented outside public repos
 Status: Partially Remediated (baseline is now registry-backed, measurable, and committed across all 9 local repo clones; public pushes of workflow files remain blocked by PAT scope)
 Severity: Critical
 
@@ -94,7 +94,7 @@ What was implemented now:
    - `docs/governance/repo-auditability-registry.json`
 5. Auditability baseline validator + rollout matrix generator added:
    - `scripts/validate-repo-auditability.py`
-   - `docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md`
+   - `docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md`
 6. Umbrella CI guard added to keep the registry/matrix in sync:
    - `.github/workflows/repo-auditability-guard.yml`
 
@@ -107,7 +107,7 @@ Current measured rollout status (from local clones, generated matrix):
 - All 9 repos now show baseline `4/4` present and `4/4` tracked locally.
 - `aethelred-core` and `aethelred-cosmos-node` baseline + authority workflows are on workflow-bearing local branches prepared earlier.
 - The other 7 repos now have dedicated baseline rollout branches prepared locally:
-  - `codex/aeth-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
+  - `codex/aethel-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
 - Advanced workflow coverage remains uneven by repo (tracked in the rollout matrix) and is now explicitly measurable.
 
 Remaining action (per repo):
@@ -118,7 +118,7 @@ Remaining action (per repo):
 Blocker noted:
 - PAT used for pushes lacked `workflow` scope for `.github/workflows/*` updates.
 
-## AETH-MR-004 — Absolute local workstation paths in public docs
+## AETHEL-MR-004 — Absolute local workstation paths in public docs
 Status: Remediated Locally (needs push to affected repos)
 Severity: High
 
@@ -135,14 +135,14 @@ Representative fixed files:
 - `sdk/README.md`
 - `docs/sdk/official-sdks.md`
 - `docs/sdk/developer-tools.md`
-- `aethelred-developer-tools/cli/aeth/README.md`
+- `aethelred-developer-tools/cli/aethel/README.md`
 - `aethelred-integrations-repo/apps/fastapi-verifier/README.md`
 
 Recommended follow-up:
 1. Add docs hygiene CI (`rg '/Users/'`) to all public repos.
 2. Extend to Windows/macOS local path patterns (`C:\\`, `/home/`, `/var/folders/`).
 
-## AETH-MR-005 — SDKs still source-first / pending public artifact publication
+## AETHEL-MR-005 — SDKs still source-first / pending public artifact publication
 Status: Partially Remediated (machine-checked repo-local provenance controls now in place), Operationally Open (public registry publication + signed releases pending)
 Severity: High (release/provenance)
 
@@ -173,7 +173,7 @@ Required action (one-by-one):
 3. Update docs from “pending” to exact install commands for registry artifacts.
 4. Maintain a public version matrix and release verification guide (guide now exists; keep it synchronized with actual registry release flow).
 
-## AETH-MR-006 — Central security workflow targets stale contract paths (`contracts/ethereum`)
+## AETHEL-MR-006 — Central security workflow targets stale contract paths (`contracts/ethereum`)
 Status: Remediated Locally (workspace root)
 Severity: High
 
@@ -193,7 +193,7 @@ Recommended follow-up:
 1. Add explicit path existence preflight checks in the workflow.
 2. Mirror/push the corrected workflow to the actual repo that owns this CI configuration.
 
-## AETH-MR-007 — Threat models / SBOMs / published security artifacts not visible per repo
+## AETHEL-MR-007 — Threat models / SBOMs / published security artifacts not visible per repo
 Status: Partially Remediated (repo-local security policy/threat-model + SBOM baseline CI added; published artifacts still open)
 Severity: High
 
@@ -211,7 +211,7 @@ Remaining action (per critical repo):
 3. Publish scan outputs or summaries (govulncheck, cargo-audit, Slither, npm audit) with commit/tag linkage.
 4. Replace placeholder/private disclosure text in `SECURITY.md` with an official contact/channel.
 
-## AETH-MR-008 — Dashboard lacks explicit CSP
+## AETHEL-MR-008 — Dashboard lacks explicit CSP
 Status: Partially Remediated Locally
 Severity: Medium
 
@@ -229,7 +229,7 @@ Required follow-up:
 2. Audit script/style injection requirements and third-party scripts.
 3. Consider `report-uri` / `report-to` for CSP telemetry.
 
-## AETH-MR-009 — Uneven test maturity across repos
+## AETHEL-MR-009 — Uneven test maturity across repos
 Status: Partially Remediated (repo-local test/security baseline CI added everywhere; implementation tests still weak in some repos)
 Severity: Medium
 
@@ -246,7 +246,7 @@ Remaining action (repo-specific):
 2. Add coverage gates where applicable (especially `developer-tools`, `integrations`, and future `rust-node` implementation).
 3. If `aethelred-rust-node` remains public, add a build/test crate or keep it explicitly research-only.
 
-## AETH-MR-010 — `nitro-sdk` `full-sdk` warnings not at zero
+## AETHEL-MR-010 — `nitro-sdk` `full-sdk` warnings not at zero
 Status: Remediated Locally (0 warnings)
 Severity: Medium (engineering quality confidence)
 
@@ -266,5 +266,5 @@ Follow-up:
 
 ## Summary by Closure Type
 
-- Remediated locally now: `AETH-MR-004`, `AETH-MR-006`, `AETH-MR-010`
-- Partially remediated locally (needs push/ratification/hardening): `AETH-MR-001`, `AETH-MR-002`, `AETH-MR-003`, `AETH-MR-005`, `AETH-MR-007`, `AETH-MR-008`, `AETH-MR-009`
+- Remediated locally now: `AETHEL-MR-004`, `AETHEL-MR-006`, `AETHEL-MR-010`
+- Partially remediated locally (needs push/ratification/hardening): `AETHEL-MR-001`, `AETHEL-MR-002`, `AETHEL-MR-003`, `AETHEL-MR-005`, `AETHEL-MR-007`, `AETHEL-MR-008`, `AETHEL-MR-009`

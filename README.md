@@ -114,7 +114,7 @@ make local-testnet-doctor
 
 Submit an AI compute job:
 ```bash
-aeth tx pouw submit-job \
+aethel tx pouw submit-job \
   --model-hash <sha256> \
   --input-data ./my_input.json \
   --verification-type hybrid \
@@ -132,7 +132,7 @@ aeth tx pouw submit-job \
 | [aethelred/aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | Python SDK |
 | [aethelred/aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | Go SDK |
 | [aethelred/aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | Rust SDK |
-| [aethelred/aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | `aeth` CLI |
+| [aethelred/aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | `aethel` CLI |
 | [aethelred/vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | VSCode extension |
 | [aethelred/aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | Documentation site |
 | [aethelred/AIPs](https://github.com/AethelredFoundation/AIPs) | Aethelred Improvement Proposals |

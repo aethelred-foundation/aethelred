@@ -520,7 +520,7 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 			if rewardErr == nil && verificationReward.IsPositive() && !k.hasMinimumValidatorStake(ctx, result.ValidatorAddress) {
 				sdkCtx.Logger().Warn("Verification reward withheld: validator below minimum bonded stake",
 					"validator", result.ValidatorAddress,
-					"required_uaeth", MinimumValidatorStakeUAETH().String(),
+					"required_uaethel", MinimumValidatorStakeUAETHEL().String(),
 				)
 			}
 		} else {
@@ -703,9 +703,9 @@ func (k Keeper) RegisterValidatorCapability(ctx context.Context, cap *types.Vali
 
 	if !k.hasMinimumValidatorStake(ctx, cap.Address) {
 		return fmt.Errorf(
-			"validator %s does not meet minimum bonded stake requirement: need at least %s uaeth",
+			"validator %s does not meet minimum bonded stake requirement: need at least %s uaethel",
 			cap.Address,
-			MinimumValidatorStakeUAETH().String(),
+			MinimumValidatorStakeUAETHEL().String(),
 		)
 	}
 

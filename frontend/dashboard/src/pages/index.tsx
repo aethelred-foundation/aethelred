@@ -184,7 +184,7 @@ export default function Dashboard() {
       window.location.href = `/seals/${searchQuery}`;
     } else if (searchQuery.startsWith('job_')) {
       window.location.href = `/jobs/${searchQuery}`;
-    } else if (searchQuery.startsWith('aeth1')) {
+    } else if (searchQuery.startsWith('aethel1')) {
       window.location.href = `/address/${searchQuery}`;
     } else {
       window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;

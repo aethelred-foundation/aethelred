@@ -95,7 +95,7 @@ func TestTokenomics_ValidateConfig_ZeroBps(t *testing.T) {
 
 func TestTokenomics_Breakdown_DefaultConfig(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 1000)
+	totalFee := sdk.NewInt64Coin("uaethel", 1000)
 	validatorCount := 3
 
 	result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
@@ -127,7 +127,7 @@ func TestTokenomics_Breakdown_DefaultConfig(t *testing.T) {
 
 func TestTokenomics_Breakdown_SingleValidator(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 1000)
+	totalFee := sdk.NewInt64Coin("uaethel", 1000)
 
 	result := keeper.CalculateFeeBreakdown(totalFee, config, 1)
 
@@ -143,7 +143,7 @@ func TestTokenomics_Breakdown_SingleValidator(t *testing.T) {
 
 func TestTokenomics_Breakdown_LargeFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 1000000) // 1 AETH
+	totalFee := sdk.NewInt64Coin("uaethel", 1000000) // 1 AETHEL
 	validatorCount := 5
 
 	result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
@@ -167,7 +167,7 @@ func TestTokenomics_Breakdown_LargeFee(t *testing.T) {
 
 func TestTokenomics_Breakdown_SmallFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 10)
+	totalFee := sdk.NewInt64Coin("uaethel", 10)
 	validatorCount := 3
 
 	result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
@@ -187,9 +187,9 @@ func TestTokenomics_Breakdown_SmallFee(t *testing.T) {
 		"DustToTreasury must be >= 0")
 }
 
-func TestTokenomics_Breakdown_OneUaethFee(t *testing.T) {
+func TestTokenomics_Breakdown_OneUaethelFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 1)
+	totalFee := sdk.NewInt64Coin("uaethel", 1)
 	validatorCount := 3
 
 	// Must not panic
@@ -197,32 +197,32 @@ func TestTokenomics_Breakdown_OneUaethFee(t *testing.T) {
 
 	// All amounts must be non-negative
 	require.True(t, result.ValidatorRewards.Amount.GTE(sdkmath.ZeroInt()),
-		"ValidatorRewards must be >= 0 for 1uaeth fee")
+		"ValidatorRewards must be >= 0 for 1uaethel fee")
 	require.True(t, result.PerValidatorReward.Amount.GTE(sdkmath.ZeroInt()),
-		"PerValidatorReward must be >= 0 for 1uaeth fee")
+		"PerValidatorReward must be >= 0 for 1uaethel fee")
 	require.True(t, result.TreasuryAmount.Amount.GTE(sdkmath.ZeroInt()),
-		"TreasuryAmount must be >= 0 for 1uaeth fee")
+		"TreasuryAmount must be >= 0 for 1uaethel fee")
 	require.True(t, result.BurnedAmount.Amount.GTE(sdkmath.ZeroInt()),
-		"BurnedAmount must be >= 0 for 1uaeth fee")
+		"BurnedAmount must be >= 0 for 1uaethel fee")
 	require.True(t, result.InsuranceFund.Amount.GTE(sdkmath.ZeroInt()),
-		"InsuranceFund must be >= 0 for 1uaeth fee")
+		"InsuranceFund must be >= 0 for 1uaethel fee")
 	require.True(t, result.DustToTreasury.Amount.GTE(sdkmath.ZeroInt()),
-		"DustToTreasury must be >= 0 for 1uaeth fee")
+		"DustToTreasury must be >= 0 for 1uaethel fee")
 }
 
 func TestTokenomics_Breakdown_ZeroFee(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
-	totalFee := sdk.NewInt64Coin("uaeth", 0)
+	totalFee := sdk.NewInt64Coin("uaethel", 0)
 	validatorCount := 3
 
 	result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
 
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.ValidatorRewards)
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.PerValidatorReward)
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.TreasuryAmount)
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.BurnedAmount)
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.InsuranceFund)
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 0), result.DustToTreasury)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.ValidatorRewards)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.PerValidatorReward)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.TreasuryAmount)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.BurnedAmount)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.InsuranceFund)
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 0), result.DustToTreasury)
 }
 
 func TestTokenomics_Breakdown_ConservationOfValue(t *testing.T) {
@@ -231,7 +231,7 @@ func TestTokenomics_Breakdown_ConservationOfValue(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		amount := rng.Int63n(10000000) + 1 // 1 to 10M
-		totalFee := sdk.NewInt64Coin("uaeth", amount)
+		totalFee := sdk.NewInt64Coin("uaethel", amount)
 		validatorCount := int(rng.Int63n(20)) + 1 // 1 to 20
 
 		result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
@@ -258,7 +258,7 @@ func TestTokenomics_Breakdown_NoNegativeAmounts(t *testing.T) {
 	edgeCases := []int64{0, 1, 2, 3, 5, 7, 9, 10, 99, 100, 999, 1000}
 	for _, amount := range edgeCases {
 		for validatorCount := 1; validatorCount <= 20; validatorCount++ {
-			totalFee := sdk.NewInt64Coin("uaeth", amount)
+			totalFee := sdk.NewInt64Coin("uaethel", amount)
 			result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
 
 			require.True(t, result.ValidatorRewards.Amount.GTE(sdkmath.ZeroInt()),
@@ -282,7 +282,7 @@ func TestTokenomics_Breakdown_NoNegativeAmounts(t *testing.T) {
 // =============================================================================
 
 func TestTokenomics_ReputationReward_MaxReputation(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1000)
 	scaled := keeper.RewardScaleByReputation(baseReward, 100)
 
 	// Reputation 100 => 100% of base reward
@@ -291,25 +291,25 @@ func TestTokenomics_ReputationReward_MaxReputation(t *testing.T) {
 }
 
 func TestTokenomics_ReputationReward_MinReputation(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1000)
 	scaled := keeper.RewardScaleByReputation(baseReward, 0)
 
 	// Reputation 0 => 50% of base reward
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 500), scaled,
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 500), scaled,
 		"min reputation (0) should yield 50%% of base reward")
 }
 
 func TestTokenomics_ReputationReward_MidReputation(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1000)
+	baseReward := sdk.NewInt64Coin("uaethel", 1000)
 	scaled := keeper.RewardScaleByReputation(baseReward, 50)
 
 	// Reputation 50 => 75% of base reward
-	require.Equal(t, sdk.NewInt64Coin("uaeth", 750), scaled,
+	require.Equal(t, sdk.NewInt64Coin("uaethel", 750), scaled,
 		"mid reputation (50) should yield 75%% of base reward")
 }
 
 func TestTokenomics_ReputationReward_Monotonic(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 10000)
+	baseReward := sdk.NewInt64Coin("uaethel", 10000)
 	reputations := []int64{0, 25, 50, 75, 100}
 
 	var previousAmount sdkmath.Int
@@ -325,10 +325,10 @@ func TestTokenomics_ReputationReward_Monotonic(t *testing.T) {
 }
 
 func TestTokenomics_ReputationReward_NeverZero(t *testing.T) {
-	baseReward := sdk.NewInt64Coin("uaeth", 1)
+	baseReward := sdk.NewInt64Coin("uaethel", 1)
 	scaled := keeper.RewardScaleByReputation(baseReward, 0)
 
-	// With 1uaeth base reward and minimum reputation, the result should be >= 0
+	// With 1uaethel base reward and minimum reputation, the result should be >= 0
 	// (the formula gives 50% of 1 = 0 due to integer truncation, but must not go below 0)
 	require.True(t, scaled.Amount.GTE(sdkmath.ZeroInt()),
 		"reputation-scaled reward should never be negative, got %s", scaled.Amount.String())
@@ -458,7 +458,7 @@ func TestTokenomics_MergeParams_MultipleFields(t *testing.T) {
 	current := types.DefaultParams()
 	update := &types.Params{
 		MinValidators: 5,
-		BaseJobFee:    "2000uaeth",
+		BaseJobFee:    "2000uaethel",
 	}
 
 	merged := keeper.MergeParams(current, update)
@@ -466,8 +466,8 @@ func TestTokenomics_MergeParams_MultipleFields(t *testing.T) {
 	// Changed fields
 	require.Equal(t, int64(5), merged.MinValidators,
 		"MinValidators should be updated to 5")
-	require.Equal(t, "2000uaeth", merged.BaseJobFee,
-		"BaseJobFee should be updated to 2000uaeth")
+	require.Equal(t, "2000uaethel", merged.BaseJobFee,
+		"BaseJobFee should be updated to 2000uaethel")
 
 	// Unchanged fields
 	require.Equal(t, current.ConsensusThreshold, merged.ConsensusThreshold)
@@ -501,9 +501,9 @@ func TestTokenomics_MergeParams_AllFieldsUpdated(t *testing.T) {
 		MinValidators:         5,
 		ConsensusThreshold:    80,
 		JobTimeoutBlocks:      200,
-		BaseJobFee:            "5000uaeth",
-		VerificationReward:    "500uaeth",
-		SlashingPenalty:       "50000uaeth",
+		BaseJobFee:            "5000uaethel",
+		VerificationReward:    "500uaethel",
+		SlashingPenalty:       "50000uaethel",
 		MaxJobsPerBlock:       20,
 		AllowedProofTypes:     []string{"tee", "hybrid"},
 		RequireTeeAttestation: false,
@@ -516,9 +516,9 @@ func TestTokenomics_MergeParams_AllFieldsUpdated(t *testing.T) {
 	require.Equal(t, int64(5), merged.MinValidators)
 	require.Equal(t, int64(80), merged.ConsensusThreshold)
 	require.Equal(t, int64(200), merged.JobTimeoutBlocks)
-	require.Equal(t, "5000uaeth", merged.BaseJobFee)
-	require.Equal(t, "500uaeth", merged.VerificationReward)
-	require.Equal(t, "50000uaeth", merged.SlashingPenalty)
+	require.Equal(t, "5000uaethel", merged.BaseJobFee)
+	require.Equal(t, "500uaethel", merged.VerificationReward)
+	require.Equal(t, "50000uaethel", merged.SlashingPenalty)
 	require.Equal(t, int64(20), merged.MaxJobsPerBlock)
 	require.Equal(t, []string{"tee", "hybrid"}, merged.AllowedProofTypes)
 	require.False(t, merged.RequireTeeAttestation)
@@ -554,7 +554,7 @@ func TestTokenomics_DiffParams_MultipleChanges(t *testing.T) {
 	old := types.DefaultParams()
 	new := types.DefaultParams()
 	new.MinValidators = 5
-	new.BaseJobFee = "5000uaeth"
+	new.BaseJobFee = "5000uaethel"
 	new.AllowSimulated = true
 
 	changes := keeper.DiffParams(old, new)
@@ -576,7 +576,7 @@ func TestTokenomics_DiffParams_MultipleChanges(t *testing.T) {
 	feeChange, ok := changedFields["base_job_fee"]
 	require.True(t, ok, "base_job_fee should be in the diff")
 	require.Equal(t, old.BaseJobFee, feeChange.OldValue)
-	require.Equal(t, "5000uaeth", feeChange.NewValue)
+	require.Equal(t, "5000uaethel", feeChange.NewValue)
 
 	simChange, ok := changedFields["allow_simulated"]
 	require.True(t, ok, "allow_simulated should be in the diff")
@@ -596,7 +596,7 @@ func TestTokenomics_Invariant_FeesSumToTotal(t *testing.T) {
 		amount := rng.Int63n(100000000) + 1 // 1 to 100M
 		validatorCount := int(rng.Int63n(20)) + 1
 
-		totalFee := sdk.NewInt64Coin("uaeth", amount)
+		totalFee := sdk.NewInt64Coin("uaethel", amount)
 		result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
 
 		// Total distributed = PerValidatorReward * validatorCount +
@@ -622,7 +622,7 @@ func TestTokenomics_Invariant_ValidatorsAlwaysPaid(t *testing.T) {
 		amount := rng.Int63n(1000000) + 1
 		validatorCount := int(rng.Int63n(20)) + 1
 
-		totalFee := sdk.NewInt64Coin("uaeth", amount)
+		totalFee := sdk.NewInt64Coin("uaethel", amount)
 		result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
 
 		// If fee > 0 and validator count > 0, per-validator reward >= 0
@@ -639,7 +639,7 @@ func TestTokenomics_Invariant_BurnIsDeflationary(t *testing.T) {
 	// For large enough fees (where BurnBps/10000 * fee >= 1), burn must be positive
 	largeFees := []int64{100, 1000, 10000, 100000, 1000000}
 	for _, amount := range largeFees {
-		totalFee := sdk.NewInt64Coin("uaeth", amount)
+		totalFee := sdk.NewInt64Coin("uaethel", amount)
 		result := keeper.CalculateFeeBreakdown(totalFee, config, 3)
 
 		require.True(t, result.BurnedAmount.Amount.GT(sdkmath.ZeroInt()),
@@ -655,7 +655,7 @@ func TestTokenomics_Invariant_DustNeverExceedsBound(t *testing.T) {
 		amount := rng.Int63n(10000000) + 1
 		validatorCount := int(rng.Int63n(20)) + 1
 
-		totalFee := sdk.NewInt64Coin("uaeth", amount)
+		totalFee := sdk.NewInt64Coin("uaethel", amount)
 		result := keeper.CalculateFeeBreakdown(totalFee, config, validatorCount)
 
 		// Dust = total - allocated, where allocated = validatorActual + treasuryRaw + burnAmount + insuranceAmount.

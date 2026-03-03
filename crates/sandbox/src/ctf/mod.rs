@@ -439,7 +439,7 @@ impl CTFEngine {
                         unlocked: false,
                     },
                 ],
-                flag_format: "AETH{...}".to_string(),
+                flag_format: "AETHEL{...}".to_string(),
                 time_limit: Some(3600 * 3), // 3 hours
                 status: ChallengeStatus::Active,
                 author: "Aethelred Security Team".to_string(),
@@ -494,7 +494,7 @@ impl CTFEngine {
                     cost: 100,
                     unlocked: false,
                 }],
-                flag_format: "AETH{...}".to_string(),
+                flag_format: "AETHEL{...}".to_string(),
                 time_limit: Some(3600 * 6), // 6 hours
                 status: ChallengeStatus::Active,
                 author: "Aethelred Security Team".to_string(),
@@ -547,7 +547,7 @@ impl CTFEngine {
                     },
                 ],
                 hints: vec![],
-                flag_format: "AETH{...}".to_string(),
+                flag_format: "AETHEL{...}".to_string(),
                 time_limit: Some(3600 * 2), // 2 hours
                 status: ChallengeStatus::Active,
                 author: "Aethelred Security Team".to_string(),
@@ -604,7 +604,7 @@ impl CTFEngine {
                     cost: 25,
                     unlocked: false,
                 }],
-                flag_format: "AETH{...}".to_string(),
+                flag_format: "AETHEL{...}".to_string(),
                 time_limit: Some(3600), // 1 hour
                 status: ChallengeStatus::Active,
                 author: "Aethelred Security Team".to_string(),
@@ -698,7 +698,7 @@ impl CTFEngine {
             .ok_or(CTFError::ChallengeNotFound)?;
 
         // For demo, accept flags in correct format
-        if flag.starts_with("AETH{") && flag.ends_with("}") {
+        if flag.starts_with("AETHEL{") && flag.ends_with("}") {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -1021,7 +1021,7 @@ mod tests {
             .unwrap();
 
         // Correct flag format
-        let result = engine.submit_flag(&session_id2, "AETH{test_flag}").unwrap();
+        let result = engine.submit_flag(&session_id2, "AETHEL{test_flag}").unwrap();
         assert!(result.correct);
         assert!(result.first_blood);
     }

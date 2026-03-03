@@ -202,8 +202,8 @@ export default function DeveloperToolsDashboard() {
               title="Developer Workflow"
               icon={ShieldCheck}
               items={[
-                `CLI: aeth local up`,
-                `CLI: aeth diagnostics doctor`,
+                `CLI: aethel local up`,
+                `CLI: aethel diagnostics doctor`,
                 `CLI: seal-verifier verify-file ./seal.json`,
                 `VS Code: “Aethelred: Verify Seal In Editor”`,
               ]}

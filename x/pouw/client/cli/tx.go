@@ -25,9 +25,9 @@ const (
 	flagValidator         = "validator"
 
 	stakeDisplayDenom = "aethel"
-	stakeBaseDenom    = "uaeth"
+	stakeBaseDenom    = "uaethel"
 
-	// 1 AETHEL = 1,000,000 uaeth.
+	// 1 AETHEL = 1,000,000 uaethel.
 	stakeBaseUnitsPerAETHEL int64 = 1_000_000
 	// Hard minimum for April 1 testnet Sybil resistance.
 	minStakeAETHEL int64 = 100_000
@@ -98,8 +98,8 @@ func CmdStakeForPoUW() *cobra.Command {
 		Use:   "stake",
 		Short: "Stake for PoUW validator eligibility (minimum 100000aethel)",
 		Long: "Delegate stake to a validator operator address for PoUW participation.\n" +
-			"Accepted denoms: aethel, uaeth.\n" +
-			"Minimum required amount is 100000aethel (100000000000uaeth).",
+			"Accepted denoms: aethel, uaethel.\n" +
+			"Minimum required amount is 100000aethel (100000000000uaethel).",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -140,7 +140,7 @@ func CmdStakeForPoUW() *cobra.Command {
 	cmd.Flags().String(
 		flagStakeAmount,
 		fmt.Sprintf("%d%s", minStakeAETHEL, stakeDisplayDenom),
-		"Stake amount (accepted denoms: aethel, uaeth)",
+		"Stake amount (accepted denoms: aethel, uaethel)",
 	)
 	cmd.Flags().String(
 		flagValidator,
@@ -187,7 +187,7 @@ func CmdRegisterValidatorPCR0() *cobra.Command {
 	return cmd
 }
 
-func minimumStakeUAETH() sdkmath.Int {
+func minimumStakeUAETHEL() sdkmath.Int {
 	return sdkmath.NewInt(minStakeAETHEL * stakeBaseUnitsPerAETHEL)
 }
 
@@ -220,7 +220,7 @@ func enforceMinimumStake(coin sdk.Coin) error {
 		return fmt.Errorf("stake denom must be %s", stakeBaseDenom)
 	}
 
-	minimum := minimumStakeUAETH()
+	minimum := minimumStakeUAETHEL()
 	if coin.Amount.LT(minimum) {
 		return fmt.Errorf(
 			"minimum stake not met: got %s%s, need at least %d%s (%s%s)",

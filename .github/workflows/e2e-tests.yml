@@ -64,7 +64,7 @@ jobs:
       - name: Build SDK and CLI tools
         run: |
           cd sdk/typescript && npm ci && npm run build
-          cd ../../tools/cli/aeth && npm ci && npm run build
+          cd ../../tools/cli/aethel && npm ci && npm run build
           cd ../seal-verifier && npm ci && npm run build
 
       - name: Start mock local testnet

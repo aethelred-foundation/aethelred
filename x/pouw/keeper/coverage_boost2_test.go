@@ -1025,7 +1025,7 @@ func TestCB2_ValidateFeeDistribution_WrongSum(t *testing.T) {
 }
 
 func TestCB2_RewardScaleByReputation(t *testing.T) {
-	baseCoin := sdk.NewCoin("uaeth", sdkmath.NewInt(1000))
+	baseCoin := sdk.NewCoin("uaethel", sdkmath.NewInt(1000))
 
 	// High reputation = higher reward
 	scaled := keeper.RewardScaleByReputation(baseCoin, 100)
@@ -1440,9 +1440,9 @@ func TestCB2_ValidateParams_ValidParams(t *testing.T) {
 		ConsensusThreshold:              67,
 		AllowSimulated:                  false,
 		JobTimeoutBlocks:                100,
-		BaseJobFee:                      "1000uaeth",
-		VerificationReward:              "500uaeth",
-		SlashingPenalty:                 "5000uaeth",
+		BaseJobFee:                      "1000uaethel",
+		VerificationReward:              "500uaethel",
+		SlashingPenalty:                 "5000uaethel",
 		MaxJobsPerBlock:                 10,
 		AllowedProofTypes:               []string{"tee", "zkml"},
 		VoteExtensionMaxPastSkewSecs:    300,
@@ -1872,20 +1872,20 @@ func TestCB2_ChecklistComplete(t *testing.T) {
 // TOKENOMICS_MODEL_SIMULATION.GO — additional coverage
 // =============================================================================
 
-func TestCB2_FormatAETH_MoreCases(t *testing.T) {
+func TestCB2_FormatAETHEL_MoreCases(t *testing.T) {
 	tests := []struct {
 		input int64
 		name  string
 	}{
 		{0, "zero"},
 		{1, "one micro"},
-		{1_000_000, "one AETH"},
-		{10_000_000, "ten AETH"},
-		{1_000_000_000, "thousand AETH"},
+		{1_000_000, "one AETHEL"},
+		{10_000_000, "ten AETHEL"},
+		{1_000_000_000, "thousand AETHEL"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := keeper.FormatAETHForTest(tc.input)
+			result := keeper.FormatAETHELForTest(tc.input)
 			require.NotEmpty(t, result)
 		})
 	}
@@ -2183,7 +2183,7 @@ func TestCB2_DefaultSchedulerConfig(t *testing.T) {
 
 func TestCB2_BondingCurve_AdditionalCases(t *testing.T) {
 	config := keeper.DefaultBondingCurveConfig()
-	require.True(t, config.BasePriceUAETH.GT(sdkmath.ZeroInt()))
+	require.True(t, config.BasePriceUAETHEL.GT(sdkmath.ZeroInt()))
 	require.True(t, config.ScaleFactor.GT(sdkmath.ZeroInt()))
 }
 
@@ -2351,12 +2351,12 @@ func TestCB2_ConsensusHandler_Accessors(t *testing.T) {
 // =============================================================================
 
 func TestCB2_RewardScaleByReputation_EdgeCases(t *testing.T) {
-	zero := sdk.NewCoin("uaeth", sdkmath.NewInt(0))
+	zero := sdk.NewCoin("uaethel", sdkmath.NewInt(0))
 	scaled := keeper.RewardScaleByReputation(zero, 100)
 	require.True(t, scaled.Amount.Equal(sdkmath.ZeroInt()))
 
 	// Negative reputation
-	base := sdk.NewCoin("uaeth", sdkmath.NewInt(1000))
+	base := sdk.NewCoin("uaethel", sdkmath.NewInt(1000))
 	scaledNeg := keeper.RewardScaleByReputation(base, -10)
 	require.True(t, scaledNeg.Amount.GTE(sdkmath.ZeroInt()))
 }

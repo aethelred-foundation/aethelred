@@ -43,30 +43,30 @@ import (
 // Section 1: Token Supply & Emission Model
 // ---------------------------------------------------------------------------
 
-// InitialSupplyUAETH is the genesis total supply in micro-AETH.
-// 1 AETH = 1,000,000 uaeth (6 decimal places).
-// Genesis supply = 10,000,000,000 AETH = 10^16 uaeth.
+// InitialSupplyUAETHEL is the genesis total supply in micro-AETHEL.
+// 1 AETHEL = 1,000,000 uaethel (6 decimal places).
+// Genesis supply = 10,000,000,000 AETHEL = 10^16 uaethel.
 //
 // CANONICAL DENOMINATION REFERENCE — Audit fix [C-02]:
 //
-//	Layer         | Unit   | Decimals | 1 AETH equals           | 10B AETH equals
-//	Go (Cosmos)   | uaeth  | 6        | 1,000,000               | 10,000,000,000,000,000
+//	Layer         | Unit   | Decimals | 1 AETHEL equals           | 10B AETHEL equals
+//	Go (Cosmos)   | uaethel  | 6        | 1,000,000               | 10,000,000,000,000,000
 //	Solidity (EVM)| wei    | 18       | 1,000,000,000,000,000,000 | 10^28
 //	Rust (VM)     | wei    | 18       | 1,000,000,000,000,000,000 | 10^28
 //
 // Cross-layer bridging MUST apply a 10^12 scaling factor:
 //
-//	EVM/Rust wei = uaeth * 10^12
-//	uaeth = EVM/Rust wei / 10^12
+//	EVM/Rust wei = uaethel * 10^12
+//	uaethel = EVM/Rust wei / 10^12
 //
-// The Go layer is the canonical L1 state machine and uses 6-decimal uaeth.
+// The Go layer is the canonical L1 state machine and uses 6-decimal uaethel.
 // The Solidity ERC20 on Ethereum and the Rust VM use 18-decimal wei for
 // compatibility with the ERC20 standard (decimals() = 18).
-const InitialSupplyUAETH int64 = 10_000_000_000_000_000 // 10B AETH
+const InitialSupplyUAETHEL int64 = 10_000_000_000_000_000 // 10B AETHEL
 
-// UaethToWeiScaleFactor is the multiplier to convert uaeth (6 decimals)
+// UaethelToWeiScaleFactor is the multiplier to convert uaethel (6 decimals)
 // to EVM/Rust wei (18 decimals). Audit fix [C-02].
-const UaethToWeiScaleFactor int64 = 1_000_000_000_000 // 10^12
+const UaethelToWeiScaleFactor int64 = 1_000_000_000_000 // 10^12
 
 // BlocksPerYear approximates the number of blocks in a year at 6s block time.
 const BlocksPerYear int64 = 5_256_000
@@ -159,7 +159,7 @@ type EmissionScheduleEntry struct {
 	Year             int
 	InflationBps     int64
 	InflationPercent float64
-	AnnualEmission   int64 // uaeth minted
+	AnnualEmission   int64 // uaethel minted
 	CumulativeSupply int64
 	StakingYield     float64 // approximate yield assuming target participation
 }
@@ -168,7 +168,7 @@ type EmissionScheduleEntry struct {
 func ComputeEmissionSchedule(config EmissionConfig, years int) []EmissionScheduleEntry {
 	schedule := make([]EmissionScheduleEntry, 0, years)
 	safeMath := NewSafeMath()
-	supply := sdkmath.NewInt(InitialSupplyUAETH)
+	supply := sdkmath.NewInt(InitialSupplyUAETHEL)
 
 	for year := 1; year <= years; year++ {
 		inflationBps := computeInflationForYear(config, year)
@@ -312,8 +312,8 @@ func computeInflationForYear(config EmissionConfig, year int) int64 {
 
 // StakingConfig defines the parameters for the staking economy.
 type StakingConfig struct {
-	// MinStakeUAETH is the minimum stake for a validator.
-	MinStakeUAETH int64
+	// MinStakeUAETHEL is the minimum stake for a validator.
+	MinStakeUAETHEL int64
 
 	// MaxCommissionBps is the maximum validator commission in BPS.
 	MaxCommissionBps int64
@@ -334,7 +334,7 @@ type StakingConfig struct {
 // DefaultStakingConfig returns the default staking configuration.
 func DefaultStakingConfig() StakingConfig {
 	return StakingConfig{
-		MinStakeUAETH:              1_000_000_000, // 1000 AETH
+		MinStakeUAETHEL:              1_000_000_000, // 1000 AETHEL
 		MaxCommissionBps:           2000,          // 20%
 		MinCommissionBps:           500,           // 5%
 		UnbondingPeriodBlocks:      302_400,       // ~21 days at 6s blocks
@@ -345,8 +345,8 @@ func DefaultStakingConfig() StakingConfig {
 
 // ValidateStakingConfig checks staking parameters.
 func ValidateStakingConfig(config StakingConfig) error {
-	if config.MinStakeUAETH < 1_000_000 {
-		return fmt.Errorf("min stake must be >= 1 AETH (1000000 uaeth), got %d", config.MinStakeUAETH)
+	if config.MinStakeUAETHEL < 1_000_000 {
+		return fmt.Errorf("min stake must be >= 1 AETHEL (1000000 uaethel), got %d", config.MinStakeUAETHEL)
 	}
 	if config.MaxCommissionBps < config.MinCommissionBps {
 		return fmt.Errorf("max commission (%d BPS) must be >= min commission (%d BPS)",
@@ -460,8 +460,8 @@ func ComputeValidatorEconomics(
 
 // FeeMarketConfig defines the dynamic fee adjustment parameters.
 type FeeMarketConfig struct {
-	// BaseFeeUAETH is the minimum fee per job in uaeth.
-	BaseFeeUAETH int64
+	// BaseFeeUAETHEL is the minimum fee per job in uaethel.
+	BaseFeeUAETHEL int64
 
 	// MaxMultiplierBps is the maximum congestion multiplier in BPS
 	// (e.g., 50000 = 5.0x).
@@ -488,7 +488,7 @@ type PriorityFeeTier struct {
 // DefaultFeeMarketConfig returns the default fee market configuration.
 func DefaultFeeMarketConfig() FeeMarketConfig {
 	return FeeMarketConfig{
-		BaseFeeUAETH:           1000,  // 0.001 AETH
+		BaseFeeUAETHEL:           1000,  // 0.001 AETHEL
 		MaxMultiplierBps:       50000, // 5.0x max
 		CongestionThresholdBps: 7000,  // 70% utilization triggers dynamic pricing
 		FeeAdjustmentRateBps:   100,   // 1% per block adjustment
@@ -502,8 +502,8 @@ func DefaultFeeMarketConfig() FeeMarketConfig {
 
 // ValidateFeeMarketConfig checks fee market parameters.
 func ValidateFeeMarketConfig(config FeeMarketConfig) error {
-	if config.BaseFeeUAETH <= 0 {
-		return fmt.Errorf("base fee must be positive, got %d", config.BaseFeeUAETH)
+	if config.BaseFeeUAETHEL <= 0 {
+		return fmt.Errorf("base fee must be positive, got %d", config.BaseFeeUAETHEL)
 	}
 	if config.MaxMultiplierBps < 10000 || config.MaxMultiplierBps > 100000 {
 		return fmt.Errorf("max multiplier must be in [10000, 100000] BPS, got %d", config.MaxMultiplierBps)
@@ -526,7 +526,7 @@ func ValidateFeeMarketConfig(config FeeMarketConfig) error {
 // ComputeDynamicFee calculates the current job fee based on congestion.
 func ComputeDynamicFee(config FeeMarketConfig, pendingJobs int, maxJobsPerBlock int64) int64 {
 	if maxJobsPerBlock <= 0 {
-		return config.BaseFeeUAETH
+		return config.BaseFeeUAETHEL
 	}
 
 	// Utilization = pendingJobs / (maxJobsPerBlock * backlog_window)
@@ -539,7 +539,7 @@ func ComputeDynamicFee(config FeeMarketConfig, pendingJobs int, maxJobsPerBlock 
 
 	// If below threshold, use base fee
 	if utilizationBps <= config.CongestionThresholdBps {
-		return config.BaseFeeUAETH
+		return config.BaseFeeUAETHEL
 	}
 
 	// Linear interpolation from 1x to MaxMultiplier
@@ -554,7 +554,7 @@ func ComputeDynamicFee(config FeeMarketConfig, pendingJobs int, maxJobsPerBlock 
 		multiplierBps = config.MaxMultiplierBps
 	}
 
-	return config.BaseFeeUAETH * multiplierBps / BpsBase
+	return config.BaseFeeUAETHEL * multiplierBps / BpsBase
 }
 
 // ---------------------------------------------------------------------------
@@ -661,8 +661,8 @@ func ValidateSlashingConfig(config SlashingConfig) error {
 }
 
 // ComputeSlashAmount calculates the slash for a given tier and stake.
-func ComputeSlashAmount(tier SlashingTier, stakedUAETH int64) int64 {
-	return stakedUAETH * tier.SlashBps / BpsBase
+func ComputeSlashAmount(tier SlashingTier, stakedUAETHEL int64) int64 {
+	return stakedUAETHEL * tier.SlashBps / BpsBase
 }
 
 // DeterrenceRatio computes the ratio of slash penalty to potential gain.

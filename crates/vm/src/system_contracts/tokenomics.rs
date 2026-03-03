@@ -96,18 +96,18 @@ use super::types::{Address, TokenAmount};
 /// Token precision (18 decimals).
 ///
 /// CROSS-LAYER DENOMINATION NOTE — Audit fix [C-02]:
-/// The Rust VM uses 18-decimal wei, while the Go/Cosmos L1 uses 6-decimal uaeth.
+/// The Rust VM uses 18-decimal wei, while the Go/Cosmos L1 uses 6-decimal uaethel.
 /// Bridging between layers requires a 10^12 scaling factor:
-///   EVM/Rust wei = uaeth * 10^12
-///   uaeth = EVM/Rust wei / 10^12
+///   EVM/Rust wei = uaethel * 10^12
+///   uaethel = EVM/Rust wei / 10^12
 pub const DECIMALS: u8 = 18;
 
 /// One AETHEL in wei (10^18)
 pub const ONE_AETHEL: TokenAmount = 1_000_000_000_000_000_000;
 
-/// Scaling factor from Go uaeth (6 decimals) to Rust wei (18 decimals).
+/// Scaling factor from Go uaethel (6 decimals) to Rust wei (18 decimals).
 /// Audit fix [C-02].
-pub const UAETH_TO_WEI_SCALE: TokenAmount = 1_000_000_000_000; // 10^12
+pub const UAETHEL_TO_WEI_SCALE: TokenAmount = 1_000_000_000_000; // 10^12
 
 /// Total genesis supply (10 billion AETHEL)
 pub const TOTAL_GENESIS_SUPPLY: TokenAmount = 10_000_000_000 * ONE_AETHEL;

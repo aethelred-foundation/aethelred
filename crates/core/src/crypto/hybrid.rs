@@ -766,7 +766,7 @@ impl HybridPublicKey {
     /// Get Aethelred address (bech32-encoded fingerprint prefix)
     pub fn to_address(&self) -> String {
         let fp = self.fingerprint();
-        format!("aeth1{}", hex::encode(&fp[..20]))
+        format!("aethel1{}", hex::encode(&fp[..20]))
     }
 
     /// Get Ethereum-compatible address (from ECDSA key only)
@@ -1467,7 +1467,7 @@ mod tests {
     #[test]
     fn test_keypair_generation() {
         let keypair = HybridKeyPair::generate().unwrap();
-        assert!(keypair.address().starts_with("aeth1"));
+        assert!(keypair.address().starts_with("aethel1"));
     }
 
     #[test]

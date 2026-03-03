@@ -167,7 +167,7 @@ docker-compose ps
 
 # Get testnet tokens
 curl -X POST http://localhost:8080/faucet \
-  -d '{"address": "aeth1..."}'
+  -d '{"address": "aethel1..."}'
 ```
 
 Services available:
@@ -188,33 +188,33 @@ npm install -g @aethelred/cli
 
 ```bash
 # Set network
-aeth config set-network testnet
+aethel config set-network testnet
 
 # Import wallet
-aeth wallet import ./wallet.json
+aethel wallet import ./wallet.json
 
 # Check balance
-aeth wallet balance
+aethel wallet balance
 ```
 
 ### Submit Job via CLI
 
 ```bash
 # Submit job
-aeth job submit \
+aethel job submit \
   --model sha256:abc123... \
   --input sha256:def456... \
   --proof-type tee \
   --priority 5
 
 # Check status
-aeth job status <job-id>
+aethel job status <job-id>
 
 # Create seal
-aeth seal create --job <job-id>
+aethel seal create --job <job-id>
 
 # Verify seal
-aeth seal verify <seal-id>
+aethel seal verify <seal-id>
 ```
 
 ## 6. VS Code Extension

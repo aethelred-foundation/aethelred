@@ -216,8 +216,8 @@ func TestParamChangeProposal_UnknownField(t *testing.T) {
 func TestParamChangeProposal_SlashingPenaltyLocked(t *testing.T) {
 	result := keeper.ValidateParamChangeProposal(keeper.ParamChangeProposal{
 		Field:    "slashing_penalty",
-		OldValue: "10000uaeth",
-		NewValue: "5000uaeth",
+		OldValue: "10000uaethel",
+		NewValue: "5000uaethel",
 		Proposer: "gov-module",
 	})
 

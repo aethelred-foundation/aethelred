@@ -132,7 +132,7 @@ def validate(generate_matrix: bool, matrix_path: Path | None):
 
 def render_matrix(registry, rows):
     lines = []
-    lines.append("# AETH-MR-003 Repo Auditability Rollout Matrix")
+    lines.append("# AETHEL-MR-003 Repo Auditability Rollout Matrix")
     lines.append("")
     lines.append(f"Date: {registry.get('effective_date', 'unknown')}")
     lines.append(
@@ -182,7 +182,7 @@ def main():
     parser.add_argument("--write-matrix", action="store_true", help="Write/update the rollout matrix markdown file")
     parser.add_argument(
         "--matrix-path",
-        default=str(ROOT / "docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md"),
+        default=str(ROOT / "docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md"),
         help="Path to write matrix markdown (used with --write-matrix)",
     )
     args = parser.parse_args()

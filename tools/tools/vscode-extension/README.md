@@ -23,7 +23,7 @@ The Aethelred Sovereign Copilot moves compliance checks left, allowing developer
 <img src="docs/hover-demo.gif" alt="Hover Demo" width="500"/>
 
 Hover over `@sovereign` decorators to see:
-- Estimated execution cost in AETH tokens
+- Estimated execution cost in AETHEL tokens
 - Power consumption
 - Hardware requirements
 - Compliance status
@@ -76,7 +76,7 @@ code --install-extension aethelred-sovereign-copilot-2.0.0.vsix
 
 ### Prerequisites
 
-The extension requires the Aethelred CLI (`aeth`) for full functionality:
+The extension requires the Aethelred CLI (`aethel`) for full functionality:
 
 ```bash
 # Install via cargo
@@ -152,7 +152,7 @@ For development without real TEE hardware:
 | `@sovereign` | Create sovereign function |
 | `sov-data` | Create SovereignData |
 | `sov-tensor` | Create SovereignTensor |
-| `aeth-import` | Import Aethelred modules |
+| `aethel-import` | Import Aethelred modules |
 | `uae-finance` | UAE finance template |
 | `hipaa-template` | HIPAA healthcare template |
 
@@ -162,8 +162,8 @@ For development without real TEE hardware:
 |--------|-------------|
 | `#[sovereign]` | Create sovereign function |
 | `sov-data` | Create SovereignData |
-| `aeth-use` | Import Aethelred types |
-| `aeth-ctx` | Create ExecutionContext |
+| `aethel-use` | Import Aethelred types |
+| `aethel-ctx` | Create ExecutionContext |
 
 ### Helix
 
@@ -197,7 +197,7 @@ For development without real TEE hardware:
 
 ## Architecture
 
-The extension uses the `aeth` CLI as its brain:
+The extension uses the `aethel` CLI as its brain:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -215,7 +215,7 @@ The extension uses the `aeth` CLI as its brain:
 └───────────────────────────┼─────────────────────────────────┘
                             │
                     ┌───────┴───────┐
-                    │   aeth CLI    │
+                    │   aethel CLI    │
                     │  (Rust Core)  │
                     └───────────────┘
 ```
@@ -226,7 +226,7 @@ The extension uses the `aeth` CLI as its brain:
 
 If you see "Aethelred CLI not found":
 
-1. Check if `aeth` is in your PATH: `which aeth`
+1. Check if `aethel` is in your PATH: `which aethel`
 2. Set custom path in settings: `aethelred.cli.path`
 3. Install CLI: `cargo install aethelred-cli`
 

@@ -1609,7 +1609,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 	// Register 4 independent validators (production-like minimum)
 	validators := make([]string, 4)
 	for i := 0; i < 4; i++ {
-		addr := fmt.Sprintf("aethvaloper1validator%d", i)
+		addr := fmt.Sprintf("aethelvaloper1validator%d", i)
 		validators[i] = addr
 		scheduler.RegisterValidator(&types.ValidatorCapability{
 			Address:           addr,

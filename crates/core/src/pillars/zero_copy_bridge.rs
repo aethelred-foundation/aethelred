@@ -435,7 +435,7 @@ pub struct ExecutionConstraints {
     pub required_tee: Option<TEERequirement>,
     /// Deadline
     pub deadline: Option<u64>,
-    /// Maximum cost (in AETH)
+    /// Maximum cost (in AETHEL)
     pub max_cost: Option<u128>,
 }
 

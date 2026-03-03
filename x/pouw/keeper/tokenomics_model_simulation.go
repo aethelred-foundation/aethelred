@@ -180,8 +180,8 @@ func RunTokenomicsSimulation(scenario SimulationScenario) *SimulationResult {
 	}
 
 	for _, tier := range scenario.Slashing.Tiers {
-		slashAmt := ComputeSlashAmount(tier, scenario.Staking.MinStakeUAETH)
-		ratio := DeterrenceRatio(slashAmt, scenario.FeeMarket.BaseFeeUAETH*BlocksPerDay)
+		slashAmt := ComputeSlashAmount(tier, scenario.Staking.MinStakeUAETHEL)
+		ratio := DeterrenceRatio(slashAmt, scenario.FeeMarket.BaseFeeUAETHEL*BlocksPerDay)
 		if ratio > result.MaxDeterrenceRatio {
 			result.MaxDeterrenceRatio = ratio
 		}
@@ -218,9 +218,9 @@ func RenderTokenomicsReport(model TokenomicsModel) string {
 	sb.WriteString("╚══════════════════════════════════════════════════════════════╝\n\n")
 
 	sb.WriteString("─── TOKEN SUPPLY ──────────────────────────────────────────────\n")
-	sb.WriteString(fmt.Sprintf("  Genesis Supply:     %s AETH\n", formatAETH(InitialSupplyUAETH)))
+	sb.WriteString(fmt.Sprintf("  Genesis Supply:     %s AETHEL\n", formatAETHEL(InitialSupplyUAETHEL)))
 	sb.WriteString(fmt.Sprintf("  Denomination:       %s\n", MainnetDenom))
-	sb.WriteString(fmt.Sprintf("  1 AETH = 1,000,000 %s\n\n", MainnetDenom))
+	sb.WriteString(fmt.Sprintf("  1 AETHEL = 1,000,000 %s\n\n", MainnetDenom))
 
 	sb.WriteString("─── EMISSION MODEL ────────────────────────────────────────────\n")
 	sb.WriteString(fmt.Sprintf("  Initial Inflation:  %.1f%%\n", float64(model.Emission.InitialInflationBps)/100))
@@ -230,7 +230,7 @@ func RenderTokenomicsReport(model TokenomicsModel) string {
 	sb.WriteString(fmt.Sprintf("  Staking Target:     %.1f%%\n\n", float64(model.Emission.StakingTargetBps)/100))
 
 	sb.WriteString("─── STAKING ECONOMICS ─────────────────────────────────────────\n")
-	sb.WriteString(fmt.Sprintf("  Min Stake:          %s AETH\n", formatAETH(model.Staking.MinStakeUAETH)))
+	sb.WriteString(fmt.Sprintf("  Min Stake:          %s AETHEL\n", formatAETHEL(model.Staking.MinStakeUAETHEL)))
 	sb.WriteString(fmt.Sprintf("  Commission Range:   %.1f%% – %.1f%%\n",
 		float64(model.Staking.MinCommissionBps)/100, float64(model.Staking.MaxCommissionBps)/100))
 	sb.WriteString(fmt.Sprintf("  Unbonding:          %d blocks (~%d days)\n",
@@ -238,8 +238,8 @@ func RenderTokenomicsReport(model TokenomicsModel) string {
 	sb.WriteString(fmt.Sprintf("  Max Validators:     %d\n\n", model.Staking.MaxValidators))
 
 	sb.WriteString("─── FEE MARKET ────────────────────────────────────────────────\n")
-	sb.WriteString(fmt.Sprintf("  Base Fee:           %d %s (%.4f AETH)\n",
-		model.FeeMarket.BaseFeeUAETH, MainnetDenom, float64(model.FeeMarket.BaseFeeUAETH)/1e6))
+	sb.WriteString(fmt.Sprintf("  Base Fee:           %d %s (%.4f AETHEL)\n",
+		model.FeeMarket.BaseFeeUAETHEL, MainnetDenom, float64(model.FeeMarket.BaseFeeUAETHEL)/1e6))
 	sb.WriteString(fmt.Sprintf("  Max Multiplier:     %.1fx\n", float64(model.FeeMarket.MaxMultiplierBps)/10000))
 	sb.WriteString(fmt.Sprintf("  Congestion Trigger: %.0f%% utilization\n",
 		float64(model.FeeMarket.CongestionThresholdBps)/100))
@@ -277,14 +277,14 @@ func RenderTokenomicsReport(model TokenomicsModel) string {
 		float64(model.Treasury.GrantsAllocationBps)/100))
 	sb.WriteString(fmt.Sprintf("  Insurance Reserve:   %.1f%% of treasury\n",
 		float64(model.Treasury.InsuranceReserveBps)/100))
-	sb.WriteString(fmt.Sprintf("  Max Grant Size:      %s AETH\n\n", formatAETH(model.Treasury.MaxGrantSizeUAETH)))
+	sb.WriteString(fmt.Sprintf("  Max Grant Size:      %s AETHEL\n\n", formatAETHEL(model.Treasury.MaxGrantSizeUAETHEL)))
 
 	sb.WriteString("─── VESTING SCHEDULE ──────────────────────────────────────────\n")
 	for _, v := range model.Vesting {
 		cliffDays := v.CliffBlocks / BlocksPerDay
 		vestDays := v.VestingBlocks / BlocksPerDay
-		sb.WriteString(fmt.Sprintf("  %-24s %12s AETH  cliff=%dd  vest=%dd\n",
-			v.Category, formatAETH(v.TotalUAETH), cliffDays, vestDays))
+		sb.WriteString(fmt.Sprintf("  %-24s %12s AETHEL  cliff=%dd  vest=%dd\n",
+			v.Category, formatAETHEL(v.TotalUAETHEL), cliffDays, vestDays))
 	}
 	sb.WriteString("\n")
 
@@ -328,15 +328,15 @@ func RenderSimulationReport(result *SimulationResult) string {
 	for _, e := range result.EmissionSchedule {
 		sb.WriteString(fmt.Sprintf("  %4d  %6.2f%%  %18s  %18s  %5.1f%%\n",
 			e.Year, e.InflationPercent,
-			formatAETH(e.AnnualEmission),
-			formatAETH(e.CumulativeSupply),
+			formatAETHEL(e.AnnualEmission),
+			formatAETHEL(e.CumulativeSupply),
 			e.StakingYield))
 	}
 
 	sb.WriteString("\n─── KEY METRICS ───────────────────────────────────────────────\n")
-	sb.WriteString(fmt.Sprintf("  Year-10 Supply:       %s AETH\n", formatAETH(result.Year10Supply)))
+	sb.WriteString(fmt.Sprintf("  Year-10 Supply:       %s AETHEL\n", formatAETHEL(result.Year10Supply)))
 	sb.WriteString(fmt.Sprintf("  Year-10 Inflation:    %.2f%%\n", result.Year10Inflation))
-	sb.WriteString(fmt.Sprintf("  Year-10 Treasury:     %s AETH\n", formatAETH(result.Year10Treasury)))
+	sb.WriteString(fmt.Sprintf("  Year-10 Treasury:     %s AETHEL\n", formatAETHEL(result.Year10Treasury)))
 	sb.WriteString(fmt.Sprintf("  Max Deterrence Ratio: %.1fx\n", result.MaxDeterrenceRatio))
 	sb.WriteString(fmt.Sprintf("  Peak Dynamic Fee:     %d %s\n", result.DynamicFeeAtPeak, MainnetDenom))
 
@@ -352,13 +352,13 @@ func RenderSimulationReport(result *SimulationResult) string {
 	return sb.String()
 }
 
-// formatAETH formats uaeth as AETH with comma separators.
-func formatAETH(uaeth int64) string {
-	aeth := uaeth / 1_000_000
-	if aeth == 0 && uaeth > 0 {
-		return fmt.Sprintf("0.%06d", uaeth)
+// formatAETHEL formats uaethel as AETHEL with comma separators.
+func formatAETHEL(uaethel int64) string {
+	aethel := uaethel / 1_000_000
+	if aethel == 0 && uaethel > 0 {
+		return fmt.Sprintf("0.%06d", uaethel)
 	}
-	return formatWithCommas(aeth)
+	return formatWithCommas(aethel)
 }
 
 // formatWithCommas adds comma separators to a number.

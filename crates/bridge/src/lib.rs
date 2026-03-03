@@ -295,8 +295,8 @@ impl BridgeRelayer {
             tokio::select! {
                 event = event_stream.recv() => {
                     match event {
-                        Ok(aeth_event) => {
-                            if let Err(e) = processor.process_aethelred_event(aeth_event).await {
+                        Ok(aethel_event) => {
+                            if let Err(e) = processor.process_aethelred_event(aethel_event).await {
                                 warn!("Failed to process Aethelred event: {}", e);
                             }
                         }

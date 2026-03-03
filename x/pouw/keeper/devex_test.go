@@ -61,7 +61,7 @@ func (m mockBankKeeper) SendCoinsFromModuleToModule(_ context.Context, _, _ stri
 }
 func (m mockBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error { return nil }
 func (m mockBankKeeper) SpendableCoins(_ context.Context, _ sdk.AccAddress) sdk.Coins {
-	return sdk.NewCoins(sdk.NewInt64Coin("uaeth", 1000000))
+	return sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1000000))
 }
 
 // mockStakingKeeper is a minimal staking keeper stub.
@@ -622,7 +622,7 @@ func TestLoad_FeeBreakdownStress(t *testing.T) {
 	for i := 0; i < iterations; i++ {
 		amount := rng.Int63n(100000000) + 1
 		validatorCount := int(rng.Int63n(20)) + 1
-		fee := sdk.NewInt64Coin("uaeth", amount)
+		fee := sdk.NewInt64Coin("uaethel", amount)
 		result := keeper.CalculateFeeBreakdown(fee, config, validatorCount)
 
 		// Quick conservation check.
@@ -704,7 +704,7 @@ func TestLoad_DiffParamsStress(t *testing.T) {
 		newParams := types.DefaultParams()
 		newParams.MinValidators = rng.Int63n(100) + 1
 		newParams.ConsensusThreshold = rng.Int63n(51) + 50
-		newParams.BaseJobFee = fmt.Sprintf("%duaeth", rng.Int63n(10000)+1)
+		newParams.BaseJobFee = fmt.Sprintf("%duaethel", rng.Int63n(10000)+1)
 
 		changes := keeper.DiffParams(old, newParams)
 		_ = changes
@@ -774,7 +774,7 @@ func BenchmarkDiffParams(b *testing.B) {
 	old := types.DefaultParams()
 	newP := types.DefaultParams()
 	newP.MinValidators = 5
-	newP.BaseJobFee = "5000uaeth"
+	newP.BaseJobFee = "5000uaethel"
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -783,7 +783,7 @@ func BenchmarkDiffParams(b *testing.B) {
 }
 
 func BenchmarkRewardScaleByReputation(b *testing.B) {
-	reward := sdk.NewInt64Coin("uaeth", 1000)
+	reward := sdk.NewInt64Coin("uaethel", 1000)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = keeper.RewardScaleByReputation(reward, 75)

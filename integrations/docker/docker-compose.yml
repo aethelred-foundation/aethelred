@@ -110,7 +110,7 @@ services:
       - "8000:8000"
     environment:
       - RPC_URL=http://aethelred-node:26657
-      - FAUCET_AMOUNT=1000000000uaeth
+      - FAUCET_AMOUNT=1000000000uaethel
       - RATE_LIMIT=100
     depends_on:
       - aethelred-node

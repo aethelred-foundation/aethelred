@@ -921,7 +921,7 @@ class AethelredClient:
 
     async def get_balance(self, address: str) -> int:
         """
-        Get account balance in AETH (smallest unit).
+        Get account balance in AETHEL (smallest unit).
 
         Args:
             address: Account address

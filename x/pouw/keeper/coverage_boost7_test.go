@@ -816,7 +816,7 @@ func TestCB7_ValidateBondingCurveConfig(t *testing.T) {
 	validConfig := keeper.DefaultBondingCurveConfig()
 
 	zeroBase := keeper.DefaultBondingCurveConfig()
-	zeroBase.BasePriceUAETH = sdkmath.NewInt(0)
+	zeroBase.BasePriceUAETHEL = sdkmath.NewInt(0)
 
 	invalidExponent := keeper.DefaultBondingCurveConfig()
 	invalidExponent.ExponentScaled = 999 // unsupported
@@ -853,29 +853,29 @@ func TestCB7_ValidateBondingCurveConfig(t *testing.T) {
 func TestCB7_EarmarkStore_StoreServiceNil(t *testing.T) {
 	// Test keeper does not have storeService configured, so earmark ops should return error.
 	k, ctx := newTestKeeper(t)
-	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaeth", 1000))
+	err := k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaethel", 1000))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	_, err = k.GetTreasuryEarmarkedBalance(ctx, "uaeth")
+	_, err = k.GetTreasuryEarmarkedBalance(ctx, "uaethel")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 }
 
 func TestCB7_EarmarkStore_InsuranceStoreServiceNil(t *testing.T) {
 	k, ctx := newTestKeeper(t)
-	err := k.RecordInsuranceFundEarmark(ctx, sdk.NewInt64Coin("uaeth", 2000))
+	err := k.RecordInsuranceFundEarmark(ctx, sdk.NewInt64Coin("uaethel", 2000))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "store service not configured")
 
-	_, err = k.GetInsuranceFundEarmarkedBalance(ctx, "uaeth")
+	_, err = k.GetInsuranceFundEarmarkedBalance(ctx, "uaethel")
 	require.Error(t, err)
 }
 
 func TestCB7_EarmarkStore_ZeroAmount(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	// Zero amount should be a no-op (returns nil) even without storeService
-	require.NoError(t, k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaeth", 0)))
+	require.NoError(t, k.RecordTreasuryEarmark(ctx, sdk.NewInt64Coin("uaethel", 0)))
 }
 
 func TestCB7_EarmarkStore_EmptyDenom(t *testing.T) {
@@ -894,7 +894,7 @@ func TestCB7_CollectJobFee_NegativeFee(t *testing.T) {
 	submitter := sdk.AccAddress([]byte("submitter-addr-12345"))
 	ctx := cb7Ctx()
 	// Negative fee should error
-	err := fd.CollectJobFee(ctx, submitter, sdk.Coin{Denom: "uaeth", Amount: sdkmath.NewInt(-100)})
+	err := fd.CollectJobFee(ctx, submitter, sdk.Coin{Denom: "uaethel", Amount: sdkmath.NewInt(-100)})
 	require.Error(t, err)
 }
 
@@ -902,7 +902,7 @@ func TestCB7_CollectJobFee_ZeroFee(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 	submitter := sdk.AccAddress([]byte("submitter-addr-12345"))
-	err := fd.CollectJobFee(ctx, submitter, sdk.NewInt64Coin("uaeth", 0))
+	err := fd.CollectJobFee(ctx, submitter, sdk.NewInt64Coin("uaethel", 0))
 	require.Error(t, err)
 }
 
@@ -913,14 +913,14 @@ func TestCB7_CollectJobFee_ZeroFee(t *testing.T) {
 func TestCB7_DistributeJobFee_NoValidators(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 10000), nil)
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 10000), nil)
 	require.Error(t, err)
 }
 
 func TestCB7_DistributeJobFee_ZeroFee(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 0), []string{cb7Bech32("v1")})
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 0), []string{cb7Bech32("v1")})
 	require.Error(t, err)
 }
 
@@ -928,7 +928,7 @@ func TestCB7_DistributeJobFee_EmptyValidators(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	fd := keeper.NewFeeDistributor(&k, keeper.DefaultFeeDistributionConfig())
 	// Empty validator list should error
-	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaeth", 100000), []string{})
+	_, err := fd.DistributeJobFee(ctx, sdk.NewInt64Coin("uaethel", 100000), []string{})
 	require.Error(t, err)
 }
 
@@ -938,21 +938,21 @@ func TestCB7_DistributeJobFee_EmptyValidators(t *testing.T) {
 
 func TestCB7_DistributeVerificationRewards_ZeroReward(t *testing.T) {
 	k, ctx := newTestKeeper(t)
-	err := k.DistributeVerificationRewards(ctx, []string{cb7Bech32("v1")}, sdk.NewInt64Coin("uaeth", 0))
+	err := k.DistributeVerificationRewards(ctx, []string{cb7Bech32("v1")}, sdk.NewInt64Coin("uaethel", 0))
 	require.NoError(t, err)
 }
 
 func TestCB7_DistributeVerificationRewards_EmptyValidators(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	// With zero reward, should return nil (no-op)
-	err := k.DistributeVerificationRewards(ctx, []string{}, sdk.NewInt64Coin("uaeth", 1000))
+	err := k.DistributeVerificationRewards(ctx, []string{}, sdk.NewInt64Coin("uaethel", 1000))
 	require.NoError(t, err)
 }
 
 func TestCB7_BurnTokens_ZeroAmount(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	// Zero amount should return nil (no-op)
-	err := k.BurnTokens(ctx, sdk.NewInt64Coin("uaeth", 0))
+	err := k.BurnTokens(ctx, sdk.NewInt64Coin("uaethel", 0))
 	require.NoError(t, err)
 }
 
