@@ -81,7 +81,7 @@ def main():
     print("\n1. Initializing client...")
     client = Client(
         endpoint="https://testnet-rpc.aethelred.io",
-        api_key="sk_test_demo_key",  # Replace with your API key
+        api_key="YOUR_API_KEY_HERE",  # Replace with your API key
     )
     print(f"   Connected to: {client.endpoint}")
     print(f"   Chain ID: {client.chain_id}")
@@ -207,7 +207,7 @@ async def async_example():
     """Async version of the credit scoring workflow."""
     async with AsyncClient(
         endpoint="https://testnet-rpc.aethelred.io",
-        api_key="sk_test_demo_key"
+        api_key="YOUR_API_KEY_HERE"
     ) as client:
         # Check connection
         status = await client.get_status()
