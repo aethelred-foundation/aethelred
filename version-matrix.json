@@ -1,0 +1,60 @@
+{
+  "release_train": "2026.Q1",
+  "policy_version": "1.0.0",
+  "api": {
+    "openapi_version": "1.0.0",
+    "rest_path_version": "v1"
+  },
+  "packages": {
+    "typescript": {
+      "package": "@aethelred/sdk",
+      "version": "1.0.0",
+      "path": "sdk/typescript/package.json",
+      "published": false
+    },
+    "python": {
+      "package": "aethelred-sdk",
+      "version": "1.0.0",
+      "path": "sdk/python/pyproject.toml",
+      "published": false
+    },
+    "rust": {
+      "package": "aethelred-sdk",
+      "version": "1.0.0",
+      "path": "sdk/rust/Cargo.toml",
+      "published": false
+    },
+    "go": {
+      "module": "github.com/aethelred/sdk-go",
+      "version": "1.0.0",
+      "path": "sdk/go/aethelred.go",
+      "published": false
+    },
+    "cli": {
+      "package": "aethelred-cli",
+      "version": "2.0.0",
+      "path": "cli/Cargo.toml",
+      "published": false
+    },
+    "native_rust": {
+      "package": "aethelred-sdk",
+      "version": "0.1.0",
+      "path": "sdk/aethelred-sdk/Cargo.toml",
+      "published": false
+    },
+    "native_python": {
+      "package": "aethelred-py",
+      "version": "2.0.0",
+      "path": "sdk/aethelred-py/Cargo.toml",
+      "published": false
+    }
+  },
+  "compatibility": {
+    "rule": "Any major version change in API or package must be accompanied by an explicit matrix update and migration notes.",
+    "lifecycle": {
+      "current": "N",
+      "maintenance": "N-1",
+      "eol": "N-2"
+    }
+  }
+}

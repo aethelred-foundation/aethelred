@@ -1,0 +1,122 @@
+=== RUN   TestDefaultSNPVMConfig
+=== PAUSE TestDefaultSNPVMConfig
+=== RUN   TestNewSNPVM
+=== PAUSE TestNewSNPVM
+=== RUN   TestNewSNPVM_CustomConfig
+=== PAUSE TestNewSNPVM_CustomConfig
+=== RUN   TestSNPVM_Execute
+=== PAUSE TestSNPVM_Execute
+=== RUN   TestSNPVM_Execute_NotRunning
+=== PAUSE TestSNPVM_Execute_NotRunning
+=== RUN   TestSNPVM_GetAttestationReport
+=== PAUSE TestSNPVM_GetAttestationReport
+=== RUN   TestSNPVM_GetAttestationReport_NotRunning
+=== PAUSE TestSNPVM_GetAttestationReport_NotRunning
+=== RUN   TestSNPVM_GetMeasurement
+=== PAUSE TestSNPVM_GetMeasurement
+=== RUN   TestSNPVM_GetExecutionLog
+=== PAUSE TestSNPVM_GetExecutionLog
+=== RUN   TestSNPVM_Stop
+=== PAUSE TestSNPVM_Stop
+=== RUN   TestSNPVM_Destroy
+=== PAUSE TestSNPVM_Destroy
+=== RUN   TestSNPReportVerifier_VerifyReport_Valid
+=== PAUSE TestSNPReportVerifier_VerifyReport_Valid
+=== RUN   TestSNPReportVerifier_UntrustedMeasurement
+=== PAUSE TestSNPReportVerifier_UntrustedMeasurement
+=== RUN   TestSNPReportVerifier_TrustedMeasurement
+=== PAUSE TestSNPReportVerifier_TrustedMeasurement
+=== RUN   TestSNPReportVerifier_TCBBelowMinimum
+=== PAUSE TestSNPReportVerifier_TCBBelowMinimum
+=== RUN   TestSNPReportVerifier_PolicyViolation_Debug
+=== PAUSE TestSNPReportVerifier_PolicyViolation_Debug
+=== RUN   TestSNPReportVerifier_PolicyViolation_VMPL
+=== PAUSE TestSNPReportVerifier_PolicyViolation_VMPL
+=== RUN   TestSNPReportVerifier_SNPNotEnabled
+=== PAUSE TestSNPReportVerifier_SNPNotEnabled
+=== RUN   TestDeriveVMPLKey
+=== PAUSE TestDeriveVMPLKey
+=== RUN   TestConstants
+=== PAUSE TestConstants
+=== RUN   TestNewSNPVM_MeasurementMismatch
+=== PAUSE TestNewSNPVM_MeasurementMismatch
+=== RUN   TestSNPReportVerifier_TCB_MicrocodeBelow
+=== PAUSE TestSNPReportVerifier_TCB_MicrocodeBelow
+=== RUN   TestSNPReportVerifier_TCB_TEEBelow
+=== PAUSE TestSNPReportVerifier_TCB_TEEBelow
+=== RUN   TestSNPReportVerifier_TCB_BootLoaderBelow
+=== PAUSE TestSNPReportVerifier_TCB_BootLoaderBelow
+=== RUN   TestSNPReportVerifier_SetCerts
+=== PAUSE TestSNPReportVerifier_SetCerts
+=== RUN   TestSNPReportVerifier_PolicyPassesValidation
+=== PAUSE TestSNPReportVerifier_PolicyPassesValidation
+=== RUN   TestSNPVM_Execute_MultipleOperations
+=== PAUSE TestSNPVM_Execute_MultipleOperations
+=== RUN   TestSNPVM_GetAttestationReport_VerifiesFields
+=== PAUSE TestSNPVM_GetAttestationReport_VerifiesFields
+=== CONT  TestDefaultSNPVMConfig
+--- PASS: TestDefaultSNPVMConfig (0.00s)
+=== CONT  TestSNPVM_GetAttestationReport_VerifiesFields
+--- PASS: TestSNPVM_GetAttestationReport_VerifiesFields (0.00s)
+=== CONT  TestSNPVM_Execute_MultipleOperations
+--- PASS: TestSNPVM_Execute_MultipleOperations (0.00s)
+=== CONT  TestSNPReportVerifier_PolicyPassesValidation
+--- PASS: TestSNPReportVerifier_PolicyPassesValidation (0.00s)
+=== CONT  TestSNPReportVerifier_SetCerts
+--- PASS: TestSNPReportVerifier_SetCerts (0.00s)
+=== CONT  TestSNPReportVerifier_TCB_BootLoaderBelow
+--- PASS: TestSNPReportVerifier_TCB_BootLoaderBelow (0.00s)
+=== CONT  TestSNPReportVerifier_TCB_TEEBelow
+--- PASS: TestSNPReportVerifier_TCB_TEEBelow (0.00s)
+=== CONT  TestSNPReportVerifier_TCB_MicrocodeBelow
+--- PASS: TestSNPReportVerifier_TCB_MicrocodeBelow (0.00s)
+=== CONT  TestNewSNPVM_MeasurementMismatch
+--- PASS: TestNewSNPVM_MeasurementMismatch (0.00s)
+=== CONT  TestConstants
+--- PASS: TestConstants (0.00s)
+=== CONT  TestDeriveVMPLKey
+--- PASS: TestDeriveVMPLKey (0.00s)
+=== CONT  TestSNPReportVerifier_SNPNotEnabled
+--- PASS: TestSNPReportVerifier_SNPNotEnabled (0.00s)
+=== CONT  TestSNPReportVerifier_PolicyViolation_VMPL
+--- PASS: TestSNPReportVerifier_PolicyViolation_VMPL (0.00s)
+=== CONT  TestSNPReportVerifier_PolicyViolation_Debug
+--- PASS: TestSNPReportVerifier_PolicyViolation_Debug (0.00s)
+=== CONT  TestSNPReportVerifier_TCBBelowMinimum
+--- PASS: TestSNPReportVerifier_TCBBelowMinimum (0.00s)
+=== CONT  TestSNPReportVerifier_TrustedMeasurement
+--- PASS: TestSNPReportVerifier_TrustedMeasurement (0.00s)
+=== CONT  TestSNPReportVerifier_UntrustedMeasurement
+--- PASS: TestSNPReportVerifier_UntrustedMeasurement (0.00s)
+=== CONT  TestSNPReportVerifier_VerifyReport_Valid
+--- PASS: TestSNPReportVerifier_VerifyReport_Valid (0.00s)
+=== CONT  TestSNPVM_Destroy
+--- PASS: TestSNPVM_Destroy (0.00s)
+=== CONT  TestSNPVM_Stop
+--- PASS: TestSNPVM_Stop (0.00s)
+=== CONT  TestSNPVM_GetExecutionLog
+--- PASS: TestSNPVM_GetExecutionLog (0.00s)
+=== CONT  TestSNPVM_GetMeasurement
+--- PASS: TestSNPVM_GetMeasurement (0.00s)
+=== CONT  TestSNPVM_GetAttestationReport_NotRunning
+--- PASS: TestSNPVM_GetAttestationReport_NotRunning (0.00s)
+=== CONT  TestSNPVM_GetAttestationReport
+--- PASS: TestSNPVM_GetAttestationReport (0.00s)
+=== CONT  TestSNPVM_Execute_NotRunning
+--- PASS: TestSNPVM_Execute_NotRunning (0.00s)
+=== CONT  TestSNPVM_Execute
+=== RUN   TestSNPVM_Execute/hash
+=== RUN   TestSNPVM_Execute/verify
+=== RUN   TestSNPVM_Execute/inference
+=== RUN   TestSNPVM_Execute/unknown
+--- PASS: TestSNPVM_Execute (0.00s)
+    --- PASS: TestSNPVM_Execute/hash (0.00s)
+    --- PASS: TestSNPVM_Execute/verify (0.00s)
+    --- PASS: TestSNPVM_Execute/inference (0.00s)
+    --- PASS: TestSNPVM_Execute/unknown (0.00s)
+=== CONT  TestNewSNPVM_CustomConfig
+--- PASS: TestNewSNPVM_CustomConfig (0.00s)
+=== CONT  TestNewSNPVM
+--- PASS: TestNewSNPVM (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/tee/sev	2.955s

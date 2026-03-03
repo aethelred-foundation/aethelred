@@ -1,0 +1,36 @@
+{
+  "Aethelred Client": {
+    "prefix": "aeth-client",
+    "body": [
+      "from aethelred import AethelredClient",
+      "",
+      "client = AethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.org')",
+      "$0"
+    ],
+    "description": "Create Aethelred client"
+  },
+  "Async Client": {
+    "prefix": "aeth-async-client",
+    "body": [
+      "from aethelred import AsyncAethelredClient",
+      "",
+      "async with AsyncAethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.org') as client:",
+      "    $0"
+    ],
+    "description": "Create async Aethelred client"
+  },
+  "Submit Job": {
+    "prefix": "aeth-submit-job",
+    "body": [
+      "response = await client.jobs.submit(",
+      "    model_hash=b'${1:...}',",
+      "    input_hash=b'${2:...}',",
+      "    proof_type=ProofType.${3|TEE,ZKML,HYBRID|},",
+      "    priority=${4:1},",
+      ")",
+      "print(f'Job submitted: {response.job_id}')",
+      "$0"
+    ],
+    "description": "Submit compute job"
+  }
+}

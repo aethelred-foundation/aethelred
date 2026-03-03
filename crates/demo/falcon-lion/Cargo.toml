@@ -1,0 +1,65 @@
+[package]
+name = "falcon-lion"
+version = "1.0.0"
+edition = "2021"
+authors = ["Aethelred Protocol <engineering@aethelred.org>"]
+description = "Project Falcon-Lion: Enterprise Cross-Border Trade Finance Demo between FAB (UAE) and DBS (Singapore)"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/protocol"
+keywords = ["trade-finance", "letter-of-credit", "zero-knowledge", "cross-border", "compliance"]
+categories = ["finance", "cryptography", "blockchain"]
+
+[lib]
+name = "falcon_lion"
+path = "src/lib.rs"
+
+[[bin]]
+name = "falcon-lion-demo"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full", "tracing"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Cryptography
+sha2 = "0.10"
+sha3 = "0.10"
+hex = "0.4"
+rand = "0.8"
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# BigDecimal for financial calculations
+rust_decimal = { version = "1.33", features = ["serde", "serde-with-str"] }
+rust_decimal_macros = "1.33"
+
+parking_lot = "0.12"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+tokio-test = "0.4"
+
+[[bench]]
+name = "trade_benchmarks"
+harness = false
+
+[features]
+default = ["demo-mode"]
+demo-mode = []
+production = []
+stress-test = []

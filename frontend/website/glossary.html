@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossary | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 60px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 30% 20%, rgba(220, 38, 38, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    /* Search */
+    .search-container { margin: 40px 0; }
+    .search-box { display: flex; align-items: center; gap: 16px; background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 16px 24px; max-width: 600px; }
+    .search-box:focus-within { border-color: var(--red-600); }
+    .search-box svg { width: 24px; height: 24px; color: var(--gray-400); flex-shrink: 0; }
+    .search-box input { flex: 1; background: none; border: none; color: var(--white); font-size: 16px; font-family: inherit; outline: none; }
+    .search-box input::placeholder { color: var(--gray-400); }
+
+    /* Alphabet Nav */
+    .alphabet-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 40px; padding: 20px; background: var(--dark-800); border-radius: 12px; }
+    .alphabet-nav a { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--dark-700); border-radius: 8px; color: var(--gray-400); text-decoration: none; font-family: 'Orbitron', monospace; font-size: 14px; transition: all 0.3s; }
+    .alphabet-nav a:hover, .alphabet-nav a.active { background: var(--red-600); color: var(--white); }
+
+    /* Glossary Content */
+    .glossary-section { margin-bottom: 60px; }
+    .glossary-letter { font-family: 'Orbitron', monospace; font-size: 48px; color: var(--red-500); margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--dark-700); }
+    
+    .glossary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .glossary-item { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 24px; transition: all 0.3s; }
+    .glossary-item:hover { border-color: var(--red-700); transform: translateY(-2px); }
+    .glossary-term { font-size: 18px; font-weight: 600; color: var(--red-400); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .glossary-term .tag { font-size: 10px; padding: 2px 8px; background: rgba(220, 38, 38, 0.2); color: var(--red-500); border-radius: 4px; font-family: 'Orbitron', monospace; }
+    .glossary-def { font-size: 14px; color: var(--gray-300); line-height: 1.7; }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; margin-top: 80px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 768px) {
+      .glossary-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .page-hero h1 { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="team.html">Team</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Reference
+      </div>
+      <h1>Aethelred <span class="gradient-text">Glossary</span></h1>
+      <p class="subtitle">A comprehensive guide to terminology used throughout Aethelred documentation and the verifiable AI ecosystem.</p>
+      
+      <div class="search-container">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search terms..." id="glossary-search">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="alphabet-nav">
+      <a href="#A" class="active">A</a><a href="#B">B</a><a href="#C">C</a><a href="#D">D</a><a href="#E">E</a><a href="#F">F</a><a href="#G">G</a><a href="#H">H</a><a href="#I">I</a><a href="#K">K</a><a href="#L">L</a><a href="#M">M</a><a href="#N">N</a><a href="#O">O</a><a href="#P">P</a><a href="#R">R</a><a href="#S">S</a><a href="#T">T</a><a href="#V">V</a><a href="#W">W</a><a href="#Z">Z</a>
+    </div>
+
+    <!-- A -->
+    <div class="glossary-section" id="A">
+      <h2 class="glossary-letter">A</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">AETHEL Token <span class="tag">TOKEN</span></div>
+          <div class="glossary-def">The native utility and governance token of the Aethelred network, used for staking, transaction fees, validator rewards, and protocol governance voting.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Attestation</div>
+          <div class="glossary-def">A cryptographic statement signed by a validator confirming that a specific computation was executed correctly according to the Proof-of-Compute protocol.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Air-Gapped Deployment</div>
+          <div class="glossary-def">A deployment configuration where the Aethelred node operates in complete network isolation, suitable for classified or highly sensitive environments.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Audit Trail</div>
+          <div class="glossary-def">An immutable, chronological record of all AI computations, decisions, and verifications stored on the Aethelred network for compliance and forensic analysis.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="glossary-section" id="B">
+      <h2 class="glossary-letter">B</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Block Producer</div>
+          <div class="glossary-def">A validator node selected to create the next block in the chain, responsible for aggregating sealed computations and attestations into a verified block.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Byzantine Fault Tolerance (BFT)</div>
+          <div class="glossary-def">The network's ability to reach consensus and continue operating correctly even when some validators are malicious or failing.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="glossary-section" id="C">
+      <h2 class="glossary-letter">C</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Computational Provenance</div>
+          <div class="glossary-def">The complete traceable history of a computation, including input data sources, model versions, execution environment, and output attestations.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Consortium</div>
+          <div class="glossary-def">The Aethelred Verification Consortium, a group of organizations collaborating to establish industry standards for verifiable AI computation.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Cross-Domain Solution (CDS)</div>
+          <div class="glossary-def">A secure system that enables verified AI outputs to be shared across different security classification levels while maintaining integrity.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Cryptographic Seal</div>
+          <div class="glossary-def">See Digital Seal. A tamper-evident cryptographic wrapper applied to AI computation outputs.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="glossary-section" id="D">
+      <h2 class="glossary-letter">D</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Digital Seal <span class="tag">CORE</span></div>
+          <div class="glossary-def">Aethelred's proprietary cryptographic mechanism that binds AI computation outputs to their provenance, creating an unforgeable certificate of authenticity and integrity.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Delegated Staking</div>
+          <div class="glossary-def">A mechanism allowing AETHEL holders to stake their tokens with a validator node without running their own infrastructure, earning proportional rewards.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Deterministic Execution</div>
+          <div class="glossary-def">The property ensuring that given identical inputs and environment, an AI computation will always produce the same outputs, enabling verification.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="glossary-section" id="E">
+      <h2 class="glossary-letter">E</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Enterprise Corridor <span class="tag">FEATURE</span></div>
+          <div class="glossary-def">Dedicated, high-throughput verification channels for enterprise customers with guaranteed SLAs, priority processing, and enhanced privacy features.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Epoch</div>
+          <div class="glossary-def">A fixed time period (currently ~6 hours) during which the validator set remains constant and after which staking rewards are distributed.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Execution Environment Hash</div>
+          <div class="glossary-def">A cryptographic fingerprint of the complete computational environment (hardware, software, libraries) used for an AI computation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F -->
+    <div class="glossary-section" id="F">
+      <h2 class="glossary-letter">F</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Federated Learning</div>
+          <div class="glossary-def">A machine learning approach where models are trained across decentralized data sources without raw data leaving its origin, with Aethelred verifying each training contribution.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Finality</div>
+          <div class="glossary-def">The point at which a sealed computation is irreversibly confirmed on the network and cannot be altered or reverted.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- G -->
+    <div class="glossary-section" id="G">
+      <h2 class="glossary-letter">G</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Gas</div>
+          <div class="glossary-def">The unit measuring computational effort required to execute operations on the Aethelred network. Gas fees are paid in AETHEL tokens.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Governance Proposal</div>
+          <div class="glossary-def">A formal suggestion for protocol changes submitted by AETHEL holders, requiring community voting to be implemented.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- H -->
+    <div class="glossary-section" id="H">
+      <h2 class="glossary-letter">H</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Hash Commitment</div>
+          <div class="glossary-def">A cryptographic technique where a hash of data is published first, allowing later verification that the revealed data matches the original commitment.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Hardware Security Module (HSM)</div>
+          <div class="glossary-def">A physical computing device that safeguards cryptographic keys, required for enterprise validator nodes.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- I -->
+    <div class="glossary-section" id="I">
+      <h2 class="glossary-letter">I</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Inference Verification</div>
+          <div class="glossary-def">The process of cryptographically proving that an AI model produced a specific output given specific inputs, without revealing model weights.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Immutable Ledger</div>
+          <div class="glossary-def">The append-only blockchain storing all sealed computations and attestations, where historical records cannot be modified.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- K -->
+    <div class="glossary-section" id="K">
+      <h2 class="glossary-letter">K</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Key Ceremony</div>
+          <div class="glossary-def">A formal process for generating and distributing cryptographic keys for network validators, ensuring no single party controls critical secrets.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L -->
+    <div class="glossary-section" id="L">
+      <h2 class="glossary-letter">L</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Light Client</div>
+          <div class="glossary-def">A minimal implementation that can verify sealed computations without running a full node, suitable for mobile and embedded applications.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Liveness</div>
+          <div class="glossary-def">The network property ensuring that valid transactions will eventually be processed and sealed computations will eventually be finalized.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- M -->
+    <div class="glossary-section" id="M">
+      <h2 class="glossary-letter">M</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Merkle Proof</div>
+          <div class="glossary-def">A cryptographic proof allowing efficient verification that a specific computation is included in a block without downloading the entire block.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Model Hash</div>
+          <div class="glossary-def">A unique cryptographic fingerprint of an AI model's weights and architecture, used to verify the exact model version in a sealed computation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- N -->
+    <div class="glossary-section" id="N">
+      <h2 class="glossary-letter">N</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Node <span class="tag">INFRA</span></div>
+          <div class="glossary-def">A computer running Aethelred software that participates in the network. Can be a full node (stores all data), validator node (produces blocks), or light node.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Nonce</div>
+          <div class="glossary-def">A unique number used once in cryptographic operations to prevent replay attacks on sealed computations.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O -->
+    <div class="glossary-section" id="O">
+      <h2 class="glossary-letter">O</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Oracle</div>
+          <div class="glossary-def">A trusted external data source that provides real-world information to the network, with attestations about data authenticity.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P -->
+    <div class="glossary-section" id="P">
+      <h2 class="glossary-letter">P</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Proof-of-Compute <span class="tag">CORE</span></div>
+          <div class="glossary-def">Aethelred's novel consensus mechanism that validates AI computations were executed correctly, combining cryptographic proofs with distributed verification.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Provenance Chain</div>
+          <div class="glossary-def">The linked sequence of seals and attestations documenting every transformation of data from origin through AI processing to final output.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- R -->
+    <div class="glossary-section" id="R">
+      <h2 class="glossary-letter">R</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Reproducibility Certificate</div>
+          <div class="glossary-def">A sealed attestation that an AI computation can be exactly reproduced given the same inputs and environment specification.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Rollup</div>
+          <div class="glossary-def">A scaling solution that bundles multiple sealed computations into a single on-chain transaction, reducing costs while maintaining security.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S -->
+    <div class="glossary-section" id="S">
+      <h2 class="glossary-letter">S</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Slashing</div>
+          <div class="glossary-def">The penalty mechanism where validators lose staked AETHEL for malicious behavior or significant downtime.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Smart Contract <span class="tag">DEV</span></div>
+          <div class="glossary-def">Self-executing code deployed on Aethelred that can trigger automatic verification, manage sealed data, and enforce AI governance rules.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Spatial Attestation</div>
+          <div class="glossary-def">Cryptographic proof of the geographic location where a computation occurred, with ±3 meter accuracy using multi-source verification.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Staking</div>
+          <div class="glossary-def">The process of locking AETHEL tokens to become a validator or support validator operations, earning rewards for network participation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T -->
+    <div class="glossary-section" id="T">
+      <h2 class="glossary-letter">T</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Trusted Execution Environment (TEE)</div>
+          <div class="glossary-def">Secure hardware enclaves (Intel SGX, ARM TrustZone) used by validators to execute sensitive computations with hardware-level isolation.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Timestamp Proof</div>
+          <div class="glossary-def">Cryptographic evidence that a computation occurred at a specific moment in time, resistant to backdating attacks.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V -->
+    <div class="glossary-section" id="V">
+      <h2 class="glossary-letter">V</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Validator</div>
+          <div class="glossary-def">A node operator who stakes AETHEL and runs specialized hardware to verify AI computations and participate in consensus.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Verification Proof</div>
+          <div class="glossary-def">The cryptographic evidence that a sealed computation is valid, can be verified by any party without re-executing the computation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- W -->
+    <div class="glossary-section" id="W">
+      <h2 class="glossary-letter">W</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Wallet</div>
+          <div class="glossary-def">Software or hardware that manages AETHEL tokens and sealed computation credentials, enabling users to interact with the Aethelred network.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Witness</div>
+          <div class="glossary-def">A validator selected to observe and attest to the correct execution of a computation, providing additional verification guarantees.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Z -->
+    <div class="glossary-section" id="Z">
+      <h2 class="glossary-letter">Z</h2>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-term">Zero-Knowledge Proof (ZKP) <span class="tag">CRYPTO</span></div>
+          <div class="glossary-def">A cryptographic method allowing one party to prove a statement is true without revealing any information beyond the validity of the statement itself.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">ZK-SNARK</div>
+          <div class="glossary-def">Zero-Knowledge Succinct Non-Interactive Argument of Knowledge — the specific ZKP construction used in Aethelred's verification proofs.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple search functionality
+    document.getElementById('glossary-search').addEventListener('input', function(e) {
+      const search = e.target.value.toLowerCase();
+      document.querySelectorAll('.glossary-item').forEach(item => {
+        const term = item.querySelector('.glossary-term').textContent.toLowerCase();
+        const def = item.querySelector('.glossary-def').textContent.toLowerCase();
+        item.style.display = (term.includes(search) || def.includes(search)) ? 'block' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contracts | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --purple-500: #8B5CF6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--purple-500); border-radius: 50px; font-size: 13px; color: var(--purple-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--purple-500); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Features Grid */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; transition: all 0.3s; }
+    .feature-card:hover { border-color: var(--purple-500); transform: translateY(-4px); }
+    .feature-icon { width: 50px; height: 50px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .feature-icon svg { width: 26px; height: 26px; color: var(--purple-500); }
+    .feature-card h3 { font-size: 18px; margin-bottom: 10px; }
+    .feature-card p { font-size: 14px; color: var(--gray-400); }
+
+    /* Code Example */
+    .code-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    .code-info h3 { font-size: 28px; margin-bottom: 16px; }
+    .code-info p { font-size: 16px; color: var(--gray-400); margin-bottom: 24px; }
+    .code-features { list-style: none; }
+    .code-features li { padding: 12px 0; padding-left: 28px; position: relative; font-size: 15px; color: var(--gray-300); }
+    .code-features li::before { content: '→'; position: absolute; left: 0; color: var(--purple-500); }
+    
+    .code-block-container { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; overflow: hidden; }
+    .code-header { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--dark-700); border-bottom: 1px solid var(--dark-600); }
+    .code-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .code-dot.red { background: #EF4444; }
+    .code-dot.yellow { background: #EAB308; }
+    .code-dot.green { background: #22C55E; }
+    .code-filename { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gray-400); }
+    .code-content { padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8; overflow-x: auto; }
+    .code-content .keyword { color: var(--purple-500); }
+    .code-content .function { color: var(--blue-500); }
+    .code-content .string { color: var(--green-500); }
+    .code-content .comment { color: var(--gray-400); }
+    .code-content .type { color: var(--red-400); }
+
+    /* Contract Types */
+    .contract-types { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .contract-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; }
+    .contract-card h3 { font-size: 20px; margin-bottom: 12px; color: var(--purple-500); }
+    .contract-card p { font-size: 14px; color: var(--gray-400); margin-bottom: 16px; }
+    .contract-use-cases { display: flex; flex-wrap: wrap; gap: 8px; }
+    .use-case-tag { padding: 6px 12px; background: var(--dark-700); border-radius: 20px; font-size: 12px; color: var(--gray-300); }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+    .btn-primary { background: var(--purple-500); color: white; }
+    .btn-primary:hover { background: #7C3AED; }
+    .btn-secondary { background: var(--dark-700); color: white; border: 1px solid var(--dark-500); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .features-grid { grid-template-columns: 1fr; } .code-section { grid-template-columns: 1fr; } .contract-types { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="sandbox.html">Sandbox</a>
+        <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Developer Tools
+      </div>
+      <h1>Aethelred <span class="gradient-text">Smart Contracts</span></h1>
+      <p class="subtitle">Build self-executing AI verification logic. Smart contracts on Aethelred enable automated seal validation, governance rules, and programmable trust.</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Capabilities</span>
+        <h2 class="section-title">What You Can Build</h2>
+        <p class="section-desc">Smart contracts extend Aethelred's verification capabilities with programmable logic.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>Automated Verification</h3>
+          <p>Trigger verification workflows automatically when conditions are met, without human intervention.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+          </div>
+          <h3>Escrow & Payments</h3>
+          <p>Release payments only when AI computations are verified, creating trustless service agreements.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+          </div>
+          <h3>Access Control</h3>
+          <p>Define granular permissions for who can verify, seal, and access AI computation results.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h3>Governance Logic</h3>
+          <p>Implement voting, proposals, and decision-making rules for consortium governance.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <h3>Oracle Integration</h3>
+          <p>Connect real-world data feeds to trigger verification based on external events.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+          <h3>Cross-Chain Bridges</h3>
+          <p>Verify AI computations on Aethelred and attest results to other blockchains.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="code-section">
+        <div class="code-info">
+          <h3>Write in Solidity or Rust</h3>
+          <p>Aethelred smart contracts are compatible with familiar languages. Use Solidity for EVM-compatible logic or Rust for native performance.</p>
+          <ul class="code-features">
+            <li>Full EVM compatibility for Solidity contracts</li>
+            <li>Native Aethelred SDK for seal verification</li>
+            <li>Built-in ZK proof validation functions</li>
+            <li>Gas-efficient verification opcodes</li>
+            <li>Comprehensive testing framework</li>
+          </ul>
+          <div style="margin-top: 30px; display: flex; gap: 16px;">
+            <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn btn-primary">View Documentation</a>
+            <a href="sandbox.html" class="btn btn-secondary">Try in Sandbox</a>
+          </div>
+        </div>
+
+        <div class="code-block-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-filename">AIVerifier.sol</span>
+          </div>
+          <div class="code-content">
+<span class="comment">// SPDX-License-Identifier: MIT</span>
+<span class="keyword">pragma</span> solidity ^0.8.19;
+
+<span class="keyword">import</span> <span class="string">"@aethelred/contracts/ISealVerifier.sol"</span>;
+
+<span class="keyword">contract</span> <span class="type">AIVerifier</span> {
+    ISealVerifier <span class="keyword">public</span> verifier;
+    
+    <span class="keyword">mapping</span>(<span class="type">bytes32</span> => <span class="type">bool</span>) <span class="keyword">public</span> verifiedSeals;
+    
+    <span class="keyword">event</span> <span class="function">ComputationVerified</span>(
+        <span class="type">bytes32</span> sealId,
+        <span class="type">address</span> model,
+        <span class="type">uint256</span> timestamp
+    );
+    
+    <span class="keyword">function</span> <span class="function">verifySeal</span>(
+        <span class="type">bytes32</span> sealId,
+        <span class="type">bytes</span> <span class="keyword">calldata</span> proof
+    ) <span class="keyword">external</span> <span class="keyword">returns</span> (<span class="type">bool</span>) {
+        <span class="keyword">require</span>(
+            verifier.<span class="function">verify</span>(sealId, proof),
+            <span class="string">"Invalid seal"</span>
+        );
+        
+        verifiedSeals[sealId] = <span class="keyword">true</span>;
+        
+        <span class="keyword">emit</span> <span class="function">ComputationVerified</span>(
+            sealId,
+            <span class="keyword">msg</span>.sender,
+            <span class="keyword">block</span>.timestamp
+        );
+        
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contract Types -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Templates</span>
+        <h2 class="section-title">Pre-Built Contract Templates</h2>
+        <p class="section-desc">Start quickly with audited, production-ready contract templates.</p>
+      </div>
+
+      <div class="contract-types">
+        <div class="contract-card">
+          <h3>🔒 Verification Registry</h3>
+          <p>Store and query verified AI computation seals. Maintains an on-chain registry of all verified outputs.</p>
+          <div class="contract-use-cases">
+            <span class="use-case-tag">Audit Trails</span>
+            <span class="use-case-tag">Compliance</span>
+            <span class="use-case-tag">Data Integrity</span>
+          </div>
+        </div>
+
+        <div class="contract-card">
+          <h3>💰 Verification Escrow</h3>
+          <p>Hold funds until AI computation is verified. Automatic release upon successful seal validation.</p>
+          <div class="contract-use-cases">
+            <span class="use-case-tag">AI Services</span>
+            <span class="use-case-tag">Payments</span>
+            <span class="use-case-tag">SLAs</span>
+          </div>
+        </div>
+
+        <div class="contract-card">
+          <h3>🗳️ AI Governance</h3>
+          <p>DAO-style governance for AI model decisions. Vote on model updates, parameters, and deployments.</p>
+          <div class="contract-use-cases">
+            <span class="use-case-tag">DAOs</span>
+            <span class="use-case-tag">Voting</span>
+            <span class="use-case-tag">Proposals</span>
+          </div>
+        </div>
+
+        <div class="contract-card">
+          <h3>🔗 Cross-Chain Attestor</h3>
+          <p>Bridge verified AI outputs to other chains. Attest Aethelred seals on Ethereum, Polygon, and more.</p>
+          <div class="contract-use-cases">
+            <span class="use-case-tag">Bridges</span>
+            <span class="use-case-tag">Interop</span>
+            <span class="use-case-tag">Multi-Chain</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="comparison.html">Why Aethelred</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

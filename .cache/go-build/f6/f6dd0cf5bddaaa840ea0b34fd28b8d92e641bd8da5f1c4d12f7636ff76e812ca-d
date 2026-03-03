@@ -1,0 +1,3 @@
+testing: warning: no tests to run
+PASS
+ok  	github.com/aethelred/aethelred/internal/config	3.084s [no tests to run]

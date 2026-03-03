@@ -1,0 +1,13 @@
+./codec.go
+./events.go
+./expected_keepers.go
+./genesis.go
+./genesis.pb.go
+./keys.go
+./mint.pb.go
+./minter.go
+./params.go
+./params_legacy.go
+./query.pb.go
+./query.pb.gw.go
+./tx.pb.go

@@ -1,0 +1,176 @@
+name: Developer Tools CI
+
+on:
+  pull_request:
+    paths:
+      - "tools/cli/**"
+      - "tools/vscode-extension/**"
+      - "tools/dashboard/**"
+      - "tools/apps/fastapi-verifier/**"
+      - "tools/apps/nextjs-verifier/**"
+      - "tools/deploy/docker/docker-compose.local-testnet.yml"
+      - "tools/deploy/docker/Dockerfile.fastapi-verifier"
+      - "tools/deploy/docker/Dockerfile.nextjs-api"
+      - "tools/deploy/docker/Dockerfile.dashboard-devtools"
+      - "tools/deploy/docker/mock-rpc-server.py"
+      - "tools/scripts/devtools-cli-smoke.sh"
+      - "sdk/typescript/**"
+      - ".github/workflows/developer-tools-ci.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "tools/cli/**"
+      - "tools/vscode-extension/**"
+      - "tools/dashboard/**"
+      - "tools/apps/fastapi-verifier/**"
+      - "tools/apps/nextjs-verifier/**"
+      - "tools/deploy/docker/docker-compose.local-testnet.yml"
+      - "tools/deploy/docker/Dockerfile.fastapi-verifier"
+      - "tools/deploy/docker/Dockerfile.nextjs-api"
+      - "tools/deploy/docker/Dockerfile.dashboard-devtools"
+      - "tools/deploy/docker/mock-rpc-server.py"
+      - "tools/scripts/devtools-cli-smoke.sh"
+      - "sdk/typescript/**"
+      - ".github/workflows/developer-tools-ci.yml"
+
+jobs:
+  cli-builds:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cli_dir:
+          - tools/cli/aeth
+          - tools/cli/seal-verifier
+          - tools/cli/model-registry
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build local TypeScript SDK for file: deps
+        if: ${{ matrix.cli_dir == 'cli/aeth' || matrix.cli_dir == 'cli/seal-verifier' }}
+        run: |
+          cd sdk/typescript
+          npm install
+          npm run build
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.cli_dir }}
+          npm install
+
+      - name: Build CLI
+        run: |
+          cd ${{ matrix.cli_dir }}
+          npm run build
+
+  vscode-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build local TypeScript SDK for file: dep
+        run: |
+          cd sdk/typescript
+          npm install
+          npm run build
+
+      - name: Install extension dependencies
+        run: |
+          cd tools/tools/vscode-extension
+          npm install
+
+      - name: Run unit tests
+        run: |
+          cd tools/tools/vscode-extension
+          npm test
+
+      - name: Build extension bundle
+        run: |
+          cd tools/tools/vscode-extension
+          npm run build
+
+  dashboard-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dashboard dependencies
+        run: |
+          cd tools/dashboard
+          npm install
+
+      - name: Build dashboard
+        run: |
+          cd tools/dashboard
+          npm run build
+
+  local-testnet-compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate local testnet compose config
+        run: |
+          docker compose -f tools/deploy/docker/docker-compose.local-testnet.yml config >/tmp/local-testnet-compose.yaml
+          test -s /tmp/local-testnet-compose.yaml
+
+  local-testnet-cli-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build local TypeScript SDK for file: deps
+        run: |
+          cd sdk/typescript
+          npm install
+          npm run build
+
+      - name: Install and build aeth CLI
+        run: |
+          cd cli/aeth
+          npm install
+          npm run build
+
+      - name: Install and build seal-verifier CLI
+        run: |
+          cd cli/seal-verifier
+          npm install
+          npm run build
+
+      - name: Start mock local devtools stack
+        run: |
+          docker compose -f tools/deploy/docker/docker-compose.local-testnet.yml --profile mock up -d --build
+
+      - name: Run CLI smoke checks
+        run: |
+          ./tools/scripts/devtools-cli-smoke.sh
+
+      - name: Dump compose status
+        if: always()
+        run: |
+          docker compose -f tools/deploy/docker/docker-compose.local-testnet.yml --profile mock ps
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: |
+          docker compose -f tools/deploy/docker/docker-compose.local-testnet.yml --profile mock logs --no-color --tail=200
+
+      - name: Stop mock local devtools stack
+        if: always()
+        run: |
+          docker compose -f tools/deploy/docker/docker-compose.local-testnet.yml --profile mock down -v

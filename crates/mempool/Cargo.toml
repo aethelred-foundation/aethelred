@@ -1,0 +1,29 @@
+[package]
+name = "aethelred-mempool"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Aethelred transaction mempool with compliance middleware"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-node"
+keywords = ["blockchain", "mempool", "transactions", "compliance"]
+categories = ["blockchain"]
+
+[features]
+default = ["std"]
+std = []
+# Full compliance checking
+full-compliance = []
+
+[dependencies]
+thiserror = "1.0"
+hex = "0.4"
+sha2 = "0.10"
+regex = "1.10"
+
+[dev-dependencies]
+criterion = "0.5"
+tokio-test = "0.4"
+tempfile = "3.9"
+test-case = "3.3"
+proptest = "1.4"

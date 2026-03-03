@@ -1,0 +1,7 @@
+./convert.go
+./errors.go
+./format.go
+./options.go
+./snapshot.pb.go
+./snapshotter.go
+./util.go

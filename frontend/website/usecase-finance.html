@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Services Use Case | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-950: #450a0a;
+      --red-900: #7F1D1D;
+      --red-800: #991B1B;
+      --red-700: #B91C1C;
+      --red-600: #DC2626;
+      --red-500: #EF4444;
+      --red-400: #EF4444;
+      --dark-950: #030303;
+      --dark-900: #0A0A0A;
+      --dark-800: #111111;
+      --dark-700: #1A1A1A;
+      --dark-600: #222222;
+      --dark-500: #333333;
+      --gray-400: #9CA3AF;
+      --gray-300: #D1D5DB;
+      --white: #FFFFFF;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--dark-950);
+      color: var(--white);
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 20px 0;
+      background: rgba(3, 3, 3, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-700);
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+    .nav-back:hover { color: var(--red-500); }
+    .nav-back svg { width: 20px; height: 20px; }
+
+    .page-hero {
+      padding: 140px 0 60px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%);
+    }
+
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at 70% 20%, rgba(220, 38, 38, 0.15) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid var(--red-800);
+      border-radius: 50px;
+      font-size: 13px;
+      color: var(--red-500);
+      margin-bottom: 20px;
+    }
+
+    .page-hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .gradient-text {
+      background: var(--red-600);
+      color: var(--white);
+      padding: 0 12px;
+      margin: 0 4px;
+      display: inline;
+    }
+
+    .page-hero .subtitle {
+      font-size: 20px;
+      color: var(--gray-400);
+      max-width: 700px;
+      margin-bottom: 30px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .hero-stat { text-align: left; }
+
+    .hero-stat-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red-500);
+    }
+
+    .hero-stat-label {
+      font-size: 14px;
+      color: var(--gray-400);
+    }
+
+    .section {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--dark-700);
+    }
+
+    .section:last-of-type { border-bottom: none; }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      color: var(--red-500);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 18px;
+      color: var(--gray-400);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .challenges-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .challenge-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 16px;
+      padding: 30px;
+      transition: all 0.3s;
+    }
+
+    .challenge-card:hover {
+      border-color: var(--red-700);
+      transform: translateY(-4px);
+    }
+
+    .challenge-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(220, 38, 38, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .challenge-icon svg {
+      width: 24px;
+      height: 24px;
+      color: var(--red-500);
+    }
+
+    .challenge-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .challenge-card p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+    }
+
+    .diagram-container {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 20px;
+      padding: 40px;
+      margin: 40px 0;
+    }
+
+    .diagram-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      color: var(--red-500);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .diagram-svg {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .usecase-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .usecase-card:hover {
+      border-color: var(--red-600);
+      box-shadow: 0 20px 40px rgba(220, 38, 38, 0.15);
+    }
+
+    .usecase-diagram {
+      background: var(--dark-900);
+      padding: 30px;
+      border-bottom: 1px solid var(--dark-600);
+    }
+
+    .usecase-content {
+      padding: 30px;
+    }
+
+    .usecase-content h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .usecase-content p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .usecase-benefits { list-style: none; }
+
+    .usecase-benefits li {
+      font-size: 13px;
+      color: var(--gray-300);
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .usecase-benefits li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--red-500);
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .benefit-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .benefit-card:hover {
+      border-color: var(--red-600);
+      transform: translateY(-4px);
+    }
+
+    .benefit-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red-500);
+      margin-bottom: 8px;
+    }
+
+    .benefit-label {
+      font-size: 14px;
+      color: var(--gray-400);
+    }
+
+    .cta-section {
+      padding: 100px 0;
+      text-align: center;
+      background: linear-gradient(180deg, var(--dark-900) 0%, var(--dark-950) 100%);
+    }
+
+    .cta-section h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .cta-section p {
+      font-size: 18px;
+      color: var(--gray-400);
+      margin-bottom: 30px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, var(--red-700), var(--red-500));
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s;
+      box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(220, 38, 38, 0.6);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: transparent;
+      border: 1px solid var(--dark-500);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s;
+      margin-left: 16px;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--red-600);
+      background: rgba(220, 38, 38, 0.1);
+    }
+
+    .footer {
+      background: var(--dark-950);
+      border-top: 1px solid var(--dark-700);
+      padding: 60px 0 30px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(4, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin: 16px 0 20px;
+      max-width: 280px;
+    }
+
+    .footer-column h4 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      color: var(--red-500);
+    }
+
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--gray-400);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .footer-links a:hover { color: var(--red-500); }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--dark-700);
+    }
+
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) {
+      .challenges-grid, .usecase-grid { grid-template-columns: 1fr; }
+      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .page-hero h1 { font-size: 42px; }
+      .hero-stats { flex-wrap: wrap; gap: 30px; }
+    }
+
+    @media (max-width: 600px) {
+      .benefits-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .page-hero h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <a href="aethelred-website.html#use-cases" class="nav-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Use Cases
+      </a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Financial Services
+      </div>
+      <h1>Verifiable AI for <span class="gradient-text">Finance</span></h1>
+      <p class="subtitle">Provable fairness in algorithmic lending, cryptographic audit trails for trading systems, and regulatory-compliant AI risk models with zero-knowledge verification.</p>
+      
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">$2.3T</div>
+          <div class="hero-stat-label">Assets Under Management</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">147</div>
+          <div class="hero-stat-label">Financial Institutions</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">99.99%</div>
+          <div class="hero-stat-label">Compliance Rate</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">0</div>
+          <div class="hero-stat-label">Fair Lending Violations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Industry Challenges</span>
+        <h2 class="section-title">Financial AI Under Scrutiny</h2>
+        <p class="section-desc">Regulators and consumers demand transparency in algorithmic decision-making while protecting proprietary trading strategies.</p>
+      </div>
+
+      <div class="challenges-grid">
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+          </div>
+          <h3>Algorithmic Fairness</h3>
+          <p>ECOA, Fair Housing Act, and state regulations require proof that lending models don't discriminate, but explaining complex ML decisions is challenging.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>Model Risk Management</h3>
+          <p>SR 11-7 and OCC guidelines require extensive model validation, but AI models are often black boxes that resist traditional audit approaches.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <h3>IP Protection</h3>
+          <p>Trading algorithms represent billions in R&D investment. Proving compliance without exposing proprietary strategies is a critical requirement.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Solution Architecture</span>
+        <h2 class="section-title">Financial Services Platform</h2>
+        <p class="section-desc">End-to-end verifiable AI for regulated financial services.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Algorithmic Fairness Verification Flow</div>
+        <svg class="diagram-svg" viewBox="0 0 900 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(220,38,38,0.1)" stroke-width="0.5"/>
+            </pattern>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626"/>
+            </marker>
+          </defs>
+          <rect width="900" height="450" fill="url(#grid)"/>
+          
+          <!-- Input Data Sources -->
+          <g id="inputs">
+            <rect x="30" y="80" width="120" height="70" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="90" y="110" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">APPLICANT</text>
+            <text x="90" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Credit Data</text>
+            
+            <rect x="30" y="170" width="120" height="70" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="90" y="200" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">BUREAU</text>
+            <text x="90" y="220" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Credit Reports</text>
+            
+            <rect x="30" y="260" width="120" height="70" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="90" y="290" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">ALTERNATIVE</text>
+            <text x="90" y="310" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Data Sources</text>
+          </g>
+          
+          <!-- ML Model -->
+          <g id="ml-model">
+            <rect x="220" y="130" width="150" height="150" rx="12" fill="#1A1A1A" stroke="#B91C1C" stroke-width="2"/>
+            <text x="295" y="165" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">LENDING MODEL</text>
+            
+            <rect x="240" y="185" width="110" height="30" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="205" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Risk Scoring</text>
+            
+            <rect x="240" y="225" width="110" height="30" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="245" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Decision Engine</text>
+          </g>
+          
+          <!-- Aethelred Verification -->
+          <g id="verification">
+            <rect x="440" y="80" width="200" height="250" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <rect x="440" y="80" width="200" height="45" rx="12" fill="#DC2626"/>
+            <text x="540" y="108" fill="#FFF" font-family="Orbitron" font-size="12" text-anchor="middle">AETHELRED VERIFY</text>
+            
+            <rect x="460" y="140" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="540" y="162" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Fairness Analysis</text>
+            
+            <rect x="460" y="185" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="540" y="207" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Bias Detection</text>
+            
+            <rect x="460" y="230" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="540" y="252" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">ZK Proof Generation</text>
+            
+            <rect x="460" y="275" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="540" y="297" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Digital Seal</text>
+          </g>
+          
+          <!-- Outputs -->
+          <g id="outputs">
+            <rect x="710" y="100" width="150" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="785" y="130" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">DECISION</text>
+            <text x="785" y="150" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Approved/Denied</text>
+            
+            <rect x="710" y="190" width="150" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="785" y="220" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">FAIRNESS CERT</text>
+            <text x="785" y="240" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">ZK Proof + Seal</text>
+            
+            <rect x="710" y="280" width="150" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="785" y="310" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">AUDIT TRAIL</text>
+            <text x="785" y="330" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Immutable Log</text>
+          </g>
+          
+          <!-- Arrows -->
+          <path d="M150 115 L210 175" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M150 205 L210 205" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M150 295 L210 235" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M370 205 L430 205" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead)"/>
+          <path d="M640 150 L700 135" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M640 205 L700 225" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M640 280 L700 315" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          
+          <!-- Title -->
+          <rect x="350" y="20" width="200" height="35" rx="5" fill="#DC2626"/>
+          <text x="450" y="43" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">FAIR LENDING VERIFICATION</text>
+          
+          <!-- Legend -->
+          <text x="400" y="420" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Zero-knowledge proofs verify fairness without exposing model internals or applicant PII</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Applications</span>
+        <h2 class="section-title">Financial Services Use Cases</h2>
+        <p class="section-desc">Verifiable AI across banking, lending, trading, and insurance.</p>
+      </div>
+
+      <div class="usecase-grid">
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="50" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="55" y="80" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">LOAN</text>
+              <text x="55" y="95" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">APPLICATION</text>
+              <text x="55" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Credit + Income</text>
+              
+              <rect x="120" y="50" width="80" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="160" y="80" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Underwriting</text>
+              <text x="160" y="95" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">AI Model</text>
+              <text x="160" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Risk Scoring</text>
+              
+              <rect x="230" y="50" width="70" height="80" rx="8" fill="#DC2626"/>
+              <text x="265" y="80" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">FAIRNESS</text>
+              <text x="265" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">PROOF</text>
+              <text x="265" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">ZK Certificate</text>
+              
+              <rect x="330" y="50" width="60" height="80" rx="8" fill="#111" stroke="#22C55E" stroke-width="1.5"/>
+              <text x="360" y="85" fill="#22C55E" font-family="Space Grotesk" font-size="9" text-anchor="middle">✓ Fair</text>
+              <text x="360" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Compliant</text>
+              
+              <path d="M90 90 L115 90" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr1)"/>
+              <path d="M200 90 L225 90" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr1)"/>
+              <path d="M300 90 L325 90" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr1)"/>
+              
+              <defs>
+                <marker id="arr1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="#DC2626"/>
+                </marker>
+              </defs>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Prove fair lending without exposing model</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Fair Lending Compliance</h3>
+            <p>Generate cryptographic proofs that lending decisions are unbiased across protected classes without exposing proprietary scoring algorithms or applicant data.</p>
+            <ul class="usecase-benefits">
+              <li>ECOA & Fair Housing Act compliance</li>
+              <li>Zero-knowledge fairness proofs</li>
+              <li>Adverse action explanations</li>
+              <li>Regulatory audit readiness</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="30" y="40" width="80" height="100" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="70" y="70" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">TRADING</text>
+              <text x="70" y="85" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">ALGORITHM</text>
+              <text x="70" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Proprietary</text>
+              <text x="70" y="118" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Strategy</text>
+              
+              <rect x="150" y="40" width="100" height="100" rx="8" fill="#111" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="200" y="70" fill="#FFF" font-family="Orbitron" font-size="9" text-anchor="middle">AETHELRED</text>
+              <text x="200" y="88" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Execution Seal</text>
+              <text x="200" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Market Abuse Check</text>
+              <text x="200" y="122" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Best Execution</text>
+              
+              <rect x="290" y="30" width="90" height="50" rx="6" fill="#DC2626"/>
+              <text x="335" y="52" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEALED</text>
+              <text x="335" y="68" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Trade Log</text>
+              
+              <rect x="290" y="90" width="90" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="335" y="112" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">MiFID II</text>
+              <text x="335" y="128" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Compliance Cert</text>
+              
+              <path d="M110 90 L145 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M250 60 L285 55" stroke="#DC2626" stroke-width="1"/>
+              <path d="M250 115 L285 115" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verifiable algorithmic trading compliance</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Algorithmic Trading Compliance</h3>
+            <p>Seal every trading decision with cryptographic proof of best execution, market abuse prevention, and regulatory compliance without revealing alpha-generating strategies.</p>
+            <ul class="usecase-benefits">
+              <li>MiFID II / Reg NMS compliance</li>
+              <li>Best execution verification</li>
+              <li>Market manipulation detection</li>
+              <li>IP-preserving audit trails</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="30" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="55" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Market Data</text>
+              
+              <rect x="20" y="80" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="105" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Positions</text>
+              
+              <rect x="20" y="130" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="155" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Scenarios</text>
+              
+              <rect x="110" y="55" width="90" height="90" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="155" y="85" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">VaR Model</text>
+              <text x="155" y="102" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Monte Carlo</text>
+              <text x="155" y="118" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Simulation</text>
+              
+              <rect x="230" y="55" width="70" height="90" rx="8" fill="#DC2626"/>
+              <text x="265" y="85" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">VERIFIED</text>
+              <text x="265" y="100" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">VaR</text>
+              <text x="265" y="120" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">+ Seal</text>
+              
+              <rect x="330" y="45" width="60" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="360" y="67" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Basel IV</text>
+              <text x="360" y="85" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Report</text>
+              
+              <rect x="330" y="105" width="60" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="360" y="127" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Stress</text>
+              <text x="360" y="145" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Test Results</text>
+              
+              <path d="M80 50 L105 80" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 100 L105 100" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 150 L105 120" stroke="#DC2626" stroke-width="1"/>
+              <path d="M200 100 L225 100" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M300 80 L325 70" stroke="#DC2626" stroke-width="1"/>
+              <path d="M300 120 L325 130" stroke="#DC2626" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Risk Model Validation</h3>
+            <p>Verify VaR calculations, stress tests, and capital adequacy models with cryptographic proofs that satisfy SR 11-7 model risk management requirements.</p>
+            <ul class="usecase-benefits">
+              <li>SR 11-7 compliant validation</li>
+              <li>Basel IV capital calculations</li>
+              <li>Stress test verification</li>
+              <li>Model drift monitoring</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="30" y="50" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="65" y="75" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">INSURANCE</text>
+              <text x="65" y="90" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">CLAIM</text>
+              <text x="65" y="110" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Policy + Docs</text>
+              
+              <rect x="130" y="50" width="80" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="170" y="80" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Claims AI</text>
+              <text x="170" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Fraud Detection</text>
+              <text x="170" y="110" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Auto-Adjudication</text>
+              
+              <rect x="240" y="50" width="70" height="80" rx="8" fill="#DC2626"/>
+              <text x="275" y="80" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEALED</text>
+              <text x="275" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">DECISION</text>
+              <text x="275" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">Audit Trail</text>
+              
+              <rect x="340" y="50" width="50" height="80" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="365" y="80" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">✓ Pay</text>
+              <text x="365" y="100" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">✗ Deny</text>
+              <text x="365" y="120" fill="#F59E0B" font-family="Space Grotesk" font-size="8" text-anchor="middle">? Review</text>
+              
+              <path d="M100 90 L125 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M210 90 L235 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M310 90 L335 90" stroke="#DC2626" stroke-width="1.5"/>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verifiable claims processing with fraud detection</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Insurance Claims Processing</h3>
+            <p>Automate claims adjudication with AI while maintaining complete audit trails. Every decision is sealed with proof of policy compliance and fraud analysis results.</p>
+            <ul class="usecase-benefits">
+              <li>90% faster claims processing</li>
+              <li>Fraud detection verification</li>
+              <li>Policy compliance proofs</li>
+              <li>Dispute resolution evidence</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Impact</span>
+        <h2 class="section-title">Measurable Benefits</h2>
+        <p class="section-desc">Quantifiable improvements across financial AI deployments.</p>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-value">100%</div>
+          <div class="benefit-label">Audit Coverage</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">60%</div>
+          <div class="benefit-label">Compliance Cost Reduction</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">0</div>
+          <div class="benefit-label">Regulatory Findings</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">$4.2M</div>
+          <div class="benefit-label">Avg. Annual Savings</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Verify Your Financial AI?</h2>
+      <p>Join leading financial institutions using Aethelred for compliant, auditable AI.</p>
+      <a href="#" class="btn-primary">Request Finance Demo</a>
+      <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn-secondary">View Documentation</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence. A Zhyra Holdings portfolio company.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Solutions</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/proof-of-compute.html">Proof-of-Compute</a>
+            <a href="computer:///mnt/user-data/outputs/digital-seal.html">Digital Seal</a>
+            <a href="computer:///mnt/user-data/outputs/spatial-verification.html">Spatial Verification</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use Cases</h4>
+          <div class="footer-links">
+            <a href="usecase-healthcare.html">Healthcare</a>
+            <a href="usecase-finance.html">Financial Services</a>
+            <a href="usecase-supplychain.html">Supply Chain</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Developers</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="computer:///mnt/user-data/outputs/sdk-tools.html">SDK & Tools</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+            <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+            <a href="computer:///mnt/user-data/outputs/governance.html">Governance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

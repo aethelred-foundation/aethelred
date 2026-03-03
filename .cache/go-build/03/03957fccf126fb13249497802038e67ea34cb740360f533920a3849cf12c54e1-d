@@ -1,0 +1,103 @@
+=== RUN   TestDefaultAcceleratorConfig
+=== PAUSE TestDefaultAcceleratorConfig
+=== RUN   TestNewFPGAAccelerator
+=== PAUSE TestNewFPGAAccelerator
+=== RUN   TestNewFPGAAccelerator_CustomConfig
+=== PAUSE TestNewFPGAAccelerator_CustomConfig
+=== RUN   TestGetAvailableDevices
+=== PAUSE TestGetAvailableDevices
+=== RUN   TestLoadBitstream
+=== PAUSE TestLoadBitstream
+=== RUN   TestLoadBitstream_NoDevice
+=== PAUSE TestLoadBitstream_NoDevice
+=== RUN   TestUnloadBitstream
+=== PAUSE TestUnloadBitstream
+=== RUN   TestUnloadBitstream_NotLoaded
+=== PAUSE TestUnloadBitstream_NotLoaded
+=== RUN   TestExecuteMSM
+=== PAUSE TestExecuteMSM
+=== RUN   TestExecuteNTT
+=== PAUSE TestExecuteNTT
+=== RUN   TestExecutePoseidonHash
+=== PAUSE TestExecutePoseidonHash
+=== RUN   TestGetStats
+=== PAUSE TestGetStats
+=== RUN   TestClose
+=== PAUSE TestClose
+=== RUN   TestNewBitstreamManager
+=== PAUSE TestNewBitstreamManager
+=== RUN   TestBitstreamManager_RegisterAndGet
+=== PAUSE TestBitstreamManager_RegisterAndGet
+=== RUN   TestBitstreamManager_GetNotFound
+=== PAUSE TestBitstreamManager_GetNotFound
+=== RUN   TestBitstreamManager_ListBitstreams
+=== PAUSE TestBitstreamManager_ListBitstreams
+=== RUN   TestBitstreamManager_GetBitstreamHash
+=== PAUSE TestBitstreamManager_GetBitstreamHash
+=== RUN   TestFPGAModelConstants
+=== PAUSE TestFPGAModelConstants
+=== RUN   TestBitstreamTypeConstants
+=== PAUSE TestBitstreamTypeConstants
+=== RUN   TestGetKernel_DynamicSwitchDisabled
+=== PAUSE TestGetKernel_DynamicSwitchDisabled
+=== RUN   TestExecuteNTT_Inverse
+=== PAUSE TestExecuteNTT_Inverse
+=== RUN   TestGetStats_AfterMultipleOps
+=== PAUSE TestGetStats_AfterMultipleOps
+=== RUN   TestClose_NoKernels
+=== PAUSE TestClose_NoKernels
+=== RUN   TestLoadBitstream_NonPreferredDevice
+=== PAUSE TestLoadBitstream_NonPreferredDevice
+=== CONT  TestDefaultAcceleratorConfig
+--- PASS: TestDefaultAcceleratorConfig (0.00s)
+=== CONT  TestLoadBitstream_NonPreferredDevice
+--- PASS: TestLoadBitstream_NonPreferredDevice (0.00s)
+=== CONT  TestClose
+--- PASS: TestClose (0.00s)
+=== CONT  TestUnloadBitstream
+--- PASS: TestUnloadBitstream (0.00s)
+=== CONT  TestGetStats
+--- PASS: TestGetStats (0.00s)
+=== CONT  TestExecutePoseidonHash
+--- PASS: TestExecutePoseidonHash (0.00s)
+=== CONT  TestExecuteNTT
+--- PASS: TestExecuteNTT (0.00s)
+=== CONT  TestExecuteMSM
+--- PASS: TestExecuteMSM (0.00s)
+=== CONT  TestUnloadBitstream_NotLoaded
+--- PASS: TestUnloadBitstream_NotLoaded (0.00s)
+=== CONT  TestGetAvailableDevices
+--- PASS: TestGetAvailableDevices (0.00s)
+=== CONT  TestLoadBitstream_NoDevice
+--- PASS: TestLoadBitstream_NoDevice (0.00s)
+=== CONT  TestLoadBitstream
+--- PASS: TestLoadBitstream (0.00s)
+=== CONT  TestNewFPGAAccelerator_CustomConfig
+--- PASS: TestNewFPGAAccelerator_CustomConfig (0.00s)
+=== CONT  TestNewFPGAAccelerator
+Warning: failed to preload kernel ntt: no available FPGA device
+--- PASS: TestNewFPGAAccelerator (0.00s)
+=== CONT  TestClose_NoKernels
+--- PASS: TestClose_NoKernels (0.00s)
+=== CONT  TestGetStats_AfterMultipleOps
+--- PASS: TestGetStats_AfterMultipleOps (0.00s)
+=== CONT  TestExecuteNTT_Inverse
+--- PASS: TestExecuteNTT_Inverse (0.00s)
+=== CONT  TestGetKernel_DynamicSwitchDisabled
+--- PASS: TestGetKernel_DynamicSwitchDisabled (0.00s)
+=== CONT  TestBitstreamTypeConstants
+--- PASS: TestBitstreamTypeConstants (0.00s)
+=== CONT  TestFPGAModelConstants
+--- PASS: TestFPGAModelConstants (0.00s)
+=== CONT  TestBitstreamManager_GetBitstreamHash
+--- PASS: TestBitstreamManager_GetBitstreamHash (0.00s)
+=== CONT  TestBitstreamManager_ListBitstreams
+--- PASS: TestBitstreamManager_ListBitstreams (0.00s)
+=== CONT  TestBitstreamManager_GetNotFound
+--- PASS: TestBitstreamManager_GetNotFound (0.00s)
+=== CONT  TestBitstreamManager_RegisterAndGet
+--- PASS: TestBitstreamManager_RegisterAndGet (0.00s)
+=== CONT  TestNewBitstreamManager
+--- PASS: TestNewBitstreamManager (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/hardware/fpga	5.788s

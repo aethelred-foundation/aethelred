@@ -1,0 +1,318 @@
+# ============================================================================
+# Aethelred DevNet Alert Rules
+# ============================================================================
+#
+# Enterprise-grade alerting rules for the Aethelred blockchain network.
+# These rules monitor critical metrics and trigger alerts when thresholds
+# are exceeded.
+#
+# Severity Levels:
+# - critical: Immediate action required, potential service outage
+# - warning:  Action needed soon, degraded performance
+# - info:     Informational, no immediate action needed
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+groups:
+  # ==========================================================================
+  # Node Health Alerts
+  # ==========================================================================
+  - name: aethelred_node_health
+    interval: 30s
+    rules:
+      # Node down alert
+      - alert: AethelredNodeDown
+        expr: up{job=~"aethelred_.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Aethelred node {{ $labels.instance }} is down"
+          description: "Node {{ $labels.instance }} ({{ $labels.node_type }}) has been unreachable for more than 1 minute."
+          runbook_url: https://docs.aethelred.io/runbooks/node-down
+
+      # High memory usage
+      - alert: AethelredNodeHighMemory
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+          / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ printf \"%.1f\" $value }}% on {{ $labels.instance }}."
+
+      # High CPU usage
+      - alert: AethelredNodeHighCPU
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ printf \"%.1f\" $value }}% on {{ $labels.instance }}."
+
+      # Disk space running low
+      - alert: AethelredNodeLowDisk
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Only {{ printf \"%.1f\" $value }}% disk space remaining on {{ $labels.instance }}."
+
+      # Disk space critical
+      - alert: AethelredNodeCriticalDisk
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+        for: 5m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Only {{ printf \"%.1f\" $value }}% disk space remaining on {{ $labels.instance }}. Immediate action required!"
+
+  # ==========================================================================
+  # Consensus Alerts
+  # ==========================================================================
+  - name: aethelred_consensus
+    interval: 15s
+    rules:
+      # Block production stalled
+      - alert: AethelredBlockProductionStalled
+        expr: |
+          increase(aethelred_consensus_height[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: consensus
+        annotations:
+          summary: "Block production has stalled"
+          description: "No new blocks have been produced in the last 5 minutes. Check validator status."
+          runbook_url: https://docs.aethelred.io/runbooks/block-stalled
+
+      # Block time too high
+      - alert: AethelredSlowBlockTime
+        expr: |
+          rate(aethelred_consensus_height[5m]) < 0.2
+        for: 10m
+        labels:
+          severity: warning
+          team: consensus
+        annotations:
+          summary: "Block production is slower than expected"
+          description: "Block time is averaging more than 5 seconds (expected: 3 seconds)."
+
+      # Validator missed blocks
+      - alert: AethelredValidatorMissingBlocks
+        expr: |
+          increase(aethelred_consensus_validator_missed_blocks[10m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: consensus
+        annotations:
+          summary: "Validator {{ $labels.validator_name }} is missing blocks"
+          description: "Validator {{ $labels.validator_name }} has missed {{ $value }} blocks in the last 10 minutes."
+
+      # Low validator participation
+      - alert: AethelredLowValidatorParticipation
+        expr: |
+          aethelred_consensus_validators_active / aethelred_consensus_validators_total < 0.67
+        for: 5m
+        labels:
+          severity: critical
+          team: consensus
+        annotations:
+          summary: "Low validator participation"
+          description: "Only {{ printf \"%.0f\" (mul $value 100) }}% of validators are participating. Consensus may fail."
+
+  # ==========================================================================
+  # Bridge Alerts
+  # ==========================================================================
+  - name: aethelred_bridge
+    interval: 30s
+    rules:
+      # Bridge relayer down
+      - alert: AethelredBridgeRelayerDown
+        expr: up{job="aethelred_bridge_relayer"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: bridge
+        annotations:
+          summary: "Bridge relayer is down"
+          description: "The bridge relayer service has been unreachable for more than 2 minutes. Cross-chain transfers may be affected."
+          runbook_url: https://docs.aethelred.io/runbooks/bridge-down
+
+      # Pending deposits backlog
+      - alert: AethelredBridgePendingDepositsHigh
+        expr: |
+          aethelred_bridge_pending_deposits > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "High pending deposits backlog"
+          description: "{{ $value }} deposits are pending processing. Check relayer capacity."
+
+      # Pending withdrawals backlog
+      - alert: AethelredBridgePendingWithdrawalsHigh
+        expr: |
+          aethelred_bridge_pending_withdrawals > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "High pending withdrawals backlog"
+          description: "{{ $value }} withdrawals are pending processing. Check Ethereum gas prices."
+
+      # Bridge transaction failures
+      - alert: AethelredBridgeTransactionFailures
+        expr: |
+          increase(aethelred_bridge_failed_txs_total[10m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "Bridge transactions failing"
+          description: "{{ $value }} bridge transactions have failed in the last 10 minutes."
+
+      # Consensus round failures
+      - alert: AethelredBridgeConsensusFailures
+        expr: |
+          increase(aethelred_bridge_consensus_failures[10m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "Bridge consensus failures detected"
+          description: "{{ $value }} consensus rounds have failed in the last 10 minutes."
+
+  # ==========================================================================
+  # Compute Node Alerts
+  # ==========================================================================
+  - name: aethelred_compute
+    interval: 30s
+    rules:
+      # Compute node not processing jobs
+      - alert: AethelredComputeNodeIdle
+        expr: |
+          increase(aethelred_compute_jobs_completed[30m]) == 0
+          and aethelred_compute_jobs_pending > 0
+        for: 15m
+        labels:
+          severity: warning
+          team: compute
+        annotations:
+          summary: "Compute node {{ $labels.compute_name }} is idle with pending jobs"
+          description: "Compute node has {{ $value }} pending jobs but hasn't completed any in 30 minutes."
+
+      # TEE attestation failures
+      - alert: AethelredTEEAttestationFailures
+        expr: |
+          increase(aethelred_tee_attestation_failures[10m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: compute
+        annotations:
+          summary: "TEE attestation failures on {{ $labels.compute_name }}"
+          description: "{{ $value }} TEE attestation failures in the last 10 minutes."
+
+      # zkML proof generation slow
+      - alert: AethelredZKMLProofSlow
+        expr: |
+          histogram_quantile(0.95, rate(aethelred_zkml_proof_duration_seconds_bucket[10m])) > 60
+        for: 10m
+        labels:
+          severity: warning
+          team: compute
+        annotations:
+          summary: "zkML proof generation is slow"
+          description: "95th percentile proof generation time is {{ printf \"%.1f\" $value }} seconds."
+
+  # ==========================================================================
+  # P2P Network Alerts
+  # ==========================================================================
+  - name: aethelred_p2p
+    interval: 30s
+    rules:
+      # Low peer count
+      - alert: AethelredLowPeerCount
+        expr: |
+          aethelred_p2p_peers < 2
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low peer count on {{ $labels.instance }}"
+          description: "Node has only {{ $value }} peers connected. Expected at least 2."
+
+      # No peers
+      - alert: AethelredNoPeers
+        expr: |
+          aethelred_p2p_peers == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Node {{ $labels.instance }} has no peers"
+          description: "Node is completely isolated with no peer connections."
+
+  # ==========================================================================
+  # Service Health Alerts
+  # ==========================================================================
+  - name: aethelred_services
+    interval: 30s
+    rules:
+      # Faucet service down
+      - alert: AethelredFaucetDown
+        expr: up{job="aethelred_faucet"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: devtools
+        annotations:
+          summary: "Faucet service is down"
+          description: "The faucet service has been unreachable for more than 5 minutes."
+
+      # Explorer service down
+      - alert: AethelredExplorerDown
+        expr: up{job="aethelred_explorer"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: devtools
+        annotations:
+          summary: "Block explorer is down"
+          description: "The block explorer has been unreachable for more than 5 minutes."
+
+      # HTTP endpoint failures
+      - alert: AethelredEndpointUnhealthy
+        expr: |
+          probe_success{job="blackbox_http"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Health endpoint failing: {{ $labels.instance }}"
+          description: "The health endpoint at {{ $labels.instance }} is returning non-2xx status."

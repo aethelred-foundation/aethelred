@@ -1,0 +1,32 @@
+[package]
+name = "aethelred-crypto-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+aethelred-core = { path = "../..", features = ["full-pqc"] }
+
+[[bin]]
+name = "fuzz_hybrid_signature_from_bytes"
+path = "fuzz_targets/fuzz_hybrid_signature_from_bytes.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_hybrid_pubkey_from_bytes"
+path = "fuzz_targets/fuzz_hybrid_pubkey_from_bytes.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_kyber_pubkey_from_bytes"
+path = "fuzz_targets/fuzz_kyber_pubkey_from_bytes.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_signature_roundtrip"
+path = "fuzz_targets/fuzz_signature_roundtrip.rs"
+doc = false

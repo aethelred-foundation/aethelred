@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "effective_date": "2026-02-24",
+  "ratification_status": "pending-foundation-ratification",
+  "ratification_record": "docs/governance/adr-0001-chain-repo-authority-canonicalization.md",
+  "purpose": "Repository authority and release provenance registry for the Aethelred multi-repo set.",
+  "authority_groups": [
+    {
+      "id": "chain-go",
+      "description": "Go-based canonical chain implementation track",
+      "canonical_repo": "AethelredFoundation/aethelred-cosmos-node",
+      "canonical_go_module": "github.com/aethelred/aethelred",
+      "allow_duplicate_go_module_during_transition": true,
+      "transition_duplicate_repos": [
+        "AethelredFoundation/aethelred-core"
+      ]
+    }
+  ],
+  "repos": [
+    {
+      "repo": "AethelredFoundation/aethelred-cosmos-node",
+      "role": "canonical-chain",
+      "authority_group": "chain-go",
+      "release_authority": true,
+      "declared_modules": {
+        "go": [
+          "github.com/aethelred/aethelred"
+        ]
+      }
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-core",
+      "role": "transitional-mirror",
+      "authority_group": "chain-go",
+      "release_authority": false,
+      "superseded_by": "AethelredFoundation/aethelred-cosmos-node",
+      "declared_modules": {
+        "go": [
+          "github.com/aethelred/aethelred"
+        ]
+      }
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-rust-node",
+      "role": "alternative-implementation",
+      "authority_group": "chain-rust",
+      "release_authority": true,
+      "declared_modules": {
+        "cargo": [
+          "aethelred-rust-node"
+        ]
+      }
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-tee-worker",
+      "role": "runtime-worker",
+      "authority_group": "tee-workers",
+      "release_authority": true
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-contracts",
+      "role": "smart-contracts",
+      "authority_group": "contracts",
+      "release_authority": true
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-sdks",
+      "role": "sdk-monorepo",
+      "authority_group": "sdks",
+      "release_authority": true
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-developer-tools",
+      "role": "developer-tools",
+      "authority_group": "developer-tools",
+      "release_authority": true
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-integrations",
+      "role": "framework-integrations",
+      "authority_group": "integrations",
+      "release_authority": true
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-dashboard",
+      "role": "frontend-dashboard",
+      "authority_group": "frontend",
+      "release_authority": true
+    }
+  ]
+}

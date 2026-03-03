@@ -1,0 +1,16 @@
+./codec.go
+./content.go
+./deposit.go
+./genesis.go
+./genesis.pb.go
+./gov.pb.go
+./msgs.go
+./params.go
+./params_legacy.go
+./proposal.go
+./querier.go
+./query.pb.go
+./query.pb.gw.go
+./tally.go
+./tx.pb.go
+./vote.go

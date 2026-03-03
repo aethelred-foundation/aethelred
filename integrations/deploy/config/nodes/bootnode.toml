@@ -1,0 +1,237 @@
+# ============================================================================
+# Aethelred Bootnode Configuration
+# ============================================================================
+#
+# Configuration for the DevNet bootnode - the primary P2P coordination node
+# that serves as the entry point for the network.
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+# ===========================================================================
+# Node Identity
+# ===========================================================================
+[node]
+# Node moniker (human-readable name)
+moniker = "bootnode"
+
+# Node type: bootnode, validator, compute, full
+type = "bootnode"
+
+# Chain ID
+chain_id = "aethelred-devnet-1"
+
+# Data directory
+data_dir = "/data/aethelred"
+
+# Log level: trace, debug, info, warn, error
+log_level = "info"
+
+# ===========================================================================
+# P2P Configuration
+# ===========================================================================
+[p2p]
+# Listen address for P2P connections
+listen_addr = "tcp://0.0.0.0:26656"
+
+# External address (advertised to peers)
+external_addr = "tcp://bootnode:26656"
+
+# Maximum number of inbound peers
+max_inbound_peers = 40
+
+# Maximum number of outbound peers
+max_outbound_peers = 10
+
+# Persistent peers (comma-separated)
+# Format: node_id@host:port
+persistent_peers = ""
+
+# Seeds (for initial peer discovery)
+seeds = ""
+
+# Enable peer exchange reactor
+pex = true
+
+# Allow duplicate IP addresses (for local testing)
+allow_duplicate_ip = true
+
+# Handshake timeout
+handshake_timeout = "20s"
+
+# Dial timeout
+dial_timeout = "3s"
+
+# ===========================================================================
+# RPC Configuration
+# ===========================================================================
+[rpc]
+# RPC listen address
+listen_addr = "tcp://0.0.0.0:26657"
+
+# CORS allowed origins
+cors_allowed_origins = ["*"]
+
+# CORS allowed methods
+cors_allowed_methods = ["HEAD", "GET", "POST"]
+
+# CORS allowed headers
+cors_allowed_headers = ["Origin", "Accept", "Content-Type", "X-Requested-With"]
+
+# Maximum number of simultaneous connections
+max_open_connections = 900
+
+# Maximum subscription clients
+max_subscription_clients = 100
+
+# Maximum subscriptions per client
+max_subscriptions_per_client = 5
+
+# Timeout for read operations
+timeout_read = "10s"
+
+# Timeout for write operations
+timeout_write = "10s"
+
+# Maximum body bytes for requests
+max_body_bytes = 1000000
+
+# Maximum header bytes for requests
+max_header_bytes = 1048576
+
+# Enable unsafe RPC methods
+unsafe = false
+
+# ===========================================================================
+# gRPC Configuration
+# ===========================================================================
+[grpc]
+# gRPC listen address
+listen_addr = "0.0.0.0:9090"
+
+# Enable gRPC
+enabled = true
+
+# Maximum receive message size (bytes)
+max_recv_msg_size = 10485760
+
+# Maximum send message size (bytes)
+max_send_msg_size = 10485760
+
+# ===========================================================================
+# Mempool Configuration
+# ===========================================================================
+[mempool]
+# Maximum number of transactions in the mempool
+size = 5000
+
+# Maximum size of a single transaction (bytes)
+max_tx_bytes = 1048576
+
+# Maximum total size of mempool (bytes)
+max_txs_bytes = 1073741824
+
+# Cache size
+cache_size = 10000
+
+# Keep invalid txs in cache
+keep_invalid_txs_in_cache = false
+
+# ===========================================================================
+# Consensus Configuration
+# ===========================================================================
+[consensus]
+# Whether this node participates in consensus
+# Bootnode does NOT participate - it's only for P2P coordination
+validator = false
+
+# Timeout for proposal step
+timeout_propose = "3s"
+
+# Delta for timeout_propose on successive rounds
+timeout_propose_delta = "500ms"
+
+# Timeout for prevote step
+timeout_prevote = "1s"
+
+# Delta for timeout_prevote
+timeout_prevote_delta = "500ms"
+
+# Timeout for precommit step
+timeout_precommit = "1s"
+
+# Delta for timeout_precommit
+timeout_precommit_delta = "500ms"
+
+# Timeout for commit step
+timeout_commit = "1s"
+
+# Skip timeout commit
+skip_timeout_commit = false
+
+# Create empty blocks
+create_empty_blocks = true
+
+# Interval for creating empty blocks
+create_empty_blocks_interval = "0s"
+
+# ===========================================================================
+# Metrics Configuration
+# ===========================================================================
+[metrics]
+# Enable Prometheus metrics
+enabled = true
+
+# Prometheus listen address
+listen_addr = "0.0.0.0:9100"
+
+# Metrics namespace
+namespace = "aethelred"
+
+# Metrics subsystem
+subsystem = "bootnode"
+
+# ===========================================================================
+# State Sync Configuration
+# ===========================================================================
+[state_sync]
+# Enable state sync
+enabled = false
+
+# RPC servers for state sync
+rpc_servers = ""
+
+# Trust height
+trust_height = 0
+
+# Trust hash
+trust_hash = ""
+
+# Trust period
+trust_period = "168h"
+
+# Discovery time
+discovery_time = "15s"
+
+# Chunk request timeout
+chunk_request_timeout = "10s"
+
+# Chunk fetchers
+chunk_fetchers = 4
+
+# ===========================================================================
+# Pruning Configuration
+# ===========================================================================
+[pruning]
+# Pruning strategy: default, nothing, everything, custom
+strategy = "default"
+
+# Keep recent blocks (only for custom)
+keep_recent = 100
+
+# Keep every N blocks (only for custom)
+keep_every = 0
+
+# Prune interval
+interval = 10

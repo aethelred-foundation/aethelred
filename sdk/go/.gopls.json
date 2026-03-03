@@ -1,0 +1,5 @@
+{
+    "build.buildFlags": [
+        "-tags=aethelred_gpu_native"
+    ]
+}

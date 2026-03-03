@@ -1,0 +1,340 @@
+version: "3.9"
+
+# Aethelred DevNet Docker Compose Configuration
+#
+# This configuration sets up a local development network with:
+# - 3 validator nodes with TEE capabilities
+# - 1 zkML prover service
+# - 1 PostgreSQL database for indexing
+# - 1 Redis for caching
+# - 1 API gateway
+
+services:
+  # ============================================
+  # Validator Nodes
+  # ============================================
+
+  validator-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.validator
+    container_name: aethelred-validator-1
+    hostname: validator-1
+    ports:
+      - "26656:26656"  # P2P
+      - "26657:26657"  # RPC
+      - "9090:9090"    # gRPC
+      - "1317:1317"    # REST API
+    volumes:
+      - validator-1-data:/root/.aethelred
+      - ./genesis.json:/root/.aethelred/config/genesis.json:ro
+      - ./config/validator-1:/root/.aethelred/config:ro
+    environment:
+      - AETHELRED_CHAIN_ID=aethelred-devnet-1
+      - AETHELRED_MONIKER=validator-1
+      - AETHELRED_LOG_LEVEL=info
+      - AETHELRED_TEE_ENABLED=true
+      - AETHELRED_TEE_PLATFORM=SIMULATED
+      - AETHELRED_TEE_MODE=mock
+      - AETHELRED_QUANTUM_THREAT_LEVEL=0
+    networks:
+      - aethelred-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:26657/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  validator-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.validator
+    container_name: aethelred-validator-2
+    hostname: validator-2
+    ports:
+      - "26756:26656"
+      - "26757:26657"
+      - "9190:9090"
+      - "1417:1317"
+    volumes:
+      - validator-2-data:/root/.aethelred
+      - ./genesis.json:/root/.aethelred/config/genesis.json:ro
+      - ./config/validator-2:/root/.aethelred/config:ro
+    environment:
+      - AETHELRED_CHAIN_ID=aethelred-devnet-1
+      - AETHELRED_MONIKER=validator-2
+      - AETHELRED_LOG_LEVEL=info
+      - AETHELRED_TEE_ENABLED=true
+      - AETHELRED_TEE_PLATFORM=SIMULATED
+      - AETHELRED_TEE_MODE=mock
+      - AETHELRED_QUANTUM_THREAT_LEVEL=0
+      - AETHELRED_PERSISTENT_PEERS=validator-1:26656
+    networks:
+      - aethelred-network
+    depends_on:
+      validator-1:
+        condition: service_healthy
+    restart: unless-stopped
+
+  validator-3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.validator
+    container_name: aethelred-validator-3
+    hostname: validator-3
+    ports:
+      - "26856:26656"
+      - "26857:26657"
+      - "9290:9090"
+      - "1517:1317"
+    volumes:
+      - validator-3-data:/root/.aethelred
+      - ./genesis.json:/root/.aethelred/config/genesis.json:ro
+      - ./config/validator-3:/root/.aethelred/config:ro
+    environment:
+      - AETHELRED_CHAIN_ID=aethelred-devnet-1
+      - AETHELRED_MONIKER=validator-3
+      - AETHELRED_LOG_LEVEL=info
+      - AETHELRED_TEE_ENABLED=true
+      - AETHELRED_TEE_PLATFORM=SIMULATED
+      - AETHELRED_TEE_MODE=mock
+      - AETHELRED_QUANTUM_THREAT_LEVEL=0
+      - AETHELRED_PERSISTENT_PEERS=validator-1:26656,validator-2:26656
+    networks:
+      - aethelred-network
+    depends_on:
+      validator-1:
+        condition: service_healthy
+      validator-2:
+        condition: service_started
+    restart: unless-stopped
+
+  # ============================================
+  # zkML Prover Service
+  # ============================================
+
+  zkml-prover:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.zkml-prover
+    container_name: aethelred-zkml-prover
+    hostname: zkml-prover
+    ports:
+      - "8080:8080"  # Prover API
+    volumes:
+      - zkml-prover-data:/app/data
+      - ./models:/app/models:ro
+      - ./circuits:/app/circuits:ro
+    environment:
+      - EZKL_LOG_LEVEL=info
+      - PROVER_MAX_CONCURRENT_JOBS=4
+      - PROVER_TIMEOUT_SECONDS=300
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://aethelred:aethelred@postgres:5432/aethelred
+    networks:
+      - aethelred-network
+    depends_on:
+      - redis
+      - postgres
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # ============================================
+  # Supporting Services
+  # ============================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: aethelred-postgres
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_USER=aethelred
+      - POSTGRES_PASSWORD=aethelred
+      - POSTGRES_DB=aethelred
+    networks:
+      - aethelred-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aethelred"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: aethelred-redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - aethelred-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # API Gateway
+  # ============================================
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api-gateway
+    container_name: aethelred-api-gateway
+    hostname: api-gateway
+    ports:
+      - "3000:3000"   # REST API
+      - "3001:3001"   # WebSocket
+    environment:
+      - NODE_ENV=development
+      - VALIDATOR_RPC_URL=http://validator-1:26657
+      - VALIDATOR_GRPC_URL=http://validator-1:9090
+      - ZKML_PROVER_URL=http://zkml-prover:8080
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://aethelred:aethelred@postgres:5432/aethelred
+      - JWT_SECRET=devnet-secret-change-in-production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+    networks:
+      - aethelred-network
+    depends_on:
+      validator-1:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================
+  # Block Explorer
+  # ============================================
+
+  explorer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.explorer
+    container_name: aethelred-explorer
+    hostname: explorer
+    ports:
+      - "8000:8000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:3001
+      - NEXT_PUBLIC_CHAIN_ID=aethelred-devnet-1
+    networks:
+      - aethelred-network
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+  # ============================================
+  # Faucet Service
+  # ============================================
+
+  faucet:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.faucet
+    container_name: aethelred-faucet
+    hostname: faucet
+    ports:
+      - "8888:8888"
+    environment:
+      - VALIDATOR_RPC_URL=http://validator-1:26657
+      - FAUCET_MNEMONIC=${FAUCET_MNEMONIC:-}
+      - FAUCET_AMOUNT=10000000000000000000
+      - FAUCET_DENOM=uaeth
+      - RATE_LIMIT_SECONDS=3600
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - aethelred-network
+    depends_on:
+      validator-1:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================
+  # Monitoring Stack
+  # ============================================
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: aethelred-prometheus
+    hostname: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - aethelred-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: aethelred-grafana
+    hostname: grafana
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-devnet-change-me}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - aethelred-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+# ============================================
+# Networks
+# ============================================
+
+networks:
+  aethelred-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================
+# Volumes
+# ============================================
+
+volumes:
+  validator-1-data:
+  validator-2-data:
+  validator-3-data:
+  zkml-prover-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

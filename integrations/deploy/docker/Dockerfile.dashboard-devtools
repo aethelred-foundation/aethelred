@@ -1,0 +1,23 @@
+FROM node:20-bookworm-slim AS deps
+WORKDIR /build/dashboard
+
+# Path from workspace root (build context = ../../..)
+COPY frontend/dashboard/package*.json ./
+RUN npm install
+
+FROM node:20-bookworm-slim AS builder
+WORKDIR /build/dashboard
+COPY --from=deps /build/dashboard/node_modules ./node_modules
+COPY frontend/dashboard ./
+ENV NODE_ENV=production
+RUN npm run build
+
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3101
+EXPOSE 3101
+
+COPY --from=builder /build/dashboard /app
+CMD ["npm", "run", "start", "--", "-p", "3101"]
+

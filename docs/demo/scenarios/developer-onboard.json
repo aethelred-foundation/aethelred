@@ -1,0 +1,84 @@
+{
+  "name": "Developer Onboarding",
+  "description": "10-15 minute technical demo for developers",
+  "duration_minutes": 15,
+  "audience": "developers",
+  "sequence": [
+    {
+      "section": "Quick Intro",
+      "duration_seconds": 60,
+      "talking_points": [
+        "Aethelred = Sovereign L1 for Verifiable AI",
+        "Build privacy-preserving AI apps",
+        "Full SDK support in your favorite language"
+      ]
+    },
+    {
+      "section": "VS Code Extension Demo",
+      "duration_seconds": 180,
+      "actions": [
+        "Install Aethelred Sovereign Copilot extension",
+        "Show compliance linting in real-time",
+        "Demonstrate cost estimation hover",
+        "Use code snippets for job submission"
+      ],
+      "commands": [
+        "Ctrl+Shift+A: Run compliance scan",
+        "Ctrl+.: Quick fixes for violations"
+      ]
+    },
+    {
+      "section": "SDK Quickstart",
+      "demo": "credit-score",
+      "mode": "realistic",
+      "duration_seconds": 180,
+      "code_example": "typescript",
+      "talking_points": [
+        "npm install @aethelred/sdk",
+        "Connect to local devnet or testnet",
+        "Submit a compute job",
+        "Verify the Digital Seal"
+      ]
+    },
+    {
+      "section": "Local DevNet Setup",
+      "duration_seconds": 180,
+      "commands": [
+        "./deploy/scripts/setup-devnet.sh --clean --build",
+        "# Starts 3 validators, zkML prover, API gateway",
+        "# Explorer at http://localhost:3000",
+        "# Faucet at http://localhost:8888"
+      ]
+    },
+    {
+      "section": "Job Submission Deep Dive",
+      "duration_seconds": 180,
+      "code_walkthrough": [
+        "1. Create client with endpoint",
+        "2. Build job specification (model, input, compliance rules)",
+        "3. Submit job and get job ID",
+        "4. Poll for completion or use WebSocket",
+        "5. Retrieve output and Digital Seal",
+        "6. Verify seal on-chain"
+      ]
+    },
+    {
+      "section": "Q&A / Hands-On",
+      "duration_seconds": 180,
+      "resources": [
+        "docs.aethelred.ai - Full documentation",
+        "github.com/aethelred - Open source SDKs",
+        "discord.gg/aethelred - Developer community"
+      ]
+    }
+  ],
+  "code_samples": {
+    "typescript": "import { AethelredClient, Job } from '@aethelred/sdk';\n\nconst client = new AethelredClient({ endpoint: 'http://localhost:26657' });\n\nconst job = await client.submitJob({\n  model: 'credit-scoring-v1',\n  input: encryptedData,\n  compliance: ['GDPR', 'CCPA'],\n});\n\nconst result = await job.waitForCompletion();\nconst seal = await client.getSeal(result.sealId);\nconsole.log('Verified:', seal.verify());",
+    "python": "from aethelred import AethelredClient\n\nclient = AethelredClient(endpoint='http://localhost:26657')\n\njob = client.submit_job(\n    model='credit-scoring-v1',\n    input_data=encrypted_data,\n    compliance=['GDPR', 'CCPA']\n)\n\nresult = job.wait_for_completion()\nseal = client.get_seal(result.seal_id)\nprint(f'Verified: {seal.verify()}')"
+  },
+  "prerequisites": [
+    "Node.js 18+ or Python 3.9+",
+    "Docker (for local devnet)",
+    "VS Code (optional, for extension)"
+  ]
+}

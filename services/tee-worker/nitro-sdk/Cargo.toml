@@ -1,0 +1,94 @@
+[package]
+name = "aethelred-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Verifiable Compute Chain (VCC) toolkit with explicit compute-backend guarantees"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-sdk"
+keywords = ["blockchain", "ai", "tee", "zk", "verifiable-compute"]
+categories = ["cryptography", "development-tools", "wasm"]
+readme = "README.md"
+
+[lib]
+name = "aethelred_sdk"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "aeth"
+path = "src/bin/aeth.rs"
+required-features = ["full-sdk"]
+
+[[bin]]
+name = "aeth-seal"
+path = "src/bin/aeth_seal.rs"
+required-features = ["full-sdk"]
+
+[[bin]]
+name = "aeth-registry"
+path = "src/bin/aeth_registry.rs"
+required-features = ["full-sdk"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+sha2 = "0.10"
+sha3 = "0.10"
+uuid = { version = "1", features = ["v4"] }
+hex = "0.4"
+base64 = "0.21"
+rand = "0.8"
+blake3 = "1"
+ring = "0.17"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+hkdf = "0.12"
+argon2 = "0.5"
+pbkdf2 = "0.12"
+bincode = "1.3"
+serde_bytes = "0.11"
+serde_json = "1.0"
+
+[dev-dependencies]
+
+[features]
+default = ["offline-minimal"]
+offline-minimal = []
+attestation-evidence = []
+cli = []
+python = []
+wasm = []
+grpc = []
+intel_sgx = []
+amd_sev = []
+full-sdk = [
+    "cli",
+    "grpc",
+    "intel_sgx",
+    "amd_sev",
+]
+full = ["full-sdk"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1
+
+[[example]]
+name = "sovereign_data"
+path = "examples/sovereign_data.rs"
+
+[[example]]
+name = "zktensor_inference"
+path = "examples/zktensor_inference.rs"
+
+[[example]]
+name = "trade_finance"
+path = "examples/trade_finance.rs"
+
+[[bench]]
+name = "crypto_benchmarks"
+harness = false

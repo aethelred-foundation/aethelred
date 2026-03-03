@@ -1,0 +1,8 @@
+./block.go
+./commit.go
+./config.go
+./doc.go
+./genesis.go
+./params.go
+./tx.go
+./validator.go

@@ -1,0 +1,4 @@
+./autocli.go
+./doc.go
+./genesis.go
+./module.go

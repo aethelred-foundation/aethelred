@@ -1,0 +1,179 @@
+{
+  "name": "aethelred-vscode",
+  "displayName": "Aethelred",
+  "description": "Aethelred AI Blockchain development tools for VS Code",
+  "version": "1.0.0",
+  "publisher": "aethelred",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Debuggers",
+    "Other"
+  ],
+  "keywords": [
+    "aethelred",
+    "blockchain",
+    "ai",
+    "cosmos",
+    "web3"
+  ],
+  "activationEvents": [
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:python",
+    "onLanguage:typescript",
+    "onLanguage:helix",
+    "workspaceContains:**/go.mod",
+    "workspaceContains:**/Cargo.toml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aethelred.connect",
+        "title": "Aethelred: Connect to Network"
+      },
+      {
+        "command": "aethelred.submitJob",
+        "title": "Aethelred: Submit Compute Job"
+      },
+      {
+        "command": "aethelred.verifySeal",
+        "title": "Aethelred: Verify Seal"
+      },
+      {
+        "command": "aethelred.verifySealInEditor",
+        "title": "Aethelred: Verify Seal In Editor"
+      },
+      {
+        "command": "aethelred.registerModel",
+        "title": "Aethelred: Register Model"
+      },
+      {
+        "command": "aethelred.startTestnet",
+        "title": "Aethelred: Start Local Testnet"
+      },
+      {
+        "command": "aethelred.openExplorer",
+        "title": "Aethelred: Open Block Explorer"
+      },
+      {
+        "command": "aethelred.openDeveloperDashboard",
+        "title": "Aethelred: Open Developer Dashboard"
+      }
+    ],
+    "configuration": {
+      "title": "Aethelred",
+      "properties": {
+        "aethelred.network": {
+          "type": "string",
+          "default": "testnet",
+          "enum": ["mainnet", "testnet", "devnet", "local"],
+          "description": "Default network to connect to"
+        },
+        "aethelred.rpcUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom RPC URL (overrides network setting)"
+        },
+        "aethelred.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for authenticated requests"
+        },
+        "aethelred.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show network status in status bar"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aethelred",
+          "title": "Aethelred",
+          "icon": "images/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "aethelred": [
+        {
+          "id": "aethelred.network",
+          "name": "Network"
+        },
+        {
+          "id": "aethelred.jobs",
+          "name": "Jobs"
+        },
+        {
+          "id": "aethelred.seals",
+          "name": "Seals"
+        },
+        {
+          "id": "aethelred.models",
+          "name": "Models"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "helix",
+        "aliases": ["Helix DSL", "helix"],
+        "extensions": [".helix"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "helix",
+        "scopeName": "source.helix",
+        "path": "./syntaxes/helix.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "python",
+        "path": "./snippets/python.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/typescript.json"
+      },
+      {
+        "language": "rust",
+        "path": "./snippets/rust.json"
+      },
+      {
+        "language": "go",
+        "path": "./snippets/go.json"
+      },
+      {
+        "language": "helix",
+        "path": "./snippets/helix.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run build -- --watch",
+    "test:unit": "node --test test/unit/*.test.mjs",
+    "test:integration": "echo \"VS Code host integration tests are optional in CI\"",
+    "test": "npm run test:unit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.19.11",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@aethelred/sdk": "file:../sdk/typescript"
+  }
+}

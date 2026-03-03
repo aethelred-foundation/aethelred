@@ -1,0 +1,214 @@
+=== RUN   TestNewField
+=== PAUSE TestNewField
+=== RUN   TestNewFieldFromBytes
+=== PAUSE TestNewFieldFromBytes
+=== RUN   TestNewFieldFromBytes_Short
+=== PAUSE TestNewFieldFromBytes_Short
+=== RUN   TestField_ToBytes
+=== PAUSE TestField_ToBytes
+=== RUN   TestField_RoundTrip
+=== PAUSE TestField_RoundTrip
+=== RUN   TestCircuitTypeConstants
+=== PAUSE TestCircuitTypeConstants
+=== RUN   TestNewCircuitBuilder
+=== PAUSE TestNewCircuitBuilder
+=== RUN   TestCircuitBuilder_WithConfig
+=== PAUSE TestCircuitBuilder_WithConfig
+=== RUN   TestCircuitBuilder_Build_Linear
+=== PAUSE TestCircuitBuilder_Build_Linear
+=== RUN   TestCircuitBuilder_Build_Conv2D
+=== PAUSE TestCircuitBuilder_Build_Conv2D
+=== RUN   TestCircuitBuilder_Build_TreeEnsemble
+=== PAUSE TestCircuitBuilder_Build_TreeEnsemble
+=== RUN   TestCeilLog2
+=== PAUSE TestCeilLog2
+=== RUN   TestNewProver
+=== PAUSE TestNewProver
+=== RUN   TestProver_LoadCircuit
+=== PAUSE TestProver_LoadCircuit
+=== RUN   TestProver_Prove
+=== PAUSE TestProver_Prove
+=== RUN   TestProver_Prove_CircuitNotFound
+=== PAUSE TestProver_Prove_CircuitNotFound
+=== RUN   TestNewVerifier
+=== PAUSE TestNewVerifier
+=== RUN   TestVerifier_LoadVerifyingKey
+=== PAUSE TestVerifier_LoadVerifyingKey
+=== RUN   TestVerifier_Verify_Valid
+=== PAUSE TestVerifier_Verify_Valid
+=== RUN   TestVerifier_Verify_MissingVK
+=== PAUSE TestVerifier_Verify_MissingVK
+=== RUN   TestVerifier_Verify_ShortProof
+=== PAUSE TestVerifier_Verify_ShortProof
+=== RUN   TestVerifier_Verify_NoPublicInputs
+=== PAUSE TestVerifier_Verify_NoPublicInputs
+=== RUN   TestGenerateVerifyingKey
+=== PAUSE TestGenerateVerifyingKey
+=== RUN   TestLoadKZGSetup
+=== PAUSE TestLoadKZGSetup
+=== RUN   TestLoadKZGSetup_TooShort
+=== PAUSE TestLoadKZGSetup_TooShort
+=== RUN   TestGenerateKZGSetup
+=== PAUSE TestGenerateKZGSetup
+=== RUN   TestDefaultQuantizationConfig
+=== PAUSE TestDefaultQuantizationConfig
+=== RUN   TestNewMLCircuitBuilder
+=== PAUSE TestNewMLCircuitBuilder
+=== RUN   TestMLCircuitBuilder_WithQuantization
+=== PAUSE TestMLCircuitBuilder_WithQuantization
+=== RUN   TestMLCircuitBuilder_AddLinearLayer
+=== PAUSE TestMLCircuitBuilder_AddLinearLayer
+=== RUN   TestMLCircuitBuilder_AddConv2DLayer
+=== PAUSE TestMLCircuitBuilder_AddConv2DLayer
+=== RUN   TestMLCircuitBuilder_AddMaxPoolLayer
+=== PAUSE TestMLCircuitBuilder_AddMaxPoolLayer
+=== RUN   TestMLCircuitBuilder_AddBatchNormLayer
+=== PAUSE TestMLCircuitBuilder_AddBatchNormLayer
+=== RUN   TestMLCircuitBuilder_AddDropoutLayer
+=== PAUSE TestMLCircuitBuilder_AddDropoutLayer
+=== RUN   TestMLCircuitBuilder_Build_NoLayers
+=== PAUSE TestMLCircuitBuilder_Build_NoLayers
+=== RUN   TestMLCircuitBuilder_Build_SimpleModel
+=== PAUSE TestMLCircuitBuilder_Build_SimpleModel
+=== RUN   TestEstimateLayerConstraints
+=== PAUSE TestEstimateLayerConstraints
+=== RUN   TestNewTreeEnsembleCircuitBuilder
+=== PAUSE TestNewTreeEnsembleCircuitBuilder
+=== RUN   TestTreeEnsembleCircuitBuilder_AddTree
+=== PAUSE TestTreeEnsembleCircuitBuilder_AddTree
+=== RUN   TestTreeEnsembleCircuitBuilder_Build_NoTrees
+=== PAUSE TestTreeEnsembleCircuitBuilder_Build_NoTrees
+=== RUN   TestTreeEnsembleCircuitBuilder_Build
+=== PAUSE TestTreeEnsembleCircuitBuilder_Build
+=== RUN   TestCreditScoringCircuit
+=== PAUSE TestCreditScoringCircuit
+=== RUN   TestFraudDetectionCircuit
+=== PAUSE TestFraudDetectionCircuit
+=== RUN   TestImageClassificationCircuit
+=== PAUSE TestImageClassificationCircuit
+=== RUN   TestConvertONNXToCircuit
+=== PAUSE TestConvertONNXToCircuit
+=== RUN   TestConvertONNXToCircuit_Empty
+=== PAUSE TestConvertONNXToCircuit_Empty
+=== RUN   TestConvertPyTorchToCircuit
+=== PAUSE TestConvertPyTorchToCircuit
+=== RUN   TestConvertPyTorchToCircuit_Empty
+=== PAUSE TestConvertPyTorchToCircuit_Empty
+=== CONT  TestNewField
+--- PASS: TestNewField (0.00s)
+=== CONT  TestConvertPyTorchToCircuit_Empty
+--- PASS: TestConvertPyTorchToCircuit_Empty (0.00s)
+=== CONT  TestConvertPyTorchToCircuit
+--- PASS: TestConvertPyTorchToCircuit (0.00s)
+=== CONT  TestConvertONNXToCircuit_Empty
+--- PASS: TestConvertONNXToCircuit_Empty (0.00s)
+=== CONT  TestConvertONNXToCircuit
+--- PASS: TestConvertONNXToCircuit (0.00s)
+=== CONT  TestImageClassificationCircuit
+--- PASS: TestImageClassificationCircuit (0.00s)
+=== CONT  TestFraudDetectionCircuit
+--- PASS: TestFraudDetectionCircuit (0.00s)
+=== CONT  TestCreditScoringCircuit
+--- PASS: TestCreditScoringCircuit (0.00s)
+=== CONT  TestTreeEnsembleCircuitBuilder_Build
+--- PASS: TestTreeEnsembleCircuitBuilder_Build (0.00s)
+=== CONT  TestTreeEnsembleCircuitBuilder_Build_NoTrees
+--- PASS: TestTreeEnsembleCircuitBuilder_Build_NoTrees (0.00s)
+=== CONT  TestTreeEnsembleCircuitBuilder_AddTree
+--- PASS: TestTreeEnsembleCircuitBuilder_AddTree (0.00s)
+=== CONT  TestNewTreeEnsembleCircuitBuilder
+--- PASS: TestNewTreeEnsembleCircuitBuilder (0.00s)
+=== CONT  TestEstimateLayerConstraints
+=== RUN   TestEstimateLayerConstraints/linear
+=== PAUSE TestEstimateLayerConstraints/linear
+=== RUN   TestEstimateLayerConstraints/relu
+=== PAUSE TestEstimateLayerConstraints/relu
+=== RUN   TestEstimateLayerConstraints/softmax
+=== PAUSE TestEstimateLayerConstraints/softmax
+=== RUN   TestEstimateLayerConstraints/batchnorm
+=== PAUSE TestEstimateLayerConstraints/batchnorm
+=== RUN   TestEstimateLayerConstraints/unknown
+=== PAUSE TestEstimateLayerConstraints/unknown
+=== CONT  TestEstimateLayerConstraints/linear
+=== CONT  TestMLCircuitBuilder_Build_SimpleModel
+--- PASS: TestMLCircuitBuilder_Build_SimpleModel (0.00s)
+=== CONT  TestMLCircuitBuilder_Build_NoLayers
+--- PASS: TestMLCircuitBuilder_Build_NoLayers (0.00s)
+=== CONT  TestMLCircuitBuilder_AddDropoutLayer
+--- PASS: TestMLCircuitBuilder_AddDropoutLayer (0.00s)
+=== CONT  TestMLCircuitBuilder_AddBatchNormLayer
+--- PASS: TestMLCircuitBuilder_AddBatchNormLayer (0.00s)
+=== CONT  TestMLCircuitBuilder_AddMaxPoolLayer
+--- PASS: TestMLCircuitBuilder_AddMaxPoolLayer (0.00s)
+=== CONT  TestMLCircuitBuilder_AddConv2DLayer
+--- PASS: TestMLCircuitBuilder_AddConv2DLayer (0.00s)
+=== CONT  TestMLCircuitBuilder_AddLinearLayer
+--- PASS: TestMLCircuitBuilder_AddLinearLayer (0.00s)
+=== CONT  TestMLCircuitBuilder_WithQuantization
+--- PASS: TestMLCircuitBuilder_WithQuantization (0.00s)
+=== CONT  TestNewMLCircuitBuilder
+--- PASS: TestNewMLCircuitBuilder (0.00s)
+=== CONT  TestDefaultQuantizationConfig
+--- PASS: TestDefaultQuantizationConfig (0.00s)
+=== CONT  TestGenerateKZGSetup
+--- PASS: TestGenerateKZGSetup (0.00s)
+=== CONT  TestLoadKZGSetup_TooShort
+--- PASS: TestLoadKZGSetup_TooShort (0.00s)
+=== CONT  TestLoadKZGSetup
+--- PASS: TestLoadKZGSetup (0.00s)
+=== CONT  TestGenerateVerifyingKey
+--- PASS: TestGenerateVerifyingKey (0.00s)
+=== CONT  TestVerifier_Verify_NoPublicInputs
+--- PASS: TestVerifier_Verify_NoPublicInputs (0.00s)
+=== CONT  TestVerifier_Verify_ShortProof
+--- PASS: TestVerifier_Verify_ShortProof (0.00s)
+=== CONT  TestVerifier_Verify_MissingVK
+--- PASS: TestVerifier_Verify_MissingVK (0.00s)
+=== CONT  TestVerifier_Verify_Valid
+--- PASS: TestVerifier_Verify_Valid (0.00s)
+=== CONT  TestVerifier_LoadVerifyingKey
+--- PASS: TestVerifier_LoadVerifyingKey (0.00s)
+=== CONT  TestNewVerifier
+--- PASS: TestNewVerifier (0.00s)
+=== CONT  TestProver_Prove_CircuitNotFound
+--- PASS: TestProver_Prove_CircuitNotFound (0.00s)
+=== CONT  TestProver_Prove
+--- PASS: TestProver_Prove (0.00s)
+=== CONT  TestProver_LoadCircuit
+--- PASS: TestProver_LoadCircuit (0.00s)
+=== CONT  TestNewProver
+--- PASS: TestNewProver (0.00s)
+=== CONT  TestCeilLog2
+--- PASS: TestCeilLog2 (0.00s)
+=== CONT  TestCircuitBuilder_Build_TreeEnsemble
+--- PASS: TestCircuitBuilder_Build_TreeEnsemble (0.00s)
+=== CONT  TestCircuitBuilder_Build_Conv2D
+--- PASS: TestCircuitBuilder_Build_Conv2D (0.00s)
+=== CONT  TestCircuitBuilder_Build_Linear
+--- PASS: TestCircuitBuilder_Build_Linear (0.00s)
+=== CONT  TestCircuitBuilder_WithConfig
+--- PASS: TestCircuitBuilder_WithConfig (0.00s)
+=== CONT  TestNewCircuitBuilder
+--- PASS: TestNewCircuitBuilder (0.00s)
+=== CONT  TestCircuitTypeConstants
+--- PASS: TestCircuitTypeConstants (0.00s)
+=== CONT  TestField_RoundTrip
+--- PASS: TestField_RoundTrip (0.00s)
+=== CONT  TestField_ToBytes
+--- PASS: TestField_ToBytes (0.00s)
+=== CONT  TestNewFieldFromBytes_Short
+--- PASS: TestNewFieldFromBytes_Short (0.00s)
+=== CONT  TestNewFieldFromBytes
+--- PASS: TestNewFieldFromBytes (0.00s)
+=== CONT  TestEstimateLayerConstraints/unknown
+=== CONT  TestEstimateLayerConstraints/batchnorm
+=== CONT  TestEstimateLayerConstraints/softmax
+=== CONT  TestEstimateLayerConstraints/relu
+--- PASS: TestEstimateLayerConstraints (0.00s)
+    --- PASS: TestEstimateLayerConstraints/linear (0.00s)
+    --- PASS: TestEstimateLayerConstraints/unknown (0.00s)
+    --- PASS: TestEstimateLayerConstraints/batchnorm (0.00s)
+    --- PASS: TestEstimateLayerConstraints/softmax (0.00s)
+    --- PASS: TestEstimateLayerConstraints/relu (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/zkml/halo2	4.810s

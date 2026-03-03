@@ -1,0 +1,16 @@
+application:
+  runtime: fastapi
+  image:
+    repository: ghcr.io/aethelred/fastapi-verifier
+    tag: latest
+  port: 8000
+  livenessProbe:
+    path: /health
+  readinessProbe:
+    path: /health
+
+service:
+  port: 80
+
+verification:
+  mode: seal-envelope

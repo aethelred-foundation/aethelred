@@ -1,0 +1,107 @@
+[package]
+name = "aethelred-sdk"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Aethelred Team <developers@aethelred.org>"]
+description = "Official Rust SDK for Aethelred AI Blockchain"
+license = "Apache-2.0"
+repository = "https://github.com/AethelredFoundation/AethelredMVP"
+homepage = "https://github.com/AethelredFoundation/AethelredMVP/tree/main/sdk/rust"
+documentation = "https://github.com/AethelredFoundation/AethelredMVP/tree/main/sdk/rust#readme"
+readme = "README.md"
+keywords = ["aethelred", "blockchain", "ai", "cryptography", "sdk"]
+categories = ["cryptography", "api-bindings", "web-programming"]
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Cryptography
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.21"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Utils
+url = "2.5"
+derive_builder = "0.12"
+rand = "0.8"
+num_cpus = "1.17"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+pretty_assertions = "1.4"
+
+[features]
+default = ["rustls"]
+rustls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+pqc = []
+wasm = [
+    "wasm-bindgen",
+    "wasm-bindgen-futures",
+    "serde-wasm-bindgen",
+    "js-sys",
+    "web-sys",
+    "console_error_panic_hook",
+    "getrandom/js",
+]
+distributed = []
+quantize = []
+gpu = []
+full-sdk = []
+
+# WASM dependencies (only included when wasm feature is enabled)
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+serde-wasm-bindgen = { version = "0.6", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", optional = true, features = [
+    "console",
+    "Window",
+    "Request",
+    "RequestInit",
+    "RequestMode",
+    "Response",
+    "Headers",
+] }
+console_error_panic_hook = { version = "0.1", optional = true }
+getrandom = { version = "0.2", features = ["js"] }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.docs.rs]
+all-features = false
+features = ["rustls"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[example]]
+name = "submit_job"
+path = "examples/submit_job.rs"
+
+[[example]]
+name = "verify_seal"
+path = "examples/verify_seal.rs"

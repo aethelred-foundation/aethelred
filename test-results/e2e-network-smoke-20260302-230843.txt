@@ -1,0 +1,182 @@
+== Waiting for local devtools stack ==
+✓ rpc-health ready (http://127.0.0.1:26657/health)
+✓ fastapi-health ready (http://127.0.0.1:8000/health)
+✓ nextjs-health ready (http://127.0.0.1:3000/api/health)
+✓ dashboard-devtools ready (http://127.0.0.1:3101/devtools)
+== CLI smoke: aeth status ==
++ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aeth/dist/index.js --rpc-url http://127.0.0.1:26657 status
+Aethelred Network Status
+RPC URL: http://127.0.0.1:26657
+Latency: 22 ms
+Moniker: aethelred-mock-rpc
+Chain ID: aethelred-local-devtools-1
+Latest block: 123457
+Health: ok
+== CLI smoke: aeth diagnostics doctor ==
++ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/aeth/dist/index.js --rpc-url http://127.0.0.1:26657 diagnostics doctor
+✓ docker-daemon: Docker daemon reachable
+✓ local-testnet-compose: /Users/rameshtamilselvan/Downloads/aethelred/integrations/deploy/docker/docker-compose.local-testnet.yml
+✓ rpc-health: http://127.0.0.1:26657 (18 ms)
+✓ fastapi-verifier: http://127.0.0.1:8000/health
+✓ nextjs-verifier: http://127.0.0.1:3000/api/health
+✓ developer-dashboard: http://127.0.0.1:3101/devtools
+== CLI smoke: seal-verifier verify-file ==
++ curl -fsS http://127.0.0.1:26657/aethelred/seal/v1/seals/seal_demo -o /var/folders/z8/kr7t2l554q9d8wdydf3b74mr0000gn/T//aethelred-smoke-seal.Rzt4to
++ node /Users/rameshtamilselvan/Downloads/aethelred/tools/cli/seal-verifier/dist/index.js verify-file /var/folders/z8/kr7t2l554q9d8wdydf3b74mr0000gn/T//aethelred-smoke-seal.Rzt4to --json
+{
+  "valid": true,
+  "score": 100,
+  "fingerprintSha256": "0x24c4ff81a3d0facc6080f9d3a318489f56a33315841f90c95c0301fc3de08679",
+  "errors": [],
+  "warnings": [],
+  "metadata": {
+    "validatorCount": 2,
+    "attestedVotingPower": 67,
+    "totalVotingPower": 100,
+    "consensusBps": 6700
+  },
+  "checks": [
+    {
+      "id": "required:id",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field id present"
+    },
+    {
+      "id": "required:jobId",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field jobId present"
+    },
+    {
+      "id": "required:modelHash",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field modelHash present"
+    },
+    {
+      "id": "required:inputCommitment",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field inputCommitment present"
+    },
+    {
+      "id": "required:outputCommitment",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field outputCommitment present"
+    },
+    {
+      "id": "required:status",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field status present"
+    },
+    {
+      "id": "required:requester",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field requester present"
+    },
+    {
+      "id": "required:createdAt",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field createdAt present"
+    },
+    {
+      "id": "required:validators",
+      "severity": "error",
+      "ok": true,
+      "message": "Required field validators present"
+    },
+    {
+      "id": "timestamp:createdAt",
+      "severity": "error",
+      "ok": true,
+      "message": "createdAt is a valid timestamp",
+      "details": {
+        "createdAt": "2026-03-02T19:08:45.000Z"
+      }
+    },
+    {
+      "id": "timestamp:expiresAt",
+      "severity": "error",
+      "ok": true,
+      "message": "expiresAt is a valid timestamp"
+    },
+    {
+      "id": "lifecycle:expiry",
+      "severity": "info",
+      "ok": true,
+      "message": "Seal has not expired",
+      "details": {
+        "expiresAt": "2026-12-31T00:00:00.000Z",
+        "now": "2026-03-02T19:08:45.635Z"
+      }
+    },
+    {
+      "id": "status:revocation-consistency",
+      "severity": "info",
+      "ok": true,
+      "message": "Revocation metadata is consistent with status",
+      "details": {
+        "status": "SEAL_STATUS_ACTIVE"
+      }
+    },
+    {
+      "id": "validators:present",
+      "severity": "error",
+      "ok": true,
+      "message": "Validator attestations present (2)",
+      "details": {
+        "validatorCount": 2,
+        "requiredValidatorCount": 1
+      }
+    },
+    {
+      "id": "validators:shape",
+      "severity": "error",
+      "ok": true,
+      "message": "Validator attestation records are structurally valid"
+    },
+    {
+      "id": "validators:signatures",
+      "severity": "info",
+      "ok": true,
+      "message": "All validator attestations include signatures"
+    },
+    {
+      "id": "consensus:threshold",
+      "severity": "error",
+      "ok": true,
+      "message": "Consensus threshold met (67.00%)",
+      "details": {
+        "attestedVotingPower": 67,
+        "totalVotingPower": 100,
+        "minConsensusBps": 6700
+      }
+    },
+    {
+      "id": "tee:timestamp",
+      "severity": "error",
+      "ok": true,
+      "message": "TEE attestation timestamp is valid"
+    },
+    {
+      "id": "tee:freshness",
+      "severity": "info",
+      "ok": true,
+      "message": "TEE attestation is within freshness window",
+      "details": {
+        "ageMs": 635,
+        "maxAttestationAgeMs": 3600000
+      }
+    }
+  ]
+}
+✓ seal-verifier reported valid=true
+== Dashboard HTTP checks ==
+✓ dashboard-home content check passed
+✓ dashboard-devtools content check passed
+All local devtools CLI smoke checks passed.

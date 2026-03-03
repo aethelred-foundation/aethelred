@@ -1,0 +1,183 @@
+syntax = "proto3";
+package aethelred.verify.v1;
+
+option go_package = "github.com/aethelred/aethelred/x/verify/types";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/api/annotations.proto";
+
+// VerificationType represents the type of verification
+enum VerificationType {
+  VERIFICATION_TYPE_UNSPECIFIED = 0;
+  VERIFICATION_TYPE_TEE = 1;
+  VERIFICATION_TYPE_ZKML = 2;
+  VERIFICATION_TYPE_HYBRID = 3;
+}
+
+// TEEPlatform represents supported TEE platforms
+enum TEEPlatform {
+  TEE_PLATFORM_UNSPECIFIED = 0;
+  TEE_PLATFORM_AWS_NITRO = 1;
+  TEE_PLATFORM_INTEL_SGX = 2;
+  TEE_PLATFORM_INTEL_TDX = 3;
+  TEE_PLATFORM_AMD_SEV = 4;
+  TEE_PLATFORM_ARM_TRUSTZONE = 5;
+}
+
+// ZKMLProof represents a zero-knowledge ML proof
+message ZKMLProof {
+  string proof_system = 1;
+  bytes proof_bytes = 2;
+  bytes public_inputs = 3;
+  bytes verifying_key_hash = 4;
+  bytes circuit_hash = 5;
+  int64 proof_size = 6;
+  int64 generation_time_ms = 7;
+  google.protobuf.Timestamp timestamp = 8;
+}
+
+// TEEAttestation represents a Trusted Execution Environment attestation
+message TEEAttestation {
+  TEEPlatform platform = 1;
+  string enclave_id = 2;
+  bytes measurement = 3;
+  bytes quote = 4;
+  bytes user_data = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  repeated bytes certificate_chain = 7;
+  bytes nonce = 8;
+}
+
+// VerifyingKey represents a stored verifying key for zkML proofs
+message VerifyingKey {
+  bytes hash = 1;
+  bytes key_bytes = 2;
+  string proof_system = 3;
+  bytes circuit_hash = 4;
+  bytes model_hash = 5;
+  string registered_by = 6;
+  google.protobuf.Timestamp registered_at = 7;
+  bool is_active = 8;
+}
+
+// Circuit represents a stored circuit definition
+message Circuit {
+  bytes hash = 1;
+  bytes circuit_bytes = 2;
+  string proof_system = 3;
+  bytes model_hash = 4;
+  string input_schema = 5;
+  string output_schema = 6;
+  string registered_by = 7;
+  google.protobuf.Timestamp registered_at = 8;
+  bool is_active = 9;
+}
+
+// TEEConfig represents configuration for a TEE platform
+message TEEConfig {
+  TEEPlatform platform = 1;
+  repeated bytes trusted_measurements = 2;
+  bytes root_certificate = 3;
+  string attestation_endpoint = 4;
+  google.protobuf.Duration max_quote_age = 5;
+  bool require_fresh_nonce = 6;
+  bool is_active = 7;
+}
+
+// VerificationResult represents the result of a verification
+message VerificationResult {
+  bool success = 1;
+  VerificationType verification_type = 2;
+  bytes model_hash = 3;
+  bytes input_hash = 4;
+  bytes output_hash = 5;
+  int64 verification_time_ms = 6;
+  google.protobuf.Timestamp timestamp = 7;
+  string error_message = 8;
+  bool zk_proof_verified = 9;
+  bool tee_attestation_verified = 10;
+}
+
+// Params defines the parameters for the verify module
+message Params {
+  int64 max_proof_size = 1;
+  int64 max_verifying_key_size = 2;
+  int64 max_circuit_size = 3;
+  google.protobuf.Duration default_tee_quote_max_age = 4;
+  bool require_tee_for_high_value = 5;
+  string high_value_threshold = 6;
+  repeated string supported_proof_systems = 7;
+  repeated string supported_tee_platforms = 8;
+  string verification_fee = 9;
+  string zk_verifier_endpoint = 10;
+  bool allow_simulated = 11;
+}
+
+// GenesisState defines the verify module's genesis state
+message GenesisState {
+  repeated VerifyingKey verifying_keys = 1;
+  repeated Circuit circuits = 2;
+  repeated TEEConfig tee_configs = 3;
+  Params params = 4;
+}
+
+// MsgRegisterVerifyingKey registers a verifying key
+message MsgRegisterVerifyingKey {
+  string creator = 1;
+  bytes key_bytes = 2;
+  string proof_system = 3;
+  bytes circuit_hash = 4;
+  bytes model_hash = 5;
+}
+
+message MsgRegisterVerifyingKeyResponse {
+  bytes key_hash = 1;
+}
+
+// MsgRegisterCircuit registers a circuit definition
+message MsgRegisterCircuit {
+  string creator = 1;
+  bytes circuit_bytes = 2;
+  string proof_system = 3;
+  bytes model_hash = 4;
+  string input_schema = 5;
+  string output_schema = 6;
+}
+
+message MsgRegisterCircuitResponse {
+  bytes circuit_hash = 1;
+}
+
+// MsgVerifyZKProof verifies a zkML proof
+message MsgVerifyZKProof {
+  string verifier = 1;
+  ZKMLProof proof = 2;
+  bytes expected_output_hash = 3;
+}
+
+message MsgVerifyZKProofResponse {
+  VerificationResult result = 1;
+}
+
+// Msg service
+service Msg {
+  rpc RegisterVerifyingKey(MsgRegisterVerifyingKey) returns (MsgRegisterVerifyingKeyResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/verify/v1/verifying_keys"
+      body: "*"
+    };
+  }
+  rpc RegisterCircuit(MsgRegisterCircuit) returns (MsgRegisterCircuitResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/verify/v1/circuits"
+      body: "*"
+    };
+  }
+  rpc VerifyZKProof(MsgVerifyZKProof) returns (MsgVerifyZKProofResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/verify/v1/zkproofs:verify"
+      body: "*"
+    };
+  }
+}

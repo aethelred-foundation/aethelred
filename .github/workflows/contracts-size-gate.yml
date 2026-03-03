@@ -1,0 +1,38 @@
+name: Contracts Size Gate
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - ".github/workflows/contracts-size-gate.yml"
+  push:
+    branches:
+      - main
+      - develop
+      - "release/**"
+    paths:
+      - "contracts/**"
+      - ".github/workflows/contracts-size-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  institutional-bridge-size-gate:
+    name: Institutional Bridge Size Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-fund --no-audit
+
+      - name: Compile and enforce EIP-170 bytecode budget
+        run: npm run size:check

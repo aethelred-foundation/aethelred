@@ -1,0 +1,271 @@
+CONTRIBUTING.md:29:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/setup_required_github_checks.sh <owner/repo> main develop`
+README.md:53:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python
+README.md:59:# aethelred-sdk = { path = "/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/rust" }
+README.md:68:- Language guide: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/helix-dsl.md`
+README.md:69:- Rust compiler entrypoint: `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk/src/helix/mod.rs`
+README.md:71:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/vscode-extension/syntaxes/helix.tmLanguage.json`
+README.md:72:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/vscode-extension/snippets/helix.json`
+infrastructure/kubernetes/README.md:7:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/deploy/helm/aethelred-validator`
+infrastructure/kubernetes/README.md:18:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets`
+docs/API_REFERENCE.md:596:- [Python SDK (source)](/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python)
+docs/API_REFERENCE.md:597:- [TypeScript SDK (source)](/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript)
+docs/API_REFERENCE.md:598:- [Rust SDK (source)](/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/rust)
+docs/API_REFERENCE.md:599:- [Go SDK (source)](/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/go)
+docs/API_REFERENCE.md:600:- [Publishing status](/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/PUBLISHING.md)
+docs/operations/PERFORMANCE_BASELINES.md:22:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/reports/benchmarks/`
+docs/operations/PERFORMANCE_BASELINES.md:29:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/pouw/keeper/performance_baselines.go`
+docs/operations/PERFORMANCE_BASELINES.md:46:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/pouw/keeper/e2e_test.go`
+docs/operations/PERFORMANCE_BASELINES.md:49:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/pouw/keeper/devex_test.go`
+docs/operations/PERFORMANCE_BASELINES.md:56:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/pouw/keeper/observability_test.go`
+docs/operations/PERFORMANCE_BASELINES.md:60:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/verify/verify_test.go`
+docs/operations/enterprise-infrastructure.md:7:1. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/ci.yml` (Go core + SDK release gate)
+docs/operations/enterprise-infrastructure.md:8:2. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/contracts-ci.yml` (Hardhat + Foundry)
+docs/operations/enterprise-infrastructure.md:9:3. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/rust-crates-ci.yml` (Rust crates)
+docs/operations/enterprise-infrastructure.md:10:4. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml` (SAST, secrets, vuln audits)
+docs/operations/enterprise-infrastructure.md:11:5. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sandbox-ci.yml` (Infinity Sandbox offline tests + warnings gate)
+docs/operations/enterprise-infrastructure.md:12:6. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/loadtest.yml` (smoke + scheduled stress tests)
+docs/operations/enterprise-infrastructure.md:13:7. `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/staging-canary-deploy.yml` (staging/canary/prod deploy)
+docs/operations/enterprise-infrastructure.md:30:/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/setup_required_github_checks.sh <owner/repo> main develop
+docs/operations/enterprise-infrastructure.md:34:`/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/branch-protection/required-checks.json`.
+docs/operations/enterprise-infrastructure.md:40:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/deploy/helm/aethelred-validator`
+docs/operations/enterprise-infrastructure.md:71:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/aws-secretstore.yaml`
+docs/operations/enterprise-infrastructure.md:74:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/vault-secretstore.yaml`
+docs/operations/enterprise-infrastructure.md:77:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/secretproviderclass-aws.yaml`
+docs/operations/load-testing.md:33:Workflow file: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/loadtest.yml`
+docs/architecture.md:239:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/README.md`
+docs/architecture.md:240:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/VALIDATOR_RUNBOOK.md`
+docs/operations/OPS_RUNBOOK.md:11:This runbook provides operational procedures to deploy, monitor, maintain, and recover Aethelred infrastructure in production. It complements `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/VALIDATOR_RUNBOOK.md` and focuses on day-2 operations.
+docs/operations/OPS_RUNBOOK.md:200:1. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/VALIDATOR_RUNBOOK.md`
+docs/operations/OPS_RUNBOOK.md:201:2. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/architecture.md`
+docs/operations/OPS_RUNBOOK.md:202:3. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/operations/geographic-redundancy.md`
+docs/operations/OPS_RUNBOOK.md:203:4. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/operations/enterprise-infrastructure.md`
+docs/operations/OPS_RUNBOOK.md:204:5. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/operations/secret-management.md`
+docs/operations/OPS_RUNBOOK.md:205:6. `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/operations/load-testing.md`
+docs/operations/secret-management.md:15:1. `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/aws-secretstore.yaml`
+docs/operations/secret-management.md:16:2. `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/vault-secretstore.yaml`
+docs/operations/secret-management.md:17:3. `/Users/rameshtamilselvan/Downloads/AethelredMVP/infrastructure/kubernetes/secrets/secretproviderclass-aws.yaml`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:7:1. `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:8:2. `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-py`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:12:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk/Cargo.offline.toml`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:13:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-py/Cargo.offline.toml`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:16:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk/Cargo.full-online.toml`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:17:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-py/Cargo.full-online.toml`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:20:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/switch_sdk_profile.sh`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:25:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk/src/lib_full.rs`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:26:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-py/src/lib_full.rs`
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:31:/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/switch_sdk_profile.sh full-online
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:36:/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/switch_sdk_profile.sh full-online --vendor
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:41:/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/switch_sdk_profile.sh full-online --validate
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:47:/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/switch_sdk_profile.sh offline
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:52:cd /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk && cargo check --offline
+docs/operations/FULL_ONLINE_PROFILE_PLAN.md:53:cd /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-py && cargo check --offline
+docs/protocol/tokenomics.md:1646:Reference TRD: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/protocol/institutional-stablecoin-integration-trd-v2.md`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:130:- Contract: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/InstitutionalStablecoinBridge.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:131:- Circuit-breaker interface: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/interfaces/ISovereignCircuitBreaker.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:132:- Drop-in circuit-breaker module: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/SovereignCircuitBreakerModule.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:133:- Governance timelock: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/SovereignGovernanceTimelock.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:135:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/mocks/MockMintableBurnableERC20.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:136:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/mocks/MockTokenMessengerV2.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:137:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/mocks/MockMessageTransmitterV2.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:138:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/mocks/MockAggregatorV3.sol`
+docs/protocol/institutional-stablecoin-integration-trd-v2.md:139:- Tests: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/test/institutional.stablecoin.integration.test.ts`
+docs/protocol/insurance-fund-actuarial-model-pre-mainnet-nov-2026.md:32:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/insurance/types/types.go`
+docs/protocol/insurance-fund-actuarial-model-pre-mainnet-nov-2026.md:33:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/x/insurance/keeper/keeper.go`
+docs/DEVELOPER_QUICKSTART.md:17:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python
+docs/DEVELOPER_QUICKSTART.md:35:npm install /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript
+docs/DEVELOPER_QUICKSTART.md:53:go mod edit -replace github.com/aethelred/sdk-go=/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/go
+docs/DEVELOPER_QUICKSTART.md:76:aethelred-sdk = { path = "/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/rust" }
+docs/operations/ci-cd-gates.md:9:`/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/branch-protection/required-checks.json`.
+docs/operations/ci-cd-gates.md:41:cd /Users/rameshtamilselvan/Downloads/AethelredMVP
+docs/operations/ci-cd-gates.md:94:`/Users/rameshtamilselvan/Downloads/AethelredMVP/version-matrix.json`.
+docs/operations/ci-cd-gates.md:104:`/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate_sdk_release_tag.py`.
+docs/operations/ci-cd-gates.md:111:cd /Users/rameshtamilselvan/Downloads/AethelredMVP
+docs/protocol/dao-transition-architecture-2027.md:36:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/InstitutionalStablecoinBridge.sol`
+docs/protocol/dao-transition-architecture-2027.md:37:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/ethereum/contracts/SovereignGovernanceTimelock.sol`
+docs/SDK_GUIDE.md:48:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python
+docs/SDK_GUIDE.md:51:npm install /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript
+docs/SDK_GUIDE.md:54:# aethelred-sdk = { path = "/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/rust" }
+docs/SDK_GUIDE.md:57:go mod edit -replace github.com/aethelred/sdk-go=/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/go
+docs/SDK_GUIDE.md:92:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python
+docs/SDK_GUIDE.md:95:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[ml]
+docs/SDK_GUIDE.md:98:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[pqc]
+docs/SDK_GUIDE.md:101:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[all]
+docs/SDK_GUIDE.md:231:npm install /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript
+docs/SDK_GUIDE.md:383:go mod edit -replace github.com/aethelred/sdk-go=/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/go
+docs/guides/helix-tooling.md:9:- Primary language spec: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/helix-dsl.md`
+docs/guides/helix-tooling.md:14:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/aethelred-sdk/src/helix/mod.rs`
+docs/guides/helix-tooling.md:16:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/vscode-extension/syntaxes/helix.tmLanguage.json`
+docs/guides/helix-tooling.md:18:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/vscode-extension/snippets/helix.json`
+docs/guides/helix-tooling.md:20:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/vscode-extension/package.json`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:24:- `aethelred-tee-worker`: `1037f36` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:25:- `aethelred-contracts`: `9b2d19a1` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:26:- `aethelred-cosmos-node`: `a000c52` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:28:- `aethelred-sdks`: `17c2cba` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:29:- `aethelred-developer-tools`: `31ceed1` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:30:- `aethelred-integrations`: `6c406f9` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:31:- `aethelred-dashboard`: `0b4627f` (local repo `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-frontend-repo`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:49:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/go.mod:1` declares the same module path `github.com/aethelred/aethelred`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:89:- In contrast, substantial security/test workflows exist only in the local workspace root (`/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/*`).
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:109:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:18`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:110:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:27`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:111:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:34`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:112:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:46`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:113:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:57`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:114:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:22`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:115:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:40`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:116:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aeth/README.md:14`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:117:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/apps/fastapi-verifier/README.md:21`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:118:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/developer-tools.md:9`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:123:- Add a docs hygiene CI check that blocks `/Users/` and similar local path patterns.
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:131:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:5` (“source-first” and pending releases)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:132:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:18`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:133:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:19`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:150:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml:21` sets `working-directory: contracts/ethereum`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:151:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml:32`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:152:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml:33`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:153:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml:77`
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:154:- Actual config file exists at `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/slither.config.json` (not `contracts/ethereum/slither.config.json`)
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:183:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-frontend-repo/dashboard/next.config.js:24` defines security headers.
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:184:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-frontend-repo/dashboard/next.config.js:29`-`:45` shows `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy` but no `Content-Security-Policy` / `frame-ancestors`.
+docs/audits/aethelred-multi-repo-strict-audit-snapshot-2026-02-24.md:211:- Warning location: `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/compliance/regulation.rs:67`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:14:| C-01 | Remediated | Bridge deposit lifecycle finalized on-chain (`finalizeDeposit`) and `cancelDeposit` guarded by finalization/cancellation state in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:15:| C-02 | Remediated | Contract-admin/multisig enforcement added across initializers; upgrader separated behind timelock pattern (`initializeWithTimelock`) in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredToken.sol`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredVesting.sol`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/SovereignGovernanceTimelock.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:16:| C-03 | Remediated | `AllowSimulated` production bypass hardened via production-mode checks/build-tag controls and one-way governance gate in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/pouw/keeper/consensus.go`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/pouw/keeper/consensus_testing_override_nonprod.go`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/pouw/keeper/scheduler.go`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:17:| C-04 | Remediated | Vesting cliff/linear math corrected (elapsed-from-cliff) and explicit schedule activation added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredVesting.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:18:| C-05 | Remediated (hard fail) | TypeScript PQC `verify()` placeholder acceptance removed; PQC operations now fail closed until a real backend is injected in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/pqc.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:19:| C-06 | Remediated + guardrail | Split integrations compose into production-safe base + dev-only compose; removed simulated TEE/prover defaults from base and added CI compose security guard in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/docker/docker-compose.yml`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/docker/docker-compose.dev.yml`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-compose-security.sh`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/audit-config-guards.yml`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:25:| H-01 | Remediated | `bridgeBurn()` enforces ERC-20 allowance via `_spendAllowance` in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredToken.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:26:| H-02 | Remediated | Deposit IDs use collision-safe encoding in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:27:| H-03 | Remediated | Relayer count/threshold synchronization added on role changes in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:28:| H-04 | Remediated | ISB mint ceiling TOCTOU fixed via atomic usage reservation/check before mint path in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:29:| H-05 | Remediated | Emergency withdrawal path blocked by pause-state constraints in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:30:| H-06 | Remediated | Timelock self-grants removed / constructor self-privileging path closed in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/SovereignGovernanceTimelock.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:31:| H-07 | Remediated | `setCategoryCap()` now enforces `cap >= allocated` invariant in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredVesting.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:32:| H-08 | Remediated (hard fail + dev-stub isolation) | Rust pillar placeholders hardened with production compile guards, deterministic non-empty dev placeholders, priority scheduling, and stronger randomness IDs in `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:33:| H-09 | Remediated | PoR checks run inline on mint path and Chainlink Automation-compatible external keeper added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol` and `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalReserveAutomationKeeper.sol`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:34:| H-10 | Remediated (hard fail) | TypeScript PQC `sign()` no longer produces hash-padded fake signatures; it now requires an injected production PQC provider in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/pqc.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:35:| H-11 | Remediated (hard fail) | TypeScript SEV/Nitro verification no longer returns placeholder `true`; backend parser/verifier callbacks are required for signature verification in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:36:| H-12 | Remediated + guardrail | Hardcoded Grafana `admin` password removed from integrations compose and devnet compose; production compose uses Docker secret file and internal observability network. CI guard rejects default password in non-dev compose. Files: `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/docker/docker-compose.yml`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/docker/docker-compose.dev.yml`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/devnet/docker-compose.yml`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-compose-security.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:42:| M-01 | Remediated | EIP-712 domain-separated typed signatures implemented in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol` with wrong-domain regression coverage in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/institutional.stablecoin.integration.test.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:43:| M-02 | Remediated | Unbounded outflow mappings replaced with bounded/ring-buffered storage in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol` with 48h/14d slot-wrap regressions in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/institutional.stablecoin.integration.test.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:44:| M-03 | Remediated | `recoverTokens()` surplus handling made safe/saturating in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredVesting.sol` with regression coverage in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/medium.findings.regression.test.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:45:| M-04 | Remediated | Validator zone-cap TOCTOU mitigated by post-write invariant recheck/rollback in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/validator/keeper/keeper.go` with rollback regression test in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/validator/keeper/keeper_additional_test.go`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:46:| M-05 | Remediated + guardrail | PoUW validator selection hardened with deterministic entropy salt/randomized tie-break behavior in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/pouw/keeper/staking.go`; static guard added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-pouw-medium-guards.sh` (workspace `x/pouw` tests blocked by missing internal deps). |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:47:| M-06 | Remediated | `adminBurn()` now requires allowance/consent path (removing unilateral instant burns) in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredToken.sol` with regression coverage in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/medium.findings.regression.test.ts`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:48:| M-07 | Remediated + runnable evidence path | TEE quote-type detection hardened in `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/attestation/engine.rs`; regressions are runnable via `--features attestation-evidence` while broader `full-sdk` stabilization continues. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:49:| M-08 | Remediated + guardrail | Testing threshold override moved out of production build into non-production file in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/pouw/keeper/consensus_testing_override_nonprod.go`, with build-tag/placement guard in `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-pouw-medium-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:50:| M-09 | Remediated + guardrail | Devnet unbonding period raised to 3 days (259200s) and validator script added to enforce floor in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/devnet/genesis.json`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-devnet-genesis.py`, `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/audit-config-guards.yml`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:51:| M-10 | Remediated + guardrail | Devnet `minAttestationsForSeal` and SLA default attestation floor raised to match validator count (3/3 for current devnet) with validator script enforcement in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/devnet/genesis.json` and `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-devnet-genesis.py`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:57:| L-01 | Remediated (critical path) | Token burn accounting path moved to deterministic integer fixed-point math in `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/quadratic_burn.rs`, with source-level regressions added for fixed-point burn calculation and non-finite input handling (workspace crate wiring still absent for execution). |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:58:| L-02 | Remediated + guardrail | Upgrade storage gaps present in bridge contracts (`AethelredBridge` and `InstitutionalStablecoinBridge`) in `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/AethelredBridge.sol` and `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/contracts/InstitutionalStablecoinBridge.sol`, enforced by `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:59:| L-03 | Remediated + guardrail + runnable evidence path | EPID-specific leak removed in favor of generic unsupported format error in `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/attestation/engine.rs`; regression is runnable via `--features attestation-evidence` and generic-string guard is enforced in `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:60:| L-04 | Remediated (with source-level regression) | `cosine_similarity()` zero/invalid denominator guard added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/vector_vault.rs`, with zero-vector/NaN regression added in the same file (workspace crate wiring still absent for execution). |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:61:| L-05 | Remediated + guardrail | `.DS_Store` ignored across repos (`contracts`, `aethelred-cosmos-node`, `services/tee-worker/nitro-sdk`) and additional integrations docker secrets ignore added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/docker/.gitignore`; ignore/tracked-file checks enforced by `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:62:| L-06 | Remediated + guardrail | Rust `target/` artifacts ignored in `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/.gitignore`, with tracked-artifact checks enforced by `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:63:| L-07 | Remediated (hard fail) | Placeholder Nitro root certificate string removed from TypeScript SDK; Nitro verification now requires explicitly configured trusted roots/backend verifier in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.ts`, with fail-closed regressions in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.test.ts` and static guard in `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:64:| L-08 | Remediated | TypeScript SDK client supports API-key auth header injection (`X-API-Key`) and regression test added in `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/core/client.ts` and `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/core/client.test.ts`, with header-presence guard in `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`. |
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:69:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/high.findings.regression.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:71:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/pqc.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:72:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:74:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/secret_mempool.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:75:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/zero_copy_bridge.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:76:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/vector_vault.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:78:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-compose-security.sh`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:79:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/audit-config-guards.yml`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:81:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-devnet-genesis.py`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:83:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/medium.findings.regression.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:84:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/institutional.stablecoin.integration.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:85:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/validator/keeper/keeper_additional_test.go`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:86:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/attestation/engine.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:87:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-pouw-medium-guards.sh`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:89:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/quadratic_burn.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:90:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/core/src/pillars/vector_vault.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:91:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/attestation/engine.rs`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:92:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:93:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/core/client.test.ts`
+docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md:94:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:15:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/go.mod:1`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:18:1. Interim authority policy published in `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/governance/repo-authority-policy-2026-02-24.md` (designates `aethelred-cosmos-node` as interim canonical chain repo).
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:20:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/README.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:25:4. Machine-readable authority registry added: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/governance/repo-authority-registry.json`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:27:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-repo-authority.py`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:28:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/repo-authority-guard.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:31:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/governance/adr-0001-chain-repo-authority-canonicalization.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:32:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/docs/governance/adr-0001-chain-repo-authority-canonicalization.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:91:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/.github/workflows/sdk-release-provenance-local.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:92:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:94:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/governance/repo-auditability-registry.json`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:96:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-repo-auditability.py`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:97:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:99:   - `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/repo-auditability-guard.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:126:- Replaced `/Users/rameshtamilselvan/Downloads/AethelredMVP/...` path references with `$AETHELRED_REPO_ROOT/...` in public markdown docs across SDK + developer-tools + integrations docs.
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:135:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:136:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:137:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/developer-tools.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:138:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-developer-tools/cli/aeth/README.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:139:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-integrations-repo/apps/fastapi-verifier/README.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:142:1. Add docs hygiene CI (`rg '/Users/'`) to all public repos.
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:143:2. Extend to Windows/macOS local path patterns (`C:\\`, `/home/`, `/var/folders/`).
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:153:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/.github/workflows/sdk-release-provenance-local.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:154:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:156:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance-registry.json`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:157:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/scripts/validate_release_provenance.py`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:158:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/.github/workflows/sdk-release-provenance-guard.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:159:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance-status.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:160:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance-status.json`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:161:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-verification-guide.md`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:163:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/.github/workflows/sdk-release-readiness.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:166:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/README.md:5`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:167:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md:18`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:168:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/docs/security/release-provenance-status.json`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:184:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/security-scans.yml`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:222:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-frontend-repo/dashboard/next.config.js:46`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:257:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/compliance/regulation.rs:66`
+docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md:261:- `bash /Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/scripts/check-nitro-sdk-warning-budget.sh .` => pass at budget `0`
+docs/audits/aethelred-v2-retest-checklist.md:8:- `/Users/rameshtamilselvan/Downloads/AethelredMVP`
+docs/audits/aethelred-v2-retest-checklist.md:37:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/bridge.emergency.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:41:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/vesting.critical.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:47:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/pqc.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:50:- Guard script: `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-compose-security.sh`
+docs/audits/aethelred-v2-retest-checklist.md:55:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/high.findings.regression.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:58:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/institutional.stablecoin.integration.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:61:- Test: `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/crypto/tee.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:67:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/institutional.stablecoin.integration.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:68:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/contracts/test/medium.findings.regression.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:72:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/aethelred-cosmos-node/x/validator/keeper/keeper_additional_test.go`
+docs/audits/aethelred-v2-retest-checklist.md:76:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-pouw-medium-guards.sh`
+docs/audits/aethelred-v2-retest-checklist.md:77:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-devnet-genesis.py`
+docs/audits/aethelred-v2-retest-checklist.md:83:cargo test --manifest-path /Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence --lib attestation::engine::tests::test_quote_type_detection_uses_intel_header_fields -- --exact
+docs/audits/aethelred-v2-retest-checklist.md:90:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/validate-low-findings-guards.sh`
+docs/audits/aethelred-v2-retest-checklist.md:94:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript/src/core/client.test.ts`
+docs/audits/aethelred-v2-retest-checklist.md:100:cargo test --manifest-path /Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence --lib attestation::engine::tests::test_epid_quotes_return_generic_unsupported_format_error -- --exact
+docs/audits/aethelred-v2-retest-checklist.md:106:- Fixed `lib_full.rs` loader strategy (removed `include!` doc-comment failure path) by loading full SDK as a module from `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/src/lib.rs`
+docs/audits/aethelred-v2-retest-checklist.md:107:- Added missing foundational dependencies in `/Users/rameshtamilselvan/Downloads/AethelredMVP/services/tee-worker/nitro-sdk/Cargo.toml` (`thiserror`, `sha2`, `uuid`, `hex`, `base64`, `rand`, `blake3`)
+docs/audits/aethelred-v2-retest-checklist.md:130:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md`
+docs/audits/aethelred-v2-retest-checklist.md:132:  - `/Users/rameshtamilselvan/Downloads/AethelredMVP/scripts/run-audit-remediation-evidence-bundle.sh`
+sdk/typescript/README.md:22:npm install /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/typescript
+sdk/typescript/README.md:72:- npm publish workflow exists: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-publish.yml`
+sdk/typescript/README.md:73:- Test/coverage CI: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-typescript-tests.yml`
+sdk/typescript/README.md:77:- Framework integrations: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/framework-integrations.md`
+sdk/typescript/README.md:78:- Developer tools: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/developer-tools.md`
+sdk/typescript/README.md:79:- SDK release readiness: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
+sdk/rust/README.md:20:aethelred-sdk = { path = "/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/rust" }
+sdk/rust/README.md:63:- crates.io publish workflow: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-publish.yml`
+sdk/rust/README.md:64:- Rust CI + coverage: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-rust-tests.yml`
+sdk/rust/README.md:68:- SDK release readiness: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
+sdk/rust/README.md:69:- Framework integrations parity spec: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/framework-integrations.md`
+sdk/python/README.md:23:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python
+sdk/python/README.md:36:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[integrations]
+sdk/python/README.md:39:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[ml]
+sdk/python/README.md:42:pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[dev,integrations]
+sdk/python/README.md:84:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python/examples/framework_integrations.py`
+sdk/python/README.md:85:- `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/framework-integrations.md`
+sdk/python/README.md:90:- PyPI publish workflow exists: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-publish.yml`
+sdk/python/README.md:91:- Current publish status: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/PUBLISHING.md`
+sdk/python/README.md:95:- Monorepo package path: `/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python`
+sdk/python/README.md:97:- SDK docs index: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
+sdk/go/README.md:16:go mod edit -replace github.com/aethelred/sdk-go=/Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/go
+sdk/go/README.md:73:- CI tests + coverage: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-go-tests.yml`
+sdk/go/README.md:74:- Dedicated `pkg/nn` coverage CI: `/Users/rameshtamilselvan/Downloads/AethelredMVP/.github/workflows/sdk-go-nn-coverage.yml`
+sdk/go/README.md:78:- SDK release readiness: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/official-sdks.md`
+sdk/go/README.md:79:- Framework integrations parity targets: `/Users/rameshtamilselvan/Downloads/AethelredMVP/docs/sdk/framework-integrations.md`

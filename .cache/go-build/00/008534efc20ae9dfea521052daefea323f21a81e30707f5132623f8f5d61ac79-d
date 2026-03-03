@@ -1,0 +1,3 @@
+./tx.pulsar.go
+./tx_grpc.pb.go
+./vesting.pulsar.go

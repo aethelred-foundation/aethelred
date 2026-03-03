@@ -1,0 +1,342 @@
+# ============================================================================
+# Aethelred Bridge Relayer Configuration
+# ============================================================================
+#
+# Configuration for the bridge relayer service that facilitates cross-chain
+# transfers between Ethereum and Aethelred.
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+# ===========================================================================
+# Service Configuration
+# ===========================================================================
+[service]
+# Service name
+name = "aethelred-bridge-relayer"
+
+# Environment: devnet, testnet, mainnet
+environment = "devnet"
+
+# Data directory
+data_dir = "/data/bridge"
+
+# Log level: trace, debug, info, warn, error
+log_level = "info"
+
+# Log format: json, pretty
+log_format = "pretty"
+
+# ===========================================================================
+# Ethereum Configuration
+# ===========================================================================
+[ethereum]
+# Ethereum RPC endpoint
+rpc_url = "http://host.docker.internal:8545"
+
+# WebSocket endpoint (for subscriptions)
+ws_url = "ws://host.docker.internal:8545"
+
+# Chain ID
+chain_id = 31337
+
+# Bridge contract address
+contract_address = "0x0000000000000000000000000000000000000000"
+
+# Relayer private key file
+private_key_file = "/keys/bridge-relayer.json"
+
+# Starting block for event scanning
+start_block = 0
+
+# Confirmations required for finality
+confirmations_required = 12
+
+# Block polling interval
+poll_interval = "5s"
+
+# Maximum gas price (gwei)
+max_gas_price_gwei = 100
+
+# Gas price buffer (percentage)
+gas_price_buffer_pct = 20
+
+# Transaction timeout
+tx_timeout = "5m"
+
+# Retry configuration
+max_retries = 3
+retry_delay = "10s"
+
+# ===========================================================================
+# Aethelred Configuration
+# ===========================================================================
+[aethelred]
+# Aethelred RPC endpoint
+rpc_url = "http://bootnode:26657"
+
+# gRPC endpoint
+grpc_url = "http://bootnode:9090"
+
+# WebSocket endpoint
+ws_url = "ws://bootnode:26657/websocket"
+
+# Chain ID
+chain_id = "aethelred-devnet-1"
+
+# Relayer address (derived from key)
+# relayer_address = "0x..."
+
+# Starting height for event scanning
+start_height = 0
+
+# Confirmations required for finality
+confirmations_required = 6
+
+# Block polling interval
+poll_interval = "3s"
+
+# Transaction timeout
+tx_timeout = "2m"
+
+# Gas configuration
+gas_limit = 500000
+gas_price = "0.025"
+
+# ===========================================================================
+# Consensus Configuration
+# ===========================================================================
+[consensus]
+# Consensus threshold (basis points, e.g., 6700 = 67%)
+threshold_bps = 6700
+
+# Minimum relayers for consensus
+min_relayers = 1
+
+# Maximum relayers
+max_relayers = 20
+
+# Proposal timeout
+proposal_timeout = "5m"
+
+# Vote timeout
+vote_timeout = "2m"
+
+# Challenge period (seconds)
+challenge_period_secs = 300
+
+# ===========================================================================
+# Processing Configuration
+# ===========================================================================
+[processing]
+# Enable deposit processing
+deposits_enabled = true
+
+# Enable withdrawal processing
+withdrawals_enabled = true
+
+# Maximum batch size
+batch_size = 50
+
+# Processing interval
+processing_interval = "10s"
+
+# Reprocess failed transactions
+reprocess_failed = true
+
+# Failed transaction retry delay
+retry_delay = "1m"
+
+# Maximum failed retries
+max_failed_retries = 5
+
+# ===========================================================================
+# Rate Limiting
+# ===========================================================================
+[rate_limit]
+# Enable rate limiting
+enabled = true
+
+# Maximum deposits per hour
+max_deposits_per_hour = 100
+
+# Maximum withdrawals per hour
+max_withdrawals_per_hour = 100
+
+# Maximum total value per hour (ETH equivalent)
+max_value_per_hour = "1000"
+
+# Cooldown period after limit reached
+cooldown_period = "1h"
+
+# ===========================================================================
+# Security Configuration
+# ===========================================================================
+[security]
+# Enable signature verification
+verify_signatures = true
+
+# Enable amount validation
+validate_amounts = true
+
+# Minimum deposit amount (wei)
+min_deposit_wei = "10000000000000000"
+
+# Maximum deposit amount (wei)
+max_deposit_wei = "100000000000000000000"
+
+# Blocked addresses file
+blocked_addresses_file = "/config/blocked_addresses.json"
+
+# Enable OFAC screening
+ofac_screening = false
+
+# OFAC API endpoint
+ofac_api_url = ""
+
+# ===========================================================================
+# Storage Configuration
+# ===========================================================================
+[storage]
+# Storage backend: rocksdb, sqlite, memory
+backend = "rocksdb"
+
+# Database path
+db_path = "/data/bridge/db"
+
+# Enable WAL
+wal_enabled = true
+
+# Cache size (MB)
+cache_size_mb = 256
+
+# Compaction interval
+compaction_interval = "1h"
+
+# ===========================================================================
+# Metrics Configuration
+# ===========================================================================
+[metrics]
+# Enable metrics
+enabled = true
+
+# Prometheus listen address
+listen_addr = "0.0.0.0:9100"
+
+# Metrics path
+path = "/metrics"
+
+# Namespace
+namespace = "aethelred"
+
+# Subsystem
+subsystem = "bridge"
+
+# ===========================================================================
+# Health Check Configuration
+# ===========================================================================
+[health]
+# Enable health endpoint
+enabled = true
+
+# Listen address
+listen_addr = "0.0.0.0:8080"
+
+# Health check path
+path = "/health"
+
+# Readiness check path
+readiness_path = "/ready"
+
+# Liveness check path
+liveness_path = "/live"
+
+# ===========================================================================
+# API Configuration
+# ===========================================================================
+[api]
+# Enable REST API
+enabled = true
+
+# Listen address
+listen_addr = "0.0.0.0:8080"
+
+# CORS allowed origins
+cors_origins = ["*"]
+
+# Request timeout
+request_timeout = "30s"
+
+# Rate limit (requests per minute per IP)
+rate_limit_rpm = 60
+
+# ===========================================================================
+# Notification Configuration
+# ===========================================================================
+[notifications]
+# Enable notifications
+enabled = false
+
+# Webhook URL
+webhook_url = ""
+
+# Slack webhook
+slack_webhook = ""
+
+# Email notifications
+email_enabled = false
+email_smtp_host = ""
+email_smtp_port = 587
+email_from = ""
+email_to = []
+
+# Events to notify on
+notify_on = [
+    "large_deposit",
+    "large_withdrawal",
+    "consensus_failure",
+    "service_restart",
+    "error"
+]
+
+# Large transaction threshold (ETH)
+large_tx_threshold = "10"
+
+# ===========================================================================
+# Recovery Configuration
+# ===========================================================================
+[recovery]
+# Enable automatic recovery
+enabled = true
+
+# Checkpoint interval
+checkpoint_interval = "5m"
+
+# Maximum checkpoint age before reprocessing
+max_checkpoint_age = "1h"
+
+# Recovery batch size
+recovery_batch_size = 100
+
+# ===========================================================================
+# Debug Configuration
+# ===========================================================================
+[debug]
+# Enable debug mode
+enabled = false
+
+# Dry run (don't submit transactions)
+dry_run = false
+
+# Skip consensus (for single relayer testing)
+skip_consensus = true
+
+# Verbose logging
+verbose = false
+
+# Profiling enabled
+profiling = false
+
+# Profiling port
+profiling_port = 6060

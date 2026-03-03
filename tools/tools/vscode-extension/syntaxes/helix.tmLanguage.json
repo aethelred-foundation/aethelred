@@ -1,0 +1,196 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Helix",
+  "scopeName": "source.helix",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#decorators" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#functions" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#brackets" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.helix",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.helix",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.documentation.helix",
+          "match": "///.*$"
+        }
+      ]
+    },
+    "decorators": {
+      "patterns": [
+        {
+          "name": "meta.decorator.helix",
+          "begin": "@(sovereign|zk_provable|compliance|encrypted|sealed)",
+          "beginCaptures": {
+            "0": { "name": "entity.name.decorator.helix" }
+          },
+          "end": "(?=\\n)|(?=fn)|(?=model)|(?=neural)|(?=pipeline)",
+          "patterns": [
+            { "include": "#decorator-params" }
+          ]
+        }
+      ]
+    },
+    "decorator-params": {
+      "patterns": [
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            {
+              "name": "variable.parameter.helix",
+              "match": "\\b(hardware|jurisdiction|compliance|seal|audit|retention_days|data_residency)\\b"
+            },
+            {
+              "name": "constant.language.helix",
+              "match": "\\b(true|false)\\b"
+            },
+            {
+              "name": "constant.other.caps.helix",
+              "match": "\\b(UAE|EU|US|GLOBAL|GDPR|HIPAA|UAE_DPL|PIPL|CCPA|PCI_DSS)\\b"
+            },
+            {
+              "name": "constant.other.hardware.helix",
+              "match": "\\b(tee_required|intel_sgx|intel_tdx|amd_sev|aws_nitro|nvidia_h100|generic)\\b"
+            },
+            { "include": "#numbers" },
+            { "include": "#strings" }
+          ]
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "name": "constant.other.caps.helix",
+              "match": "\\b(GDPR|HIPAA|UAE_DPL|PIPL|CCPA|PCI_DSS|SOX|GLBA)\\b"
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.helix",
+          "match": "\\b(if|else|for|while|loop|break|continue|return|match|in)\\b"
+        },
+        {
+          "name": "keyword.declaration.helix",
+          "match": "\\b(fn|let|const|mut|model|neural|pipeline|struct|enum|trait|impl|use|mod|pub)\\b"
+        },
+        {
+          "name": "keyword.other.helix",
+          "match": "\\b(as|where|async|await|self|Self|super|crate)\\b"
+        },
+        {
+          "name": "storage.modifier.helix",
+          "match": "\\b(input|output|hidden|layers|stages|optimizer|loss)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "entity.name.type.helix",
+          "match": "\\b(Tensor|f32|f64|i32|i64|u32|u64|bool|String|Vec|Option|Result)\\b"
+        },
+        {
+          "name": "entity.name.type.neural.helix",
+          "match": "\\b(Linear|Conv2d|ReLU|Sigmoid|Softmax|Tanh|BatchNorm|Dropout|LSTM|GRU|Attention)\\b"
+        },
+        {
+          "name": "entity.name.type.optimizer.helix",
+          "match": "\\b(Adam|SGD|AdamW|RMSprop)\\b"
+        },
+        {
+          "name": "entity.name.type.loss.helix",
+          "match": "\\b(MSELoss|BCELoss|CrossEntropyLoss|L1Loss)\\b"
+        },
+        {
+          "name": "entity.name.type.aethelred.helix",
+          "match": "\\b(SovereignData|SovereignTensor|Jurisdiction|Hardware|Compliance|Attestation|DigitalSeal)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.helix",
+          "match": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+        },
+        {
+          "name": "entity.name.function.method.helix",
+          "match": "\\.([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.helix",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.helix",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.helix",
+          "begin": "'",
+          "end": "'"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.helix",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.helix",
+          "match": "\\b[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.hex.helix",
+          "match": "\\b0x[0-9a-fA-F]+\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.helix",
+          "match": "(\\+|\\-|\\*|/|%|==|!=|<=|>=|<|>|&&|\\|\\||!|->|=>|::|\\.|,|:|;)"
+        }
+      ]
+    },
+    "brackets": {
+      "patterns": [
+        {
+          "name": "punctuation.bracket.helix",
+          "match": "[\\[\\]\\{\\}\\(\\)]"
+        }
+      ]
+    }
+  }
+}

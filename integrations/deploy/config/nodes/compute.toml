@@ -1,0 +1,371 @@
+# ============================================================================
+# Aethelred Compute Node Configuration
+# ============================================================================
+#
+# Configuration for compute nodes that process AI verification jobs.
+# These nodes run TEE enclaves and generate zkML proofs.
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+# ===========================================================================
+# Node Identity
+# ===========================================================================
+[node]
+# Node moniker
+moniker = "${COMPUTE_MONIKER:-compute}"
+
+# Node type
+type = "compute"
+
+# Chain ID
+chain_id = "aethelred-devnet-1"
+
+# Data directory
+data_dir = "/data/aethelred"
+
+# Log level
+log_level = "info"
+
+# ===========================================================================
+# Compute Configuration
+# ===========================================================================
+[compute]
+# Enable compute node mode
+enabled = true
+
+# Compute node key file
+key_file = "/keys/compute.json"
+
+# Maximum concurrent jobs
+max_concurrent_jobs = 4
+
+# Job timeout
+job_timeout = "60s"
+
+# Job queue size
+queue_size = 100
+
+# Supported model types
+supported_models = ["onnx", "pytorch", "tensorflow"]
+
+# Maximum model size (bytes)
+max_model_size = 1073741824  # 1GB
+
+# Maximum input size (bytes)
+max_input_size = 104857600  # 100MB
+
+# ===========================================================================
+# TEE Configuration
+# ===========================================================================
+[tee]
+# TEE type: sgx, nitro, sev, mock
+type = "mock"
+
+# Enable TEE
+enabled = true
+
+# Attestation service URL (for real TEE)
+attestation_service = ""
+
+# Attestation refresh interval
+attestation_refresh_interval = "1h"
+
+# Enclave memory (MB)
+enclave_memory_mb = 4096
+
+# Enclave threads
+enclave_threads = 4
+
+# Measurement file (for real TEE)
+measurement_file = ""
+
+# Debug mode (only for mock)
+debug = true
+
+# ===========================================================================
+# SGX-Specific Configuration (if using Intel SGX)
+# ===========================================================================
+[tee.sgx]
+# EPID or DCAP mode
+attestation_mode = "dcap"
+
+# PCCS URL
+pccs_url = "https://localhost:8081/sgx/certification/v3/"
+
+# Use platform services
+use_platform_services = true
+
+# AESM socket
+aesm_socket = "/var/run/aesmd/aesm.socket"
+
+# ===========================================================================
+# Nitro-Specific Configuration (if using AWS Nitro)
+# ===========================================================================
+[tee.nitro]
+# Enclave CID
+enclave_cid = 16
+
+# Vsock port
+vsock_port = 5000
+
+# PCR values (comma-separated)
+expected_pcrs = ""
+
+# ===========================================================================
+# zkML Configuration
+# ===========================================================================
+[zkml]
+# Enable zkML proof generation
+enabled = true
+
+# Proving system: ezkl, plonky2, halo2
+proving_system = "ezkl"
+
+# Proving key directory
+proving_key_dir = "/data/zkml/keys"
+
+# Circuit cache directory
+circuit_cache_dir = "/data/zkml/circuits"
+
+# Maximum proof time
+max_proof_time = "300s"
+
+# Parallel proving threads
+parallel_provers = 2
+
+# GPU acceleration
+use_gpu = false
+
+# ===========================================================================
+# EZKL-Specific Configuration
+# ===========================================================================
+[zkml.ezkl]
+# EZKL binary path
+binary_path = "/usr/local/bin/ezkl"
+
+# SRS path
+srs_path = "/data/zkml/srs"
+
+# Default scale
+default_scale = 7
+
+# Default bits
+default_bits = 16
+
+# Default logrows
+default_logrows = 17
+
+# ===========================================================================
+# Hardware Configuration
+# ===========================================================================
+[hardware]
+# Hardware type: cpu, gpu, tpu
+type = "gpu"
+
+# GPU model (for reporting)
+gpu_model = "NVIDIA_A100"
+
+# GPU memory (GB)
+gpu_memory_gb = 40
+
+# CPU cores available
+cpu_cores = 8
+
+# RAM available (GB)
+ram_gb = 64
+
+# Storage available (GB)
+storage_gb = 500
+
+# Compute score (performance metric)
+useful_work_score = 10000
+
+# ===========================================================================
+# P2P Configuration
+# ===========================================================================
+[p2p]
+# Listen address
+listen_addr = "tcp://0.0.0.0:26656"
+
+# External address
+external_addr = "${EXTERNAL_ADDRESS:-tcp://localhost:26656}"
+
+# Maximum peers
+max_inbound_peers = 20
+max_outbound_peers = 5
+
+# Persistent peers
+persistent_peers = "bootnode:26656"
+
+# Enable PEX
+pex = true
+
+# Allow duplicate IP
+allow_duplicate_ip = true
+
+# ===========================================================================
+# RPC Configuration
+# ===========================================================================
+[rpc]
+# Listen address
+listen_addr = "tcp://0.0.0.0:26657"
+
+# CORS allowed origins
+cors_allowed_origins = ["*"]
+
+# Maximum connections
+max_open_connections = 450
+
+# ===========================================================================
+# gRPC Configuration
+# ===========================================================================
+[grpc]
+# Listen address
+listen_addr = "0.0.0.0:9090"
+
+# Enable gRPC
+enabled = true
+
+# ===========================================================================
+# Job API Configuration
+# ===========================================================================
+[job_api]
+# Enable job submission API
+enabled = true
+
+# Listen address
+listen_addr = "0.0.0.0:8090"
+
+# Maximum request size
+max_request_size = 104857600  # 100MB
+
+# Request timeout
+request_timeout = "30s"
+
+# Rate limit (requests per minute)
+rate_limit = 60
+
+# ===========================================================================
+# Mempool Configuration
+# ===========================================================================
+[mempool]
+# Mempool size
+size = 1000
+
+# Max transaction size
+max_tx_bytes = 1048576
+
+# Total mempool size
+max_txs_bytes = 536870912
+
+# ===========================================================================
+# Consensus Configuration
+# ===========================================================================
+[consensus]
+# Compute nodes don't participate in consensus
+validator = false
+
+# But they process vote extensions
+process_vote_extensions = true
+
+# ===========================================================================
+# Staking Configuration
+# ===========================================================================
+[staking]
+# Minimum compute stake
+min_stake = "50000000000000000000000"
+
+# Compute staking enabled
+enabled = true
+
+# Key file for staking
+key_file = "/keys/compute.json"
+
+# ===========================================================================
+# Metrics Configuration
+# ===========================================================================
+[metrics]
+# Enable Prometheus metrics
+enabled = true
+
+# Listen address
+listen_addr = "0.0.0.0:9100"
+
+# Namespace
+namespace = "aethelred"
+
+# Subsystem
+subsystem = "compute"
+
+# Custom metrics
+[metrics.custom]
+# Job metrics
+jobs_completed = true
+jobs_failed = true
+job_duration = true
+
+# TEE metrics
+tee_attestations = true
+tee_failures = true
+
+# zkML metrics
+proofs_generated = true
+proof_duration = true
+proof_size = true
+
+# Hardware metrics
+gpu_utilization = true
+memory_usage = true
+
+# ===========================================================================
+# Storage Configuration
+# ===========================================================================
+[storage]
+# Model cache directory
+model_cache_dir = "/data/models"
+
+# Model cache size (GB)
+model_cache_size_gb = 50
+
+# Input cache directory
+input_cache_dir = "/data/inputs"
+
+# Output directory
+output_dir = "/data/outputs"
+
+# Proof archive directory
+proof_archive_dir = "/data/proofs"
+
+# ===========================================================================
+# Pruning Configuration
+# ===========================================================================
+[pruning]
+# Pruning strategy
+strategy = "custom"
+
+# Keep recent
+keep_recent = 50
+
+# Keep every
+keep_every = 0
+
+# Interval
+interval = 10
+
+# ===========================================================================
+# SLA Configuration
+# ===========================================================================
+[sla]
+# Target job completion rate (percentage)
+target_completion_rate = 99
+
+# Target average latency (seconds)
+target_avg_latency = 30
+
+# Maximum failure rate (percentage)
+max_failure_rate = 1
+
+# Penalty per SLA violation (basis points)
+violation_penalty_bps = 100

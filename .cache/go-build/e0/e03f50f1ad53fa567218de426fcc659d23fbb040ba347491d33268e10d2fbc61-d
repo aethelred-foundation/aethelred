@@ -1,0 +1,8 @@
+./app.go
+./autocli.go
+./builder.go
+./events.go
+./module.go
+./services.go
+./store.go
+./types.go

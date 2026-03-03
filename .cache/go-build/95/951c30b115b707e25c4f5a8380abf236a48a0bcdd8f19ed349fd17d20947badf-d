@@ -1,0 +1,5 @@
+./query.pulsar.go
+./query_grpc.pb.go
+./tx.pulsar.go
+./tx_grpc.pb.go
+./upgrade.pulsar.go

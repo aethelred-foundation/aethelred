@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why Aethelred | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --yellow-500: #EAB308;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; text-align: center; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(220, 38, 38, 0.15) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Comparison Table */
+    .comparison-wrapper { overflow-x: auto; }
+    .comparison-table { width: 100%; border-collapse: collapse; background: var(--dark-800); border-radius: 16px; overflow: hidden; }
+    .comparison-table th, .comparison-table td { padding: 20px 24px; text-align: left; border-bottom: 1px solid var(--dark-600); }
+    .comparison-table th { background: var(--dark-700); font-size: 14px; font-weight: 600; }
+    .comparison-table th:first-child { width: 200px; }
+    .comparison-table td:first-child { font-weight: 600; color: var(--gray-300); }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table .aethelred { background: rgba(220, 38, 38, 0.1); }
+    .comparison-table .aethelred-header { background: var(--red-600); color: white; }
+    .check { color: var(--green-500); font-size: 18px; }
+    .cross { color: var(--red-500); font-size: 18px; }
+    .partial { color: var(--yellow-500); font-size: 18px; }
+    .feature-note { font-size: 12px; color: var(--gray-400); display: block; margin-top: 4px; }
+
+    /* Differentiators */
+    .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .diff-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; transition: all 0.3s; }
+    .diff-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .diff-icon { width: 60px; height: 60px; background: rgba(220, 38, 38, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 28px; }
+    .diff-card h3 { font-size: 20px; margin-bottom: 12px; }
+    .diff-card p { font-size: 14px; color: var(--gray-400); }
+
+    /* Problems Solved */
+    .problems-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .problem-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; display: flex; gap: 20px; }
+    .problem-icon { width: 50px; height: 50px; background: rgba(220, 38, 38, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .problem-icon svg { width: 24px; height: 24px; color: var(--red-500); }
+    .problem-content h4 { font-size: 18px; margin-bottom: 8px; }
+    .problem-content p { font-size: 14px; color: var(--gray-400); margin-bottom: 12px; }
+    .problem-solution { font-size: 13px; color: var(--green-500); display: flex; align-items: center; gap: 8px; }
+
+    /* CTA */
+    .cta-section { background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, var(--dark-900) 100%); border: 1px solid var(--red-800); border-radius: 20px; padding: 60px; text-align: center; }
+    .cta-section h2 { font-family: 'Syne', sans-serif; font-size: 36px; margin-bottom: 16px; }
+    .cta-section p { font-size: 18px; color: var(--gray-400); margin-bottom: 30px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; margin: 0 8px; }
+    .btn-primary { background: var(--red-600); color: white; }
+    .btn-primary:hover { background: var(--red-500); }
+    .btn-secondary { background: var(--dark-700); color: white; border: 1px solid var(--dark-500); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .diff-grid { grid-template-columns: 1fr; } .problems-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="team.html">Team</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        Comparison
+      </div>
+      <h1>Why <span class="gradient-text">Aethelred</span>?</h1>
+      <p class="subtitle">See how Aethelred compares to other approaches for AI verification and why it's the best choice for enterprise-grade verifiable intelligence.</p>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Feature Comparison</span>
+        <h2 class="section-title">Aethelred vs. Alternatives</h2>
+        <p class="section-desc">A comprehensive comparison of AI verification approaches.</p>
+      </div>
+
+      <div class="comparison-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th class="aethelred-header">Aethelred</th>
+              <th>Traditional Audit</th>
+              <th>Centralized APIs</th>
+              <th>Other Blockchains</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Real-time Verification</td>
+              <td class="aethelred"><span class="check">✓</span> Sub-second</td>
+              <td><span class="cross">✗</span> Days/weeks</td>
+              <td><span class="partial">◐</span> API-dependent</td>
+              <td><span class="partial">◐</span> Minutes</td>
+            </tr>
+            <tr>
+              <td>Privacy-Preserving</td>
+              <td class="aethelred"><span class="check">✓</span> ZK Proofs</td>
+              <td><span class="cross">✗</span> Full disclosure</td>
+              <td><span class="cross">✗</span> Data shared</td>
+              <td><span class="partial">◐</span> Limited</td>
+            </tr>
+            <tr>
+              <td>Decentralized Trust</td>
+              <td class="aethelred"><span class="check">✓</span> 247+ validators</td>
+              <td><span class="cross">✗</span> Single auditor</td>
+              <td><span class="cross">✗</span> Single provider</td>
+              <td><span class="check">✓</span> Varies</td>
+            </tr>
+            <tr>
+              <td>AI-Specific Design</td>
+              <td class="aethelred"><span class="check">✓</span> Purpose-built</td>
+              <td><span class="partial">◐</span> Generic</td>
+              <td><span class="partial">◐</span> Generic</td>
+              <td><span class="cross">✗</span> General purpose</td>
+            </tr>
+            <tr>
+              <td>Spatial Verification</td>
+              <td class="aethelred"><span class="check">✓</span> ±3m accuracy</td>
+              <td><span class="cross">✗</span> None</td>
+              <td><span class="cross">✗</span> None</td>
+              <td><span class="cross">✗</span> None</td>
+            </tr>
+            <tr>
+              <td>Enterprise SLAs</td>
+              <td class="aethelred"><span class="check">✓</span> 99.99% uptime</td>
+              <td><span class="partial">◐</span> Contract-based</td>
+              <td><span class="check">✓</span> Yes</td>
+              <td><span class="cross">✗</span> Best effort</td>
+            </tr>
+            <tr>
+              <td>Regulatory Compliance</td>
+              <td class="aethelred"><span class="check">✓</span> SOC2, HIPAA, GDPR</td>
+              <td><span class="check">✓</span> Varies</td>
+              <td><span class="partial">◐</span> Limited</td>
+              <td><span class="cross">✗</span> Rarely</td>
+            </tr>
+            <tr>
+              <td>Model Weight Privacy</td>
+              <td class="aethelred"><span class="check">✓</span> Never exposed</td>
+              <td><span class="cross">✗</span> Often required</td>
+              <td><span class="cross">✗</span> Shared</td>
+              <td><span class="cross">✗</span> On-chain</td>
+            </tr>
+            <tr>
+              <td>Cost per Verification</td>
+              <td class="aethelred"><span class="check">✓</span> ~$0.001</td>
+              <td><span class="cross">✗</span> $10K+</td>
+              <td><span class="partial">◐</span> $0.01-$1</td>
+              <td><span class="partial">◐</span> $0.10+</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Differentiators -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Key Differentiators</span>
+        <h2 class="section-title">What Makes Aethelred Unique</h2>
+      </div>
+
+      <div class="diff-grid">
+        <div class="diff-card">
+          <div class="diff-icon">🔐</div>
+          <h3>Digital Seal Technology</h3>
+          <p>Our proprietary cryptographic sealing mechanism creates unforgeable certificates of AI computation authenticity, binding outputs to their complete provenance.</p>
+        </div>
+
+        <div class="diff-card">
+          <div class="diff-icon">⚡</div>
+          <h3>Proof-of-Compute Consensus</h3>
+          <p>Purpose-built consensus mechanism that validates AI computations were executed correctly, not just that transactions are valid.</p>
+        </div>
+
+        <div class="diff-card">
+          <div class="diff-icon">🌍</div>
+          <h3>Spatial Verification</h3>
+          <p>Industry-first geographic attestation proving where computations occurred with ±3 meter accuracy using multi-source verification.</p>
+        </div>
+
+        <div class="diff-card">
+          <div class="diff-icon">🏢</div>
+          <h3>Enterprise Corridors</h3>
+          <p>Dedicated high-throughput channels with guaranteed SLAs, priority processing, and enhanced privacy for enterprise customers.</p>
+        </div>
+
+        <div class="diff-card">
+          <div class="diff-icon">🔒</div>
+          <h3>Zero-Knowledge Native</h3>
+          <p>ZK proofs are built into the core protocol, enabling verification without exposing model weights, training data, or proprietary algorithms.</p>
+        </div>
+
+        <div class="diff-card">
+          <div class="diff-icon">🤝</div>
+          <h3>Industry Consortium</h3>
+          <p>Governed by a consortium of leading organizations establishing universal standards for verifiable AI computation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problems We Solve -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Problems We Solve</span>
+        <h2 class="section-title">Challenges Addressed by Aethelred</h2>
+      </div>
+
+      <div class="problems-grid">
+        <div class="problem-card">
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div class="problem-content">
+            <h4>AI Black Box Problem</h4>
+            <p>Organizations can't prove how AI decisions were made, creating liability and compliance risks.</p>
+            <div class="problem-solution">✓ Complete computation audit trails with cryptographic proof</div>
+          </div>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <div class="problem-content">
+            <h4>Model IP Exposure</h4>
+            <p>Current verification methods require sharing proprietary models and training data.</p>
+            <div class="problem-solution">✓ ZK proofs verify without exposing any sensitive information</div>
+          </div>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div class="problem-content">
+            <h4>Expensive Manual Audits</h4>
+            <p>Traditional AI audits cost $50K+ and take months, making continuous verification impossible.</p>
+            <div class="problem-solution">✓ Automated real-time verification at ~$0.001 per computation</div>
+          </div>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div class="problem-content">
+            <h4>Single Point of Trust</h4>
+            <p>Centralized verification creates single points of failure and requires trusting one entity.</p>
+            <div class="problem-solution">✓ Decentralized validator network with Byzantine fault tolerance</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-section">
+        <h2>Ready to Experience the Difference?</h2>
+        <p>Start building with verifiable AI infrastructure today.</p>
+        <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn btn-primary">Read the Docs</a>
+        <a href="computer:///mnt/user-data/outputs/testnet.html" class="btn btn-secondary">Try Testnet</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

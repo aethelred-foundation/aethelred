@@ -1,0 +1,767 @@
+{
+  "$schema": "https://aethelred.org/schemas/genesis-v1.json",
+  "version": "1.0.0",
+  "chain_id": "aethelred-mainnet-1",
+  "chain_name": "Aethelred Mainnet",
+  "genesis_time": "2024-06-01T12:00:00.000000Z",
+
+  "_comment": "=============================================================================",
+  "_comment_2": "AETHELRED MAINNET GENESIS CONFIGURATION",
+  "_comment_3": "Enterprise-Grade Sovereign L1 for Cryptographically Verified AI Computations",
+  "_comment_4": "=============================================================================",
+
+  "metadata": {
+    "protocol_version": "1.0.0",
+    "chain_type": "sovereign_l1",
+    "network_type": "mainnet",
+    "documentation": "https://docs.aethelred.io/genesis",
+    "audit_reports": [
+      "https://aethelred.io/audits/genesis-config-v1.pdf"
+    ]
+  },
+
+  "_comment_consensus": "================== PROOF-OF-COMPUTE CONSENSUS ==================",
+
+  "consensus": {
+    "type": "proof_of_compute",
+    "description": "Hybrid consensus combining stake-weighted voting with verified AI computation proofs",
+    "params": {
+      "block_time_ms": 6000,
+      "epoch_length_blocks": 43200,
+      "epoch_duration_seconds": 259200,
+      "min_validators": 21,
+      "max_validators": 1000,
+      "active_validator_set_size": 100,
+
+      "weight_distribution": {
+        "stake_weight_bps": 7000,
+        "compute_weight_bps": 3000,
+        "_comment": "70% stake, 30% compute contribution"
+      },
+
+      "vrf_params": {
+        "threshold": "0.5",
+        "leader_selection": "weighted_vrf",
+        "randomness_beacon_interval_blocks": 100
+      },
+
+      "finality": {
+        "type": "single_slot",
+        "confirmation_blocks": 1,
+        "max_reorg_depth": 6
+      },
+
+      "vote_extensions": {
+        "enabled": true,
+        "max_size_bytes": 1048576,
+        "required_for_compute_proofs": true
+      }
+    }
+  },
+
+  "_comment_token": "================== AETHEL TOKEN SPECIFICATION ==================",
+
+  "token": {
+    "name": "Aethelred",
+    "symbol": "AETHEL",
+    "decimals": 18,
+    "total_supply": "1000000000000000000000000000",
+    "total_supply_human": "1,000,000,000 AETHEL",
+
+    "metadata": {
+      "description": "Native utility and governance token of the Aethelred Protocol",
+      "logo_uri": "https://assets.aethelred.io/token/aethel-logo.svg",
+      "coingecko_id": "aethelred",
+      "website": "https://aethelred.io"
+    },
+
+    "precision_reference": {
+      "_1_aethel": "1000000000000000000",
+      "_1000_aethel": "1000000000000000000000",
+      "_5000_aethel": "5000000000000000000000",
+      "_50000_aethel": "50000000000000000000000",
+      "_1m_aethel": "1000000000000000000000000",
+      "_50m_aethel": "50000000000000000000000000",
+      "_100m_aethel": "100000000000000000000000000",
+      "_150m_aethel": "150000000000000000000000000",
+      "_200m_aethel": "200000000000000000000000000",
+      "_400m_aethel": "400000000000000000000000000"
+    }
+  },
+
+  "_comment_tokenomics": "================== TOKENOMICS CONFIGURATION ==================",
+
+  "tokenomics": {
+    "emission_schedule": {
+      "type": "halving",
+      "halving_interval_years": 4,
+      "halving_interval_seconds": 126144000,
+      "total_emission_years": 50,
+      "total_emission_seconds": 1576800000,
+      "initial_period_emission_pct": 25,
+      "_comment": "25% of mining pool in first 4 years, then halving"
+    },
+
+    "adaptive_burn": {
+      "enabled": true,
+      "min_burn_rate_bps": 500,
+      "max_burn_rate_bps": 2000,
+      "curve_exponent": 2,
+      "smoothing_factor_pct": 50,
+      "_formula": "BurnRate = B_min + (B_max - B_min) × (BlockUsage / BlockCapacity)²",
+      "_example_rates": {
+        "10pct_utilization": "~5.1% burn",
+        "50pct_utilization": "~8.75% burn",
+        "90pct_utilization": "~17% burn",
+        "100pct_utilization": "20% burn"
+      }
+    },
+
+    "fee_distribution": {
+      "prover_share_bps": 7000,
+      "validator_share_bps": 2000,
+      "burn_share_bps": 1000,
+      "_comment": "70% to prover, 20% to validator, 10% burn (before adaptive adjustment)"
+    }
+  },
+
+  "_comment_allocations": "================== GENESIS TOKEN ALLOCATIONS ==================",
+
+  "allocations": {
+    "_summary": {
+      "mining_rewards_pct": 40,
+      "ecosystem_fund_pct": 20,
+      "early_investors_pct": 15,
+      "core_team_pct": 15,
+      "public_sale_pct": 5,
+      "foundation_pct": 5,
+      "total_pct": 100
+    },
+
+    "pools": [
+      {
+        "id": "mining_rewards",
+        "name": "Mining Rewards Pool",
+        "address": "aethelred1mining00000000000000000000000000000000",
+        "address_type": "module_account",
+        "balance": "400000000000000000000000000",
+        "balance_human": "400,000,000 AETHEL (40%)",
+        "purpose": "Algorithmic rewards for compute nodes providing verified AI computations",
+        "vesting": {
+          "type": "emission",
+          "schedule": "halving",
+          "halving_interval_years": 4,
+          "total_duration_years": 50,
+          "tge_unlock_pct": 0,
+          "_year_1_4_emission": "100,000,000 AETHEL (25% of pool)",
+          "_year_5_8_emission": "50,000,000 AETHEL (12.5% of pool)",
+          "_year_9_12_emission": "25,000,000 AETHEL (6.25% of pool)"
+        },
+        "governance": {
+          "controlled_by": "protocol",
+          "can_modify": false
+        }
+      },
+      {
+        "id": "ecosystem_fund",
+        "name": "Ecosystem Development Fund",
+        "address": "aethelred1ecosystem0000000000000000000000000000",
+        "address_type": "multisig",
+        "multisig_config": {
+          "threshold": 4,
+          "total_signers": 7,
+          "signers": [
+            "Foundation Director",
+            "Technical Lead",
+            "Community Representative 1",
+            "Community Representative 2",
+            "Investor Representative 1",
+            "Investor Representative 2",
+            "Independent Advisor"
+          ],
+          "timelock_hours": 48
+        },
+        "balance": "200000000000000000000000000",
+        "balance_human": "200,000,000 AETHEL (20%)",
+        "purpose": "Grants, partnerships, developer incentives, and ecosystem growth",
+        "vesting": {
+          "type": "dao_controlled",
+          "schedule": "proposal_based",
+          "tge_unlock_pct": 0,
+          "max_monthly_unlock_pct": 2,
+          "requires_governance_vote": true,
+          "proposal_threshold_pct": 1,
+          "quorum_pct": 10,
+          "approval_threshold_pct": 50
+        },
+        "governance": {
+          "controlled_by": "dao",
+          "proposal_types": ["grant", "partnership", "liquidity", "marketing"]
+        },
+        "allocation_guidelines": {
+          "developer_grants_pct": 40,
+          "strategic_partnerships_pct": 25,
+          "liquidity_programs_pct": 20,
+          "marketing_growth_pct": 15
+        }
+      },
+      {
+        "id": "early_investors",
+        "name": "Early Investor Allocation",
+        "address": "aethelred1investors000000000000000000000000000",
+        "address_type": "vesting_contract",
+        "balance": "150000000000000000000000000",
+        "balance_human": "150,000,000 AETHEL (15%)",
+        "purpose": "Seed and private round investors with aligned long-term incentives",
+        "vesting": {
+          "type": "linear_with_cliff",
+          "cliff_duration_seconds": 31536000,
+          "cliff_duration_human": "1 year",
+          "total_duration_seconds": 94608000,
+          "total_duration_human": "3 years (1 year cliff + 2 years linear)",
+          "tge_unlock_pct": 0,
+          "post_cliff_unlock_schedule": "linear_monthly",
+          "monthly_unlock_pct": 4.17,
+          "_unlock_schedule": {
+            "month_0_12": "0% (cliff)",
+            "month_13": "4.17%",
+            "month_14": "8.34%",
+            "month_24": "50%",
+            "month_36": "100%"
+          }
+        },
+        "governance": {
+          "controlled_by": "smart_contract",
+          "can_modify": false,
+          "revocable": false
+        },
+        "investor_rounds": {
+          "seed_round": {
+            "allocation_pct": 40,
+            "amount": "60000000000000000000000000",
+            "amount_human": "60,000,000 AETHEL"
+          },
+          "private_round": {
+            "allocation_pct": 60,
+            "amount": "90000000000000000000000000",
+            "amount_human": "90,000,000 AETHEL"
+          }
+        }
+      },
+      {
+        "id": "core_team",
+        "name": "Core Team & Advisors",
+        "address": "aethelred1team0000000000000000000000000000000000",
+        "address_type": "vesting_contract",
+        "balance": "150000000000000000000000000",
+        "balance_human": "150,000,000 AETHEL (15%)",
+        "purpose": "Long-term incentive alignment for core contributors",
+        "vesting": {
+          "type": "linear_with_cliff",
+          "cliff_duration_seconds": 31536000,
+          "cliff_duration_human": "1 year",
+          "total_duration_seconds": 126144000,
+          "total_duration_human": "4 years (1 year cliff + 3 years linear)",
+          "tge_unlock_pct": 0,
+          "post_cliff_unlock_schedule": "linear_monthly",
+          "monthly_unlock_pct": 2.78,
+          "_unlock_schedule": {
+            "month_0_12": "0% (cliff)",
+            "month_13": "2.78%",
+            "month_24": "33.33%",
+            "month_36": "66.67%",
+            "month_48": "100%"
+          }
+        },
+        "governance": {
+          "controlled_by": "smart_contract",
+          "can_modify": false,
+          "revocable": true,
+          "revocation_beneficiary": "ecosystem_fund"
+        },
+        "sub_allocations": {
+          "founding_team": {
+            "allocation_pct": 60,
+            "amount_human": "90,000,000 AETHEL"
+          },
+          "advisors": {
+            "allocation_pct": 15,
+            "amount_human": "22,500,000 AETHEL"
+          },
+          "future_hires": {
+            "allocation_pct": 25,
+            "amount_human": "37,500,000 AETHEL"
+          }
+        }
+      },
+      {
+        "id": "public_sale",
+        "name": "Public Sale / TGE",
+        "address": "aethelred1publicsale00000000000000000000000000",
+        "address_type": "distribution_contract",
+        "balance": "50000000000000000000000000",
+        "balance_human": "50,000,000 AETHEL (5%)",
+        "purpose": "Initial liquidity and public distribution at Token Generation Event",
+        "vesting": {
+          "type": "immediate",
+          "tge_unlock_pct": 100,
+          "_comment": "100% unlocked at TGE for immediate trading"
+        },
+        "governance": {
+          "controlled_by": "smart_contract",
+          "can_modify": false
+        },
+        "distribution": {
+          "public_sale": {
+            "allocation_pct": 60,
+            "amount_human": "30,000,000 AETHEL"
+          },
+          "initial_liquidity": {
+            "allocation_pct": 30,
+            "amount_human": "15,000,000 AETHEL",
+            "dex_pairs": ["AETHEL/ETH", "AETHEL/USDC"]
+          },
+          "market_making": {
+            "allocation_pct": 10,
+            "amount_human": "5,000,000 AETHEL"
+          }
+        }
+      },
+      {
+        "id": "foundation",
+        "name": "Foundation Reserve",
+        "address": "aethelred1foundation0000000000000000000000000",
+        "address_type": "multisig",
+        "multisig_config": {
+          "threshold": 3,
+          "total_signers": 5,
+          "timelock_hours": 72
+        },
+        "balance": "50000000000000000000000000",
+        "balance_human": "50,000,000 AETHEL (5%)",
+        "purpose": "Strategic reserve for unforeseen opportunities and emergencies",
+        "vesting": {
+          "type": "strategic",
+          "tge_unlock_pct": 0,
+          "unlock_requires": "board_approval",
+          "_comment": "Unlocked as needed for strategic initiatives"
+        },
+        "governance": {
+          "controlled_by": "foundation_board",
+          "requires_public_disclosure": true,
+          "disclosure_delay_hours": 24
+        },
+        "permitted_uses": [
+          "emergency_liquidity",
+          "strategic_acquisitions",
+          "legal_defense",
+          "regulatory_compliance",
+          "exchange_listings"
+        ]
+      }
+    ]
+  },
+
+  "_comment_staking": "================== STAKING CONFIGURATION ==================",
+
+  "staking": {
+    "validator_requirements": {
+      "min_stake": "50000000000000000000000",
+      "min_stake_human": "50,000 AETHEL",
+      "max_stake": "5000000000000000000000000",
+      "max_stake_human": "5,000,000 AETHEL (10% of validator pool cap)",
+      "unbonding_period_seconds": 1814400,
+      "unbonding_period_human": "21 days",
+      "commission_rate_min_bps": 0,
+      "commission_rate_max_bps": 2000,
+      "commission_rate_change_max_bps_per_day": 100,
+      "_rationale": "High minimum stake ensures validators have significant skin in the game"
+    },
+
+    "compute_node_requirements": {
+      "min_stake": "5000000000000000000000",
+      "min_stake_human": "5,000 AETHEL",
+      "max_stake": "500000000000000000000000",
+      "max_stake_human": "500,000 AETHEL",
+      "unbonding_period_seconds": 604800,
+      "unbonding_period_human": "7 days",
+      "_rationale": "Lower barrier encourages researchers and students to contribute GPU power"
+    },
+
+    "delegator_requirements": {
+      "min_stake": "100000000000000000000",
+      "min_stake_human": "100 AETHEL",
+      "unbonding_period_seconds": 1209600,
+      "unbonding_period_human": "14 days",
+      "max_validators_per_delegator": 10,
+      "redelegation_cooldown_seconds": 86400
+    },
+
+    "rewards": {
+      "base_apr_bps": 800,
+      "max_apr_bps": 1500,
+      "compute_bonus_multiplier": 1.5,
+      "loyalty_bonus_enabled": true,
+      "loyalty_bonus_max_pct": 10,
+      "loyalty_bonus_full_at_days": 365
+    },
+
+    "validator_set": {
+      "max_validators": 1000,
+      "active_set_size": 100,
+      "rotation_interval_epochs": 1,
+      "min_uptime_pct": 95,
+      "performance_score_weight_bps": 3000
+    }
+  },
+
+  "_comment_slashing": "================== SLASHING CONFIGURATION ==================",
+
+  "slashing": {
+    "enabled": true,
+
+    "tier1_critical": {
+      "offenses": [
+        "invalid_zk_proof",
+        "forged_tee_signature",
+        "hardware_spoofing",
+        "fabricated_result",
+        "committee_manipulation"
+      ],
+      "slash_pct": 100,
+      "consequence": "permanent_tombstone",
+      "ban_duration": "permanent",
+      "_comment": "Zero tolerance for cryptographic fraud"
+    },
+
+    "tier2_malicious": {
+      "offenses": [
+        "double_sign",
+        "equivocation",
+        "vote_tampering",
+        "collusion",
+        "result_plagiarism"
+      ],
+      "slash_pct": 50,
+      "consequence": "temporary_ban",
+      "ban_duration_seconds": 2592000,
+      "ban_duration_human": "30 days"
+    },
+
+    "tier3_performance": {
+      "offenses": [
+        "sla_timeout",
+        "late_delivery",
+        "incomplete_result",
+        "attestation_failure",
+        "job_abandonment",
+        "low_reliability"
+      ],
+      "slash_pct": 5,
+      "consequence": "suspension",
+      "suspension_duration_seconds": 86400,
+      "suspension_duration_human": "24 hours"
+    },
+
+    "challenge_response": {
+      "enabled": true,
+      "challenger_reward_pct": 50,
+      "spam_penalty_pct": 20,
+      "committee_size": 3,
+      "committee_threshold_pct": 67,
+      "response_window_seconds": 600
+    },
+
+    "attestation_verification": {
+      "enabled": true,
+      "max_attestation_age_seconds": 86400,
+      "challenge_interval_seconds": 14400,
+      "sample_pct_per_epoch": 5
+    },
+
+    "reliability_tracking": {
+      "enabled": true,
+      "rolling_window_jobs": 100,
+      "min_reliability_bps": 9000,
+      "_comment": "90% minimum reliability score required"
+    }
+  },
+
+  "_comment_governance": "================== GOVERNANCE CONFIGURATION ==================",
+
+  "governance": {
+    "enabled": true,
+    "governance_token": "AETHEL",
+
+    "proposal_params": {
+      "min_deposit": "100000000000000000000000",
+      "min_deposit_human": "100,000 AETHEL",
+      "max_deposit_period_seconds": 604800,
+      "max_deposit_period_human": "7 days",
+      "voting_period_seconds": 604800,
+      "voting_period_human": "7 days"
+    },
+
+    "voting_params": {
+      "quorum_pct": 33,
+      "threshold_pct": 50,
+      "veto_threshold_pct": 33,
+      "vote_options": ["yes", "no", "abstain", "no_with_veto"]
+    },
+
+    "proposal_types": {
+      "parameter_change": {
+        "quorum_pct": 33,
+        "threshold_pct": 50
+      },
+      "software_upgrade": {
+        "quorum_pct": 40,
+        "threshold_pct": 67
+      },
+      "community_spend": {
+        "quorum_pct": 33,
+        "threshold_pct": 50,
+        "max_amount_pct": 5
+      },
+      "emergency": {
+        "quorum_pct": 50,
+        "threshold_pct": 67,
+        "expedited_voting_period_seconds": 86400
+      }
+    },
+
+    "council": {
+      "enabled": true,
+      "council_size": 9,
+      "term_duration_seconds": 31536000,
+      "term_duration_human": "1 year",
+      "election_method": "weighted_vote"
+    }
+  },
+
+  "_comment_compliance": "================== COMPLIANCE CONFIGURATION ==================",
+
+  "compliance": {
+    "enabled": true,
+    "default_enforcement_level": "strict",
+
+    "modules": {
+      "ofac_sanctions": {
+        "enabled": true,
+        "lists": ["SDN", "CONSOLIDATED"],
+        "update_frequency_hours": 24,
+        "enforcement": "block_transaction"
+      },
+      "gdpr": {
+        "enabled": true,
+        "jurisdictions": ["EU", "EEA", "UK"],
+        "data_retention_days": 365,
+        "right_to_erasure": true,
+        "consent_required": true
+      },
+      "hipaa": {
+        "enabled": true,
+        "jurisdiction": "US",
+        "requires_baa": true,
+        "phi_encryption_required": true
+      },
+      "ccpa": {
+        "enabled": true,
+        "jurisdiction": "US_CA",
+        "opt_out_required": true
+      },
+      "basel_iii": {
+        "enabled": false,
+        "threshold_amount": "10000000000000000000000000",
+        "_comment": "Required for transactions over 10M AETHEL"
+      },
+      "aml": {
+        "enabled": true,
+        "kyc_threshold": "10000000000000000000000",
+        "kyc_threshold_human": "10,000 AETHEL",
+        "reporting_threshold": "100000000000000000000000",
+        "reporting_threshold_human": "100,000 AETHEL"
+      }
+    },
+
+    "approved_tee_vendors": {
+      "intel_sgx": {
+        "enabled": true,
+        "versions": ["SGX2", "SGX_SCALABLE"],
+        "pccs_url": "https://pccs.aethelred.io/sgx/certification/v4/"
+      },
+      "amd_sev": {
+        "enabled": true,
+        "versions": ["SEV_SNP"],
+        "ark_cert_url": "https://kds.amd.com/vcek/v1/"
+      },
+      "aws_nitro": {
+        "enabled": true,
+        "versions": ["NITRO_ENCLAVE_V1"]
+      }
+    },
+
+    "risk_scoring": {
+      "enabled": true,
+      "low_risk_threshold": 30,
+      "medium_risk_threshold": 60,
+      "high_risk_threshold": 80,
+      "auto_block_threshold": 95
+    }
+  },
+
+  "_comment_bridge": "================== BRIDGE CONFIGURATION ==================",
+
+  "bridge": {
+    "ethereum": {
+      "enabled": true,
+      "chain_id": 1,
+      "chain_name": "Ethereum Mainnet",
+      "contract_address": "0x0000000000000000000000000000000000000000",
+      "deploy_block": 0,
+
+      "relayer_config": {
+        "min_relayers": 7,
+        "max_relayers": 20,
+        "consensus_threshold_bps": 6700,
+        "selection_method": "top_validators_by_stake"
+      },
+
+      "security": {
+        "challenge_period_seconds": 604800,
+        "challenge_period_human": "7 days",
+        "min_confirmations": 12,
+        "rate_limit_enabled": true,
+        "max_deposit_per_period": "100000000000000000000",
+        "max_withdrawal_per_period": "100000000000000000000",
+        "rate_limit_period_seconds": 3600
+      },
+
+      "supported_tokens": [
+        {
+          "symbol": "ETH",
+          "address": "0x0000000000000000000000000000000000000000",
+          "decimals": 18,
+          "wrapped_symbol": "wETH",
+          "min_deposit": "10000000000000000",
+          "max_deposit": "100000000000000000000"
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6,
+          "wrapped_symbol": "wUSDC",
+          "min_deposit": "10000000",
+          "max_deposit": "1000000000000"
+        },
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6,
+          "wrapped_symbol": "wUSDT",
+          "min_deposit": "10000000",
+          "max_deposit": "1000000000000"
+        }
+      ]
+    },
+
+    "_future_integrations": {
+      "layerzero": {
+        "enabled": false,
+        "comment": "Planned for Phase 2 - Multi-chain via LayerZero"
+      },
+      "wormhole": {
+        "enabled": false,
+        "comment": "Planned for Phase 2 - Alternative multi-chain"
+      }
+    }
+  },
+
+  "_comment_job_registry": "================== JOB REGISTRY CONFIGURATION ==================",
+
+  "job_registry": {
+    "params": {
+      "min_bid": "1000000000000000000",
+      "min_bid_human": "1 AETHEL",
+      "max_jobs_per_block": 1000,
+      "max_concurrent_jobs_per_prover": 10,
+      "default_sla_timeout_seconds": 3600,
+      "max_sla_timeout_seconds": 86400,
+      "late_penalty_bps_per_minute": 100,
+      "cancellation_fee_bps": 500,
+      "max_priority_multiplier": 5
+    },
+
+    "supported_models": {
+      "formats": ["ONNX", "PyTorch", "TensorFlow", "SafeTensors"],
+      "max_model_size_bytes": 10737418240,
+      "max_input_size_bytes": 1073741824
+    },
+
+    "verification_methods": {
+      "tee_attestation": {
+        "enabled": true,
+        "priority": 1
+      },
+      "zkml_proof": {
+        "enabled": true,
+        "priority": 2,
+        "systems": ["ezkl", "plonky2", "halo2"]
+      },
+      "optimistic": {
+        "enabled": true,
+        "priority": 3,
+        "challenge_period_seconds": 3600
+      }
+    }
+  },
+
+  "_comment_initial_state": "================== INITIAL CHAIN STATE ==================",
+
+  "initial_validators": [],
+  "initial_compute_nodes": [],
+
+  "_comment_note": "Validators and compute nodes will register after TGE via staking transactions",
+
+  "app_state": {
+    "bank": {
+      "supply": [
+        {
+          "denom": "uaethel",
+          "amount": "1000000000000000000000000000"
+        }
+      ]
+    },
+    "staking": {
+      "params": {
+        "unbonding_time": "1814400s",
+        "max_validators": 1000,
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "bond_denom": "uaethel"
+      }
+    },
+    "slashing": {
+      "params": {
+        "signed_blocks_window": 10000,
+        "min_signed_per_window": "0.95",
+        "downtime_jail_duration": "600s",
+        "slash_fraction_double_sign": "0.50",
+        "slash_fraction_downtime": "0.01"
+      }
+    },
+    "governance": {
+      "starting_proposal_id": 1,
+      "deposits": [],
+      "votes": [],
+      "proposals": []
+    }
+  },
+
+  "_signature": {
+    "_comment": "Genesis file must be signed by foundation multisig before activation",
+    "signed_by": [],
+    "signature_threshold": 4,
+    "signatures": []
+  }
+}

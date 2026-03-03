@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Your Knowledge | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 60px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; text-align: center; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(220, 38, 38, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 800; margin-bottom: 16px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 18px; color: var(--gray-400); max-width: 600px; margin: 0 auto; }
+
+    /* Quiz Container */
+    .quiz-section { padding: 60px 0 100px; }
+    .quiz-progress { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+    .progress-bar { flex: 1; height: 8px; background: var(--dark-700); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--red-600), var(--red-400)); border-radius: 4px; transition: width 0.3s; }
+    .progress-text { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--red-500); }
+
+    .quiz-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; }
+    .question-number { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 2px; }
+    .question-text { font-size: 24px; font-weight: 600; margin-bottom: 30px; line-height: 1.4; }
+
+    .options { display: flex; flex-direction: column; gap: 12px; }
+    .option { background: var(--dark-700); border: 2px solid var(--dark-500); border-radius: 12px; padding: 20px 24px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; }
+    .option:hover { border-color: var(--red-600); background: rgba(220, 38, 38, 0.1); }
+    .option.selected { border-color: var(--red-500); background: rgba(220, 38, 38, 0.15); }
+    .option.correct { border-color: var(--green-500); background: rgba(34, 197, 94, 0.15); }
+    .option.incorrect { border-color: var(--red-500); background: rgba(220, 38, 38, 0.15); }
+    .option-letter { width: 36px; height: 36px; background: var(--dark-600); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', monospace; font-weight: 600; flex-shrink: 0; }
+    .option.selected .option-letter { background: var(--red-600); }
+    .option.correct .option-letter { background: var(--green-500); }
+    .option.incorrect .option-letter { background: var(--red-600); }
+    .option-text { font-size: 16px; }
+
+    .feedback { margin-top: 24px; padding: 20px; border-radius: 12px; display: none; }
+    .feedback.show { display: block; }
+    .feedback.correct { background: rgba(34, 197, 94, 0.1); border: 1px solid var(--green-500); }
+    .feedback.incorrect { background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-600); }
+    .feedback h4 { font-size: 16px; margin-bottom: 8px; }
+    .feedback.correct h4 { color: var(--green-500); }
+    .feedback.incorrect h4 { color: var(--red-500); }
+    .feedback p { font-size: 14px; color: var(--gray-300); }
+
+    .quiz-actions { display: flex; justify-content: space-between; margin-top: 30px; }
+    .btn { padding: 14px 28px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 14px; transition: all 0.2s; }
+    .btn-primary { background: var(--red-600); color: white; }
+    .btn-primary:hover { background: var(--red-500); }
+    .btn-primary:disabled { background: var(--dark-600); cursor: not-allowed; }
+    .btn-secondary { background: var(--dark-700); color: white; border: 1px solid var(--dark-500); }
+
+    /* Results */
+    .results-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 60px; text-align: center; display: none; }
+    .results-card.show { display: block; }
+    .results-icon { font-size: 72px; margin-bottom: 24px; }
+    .results-card h2 { font-family: 'Syne', sans-serif; font-size: 36px; margin-bottom: 16px; }
+    .results-score { font-family: 'Orbitron', monospace; font-size: 48px; color: var(--red-500); margin-bottom: 8px; }
+    .results-text { font-size: 18px; color: var(--gray-400); margin-bottom: 30px; }
+    .results-breakdown { display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; }
+    .breakdown-item { text-align: center; }
+    .breakdown-value { font-family: 'Orbitron', monospace; font-size: 28px; margin-bottom: 4px; }
+    .breakdown-value.correct { color: var(--green-500); }
+    .breakdown-value.incorrect { color: var(--red-500); }
+    .breakdown-label { font-size: 13px; color: var(--gray-400); }
+
+    /* Quiz Selection */
+    .quiz-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 40px; }
+    .quiz-item { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 24px; cursor: pointer; transition: all 0.3s; }
+    .quiz-item:hover { border-color: var(--red-600); transform: translateY(-2px); }
+    .quiz-item.active { border-color: var(--red-500); background: rgba(220, 38, 38, 0.1); }
+    .quiz-item h3 { font-size: 18px; margin-bottom: 8px; }
+    .quiz-item p { font-size: 13px; color: var(--gray-400); margin-bottom: 12px; }
+    .quiz-meta { display: flex; gap: 16px; font-size: 12px; color: var(--gray-400); }
+    .quiz-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-content { text-align: center; }
+    .footer-content p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 600px) { 
+      .page-hero h1 { font-size: 32px; } 
+      .quiz-list { grid-template-columns: 1fr; }
+      .results-breakdown { flex-direction: column; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="glossary.html">Glossary</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Learn & Earn
+      </div>
+      <h1>Test Your <span class="gradient-text">Knowledge</span></h1>
+      <p class="subtitle">Challenge yourself with quizzes about Aethelred, blockchain, cryptography, and verifiable AI. Earn badges and track your progress.</p>
+    </div>
+  </section>
+
+  <section class="quiz-section">
+    <div class="container">
+      <!-- Quiz Selection -->
+      <div id="quiz-selection">
+        <div class="quiz-list">
+          <div class="quiz-item active" data-quiz="basics">
+            <h3>🎯 Aethelred Basics</h3>
+            <p>Learn the fundamentals of verifiable AI and how Aethelred works.</p>
+            <div class="quiz-meta">
+              <span>📝 10 questions</span>
+              <span>⏱️ 5 min</span>
+              <span>🏆 Beginner</span>
+            </div>
+          </div>
+          <div class="quiz-item" data-quiz="crypto">
+            <h3>🔐 Cryptography</h3>
+            <p>Test your knowledge of zero-knowledge proofs and digital signatures.</p>
+            <div class="quiz-meta">
+              <span>📝 10 questions</span>
+              <span>⏱️ 8 min</span>
+              <span>🏆 Intermediate</span>
+            </div>
+          </div>
+          <div class="quiz-item" data-quiz="tokens">
+            <h3>💰 AETHEL Token</h3>
+            <p>Understand tokenomics, staking, and governance mechanics.</p>
+            <div class="quiz-meta">
+              <span>📝 10 questions</span>
+              <span>⏱️ 5 min</span>
+              <span>🏆 Beginner</span>
+            </div>
+          </div>
+          <div class="quiz-item" data-quiz="advanced">
+            <h3>⚡ Advanced Concepts</h3>
+            <p>Deep dive into Proof-of-Compute, spatial verification, and more.</p>
+            <div class="quiz-meta">
+              <span>📝 10 questions</span>
+              <span>⏱️ 10 min</span>
+              <span>🏆 Advanced</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="startQuiz()">Start Quiz →</button>
+      </div>
+
+      <!-- Quiz Card -->
+      <div id="quiz-container" style="display: none;">
+        <div class="quiz-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 10%;"></div>
+          </div>
+          <span class="progress-text" id="progress-text">1 / 10</span>
+        </div>
+
+        <div class="quiz-card">
+          <div class="question-number" id="question-number">Question 1</div>
+          <div class="question-text" id="question-text">What is the primary purpose of Aethelred's Digital Seal?</div>
+          
+          <div class="options" id="options">
+            <div class="option" data-option="a">
+              <div class="option-letter">A</div>
+              <div class="option-text">To encrypt AI model weights</div>
+            </div>
+            <div class="option" data-option="b">
+              <div class="option-letter">B</div>
+              <div class="option-text">To create unforgeable certificates of AI computation authenticity</div>
+            </div>
+            <div class="option" data-option="c">
+              <div class="option-letter">C</div>
+              <div class="option-text">To compress blockchain data</div>
+            </div>
+            <div class="option" data-option="d">
+              <div class="option-letter">D</div>
+              <div class="option-text">To generate random numbers</div>
+            </div>
+          </div>
+
+          <div class="feedback" id="feedback">
+            <h4 id="feedback-title">Correct!</h4>
+            <p id="feedback-text">The Digital Seal creates a tamper-evident cryptographic wrapper that binds AI computation outputs to their complete provenance.</p>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn btn-secondary" onclick="previousQuestion()" id="prev-btn" disabled>← Previous</button>
+            <button class="btn btn-primary" onclick="nextQuestion()" id="next-btn" disabled>Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-card" id="results">
+        <div class="results-icon" id="results-icon">🏆</div>
+        <h2 id="results-title">Quiz Complete!</h2>
+        <div class="results-score" id="results-score">80%</div>
+        <p class="results-text" id="results-text">Great job! You have a solid understanding of Aethelred basics.</p>
+        <div class="results-breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-value correct" id="correct-count">8</div>
+            <div class="breakdown-label">Correct</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-value incorrect" id="incorrect-count">2</div>
+            <div class="breakdown-label">Incorrect</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="restartQuiz()">Try Another Quiz</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const quizzes = {
+      basics: [
+        {
+          question: "What is the primary purpose of Aethelred's Digital Seal?",
+          options: ["To encrypt AI model weights", "To create unforgeable certificates of AI computation authenticity", "To compress blockchain data", "To generate random numbers"],
+          correct: 1,
+          explanation: "The Digital Seal creates a tamper-evident cryptographic wrapper that binds AI computation outputs to their complete provenance."
+        },
+        {
+          question: "What consensus mechanism does Aethelred use?",
+          options: ["Proof-of-Work", "Proof-of-Stake", "Proof-of-Compute", "Proof-of-Authority"],
+          correct: 2,
+          explanation: "Aethelred uses Proof-of-Compute, a novel consensus mechanism designed specifically to validate AI computations were executed correctly."
+        },
+        {
+          question: "What is the native token of the Aethelred network?",
+          options: ["ETH", "AETHEL", "AET", "SEAL"],
+          correct: 1,
+          explanation: "AETHEL is the native utility and governance token used for staking, transaction fees, and protocol governance."
+        },
+        {
+          question: "What accuracy does Aethelred's spatial verification achieve?",
+          options: ["±100 meters", "±50 meters", "±10 meters", "±3 meters"],
+          correct: 3,
+          explanation: "Aethelred's spatial verification can prove computation location with ±3 meter accuracy using multi-source verification."
+        },
+        {
+          question: "What problem does Aethelred primarily solve?",
+          options: ["Cryptocurrency payments", "AI computation verification", "Social media moderation", "Cloud storage"],
+          correct: 1,
+          explanation: "Aethelred solves the AI black box problem by providing cryptographic proof of how AI decisions were made."
+        },
+        {
+          question: "What is an Enterprise Corridor in Aethelred?",
+          options: ["A physical data center", "A dedicated high-throughput verification channel", "A type of smart contract", "A governance proposal"],
+          correct: 1,
+          explanation: "Enterprise Corridors are dedicated channels with guaranteed SLAs, priority processing, and enhanced privacy for enterprise customers."
+        },
+        {
+          question: "How does Aethelred protect model weights during verification?",
+          options: ["By storing them on-chain", "Through zero-knowledge proofs", "By encrypting the blockchain", "Model weights must be shared"],
+          correct: 1,
+          explanation: "Zero-knowledge proofs allow verification without exposing model weights, training data, or proprietary algorithms."
+        },
+        {
+          question: "What is a sealed computation in Aethelred?",
+          options: ["An encrypted transaction", "An AI computation with cryptographic proof of authenticity", "A deleted smart contract", "A private message"],
+          correct: 1,
+          explanation: "A sealed computation is an AI output bound to its complete provenance through Aethelred's Digital Seal technology."
+        },
+        {
+          question: "Who governs the Aethelred protocol?",
+          options: ["A single company", "The Aethelred Verification Consortium", "Government regulators", "Anonymous developers"],
+          correct: 1,
+          explanation: "The protocol is governed by a consortium of organizations collaborating to establish industry standards for verifiable AI."
+        },
+        {
+          question: "What type of node produces blocks on Aethelred?",
+          options: ["Light node", "Full node", "Validator node", "Archive node"],
+          correct: 2,
+          explanation: "Validator nodes stake AETHEL and run specialized hardware to verify AI computations and produce blocks."
+        }
+      ]
+    };
+
+    let currentQuiz = 'basics';
+    let currentQuestion = 0;
+    let selectedAnswer = null;
+    let answered = false;
+    let score = 0;
+    let answers = [];
+
+    document.querySelectorAll('.quiz-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.quiz-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        currentQuiz = item.dataset.quiz;
+      });
+    });
+
+    function startQuiz() {
+      document.getElementById('quiz-selection').style.display = 'none';
+      document.getElementById('quiz-container').style.display = 'block';
+      currentQuestion = 0;
+      score = 0;
+      answers = [];
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const quiz = quizzes[currentQuiz] || quizzes.basics;
+      const q = quiz[currentQuestion];
+      
+      document.getElementById('question-number').textContent = `Question ${currentQuestion + 1}`;
+      document.getElementById('question-text').textContent = q.question;
+      document.getElementById('progress-text').textContent = `${currentQuestion + 1} / ${quiz.length}`;
+      document.getElementById('progress-fill').style.width = `${((currentQuestion + 1) / quiz.length) * 100}%`;
+      
+      const optionsEl = document.getElementById('options');
+      optionsEl.innerHTML = '';
+      const letters = ['A', 'B', 'C', 'D'];
+      q.options.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'option';
+        div.dataset.option = i;
+        div.innerHTML = `<div class="option-letter">${letters[i]}</div><div class="option-text">${opt}</div>`;
+        div.addEventListener('click', () => selectOption(i));
+        optionsEl.appendChild(div);
+      });
+
+      selectedAnswer = null;
+      answered = false;
+      document.getElementById('feedback').classList.remove('show', 'correct', 'incorrect');
+      document.getElementById('next-btn').disabled = true;
+      document.getElementById('prev-btn').disabled = currentQuestion === 0;
+      document.getElementById('next-btn').textContent = currentQuestion === quiz.length - 1 ? 'Finish' : 'Next →';
+    }
+
+    function selectOption(index) {
+      if (answered) return;
+      
+      const quiz = quizzes[currentQuiz] || quizzes.basics;
+      const q = quiz[currentQuestion];
+      
+      selectedAnswer = index;
+      answered = true;
+      answers[currentQuestion] = index;
+
+      document.querySelectorAll('.option').forEach((opt, i) => {
+        opt.classList.remove('selected', 'correct', 'incorrect');
+        if (i === q.correct) opt.classList.add('correct');
+        else if (i === index && index !== q.correct) opt.classList.add('incorrect');
+      });
+
+      const feedback = document.getElementById('feedback');
+      const isCorrect = index === q.correct;
+      if (isCorrect) score++;
+      
+      feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+      document.getElementById('feedback-title').textContent = isCorrect ? '✓ Correct!' : '✗ Incorrect';
+      document.getElementById('feedback-text').textContent = q.explanation;
+      document.getElementById('next-btn').disabled = false;
+    }
+
+    function nextQuestion() {
+      const quiz = quizzes[currentQuiz] || quizzes.basics;
+      if (currentQuestion < quiz.length - 1) {
+        currentQuestion++;
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function previousQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion();
+      }
+    }
+
+    function showResults() {
+      const quiz = quizzes[currentQuiz] || quizzes.basics;
+      const percent = Math.round((score / quiz.length) * 100);
+      
+      document.getElementById('quiz-container').style.display = 'none';
+      document.getElementById('results').classList.add('show');
+      
+      document.getElementById('results-score').textContent = `${percent}%`;
+      document.getElementById('correct-count').textContent = score;
+      document.getElementById('incorrect-count').textContent = quiz.length - score;
+      
+      if (percent >= 80) {
+        document.getElementById('results-icon').textContent = '🏆';
+        document.getElementById('results-title').textContent = 'Excellent!';
+        document.getElementById('results-text').textContent = 'You have a deep understanding of Aethelred!';
+      } else if (percent >= 60) {
+        document.getElementById('results-icon').textContent = '👍';
+        document.getElementById('results-title').textContent = 'Good Job!';
+        document.getElementById('results-text').textContent = 'You have a solid understanding. Keep learning!';
+      } else {
+        document.getElementById('results-icon').textContent = '📚';
+        document.getElementById('results-title').textContent = 'Keep Learning!';
+        document.getElementById('results-text').textContent = 'Review the documentation and try again.';
+      }
+    }
+
+    function restartQuiz() {
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('quiz-selection').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "date": "2026-02-24",
+  "validation_ok": true,
+  "errors": [],
+  "workflow_controls": {
+    "has_sha256sums": true,
+    "uploads_artifact": true,
+    "copies_version_matrix": true,
+    "mentions_attestation": true,
+    "builds_python": true,
+    "builds_typescript": true,
+    "builds_rust": true,
+    "handles_go": true
+  },
+  "packages": [
+    {
+      "id": "python",
+      "display_name": "Python SDK",
+      "registry": "PyPI",
+      "manifest_path": "python/pyproject.toml",
+      "manifest_exists": true,
+      "matrix_version": "1.0.0",
+      "manifest_version": "1.0.0",
+      "version_match": true,
+      "published": false,
+      "expected_artifact_extensions": [
+        ".whl",
+        ".tar.gz"
+      ],
+      "build_command_doc": "python -m build"
+    },
+    {
+      "id": "typescript",
+      "display_name": "TypeScript SDK",
+      "registry": "npm",
+      "manifest_path": "typescript/package.json",
+      "manifest_exists": true,
+      "matrix_version": "1.0.0",
+      "manifest_version": "1.0.0",
+      "version_match": true,
+      "published": false,
+      "expected_artifact_extensions": [
+        ".tgz"
+      ],
+      "build_command_doc": "npm pack"
+    },
+    {
+      "id": "rust",
+      "display_name": "Rust SDK",
+      "registry": "crates.io",
+      "manifest_path": "rust/Cargo.toml",
+      "manifest_exists": true,
+      "matrix_version": "1.0.0",
+      "manifest_version": "1.0.0",
+      "version_match": true,
+      "published": false,
+      "expected_artifact_extensions": [
+        ".crate"
+      ],
+      "build_command_doc": "cargo package"
+    },
+    {
+      "id": "go",
+      "display_name": "Go SDK",
+      "registry": "Go Module Proxy",
+      "manifest_path": "go/go.mod",
+      "manifest_exists": true,
+      "matrix_version": "1.0.0",
+      "manifest_version": "1.0.0",
+      "version_match": true,
+      "published": false,
+      "expected_artifact_extensions": [
+        ".mod",
+        ".info",
+        ".zip"
+      ],
+      "build_command_doc": "git tag + module proxy indexing"
+    }
+  ]
+}

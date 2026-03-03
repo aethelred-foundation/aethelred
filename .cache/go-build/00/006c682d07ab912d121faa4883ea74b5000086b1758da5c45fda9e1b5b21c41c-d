@@ -1,0 +1,130 @@
+=== RUN   TestStateMachine_Pending_To_Processing
+--- PASS: TestStateMachine_Pending_To_Processing (0.00s)
+=== RUN   TestStateMachine_Pending_To_Expired
+--- PASS: TestStateMachine_Pending_To_Expired (0.00s)
+=== RUN   TestStateMachine_Pending_To_Failed
+--- PASS: TestStateMachine_Pending_To_Failed (0.00s)
+=== RUN   TestStateMachine_Processing_To_Completed
+--- PASS: TestStateMachine_Processing_To_Completed (0.00s)
+=== RUN   TestStateMachine_Processing_To_Failed
+--- PASS: TestStateMachine_Processing_To_Failed (0.00s)
+=== RUN   TestStateMachine_Processing_To_Pending_Retry
+--- PASS: TestStateMachine_Processing_To_Pending_Retry (0.00s)
+=== RUN   TestStateMachine_Completed_Is_Terminal
+--- PASS: TestStateMachine_Completed_Is_Terminal (0.00s)
+=== RUN   TestStateMachine_Failed_Is_Terminal
+--- PASS: TestStateMachine_Failed_Is_Terminal (0.00s)
+=== RUN   TestStateMachine_Expired_Is_Terminal
+--- PASS: TestStateMachine_Expired_Is_Terminal (0.00s)
+=== RUN   TestStateMachine_Pending_Cannot_Complete
+    job_test.go:209: OK: correctly rejected Pending → Completed: invalid state transition: JOB_STATUS_PENDING → JOB_STATUS_COMPLETED
+--- PASS: TestStateMachine_Pending_Cannot_Complete (0.00s)
+=== RUN   TestStateMachine_Pending_Cannot_Retry
+--- PASS: TestStateMachine_Pending_Cannot_Retry (0.00s)
+=== RUN   TestStateMachine_Processing_Cannot_Expire
+--- PASS: TestStateMachine_Processing_Cannot_Expire (0.00s)
+=== RUN   TestCanTransitionTo_AllValidTransitions
+--- PASS: TestCanTransitionTo_AllValidTransitions (0.00s)
+=== RUN   TestStateMachine_TransitionTo_UpdatesTimestamp
+--- PASS: TestStateMachine_TransitionTo_UpdatesTimestamp (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_Deterministic
+--- PASS: TestNewComputeJobWithBlockTime_Deterministic (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_DifferentHeight_DifferentID
+--- PASS: TestNewComputeJobWithBlockTime_DifferentHeight_DifferentID (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_DifferentTime_DifferentID
+--- PASS: TestNewComputeJobWithBlockTime_DifferentTime_DifferentID (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_StatusIsPending
+--- PASS: TestNewComputeJobWithBlockTime_StatusIsPending (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_CreatedAtFromBlockTime
+--- PASS: TestNewComputeJobWithBlockTime_CreatedAtFromBlockTime (0.00s)
+=== RUN   TestNewComputeJobWithBlockTime_ExpiresAt24Hours
+--- PASS: TestNewComputeJobWithBlockTime_ExpiresAt24Hours (0.00s)
+=== RUN   TestIsExpiredAtHeight_NotExpired
+--- PASS: TestIsExpiredAtHeight_NotExpired (0.00s)
+=== RUN   TestIsExpiredAtHeight_JustExpired
+--- PASS: TestIsExpiredAtHeight_JustExpired (0.00s)
+=== RUN   TestIsExpiredAtHeight_WayPastExpiry
+--- PASS: TestIsExpiredAtHeight_WayPastExpiry (0.00s)
+=== RUN   TestIsExpiredAtHeight_SameBlock
+--- PASS: TestIsExpiredAtHeight_SameBlock (0.00s)
+=== RUN   TestIsExpiredAtHeight_ZeroHeight
+--- PASS: TestIsExpiredAtHeight_ZeroHeight (0.00s)
+=== RUN   TestIsExpiredAt_NotExpired
+--- PASS: TestIsExpiredAt_NotExpired (0.00s)
+=== RUN   TestIsExpiredAt_JustExpired
+--- PASS: TestIsExpiredAt_JustExpired (0.00s)
+=== RUN   TestIsExpiredAt_NilExpiresAt
+--- PASS: TestIsExpiredAt_NilExpiresAt (0.00s)
+=== RUN   TestGenerateID_DeterministicAcrossMultipleCalls
+--- PASS: TestGenerateID_DeterministicAcrossMultipleCalls (0.00s)
+=== RUN   TestGenerateID_Length
+--- PASS: TestGenerateID_Length (0.00s)
+=== RUN   TestGenerateID_DifferentRequesters
+--- PASS: TestGenerateID_DifferentRequesters (0.00s)
+=== RUN   TestAddVerificationResultAt_DeterministicTimestamp
+--- PASS: TestAddVerificationResultAt_DeterministicTimestamp (0.00s)
+=== RUN   TestGetConsensusOutput_NoResults
+--- PASS: TestGetConsensusOutput_NoResults (0.00s)
+=== RUN   TestGetConsensusOutput_InsufficientVotes
+--- PASS: TestGetConsensusOutput_InsufficientVotes (0.00s)
+=== RUN   TestGetConsensusOutput_ConsensusReached
+--- PASS: TestGetConsensusOutput_ConsensusReached (0.00s)
+=== RUN   TestGetConsensusOutput_Disagreement
+--- PASS: TestGetConsensusOutput_Disagreement (0.00s)
+=== RUN   TestGetConsensusOutput_SkipsFailures
+--- PASS: TestGetConsensusOutput_SkipsFailures (0.00s)
+=== RUN   TestGetConsensusOutput_NilResult
+--- PASS: TestGetConsensusOutput_NilResult (0.00s)
+=== RUN   TestValidate_ValidJob
+--- PASS: TestValidate_ValidJob (0.00s)
+=== RUN   TestValidate_EmptyID
+--- PASS: TestValidate_EmptyID (0.00s)
+=== RUN   TestValidate_ShortModelHash
+--- PASS: TestValidate_ShortModelHash (0.00s)
+=== RUN   TestValidate_ShortInputHash
+--- PASS: TestValidate_ShortInputHash (0.00s)
+=== RUN   TestValidate_EmptyPurpose
+--- PASS: TestValidate_EmptyPurpose (0.00s)
+=== RUN   TestDefaultJobExpiryBlocks_Is24Hours
+--- PASS: TestDefaultJobExpiryBlocks_Is24Hours (0.00s)
+=== RUN   TestValidTransitions_AllStatesHaveEntries
+--- PASS: TestValidTransitions_AllStatesHaveEntries (0.00s)
+=== RUN   TestValidTransitions_TerminalStatesHaveNoOutgoing
+--- PASS: TestValidTransitions_TerminalStatesHaveNoOutgoing (0.00s)
+=== RUN   TestNegative_Genesis_NilParams
+    negative_test.go:18: OK: correctly rejected: params must be set
+--- PASS: TestNegative_Genesis_NilParams (0.00s)
+=== RUN   TestNegative_Genesis_ZeroMinValidators
+    negative_test.go:25: OK: correctly rejected: min_validators must be positive
+--- PASS: TestNegative_Genesis_ZeroMinValidators (0.00s)
+=== RUN   TestNegative_Genesis_NegativeMinValidators
+    negative_test.go:32: OK: correctly rejected: min_validators must be positive
+--- PASS: TestNegative_Genesis_NegativeMinValidators (0.00s)
+=== RUN   TestNegative_Genesis_ConsensusThresholdTooLow
+    negative_test.go:39: OK: correctly rejected: consensus_threshold must be between 50 and 100
+--- PASS: TestNegative_Genesis_ConsensusThresholdTooLow (0.00s)
+=== RUN   TestNegative_Genesis_ConsensusThresholdTooHigh
+    negative_test.go:46: OK: correctly rejected: consensus_threshold must be between 50 and 100
+--- PASS: TestNegative_Genesis_ConsensusThresholdTooHigh (0.00s)
+=== RUN   TestNegative_Genesis_ZeroJobTimeout
+    negative_test.go:53: OK: correctly rejected: job_timeout_blocks must be positive
+--- PASS: TestNegative_Genesis_ZeroJobTimeout (0.00s)
+=== RUN   TestNegative_Genesis_ZeroMaxJobs
+    negative_test.go:60: OK: correctly rejected: max_jobs_per_block must be positive
+--- PASS: TestNegative_Genesis_ZeroMaxJobs (0.00s)
+=== RUN   TestNegative_Genesis_NilJob
+    negative_test.go:67: OK: correctly rejected: job at index 0 is nil
+--- PASS: TestNegative_Genesis_NilJob (0.00s)
+=== RUN   TestNegative_Genesis_EmptyCapabilityAddress
+    negative_test.go:76: OK: correctly rejected: validator capability missing address at index 0
+--- PASS: TestNegative_Genesis_EmptyCapabilityAddress (0.00s)
+=== RUN   TestNegative_Genesis_NilCapability
+    negative_test.go:83: OK: correctly rejected: validator capability missing address at index 0
+--- PASS: TestNegative_Genesis_NilCapability (0.00s)
+=== RUN   TestPolicy_DefaultParamsAllowSimulatedFalse
+    negative_test.go:108: Default params: AllowSimulated=false, Threshold=67, MinValidators=3
+--- PASS: TestPolicy_DefaultParamsAllowSimulatedFalse (0.00s)
+=== RUN   TestPositive_DefaultGenesis_IsValid
+--- PASS: TestPositive_DefaultGenesis_IsValid (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/x/pouw/types	4.614s

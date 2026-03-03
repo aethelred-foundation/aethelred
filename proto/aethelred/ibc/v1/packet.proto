@@ -1,0 +1,202 @@
+syntax = "proto3";
+package aethelred.ibc.v1;
+
+option go_package = "github.com/aethelred/aethelred/x/ibc/types";
+
+import "google/protobuf/timestamp.proto";
+
+// ProofRelayPacket is the IBC packet data for relaying verified AI computation
+// proofs cross-chain. This allows other Cosmos chains to consume Aethelred's
+// verified computation results with full cryptographic guarantees.
+message ProofRelayPacket {
+  // packet_type identifies this packet (e.g. "proof_relay", "attestation_relay")
+  string packet_type = 1;
+
+  // job_id of the computation that was verified
+  string job_id = 2;
+
+  // model_hash is the SHA-256 hash of the AI model
+  bytes model_hash = 3;
+
+  // input_hash is the SHA-256 hash of the computation input
+  bytes input_hash = 4;
+
+  // output_hash is the SHA-256 hash of the computation output
+  bytes output_hash = 5;
+
+  // verification_type indicates how the computation was verified ("tee", "zkml", "hybrid")
+  string verification_type = 6;
+
+  // tee_attestation contains the TEE attestation proof (if applicable)
+  TEEAttestationProof tee_attestation = 7;
+
+  // zk_proof contains the zero-knowledge proof (if applicable)
+  ZKProofData zk_proof = 8;
+
+  // consensus_evidence contains the validator consensus evidence
+  ConsensusEvidence consensus_evidence = 9;
+
+  // source_chain_id is the chain where the computation was verified
+  string source_chain_id = 10;
+
+  // source_height is the block height where consensus was reached
+  int64 source_height = 11;
+
+  // timestamp when the proof was finalized
+  google.protobuf.Timestamp timestamp = 12;
+
+  // memo is an optional human-readable memo
+  string memo = 13;
+}
+
+// TEEAttestationProof contains TEE attestation data for cross-chain relay.
+message TEEAttestationProof {
+  // platform identifies the TEE (e.g. "aws-nitro", "intel-sgx", "intel-tdx", "amd-sev")
+  string platform = 1;
+
+  // quote is the raw attestation quote bytes
+  bytes quote = 2;
+
+  // user_data bound to the attestation
+  bytes user_data = 3;
+
+  // measurement is the enclave code hash (PCR values for Nitro, MRENCLAVE for SGX)
+  bytes measurement = 4;
+
+  // certificate_chain for quote verification
+  repeated bytes certificate_chain = 5;
+}
+
+// ZKProofData contains a zero-knowledge proof for cross-chain relay.
+message ZKProofData {
+  // proof_system identifies the proof system ("ezkl", "groth16", "halo2", "plonk")
+  string proof_system = 1;
+
+  // proof is the serialized proof bytes
+  bytes proof = 2;
+
+  // public_inputs for proof verification
+  bytes public_inputs = 3;
+
+  // verifying_key_hash for verifier identification
+  bytes verifying_key_hash = 4;
+
+  // circuit_hash for circuit identification
+  bytes circuit_hash = 5;
+}
+
+// ConsensusEvidence contains validator consensus evidence for a verified proof.
+message ConsensusEvidence {
+  // validator_count is the number of validators that agreed
+  int32 validator_count = 1;
+
+  // total_validators is the total validator count
+  int32 total_validators = 2;
+
+  // agreement_power is the voting power that agreed
+  int64 agreement_power = 3;
+
+  // total_power is the total voting power
+  int64 total_power = 4;
+
+  // bls_aggregate_signature is the aggregated BLS signature (96 bytes)
+  bytes bls_aggregate_signature = 5;
+
+  // bls_signer_pub_keys lists contributing validator BLS public keys
+  repeated bytes bls_signer_pub_keys = 6;
+}
+
+// ProofRequestPacket is used by external chains to request computation
+// verification from Aethelred via IBC.
+message ProofRequestPacket {
+  // packet_type must be "proof_request"
+  string packet_type = 1;
+
+  // request_id uniquely identifies this request
+  string request_id = 2;
+
+  // model_hash of the model to run
+  bytes model_hash = 3;
+
+  // input_hash of the input data
+  bytes input_hash = 4;
+
+  // required_verification specifies verification type ("tee", "zkml", "hybrid")
+  string required_verification = 5;
+
+  // callback contains info for relaying the result back
+  CallbackInfo callback = 6;
+
+  // source_chain_id of the requesting chain
+  string source_chain_id = 7;
+
+  // timeout_timestamp after which the request expires
+  google.protobuf.Timestamp timeout_timestamp = 8;
+}
+
+// CallbackInfo specifies where to send the proof result back.
+message CallbackInfo {
+  // channel_id to send the response through
+  string channel_id = 1;
+
+  // port_id on the destination chain
+  string port_id = 2;
+}
+
+// ProofSubscriptionPacket sets up an ongoing subscription for proof
+// notifications from Aethelred.
+message ProofSubscriptionPacket {
+  // packet_type must be "proof_subscription"
+  string packet_type = 1;
+
+  // subscription_id uniquely identifies this subscription
+  string subscription_id = 2;
+
+  // model_hashes to subscribe to (empty = all models)
+  repeated bytes model_hashes = 3;
+
+  // min_consensus_threshold minimum consensus percentage required (0-100)
+  int32 min_consensus_threshold = 4;
+
+  // source_chain_id of the subscribing chain
+  string source_chain_id = 5;
+
+  // active indicates if this is a subscribe (true) or unsubscribe (false)
+  bool active = 6;
+}
+
+// ProofRelayAcknowledgement is the acknowledgement for a proof relay packet.
+message ProofRelayAcknowledgement {
+  // success indicates if the relay was accepted
+  bool success = 1;
+
+  // proof_id is the unique identifier assigned to the relayed proof
+  string proof_id = 2;
+
+  // error contains the error message if success is false
+  string error = 3;
+}
+
+// ProofRequestAcknowledgement is the acknowledgement for a proof request.
+message ProofRequestAcknowledgement {
+  // accepted indicates if the request was accepted for processing
+  bool accepted = 1;
+
+  // request_id echoes back the request identifier
+  string request_id = 2;
+
+  // error contains the error message if accepted is false
+  string error = 3;
+}
+
+// SubscriptionAcknowledgement is the acknowledgement for a subscription packet.
+message SubscriptionAcknowledgement {
+  // success indicates if the subscription was processed
+  bool success = 1;
+
+  // subscription_id echoes back the subscription identifier
+  string subscription_id = 2;
+
+  // error contains the error message if success is false
+  string error = 3;
+}

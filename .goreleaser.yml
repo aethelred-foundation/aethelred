@@ -1,0 +1,100 @@
+project_name: aethelred
+project_url: https://github.com/aethelred/aethelred
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: aethelredd
+    main: ./cmd/aethelredd
+    binary: aethelredd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/aethelred/aethelred/version.Version={{.Version}}
+      - -X github.com/aethelred/aethelred/version.Commit={{.Commit}}
+      - -X github.com/aethelred/aethelred/version.BuildDate={{.Date}}
+
+  - id: aeth
+    main: ./tools/cli/aeth
+    binary: aeth
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: aethelred
+    name: aethelred
+  draft: false
+  prerelease: auto
+  header: |
+    ## Aethelred {{ .Tag }}
+
+    See [CHANGELOG.md](https://github.com/aethelred/aethelred/blob/main/CHANGELOG.md) for full details.
+
+  name_template: "{{.ProjectName}} {{.Tag}}"
+
+brews:
+  - name: aethelred
+    homepage: https://aethelred.io
+    description: Aethelred CLI and node binary
+    repository:
+      owner: aethelred
+      name: homebrew-tap
+    install: |
+      bin.install "aethelredd"
+      bin.install "aeth"
+
+dockers:
+  - image_templates:
+      - "ghcr.io/aethelred/node:{{ .Tag }}"
+      - "ghcr.io/aethelred/node:latest"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64,linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"

@@ -1,0 +1,564 @@
+// Proof-of-Useful-Work (PoUW) protocol buffer definitions.
+//
+// INTEGRATION BOUNDARY: These protobuf types define the shared data contract
+// between the Go blockchain (Cosmos SDK) and Rust services (crates/).
+//
+// Go compilation: protoc generates Go types into x/pouw/types/
+// Rust compilation: Rust services use prost or manual structs matching these schemas.
+//
+// Communication path:
+//   User TX --> Go Chain (x/pouw/keeper) --> ABCI++ Vote Extensions --> TEE Worker (Rust, HTTP/gRPC)
+//   TEE Worker --> Attestation + Result --> Go Chain --> Digital Seal (x/seal)
+//
+// The Go chain is the source of truth for state. Rust services are stateless workers
+// that execute computations and return attestations.
+//
+// PoUW (Proof-of-Useful-Work) is Aethelred's novel consensus mechanism that:
+// - Verifies AI computations cryptographically
+// - Rewards validators based on utility category multipliers
+// - Uses logarithmic scaling to prevent stake concentration
+// - Supports hybrid TEE + zkML verification
+
+syntax = "proto3";
+package aethelred.pouw.v1;
+
+option go_package = "github.com/aethelred/aethelred/x/pouw/types";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+// UtilityCategory defines the type of useful work being performed
+enum UtilityCategory {
+  UTILITY_CATEGORY_UNSPECIFIED = 0;
+  UTILITY_CATEGORY_MEDICAL = 1;      // 2.0x multiplier - Healthcare AI
+  UTILITY_CATEGORY_SCIENTIFIC = 2;   // 1.75x multiplier - Research/Discovery
+  UTILITY_CATEGORY_FINANCIAL = 3;    // 1.5x multiplier - Banking/Credit
+  UTILITY_CATEGORY_ENVIRONMENTAL = 4; // 1.5x multiplier - Climate/Sustainability
+  UTILITY_CATEGORY_INFRASTRUCTURE = 5; // 1.25x multiplier - Critical systems
+  UTILITY_CATEGORY_GENERAL = 6;      // 1.0x multiplier - Other AI tasks
+}
+
+// ComputeJob represents a request for verified AI computation (Useful Work)
+message ComputeJob {
+  // Unique identifier
+  string id = 1;
+
+  // SHA-256 hash of the AI model weights
+  bytes model_hash = 2;
+
+  // Optional human-readable model identifier
+  string model_id = 3;
+
+  // SHA-256 hash of the input data
+  bytes input_hash = 4;
+
+  // URI to fetch encrypted input data
+  string input_data_uri = 5;
+
+  // SHA-256 hash of the output (set after verification)
+  bytes output_hash = 6;
+
+  // Address that submitted this job
+  string requested_by = 7;
+
+  // Type of proof to generate
+  ProofType proof_type = 8;
+
+  // Use case description
+  string purpose = 9;
+
+  // Current status
+  JobStatus status = 10;
+
+  // When the job was submitted
+  google.protobuf.Timestamp created_at = 11;
+
+  // When the job was last updated
+  google.protobuf.Timestamp updated_at = 12;
+
+  // When the job was completed
+  google.protobuf.Timestamp completed_at = 13;
+
+  // When the job will expire
+  google.protobuf.Timestamp expires_at = 14;
+
+  // ID of the Digital Seal created (if completed)
+  string seal_id = 15;
+
+  // Verification results from validators
+  repeated VerificationResult verification_results = 16;
+
+  // Additional parameters
+  map<string, string> metadata = 17;
+
+  // Fee paid for this computation
+  cosmos.base.v1beta1.Coin fee = 18;
+
+  // Priority level
+  int64 priority = 19;
+
+  // Block height when submitted
+  int64 block_height = 20;
+
+  // Utility category for PoUW reward calculation
+  UtilityCategory utility_category = 21;
+
+  // Useful Work Units (UWU) earned for this job
+  uint64 useful_work_units = 22;
+}
+
+// JobStatus represents the status of a compute job
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_PROCESSING = 2;
+  JOB_STATUS_COMPLETED = 3;
+  JOB_STATUS_FAILED = 4;
+  JOB_STATUS_EXPIRED = 5;
+}
+
+// ProofType represents the type of verification proof
+enum ProofType {
+  PROOF_TYPE_UNSPECIFIED = 0;
+  PROOF_TYPE_TEE = 1;
+  PROOF_TYPE_ZKML = 2;
+  PROOF_TYPE_HYBRID = 3;
+  PROOF_TYPE_REEXECUTION = 4;  // Multiple validators re-execute
+  PROOF_TYPE_AI_PROOF = 5;     // AI-based proof systems
+}
+
+// VerificationMethod defines how the work was verified
+enum VerificationMethod {
+  VERIFICATION_METHOD_UNSPECIFIED = 0;
+  VERIFICATION_METHOD_TEE = 1;
+  VERIFICATION_METHOD_ZKML = 2;
+  VERIFICATION_METHOD_HYBRID = 3;
+  VERIFICATION_METHOD_REEXECUTION = 4;
+  VERIFICATION_METHOD_AI_PROOF = 5;
+}
+
+// VerificationResult represents a single validator's verification
+message VerificationResult {
+  // Validator address
+  string validator_address = 1;
+
+  // Output hash computed by this validator
+  bytes output_hash = 2;
+
+  // Type of attestation used
+  string attestation_type = 3;
+
+  // TEE platform used (if TEE attestation)
+  string tee_platform = 4;
+
+  // Raw attestation/proof data
+  bytes attestation_data = 5;
+
+  // Validator's signature
+  bytes signature = 6;
+
+  // Execution time in milliseconds
+  int64 execution_time_ms = 7;
+
+  // When this verification was performed
+  google.protobuf.Timestamp timestamp = 8;
+
+  // Whether verification succeeded
+  bool success = 9;
+
+  // Error message if failed
+  string error_message = 10;
+
+  // Verification method used
+  VerificationMethod verification_method = 11;
+
+  // Useful Work Units contributed by this verification
+  uint64 uwu_contribution = 12;
+}
+
+// RegisteredModel represents a model registered for verification
+message RegisteredModel {
+  // SHA-256 hash of the model weights
+  bytes model_hash = 1;
+
+  // Human-readable identifier
+  string model_id = 2;
+
+  // Model name
+  string name = 3;
+
+  // Description
+  string description = 4;
+
+  // Version
+  string version = 5;
+
+  // Architecture description
+  string architecture = 6;
+
+  // Expected input format
+  string input_schema = 7;
+
+  // Expected output format
+  string output_schema = 8;
+
+  // Address that registered this model
+  string owner = 9;
+
+  // Hash of the zkML circuit (if available)
+  bytes circuit_hash = 10;
+
+  // Hash of the verifying key (if available)
+  bytes verifying_key_hash = 11;
+
+  // Expected enclave measurement
+  bytes tee_measurement = 12;
+
+  // When registered
+  google.protobuf.Timestamp registered_at = 13;
+
+  // Whether active
+  bool is_active = 14;
+
+  // Allowed purposes
+  repeated string allowed_purposes = 15;
+
+  // Default utility category for this model
+  UtilityCategory default_utility_category = 16;
+
+  // Base UWU value for computations using this model
+  uint64 base_uwu_value = 17;
+}
+
+// ValidatorStats tracks validator performance in PoUW
+message ValidatorStats {
+  string validator_address = 1;
+  int64 total_jobs_processed = 2;
+  int64 successful_jobs = 3;
+  int64 failed_jobs = 4;
+  int64 average_execution_time_ms = 5;
+  google.protobuf.Timestamp last_active_at = 6;
+  repeated string tee_capabilities = 7;
+  repeated string zkml_capabilities = 8;
+  int64 reputation_score = 9;
+  int64 slashing_events = 10;
+
+  // PoUW-specific stats
+  uint64 total_useful_work_units = 11;
+  map<string, uint64> uwu_by_category = 12;
+  uint64 current_epoch_uwu = 13;
+}
+
+// ValidatorCapability tracks validator compute capabilities
+message ValidatorCapability {
+  string address = 1;
+  repeated string tee_platforms = 2;
+  repeated string zkml_systems = 3;
+  int64 max_concurrent_jobs = 4;
+  int64 current_jobs = 5;
+  bool is_online = 6;
+  google.protobuf.Timestamp last_seen = 7;
+  int64 reputation_score = 8;
+
+  // Supported utility categories
+  repeated UtilityCategory supported_categories = 9;
+
+  // Hardware capabilities for PoUW
+  int64 gpu_memory_gb = 10;
+  int64 cpu_cores = 11;
+  int64 memory_gb = 12;
+}
+
+// MsgSubmitJob submits a new compute job (Useful Work request)
+message MsgSubmitJob {
+  string creator = 1;
+  bytes model_hash = 2;
+  string model_id = 3;
+  bytes input_hash = 4;
+  string input_data_uri = 5;
+  ProofType proof_type = 6;
+  string purpose = 7;
+  int64 priority = 8;
+  map<string, string> metadata = 9;
+  UtilityCategory utility_category = 10;
+}
+
+message MsgSubmitJobResponse {
+  string job_id = 1;
+  uint64 estimated_uwu = 2;
+}
+
+// MsgRegisterModel registers a new AI model
+message MsgRegisterModel {
+  string owner = 1;
+  bytes model_hash = 2;
+  string model_id = 3;
+  string name = 4;
+  string description = 5;
+  string version = 6;
+  string architecture = 7;
+  string input_schema = 8;
+  string output_schema = 9;
+  bytes circuit_hash = 10;
+  bytes verifying_key_hash = 11;
+  bytes tee_measurement = 12;
+  repeated string allowed_purposes = 13;
+  UtilityCategory default_utility_category = 14;
+  uint64 base_uwu_value = 15;
+}
+
+message MsgRegisterModelResponse {
+  bytes model_hash = 1;
+}
+
+// MsgCancelJob cancels a pending job
+message MsgCancelJob {
+  string creator = 1;
+  string job_id = 2;
+}
+
+message MsgCancelJobResponse {}
+
+// Msg service
+service Msg {
+  rpc SubmitJob(MsgSubmitJob) returns (MsgSubmitJobResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/jobs"
+      body: "*"
+    };
+  }
+  rpc RegisterModel(MsgRegisterModel) returns (MsgRegisterModelResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/models"
+      body: "*"
+    };
+  }
+  rpc CancelJob(MsgCancelJob) returns (MsgCancelJobResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/jobs/{job_id}:cancel"
+      body: "*"
+    };
+  }
+  rpc RegisterValidatorCapability(MsgRegisterValidatorCapability) returns (MsgRegisterValidatorCapabilityResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/validators/capabilities"
+      body: "*"
+    };
+  }
+  rpc RegisterValidatorPCR0(MsgRegisterValidatorPCR0) returns (MsgRegisterValidatorPCR0Response) {
+    option (google.api.http) = {
+      post: "/aethelred/pouw/v1/validators/pcr0"
+      body: "*"
+    };
+  }
+}
+
+message MsgRegisterValidatorCapability {
+  string creator = 1;
+  repeated string tee_platforms = 2;
+  repeated string zkml_systems = 3;
+  int64 max_concurrent_jobs = 4;
+  bool is_online = 5;
+  repeated UtilityCategory supported_categories = 6;
+  int64 gpu_memory_gb = 7;
+  int64 cpu_cores = 8;
+  int64 memory_gb = 9;
+}
+
+message MsgRegisterValidatorCapabilityResponse {}
+
+message MsgRegisterValidatorPCR0 {
+  string creator = 1;
+  string validator_address = 2;
+  string pcr0_hex = 3;
+}
+
+message MsgRegisterValidatorPCR0Response {
+  string validator_address = 1;
+  string pcr0_hex = 2;
+}
+
+// Query service
+service Query {
+  rpc Job(QueryJobRequest) returns (QueryJobResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/jobs/{job_id}"
+    };
+  }
+  rpc Jobs(QueryJobsRequest) returns (QueryJobsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/jobs"
+    };
+  }
+  rpc PendingJobs(QueryPendingJobsRequest) returns (QueryPendingJobsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/jobs/pending"
+    };
+  }
+  rpc Model(QueryModelRequest) returns (QueryModelResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/models/{model_hash}"
+    };
+  }
+  rpc ValidatorStats(QueryValidatorStatsRequest) returns (QueryValidatorStatsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/validators/{validator_address}/stats"
+    };
+  }
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/params"
+    };
+  }
+  rpc ValidatorPCR0(QueryValidatorPCR0Request) returns (QueryValidatorPCR0Response) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/validators/{validator_address}/pcr0"
+    };
+  }
+  rpc IsPCR0Registered(QueryIsPCR0RegisteredRequest) returns (QueryIsPCR0RegisteredResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/pcr0/{pcr0_hex}/registered"
+    };
+  }
+  rpc UsefulWorkStats(QueryUsefulWorkStatsRequest) returns (QueryUsefulWorkStatsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/stats/useful_work"
+    };
+  }
+  rpc EpochStats(QueryEpochStatsRequest) returns (QueryEpochStatsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/pouw/v1/stats/epochs/{epoch}"
+    };
+  }
+}
+
+message QueryJobRequest {
+  string job_id = 1;
+}
+
+message QueryJobResponse {
+  ComputeJob job = 1;
+}
+
+message QueryJobsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string status = 3;
+  UtilityCategory utility_category = 4;
+}
+
+message QueryJobsResponse {
+  repeated ComputeJob jobs = 1;
+  uint64 total = 2;
+}
+
+message QueryPendingJobsRequest {}
+
+message QueryPendingJobsResponse {
+  repeated ComputeJob jobs = 1;
+}
+
+message QueryModelRequest {
+  bytes model_hash = 1;
+}
+
+message QueryModelResponse {
+  RegisteredModel model = 1;
+}
+
+message QueryValidatorStatsRequest {
+  string validator_address = 1;
+}
+
+message QueryValidatorStatsResponse {
+  ValidatorStats stats = 1;
+}
+
+message QueryParamsRequest {}
+
+message QueryParamsResponse {
+  Params params = 1;
+}
+
+message QueryValidatorPCR0Request {
+  string validator_address = 1;
+}
+
+message QueryValidatorPCR0Response {
+  string validator_address = 1;
+  string pcr0_hex = 2;
+}
+
+message QueryIsPCR0RegisteredRequest {
+  string pcr0_hex = 1;
+}
+
+message QueryIsPCR0RegisteredResponse {
+  string pcr0_hex = 1;
+  bool registered = 2;
+}
+
+message QueryUsefulWorkStatsRequest {}
+
+message QueryUsefulWorkStatsResponse {
+  uint64 total_uwu = 1;
+  map<string, uint64> uwu_by_category = 2;
+  uint64 total_jobs_completed = 3;
+  uint64 active_validators = 4;
+}
+
+message QueryEpochStatsRequest {
+  uint64 epoch = 1;
+}
+
+message QueryEpochStatsResponse {
+  uint64 epoch = 1;
+  uint64 total_uwu = 2;
+  uint64 jobs_completed = 3;
+  repeated ValidatorEpochStats validator_stats = 4;
+}
+
+message ValidatorEpochStats {
+  string validator_address = 1;
+  uint64 uwu_earned = 2;
+  uint64 jobs_completed = 3;
+  string reward_earned = 4;
+}
+
+// Params defines module parameters for PoUW
+message Params {
+  int64 min_validators = 1;
+  int64 consensus_threshold = 2;
+  int64 job_timeout_blocks = 3;
+  string base_job_fee = 4;
+  string verification_reward = 5;
+  string slashing_penalty = 6;
+  int64 max_jobs_per_block = 7;
+  repeated string allowed_proof_types = 8;
+  bool require_tee_attestation = 9;
+  bool allow_zkml_fallback = 10;
+  bool allow_simulated = 11;
+
+  // Vote extension time bounds (seconds).
+  int64 vote_extension_max_past_skew_secs = 17;
+  int64 vote_extension_max_future_skew_secs = 18;
+
+  // PoUW-specific parameters
+  uint64 epoch_length_blocks = 12;
+  string base_uwu_reward = 13;
+  map<string, string> utility_multipliers = 14;  // category -> multiplier (e.g., "MEDICAL" -> "2.0")
+  bool use_logarithmic_scaling = 15;
+  uint64 anti_whale_threshold = 16;
+}
+
+// GenesisState
+message GenesisState {
+  repeated ComputeJob jobs = 1;
+  repeated RegisteredModel registered_models = 2;
+  repeated ValidatorStats validator_stats = 3;
+  repeated ValidatorCapability validator_capabilities = 4;
+  Params params = 5;
+  uint64 current_epoch = 6;
+  uint64 total_uwu = 7;
+}

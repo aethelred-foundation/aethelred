@@ -1,0 +1,3 @@
+./config.pb.go
+./module.pb.go
+./query.pb.go

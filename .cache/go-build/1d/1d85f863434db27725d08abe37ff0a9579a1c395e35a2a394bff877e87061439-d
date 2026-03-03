@@ -1,0 +1,4 @@
+./hardware.go
+./keys.go
+./params.go
+./validator.pb.go

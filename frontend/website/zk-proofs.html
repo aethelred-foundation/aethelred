@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero-Knowledge Proofs | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --cyan-500: #06B6D4;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 30% 30%, rgba(6, 182, 212, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(6, 182, 212, 0.1); border: 1px solid var(--cyan-500); border-radius: 50px; font-size: 13px; color: var(--cyan-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--cyan-500); color: var(--dark-950); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Explainer */
+    .explainer { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .explainer-content h3 { font-size: 32px; margin-bottom: 20px; }
+    .explainer-content p { font-size: 16px; color: var(--gray-400); margin-bottom: 20px; }
+    .explainer-visual { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; }
+
+    /* ZK Diagram */
+    .zk-diagram { display: flex; flex-direction: column; gap: 20px; }
+    .zk-step { display: flex; align-items: center; gap: 20px; }
+    .zk-icon { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.1); border: 2px solid var(--cyan-500); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .zk-icon svg { width: 28px; height: 28px; color: var(--cyan-500); }
+    .zk-arrow { width: 40px; height: 2px; background: var(--cyan-500); margin: 0 auto; }
+    .zk-step-content h4 { font-size: 16px; margin-bottom: 4px; }
+    .zk-step-content p { font-size: 13px; color: var(--gray-400); }
+
+    /* Properties */
+    .properties-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .property-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; text-align: center; transition: all 0.3s; }
+    .property-card:hover { border-color: var(--cyan-500); transform: translateY(-4px); }
+    .property-icon { font-size: 48px; margin-bottom: 16px; }
+    .property-card h3 { font-size: 20px; margin-bottom: 12px; color: var(--cyan-500); }
+    .property-card p { font-size: 14px; color: var(--gray-400); }
+
+    /* Use Cases */
+    .zk-uses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .zk-use-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; display: flex; gap: 20px; }
+    .zk-use-card:hover { border-color: var(--cyan-500); }
+    .zk-use-icon { width: 50px; height: 50px; background: rgba(6, 182, 212, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .zk-use-icon svg { width: 24px; height: 24px; color: var(--cyan-500); }
+    .zk-use-content h4 { font-size: 18px; margin-bottom: 8px; }
+    .zk-use-content p { font-size: 14px; color: var(--gray-400); }
+
+    /* Comparison */
+    .comparison-table { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; overflow: hidden; }
+    .comparison-table table { width: 100%; border-collapse: collapse; }
+    .comparison-table th { background: var(--dark-700); padding: 16px 20px; text-align: left; font-size: 14px; font-weight: 600; }
+    .comparison-table td { padding: 16px 20px; border-bottom: 1px solid var(--dark-600); font-size: 14px; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table .check { color: var(--green-500); }
+    .comparison-table .cross { color: var(--red-500); }
+    .comparison-table .partial { color: #EAB308; }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .explainer { grid-template-columns: 1fr; } .properties-grid { grid-template-columns: 1fr; } .zk-uses { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="glossary.html">Glossary</a>
+        <a href="research.html">Research</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Cryptography
+      </div>
+      <h1><span class="gradient-text">Zero-Knowledge</span> Proofs</h1>
+      <p class="subtitle">Prove AI computation correctness without revealing sensitive data. ZK proofs are the cryptographic foundation enabling privacy-preserving verification on Aethelred.</p>
+    </div>
+  </section>
+
+  <!-- What is ZKP -->
+  <section class="section">
+    <div class="container">
+      <div class="explainer">
+        <div class="explainer-content">
+          <h3>What Are Zero-Knowledge Proofs?</h3>
+          <p>A zero-knowledge proof is a cryptographic method that allows one party (the prover) to convince another party (the verifier) that a statement is true, without revealing any information beyond the validity of the statement itself.</p>
+          <p>In Aethelred, this means you can prove an AI model produced a specific output, that the output meets certain criteria, or that computation followed specific rules — all without exposing the model weights, input data, or proprietary algorithms.</p>
+        </div>
+        <div class="explainer-visual">
+          <div class="zk-diagram">
+            <div class="zk-step">
+              <div class="zk-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+              </div>
+              <div class="zk-step-content">
+                <h4>1. Computation</h4>
+                <p>AI model processes input data privately</p>
+              </div>
+            </div>
+            <div class="zk-arrow"></div>
+            <div class="zk-step">
+              <div class="zk-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="zk-step-content">
+                <h4>2. Proof Generation</h4>
+                <p>ZK circuit creates succinct proof</p>
+              </div>
+            </div>
+            <div class="zk-arrow"></div>
+            <div class="zk-step">
+              <div class="zk-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="zk-step-content">
+                <h4>3. Verification</h4>
+                <p>Anyone can verify in milliseconds</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Properties -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Core Properties</span>
+        <h2 class="section-title">The Three Pillars of ZK</h2>
+        <p class="section-desc">Every zero-knowledge proof system must satisfy these fundamental properties.</p>
+      </div>
+
+      <div class="properties-grid">
+        <div class="property-card">
+          <div class="property-icon">✓</div>
+          <h3>Completeness</h3>
+          <p>If the statement is true, an honest prover can always convince an honest verifier. Valid computations will always generate valid proofs.</p>
+        </div>
+
+        <div class="property-card">
+          <div class="property-icon">🛡️</div>
+          <h3>Soundness</h3>
+          <p>If the statement is false, no cheating prover can convince the verifier (except with negligible probability). Invalid computations cannot produce valid proofs.</p>
+        </div>
+
+        <div class="property-card">
+          <div class="property-icon">🔒</div>
+          <h3>Zero-Knowledge</h3>
+          <p>The verifier learns nothing beyond the truth of the statement. Model weights, training data, and proprietary logic remain completely private.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Applications</span>
+        <h2 class="section-title">ZK Proofs in Aethelred</h2>
+        <p class="section-desc">How we use zero-knowledge cryptography to enable private, verifiable AI.</p>
+      </div>
+
+      <div class="zk-uses">
+        <div class="zk-use-card">
+          <div class="zk-use-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <div class="zk-use-content">
+            <h4>Model Inference Verification</h4>
+            <p>Prove a specific model produced an output without revealing model weights or architecture details.</p>
+          </div>
+        </div>
+
+        <div class="zk-use-card">
+          <div class="zk-use-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+          </div>
+          <div class="zk-use-content">
+            <h4>Fairness Attestation</h4>
+            <p>Prove an AI model doesn't discriminate based on protected attributes without exposing the training data.</p>
+          </div>
+        </div>
+
+        <div class="zk-use-card">
+          <div class="zk-use-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+          </div>
+          <div class="zk-use-content">
+            <h4>Federated Learning</h4>
+            <p>Verify model updates from distributed nodes without seeing the underlying training data.</p>
+          </div>
+        </div>
+
+        <div class="zk-use-card">
+          <div class="zk-use-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+          </div>
+          <div class="zk-use-content">
+            <h4>Spatial Verification</h4>
+            <p>Prove computation occurred at a specific location without revealing exact coordinates.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Technical Details</span>
+        <h2 class="section-title">ZK Proof Systems Comparison</h2>
+        <p class="section-desc">Different ZK systems have different tradeoffs. Aethelred uses a hybrid approach.</p>
+      </div>
+
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>System</th>
+              <th>Proof Size</th>
+              <th>Verification Time</th>
+              <th>Trusted Setup</th>
+              <th>Used In Aethelred</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Groth16</strong></td>
+              <td>~200 bytes</td>
+              <td>~3ms</td>
+              <td class="cross">Required</td>
+              <td class="check">✓ For fast verification</td>
+            </tr>
+            <tr>
+              <td><strong>PLONK</strong></td>
+              <td>~400 bytes</td>
+              <td>~5ms</td>
+              <td class="partial">Universal</td>
+              <td class="check">✓ For flexibility</td>
+            </tr>
+            <tr>
+              <td><strong>STARKs</strong></td>
+              <td>~50KB</td>
+              <td>~10ms</td>
+              <td class="check">None</td>
+              <td class="check">✓ For transparency</td>
+            </tr>
+            <tr>
+              <td><strong>Bulletproofs</strong></td>
+              <td>~700 bytes</td>
+              <td>~50ms</td>
+              <td class="check">None</td>
+              <td class="partial">Limited use</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

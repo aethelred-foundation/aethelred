@@ -1,0 +1,15 @@
+./any.go
+./bool.go
+./bytes.go
+./coins.go
+./dec.go
+./duration.go
+./encode.go
+./enum.go
+./handler.go
+./int.go
+./message.go
+./string.go
+./timestamp.go
+./tx.go
+./types.go

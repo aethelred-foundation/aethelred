@@ -1,0 +1,50 @@
+=== RUN   TestGetMode
+=== PAUSE TestGetMode
+=== RUN   TestIsProduction
+=== PAUSE TestIsProduction
+=== RUN   TestIsTestnet
+=== PAUSE TestIsTestnet
+=== RUN   TestIsDevelopment
+=== PAUSE TestIsDevelopment
+=== RUN   TestSimulationAllowed
+=== PAUSE TestSimulationAllowed
+=== RUN   TestGetBuildInfo
+=== PAUSE TestGetBuildInfo
+=== RUN   TestMustNotSimulate_Allowed
+=== PAUSE TestMustNotSimulate_Allowed
+=== RUN   TestAssertSimulationAllowed_Allowed
+=== PAUSE TestAssertSimulationAllowed_Allowed
+=== RUN   TestSimulationDisabledError
+=== PAUSE TestSimulationDisabledError
+=== RUN   TestModeConstants
+=== PAUSE TestModeConstants
+=== RUN   TestMustNotSimulate_Disabled
+--- PASS: TestMustNotSimulate_Disabled (0.00s)
+=== RUN   TestAssertSimulationAllowed_Disabled
+--- PASS: TestAssertSimulationAllowed_Disabled (0.00s)
+=== RUN   TestIsProduction_WhenProduction
+--- PASS: TestIsProduction_WhenProduction (0.00s)
+=== RUN   TestIsTestnet_WhenTestnet
+--- PASS: TestIsTestnet_WhenTestnet (0.00s)
+=== CONT  TestGetMode
+--- PASS: TestGetMode (0.00s)
+=== CONT  TestModeConstants
+--- PASS: TestModeConstants (0.00s)
+=== CONT  TestSimulationDisabledError
+--- PASS: TestSimulationDisabledError (0.00s)
+=== CONT  TestAssertSimulationAllowed_Allowed
+--- PASS: TestAssertSimulationAllowed_Allowed (0.00s)
+=== CONT  TestMustNotSimulate_Allowed
+--- PASS: TestMustNotSimulate_Allowed (0.00s)
+=== CONT  TestGetBuildInfo
+--- PASS: TestGetBuildInfo (0.00s)
+=== CONT  TestSimulationAllowed
+--- PASS: TestSimulationAllowed (0.00s)
+=== CONT  TestIsDevelopment
+--- PASS: TestIsDevelopment (0.00s)
+=== CONT  TestIsTestnet
+--- PASS: TestIsTestnet (0.00s)
+=== CONT  TestIsProduction
+--- PASS: TestIsProduction (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/build	0.995s

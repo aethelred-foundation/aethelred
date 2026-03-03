@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethelred | Sovereign Infrastructure for Institutional AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Aethelred Red Color Palette */
+            --red-950: #450a0a;
+            --red-900: #7F1D1D;
+            --red-800: #991B1B;
+            --red-700: #B91C1C;
+            --red-600: #DC2626;
+            --red-500: #EF4444;
+            --red-400: #F87171;
+            --red-300: #FCA5A5;
+            --crimson: #DC143C;
+            --scarlet: #FF2400;
+            --vermillion: #E34234;
+            --red-glow: rgba(220, 38, 38, 0.6);
+            --red-glow-intense: rgba(255, 36, 0, 0.8);
+
+            /* Dark Theme */
+            --dark-950: #030303;
+            --dark-900: #0A0A0A;
+            --dark-800: #111111;
+            --dark-700: #1A1A1A;
+            --dark-600: #222222;
+            --dark-500: #333333;
+            --gray-400: #9CA3AF;
+            --gray-300: #D1D5DB;
+            --white: #FFFFFF;
+
+            /* Semantic Colors */
+            --primary: var(--red-600);
+            --primary-light: var(--red-400);
+            --primary-dark: var(--red-800);
+            --accent: var(--crimson);
+            --gold: #d4af37;
+            --gold-light: #f4d03f;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+
+            /* Backgrounds */
+            --bg-primary: var(--dark-950);
+            --bg-secondary: var(--dark-900);
+            --bg-tertiary: var(--dark-800);
+            --bg-card: rgba(17, 17, 17, 0.7);
+            --border: rgba(255, 255, 255, 0.05);
+            --border-light: rgba(255, 255, 255, 0.1);
+
+            /* Text */
+            --text-primary: var(--white);
+            --text-secondary: var(--gray-400);
+            --text-muted: #71717a;
+
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #B91C1C 0%, #DC2626 50%, #EF4444 100%);
+            --gradient-gold: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%);
+            --gradient-text: linear-gradient(135deg, #FF4136 0%, #FF6B6B 30%, #FFA07A 60%, #FFD700 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark-900); }
+        ::-webkit-scrollbar-thumb { background: var(--red-700); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--red-600); }
+
+        /* Premium Background Effects */
+        .bg-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(220, 38, 38, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(220, 38, 38, 0.08) 1px, transparent 1px);
+            background-size: 80px 80px;
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 0%, transparent 70%);
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .hero-glow-1 {
+            position: absolute;
+            top: -80px;
+            right: 15%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.25) 0%, rgba(185, 28, 28, 0.12) 40%, transparent 70%);
+            filter: blur(60px);
+            animation: orbFloat 8s ease-in-out infinite;
+        }
+
+        .hero-glow-2 {
+            position: absolute;
+            bottom: -100px;
+            left: 10%;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 40%, transparent 70%);
+            filter: blur(80px);
+            animation: orbFloat 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.1); }
+            66% { transform: translate(-20px, 30px) scale(0.95); }
+        }
+
+        /* Particles */
+        .particles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--red-500);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--red-500), 0 0 20px var(--red-600);
+            animation: floatParticle 15s infinite linear;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 20s; }
+        .particle:nth-child(2) { left: 25%; animation-delay: 2s; animation-duration: 18s; }
+        .particle:nth-child(3) { left: 40%; animation-delay: 4s; animation-duration: 22s; }
+        .particle:nth-child(4) { left: 55%; animation-delay: 1s; animation-duration: 16s; }
+        .particle:nth-child(5) { left: 70%; animation-delay: 3s; animation-duration: 19s; }
+        .particle:nth-child(6) { left: 85%; animation-delay: 5s; animation-duration: 21s; }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; transform: scale(1); }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) scale(0); opacity: 0; }
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 14px 40px;
+            background: rgba(3, 3, 3, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-logo {
+            height: 40px;
+            width: auto;
+            display: none;
+        }
+
+        .nav-logo-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #F87171 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-badge {
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(185, 28, 28, 0.1) 100%);
+            border: 1px solid rgba(220, 38, 38, 0.4);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--red-400);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-300);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.2px;
+        }
+
+        .nav-link:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link.active {
+            color: var(--white);
+            background: rgba(220, 38, 38, 0.15);
+        }
+
+        .nav-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            background: var(--gradient-primary);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-cta:hover::before {
+            left: 100%;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px var(--red-glow-intense), 0 0 100px rgba(220, 38, 38, 0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 40px 64px;
+            position: relative;
+            width: 100%;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            text-align: center;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 16px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(185, 28, 28, 0.08) 100%);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--red-400);
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease-out;
+            letter-spacing: 0.3px;
+        }
+
+        .hero-eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--red-500);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--red-500);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--red-500), 0 0 16px var(--red-600); }
+            50% { opacity: 0.4; box-shadow: 0 0 4px var(--red-500); }
+        }
+
+        .hero-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.6s ease-out 0.1s both;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-title-line {
+            display: block;
+            line-height: 1.15;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #FF4136 0%, #FF6B6B 30%, #FFA07A 60%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(15px, 1.5vw, 17px);
+            color: var(--gray-400);
+            max-width: 560px;
+            margin: 0 auto 32px;
+            line-height: 1.7;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+            padding: 20px 32px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-text);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 0 30px var(--red-glow), 0 0 60px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 50px var(--red-glow-intense), 0 0 100px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 1px solid var(--dark-500);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--red-500);
+            background: rgba(220, 38, 38, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-gold {
+            background: var(--gradient-gold);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Sections */
+        .section {
+            padding: 72px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--red-400);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(24px, 3.5vw, 36px);
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .section-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            max-width: 520px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Demo Container */
+        .demo-container {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        @media (max-width: 1024px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .demo-sidebar {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 28px;
+            border-right: 1px solid var(--border);
+        }
+
+        .demo-sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .demo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .demo-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            width: 100%;
+        }
+
+        .demo-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: var(--border);
+        }
+
+        .demo-item.active {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        .demo-item-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--red-800) 0%, var(--red-600) 100%);
+            border-radius: 10px;
+            font-size: 1.25rem;
+        }
+
+        .demo-item-content {
+            flex: 1;
+        }
+
+        .demo-item-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .demo-item-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .demo-item-badge {
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--success);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .demo-main {
+            padding: 28px;
+        }
+
+        .demo-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .demo-header-icon {
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(185, 28, 28, 0.15));
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 16px;
+            font-size: 2rem;
+        }
+
+        .demo-header-info h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .demo-header-info p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .demo-header-meta {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .demo-tag {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .demo-btn {
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .demo-btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .demo-btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.5);
+        }
+
+        .demo-btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .demo-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--dark-500);
+        }
+
+        .demo-btn-secondary:hover {
+            border-color: var(--red-500);
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        /* Progress Section */
+        .progress-section {
+            margin-bottom: 24px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+
+        .progress-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+
+        .progress-stat-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-bar-container {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-bar-fill.animating::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Steps Timeline */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 44px 1fr auto;
+            gap: 16px;
+            padding: 14px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            align-items: start;
+        }
+
+        .step.pending {
+            opacity: 0.4;
+        }
+
+        .step.running {
+            background: rgba(220, 38, 38, 0.08);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .step.completed {
+            opacity: 0.9;
+        }
+
+        .step-indicator {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .step-indicator.pending {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .step-indicator.running {
+            background: var(--gradient-primary);
+            color: white;
+            animation: pulse-indicator 1.5s ease-in-out infinite;
+            box-shadow: 0 0 20px var(--red-glow);
+        }
+
+        @keyframes pulse-indicator {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        }
+
+        .step-indicator.completed {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .step-content {
+            min-width: 0;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .step-description {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .step-details {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+        }
+
+        .step-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--success);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .step-detail + .step-detail {
+            margin-top: 6px;
+        }
+
+        .step-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .step-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .step-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step-status.verified {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        /* Results Panel */
+        .results-panel {
+            margin-top: 28px;
+            padding-top: 28px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+
+        .results-panel.visible {
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .results-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: rgba(220, 38, 38, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .result-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .result-value.premium {
+            background: var(--gradient-text);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .result-value.success {
+            color: var(--success);
+        }
+
+        .result-value.gold {
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Insights Section */
+        .insights-section {
+            margin-top: 28px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .insight-card {
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid;
+        }
+
+        .insight-card.sovereignty {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(185, 28, 28, 0.05));
+            border-color: rgba(220, 38, 38, 0.2);
+        }
+
+        .insight-card.proof {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(6, 182, 212, 0.05));
+            border-color: rgba(14, 165, 233, 0.2);
+        }
+
+        .insight-card.audit {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.05));
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .insight-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .insight-card.sovereignty .insight-icon {
+            background: rgba(220, 38, 38, 0.15);
+        }
+
+        .insight-card.proof .insight-icon {
+            background: rgba(14, 165, 233, 0.15);
+        }
+
+        .insight-card.audit .insight-icon {
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .insight-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Value Section */
+        .value-section {
+            background: linear-gradient(180deg, transparent 0%, rgba(220, 38, 38, 0.03) 50%, transparent 100%);
+        }
+
+        .value-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .value-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .value-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .value-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .value-card:hover {
+            border-color: rgba(220, 38, 38, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .value-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(185, 28, 28, 0.1));
+            border-radius: 14px;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .value-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .value-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Trust Section */
+        .trust-section {
+            padding: 60px 40px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trust-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .trust-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 32px;
+        }
+
+        .trust-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            opacity: 0.6;
+        }
+
+        .trust-logo {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-content {
+            max-width: 560px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(24px, 3.5vw, 36px);
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        .cta-text {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            line-height: 1.7;
+        }
+
+        .cta-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 32px 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-logo {
+            height: 32px;
+            width: auto;
+            display: none;
+        }
+
+        .footer-logo-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #F87171 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .footer-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--red-400);
+        }
+
+        .footer-legal {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 12px 16px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 90px 20px 48px;
+            }
+
+            .hero-content {
+                max-width: 100%;
+            }
+
+            .hero-title {
+                font-size: clamp(28px, 7vw, 40px);
+            }
+
+            .hero-subtitle {
+                font-size: 14px;
+                max-width: 100%;
+            }
+
+            .hero-stats {
+                gap: 20px;
+                padding: 16px 20px;
+            }
+
+            .hero-stat-value {
+                font-size: 1.25rem;
+            }
+
+            .section {
+                padding: 48px 16px;
+            }
+
+            .demo-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .demo-controls {
+                width: 100%;
+            }
+
+            .demo-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .demo-panel {
+            display: block;
+        }
+
+        .demo-panel.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-effects">
+        <div class="hero-grid"></div>
+        <div class="hero-glow-1"></div>
+        <div class="hero-glow-2"></div>
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-content">
+                <div class="nav-brand">
+                    <img src="data:image/webp;base64,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" alt="Aethelred" class="nav-logo">
+                    <span class="nav-logo-text">AETHELRED</span>
+                    <span class="nav-badge">Institutional</span>
+                </div>
+                <div class="nav-links">
+                    <button class="nav-link active" data-section="hero">Overview</button>
+                    <button class="nav-link" data-section="demo-section">Live Demo</button>
+                    <button class="nav-link" data-section="value-section">Capabilities</button>
+                    <button class="nav-link" data-section="cta-section">Contact</button>
+                </div>
+                <button class="nav-cta" onclick="scrollToSection('cta-section')">Request Access</button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <div class="hero-eyebrow">
+                    <span class="hero-eyebrow-dot"></span>
+                    Sovereign Infrastructure for Institutional Capital
+                </div>
+                <h1 class="hero-title">
+                    <span class="hero-title-line">Cross-Border AI</span>
+                    <span class="hero-title-line"><span class="gradient-text">Computation</span> Without</span>
+                    <span class="hero-title-line">Data Movement</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Enable compliant AI collaboration across jurisdictions while maintaining
+                    full data sovereignty. Purpose-built for sovereign wealth funds, institutional
+                    investors, and family offices.
+                </p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">$500B+</div>
+                        <div class="hero-stat-label">Addressable Market</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">100%</div>
+                        <div class="hero-stat-label">Data Sovereignty</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Zero</div>
+                        <div class="hero-stat-label">Data Exposure</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">4</div>
+                        <div class="hero-stat-label">Enterprise SDKs</div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="scrollToSection('demo-section')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        View Live Demo
+                    </button>
+                    <button class="btn btn-secondary" onclick="scrollToSection('value-section')">
+                        Learn More
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section class="section" id="demo-section">
+            <div class="section-header">
+                <div class="section-eyebrow">Interactive Demonstration</div>
+                <h2 class="section-title">See Aethelred in Action</h2>
+                <p class="section-subtitle">
+                    Experience real-world use cases demonstrating sovereign AI computation
+                    across jurisdictional boundaries.
+                </p>
+            </div>
+
+            <div class="demo-container">
+                <div class="demo-sidebar">
+                    <div class="demo-sidebar-title">Select Use Case</div>
+                    <div class="demo-list">
+                        <button class="demo-item active" data-demo="trade-finance">
+                            <div class="demo-item-icon">🏛️</div>
+                            <div class="demo-item-content">
+                                <div class="demo-item-title">Cross-Border Trade Finance</div>
+                                <div class="demo-item-desc">UAE ↔ Singapore LC Processing</div>
+                            </div>
+                            <div class="demo-item-badge">Live</div>
+                        </button>
+                        <button class="demo-item" data-demo="drug-discovery">
+                            <div class="demo-item-icon">🧬</div>
+                            <div class="demo-item-content">
+                                <div class="demo-item-title">Sovereign Drug Discovery</div>
+                                <div class="demo-item-desc">Multi-Party Blind Computation</div>
+                            </div>
+                            <div class="demo-item-badge">Live</div>
+                        </button>
+                        <button class="demo-item" data-demo="credit-assessment">
+                            <div class="demo-item-icon">📊</div>
+                            <div class="demo-item-content">
+                                <div class="demo-item-title">Private Credit Assessment</div>
+                                <div class="demo-item-desc">Privacy-Preserving Scoring</div>
+                            </div>
+                            <div class="demo-item-badge">Live</div>
+                        </button>
+                        <button class="demo-item" data-demo="portfolio-risk">
+                            <div class="demo-item-icon">📈</div>
+                            <div class="demo-item-content">
+                                <div class="demo-item-title">Portfolio Risk Analysis</div>
+                                <div class="demo-item-desc">Cross-Fund Aggregation</div>
+                            </div>
+                            <div class="demo-item-badge">Live</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="demo-main">
+                    <!-- Trade Finance Demo -->
+                    <div id="demo-trade-finance" class="demo-panel">
+                        <div class="demo-header">
+                            <div class="demo-header-left">
+                                <div class="demo-header-icon">🏛️</div>
+                                <div class="demo-header-info">
+                                    <h2>Cross-Border Trade Finance</h2>
+                                    <p>Letter of Credit processing between UAE and Singapore with full regulatory compliance</p>
+                                    <div class="demo-header-meta">
+                                        <span class="demo-tag">UAE Central Bank</span>
+                                        <span class="demo-tag">MAS Singapore</span>
+                                        <span class="demo-tag">SGX Verified</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-secondary" onclick="resetDemo('trade-finance')">Reset</button>
+                                <button class="demo-btn demo-btn-primary" id="run-trade-finance" onclick="runDemo('trade-finance')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Execute Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-title">Execution Progress</span>
+                                <div class="progress-stats">
+                                    <div class="progress-stat">
+                                        <span>Steps:</span>
+                                        <span class="progress-stat-value" id="trade-finance-step-count">0 / 10</span>
+                                    </div>
+                                    <div class="progress-stat">
+                                        <span>Completion:</span>
+                                        <span class="progress-stat-value" id="trade-finance-percent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="trade-finance-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="steps-container" id="trade-finance-steps"></div>
+
+                        <div class="results-panel" id="trade-finance-results">
+                            <div class="results-title">Execution Results</div>
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-value premium">$2.5M</div>
+                                    <div class="result-label">Transaction Value</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">✓ ✓</div>
+                                    <div class="result-label">UAE | SG Compliance</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value gold">12</div>
+                                    <div class="result-label">Audit Entries</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">0</div>
+                                    <div class="result-label">Data Points Exposed</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insights-section">
+                            <div class="insights-grid">
+                                <div class="insight-card sovereignty">
+                                    <div class="insight-icon">🔒</div>
+                                    <div class="insight-title">Data Sovereignty</div>
+                                    <div class="insight-text">Sensitive trade data never leaves jurisdictional boundaries. TEE enclaves ensure complete isolation.</div>
+                                </div>
+                                <div class="insight-card proof">
+                                    <div class="insight-icon">✓</div>
+                                    <div class="insight-title">Cryptographic Proof</div>
+                                    <div class="insight-text">Every verification generates zkML proofs that regulators can audit without accessing raw data.</div>
+                                </div>
+                                <div class="insight-card audit">
+                                    <div class="insight-icon">📜</div>
+                                    <div class="insight-title">Immutable Audit Trail</div>
+                                    <div class="insight-text">Blockchain-anchored records provide tamper-proof compliance documentation for regulatory review.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drug Discovery Demo -->
+                    <div id="demo-drug-discovery" class="demo-panel hidden">
+                        <div class="demo-header">
+                            <div class="demo-header-left">
+                                <div class="demo-header-icon">🧬</div>
+                                <div class="demo-header-info">
+                                    <h2>Sovereign Drug Discovery</h2>
+                                    <p>Blind multi-party computation for pharmaceutical IP collaboration</p>
+                                    <div class="demo-header-meta">
+                                        <span class="demo-tag">M42 Health (UAE)</span>
+                                        <span class="demo-tag">AstraZeneca (UK)</span>
+                                        <span class="demo-tag">HIPAA Compliant</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-secondary" onclick="resetDemo('drug-discovery')">Reset</button>
+                                <button class="demo-btn demo-btn-primary" id="run-drug-discovery" onclick="runDemo('drug-discovery')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Execute Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-title">Execution Progress</span>
+                                <div class="progress-stats">
+                                    <div class="progress-stat">
+                                        <span>Steps:</span>
+                                        <span class="progress-stat-value" id="drug-discovery-step-count">0 / 11</span>
+                                    </div>
+                                    <div class="progress-stat">
+                                        <span>Completion:</span>
+                                        <span class="progress-stat-value" id="drug-discovery-percent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="drug-discovery-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="steps-container" id="drug-discovery-steps"></div>
+
+                        <div class="results-panel" id="drug-discovery-results">
+                            <div class="results-title">Execution Results</div>
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-value premium">94.7%</div>
+                                    <div class="result-label">Match Confidence</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value gold">150K</div>
+                                    <div class="result-label">AETHEL Settlement</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">ZERO</div>
+                                    <div class="result-label">IP Exposure</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">3</div>
+                                    <div class="result-label">Compliance Standards</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="insights-section">
+                            <div class="insights-grid">
+                                <div class="insight-card sovereignty">
+                                    <div class="insight-icon">🧪</div>
+                                    <div class="insight-title">Blind Computation</div>
+                                    <div class="insight-text">Neither party sees the other's proprietary compounds or targets. True multi-party computation.</div>
+                                </div>
+                                <div class="insight-card proof">
+                                    <div class="insight-icon">🔬</div>
+                                    <div class="insight-title">Verified Results</div>
+                                    <div class="insight-text">zkML proofs guarantee computation correctness without revealing underlying methodology.</div>
+                                </div>
+                                <div class="insight-card audit">
+                                    <div class="insight-icon">💰</div>
+                                    <div class="insight-title">Automated Settlement</div>
+                                    <div class="insight-text">Royalty distribution executed via smart contract based on predefined contribution ratios.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credit Assessment Demo -->
+                    <div id="demo-credit-assessment" class="demo-panel hidden">
+                        <div class="demo-header">
+                            <div class="demo-header-left">
+                                <div class="demo-header-icon">📊</div>
+                                <div class="demo-header-info">
+                                    <h2>Private Credit Assessment</h2>
+                                    <p>Privacy-preserving credit scoring without data exposure</p>
+                                    <div class="demo-header-meta">
+                                        <span class="demo-tag">GDPR Compliant</span>
+                                        <span class="demo-tag">CCPA Compliant</span>
+                                        <span class="demo-tag">PCI-DSS Ready</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-secondary" onclick="resetDemo('credit-assessment')">Reset</button>
+                                <button class="demo-btn demo-btn-primary" id="run-credit-assessment" onclick="runDemo('credit-assessment')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Execute Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-title">Execution Progress</span>
+                                <div class="progress-stats">
+                                    <div class="progress-stat">
+                                        <span>Steps:</span>
+                                        <span class="progress-stat-value" id="credit-assessment-step-count">0 / 8</span>
+                                    </div>
+                                    <div class="progress-stat">
+                                        <span>Completion:</span>
+                                        <span class="progress-stat-value" id="credit-assessment-percent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="credit-assessment-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="steps-container" id="credit-assessment-steps"></div>
+
+                        <div class="results-panel" id="credit-assessment-results">
+                            <div class="results-title">Execution Results</div>
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-value premium">3</div>
+                                    <div class="result-label">Profiles Assessed</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">100%</div>
+                                    <div class="result-label">Privacy Preserved</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value gold">< 2s</div>
+                                    <div class="result-label">Per Assessment</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">✓</div>
+                                    <div class="result-label">Digital Seals Issued</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Risk Demo -->
+                    <div id="demo-portfolio-risk" class="demo-panel hidden">
+                        <div class="demo-header">
+                            <div class="demo-header-left">
+                                <div class="demo-header-icon">📈</div>
+                                <div class="demo-header-info">
+                                    <h2>Portfolio Risk Analysis</h2>
+                                    <p>Cross-fund aggregated risk assessment without position disclosure</p>
+                                    <div class="demo-header-meta">
+                                        <span class="demo-tag">SEC Compliant</span>
+                                        <span class="demo-tag">MiFID II Ready</span>
+                                        <span class="demo-tag">Basel III Aligned</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-secondary" onclick="resetDemo('portfolio-risk')">Reset</button>
+                                <button class="demo-btn demo-btn-primary" id="run-portfolio-risk" onclick="runDemo('portfolio-risk')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Execute Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span class="progress-title">Execution Progress</span>
+                                <div class="progress-stats">
+                                    <div class="progress-stat">
+                                        <span>Steps:</span>
+                                        <span class="progress-stat-value" id="portfolio-risk-step-count">0 / 9</span>
+                                    </div>
+                                    <div class="progress-stat">
+                                        <span>Completion:</span>
+                                        <span class="progress-stat-value" id="portfolio-risk-percent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="portfolio-risk-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="steps-container" id="portfolio-risk-steps"></div>
+
+                        <div class="results-panel" id="portfolio-risk-results">
+                            <div class="results-title">Execution Results</div>
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-value premium">$12.4B</div>
+                                    <div class="result-label">AUM Analyzed</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value gold">4</div>
+                                    <div class="result-label">Funds Aggregated</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value success">0</div>
+                                    <div class="result-label">Positions Disclosed</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value premium">VaR: 2.3%</div>
+                                    <div class="result-label">Risk Metric</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Value Proposition Section -->
+        <section class="section value-section" id="value-section">
+            <div class="section-header">
+                <div class="section-eyebrow">Platform Capabilities</div>
+                <h2 class="section-title">Enterprise-Grade Infrastructure</h2>
+                <p class="section-subtitle">
+                    Purpose-built for the most demanding institutional requirements
+                </p>
+            </div>
+
+            <div class="value-grid">
+                <div class="value-card">
+                    <div class="value-icon">🔐</div>
+                    <h3 class="value-title">Multi-TEE Support</h3>
+                    <p class="value-text">Intel SGX, AMD SEV, Intel TDX, AWS Nitro. Hardware-backed attestation with no vendor lock-in.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🌐</div>
+                    <h3 class="value-title">Global Compliance</h3>
+                    <p class="value-text">GDPR, HIPAA, UAE DPL, PIPL, CCPA, PDPA, PCI-DSS, SOX. Pre-built regulatory templates.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">⚡</div>
+                    <h3 class="value-title">Sub-Second Verification</h3>
+                    <p class="value-text">zkML proof generation in milliseconds. Enterprise SLAs with 99.99% uptime guarantee.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🔗</div>
+                    <h3 class="value-title">Seamless Integration</h3>
+                    <p class="value-text">REST, gRPC, WebSocket APIs. Python, TypeScript, Rust, Go SDKs. Kubernetes operators.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🛡️</div>
+                    <h3 class="value-title">Post-Quantum Ready</h3>
+                    <p class="value-text">ML-KEM and ML-DSA cryptography. Future-proof key exchange and digital signatures.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">📊</div>
+                    <h3 class="value-title">Real-Time Analytics</h3>
+                    <p class="value-text">Prometheus metrics, Grafana dashboards, custom alerting. Full observability stack.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🏛️</div>
+                    <h3 class="value-title">Deployment Flexibility</h3>
+                    <p class="value-text">Managed cloud, hybrid, private network, or consortium deployment options.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">💎</div>
+                    <h3 class="value-title">AETHEL Token</h3>
+                    <p class="value-text">Utility token for compute payments, staking rewards, and ecosystem governance.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust Section -->
+        <section class="trust-section">
+            <div class="trust-content">
+                <div class="trust-title">Built on Proven Technology</div>
+                <div class="trust-logos">
+                    <span class="trust-logo">COSMOS SDK</span>
+                    <span class="trust-logo">COMETBFT</span>
+                    <span class="trust-logo">INTEL SGX</span>
+                    <span class="trust-logo">AMD SEV</span>
+                    <span class="trust-logo">GROTH16</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section" id="cta-section">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Transform Your AI Infrastructure?</h2>
+                <p class="cta-text">
+                    Schedule a private demonstration with our institutional team.
+                    Learn how Aethelred can enable compliant AI collaboration for your organization.
+                </p>
+                <div class="cta-actions">
+                    <button class="btn btn-gold" onclick="window.location.href='mailto:institutional@aethelred.ai?subject=Demo Request'">
+                        Request Private Demo
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.location.href='mailto:partnerships@aethelred.ai?subject=Partnership Inquiry'">
+                        Partnership Inquiry
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="footer-logo-text">AETHELRED</span>
+                </div>
+                <div class="footer-links">
+                    <a href="mailto:institutional@aethelred.ai" class="footer-link">institutional@aethelred.ai</a>
+                    <a href="#" class="footer-link">Documentation</a>
+                    <a href="#" class="footer-link">Security</a>
+                    <a href="#" class="footer-link">Legal</a>
+                </div>
+                <span class="footer-legal">© 2024 Aethelred. All rights reserved.</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Demo Data
+        const DEMOS = {
+            'trade-finance': {
+                steps: [
+                    { title: 'Initialize Emirates Trading Corp', description: 'Establishing UAE sovereign entity identity', details: ['KYC/AML verification: PASSED', 'UAE Central Bank registration: VERIFIED', 'Trade license: VALID'] },
+                    { title: 'Initialize Singapore Maritime Ltd', description: 'Establishing Singapore partner identity', details: ['MAS registration: VERIFIED', 'SGX authorization: ACTIVE', 'BIS compliance: CONFIRMED'] },
+                    { title: 'Create Letter of Credit', description: 'LC value: USD 2,500,000 • Electronics shipment', details: ['LC ID: LC-2024-UAE-SG-00847', 'Issuing bank: Emirates NBD', 'Advising bank: DBS Singapore'] },
+                    { title: 'UAE Export Compliance Check', description: 'TEE-enclosed regulatory verification', details: ['SGX attestation: 0x7a8b...3c4d', 'Export license: GRANTED', 'Sanctions screening: CLEAR'] },
+                    { title: 'Generate Compliance Proof', description: 'zkML proof of regulatory adherence', details: ['Proof size: 1,247 bytes', 'Verification time: 12ms', 'Circuit: compliance-v3.2'] },
+                    { title: 'Cross Sovereign Boundary', description: 'Secure data transit: UAE → Singapore', details: ['Encryption: AES-256-GCM', 'Key exchange: ML-KEM-768', 'Data exposure: ZERO'] },
+                    { title: 'Singapore Import Verification', description: 'MAS regulatory compliance check', details: ['Import permit: APPROVED', 'Customs clearance: PENDING', 'SGX attestation: VALID'] },
+                    { title: 'Mint Digital Seal', description: 'Creating immutable verification record', details: ['Seal ID: seal_lc_2024_00847', 'Methods: TEE + zkML', 'Expiry: 2025-02-09'] },
+                    { title: 'Blockchain Anchoring', description: 'Recording to Aethelred mainnet', details: ['Block: 1,847,293', 'Tx: 0x4f2a...8e1b', 'Gas: 127,450 AETHEL'] },
+                    { title: 'Execution Complete', description: 'All verifications successful', details: ['Total time: 3.2 seconds', 'Audit entries: 12', 'Compliance: 100%'] }
+                ]
+            },
+            'drug-discovery': {
+                steps: [
+                    { title: 'Initialize M42 Health Enclave', description: 'UAE pharmaceutical research entity', details: ['TEE: Intel SGX v2', 'Attestation: VALID', 'HIPAA status: COMPLIANT'] },
+                    { title: 'Initialize AstraZeneca Enclave', description: 'UK pharmaceutical partner', details: ['TEE: Intel SGX v2', 'Attestation: VALID', 'UK GDPR: COMPLIANT'] },
+                    { title: 'Submit Drug Candidates (M42)', description: '3 encrypted proprietary compounds', details: ['Candidates: AZ-M42-001, 002, 003', 'Encryption: ML-KEM-1024', 'IP protection: ACTIVE'] },
+                    { title: 'Submit Molecular Targets (AZ)', description: 'Encrypted target proteins', details: ['Targets: BRCA1, TP53, EGFR', 'Encryption: ML-KEM-1024', 'IP protection: ACTIVE'] },
+                    { title: 'Create Blind Session', description: 'Multi-party computation initialization', details: ['Session: HG-2024-M42-AZ-001', 'Protocol: SPDZ-2k', 'Parties: 2'] },
+                    { title: 'M42 Authorization', description: 'Sovereign approval for computation', details: ['Authorizer: Chief Scientific Officer', 'Timestamp: ' + new Date().toISOString().slice(0, 19), 'Scope: Drug-target matching only'] },
+                    { title: 'AstraZeneca Authorization', description: 'Partner approval for computation', details: ['Authorizer: Research Director', 'Timestamp: ' + new Date().toISOString().slice(0, 19), 'Scope: Drug-target matching only'] },
+                    { title: 'Execute Blind Computation', description: 'TEE-enclosed drug-target matching', details: ['Match found: AZ-M42-002 ↔ BRCA1', 'Binding affinity: 94.7%', 'Raw data exposed: ZERO'] },
+                    { title: 'Generate zkML Proof', description: 'Computation correctness verification', details: ['Proof size: 1,847 bytes', 'Verification: 18ms', 'Circuit: pharma-match-v2.1'] },
+                    { title: 'Execute Settlement', description: 'Royalty distribution via smart contract', details: ['Total: 150,000 AETHEL', 'M42 (60%): 90,000 AETHEL', 'AstraZeneca (40%): 60,000 AETHEL'] },
+                    { title: 'Discovery Complete', description: 'Blind collaboration successful', details: ['Compliance: UAE DPL ✓ UK GDPR ✓ HIPAA ✓', 'IP preserved: 100%', 'Audit trail: Complete'] }
+                ]
+            },
+            'credit-assessment': {
+                steps: [
+                    { title: 'Initialize Assessment Engine', description: 'Privacy-preserving credit model', details: ['Model: credit-score-v4.2', 'TEE: Intel SGX', 'Regulations: GDPR, CCPA'] },
+                    { title: 'Load Encrypted Profiles', description: '3 applicant profiles (encrypted)', details: ['Profile A: High-net-worth', 'Profile B: Corporate', 'Profile C: Institutional'] },
+                    { title: 'Execute Private Scoring (A)', description: 'TEE-enclosed assessment', details: ['Score: 847 (Excellent)', 'Decision: APPROVED', 'Limit: $5,000,000'] },
+                    { title: 'Execute Private Scoring (B)', description: 'TEE-enclosed assessment', details: ['Score: 712 (Good)', 'Decision: APPROVED', 'Limit: $2,500,000'] },
+                    { title: 'Execute Private Scoring (C)', description: 'TEE-enclosed assessment', details: ['Score: 689 (Fair)', 'Decision: REVIEW', 'Limit: $1,000,000'] },
+                    { title: 'Generate Compliance Proofs', description: 'zkML proofs for each assessment', details: ['Proofs generated: 3', 'Avg verification: 8ms', 'Privacy preserved: 100%'] },
+                    { title: 'Issue Digital Seals', description: 'Verifiable assessment records', details: ['Seals issued: 3', 'Validity: 90 days', 'Revocable: Yes'] },
+                    { title: 'Assessment Complete', description: 'All profiles processed', details: ['Total time: 1.8 seconds', 'Data exposed: ZERO', 'Audit ready: YES'] }
+                ]
+            },
+            'portfolio-risk': {
+                steps: [
+                    { title: 'Initialize Risk Engine', description: 'Cross-fund aggregation system', details: ['Model: portfolio-risk-v3.1', 'TEE: AMD SEV', 'Standards: Basel III'] },
+                    { title: 'Connect Fund Alpha', description: 'Sovereign wealth fund ($4.2B AUM)', details: ['Positions: 847', 'Encryption: Active', 'Disclosure: ZERO'] },
+                    { title: 'Connect Fund Beta', description: 'Pension fund ($3.1B AUM)', details: ['Positions: 523', 'Encryption: Active', 'Disclosure: ZERO'] },
+                    { title: 'Connect Fund Gamma', description: 'Family office ($2.8B AUM)', details: ['Positions: 312', 'Encryption: Active', 'Disclosure: ZERO'] },
+                    { title: 'Connect Fund Delta', description: 'Endowment ($2.3B AUM)', details: ['Positions: 456', 'Encryption: Active', 'Disclosure: ZERO'] },
+                    { title: 'Execute Blind Aggregation', description: 'Multi-party risk computation', details: ['Total AUM: $12.4B', 'Combined positions: 2,138', 'Individual holdings: PRIVATE'] },
+                    { title: 'Calculate Aggregate VaR', description: 'Value-at-Risk computation', details: ['VaR (95%): 2.3%', 'VaR (99%): 4.1%', 'Stress test: PASSED'] },
+                    { title: 'Generate Risk Report', description: 'Anonymized aggregate insights', details: ['Concentration risk: LOW', 'Sector exposure: Diversified', 'Liquidity score: 8.4/10'] },
+                    { title: 'Analysis Complete', description: 'Cross-fund risk assessment done', details: ['Positions disclosed: 0', 'Compliance: SEC ✓ MiFID II ✓', 'Report ready: YES'] }
+                ]
+            }
+        };
+
+        // State
+        const state = {
+            currentDemo: 'trade-finance',
+            running: {},
+            completed: {}
+        };
+
+        // Initialize demos
+        Object.keys(DEMOS).forEach(demoId => {
+            state.running[demoId] = false;
+            state.completed[demoId] = 0;
+            renderSteps(demoId);
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                scrollToSection(link.dataset.section);
+            });
+        });
+
+        function scrollToSection(sectionId) {
+            document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Demo Selection
+        document.querySelectorAll('.demo-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.demo-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const demoId = item.dataset.demo;
+                state.currentDemo = demoId;
+
+                document.querySelectorAll('.demo-panel').forEach(p => p.classList.add('hidden'));
+                document.getElementById(`demo-${demoId}`).classList.remove('hidden');
+            });
+        });
+
+        // Render Steps
+        function renderSteps(demoId) {
+            const demo = DEMOS[demoId];
+            const container = document.getElementById(`${demoId}-steps`);
+            const completed = state.completed[demoId] || 0;
+            const running = state.running[demoId];
+
+            container.innerHTML = demo.steps.map((step, i) => {
+                const status = i < completed ? 'completed' : (i === completed && running ? 'running' : 'pending');
+                const indicator = i < completed ? '✓' : (i === completed && running ? '◉' : (i + 1));
+
+                return `
+                    <div class="step ${status}">
+                        <div class="step-indicator ${status}">${indicator}</div>
+                        <div class="step-content">
+                            <div class="step-title">${step.title}</div>
+                            <div class="step-description">${step.description}</div>
+                            ${status === 'completed' ? `
+                                <div class="step-details">
+                                    ${step.details.map(d => `<div class="step-detail">✓ ${d}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="step-meta">
+                            ${status === 'completed' ? `<span class="step-time">${Math.floor(Math.random() * 400 + 200)}ms</span>` : ''}
+                            ${status === 'completed' ? '<span class="step-status verified">Verified</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateProgress(demoId);
+        }
+
+        // Update Progress
+        function updateProgress(demoId) {
+            const demo = DEMOS[demoId];
+            const completed = state.completed[demoId] || 0;
+            const percent = Math.round((completed / demo.steps.length) * 100);
+
+            document.getElementById(`${demoId}-progress`).style.width = `${percent}%`;
+            document.getElementById(`${demoId}-step-count`).textContent = `${completed} / ${demo.steps.length}`;
+            document.getElementById(`${demoId}-percent`).textContent = `${percent}%`;
+
+            if (state.running[demoId]) {
+                document.getElementById(`${demoId}-progress`).classList.add('animating');
+            } else {
+                document.getElementById(`${demoId}-progress`).classList.remove('animating');
+            }
+        }
+
+        // Run Demo
+        async function runDemo(demoId) {
+            if (state.running[demoId]) return;
+
+            state.running[demoId] = true;
+            state.completed[demoId] = 0;
+            document.getElementById(`run-${demoId}`).disabled = true;
+            document.getElementById(`${demoId}-results`).classList.remove('visible');
+
+            const demo = DEMOS[demoId];
+
+            for (let i = 0; i < demo.steps.length; i++) {
+                renderSteps(demoId);
+                await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
+                state.completed[demoId] = i + 1;
+                renderSteps(demoId);
+            }
+
+            state.running[demoId] = false;
+            document.getElementById(`run-${demoId}`).disabled = false;
+            document.getElementById(`${demoId}-results`).classList.add('visible');
+        }
+
+        // Reset Demo
+        function resetDemo(demoId) {
+            state.running[demoId] = false;
+            state.completed[demoId] = 0;
+            document.getElementById(`run-${demoId}`).disabled = false;
+            document.getElementById(`${demoId}-results`).classList.remove('visible');
+            renderSteps(demoId);
+        }
+    </script>
+</body>
+</html>

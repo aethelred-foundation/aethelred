@@ -1,0 +1,5 @@
+./batch_verify.go
+./context.go
+./doc.go
+./keys.go
+./sign.go

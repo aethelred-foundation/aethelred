@@ -1,0 +1,150 @@
+{
+  "name": "Enterprise Evaluation",
+  "description": "30-45 minute comprehensive demo for enterprise buyers",
+  "duration_minutes": 45,
+  "audience": "enterprise",
+  "sequence": [
+    {
+      "section": "Executive Summary",
+      "duration_seconds": 180,
+      "talking_points": [
+        "Challenge: Cross-border AI blocked by data sovereignty laws",
+        "Solution: Aethelred enables computation without data movement",
+        "Differentiation: Cryptographic proof of compliance (not just policy)",
+        "Outcome: Unlock $500B+ in blocked AI collaborations"
+      ]
+    },
+    {
+      "section": "Compliance Deep Dive",
+      "duration_seconds": 300,
+      "regulations_covered": [
+        "GDPR (EU) - Article 44 cross-border transfers",
+        "HIPAA (US) - PHI protection requirements",
+        "UAE Data Protection Law - Data localization",
+        "China PIPL - Cross-border data rules",
+        "Singapore PDPA - Data protection framework"
+      ],
+      "compliance_features": [
+        "Automated jurisdiction detection",
+        "Rule-based compliance engine",
+        "Pre-built regulatory templates",
+        "Custom rule support"
+      ]
+    },
+    {
+      "section": "Demo: Trade Finance Use Case",
+      "demo": "falcon-lion",
+      "mode": "presentation",
+      "duration_seconds": 360,
+      "enterprise_focus": [
+        "Real-world trade finance scenario",
+        "Multi-party compliance verification",
+        "Audit trail for regulators",
+        "Integration with existing systems"
+      ]
+    },
+    {
+      "section": "Demo: Healthcare/Pharma Use Case",
+      "demo": "helix-guard",
+      "mode": "presentation",
+      "duration_seconds": 360,
+      "enterprise_focus": [
+        "HIPAA-compliant drug discovery",
+        "Multi-party computation without data sharing",
+        "IP protection for proprietary compounds",
+        "Royalty settlement and accounting"
+      ]
+    },
+    {
+      "section": "Security Architecture",
+      "duration_seconds": 300,
+      "security_features": [
+        "TEE Support: Intel SGX, AMD SEV, Intel TDX, AWS Nitro",
+        "Attestation: Hardware-backed cryptographic proof",
+        "zkML: Zero-knowledge proofs for computation correctness",
+        "Post-Quantum Cryptography: Future-proof key exchange",
+        "No Single Point of Failure: Decentralized validator network"
+      ],
+      "certifications_roadmap": [
+        "SOC 2 Type II (Target: Q3 2024)",
+        "ISO 27001 (Target: Q4 2024)",
+        "HIPAA BAA (Available now)",
+        "FedRAMP (Roadmap item)"
+      ]
+    },
+    {
+      "section": "Integration Patterns",
+      "duration_seconds": 300,
+      "integration_options": [
+        "REST API - Simple HTTP-based integration",
+        "gRPC - High-performance binary protocol",
+        "SDK - Native libraries (Python, TypeScript, Rust, Go)",
+        "WebSocket - Real-time event streaming",
+        "Webhook - Push notifications for job completion"
+      ],
+      "enterprise_integrations": [
+        "AWS/Azure/GCP cloud connectors",
+        "Kubernetes operators",
+        "Terraform providers",
+        "CI/CD pipeline plugins"
+      ]
+    },
+    {
+      "section": "Deployment Options",
+      "duration_seconds": 180,
+      "options": [
+        "Managed Cloud - Fully managed by Aethelred",
+        "Hybrid - Your validators, our network",
+        "Private Network - Dedicated chain for your organization",
+        "Consortium - Shared chain with partners"
+      ]
+    },
+    {
+      "section": "Pricing Model",
+      "duration_seconds": 180,
+      "pricing_tiers": [
+        "Developer: Free (limited compute, testnet only)",
+        "Startup: $5K/month (10M compute units, mainnet access)",
+        "Enterprise: Custom pricing (unlimited, SLA, support)",
+        "Consortium: Revenue share model"
+      ],
+      "token_economics": [
+        "AETHEL token for compute payments",
+        "Staking rewards for validators",
+        "Volume discounts available"
+      ]
+    },
+    {
+      "section": "Implementation Timeline",
+      "duration_seconds": 180,
+      "typical_timeline": [
+        "Week 1-2: Technical integration (SDK setup, API testing)",
+        "Week 3-4: Compliance mapping (your rules → our engine)",
+        "Week 5-6: UAT and security review",
+        "Week 7-8: Production deployment and monitoring setup"
+      ]
+    },
+    {
+      "section": "Q&A and Next Steps",
+      "duration_seconds": 300,
+      "next_steps": [
+        "Technical POC with your team",
+        "Security questionnaire completion",
+        "Legal/compliance review",
+        "Commercial proposal"
+      ]
+    }
+  ],
+  "deliverables_post_demo": [
+    "Technical architecture document",
+    "Security whitepaper",
+    "Compliance mapping worksheet",
+    "Pricing proposal (NDA required)",
+    "Implementation timeline"
+  ],
+  "contacts": {
+    "sales": "enterprise@aethelred.ai",
+    "technical": "solutions@aethelred.ai",
+    "security": "security@aethelred.ai"
+  }
+}

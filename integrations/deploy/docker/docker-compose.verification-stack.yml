@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  aethelred-fastapi-verifier:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.fastapi-verifier
+      args:
+        APP_DIR: apps/fastapi-verifier
+    image: ghcr.io/aethelred/fastapi-verifier:dev
+    environment:
+      AETHELRED_RPC_URL: http://aethelred-node:26657
+      AETHELRED_HEADER_PREFIX: x-aethelred
+    ports:
+      - "8000:8000"
+    depends_on:
+      - aethelred-node
+
+  aethelred-nextjs-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.nextjs-api
+      args:
+        APP_DIR: apps/nextjs-verifier
+    image: ghcr.io/aethelred/nextjs-api:dev
+    environment:
+      AETHELRED_RPC_URL: http://aethelred-node:26657
+      AETHELRED_HEADER_PREFIX: x-aethelred
+    ports:
+      - "3000:3000"
+    depends_on:
+      - aethelred-node
+
+  aethelred-node:
+    image: ghcr.io/aethelred/validator:latest
+    command: ["aethelredd", "start", "--home=/data", "--rpc.laddr=tcp://0.0.0.0:26657"]
+    ports:
+      - "26657:26657"

@@ -1,0 +1,213 @@
+=== RUN   TestValidateProductionReadiness_AllowSimulated
+--- PASS: TestValidateProductionReadiness_AllowSimulated (0.00s)
+=== RUN   TestReadinessReportString
+--- PASS: TestReadinessReportString (0.00s)
+=== RUN   TestValidateProductionReadiness_ProductionFailures
+--- PASS: TestValidateProductionReadiness_ProductionFailures (0.00s)
+=== RUN   TestValidateProductionReadiness_NilParams
+--- PASS: TestValidateProductionReadiness_NilParams (0.00s)
+=== RUN   TestValidateProductionReadiness_OrchestratorConfig
+--- PASS: TestValidateProductionReadiness_OrchestratorConfig (0.00s)
+=== RUN   TestValidateProductionReadiness_TrustedMeasurementsRequiredInProduction
+--- PASS: TestValidateProductionReadiness_TrustedMeasurementsRequiredInProduction (0.00s)
+=== RUN   TestValidateProductionReadiness_PartialTrustedMeasurementsFail
+--- PASS: TestValidateProductionReadiness_PartialTrustedMeasurementsFail (0.00s)
+=== RUN   TestValidateProductionReadiness_MissingAttestationEndpointFails
+--- PASS: TestValidateProductionReadiness_MissingAttestationEndpointFails (0.00s)
+=== RUN   TestValidateEndpointReachability_NoConfig
+--- PASS: TestValidateEndpointReachability_NoConfig (0.00s)
+=== RUN   TestValidateEndpointReachability
+--- PASS: TestValidateEndpointReachability (0.00s)
+=== RUN   TestEndpointProbeURLs
+=== RUN   TestEndpointProbeURLs/host_only
+=== RUN   TestEndpointProbeURLs/path_endpoint
+=== RUN   TestEndpointProbeURLs/health_endpoint
+=== RUN   TestEndpointProbeURLs/empty_endpoint
+=== RUN   TestEndpointProbeURLs/invalid_parse
+--- PASS: TestEndpointProbeURLs (0.00s)
+    --- PASS: TestEndpointProbeURLs/host_only (0.00s)
+    --- PASS: TestEndpointProbeURLs/path_endpoint (0.00s)
+    --- PASS: TestEndpointProbeURLs/health_endpoint (0.00s)
+    --- PASS: TestEndpointProbeURLs/empty_endpoint (0.00s)
+    --- PASS: TestEndpointProbeURLs/invalid_parse (0.00s)
+=== RUN   TestIsEndpointReachable_BlankEndpoint
+--- PASS: TestIsEndpointReachable_BlankEndpoint (0.00s)
+=== RUN   TestValidateOrchestratorConfig_AllBranches
+--- PASS: TestValidateOrchestratorConfig_AllBranches (0.00s)
+=== RUN   TestValidateProductionReadiness_OrchestratorMissingEndpoint
+--- PASS: TestValidateProductionReadiness_OrchestratorMissingEndpoint (0.00s)
+=== RUN   TestModelRegistryLoadExportStats
+--- PASS: TestModelRegistryLoadExportStats (0.00s)
+=== RUN   TestModelRegistryDeactivateModel
+--- PASS: TestModelRegistryDeactivateModel (0.00s)
+=== RUN   TestModelRegistryErrors
+--- PASS: TestModelRegistryErrors (0.00s)
+=== RUN   TestModelRegistrySetTEEMeasurement
+--- PASS: TestModelRegistrySetTEEMeasurement (0.00s)
+=== RUN   TestModelRegistryListActiveModels
+--- PASS: TestModelRegistryListActiveModels (0.00s)
+=== RUN   TestNegative_ZKMLProof_EmptyProofSystem
+    negative_test.go:37: OK: correctly rejected: proof system cannot be empty
+--- PASS: TestNegative_ZKMLProof_EmptyProofSystem (0.00s)
+=== RUN   TestNegative_ZKMLProof_EmptyProofBytes
+    negative_test.go:47: OK: correctly rejected: proof bytes cannot be empty
+--- PASS: TestNegative_ZKMLProof_EmptyProofBytes (0.00s)
+=== RUN   TestNegative_ZKMLProof_VKHashWrongSize
+    negative_test.go:57: OK: correctly rejected: verifying key hash must be 32 bytes
+--- PASS: TestNegative_ZKMLProof_VKHashWrongSize (0.00s)
+=== RUN   TestNegative_TEEAttestation_UnspecifiedPlatform
+    negative_test.go:71: OK: correctly rejected: platform cannot be unspecified
+--- PASS: TestNegative_TEEAttestation_UnspecifiedPlatform (0.00s)
+=== RUN   TestNegative_TEEAttestation_EmptyMeasurement
+    negative_test.go:81: OK: correctly rejected: measurement cannot be empty
+--- PASS: TestNegative_TEEAttestation_EmptyMeasurement (0.00s)
+=== RUN   TestNegative_TEEAttestation_EmptyQuote
+    negative_test.go:91: OK: correctly rejected: quote cannot be empty
+--- PASS: TestNegative_TEEAttestation_EmptyQuote (0.00s)
+=== RUN   TestNegative_UnsupportedPlatform
+--- PASS: TestNegative_UnsupportedPlatform (0.00s)
+=== RUN   TestNegative_UnsupportedProofSystem
+--- PASS: TestNegative_UnsupportedProofSystem (0.00s)
+=== RUN   TestPositive_SupportedPlatforms
+--- PASS: TestPositive_SupportedPlatforms (0.00s)
+=== RUN   TestPositive_SupportedProofSystems
+--- PASS: TestPositive_SupportedProofSystems (0.00s)
+=== RUN   TestNegative_Orchestrator_HybridMismatch_Sequential
+    negative_test.go:179: Sequential hybrid result: success=false
+--- PASS: TestNegative_Orchestrator_HybridMismatch_Sequential (0.00s)
+=== RUN   TestNegative_Orchestrator_HybridMismatch_Parallel
+    negative_test.go:216: Parallel hybrid result: success=false
+    negative_test.go:218:   TEE: success=false, error=output hash mismatch
+    negative_test.go:221:   ZKML: success=true, error=
+--- PASS: TestNegative_Orchestrator_HybridMismatch_Parallel (0.00s)
+=== RUN   TestNegative_Orchestrator_NilRequest
+--- PASS: TestNegative_Orchestrator_NilRequest (0.00s)
+=== RUN   TestNegative_Orchestrator_EmptyModelHash
+    negative_test.go:255: Correctly returned error for nil model hash: model hash cannot be empty
+--- PASS: TestNegative_Orchestrator_EmptyModelHash (0.00s)
+=== RUN   TestNegative_Orchestrator_UnknownVerificationType
+    negative_test.go:291: Unspecified type resolved to default: success=true, type=VERIFICATION_TYPE_UNSPECIFIED
+--- PASS: TestNegative_Orchestrator_UnknownVerificationType (0.00s)
+=== RUN   TestNegative_Registry_EmptyModelBytes
+    negative_test.go:321: NOTE: registry accepted nil model bytes (hash=e3b0c44298fc1c14), consider adding validation
+--- PASS: TestNegative_Registry_EmptyModelBytes (0.00s)
+=== RUN   TestNegative_Registry_DuplicateModel
+    negative_test.go:356: NOTE: in-memory registry accepted duplicate (idempotent)
+--- PASS: TestNegative_Registry_DuplicateModel (0.00s)
+=== RUN   TestNegative_Registry_GetNonexistentModel
+--- PASS: TestNegative_Registry_GetNonexistentModel (0.00s)
+=== RUN   TestNegative_Genesis_NilParams
+    negative_test.go:379: OK: correctly rejected: params cannot be nil
+--- PASS: TestNegative_Genesis_NilParams (0.00s)
+=== RUN   TestNegative_Genesis_ZeroMaxProofSize
+    negative_test.go:386: OK: correctly rejected: max_proof_size must be positive
+--- PASS: TestNegative_Genesis_ZeroMaxProofSize (0.00s)
+=== RUN   TestNegative_Genesis_NegativeMaxProofSize
+    negative_test.go:393: OK: correctly rejected: max_proof_size must be positive
+--- PASS: TestNegative_Genesis_NegativeMaxProofSize (0.00s)
+=== RUN   TestNegative_Genesis_ZeroMaxVKSize
+    negative_test.go:400: OK: correctly rejected: max_verifying_key_size must be positive
+--- PASS: TestNegative_Genesis_ZeroMaxVKSize (0.00s)
+=== RUN   TestNegative_Genesis_InvalidVKHash
+    negative_test.go:412: OK: correctly rejected: invalid verifying key hash at index 0
+--- PASS: TestNegative_Genesis_InvalidVKHash (0.00s)
+=== RUN   TestNegative_Genesis_EmptyVKBytes
+    negative_test.go:424: OK: correctly rejected: empty key bytes at index 0
+--- PASS: TestNegative_Genesis_EmptyVKBytes (0.00s)
+=== RUN   TestNegative_Genesis_NilVK
+    negative_test.go:431: OK: correctly rejected: nil verifying key at index 0
+--- PASS: TestNegative_Genesis_NilVK (0.00s)
+=== RUN   TestNegative_Genesis_InvalidCircuitHash
+    negative_test.go:443: OK: correctly rejected: invalid circuit hash at index 0
+--- PASS: TestNegative_Genesis_InvalidCircuitHash (0.00s)
+=== RUN   TestNegative_Genesis_EmptyCircuitBytes
+    negative_test.go:455: OK: correctly rejected: empty circuit bytes at index 0
+--- PASS: TestNegative_Genesis_EmptyCircuitBytes (0.00s)
+=== RUN   TestNegative_Genesis_NilCircuit
+    negative_test.go:462: OK: correctly rejected: nil circuit at index 0
+--- PASS: TestNegative_Genesis_NilCircuit (0.00s)
+=== RUN   TestPolicy_DefaultParamsAreProductionSafe
+    negative_test.go:493: Default params verified: AllowSimulated=false, proof_systems=[ezkl risc0 plonky2 halo2], tee_platforms=[aws-nitro intel-sgx intel-tdx amd-sev]
+--- PASS: TestPolicy_DefaultParamsAreProductionSafe (0.00s)
+=== RUN   TestNegative_Orchestrator_MetricsTrackFailures
+    negative_test.go:525: Metrics: total=3, success=3, failed=0
+--- PASS: TestNegative_Orchestrator_MetricsTrackFailures (0.00s)
+=== RUN   TestEZKLProverService
+=== RUN   TestEZKLProverService/Proof_generation
+    verify_test.go:70: Proof generated: size=284 bytes, time=0ms
+=== RUN   TestEZKLProverService/Proof_verification
+    verify_test.go:106: Proof verification passed
+=== RUN   TestEZKLProverService/Circuit_caching
+    verify_test.go:143: Circuit caching passed
+=== RUN   TestEZKLProverService/Concurrent_proofs
+    verify_test.go:189: Concurrent proofs: total=10, avg_time=0ms
+--- PASS: TestEZKLProverService (0.00s)
+    --- PASS: TestEZKLProverService/Proof_generation (0.00s)
+    --- PASS: TestEZKLProverService/Proof_verification (0.00s)
+    --- PASS: TestEZKLProverService/Circuit_caching (0.00s)
+    --- PASS: TestEZKLProverService/Concurrent_proofs (0.00s)
+=== RUN   TestONNXModelHandler
+=== RUN   TestONNXModelHandler/Model_parsing
+    verify_test.go:224: Model parsed: nodes=6, parameters=2817
+=== RUN   TestONNXModelHandler/Model_validation
+    verify_test.go:244: Model validated: constraints=845220, estimated_time=845ms
+=== RUN   TestONNXModelHandler/Circuit_preparation
+    verify_test.go:268: Circuit preparation passed
+--- PASS: TestONNXModelHandler (0.00s)
+    --- PASS: TestONNXModelHandler/Model_parsing (0.00s)
+    --- PASS: TestONNXModelHandler/Model_validation (0.00s)
+    --- PASS: TestONNXModelHandler/Circuit_preparation (0.00s)
+=== RUN   TestNitroEnclaveService
+=== RUN   TestNitroEnclaveService/Enclave_initialization
+    verify_test.go:299: Enclave initialized: id=nitro-simulated
+=== RUN   TestNitroEnclaveService/Enclave_execution
+    verify_test.go:337: Enclave execution: time=0ms
+=== RUN   TestNitroEnclaveService/Attestation_verification
+    verify_test.go:370: Attestation verification passed
+--- PASS: TestNitroEnclaveService (0.00s)
+    --- PASS: TestNitroEnclaveService/Enclave_initialization (0.00s)
+    --- PASS: TestNitroEnclaveService/Enclave_execution (0.00s)
+    --- PASS: TestNitroEnclaveService/Attestation_verification (0.00s)
+=== RUN   TestVerificationOrchestrator
+=== RUN   TestVerificationOrchestrator/TEE_verification
+    verify_test.go:410: TEE verification: time=0ms
+=== RUN   TestVerificationOrchestrator/zkML_verification
+    verify_test.go:449: zkML verification: time=0ms, proof_size=284
+=== RUN   TestVerificationOrchestrator/Hybrid_verification
+    verify_test.go:497: Hybrid verification (sequential): success=false, time=0ms
+=== RUN   TestVerificationOrchestrator/Verification_caching
+    verify_test.go:532: Verification caching passed
+--- PASS: TestVerificationOrchestrator (0.00s)
+    --- PASS: TestVerificationOrchestrator/TEE_verification (0.00s)
+    --- PASS: TestVerificationOrchestrator/zkML_verification (0.00s)
+    --- PASS: TestVerificationOrchestrator/Hybrid_verification (0.00s)
+    --- PASS: TestVerificationOrchestrator/Verification_caching (0.00s)
+=== RUN   TestModelRegistry
+=== RUN   TestModelRegistry/Model_registration
+    verify_test.go:585: Model registered: hash=69f4dde40f8c8452
+=== RUN   TestModelRegistry/Circuit_retrieval
+    verify_test.go:615: Circuit retrieval passed
+=== RUN   TestModelRegistry/Model_listing
+    verify_test.go:648: Model listing: total=3, active=0
+--- PASS: TestModelRegistry (0.00s)
+    --- PASS: TestModelRegistry/Model_registration (0.00s)
+    --- PASS: TestModelRegistry/Circuit_retrieval (0.00s)
+    --- PASS: TestModelRegistry/Model_listing (0.00s)
+=== RUN   TestEndToEndVerification
+    verify_test.go:653: === End-to-End Verification Test ===
+    verify_test.go:668: Step 1: Registering model...
+    verify_test.go:682: Model registered: Credit Score Model
+    verify_test.go:685: Step 2: Creating verification request...
+    verify_test.go:698: Step 3: Executing TEE verification...
+    verify_test.go:707: TEE verification completed: output_hash=a31415f49ea6e469
+    verify_test.go:710: Step 4: Executing zkML verification...
+    verify_test.go:725: zkML verification completed: proof_size=284 bytes
+    verify_test.go:732: Step 5: Executing hybrid verification (expects mismatch in simulated mode)...
+    verify_test.go:746: Hybrid verification correctly detected output mismatch: TEE: hybrid output mismatch: TEE and zkML produced different results; zkML: hybrid output mismatch: TEE and zkML produced different results
+    verify_test.go:748: Hybrid verification completed: time=0ms
+    verify_test.go:751: Step 6: Checking metrics...
+    verify_test.go:753: Orchestrator metrics: total=3, success=2, avg_time=0ms
+    verify_test.go:756: === End-to-End Test Complete ===
+--- PASS: TestEndToEndVerification (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/x/verify	6.192s

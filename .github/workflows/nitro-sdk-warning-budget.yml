@@ -1,0 +1,38 @@
+name: Nitro SDK Warning Budget
+
+on:
+  pull_request:
+    paths:
+      - "services/tee-worker/nitro-sdk/**"
+      - "scripts/check-nitro-sdk-warning-budget.sh"
+      - ".github/workflows/nitro-sdk-warning-budget.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "services/tee-worker/nitro-sdk/**"
+      - "scripts/check-nitro-sdk-warning-budget.sh"
+      - ".github/workflows/nitro-sdk-warning-budget.yml"
+
+jobs:
+  warning-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.75.0
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            services/tee-worker/nitro-sdk -> target
+
+      - name: Check nitro-sdk warning budget (full-sdk)
+        env:
+          NITRO_SDK_WARNING_BUDGET: "0"
+        run: |
+          bash ./scripts/check-nitro-sdk-warning-budget.sh .

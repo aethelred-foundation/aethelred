@@ -1,0 +1,298 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aethelred-validator
+  namespace: aethelred
+  labels:
+    app: aethelred-validator
+    component: consensus
+spec:
+  serviceName: aethelred-validator
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: aethelred-validator
+  template:
+    metadata:
+      labels:
+        app: aethelred-validator
+        component: consensus
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "26660"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: aethelred-validator
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true
+
+      # Anti-affinity to spread validators across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: aethelred-validator
+                topologyKey: kubernetes.io/hostname
+
+      # Node selector for TEE-capable nodes
+      nodeSelector:
+        aethelred.io/tee-capable: "true"
+
+      tolerations:
+        - key: "aethelred.io/validator"
+          operator: "Exists"
+          effect: "NoSchedule"
+
+      initContainers:
+        # Initialize validator configuration
+        - name: init-config
+          image: aethelred/validator:latest
+          command: ["aethelredd", "init", "--home=/data"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: aethelred-config
+                  key: chain_id
+
+      containers:
+        # Main validator node
+        - name: validator
+          image: aethelred/validator:latest
+          imagePullPolicy: Always
+          command:
+            - aethelredd
+            - start
+            - --home=/data
+            - --p2p.laddr=tcp://0.0.0.0:26656
+            - --rpc.laddr=tcp://0.0.0.0:26657
+            - --grpc.address=0.0.0.0:9090
+            - --api.address=tcp://0.0.0.0:1317
+            - --pruning=nothing
+            - --log_format=json
+          ports:
+            - name: p2p
+              containerPort: 26656
+              protocol: TCP
+            - name: rpc
+              containerPort: 26657
+              protocol: TCP
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+            - name: api
+              containerPort: 1317
+              protocol: TCP
+            - name: metrics
+              containerPort: 26660
+              protocol: TCP
+
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+              ephemeral-storage: "50Gi"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+              ephemeral-storage: "100Gi"
+
+          env:
+            - name: CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: aethelred-config
+                  key: chain_id
+            - name: VALIDATOR_MONIKER
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: PERSISTENT_PEERS
+              valueFrom:
+                configMapKeyRef:
+                  name: aethelred-config
+                  key: persistent_peers
+            - name: LOG_LEVEL
+              value: "info"
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 26657
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 26657
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+        # TEE sidecar for secure compute
+        - name: tee-worker
+          image: aethelred/tee-worker:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true  # Required for SGX/Nitro
+          command:
+            - /usr/bin/tee-worker
+            - --listen=0.0.0.0:9091
+            - --attestation-service=attestation.aethelred.svc:443
+          ports:
+            - name: tee-grpc
+              containerPort: 9091
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+              sgx.intel.com/epc: "64Mi"  # SGX enclave memory
+            limits:
+              cpu: "4"
+              memory: "16Gi"
+              sgx.intel.com/epc: "128Mi"
+          volumeMounts:
+            - name: tee-secrets
+              mountPath: /tee/secrets
+              readOnly: true
+            - name: sgx-provision
+              mountPath: /dev/sgx_provision
+            - name: sgx-enclave
+              mountPath: /dev/sgx_enclave
+
+        # zkML prover sidecar
+        - name: zkml-prover
+          image: aethelred/zkml-prover:latest
+          imagePullPolicy: Always
+          command:
+            - /usr/bin/zkml-prover
+            - --listen=0.0.0.0:9092
+            - --gpu-enabled=true
+          ports:
+            - name: zkml-grpc
+              containerPort: 9092
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "2"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: zkml-models
+              mountPath: /models
+              readOnly: true
+
+      volumes:
+        - name: config
+          configMap:
+            name: aethelred-validator-config
+        - name: secrets
+          secret:
+            secretName: aethelred-validator-keys
+        - name: tee-secrets
+          secret:
+            secretName: aethelred-tee-keys
+        - name: zkml-models
+          persistentVolumeClaim:
+            claimName: zkml-models-pvc
+        - name: sgx-provision
+          hostPath:
+            path: /dev/sgx_provision
+            type: CharDevice
+        - name: sgx-enclave
+          hostPath:
+            path: /dev/sgx_enclave
+            type: CharDevice
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 500Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aethelred-validator
+  namespace: aethelred
+  labels:
+    app: aethelred-validator
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - name: p2p
+      port: 26656
+      targetPort: 26656
+    - name: rpc
+      port: 26657
+      targetPort: 26657
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+    - name: api
+      port: 1317
+      targetPort: 1317
+  selector:
+    app: aethelred-validator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aethelred-validator-rpc
+  namespace: aethelred
+  labels:
+    app: aethelred-validator
+    service: rpc
+spec:
+  type: LoadBalancer
+  ports:
+    - name: rpc
+      port: 26657
+      targetPort: 26657
+    - name: api
+      port: 1317
+      targetPort: 1317
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+  selector:
+    app: aethelred-validator

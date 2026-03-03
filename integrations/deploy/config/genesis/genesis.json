@@ -1,0 +1,195 @@
+{
+  "$schema": "https://aethelred.org/schemas/genesis-v1.json",
+  "chain_id": "aethelred-devnet-1",
+  "chain_name": "Aethelred DevNet",
+  "genesis_time": "2024-01-01T00:00:00.000000Z",
+
+  "consensus": {
+    "type": "proof_of_compute",
+    "params": {
+      "block_time_ms": 3000,
+      "epoch_length": 100,
+      "min_validators": 2,
+      "max_validators": 100,
+      "compute_weight": 0.3,
+      "stake_weight": 0.7,
+      "vrf_threshold": "0.5"
+    }
+  },
+
+  "staking": {
+    "params": {
+      "min_validator_stake": "10000000000000000000000",
+      "min_compute_stake": "50000000000000000000000",
+      "min_delegator_stake": "100000000000000000000",
+      "unbonding_period_seconds": 259200,
+      "max_validators": 100,
+      "slashing": {
+        "double_sign_slash_bps": 500,
+        "downtime_slash_bps": 100,
+        "sla_violation_slash_bps": 200,
+        "jail_duration_seconds": 600
+      }
+    }
+  },
+
+  "job_registry": {
+    "params": {
+      "min_bid": "1000000000000",
+      "max_jobs_per_block": 100,
+      "default_sla_timeout_seconds": 300,
+      "late_penalty_bps_per_minute": 100,
+      "cancellation_fee_bps": 500,
+      "max_priority_multiplier": 3.0
+    }
+  },
+
+  "compliance": {
+    "enabled": false,
+    "default_standards": [],
+    "enforce_sanctions": false,
+    "allow_grace_period": true,
+    "risk_threshold": 100
+  },
+
+  "fee_config": {
+    "prover_share_bps": 7000,
+    "validator_share_bps": 2000,
+    "burn_share_bps": 500,
+    "treasury_share_bps": 500,
+    "adaptive_burn": {
+      "enabled": true,
+      "base_rate_bps": 500,
+      "max_rate_bps": 1500,
+      "utilization_target_pct": 50
+    }
+  },
+
+  "token": {
+    "name": "Aethelred",
+    "symbol": "AETH",
+    "decimals": 18,
+    "total_supply": "1000000000000000000000000000"
+  },
+
+  "allocations": [
+    {
+      "address": "0x0000000000000000000000000000000000000001",
+      "balance": "100000000000000000000000000",
+      "label": "validator-alice",
+      "vesting": null
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000002",
+      "balance": "100000000000000000000000000",
+      "label": "validator-bob",
+      "vesting": null
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000003",
+      "balance": "100000000000000000000000000",
+      "label": "compute-charlie",
+      "vesting": null
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000004",
+      "balance": "100000000000000000000000000",
+      "label": "bridge-relayer",
+      "vesting": null
+    },
+    {
+      "address": "0x0000000000000000000000000000000000001000",
+      "balance": "500000000000000000000000000",
+      "label": "faucet",
+      "vesting": null
+    },
+    {
+      "address": "0x0000000000000000000000000000000000002000",
+      "balance": "100000000000000000000000000",
+      "label": "treasury",
+      "vesting": {
+        "cliff_duration_seconds": 0,
+        "total_duration_seconds": 31536000,
+        "tge_amount": "10000000000000000000000000"
+      }
+    }
+  ],
+
+  "validators": [
+    {
+      "address": "0x0000000000000000000000000000000000000001",
+      "pubkey": {
+        "ecdsa": "0x04alice_ecdsa_pubkey_placeholder",
+        "dilithium": "0xalice_dilithium_pubkey_placeholder"
+      },
+      "stake": "50000000000000000000000",
+      "commission_bps": 1000,
+      "moniker": "validator-alice",
+      "website": "https://alice.aethelred.local",
+      "details": "Primary validator for DevNet"
+    },
+    {
+      "address": "0x0000000000000000000000000000000000000002",
+      "pubkey": {
+        "ecdsa": "0x04bob_ecdsa_pubkey_placeholder",
+        "dilithium": "0xbob_dilithium_pubkey_placeholder"
+      },
+      "stake": "50000000000000000000000",
+      "commission_bps": 1000,
+      "moniker": "validator-bob",
+      "website": "https://bob.aethelred.local",
+      "details": "Secondary validator for DevNet"
+    }
+  ],
+
+  "compute_nodes": [
+    {
+      "address": "0x0000000000000000000000000000000000000003",
+      "pubkey": {
+        "ecdsa": "0x04charlie_ecdsa_pubkey_placeholder",
+        "dilithium": "0xcharlie_dilithium_pubkey_placeholder"
+      },
+      "stake": "100000000000000000000000",
+      "tee_type": "mock",
+      "tee_measurement": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "useful_work_score": 10000,
+      "moniker": "compute-charlie",
+      "hardware": {
+        "type": "gpu",
+        "model": "NVIDIA_A100",
+        "memory_gb": 40
+      }
+    }
+  ],
+
+  "bridge": {
+    "ethereum": {
+      "chain_id": 11155111,
+      "contract_address": "0x0000000000000000000000000000000000000000",
+      "relayers": [
+        "0x0000000000000000000000000000000000000004"
+      ],
+      "consensus_threshold_bps": 6700,
+      "challenge_period_seconds": 86400
+    }
+  },
+
+  "app_state": {
+    "seal": {
+      "seals": [],
+      "params": {
+        "min_validator_attestations": 3,
+        "default_retention_days": 365
+      }
+    },
+    "pouw": {
+      "jobs": [],
+      "models": [],
+      "params": {
+        "min_validators": 3,
+        "consensus_threshold_pct": 67,
+        "job_timeout_blocks": 100
+      }
+    }
+  }
+}

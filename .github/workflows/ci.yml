@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  GO_VERSION: "1.22"
+  RUST_VERSION: "1.75"
+
+jobs:
+  go-lint:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=10m
+
+  go-test:
+    name: Go Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Download dependencies
+        run: go mod download
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  go-build:
+    name: Go Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Build node binary
+        run: go build -v ./cmd/aethelredd/...
+      - name: Build loadtest binary
+        run: go build -v ./cmd/aethelred-loadtest/...
+
+  rust-test:
+    name: Rust Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+        working-directory: crates
+      - name: Cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: crates
+      - name: Cargo test
+        run: cargo test --workspace
+        working-directory: crates
+
+  proto-lint:
+    name: Proto Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1
+      - name: Lint protos
+        run: buf lint
+        working-directory: proto
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: aethelred/node:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

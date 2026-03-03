@@ -1,0 +1,68 @@
+name: Repo Authority Guard
+
+on:
+  pull_request:
+    paths:
+      - 'repo-authority.json'
+      - 'go.mod'
+      - 'README.md'
+      - '.github/workflows/repo-authority-guard.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'repo-authority.json'
+      - 'go.mod'
+      - 'README.md'
+      - '.github/workflows/repo-authority-guard.yml'
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+
+jobs:
+  validate-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate repo-authority manifest vs go.mod
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re, sys, pathlib
+          root = pathlib.Path('.')
+          m = json.loads((root / 'repo-authority.json').read_text())
+          assert m['repo'] == 'AethelredFoundation/aethelred-cosmos-node'
+          assert m['role'] == 'canonical-chain'
+          assert m['release_authority'] is True
+          assert m['ratification_status'] in {'pending-foundation-ratification', 'ratified'}
+          assert m['ratification_record'].endswith('.md')
+          gomod = (root / 'go.mod').read_text()
+          mm = re.search(r'^module\s+(\S+)\s*$', gomod, re.M)
+          assert mm, 'go.mod module line missing'
+          assert mm.group(1) == m['go_module'], (mm.group(1), m['go_module'])
+          readme = (root / 'README.md').read_text(errors='ignore').lower()
+          assert 'authority' in readme, 'README must include authority notice'
+          assert 'ratification' in readme, 'README should mention ratification status'
+          print('repo authority manifest validation passed')
+          PY
+
+  release-authority:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Enforce canonical release authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          m = json.loads(pathlib.Path('repo-authority.json').read_text())
+          if not m.get('release_authority', False):
+              raise SystemExit('release blocked: repo is not release-authoritative')
+          print('release authority ok')
+          PY

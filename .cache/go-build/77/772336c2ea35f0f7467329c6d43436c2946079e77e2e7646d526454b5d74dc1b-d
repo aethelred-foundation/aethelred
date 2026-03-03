@@ -1,0 +1,4 @@
+./configurator.go
+./core_module.go
+./module.go
+./simulation.go

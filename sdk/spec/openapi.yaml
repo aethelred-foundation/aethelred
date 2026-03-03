@@ -1,0 +1,1223 @@
+openapi: 3.1.0
+info:
+  title: Aethelred API
+  description: |
+    The Aethelred AI Blockchain API provides endpoints for submitting AI compute jobs,
+    creating digital seals, managing models, and verifying cryptographic proofs.
+  version: 1.0.0
+  contact:
+    name: Aethelred Team
+    url: https://aethelred.org
+    email: developers@aethelred.org
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://rpc.mainnet.aethelred.org
+    description: Mainnet
+  - url: https://rpc.testnet.aethelred.org
+    description: Testnet
+  - url: http://localhost:26657
+    description: Local Development
+
+tags:
+  - name: Jobs
+    description: AI Compute Job operations
+  - name: Seals
+    description: Digital Seal operations
+  - name: Models
+    description: AI Model Registry operations
+  - name: Validators
+    description: Validator operations
+  - name: Verification
+    description: Proof verification operations
+  - name: Network
+    description: Network information
+
+paths:
+  # ============ Jobs ============
+  /aethelred/pouw/v1/jobs:
+    post:
+      tags: [Jobs]
+      summary: Submit a compute job
+      operationId: submitJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitJobRequest'
+      responses:
+        '200':
+          description: Job submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitJobResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    get:
+      tags: [Jobs]
+      summary: List all jobs
+      operationId: listJobs
+      parameters:
+        - $ref: '#/components/parameters/Pagination'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/JobStatus'
+        - name: creator
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListJobsResponse'
+
+  /aethelred/pouw/v1/jobs/{job_id}:
+    get:
+      tags: [Jobs]
+      summary: Get job by ID
+      operationId: getJob
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComputeJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/pouw/v1/jobs/{job_id}/cancel:
+    post:
+      tags: [Jobs]
+      summary: Cancel a pending job
+      operationId: cancelJob
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job cancelled
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/pouw/v1/jobs/pending:
+    get:
+      tags: [Jobs]
+      summary: List pending jobs
+      operationId: listPendingJobs
+      parameters:
+        - $ref: '#/components/parameters/Pagination'
+      responses:
+        '200':
+          description: List of pending jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListJobsResponse'
+
+  # ============ Seals ============
+  /aethelred/seal/v1/seals:
+    post:
+      tags: [Seals]
+      summary: Create a digital seal
+      operationId: createSeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSealRequest'
+      responses:
+        '200':
+          description: Seal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSealResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      tags: [Seals]
+      summary: List seals
+      operationId: listSeals
+      parameters:
+        - $ref: '#/components/parameters/Pagination'
+        - name: requester
+          in: query
+          schema:
+            type: string
+        - name: model_hash
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of seals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSealsResponse'
+
+  /aethelred/seal/v1/seals/{seal_id}:
+    get:
+      tags: [Seals]
+      summary: Get seal by ID
+      operationId: getSeal
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Seal details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalSeal'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/seal/v1/seals/{seal_id}/verify:
+    get:
+      tags: [Seals]
+      summary: Verify a seal
+      operationId: verifySeal
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySealResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/seal/v1/seals/{seal_id}/revoke:
+    post:
+      tags: [Seals]
+      summary: Revoke a seal
+      operationId: revokeSeal
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeSealRequest'
+      responses:
+        '200':
+          description: Seal revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============ Models ============
+  /aethelred/pouw/v1/models:
+    post:
+      tags: [Models]
+      summary: Register a model
+      operationId: registerModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterModelRequest'
+      responses:
+        '200':
+          description: Model registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterModelResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      tags: [Models]
+      summary: List models
+      operationId: listModels
+      parameters:
+        - $ref: '#/components/parameters/Pagination'
+        - name: owner
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/UtilityCategory'
+      responses:
+        '200':
+          description: List of models
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListModelsResponse'
+
+  /aethelred/pouw/v1/models/{model_hash}:
+    get:
+      tags: [Models]
+      summary: Get model by hash
+      operationId: getModel
+      parameters:
+        - name: model_hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisteredModel'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============ Validators ============
+  /aethelred/pouw/v1/validators:
+    get:
+      tags: [Validators]
+      summary: List validators
+      operationId: listValidators
+      parameters:
+        - $ref: '#/components/parameters/Pagination'
+      responses:
+        '200':
+          description: List of validators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListValidatorsResponse'
+
+  /aethelred/pouw/v1/validators/{address}/stats:
+    get:
+      tags: [Validators]
+      summary: Get validator stats
+      operationId: getValidatorStats
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validator statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorStats'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /aethelred/pouw/v1/validators/{address}/capability:
+    post:
+      tags: [Validators]
+      summary: Register validator capability
+      operationId: registerValidatorCapability
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCapabilityRequest'
+      responses:
+        '200':
+          description: Capability registered
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ============ Verification ============
+  /aethelred/verify/v1/zkproofs:verify:
+    post:
+      tags: [Verification]
+      summary: Verify a ZK proof
+      operationId: verifyZKProof
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyZKProofRequest'
+      responses:
+        '200':
+          description: Proof verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyZKProofResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /aethelred/verify/v1/tee/attestation:verify:
+    post:
+      tags: [Verification]
+      summary: Verify TEE attestation
+      operationId: verifyTEEAttestation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyTEEAttestationRequest'
+      responses:
+        '200':
+          description: Attestation verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyTEEAttestationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ============ Network ============
+  /aethelred/pouw/v1/stats/useful_work:
+    get:
+      tags: [Network]
+      summary: Get useful work statistics
+      operationId: getUsefulWorkStats
+      responses:
+        '200':
+          description: Useful work statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsefulWorkStats'
+
+  /aethelred/pouw/v1/epochs/{epoch}/stats:
+    get:
+      tags: [Network]
+      summary: Get epoch statistics
+      operationId: getEpochStats
+      parameters:
+        - name: epoch
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: uint64
+      responses:
+        '200':
+          description: Epoch statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EpochStats'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cosmos/base/tendermint/v1beta1/node_info:
+    get:
+      tags: [Network]
+      summary: Get node info
+      operationId: getNodeInfo
+      responses:
+        '200':
+          description: Node information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeInfo'
+
+  /cosmos/base/tendermint/v1beta1/blocks/latest:
+    get:
+      tags: [Network]
+      summary: Get latest block
+      operationId: getLatestBlock
+      responses:
+        '200':
+          description: Latest block
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+
+components:
+  schemas:
+    # ============ Jobs ============
+    ComputeJob:
+      type: object
+      required:
+        - id
+        - creator
+        - model_hash
+        - input_hash
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          description: Unique job identifier
+        creator:
+          type: string
+          description: Address of job creator
+        model_hash:
+          type: string
+          format: byte
+          description: SHA-256 hash of the model
+        input_hash:
+          type: string
+          format: byte
+          description: SHA-256 hash of input data
+        output_hash:
+          type: string
+          format: byte
+          description: SHA-256 hash of output (after completion)
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        priority:
+          type: integer
+          format: uint32
+          default: 1
+        max_gas:
+          type: string
+          format: uint64
+        timeout_blocks:
+          type: integer
+          format: uint32
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        validator_address:
+          type: string
+          description: Assigned validator address
+        verification_result:
+          $ref: '#/components/schemas/VerificationResult'
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    JobStatus:
+      type: string
+      enum:
+        - JOB_STATUS_UNSPECIFIED
+        - JOB_STATUS_PENDING
+        - JOB_STATUS_ASSIGNED
+        - JOB_STATUS_COMPUTING
+        - JOB_STATUS_VERIFYING
+        - JOB_STATUS_COMPLETED
+        - JOB_STATUS_FAILED
+        - JOB_STATUS_CANCELLED
+        - JOB_STATUS_EXPIRED
+
+    ProofType:
+      type: string
+      enum:
+        - PROOF_TYPE_UNSPECIFIED
+        - PROOF_TYPE_TEE
+        - PROOF_TYPE_ZKML
+        - PROOF_TYPE_HYBRID
+        - PROOF_TYPE_OPTIMISTIC
+
+    SubmitJobRequest:
+      type: object
+      required:
+        - model_hash
+        - input_hash
+      properties:
+        model_hash:
+          type: string
+          format: byte
+        input_hash:
+          type: string
+          format: byte
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        priority:
+          type: integer
+          format: uint32
+          default: 1
+        max_gas:
+          type: string
+          format: uint64
+        timeout_blocks:
+          type: integer
+          format: uint32
+        callback_url:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    SubmitJobResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+        tx_hash:
+          type: string
+        estimated_blocks:
+          type: integer
+
+    ListJobsResponse:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComputeJob'
+        pagination:
+          $ref: '#/components/schemas/PageResponse'
+
+    # ============ Seals ============
+    DigitalSeal:
+      type: object
+      required:
+        - id
+        - job_id
+        - model_hash
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+        job_id:
+          type: string
+        model_hash:
+          type: string
+          format: byte
+        input_commitment:
+          type: string
+          format: byte
+        output_commitment:
+          type: string
+          format: byte
+        model_commitment:
+          type: string
+          format: byte
+        status:
+          $ref: '#/components/schemas/SealStatus'
+        requester:
+          type: string
+        validators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorAttestation'
+        tee_attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+        zkml_proof:
+          $ref: '#/components/schemas/ZKMLProof'
+        regulatory_info:
+          $ref: '#/components/schemas/RegulatoryInfo'
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: string
+          format: date-time
+        revocation_reason:
+          type: string
+
+    SealStatus:
+      type: string
+      enum:
+        - SEAL_STATUS_UNSPECIFIED
+        - SEAL_STATUS_ACTIVE
+        - SEAL_STATUS_REVOKED
+        - SEAL_STATUS_EXPIRED
+        - SEAL_STATUS_SUPERSEDED
+
+    ValidatorAttestation:
+      type: object
+      properties:
+        validator_address:
+          type: string
+        signature:
+          type: string
+          format: byte
+        timestamp:
+          type: string
+          format: date-time
+        voting_power:
+          type: string
+          format: uint64
+
+    TEEAttestation:
+      type: object
+      properties:
+        platform:
+          $ref: '#/components/schemas/TEEPlatform'
+        quote:
+          type: string
+          format: byte
+        enclave_hash:
+          type: string
+          format: byte
+        timestamp:
+          type: string
+          format: date-time
+        pcr_values:
+          type: object
+          additionalProperties:
+            type: string
+            format: byte
+
+    TEEPlatform:
+      type: string
+      enum:
+        - TEE_PLATFORM_UNSPECIFIED
+        - TEE_PLATFORM_INTEL_SGX
+        - TEE_PLATFORM_AMD_SEV
+        - TEE_PLATFORM_AWS_NITRO
+        - TEE_PLATFORM_ARM_TRUSTZONE
+
+    ZKMLProof:
+      type: object
+      properties:
+        proof_system:
+          $ref: '#/components/schemas/ProofSystem'
+        proof:
+          type: string
+          format: byte
+        public_inputs:
+          type: array
+          items:
+            type: string
+            format: byte
+        verifying_key_hash:
+          type: string
+          format: byte
+
+    ProofSystem:
+      type: string
+      enum:
+        - PROOF_SYSTEM_UNSPECIFIED
+        - PROOF_SYSTEM_GROTH16
+        - PROOF_SYSTEM_PLONK
+        - PROOF_SYSTEM_STARK
+        - PROOF_SYSTEM_EZKL
+
+    RegulatoryInfo:
+      type: object
+      properties:
+        jurisdiction:
+          type: string
+        compliance_frameworks:
+          type: array
+          items:
+            type: string
+        data_classification:
+          type: string
+        retention_period:
+          type: string
+        audit_trail_hash:
+          type: string
+          format: byte
+
+    CreateSealRequest:
+      type: object
+      required:
+        - job_id
+      properties:
+        job_id:
+          type: string
+        regulatory_info:
+          $ref: '#/components/schemas/RegulatoryInfo'
+        expires_in_blocks:
+          type: integer
+          format: uint64
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    CreateSealResponse:
+      type: object
+      properties:
+        seal_id:
+          type: string
+        tx_hash:
+          type: string
+
+    ListSealsResponse:
+      type: object
+      properties:
+        seals:
+          type: array
+          items:
+            $ref: '#/components/schemas/DigitalSeal'
+        pagination:
+          $ref: '#/components/schemas/PageResponse'
+
+    VerifySealResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        seal:
+          $ref: '#/components/schemas/DigitalSeal'
+        verification_details:
+          type: object
+          properties:
+            signature_valid:
+              type: boolean
+            tee_attestation_valid:
+              type: boolean
+            zkml_proof_valid:
+              type: boolean
+            not_expired:
+              type: boolean
+            not_revoked:
+              type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+
+    RevokeSealRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+
+    # ============ Models ============
+    RegisteredModel:
+      type: object
+      properties:
+        model_hash:
+          type: string
+          format: byte
+        name:
+          type: string
+        owner:
+          type: string
+        architecture:
+          type: string
+        version:
+          type: string
+        category:
+          $ref: '#/components/schemas/UtilityCategory'
+        input_schema:
+          type: string
+        output_schema:
+          type: string
+        storage_uri:
+          type: string
+          format: uri
+        registered_at:
+          type: string
+          format: date-time
+        verified:
+          type: boolean
+        total_jobs:
+          type: string
+          format: uint64
+
+    UtilityCategory:
+      type: string
+      enum:
+        - UTILITY_CATEGORY_UNSPECIFIED
+        - UTILITY_CATEGORY_MEDICAL
+        - UTILITY_CATEGORY_SCIENTIFIC
+        - UTILITY_CATEGORY_FINANCIAL
+        - UTILITY_CATEGORY_LEGAL
+        - UTILITY_CATEGORY_EDUCATIONAL
+        - UTILITY_CATEGORY_ENVIRONMENTAL
+        - UTILITY_CATEGORY_GENERAL
+
+    RegisterModelRequest:
+      type: object
+      required:
+        - model_hash
+        - name
+      properties:
+        model_hash:
+          type: string
+          format: byte
+        name:
+          type: string
+        architecture:
+          type: string
+        version:
+          type: string
+        category:
+          $ref: '#/components/schemas/UtilityCategory'
+        input_schema:
+          type: string
+        output_schema:
+          type: string
+        storage_uri:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    RegisterModelResponse:
+      type: object
+      properties:
+        model_hash:
+          type: string
+        tx_hash:
+          type: string
+
+    ListModelsResponse:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegisteredModel'
+        pagination:
+          $ref: '#/components/schemas/PageResponse'
+
+    # ============ Validators ============
+    ValidatorStats:
+      type: object
+      properties:
+        address:
+          type: string
+        jobs_completed:
+          type: string
+          format: uint64
+        jobs_failed:
+          type: string
+          format: uint64
+        average_latency_ms:
+          type: string
+          format: uint64
+        uptime_percentage:
+          type: number
+          format: double
+        reputation_score:
+          type: number
+          format: double
+        total_rewards:
+          type: string
+        slashing_events:
+          type: integer
+        hardware_capabilities:
+          $ref: '#/components/schemas/HardwareCapability'
+
+    HardwareCapability:
+      type: object
+      properties:
+        tee_platforms:
+          type: array
+          items:
+            $ref: '#/components/schemas/TEEPlatform'
+        zkml_supported:
+          type: boolean
+        max_model_size_mb:
+          type: integer
+          format: uint64
+        gpu_memory_gb:
+          type: integer
+        cpu_cores:
+          type: integer
+
+    RegisterCapabilityRequest:
+      type: object
+      properties:
+        hardware_capabilities:
+          $ref: '#/components/schemas/HardwareCapability'
+        attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+
+    ListValidatorsResponse:
+      type: object
+      properties:
+        validators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorStats'
+        pagination:
+          $ref: '#/components/schemas/PageResponse'
+
+    # ============ Verification ============
+    VerificationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        output_hash:
+          type: string
+          format: byte
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        tee_attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+        zkml_proof:
+          $ref: '#/components/schemas/ZKMLProof'
+        consensus_validators:
+          type: integer
+        total_voting_power:
+          type: string
+          format: uint64
+
+    VerifyZKProofRequest:
+      type: object
+      required:
+        - proof
+        - public_inputs
+        - verifying_key_hash
+      properties:
+        proof:
+          type: string
+          format: byte
+        public_inputs:
+          type: array
+          items:
+            type: string
+            format: byte
+        verifying_key_hash:
+          type: string
+          format: byte
+        proof_system:
+          $ref: '#/components/schemas/ProofSystem'
+
+    VerifyZKProofResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        verification_time_ms:
+          type: integer
+        error:
+          type: string
+
+    VerifyTEEAttestationRequest:
+      type: object
+      required:
+        - attestation
+      properties:
+        attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+        expected_enclave_hash:
+          type: string
+          format: byte
+
+    VerifyTEEAttestationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        platform:
+          $ref: '#/components/schemas/TEEPlatform'
+        enclave_hash:
+          type: string
+          format: byte
+        timestamp:
+          type: string
+          format: date-time
+        error:
+          type: string
+
+    # ============ Network ============
+    UsefulWorkStats:
+      type: object
+      properties:
+        total_jobs:
+          type: string
+          format: uint64
+        completed_jobs:
+          type: string
+          format: uint64
+        failed_jobs:
+          type: string
+          format: uint64
+        total_useful_work_units:
+          type: string
+        jobs_by_category:
+          type: object
+          additionalProperties:
+            type: string
+            format: uint64
+        active_validators:
+          type: integer
+        average_job_latency_ms:
+          type: string
+          format: uint64
+
+    EpochStats:
+      type: object
+      properties:
+        epoch:
+          type: string
+          format: uint64
+        start_block:
+          type: string
+          format: uint64
+        end_block:
+          type: string
+          format: uint64
+        total_rewards:
+          type: string
+        jobs_completed:
+          type: string
+          format: uint64
+        validator_count:
+          type: integer
+        useful_work_units:
+          type: string
+
+    NodeInfo:
+      type: object
+      properties:
+        default_node_id:
+          type: string
+        listen_addr:
+          type: string
+        network:
+          type: string
+        version:
+          type: string
+        moniker:
+          type: string
+
+    Block:
+      type: object
+      properties:
+        block_id:
+          type: object
+          properties:
+            hash:
+              type: string
+        block:
+          type: object
+          properties:
+            header:
+              type: object
+              properties:
+                height:
+                  type: string
+                time:
+                  type: string
+                  format: date-time
+                chain_id:
+                  type: string
+
+    # ============ Common ============
+    PageResponse:
+      type: object
+      properties:
+        next_key:
+          type: string
+          format: byte
+        total:
+          type: string
+          format: uint64
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+
+  parameters:
+    Pagination:
+      name: pagination
+      in: query
+      schema:
+        type: object
+        properties:
+          key:
+            type: string
+            format: byte
+          offset:
+            type: string
+            format: uint64
+          limit:
+            type: string
+            format: uint64
+          count_total:
+            type: boolean
+          reverse:
+            type: boolean
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []

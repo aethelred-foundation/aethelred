@@ -1,0 +1,4 @@
+error: failed to parse manifest at `/Users/rameshtamilselvan/Downloads/aethelred/tools/testnet/Cargo.toml`
+
+Caused by:
+  can't find `faucet_bench` bench at `benches/faucet_bench.rs` or `benches/faucet_bench/main.rs`. Please specify bench.path if you want to use a non-default path.

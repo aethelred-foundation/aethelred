@@ -1,0 +1,23 @@
+{
+  "aws_sagemaker": {
+    "tree_based_cost_per_100": 0.01,
+    "neural_network_cost_per_100": 0.02,
+    "transformer_cost_per_100": 0.5,
+    "default_cost_per_100": 0.01,
+    "tee_overhead_multiplier": 0.3
+  },
+  "azure_ml": {
+    "tree_based_cost_per_100": 0.012,
+    "neural_network_cost_per_100": 0.022,
+    "transformer_cost_per_100": 0.55,
+    "default_cost_per_100": 0.012,
+    "tee_overhead_multiplier": 0.0
+  },
+  "gcp_vertex": {
+    "tree_based_cost_per_100": 0.009,
+    "neural_network_cost_per_100": 0.018,
+    "transformer_cost_per_100": 0.45,
+    "default_cost_per_100": 0.009,
+    "tee_overhead_multiplier": 0.0
+  }
+}

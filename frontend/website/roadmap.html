@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roadmap | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-950: #450a0a; --red-900: #7F1D1D; --red-800: #991B1B; --red-700: #B91C1C;
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --yellow-500: #EAB308; --blue-500: #3B82F6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); overflow-x: hidden; line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; position: relative; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 0%, rgba(220, 38, 38, 0.15) 0%, transparent 60%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; margin: 0 4px; display: inline; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Timeline */
+    .timeline { position: relative; padding: 40px 0; }
+    .timeline::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, var(--red-600) 0%, var(--red-900) 100%); transform: translateX(-50%); border-radius: 2px; }
+    
+    .timeline-item { display: flex; justify-content: flex-end; padding-right: calc(50% + 40px); margin-bottom: 60px; position: relative; }
+    .timeline-item:nth-child(even) { justify-content: flex-start; padding-right: 0; padding-left: calc(50% + 40px); }
+    
+    .timeline-marker { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); width: 24px; height: 24px; background: var(--dark-950); border: 4px solid var(--red-600); border-radius: 50%; z-index: 10; }
+    .timeline-marker.completed { background: var(--green-500); border-color: var(--green-500); }
+    .timeline-marker.active { background: var(--red-600); border-color: var(--red-400); box-shadow: 0 0 20px var(--red-600); animation: pulse 2s infinite; }
+    .timeline-marker.upcoming { background: var(--dark-700); border-color: var(--dark-500); }
+    
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 20px var(--red-600); } 50% { box-shadow: 0 0 40px var(--red-600); } }
+    
+    .timeline-content { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; max-width: 500px; transition: all 0.3s; }
+    .timeline-content:hover { border-color: var(--red-700); transform: translateY(-4px); }
+    
+    .timeline-date { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .timeline-status { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .status-completed { background: rgba(34, 197, 94, 0.2); color: var(--green-500); }
+    .status-active { background: rgba(220, 38, 38, 0.2); color: var(--red-500); }
+    .status-upcoming { background: rgba(156, 163, 175, 0.2); color: var(--gray-400); }
+    
+    .timeline-content h3 { font-size: 22px; font-weight: 600; margin-bottom: 12px; }
+    .timeline-content p { font-size: 14px; color: var(--gray-400); margin-bottom: 16px; }
+    
+    .timeline-features { list-style: none; }
+    .timeline-features li { font-size: 13px; color: var(--gray-300); padding: 6px 0; padding-left: 20px; position: relative; }
+    .timeline-features li::before { content: '→'; position: absolute; left: 0; color: var(--red-500); }
+
+    /* Current Phase */
+    .current-phase { background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%); border: 1px solid var(--red-800); border-radius: 20px; padding: 40px; margin: 60px 0; }
+    .current-phase-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+    .current-phase h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; }
+    .phase-progress { display: flex; align-items: center; gap: 16px; }
+    .progress-bar { width: 200px; height: 8px; background: var(--dark-700); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--red-600), var(--red-400)); border-radius: 4px; transition: width 0.5s; }
+    .progress-text { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--red-500); }
+    
+    .milestones-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .milestone-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 20px; text-align: center; }
+    .milestone-card.done { border-color: var(--green-500); }
+    .milestone-card.active { border-color: var(--red-500); background: rgba(220, 38, 38, 0.1); }
+    .milestone-icon { font-size: 24px; margin-bottom: 12px; }
+    .milestone-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .milestone-card p { font-size: 12px; color: var(--gray-400); }
+
+    /* Vision Section */
+    .vision-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .vision-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; transition: all 0.3s; }
+    .vision-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .vision-icon { width: 60px; height: 60px; background: rgba(220, 38, 38, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .vision-icon svg { width: 30px; height: 30px; color: var(--red-500); }
+    .vision-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    .vision-card p { font-size: 14px; color: var(--gray-400); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); line-height: 1.7; margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; transition: color 0.3s; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { display: flex; justify-content: space-between; padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) {
+      .timeline::before { left: 20px; }
+      .timeline-item, .timeline-item:nth-child(even) { padding-left: 60px; padding-right: 0; justify-content: flex-start; }
+      .timeline-marker { left: 20px; }
+      .milestones-grid { grid-template-columns: repeat(2, 1fr); }
+      .vision-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .page-hero h1 { font-size: 36px; }
+      .milestones-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="glossary.html">Glossary</a>
+        <a href="team.html">Team</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        Development Roadmap
+      </div>
+      <h1>The Aethelred <span class="gradient-text">Roadmap</span></h1>
+      <p class="subtitle">Our vision for building the world's most trusted verifiable AI infrastructure. Follow our journey from genesis to global scale.</p>
+    </div>
+  </section>
+
+  <!-- Current Phase -->
+  <section class="section">
+    <div class="container">
+      <div class="current-phase">
+        <div class="current-phase-header">
+          <div>
+            <span class="section-label">Current Phase</span>
+            <h2>Phase 2: Mainnet Alpha</h2>
+          </div>
+          <div class="phase-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 67%;"></div>
+            </div>
+            <span class="progress-text">67% Complete</span>
+          </div>
+        </div>
+        
+        <div class="milestones-grid">
+          <div class="milestone-card done">
+            <div class="milestone-icon">✓</div>
+            <h4>Core Protocol</h4>
+            <p>Proof-of-Compute consensus deployed</p>
+          </div>
+          <div class="milestone-card done">
+            <div class="milestone-icon">✓</div>
+            <h4>Digital Seal v2</h4>
+            <p>Enhanced cryptographic sealing</p>
+          </div>
+          <div class="milestone-card active">
+            <div class="milestone-icon">⚡</div>
+            <h4>Validator Network</h4>
+            <p>Expanding to 500+ validators</p>
+          </div>
+          <div class="milestone-card">
+            <div class="milestone-icon">○</div>
+            <h4>Enterprise APIs</h4>
+            <p>Production-ready integrations</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timeline -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Development Timeline</span>
+        <h2 class="section-title">Building the Future of Verifiable AI</h2>
+        <p class="section-desc">From concept to global infrastructure — our roadmap to trustworthy artificial intelligence.</p>
+      </div>
+
+      <div class="timeline">
+        <!-- Phase 0 -->
+        <div class="timeline-item">
+          <div class="timeline-marker completed"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              Q1-Q2 2024
+              <span class="timeline-status status-completed">Completed</span>
+            </div>
+            <h3>Phase 0: Genesis</h3>
+            <p>Foundation and core research phase establishing the theoretical groundwork for verifiable AI computation.</p>
+            <ul class="timeline-features">
+              <li>Whitepaper publication and peer review</li>
+              <li>Core cryptographic primitives research</li>
+              <li>Initial team formation and advisory board</li>
+              <li>Seed funding round completion ($12M)</li>
+              <li>Patent filings for Digital Seal technology</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Phase 1 -->
+        <div class="timeline-item">
+          <div class="timeline-marker completed"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              Q3-Q4 2024
+              <span class="timeline-status status-completed">Completed</span>
+            </div>
+            <h3>Phase 1: Testnet Launch</h3>
+            <p>First public testnet deployment with core verification capabilities and developer tools.</p>
+            <ul class="timeline-features">
+              <li>Testnet deployment across 12 regions</li>
+              <li>Proof-of-Compute consensus v1</li>
+              <li>Digital Seal engine implementation</li>
+              <li>SDK release (Python, JavaScript, Rust)</li>
+              <li>Developer documentation and tutorials</li>
+              <li>Bug bounty program launch</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Phase 2 -->
+        <div class="timeline-item">
+          <div class="timeline-marker active"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              Q1-Q2 2025
+              <span class="timeline-status status-active">In Progress</span>
+            </div>
+            <h3>Phase 2: Mainnet Alpha</h3>
+            <p>Production-ready mainnet with enterprise features and expanded validator network.</p>
+            <ul class="timeline-features">
+              <li>Mainnet alpha launch (live)</li>
+              <li>Validator staking mechanism</li>
+              <li>Enterprise corridor infrastructure</li>
+              <li>Spatial verification module</li>
+              <li>AETHEL token economics finalization</li>
+              <li>First consortium partnerships</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Phase 3 -->
+        <div class="timeline-item">
+          <div class="timeline-marker upcoming"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              Q3-Q4 2025
+              <span class="timeline-status status-upcoming">Upcoming</span>
+            </div>
+            <h3>Phase 3: Mainnet Beta</h3>
+            <p>Full mainnet deployment with governance and cross-chain interoperability.</p>
+            <ul class="timeline-features">
+              <li>Mainnet beta with full features</li>
+              <li>DAO governance launch</li>
+              <li>Cross-chain bridge deployment</li>
+              <li>Zero-knowledge proof optimization</li>
+              <li>Mobile SDK release</li>
+              <li>Regulatory compliance certifications</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Phase 4 -->
+        <div class="timeline-item">
+          <div class="timeline-marker upcoming"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              2026
+              <span class="timeline-status status-upcoming">Planned</span>
+            </div>
+            <h3>Phase 4: Global Scale</h3>
+            <p>Worldwide deployment with industry-specific solutions and advanced AI verification.</p>
+            <ul class="timeline-features">
+              <li>1000+ validator network</li>
+              <li>Industry-specific verification modules</li>
+              <li>Sovereign deployment options</li>
+              <li>Advanced federated learning support</li>
+              <li>Real-time inference verification</li>
+              <li>Quantum-resistant cryptography upgrade</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Phase 5 -->
+        <div class="timeline-item">
+          <div class="timeline-marker upcoming"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">
+              2027+
+              <span class="timeline-status status-upcoming">Vision</span>
+            </div>
+            <h3>Phase 5: AGI Readiness</h3>
+            <p>Infrastructure prepared for advanced AI systems with comprehensive verification capabilities.</p>
+            <ul class="timeline-features">
+              <li>Multi-modal AI verification</li>
+              <li>Autonomous agent attestation</li>
+              <li>Global regulatory framework alignment</li>
+              <li>Decentralized AI marketplace</li>
+              <li>Post-quantum security implementation</li>
+              <li>Universal AI verification standard</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vision -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Long-Term Vision</span>
+        <h2 class="section-title">Where We're Heading</h2>
+        <p class="section-desc">Our ultimate goal is to make AI verification as ubiquitous as SSL certificates are for the web.</p>
+      </div>
+
+      <div class="vision-grid">
+        <div class="vision-card">
+          <div class="vision-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3>Global Standard</h3>
+          <p>Establish Aethelred as the universal standard for AI verification, adopted by enterprises and governments worldwide.</p>
+        </div>
+
+        <div class="vision-card">
+          <div class="vision-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>Trust Infrastructure</h3>
+          <p>Build the foundational trust layer that enables safe deployment of increasingly powerful AI systems.</p>
+        </div>
+
+        <div class="vision-card">
+          <div class="vision-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <h3>Decentralized Governance</h3>
+          <p>Transition to fully community-governed protocol ensuring the network serves humanity's interests.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence. A Zhyra Holdings portfolio company.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">Zero-Knowledge Proofs</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="computer:///mnt/user-data/outputs/sdk-tools.html">SDK & Tools</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Aethel Wallets</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+            <a href="computer:///mnt/user-data/outputs/enterprise-corridors.html">Enterprise</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+            <a href="comparison.html">Why Aethelred</a>
+            <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

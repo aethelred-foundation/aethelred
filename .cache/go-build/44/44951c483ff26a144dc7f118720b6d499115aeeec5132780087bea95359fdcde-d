@@ -1,0 +1,10 @@
+=== RUN   TestHandleExecuteFailClosedWhenSimulationDisabled
+--- PASS: TestHandleExecuteFailClosedWhenSimulationDisabled (0.00s)
+=== RUN   TestSimulatedEnclaveExecuteAndVerify
+--- PASS: TestSimulatedEnclaveExecuteAndVerify (0.00s)
+=== RUN   TestSimulatedAppExecute
+--- PASS: TestSimulatedAppExecute (0.00s)
+=== RUN   TestHandleExecuteRateLimit
+--- PASS: TestHandleExecuteRateLimit (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/services/tee-worker/executor	5.645s

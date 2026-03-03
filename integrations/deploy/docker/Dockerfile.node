@@ -1,0 +1,151 @@
+# =============================================================================
+# AETHELRED NODE - Multi-Stage Production Dockerfile
+# =============================================================================
+#
+# Build: docker build -f Dockerfile.node -t aethelred/node:latest .
+#
+# Features:
+#   - Multi-stage build for minimal image size
+#   - Non-root user for security
+#   - Health check endpoint
+#   - Signal handling for graceful shutdown
+#   - Support for all node roles (validator, compute, bootnode)
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build Environment
+# -----------------------------------------------------------------------------
+FROM rust:1.75-bookworm AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    clang \
+    llvm \
+    libssl-dev \
+    pkg-config \
+    protobuf-compiler \
+    libprotobuf-dev \
+    librocksdb-dev \
+    libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set build environment
+ENV CARGO_HOME=/usr/local/cargo
+ENV RUSTFLAGS="-C target-cpu=native"
+ENV CARGO_INCREMENTAL=0
+
+WORKDIR /build
+
+# Copy Cargo files first for dependency caching
+COPY Cargo.toml Cargo.lock ./
+COPY crates/core/Cargo.toml ./crates/core/
+COPY crates/consensus/Cargo.toml ./crates/consensus/
+COPY crates/vm/Cargo.toml ./crates/vm/
+COPY crates/network/Cargo.toml ./crates/network/
+COPY crates/storage/Cargo.toml ./crates/storage/
+COPY crates/rpc/Cargo.toml ./crates/rpc/
+COPY crates/node/Cargo.toml ./crates/node/
+
+# Create dummy source files for dependency compilation
+RUN mkdir -p crates/core/src && echo "fn main() {}" > crates/core/src/lib.rs \
+    && mkdir -p crates/consensus/src && echo "fn main() {}" > crates/consensus/src/lib.rs \
+    && mkdir -p crates/vm/src && echo "fn main() {}" > crates/vm/src/lib.rs \
+    && mkdir -p crates/network/src && echo "fn main() {}" > crates/network/src/lib.rs \
+    && mkdir -p crates/storage/src && echo "fn main() {}" > crates/storage/src/lib.rs \
+    && mkdir -p crates/rpc/src && echo "fn main() {}" > crates/rpc/src/lib.rs \
+    && mkdir -p crates/node/src && echo "fn main() {}" > crates/node/src/main.rs
+
+# Build dependencies only (cached layer)
+RUN cargo build --release --features "mock-tee" 2>/dev/null || true
+
+# Remove dummy sources
+RUN rm -rf crates/*/src
+
+# Copy actual source code
+COPY crates/ ./crates/
+
+# Build the actual application
+RUN cargo build --release --features "mock-tee" -p aethelred-node \
+    && strip /build/target/release/aethelred-node
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime Environment
+# -----------------------------------------------------------------------------
+FROM debian:bookworm-slim AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    librocksdb7.8 \
+    curl \
+    jq \
+    tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user
+RUN groupadd -r aethelred && useradd -r -g aethelred aethelred
+
+# Create directories
+RUN mkdir -p /app /data /config /keys /genesis \
+    && chown -R aethelred:aethelred /app /data /config /keys /genesis
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /build/target/release/aethelred-node /app/aethelred-node
+
+# Copy default configurations
+COPY deploy/config/defaults/ /config/defaults/
+
+# Add health check script
+COPY --chmod=755 deploy/scripts/healthcheck.sh /app/healthcheck.sh
+
+# Set permissions
+RUN chmod +x /app/aethelred-node
+
+# Switch to non-root user
+USER aethelred
+
+# Environment defaults
+ENV NODE_NAME="aethelred-node"
+ENV NODE_ROLE="validator"
+ENV CHAIN_ID="aethelred-devnet-1"
+ENV DATA_DIR="/data"
+ENV CONFIG_DIR="/config"
+ENV RUST_LOG="info,aethelred=debug"
+ENV RUST_BACKTRACE="1"
+
+# Expose ports
+# P2P
+EXPOSE 30303/tcp
+EXPOSE 30303/udp
+# JSON-RPC HTTP
+EXPOSE 8545/tcp
+# JSON-RPC WebSocket
+EXPOSE 8546/tcp
+# GraphQL
+EXPOSE 8547/tcp
+# Metrics
+EXPOSE 9100/tcp
+
+# Health check
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/aethelred-node"]
+
+# Default command
+CMD ["start", "--help"]
+
+# Labels
+LABEL org.opencontainers.image.title="Aethelred Node"
+LABEL org.opencontainers.image.description="Aethelred blockchain node for verifiable AI computations"
+LABEL org.opencontainers.image.vendor="Aethelred"
+LABEL org.opencontainers.image.version="0.1.0"
+LABEL org.opencontainers.image.source="https://github.com/aethelred/aethelred"

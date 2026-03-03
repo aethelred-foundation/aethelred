@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aethel Wallets | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --orange-500: #F97316;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 70% 20%, rgba(249, 115, 22, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(249, 115, 22, 0.1); border: 1px solid var(--orange-500); border-radius: 50px; font-size: 13px; color: var(--orange-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--orange-500); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Wallet Grid */
+    .wallets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .wallet-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 30px; transition: all 0.3s; }
+    .wallet-card:hover { border-color: var(--orange-500); transform: translateY(-4px); }
+    .wallet-card.featured { border-color: var(--orange-500); background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, var(--dark-800) 100%); }
+    .wallet-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .wallet-logo { width: 60px; height: 60px; background: var(--dark-700); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .wallet-info h3 { font-size: 20px; margin-bottom: 4px; }
+    .wallet-info .type { font-size: 12px; color: var(--orange-500); font-family: 'Orbitron', monospace; }
+    .wallet-card p { font-size: 14px; color: var(--gray-400); margin-bottom: 20px; }
+    .wallet-features { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .wallet-feature { padding: 4px 10px; background: var(--dark-700); border-radius: 4px; font-size: 11px; color: var(--gray-300); }
+    .wallet-platforms { display: flex; gap: 8px; }
+    .platform-badge { padding: 6px 12px; background: var(--dark-600); border-radius: 6px; font-size: 12px; color: var(--gray-300); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; font-size: 14px; }
+    .btn-primary { background: var(--orange-500); color: white; }
+    .btn-primary:hover { background: #EA580C; }
+
+    /* What is a Wallet */
+    .explainer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .explainer-content h3 { font-size: 32px; margin-bottom: 20px; }
+    .explainer-content p { font-size: 16px; color: var(--gray-400); margin-bottom: 16px; }
+    .wallet-functions { list-style: none; margin-top: 24px; }
+    .wallet-functions li { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 15px; }
+    .wallet-functions li svg { width: 24px; height: 24px; color: var(--orange-500); flex-shrink: 0; }
+    
+    .wallet-visual { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; }
+    .wallet-mockup { background: var(--dark-900); border-radius: 16px; padding: 24px; }
+    .mockup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--dark-600); }
+    .mockup-balance { text-align: center; margin-bottom: 24px; }
+    .mockup-balance .label { font-size: 12px; color: var(--gray-400); margin-bottom: 8px; }
+    .mockup-balance .amount { font-family: 'Orbitron', monospace; font-size: 36px; color: var(--orange-500); }
+    .mockup-actions { display: flex; gap: 12px; justify-content: center; }
+    .mockup-btn { padding: 12px 24px; background: var(--dark-700); border-radius: 8px; font-size: 14px; color: var(--gray-300); }
+    .mockup-btn.primary { background: var(--orange-500); color: white; }
+
+    /* Security Tips */
+    .security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .security-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 24px; text-align: center; }
+    .security-icon { font-size: 32px; margin-bottom: 12px; }
+    .security-card h4 { font-size: 16px; margin-bottom: 8px; }
+    .security-card p { font-size: 13px; color: var(--gray-400); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .wallets-grid { grid-template-columns: 1fr; } .explainer-grid { grid-template-columns: 1fr; } .security-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .security-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+        <a href="aethel-token.html">AETHEL</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 10H2"/><path d="M6 14h4"/></svg>
+        Getting Started
+      </div>
+      <h1>Aethel <span class="gradient-text">Wallets</span></h1>
+      <p class="subtitle">Manage your AETHEL tokens, interact with sealed computations, and access the Aethelred network. Choose a wallet that fits your needs.</p>
+    </div>
+  </section>
+
+  <!-- What is a Wallet -->
+  <section class="section">
+    <div class="container">
+      <div class="explainer-grid">
+        <div class="explainer-content">
+          <h3>What is an Aethel Wallet?</h3>
+          <p>An Aethel wallet is your gateway to the Aethelred network. It's a digital tool that lets you store AETHEL tokens, sign transactions, manage sealed computation credentials, and interact with smart contracts.</p>
+          <p>Unlike traditional crypto wallets, Aethel wallets also handle verification credentials — cryptographic certificates that prove you have access to specific sealed AI computations.</p>
+          <ul class="wallet-functions">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1"/></svg>
+              Hold and transfer AETHEL tokens
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              Store verification credentials
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7h3a5 5 0 015 5 5 5 0 01-5 5h-3m-6 0H6a5 5 0 01-5-5 5 5 0 015-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Connect to dApps and smart contracts
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+              Participate in governance voting
+            </li>
+          </ul>
+        </div>
+        <div class="wallet-visual">
+          <div class="wallet-mockup">
+            <div class="mockup-header">
+              <span style="color: var(--gray-400); font-size: 14px;">Aethel Wallet</span>
+              <span style="color: var(--green-500); font-size: 12px;">● Connected</span>
+            </div>
+            <div class="mockup-balance">
+              <div class="label">Total Balance</div>
+              <div class="amount">12,847.50</div>
+              <div class="label" style="margin-top: 4px;">AETHEL</div>
+            </div>
+            <div class="mockup-actions">
+              <div class="mockup-btn primary">Send</div>
+              <div class="mockup-btn">Receive</div>
+              <div class="mockup-btn">Stake</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wallet Options -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Choose Your Wallet</span>
+        <h2 class="section-title">Supported Wallets</h2>
+        <p class="section-desc">Pick the wallet that matches your needs — from browser extensions to hardware security.</p>
+      </div>
+
+      <div class="wallets-grid">
+        <div class="wallet-card featured">
+          <div class="wallet-header">
+            <div class="wallet-logo">🔷</div>
+            <div class="wallet-info">
+              <h3>Aethel Wallet</h3>
+              <span class="type">OFFICIAL</span>
+            </div>
+          </div>
+          <p>The official wallet built specifically for Aethelred. Full support for all network features including verification credentials and staking.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">Verification Credentials</span>
+            <span class="wallet-feature">Staking</span>
+            <span class="wallet-feature">dApp Browser</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">Chrome</span>
+            <span class="platform-badge">Firefox</span>
+            <span class="platform-badge">iOS</span>
+            <span class="platform-badge">Android</span>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-header">
+            <div class="wallet-logo">🦊</div>
+            <div class="wallet-info">
+              <h3>MetaMask</h3>
+              <span class="type">BROWSER EXTENSION</span>
+            </div>
+          </div>
+          <p>Popular Ethereum wallet with Aethelred network support. Great for users already familiar with MetaMask.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">EVM Compatible</span>
+            <span class="wallet-feature">Wide Support</span>
+            <span class="wallet-feature">Hardware Wallet</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">Chrome</span>
+            <span class="platform-badge">Firefox</span>
+            <span class="platform-badge">Mobile</span>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-header">
+            <div class="wallet-logo">🔐</div>
+            <div class="wallet-info">
+              <h3>Ledger</h3>
+              <span class="type">HARDWARE</span>
+            </div>
+          </div>
+          <p>Hardware wallet for maximum security. Keep your private keys offline while interacting with the network.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">Cold Storage</span>
+            <span class="wallet-feature">Secure Element</span>
+            <span class="wallet-feature">Multi-Asset</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">Nano S</span>
+            <span class="platform-badge">Nano X</span>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-header">
+            <div class="wallet-logo">🌈</div>
+            <div class="wallet-info">
+              <h3>Rainbow</h3>
+              <span class="type">MOBILE</span>
+            </div>
+          </div>
+          <p>Beautiful mobile-first wallet with excellent UX. Perfect for managing AETHEL on the go.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">Mobile First</span>
+            <span class="wallet-feature">Simple UX</span>
+            <span class="wallet-feature">NFT Support</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">iOS</span>
+            <span class="platform-badge">Android</span>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-header">
+            <div class="wallet-logo">⚡</div>
+            <div class="wallet-info">
+              <h3>WalletConnect</h3>
+              <span class="type">PROTOCOL</span>
+            </div>
+          </div>
+          <p>Connect any WalletConnect-compatible wallet to Aethelred dApps securely via QR code.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">Universal</span>
+            <span class="wallet-feature">QR Connect</span>
+            <span class="wallet-feature">200+ Wallets</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">Any Wallet</span>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-header">
+            <div class="wallet-logo">🏢</div>
+            <div class="wallet-info">
+              <h3>Enterprise Vault</h3>
+              <span class="type">INSTITUTIONAL</span>
+            </div>
+          </div>
+          <p>Multi-signature custody solution for enterprises. Role-based access control and audit logging.</p>
+          <div class="wallet-features">
+            <span class="wallet-feature">Multi-Sig</span>
+            <span class="wallet-feature">RBAC</span>
+            <span class="wallet-feature">Audit Logs</span>
+          </div>
+          <div class="wallet-platforms">
+            <span class="platform-badge">Web</span>
+            <span class="platform-badge">API</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security Tips -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Stay Safe</span>
+        <h2 class="section-title">Wallet Security Tips</h2>
+        <p class="section-desc">Protect your assets with these essential security practices.</p>
+      </div>
+
+      <div class="security-grid">
+        <div class="security-card">
+          <div class="security-icon">🔑</div>
+          <h4>Backup Your Seed</h4>
+          <p>Write down your recovery phrase and store it securely offline. Never share it with anyone.</p>
+        </div>
+        <div class="security-card">
+          <div class="security-icon">🔒</div>
+          <h4>Use Hardware Wallets</h4>
+          <p>For large holdings, use a hardware wallet to keep private keys completely offline.</p>
+        </div>
+        <div class="security-card">
+          <div class="security-icon">🔍</div>
+          <h4>Verify Transactions</h4>
+          <p>Always double-check addresses and amounts before signing any transaction.</p>
+        </div>
+        <div class="security-card">
+          <div class="security-icon">🚫</div>
+          <h4>Beware of Scams</h4>
+          <p>Aethelred will never ask for your seed phrase. Report suspicious messages.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="comparison.html">Why Aethelred</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

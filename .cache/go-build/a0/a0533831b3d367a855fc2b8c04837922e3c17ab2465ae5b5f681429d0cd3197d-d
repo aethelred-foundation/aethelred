@@ -1,0 +1,3 @@
+./amino_msg.go
+./codec.go
+./doc.go

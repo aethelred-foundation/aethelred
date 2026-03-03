@@ -1,0 +1,116 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "aethelred"
+version = "2.0.0"
+description = "Aethelred Sovereign AI Platform - Python SDK"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Aethelred Team", email = "dev@aethelred.io" }
+]
+maintainers = [
+    { name = "Aethelred Team", email = "dev@aethelred.io" }
+]
+keywords = [
+    "blockchain",
+    "ai",
+    "machine-learning",
+    "tee",
+    "sovereign",
+    "compliance",
+    "gdpr",
+    "hipaa",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security :: Cryptography",
+    "Typing :: Typed",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.21.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "sphinx>=6.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+]
+torch = [
+    "torch>=2.0.0",
+]
+tensorflow = [
+    "tensorflow>=2.12.0",
+]
+jax = [
+    "jax>=0.4.0",
+    "jaxlib>=0.4.0",
+]
+all = [
+    "aethelred[dev,torch]",
+]
+
+[project.urls]
+Homepage = "https://aethelred.io"
+Documentation = "https://docs.aethelred.io/python"
+Repository = "https://github.com/aethelred/sdk-py"
+Changelog = "https://github.com/aethelred/sdk-py/blob/main/CHANGELOG.md"
+
+[project.scripts]
+aethelred-py = "aethelred.cli:main"
+
+[tool.maturin]
+python-source = "python"
+module-name = "aethelred._core"
+features = ["pyo3/extension-module"]
+strip = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+target-version = "py38"
+
+[tool.ruff.isort]
+known-first-party = ["aethelred"]

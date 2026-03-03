@@ -1,0 +1,21 @@
+name: Go SDK GPU Integration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gpu-integration:
+    name: GPU Hardware Integration
+    runs-on: [self-hosted, linux, x64, gpu]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: sdk/go/go.sum
+      - name: Run GPU integration test
+        working-directory: sdk/go
+        run: |
+          AETH_SDK_RUN_GPU_INTEGRATION=1 \
+          AETH_SDK_REQUIRE_NATIVE_GPU=1 \
+          go test ./pkg/runtime -run TestGPUHardwareProbeIntegration -tags aethelred_gpu_native -v

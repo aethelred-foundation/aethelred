@@ -1,0 +1,199 @@
+{
+  "Sovereign Function": {
+    "prefix": ["@sovereign", "sovereign", "aeth-func"],
+    "body": [
+      "@sovereign(",
+      "    hardware=Hardware.${1|TEE_REQUIRED,TEE_PREFERRED,INTEL_SGX,AMD_SEV,AWS_NITRO,NVIDIA_H100|},",
+      "    compliance=${2|Compliance.GDPR,Compliance.HIPAA,Compliance.UAE_DATA_RESIDENCY,Compliance.PIPL|},",
+      ")",
+      "def ${3:function_name}(${4:data: SovereignData})${5: -> ${6:SovereignData}}:",
+      "    \"\"\"${7:Sovereign function description.}\"\"\"",
+      "    ${0:pass}"
+    ],
+    "description": "Create a sovereign function with hardware and compliance requirements"
+  },
+  "Sovereign Function Simple": {
+    "prefix": ["@sovereign-simple", "sov-simple"],
+    "body": [
+      "@sovereign(hardware=Hardware.${1|TEE_REQUIRED,TEE_PREFERRED,AWS_NITRO|})",
+      "def ${2:function_name}(${3:data}):",
+      "    ${0:pass}"
+    ],
+    "description": "Create a simple sovereign function"
+  },
+  "Sovereign Data": {
+    "prefix": ["SovereignData", "sov-data"],
+    "body": [
+      "SovereignData(",
+      "    data=${1:data_bytes},",
+      "    jurisdiction=Jurisdiction.${2|UAE,EU,US,GLOBAL|},",
+      "    classification=${3|DataClassification.SENSITIVE,DataClassification.RESTRICTED,DataClassification.CONFIDENTIAL|},",
+      ")"
+    ],
+    "description": "Create SovereignData with jurisdiction binding"
+  },
+  "Sovereign Tensor": {
+    "prefix": ["SovereignTensor", "sov-tensor"],
+    "body": [
+      "SovereignTensor(",
+      "    data=${1:np.array([...])},",
+      "    jurisdiction=Jurisdiction.${2|UAE,EU,US,GLOBAL|},",
+      "    hardware=Hardware.${3|TEE_REQUIRED,TEE_PREFERRED,AWS_NITRO,NVIDIA_H100|},",
+      "    classification=DataClassification.${4|SENSITIVE,RESTRICTED,CONFIDENTIAL|},",
+      ")"
+    ],
+    "description": "Create SovereignTensor with full sovereignty settings"
+  },
+  "Aethelred Import": {
+    "prefix": ["import-aethelred", "aeth-import"],
+    "body": [
+      "from aethelred import (",
+      "    sovereign,",
+      "    SovereignData,",
+      "    SovereignTensor,",
+      "    Jurisdiction,",
+      "    AethelredClient,",
+      "    Network,",
+      ")",
+      "from aethelred.hardware import Hardware, Compliance, DataClassification",
+      ""
+    ],
+    "description": "Import common Aethelred modules"
+  },
+  "Aethelred Client": {
+    "prefix": ["AethelredClient", "aeth-client"],
+    "body": [
+      "async with AethelredClient(",
+      "    network=Network.${1|TESTNET,MAINNET,DEVNET|},",
+      "    api_key=${2:os.environ.get('AETHELRED_API_KEY')},",
+      ") as client:",
+      "    ${0:pass}"
+    ],
+    "description": "Create Aethelred client context"
+  },
+  "Submit Compute Job": {
+    "prefix": ["submit-job", "aeth-job"],
+    "body": [
+      "job = await client.submit_job(",
+      "    model_id=\"${1:model-id}\",",
+      "    input_data=${2:encrypted_data},",
+      "    proof_type=\"${3|hybrid,tee,zkml|}\",",
+      "    priority=${4|2,1,3|},",
+      ")",
+      "seal = await client.wait_for_seal(job.id)",
+      "${0:print(f'Seal: {seal.id}')}"
+    ],
+    "description": "Submit a compute job and wait for seal"
+  },
+  "Compliance Check Decorator": {
+    "prefix": ["@compliance-check", "comp-check"],
+    "body": [
+      "@compliance_check(",
+      "    regulations=[${1|Compliance.GDPR,Compliance.HIPAA,Compliance.UAE_DATA_RESIDENCY|}],",
+      "    strict=${2|True,False|},",
+      ")",
+      "def ${3:function_name}(${4:data}):",
+      "    ${0:pass}"
+    ],
+    "description": "Add compliance check decorator"
+  },
+  "Require TEE Decorator": {
+    "prefix": ["@require-tee", "req-tee"],
+    "body": [
+      "@require_tee(hardware=Hardware.${1|TEE_REQUIRED,INTEL_SGX,AMD_SEV,AWS_NITRO|})",
+      "def ${2:function_name}(${3:data}):",
+      "    ${0:pass}"
+    ],
+    "description": "Require TEE execution decorator"
+  },
+  "With Seal Decorator": {
+    "prefix": ["@with-seal", "seal"],
+    "body": [
+      "@with_seal(",
+      "    seal_type=\"${1|computation,inference,training|}\",",
+      "    include_proof=${2|True,False|},",
+      ")",
+      "def ${3:function_name}(${4:data}):",
+      "    ${0:pass}"
+    ],
+    "description": "Generate digital seal for function"
+  },
+  "Sovereign Context": {
+    "prefix": ["SovereignContext", "sov-ctx"],
+    "body": [
+      "with SovereignContext(",
+      "    jurisdiction=Jurisdiction.${1|UAE,EU,US,GLOBAL|},",
+      "    hardware=Hardware.${2|TEE_REQUIRED,AWS_NITRO|},",
+      "    compliance=${3|Compliance.GDPR,Compliance.HIPAA|},",
+      ") as ctx:",
+      "    ${0:pass}"
+    ],
+    "description": "Create sovereign execution context"
+  },
+  "UAE Finance Template": {
+    "prefix": ["uae-finance", "aeth-uae"],
+    "body": [
+      "from aethelred import sovereign, SovereignData, Jurisdiction",
+      "from aethelred.hardware import Hardware, Compliance",
+      "",
+      "",
+      "@sovereign(",
+      "    hardware=Hardware.AWS_NITRO,",
+      "    compliance=Compliance.UAE_DATA_RESIDENCY | Compliance.GDPR,",
+      ")",
+      "def ${1:process_financial_data}(data: SovereignData) -> SovereignData:",
+      "    \"\"\"",
+      "    Process financial data in UAE-compliant TEE.",
+      "    ",
+      "    Data never leaves UAE jurisdiction.",
+      "    \"\"\"",
+      "    ${0:# Implementation}",
+      "    return data"
+    ],
+    "description": "UAE-compliant financial processing template"
+  },
+  "Healthcare HIPAA Template": {
+    "prefix": ["hipaa-template", "aeth-hipaa"],
+    "body": [
+      "from aethelred import sovereign, SovereignData, Jurisdiction",
+      "from aethelred.hardware import Hardware, Compliance, DataClassification",
+      "",
+      "",
+      "@sovereign(",
+      "    hardware=Hardware.TEE_REQUIRED,",
+      "    compliance=Compliance.HIPAA | Compliance.HITECH,",
+      ")",
+      "def ${1:analyze_patient_data}(",
+      "    patient_data: SovereignData,",
+      ") -> SovereignData:",
+      "    \"\"\"",
+      "    Analyze patient data with HIPAA compliance.",
+      "    ",
+      "    PHI is processed in TEE with full audit trail.",
+      "    \"\"\"",
+      "    ${0:# Implementation}",
+      "    return patient_data"
+    ],
+    "description": "HIPAA-compliant healthcare template"
+  },
+  "AI Model Inference": {
+    "prefix": ["ai-inference", "aeth-ml"],
+    "body": [
+      "from aethelred import sovereign, SovereignTensor, with_seal",
+      "from aethelred.hardware import Hardware, Compliance",
+      "",
+      "",
+      "@sovereign(hardware=Hardware.NVIDIA_H100)",
+      "@with_seal(seal_type=\"inference\", include_proof=True)",
+      "def ${1:run_inference}(",
+      "    input_tensor: SovereignTensor,",
+      "    model: ${2:Any},",
+      ") -> SovereignTensor:",
+      "    \"\"\"Run model inference with digital seal.\"\"\"",
+      "    ${0:# Run inference}",
+      "    output = model(input_tensor.to_torch())",
+      "    return SovereignTensor(output)"
+    ],
+    "description": "AI model inference with digital seal"
+  }
+}

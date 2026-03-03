@@ -1,0 +1,37 @@
+name: Infinity Sandbox CI
+
+on:
+  push:
+    branches: [main, develop, release/**]
+  pull_request:
+    branches: [main, develop, release/**]
+  workflow_dispatch:
+
+env:
+  RUST_VERSION: "1.75"
+
+jobs:
+  sandbox-tests:
+    name: Sandbox Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Run sandbox tests (offline, warnings as errors)
+        run: |
+          RUSTFLAGS="-D warnings" cargo test --manifest-path crates/sandbox/Cargo.toml --offline
+
+  sandbox-required-gate:
+    name: Sandbox Required Gate
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs:
+      - sandbox-tests
+    steps:
+      - name: Enforce required gate status
+        run: |
+          echo "sandbox-tests=${{ needs.sandbox-tests.result }}"
+          test "${{ needs.sandbox-tests.result }}" = "success"

@@ -1,0 +1,171 @@
+[package]
+name = "aethelred-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Core cryptographic primitives and types for the Aethelred blockchain"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-node"
+keywords = ["blockchain", "post-quantum", "cryptography", "tee", "zkml"]
+categories = ["cryptography", "blockchain"]
+
+[features]
+default = ["std", "full-pqc"]
+std = []
+# Feature flag to simulate TEEs during development on Mac/Windows
+mock-tee = []
+# Enable full PQC implementations (vs lightweight for testing)
+full-pqc = ["pqcrypto-kyber"]
+# Enable SGX support (Linux only)
+sgx = []
+# Enable HSM support via PKCS#11
+hsm = ["cryptoki"]
+# Enable benchmarking
+bench = ["dep:criterion"]
+# Production hardening — enables compile_error! guards in pillar stubs
+# to prevent shipping dev tokenomics/mempool/bridge stubs to mainnet.
+production = []
+
+[dependencies]
+# =============================================================================
+# Async Runtime & Core Utilities
+# =============================================================================
+tokio = { version = "1.35", features = ["full", "sync", "time", "rt-multi-thread"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# =============================================================================
+# Serialization & Error Handling
+# =============================================================================
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+thiserror = "1.0"
+anyhow = "1.0"
+
+# =============================================================================
+# Encoding
+# =============================================================================
+hex = { version = "0.4", features = ["serde"] }
+base64 = "0.21"
+bs58 = "0.5"
+bech32 = "0.9"
+
+# =============================================================================
+# Classic Cryptography (Layer 0 - Ethereum/Bitcoin Compatibility)
+# =============================================================================
+# ECDSA secp256k1 (Bitcoin/Ethereum standard)
+k256 = { version = "0.13", features = ["ecdsa", "sha256", "serde"] }
+# Additional elliptic curves
+p256 = { version = "0.13", features = ["ecdsa", "serde"] }
+# Elliptic curve traits
+elliptic-curve = { version = "0.13", features = ["sec1"] }
+# Signature traits
+signature = "2.2"
+
+# =============================================================================
+# Hash Functions
+# =============================================================================
+sha2 = "0.10"
+sha3 = "0.10"           # Keccak256 for Ethereum compatibility
+blake3 = "1.5"          # Fast hashing
+ripemd = "0.1"          # Bitcoin address compatibility
+
+# =============================================================================
+# Post-Quantum Cryptography (The "Moat")
+# =============================================================================
+# Dilithium3 (NIST FIPS 204 / ML-DSA) for Signatures - REQUIRED for production
+pqcrypto-dilithium = "0.5"
+# Kyber768 (NIST FIPS 203 / ML-KEM) for Key Exchange
+pqcrypto-kyber = { version = "0.8", optional = true }
+# Common PQC traits
+pqcrypto-traits = "0.3"
+
+# =============================================================================
+# Key Derivation & MAC
+# =============================================================================
+hkdf = "0.12"
+hmac = "0.12"
+pbkdf2 = { version = "0.12", features = ["sha2"] }
+argon2 = "0.5"          # Memory-hard KDF for passwords
+
+# =============================================================================
+# Random Number Generation
+# =============================================================================
+rand = "0.8"
+rand_core = "0.6"
+rand_chacha = "0.3"     # CSPRNG
+getrandom = { version = "0.2", features = ["std"] }
+
+# =============================================================================
+# Memory Safety
+# =============================================================================
+zeroize = { version = "1.7", features = ["derive", "zeroize_derive"] }
+secrecy = "0.8"         # Secret type wrappers
+subtle = "2.5"          # Constant-time comparisons
+
+# =============================================================================
+# Zero-Knowledge Proofs
+# =============================================================================
+# Halo2 for general purpose circuit verification
+halo2_proofs = { version = "0.3", optional = true }
+halo2curves = { version = "0.6", optional = true }
+# Groth16 via arkworks
+ark-serialize = { version = "0.4", optional = true }
+
+# =============================================================================
+# Hardware Verification (TEEs)
+# =============================================================================
+# Intel SGX Data Center Attestation Primitives (DCAP)
+# SGX types and parsers
+
+# =============================================================================
+# Hardware Security Modules (HSM)
+# =============================================================================
+# PKCS#11 interface for HSM access (Thales, AWS CloudHSM, YubiHSM)
+cryptoki = { version = "0.6", optional = true }
+
+# =============================================================================
+# CBOR (for Nitro attestation documents)
+# =============================================================================
+ciborium = "0.2"
+coset = "0.3"           # COSE (CBOR Object Signing and Encryption)
+
+# =============================================================================
+# X.509 Certificates (for TEE certificate chains)
+# =============================================================================
+x509-cert = "0.2"
+der = "0.7"
+spki = "0.7"
+
+# =============================================================================
+# Time
+# =============================================================================
+chrono = { version = "0.4", features = ["serde"] }
+
+# =============================================================================
+# Logging & Tracing
+# =============================================================================
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# =============================================================================
+# Regex (for PII detection)
+# =============================================================================
+regex = "1.10"
+criterion = { version = "0.5", features = ["html_reports"], optional = true }
+
+[dev-dependencies]
+proptest = "1.4"
+test-case = "3.3"
+tokio-test = "0.4"
+tempfile = "3.9"
+pretty_assertions = "1.4"
+
+[[bench]]
+name = "crypto_benchmarks"
+harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

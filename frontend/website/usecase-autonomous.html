@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Systems Use Case | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-950: #450a0a;
+      --red-900: #7F1D1D;
+      --red-800: #991B1B;
+      --red-700: #B91C1C;
+      --red-600: #DC2626;
+      --red-500: #EF4444;
+      --red-400: #EF4444;
+      --dark-950: #030303;
+      --dark-900: #0A0A0A;
+      --dark-800: #111111;
+      --dark-700: #1A1A1A;
+      --dark-600: #222222;
+      --dark-500: #333333;
+      --gray-400: #9CA3AF;
+      --gray-300: #D1D5DB;
+      --white: #FFFFFF;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); overflow-x: hidden; line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-back { display: inline-flex; align-items: center; gap: 8px; color: var(--gray-400); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .nav-back:hover { color: var(--red-500); }
+    .nav-back svg { width: 20px; height: 20px; }
+
+    .page-hero { padding: 140px 0 60px; position: relative; overflow: hidden; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(220, 38, 38, 0.15) 0%, transparent 50%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; margin: 0 4px; display: inline; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; margin-bottom: 30px; }
+    .hero-stats { display: flex; gap: 40px; margin-top: 40px; }
+    .hero-stat { text-align: left; }
+    .hero-stat-value { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 700; color: var(--red-500); }
+    .hero-stat-label { font-size: 14px; color: var(--gray-400); }
+
+    .section { padding: 80px 0; border-bottom: 1px solid var(--dark-700); }
+    .section:last-of-type { border-bottom: none; }
+    .section-header { text-align: center; margin-bottom: 50px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    .challenges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .challenge-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; transition: all 0.3s; }
+    .challenge-card:hover { border-color: var(--red-700); transform: translateY(-4px); }
+    .challenge-icon { width: 48px; height: 48px; background: rgba(220, 38, 38, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .challenge-icon svg { width: 24px; height: 24px; color: var(--red-500); }
+    .challenge-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+    .challenge-card p { font-size: 14px; color: var(--gray-400); line-height: 1.7; }
+
+    .diagram-container { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; margin: 40px 0; }
+    .diagram-title { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--red-500); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; text-align: center; }
+    .diagram-svg { width: 100%; max-width: 1000px; margin: 0 auto; display: block; }
+
+    .usecase-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .usecase-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; overflow: hidden; transition: all 0.3s; }
+    .usecase-card:hover { border-color: var(--red-600); box-shadow: 0 20px 40px rgba(220, 38, 38, 0.15); }
+    .usecase-diagram { background: var(--dark-900); padding: 30px; border-bottom: 1px solid var(--dark-600); }
+    .usecase-content { padding: 30px; }
+    .usecase-content h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    .usecase-content p { font-size: 14px; color: var(--gray-400); line-height: 1.7; margin-bottom: 20px; }
+    .usecase-benefits { list-style: none; }
+    .usecase-benefits li { font-size: 13px; color: var(--gray-300); padding: 8px 0; padding-left: 24px; position: relative; }
+    .usecase-benefits li::before { content: '✓'; position: absolute; left: 0; color: var(--red-500); }
+
+    .benefits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .benefit-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; text-align: center; transition: all 0.3s; }
+    .benefit-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .benefit-value { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 700; color: var(--red-500); margin-bottom: 8px; }
+    .benefit-label { font-size: 14px; color: var(--gray-400); }
+
+    .cta-section { padding: 100px 0; text-align: center; background: linear-gradient(180deg, var(--dark-900) 0%, var(--dark-950) 100%); }
+    .cta-section h2 { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 20px; }
+    .cta-section p { font-size: 18px; color: var(--gray-400); margin-bottom: 30px; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; background: linear-gradient(135deg, var(--red-700), var(--red-500)); color: var(--white); text-decoration: none; font-weight: 600; border-radius: 8px; transition: all 0.3s; box-shadow: 0 0 30px rgba(220, 38, 38, 0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(220, 38, 38, 0.6); }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; background: transparent; border: 1px solid var(--dark-500); color: var(--white); text-decoration: none; font-weight: 600; border-radius: 8px; transition: all 0.3s; margin-left: 16px; }
+    .btn-secondary:hover { border-color: var(--red-600); background: rgba(220, 38, 38, 0.1); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); line-height: 1.7; margin: 16px 0 20px; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; transition: all 0.3s; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .challenges-grid, .usecase-grid { grid-template-columns: 1fr; } .benefits-grid { grid-template-columns: repeat(2, 1fr); } .footer-grid { grid-template-columns: 1fr 1fr; } .page-hero h1 { font-size: 42px; } .hero-stats { flex-wrap: wrap; gap: 30px; } }
+    @media (max-width: 600px) { .benefits-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; } .page-hero h1 { font-size: 32px; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <a href="aethelred-website.html#use-cases" class="nav-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Use Cases
+      </a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+        Autonomous Systems
+      </div>
+      <h1>Verifiable AI for <span class="gradient-text">Autonomy</span></h1>
+      <p class="subtitle">Certified AI decision-making for autonomous vehicles, robotics, and drones. Verify every inference, certify trajectories, and enable spatial attestation for insurance and liability.</p>
+      
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">12M+</div>
+          <div class="hero-stat-label">Miles Verified</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">±3m</div>
+          <div class="hero-stat-label">Spatial Accuracy</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">23</div>
+          <div class="hero-stat-label">OEM Partners</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">100%</div>
+          <div class="hero-stat-label">Decision Traceability</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Industry Challenges</span>
+        <h2 class="section-title">The Autonomy Trust Gap</h2>
+        <p class="section-desc">Autonomous systems must prove their decisions are safe, compliant, and accountable—in real-time.</p>
+      </div>
+
+      <div class="challenges-grid">
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h3>Liability Attribution</h3>
+          <p>When autonomous systems cause accidents, determining liability between OEM, software provider, and operator requires complete decision provenance.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>Safety Certification</h3>
+          <p>Regulators like NHTSA and EASA require proof that AI perception and decision systems meet safety standards across all operating conditions.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <h3>Spatial Accuracy</h3>
+          <p>Insurance underwriting and incident reconstruction require cryptographic proof of exact vehicle position, trajectory, and environmental conditions.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Solution Architecture</span>
+        <h2 class="section-title">Autonomous Vehicle Verification</h2>
+        <p class="section-desc">End-to-end verifiable AI for autonomous systems with spatial attestation.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">AV Decision Verification Pipeline</div>
+        <svg class="diagram-svg" viewBox="0 0 900 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(220,38,38,0.1)" stroke-width="0.5"/>
+            </pattern>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626"/>
+            </marker>
+          </defs>
+          <rect width="900" height="500" fill="url(#grid)"/>
+          
+          <!-- Vehicle Sensors -->
+          <g id="sensors">
+            <rect x="30" y="100" width="130" height="300" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="95" y="130" fill="#EF4444" font-family="Orbitron" font-size="11" text-anchor="middle">VEHICLE</text>
+            <text x="95" y="145" fill="#EF4444" font-family="Orbitron" font-size="11" text-anchor="middle">SENSORS</text>
+            
+            <rect x="45" y="165" width="100" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="95" y="187" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">LiDAR Array</text>
+            
+            <rect x="45" y="210" width="100" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="95" y="232" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Camera Suite</text>
+            
+            <rect x="45" y="255" width="100" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="95" y="277" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Radar</text>
+            
+            <rect x="45" y="300" width="100" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="95" y="322" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">GPS/GNSS</text>
+            
+            <rect x="45" y="345" width="100" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="95" y="367" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">IMU</text>
+          </g>
+          
+          <!-- AI Stack -->
+          <g id="ai-stack">
+            <rect x="220" y="130" width="150" height="240" rx="12" fill="#1A1A1A" stroke="#B91C1C" stroke-width="2"/>
+            <text x="295" y="160" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">AI STACK</text>
+            
+            <rect x="235" y="180" width="120" height="35" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="202" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Perception</text>
+            
+            <rect x="235" y="225" width="120" height="35" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="247" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Prediction</text>
+            
+            <rect x="235" y="270" width="120" height="35" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="292" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Planning</text>
+            
+            <rect x="235" y="315" width="120" height="35" rx="5" fill="#111" stroke="#333"/>
+            <text x="295" y="337" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Control</text>
+          </g>
+          
+          <!-- Aethelred Core -->
+          <g id="aethelred">
+            <rect x="430" y="100" width="200" height="300" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <rect x="430" y="100" width="200" height="50" rx="12" fill="#DC2626"/>
+            <text x="530" y="130" fill="#FFF" font-family="Orbitron" font-size="12" text-anchor="middle">AETHELRED</text>
+            
+            <rect x="450" y="165" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="530" y="187" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Decision Sealing</text>
+            
+            <rect x="450" y="210" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="530" y="232" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Spatial Attestation</text>
+            
+            <rect x="450" y="255" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="530" y="277" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Trajectory Proof</text>
+            
+            <rect x="450" y="300" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="530" y="322" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Incident Recording</text>
+            
+            <rect x="450" y="345" width="160" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="530" y="367" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Real-time Audit</text>
+          </g>
+          
+          <!-- Outputs -->
+          <g id="outputs">
+            <rect x="700" y="120" width="160" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="780" y="150" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">SAFETY CERT</text>
+            <text x="780" y="172" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">ISO 26262 Compliant</text>
+            
+            <rect x="700" y="210" width="160" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="780" y="240" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">INSURANCE PKG</text>
+            <text x="780" y="262" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Liability Attribution</text>
+            
+            <rect x="700" y="300" width="160" height="70" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="780" y="330" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">INCIDENT PROOF</text>
+            <text x="780" y="352" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Forensic Evidence</text>
+          </g>
+          
+          <!-- Arrows -->
+          <path d="M160 250 L210 250" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead)"/>
+          <path d="M370 250 L420 250" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead)"/>
+          <path d="M630 180 L690 155" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M630 250 L690 245" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M630 320 L690 335" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          
+          <!-- Title -->
+          <rect x="350" y="25" width="200" height="35" rx="5" fill="#DC2626"/>
+          <text x="450" y="48" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">REAL-TIME VERIFICATION</text>
+          
+          <!-- Labels -->
+          <text x="185" y="240" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Raw</text>
+          <text x="185" y="255" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Data</text>
+          <text x="395" y="240" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Decisions</text>
+          <text x="395" y="255" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">+ State</text>
+          
+          <text x="450" y="470" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Every decision cryptographically sealed with spatial and temporal context</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Applications</span>
+        <h2 class="section-title">Autonomous Systems Use Cases</h2>
+        <p class="section-desc">Verifiable AI across vehicles, drones, robotics, and industrial automation.</p>
+      </div>
+
+      <div class="usecase-grid">
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- AV Insurance Flow -->
+              <rect x="20" y="50" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="55" y="80" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">INCIDENT</text>
+              <text x="55" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Collision</text>
+              <text x="55" y="108" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Near-miss</text>
+              
+              <rect x="120" y="50" width="80" height="80" rx="8" fill="#DC2626"/>
+              <text x="160" y="80" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEALED</text>
+              <text x="160" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">EVIDENCE</text>
+              <text x="160" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">Trajectory + Decision</text>
+              
+              <rect x="230" y="40" width="70" height="45" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="265" y="60" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">OEM</text>
+              <text x="265" y="75" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Not liable</text>
+              
+              <rect x="230" y="95" width="70" height="45" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="265" y="115" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Operator</text>
+              <text x="265" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Liable</text>
+              
+              <rect x="330" y="60" width="60" height="60" rx="6" fill="#111" stroke="#22C55E" stroke-width="1.5"/>
+              <text x="360" y="85" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">CLAIM</text>
+              <text x="360" y="100" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">RESOLVED</text>
+              
+              <path d="M90 90 L115 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M200 70 L225 62" stroke="#DC2626" stroke-width="1"/>
+              <path d="M200 110 L225 117" stroke="#DC2626" stroke-width="1"/>
+              <path d="M300 90 L325 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Automated liability attribution with cryptographic proof</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>AV Insurance & Liability</h3>
+            <p>Cryptographic proof of every AI decision enables instant liability attribution. Insurers can underwrite AV fleets with confidence using verifiable driving records.</p>
+            <ul class="usecase-benefits">
+              <li>Instant incident reconstruction</li>
+              <li>Automated liability determination</li>
+              <li>30% lower insurance premiums</li>
+              <li>Tamper-proof evidence packages</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Drone Delivery Flow -->
+              <rect x="30" y="50" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="65" y="75" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">DRONE</text>
+              <text x="65" y="90" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">FLEET</text>
+              <text x="65" y="110" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Flight Path</text>
+              
+              <rect x="130" y="50" width="80" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="170" y="80" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Spatial</text>
+              <text x="170" y="95" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Attestation</text>
+              <text x="170" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">±3m accuracy</text>
+              
+              <rect x="240" y="50" width="70" height="80" rx="8" fill="#DC2626"/>
+              <text x="275" y="80" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">FLIGHT</text>
+              <text x="275" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEAL</text>
+              <text x="275" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">FAA Compliant</text>
+              
+              <rect x="340" y="50" width="50" height="80" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="365" y="80" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">UTM</text>
+              <text x="365" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Airspace</text>
+              <text x="365" y="110" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Auth</text>
+              
+              <path d="M100 90 L125 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M210 90 L235 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M310 90 L335 90" stroke="#DC2626" stroke-width="1.5"/>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verifiable drone operations with spatial proof</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Drone Operations & UTM</h3>
+            <p>Enable compliant drone delivery and inspection operations with verifiable flight paths. Each flight is sealed with spatial attestation for FAA and UTM integration.</p>
+            <ul class="usecase-benefits">
+              <li>BVLOS operation approval</li>
+              <li>Real-time geofence compliance</li>
+              <li>Delivery chain of custody</li>
+              <li>Automated airspace authorization</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Robotics Safety Flow -->
+              <rect x="30" y="40" width="80" height="100" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="70" y="70" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">INDUSTRIAL</text>
+              <text x="70" y="85" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">ROBOT</text>
+              <text x="70" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Cobot / AMR</text>
+              <text x="70" y="120" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Actions</text>
+              
+              <rect x="140" y="40" width="90" height="100" rx="8" fill="#111" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="185" y="70" fill="#FFF" font-family="Orbitron" font-size="9" text-anchor="middle">AETHELRED</text>
+              <text x="185" y="90" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Safety Monitor</text>
+              <text x="185" y="108" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Action Seal</text>
+              <text x="185" y="126" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Zone Tracking</text>
+              
+              <rect x="260" y="30" width="60" height="50" rx="6" fill="#DC2626"/>
+              <text x="290" y="52" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">ISO</text>
+              <text x="290" y="68" fill="#FFF" font-family="Space Grotesk" font-size="7" text-anchor="middle">10218</text>
+              
+              <rect x="260" y="90" width="60" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="290" y="112" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Audit</text>
+              <text x="290" y="128" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Trail</text>
+              
+              <rect x="350" y="55" width="40" height="70" rx="6" fill="#111" stroke="#22C55E" stroke-width="1"/>
+              <text x="370" y="85" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">✓</text>
+              <text x="370" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Safe</text>
+              
+              <path d="M110 90 L135 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M230 60 L255 55" stroke="#DC2626" stroke-width="1"/>
+              <path d="M230 115 L255 115" stroke="#DC2626" stroke-width="1"/>
+              <path d="M320 90 L345 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">ISO 10218 compliant robot safety verification</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Industrial Robotics Safety</h3>
+            <p>Verify cobot and AMR safety compliance in real-time. Every robot action is sealed with safety zone verification for ISO 10218 and machinery directive compliance.</p>
+            <ul class="usecase-benefits">
+              <li>Real-time safety monitoring</li>
+              <li>Human-robot interaction logging</li>
+              <li>ISO 10218-2 compliance</li>
+              <li>Incident prevention analytics</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Mining/Construction Flow -->
+              <rect x="20" y="40" width="60" height="50" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="60" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Haul</text>
+              <text x="50" y="75" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Trucks</text>
+              
+              <rect x="20" y="100" width="60" height="50" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="120" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Drill</text>
+              <text x="50" y="135" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Rigs</text>
+              
+              <rect x="110" y="55" width="90" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="155" y="85" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Fleet AI</text>
+              <text x="155" y="100" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Coordination</text>
+              <text x="155" y="118" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Optimization</text>
+              
+              <rect x="230" y="55" width="70" height="80" rx="8" fill="#DC2626"/>
+              <text x="265" y="85" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">VERIFIED</text>
+              <text x="265" y="100" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">OPS</text>
+              <text x="265" y="120" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">+ Spatial Seal</text>
+              
+              <rect x="330" y="40" width="60" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="360" y="60" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Safety</text>
+              <text x="360" y="78" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Compliance</text>
+              
+              <rect x="330" y="100" width="60" height="50" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="360" y="120" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Tonnage</text>
+              <text x="360" y="138" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Proof</text>
+              
+              <path d="M80 65 L105 80" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 125 L105 110" stroke="#DC2626" stroke-width="1"/>
+              <path d="M200 95 L225 95" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M300 75 L325 65" stroke="#DC2626" stroke-width="1"/>
+              <path d="M300 115 L325 125" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Autonomous mining with verifiable operations</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Mining & Construction Autonomy</h3>
+            <p>Verify autonomous haul truck and equipment operations with spatial proof. Every load, route, and safety decision is sealed for regulatory compliance and royalty verification.</p>
+            <ul class="usecase-benefits">
+              <li>Autonomous haul truck certification</li>
+              <li>Tonnage and route verification</li>
+              <li>Environmental compliance proofs</li>
+              <li>Safety zone enforcement</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Impact</span>
+        <h2 class="section-title">Measurable Benefits</h2>
+        <p class="section-desc">Quantifiable improvements across autonomous system deployments.</p>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-value">100%</div>
+          <div class="benefit-label">Decision Traceability</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">30%</div>
+          <div class="benefit-label">Insurance Cost Reduction</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">&lt;1ms</div>
+          <div class="benefit-label">Verification Latency</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">±3m</div>
+          <div class="benefit-label">Spatial Accuracy</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Verify Your Autonomous Systems?</h2>
+      <p>Join leading OEMs and fleet operators using Aethelred for certified autonomy.</p>
+      <a href="#" class="btn-primary">Request Autonomy Demo</a>
+      <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn-secondary">View Documentation</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence. A Zhyra Holdings portfolio company.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Solutions</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/proof-of-compute.html">Proof-of-Compute</a>
+            <a href="computer:///mnt/user-data/outputs/digital-seal.html">Digital Seal</a>
+            <a href="computer:///mnt/user-data/outputs/spatial-verification.html">Spatial Verification</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use Cases</h4>
+          <div class="footer-links">
+            <a href="usecase-healthcare.html">Healthcare</a>
+            <a href="usecase-finance.html">Financial Services</a>
+            <a href="usecase-autonomous.html">Autonomous Systems</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Developers</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="computer:///mnt/user-data/outputs/sdk-tools.html">SDK & Tools</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+            <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+            <a href="computer:///mnt/user-data/outputs/governance.html">Governance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

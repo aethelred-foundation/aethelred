@@ -1,0 +1,11 @@
+./auto_uint64.go
+./genesis.go
+./index.go
+./indexer.go
+./iterator.go
+./key_codec.go
+./primary_key.go
+./sequence.go
+./table.go
+./testsupport.go
+./types.go

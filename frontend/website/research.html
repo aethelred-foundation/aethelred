@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research & Development | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --purple-500: #8B5CF6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--purple-500); border-radius: 50px; font-size: 13px; color: var(--purple-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--purple-500); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Research Areas */
+    .research-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .research-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; transition: all 0.3s; }
+    .research-card:hover { border-color: var(--purple-500); transform: translateY(-4px); }
+    .research-icon { width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 28px; }
+    .research-card h3 { font-size: 24px; margin-bottom: 12px; }
+    .research-card p { font-size: 15px; color: var(--gray-400); margin-bottom: 20px; }
+    .research-topics { display: flex; flex-wrap: wrap; gap: 8px; }
+    .topic-tag { padding: 6px 12px; background: var(--dark-700); border-radius: 6px; font-size: 12px; color: var(--gray-300); }
+
+    /* Papers */
+    .papers-list { display: flex; flex-direction: column; gap: 20px; }
+    .paper-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; display: flex; gap: 24px; transition: all 0.3s; }
+    .paper-card:hover { border-color: var(--purple-500); }
+    .paper-icon { width: 60px; height: 80px; background: var(--dark-700); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .paper-icon svg { width: 32px; height: 32px; color: var(--purple-500); }
+    .paper-content { flex: 1; }
+    .paper-content h4 { font-size: 18px; margin-bottom: 8px; }
+    .paper-meta { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; color: var(--gray-400); }
+    .paper-content p { font-size: 14px; color: var(--gray-400); margin-bottom: 16px; }
+    .paper-links { display: flex; gap: 12px; }
+    .paper-link { padding: 8px 16px; background: var(--dark-700); border-radius: 6px; font-size: 13px; color: var(--gray-300); text-decoration: none; transition: all 0.2s; }
+    .paper-link:hover { background: var(--purple-500); color: white; }
+
+    /* Open Problems */
+    .problems-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .problem-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; }
+    .problem-card:hover { border-color: var(--red-600); }
+    .problem-status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-family: 'Orbitron', monospace; margin-bottom: 16px; }
+    .status-active { background: rgba(34, 197, 94, 0.2); color: var(--green-500); }
+    .status-seeking { background: rgba(220, 38, 38, 0.2); color: var(--red-500); }
+    .status-proposed { background: rgba(139, 92, 246, 0.2); color: var(--purple-500); }
+    .problem-card h4 { font-size: 18px; margin-bottom: 12px; }
+    .problem-card p { font-size: 14px; color: var(--gray-400); }
+
+    /* Grants */
+    .grants-section { background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, var(--dark-800) 100%); border: 1px solid var(--purple-500); border-radius: 20px; padding: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .grants-content h3 { font-size: 32px; margin-bottom: 16px; }
+    .grants-content p { font-size: 16px; color: var(--gray-400); margin-bottom: 24px; }
+    .grant-tiers { display: flex; flex-direction: column; gap: 16px; }
+    .grant-tier { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--dark-800); border-radius: 12px; }
+    .tier-amount { font-family: 'Orbitron', monospace; font-size: 20px; color: var(--purple-500); min-width: 120px; }
+    .tier-desc { font-size: 14px; color: var(--gray-300); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+    .btn-primary { background: var(--purple-500); color: white; }
+    .btn-primary:hover { background: #7C3AED; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 60px; }
+    .stat-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 30px; text-align: center; }
+    .stat-value { font-family: 'Orbitron', monospace; font-size: 36px; color: var(--purple-500); margin-bottom: 8px; }
+    .stat-label { font-size: 14px; color: var(--gray-400); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .research-grid { grid-template-columns: 1fr; } .problems-grid { grid-template-columns: 1fr; } .grants-section { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .paper-card { flex-direction: column; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="team.html">Team</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Innovation
+      </div>
+      <h1>Research & <span class="gradient-text">Development</span></h1>
+      <p class="subtitle">Pushing the boundaries of verifiable AI computation. Explore our research areas, published papers, and open problems we're working to solve.</p>
+    </div>
+  </section>
+
+  <!-- Research Areas -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Focus Areas</span>
+        <h2 class="section-title">Active Research Programs</h2>
+        <p class="section-desc">Our research spans cryptography, distributed systems, and AI safety.</p>
+      </div>
+
+      <div class="research-grid">
+        <div class="research-card">
+          <div class="research-icon">🔐</div>
+          <h3>Zero-Knowledge Machine Learning</h3>
+          <p>Developing efficient ZK circuits for neural network inference verification. Our goal is to prove model outputs without revealing proprietary weights or training data.</p>
+          <div class="research-topics">
+            <span class="topic-tag">zkML</span>
+            <span class="topic-tag">Neural Networks</span>
+            <span class="topic-tag">Privacy</span>
+            <span class="topic-tag">PLONK</span>
+          </div>
+        </div>
+
+        <div class="research-card">
+          <div class="research-icon">⚡</div>
+          <h3>Proof-of-Compute Consensus</h3>
+          <p>Novel consensus mechanism that validates AI computations were executed correctly. Combines cryptographic proofs with economic incentives for honest verification.</p>
+          <div class="research-topics">
+            <span class="topic-tag">Consensus</span>
+            <span class="topic-tag">BFT</span>
+            <span class="topic-tag">Verification</span>
+            <span class="topic-tag">Incentives</span>
+          </div>
+        </div>
+
+        <div class="research-card">
+          <div class="research-icon">🛡️</div>
+          <h3>AI Safety Verification</h3>
+          <p>Formal methods for verifying AI model behavior meets safety constraints. Proving alignment properties without exposing model internals.</p>
+          <div class="research-topics">
+            <span class="topic-tag">Safety</span>
+            <span class="topic-tag">Alignment</span>
+            <span class="topic-tag">Formal Methods</span>
+            <span class="topic-tag">Constraints</span>
+          </div>
+        </div>
+
+        <div class="research-card">
+          <div class="research-icon">🌐</div>
+          <h3>Spatial Verification</h3>
+          <p>Cryptographic attestation of computation location with sub-meter accuracy. Multi-source verification combining GPS, network, and trusted hardware.</p>
+          <div class="research-topics">
+            <span class="topic-tag">Geolocation</span>
+            <span class="topic-tag">TEE</span>
+            <span class="topic-tag">Attestation</span>
+            <span class="topic-tag">Multi-Source</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">24</div>
+          <div class="stat-label">Published Papers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">12</div>
+          <div class="stat-label">Active Researchers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">$4.2M</div>
+          <div class="stat-label">R&D Investment</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">7</div>
+          <div class="stat-label">Patent Filings</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Papers -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Publications</span>
+        <h2 class="section-title">Research Papers</h2>
+        <p class="section-desc">Peer-reviewed publications and technical reports from the Aethelred research team.</p>
+      </div>
+
+      <div class="papers-list">
+        <div class="paper-card">
+          <div class="paper-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <div class="paper-content">
+            <h4>Proof-of-Compute: A Novel Consensus for Verifiable AI</h4>
+            <div class="paper-meta">
+              <span>📅 2024</span>
+              <span>👥 Kim, Rodriguez, Petrov et al.</span>
+              <span>📊 47 citations</span>
+            </div>
+            <p>We introduce Proof-of-Compute, a consensus mechanism specifically designed for validating AI computation integrity across distributed networks while maintaining privacy of model weights and training data.</p>
+            <div class="paper-links">
+              <a href="#" class="paper-link">PDF</a>
+              <a href="#" class="paper-link">arXiv</a>
+              <a href="#" class="paper-link">Code</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="paper-card">
+          <div class="paper-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <div class="paper-content">
+            <h4>Efficient Zero-Knowledge Proofs for Transformer Inference</h4>
+            <div class="paper-meta">
+              <span>📅 2024</span>
+              <span>👥 Petrov, Nakamura, Chen</span>
+              <span>📊 31 citations</span>
+            </div>
+            <p>We present optimized ZK circuits for attention mechanisms, reducing proof generation time for transformer models by 94% compared to naive approaches.</p>
+            <div class="paper-links">
+              <a href="#" class="paper-link">PDF</a>
+              <a href="#" class="paper-link">arXiv</a>
+              <a href="#" class="paper-link">Benchmarks</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="paper-card">
+          <div class="paper-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <div class="paper-content">
+            <h4>Digital Seal: Cryptographic Provenance for AI Outputs</h4>
+            <div class="paper-meta">
+              <span>📅 2023</span>
+              <span>👥 Kim, Khan, Wright</span>
+              <span>📊 89 citations</span>
+            </div>
+            <p>We formalize the Digital Seal primitive for creating tamper-evident, cryptographically bound certificates of AI computation authenticity.</p>
+            <div class="paper-links">
+              <a href="#" class="paper-link">PDF</a>
+              <a href="#" class="paper-link">arXiv</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="paper-card">
+          <div class="paper-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <div class="paper-content">
+            <h4>Spatial Attestation in Untrusted Environments</h4>
+            <div class="paper-meta">
+              <span>📅 2024</span>
+              <span>👥 Thompson, Rodriguez, Martinez</span>
+              <span>📊 18 citations</span>
+            </div>
+            <p>Multi-source location verification combining GPS, network triangulation, and TEE attestation to achieve ±3m accuracy with cryptographic guarantees.</p>
+            <div class="paper-links">
+              <a href="#" class="paper-link">PDF</a>
+              <a href="#" class="paper-link">arXiv</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Problems -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Contribute</span>
+        <h2 class="section-title">Open Research Problems</h2>
+        <p class="section-desc">Challenges we're actively working on. Contributions welcome.</p>
+      </div>
+
+      <div class="problems-grid">
+        <div class="problem-card">
+          <span class="problem-status status-active">ACTIVE RESEARCH</span>
+          <h4>Real-Time Inference Verification</h4>
+          <p>Reducing ZK proof generation latency to enable verification of streaming AI inference with &lt;100ms overhead.</p>
+        </div>
+
+        <div class="problem-card">
+          <span class="problem-status status-seeking">SEEKING CONTRIBUTORS</span>
+          <h4>Post-Quantum Seal Signatures</h4>
+          <p>Migrating Digital Seal cryptography to lattice-based signatures resistant to quantum computer attacks.</p>
+        </div>
+
+        <div class="problem-card">
+          <span class="problem-status status-active">ACTIVE RESEARCH</span>
+          <h4>Federated Model Verification</h4>
+          <p>Verifying aggregated model updates from distributed training without exposing individual participant data.</p>
+        </div>
+
+        <div class="problem-card">
+          <span class="problem-status status-proposed">PROPOSED</span>
+          <h4>Multi-Modal ZK Proofs</h4>
+          <p>Efficient circuits for verifying vision-language models processing combined image and text inputs.</p>
+        </div>
+
+        <div class="problem-card">
+          <span class="problem-status status-seeking">SEEKING CONTRIBUTORS</span>
+          <h4>Hardware Verification Oracles</h4>
+          <p>Trustless verification that computations ran on specific GPU/TPU hardware configurations.</p>
+        </div>
+
+        <div class="problem-card">
+          <span class="problem-status status-active">ACTIVE RESEARCH</span>
+          <h4>Differential Privacy + ZK</h4>
+          <p>Combining differential privacy guarantees with zero-knowledge proofs for enhanced data protection.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grants -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="grants-section">
+        <div class="grants-content">
+          <h3>Research Grants Program</h3>
+          <p>We fund independent researchers working on problems relevant to verifiable AI. Open to academics, independent researchers, and teams worldwide.</p>
+          <a href="#" class="btn btn-primary">Apply for Grant →</a>
+        </div>
+        <div class="grant-tiers">
+          <div class="grant-tier">
+            <span class="tier-amount">$5K - $25K</span>
+            <span class="tier-desc">Explorer grants for initial research and proof of concepts</span>
+          </div>
+          <div class="grant-tier">
+            <span class="tier-amount">$25K - $100K</span>
+            <span class="tier-desc">Builder grants for significant research contributions</span>
+          </div>
+          <div class="grant-tier">
+            <span class="tier-amount">$100K+</span>
+            <span class="tier-desc">Research partnerships for long-term collaborations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "core",
+    "bridge",
+    "consensus",
+    "mempool",
+    "vm",
+    "benchmarks",
+    "testing",
+    "sandbox",
+    "demo/falcon-lion",
+    "demo/helix-guard",
+]
+resolver = "2"

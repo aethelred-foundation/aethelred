@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "effective_date": "2026-02-24",
+  "purpose": "Defines the minimum repo-local auditability baseline required in each public Aethelred repository to reduce CI and evidence fragmentation.",
+  "baseline_required_files": [
+    "SECURITY.md",
+    "docs/security/threat-model.md",
+    ".github/workflows/docs-hygiene.yml",
+    ".github/workflows/repo-security-baseline.yml"
+  ],
+  "repos": [
+    {
+      "repo": "AethelredFoundation/aethelred-core",
+      "role": "chain-go-transitional-mirror",
+      "advanced_expected_workflows": [
+        ".github/workflows/repo-authority-guard.yml",
+        ".github/workflows/mirror-drift-check.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-cosmos-node",
+      "role": "chain-go-canonical",
+      "advanced_expected_workflows": [
+        ".github/workflows/repo-authority-guard.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-rust-node",
+      "role": "chain-rust-implementation-track",
+      "advanced_expected_workflows": [
+        ".github/workflows/rust-node-ci.yml",
+        ".github/workflows/rust-node-vendored-offline.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-tee-worker",
+      "role": "tee-worker-runtime",
+      "advanced_expected_workflows": [
+        ".github/workflows/nitro-sdk-attestation-evidence.yml",
+        ".github/workflows/nitro-sdk-warning-budget.yml",
+        ".github/workflows/nitro-sdk-attestation-evidence-warning-budget.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-contracts",
+      "role": "contracts"
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-sdks",
+      "role": "sdk-monorepo",
+      "advanced_expected_workflows": [
+        ".github/workflows/sdk-typescript-tests.yml",
+        ".github/workflows/sdk-go-tests.yml",
+        ".github/workflows/sdk-go-nn-coverage.yml",
+        ".github/workflows/sdk-python-tests.yml",
+        ".github/workflows/sdk-rust-tests.yml",
+        ".github/workflows/sdk-release-readiness.yml",
+        ".github/workflows/sdk-release-provenance-local.yml"
+      ],
+      "advanced_expected_docs": [
+        "docs/security/release-provenance.md"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-developer-tools",
+      "role": "developer-tools",
+      "advanced_expected_workflows": [
+        ".github/workflows/developer-tools-ci.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-integrations",
+      "role": "framework-integrations",
+      "advanced_expected_workflows": [
+        ".github/workflows/sample-apps-docker-smoke.yml",
+        ".github/workflows/helm-charts-ci.yml"
+      ]
+    },
+    {
+      "repo": "AethelredFoundation/aethelred-dashboard",
+      "role": "frontend-dashboard"
+    }
+  ]
+}

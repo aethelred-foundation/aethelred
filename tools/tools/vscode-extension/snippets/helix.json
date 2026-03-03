@@ -1,0 +1,137 @@
+{
+  "Helix Sovereign Function": {
+    "prefix": ["sovereign", "fn-sovereign"],
+    "body": [
+      "@sovereign {",
+      "    hardware: ${1|tee_required,intel_sgx,amd_sev,aws_nitro,nvidia_h100|},",
+      "    jurisdiction: ${2|UAE,EU,US,GLOBAL|},",
+      "    compliance: [${3|GDPR,HIPAA,UAE_DPL|}]",
+      "}",
+      "fn ${4:function_name}(${5:data}: Tensor) -> Tensor {",
+      "    ${0:// Implementation}",
+      "}"
+    ],
+    "description": "Create a Helix sovereign function"
+  },
+  "Helix Neural Network": {
+    "prefix": ["neural", "nn"],
+    "body": [
+      "@sovereign { hardware: nvidia_h100 }",
+      "neural ${1:ModelName} {",
+      "    layers: [",
+      "        Linear(${2:784}, ${3:256}),",
+      "        ReLU,",
+      "        Linear(${3:256}, ${4:10}),",
+      "        Softmax",
+      "    ]",
+      "}"
+    ],
+    "description": "Define a sovereign neural network"
+  },
+  "Helix Tensor Operation": {
+    "prefix": ["tensor-op", "zkop"],
+    "body": [
+      "@zk_provable",
+      "fn ${1:operation}(x: Tensor, y: Tensor) -> Tensor {",
+      "    ${0:x + y}",
+      "}"
+    ],
+    "description": "Create a ZK-provable tensor operation"
+  },
+  "Helix Data Pipeline": {
+    "prefix": ["pipeline", "data-pipe"],
+    "body": [
+      "@sovereign { jurisdiction: ${1|UAE,EU|} }",
+      "pipeline ${2:DataPipeline} {",
+      "    input: Tensor<${3:f32}, [${4:batch}, ${5:features}]>,",
+      "    ",
+      "    stages: [",
+      "        normalize,",
+      "        ${6:transform},",
+      "        ${7:predict}",
+      "    ],",
+      "    ",
+      "    output: Tensor<${8:f32}, [${4:batch}, ${9:classes}]>",
+      "}"
+    ],
+    "description": "Create a sovereign data pipeline"
+  },
+  "Helix Compliance Block": {
+    "prefix": ["compliance", "comp"],
+    "body": [
+      "@compliance {",
+      "    regulations: [${1|GDPR,HIPAA,UAE_DPL,PIPL,CCPA|}],",
+      "    data_residency: ${2|UAE,EU,US|},",
+      "    retention_days: ${3:365},",
+      "    audit: true",
+      "}",
+      "${0:}"
+    ],
+    "description": "Add compliance requirements block"
+  },
+  "Helix Model Definition": {
+    "prefix": ["model", "ml-model"],
+    "body": [
+      "@sovereign {",
+      "    hardware: ${1|nvidia_h100,aws_nitro|},",
+      "    seal: true",
+      "}",
+      "model ${2:CreditScorer} {",
+      "    // Input features",
+      "    input features: Tensor<f32, [batch, ${3:100}]>",
+      "    ",
+      "    // Model architecture",
+      "    hidden: Linear(${3:100}, ${4:64}) -> ReLU",
+      "    output: Linear(${4:64}, ${5:1}) -> Sigmoid",
+      "    ",
+      "    // Training config",
+      "    optimizer: Adam { lr: ${6:0.001} }",
+      "    loss: BCELoss",
+      "}"
+    ],
+    "description": "Define a complete ML model"
+  },
+  "Helix Import": {
+    "prefix": ["import", "use"],
+    "body": [
+      "use aethelred::{",
+      "    Tensor,",
+      "    sovereign,",
+      "    zk_provable,",
+      "    Jurisdiction,",
+      "    Hardware,",
+      "}",
+      ""
+    ],
+    "description": "Import Aethelred Helix primitives"
+  },
+  "Helix UAE Template": {
+    "prefix": ["uae-ml", "helix-uae"],
+    "body": [
+      "// UAE Sovereign AI Model",
+      "// Data never leaves UAE jurisdiction",
+      "",
+      "@sovereign {",
+      "    hardware: aws_nitro,",
+      "    jurisdiction: UAE,",
+      "    compliance: [UAE_DPL, GDPR]",
+      "}",
+      "model ${1:UAEFinanceModel} {",
+      "    input: Tensor<f32, [batch, ${2:features}]>",
+      "    ",
+      "    // Encrypted inference",
+      "    @encrypted",
+      "    hidden1: Linear(${2:features}, 256) -> ReLU",
+      "    hidden2: Linear(256, 128) -> ReLU",
+      "    ",
+      "    output: Linear(128, ${3:classes}) -> Softmax",
+      "}",
+      "",
+      "@zk_provable",
+      "fn inference(model: ${1:UAEFinanceModel}, data: Tensor) -> Tensor {",
+      "    model.forward(data)",
+      "}"
+    ],
+    "description": "UAE-compliant Helix ML template"
+  }
+}

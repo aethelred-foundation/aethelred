@@ -1,0 +1,42 @@
+[package]
+name = "aethelred-sandbox"
+version = "0.1.0"
+edition = "2021"
+description = "The World's First Sovereign AI Risk Simulator"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/aethelred-mvp"
+keywords = ["blockchain", "ai", "tee", "sandbox", "compliance"]
+categories = ["development-tools", "simulation"]
+
+[dependencies]
+# Serialization
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+
+# Unique identifiers
+uuid = { version = "=1.20.0", features = ["v4"] }
+
+# Async runtime (optional for full async support)
+tokio = { version = "=1.49.0", features = ["full"], optional = true }
+
+# Logging
+tracing = "=0.1.44"
+
+[dev-dependencies]
+tokio = { version = "=1.49.0", features = ["full", "test-util"] }
+
+[features]
+default = []
+async = ["tokio"]
+
+[[example]]
+name = "trade_finance_demo"
+path = "examples/trade_finance_demo.rs"
+
+[[example]]
+name = "q_day_simulation"
+path = "examples/q_day_simulation.rs"
+
+[[example]]
+name = "ctf_challenge"
+path = "examples/ctf_challenge.rs"

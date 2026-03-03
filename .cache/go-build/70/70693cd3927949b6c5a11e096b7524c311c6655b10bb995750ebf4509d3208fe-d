@@ -1,0 +1,7 @@
+./collect.go
+./commands.go
+./genaccount.go
+./gentx.go
+./init.go
+./migrate.go
+./validate_genesis.go

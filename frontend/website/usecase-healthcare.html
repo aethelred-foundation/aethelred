@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healthcare Use Case | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-950: #450a0a;
+      --red-900: #7F1D1D;
+      --red-800: #991B1B;
+      --red-700: #B91C1C;
+      --red-600: #DC2626;
+      --red-500: #EF4444;
+      --red-400: #EF4444;
+      --dark-950: #030303;
+      --dark-900: #0A0A0A;
+      --dark-800: #111111;
+      --dark-700: #1A1A1A;
+      --dark-600: #222222;
+      --dark-500: #333333;
+      --gray-400: #9CA3AF;
+      --gray-300: #D1D5DB;
+      --white: #FFFFFF;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--dark-950);
+      color: var(--white);
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 20px 0;
+      background: rgba(3, 3, 3, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-700);
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+    .nav-back:hover { color: var(--red-500); }
+    .nav-back svg { width: 20px; height: 20px; }
+
+    /* Hero */
+    .page-hero {
+      padding: 140px 0 60px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%);
+    }
+
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at 30% 20%, rgba(220, 38, 38, 0.15) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid var(--red-800);
+      border-radius: 50px;
+      font-size: 13px;
+      color: var(--red-500);
+      margin-bottom: 20px;
+    }
+
+    .page-hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .gradient-text {
+      background: var(--red-600);
+      color: var(--white);
+      padding: 0 12px;
+      margin: 0 4px;
+      display: inline;
+    }
+
+    .page-hero .subtitle {
+      font-size: 20px;
+      color: var(--gray-400);
+      max-width: 700px;
+      margin-bottom: 30px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .hero-stat {
+      text-align: left;
+    }
+
+    .hero-stat-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red-500);
+    }
+
+    .hero-stat-label {
+      font-size: 14px;
+      color: var(--gray-400);
+    }
+
+    /* Sections */
+    .section {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--dark-700);
+    }
+
+    .section:last-of-type { border-bottom: none; }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      color: var(--red-500);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 18px;
+      color: var(--gray-400);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Challenges Grid */
+    .challenges-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .challenge-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 16px;
+      padding: 30px;
+      transition: all 0.3s;
+    }
+
+    .challenge-card:hover {
+      border-color: var(--red-700);
+      transform: translateY(-4px);
+    }
+
+    .challenge-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(220, 38, 38, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .challenge-icon svg {
+      width: 24px;
+      height: 24px;
+      color: var(--red-500);
+    }
+
+    .challenge-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .challenge-card p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+    }
+
+    /* Diagram Container */
+    .diagram-container {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 20px;
+      padding: 40px;
+      margin: 40px 0;
+    }
+
+    .diagram-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      color: var(--red-500);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .diagram-svg {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* Use Case Cards */
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .usecase-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .usecase-card:hover {
+      border-color: var(--red-600);
+      box-shadow: 0 20px 40px rgba(220, 38, 38, 0.15);
+    }
+
+    .usecase-diagram {
+      background: var(--dark-900);
+      padding: 30px;
+      border-bottom: 1px solid var(--dark-600);
+    }
+
+    .usecase-content {
+      padding: 30px;
+    }
+
+    .usecase-content h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .usecase-content p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .usecase-benefits {
+      list-style: none;
+    }
+
+    .usecase-benefits li {
+      font-size: 13px;
+      color: var(--gray-300);
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .usecase-benefits li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--red-500);
+    }
+
+    /* Benefits Section */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .benefit-card {
+      background: var(--dark-800);
+      border: 1px solid var(--dark-600);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .benefit-card:hover {
+      border-color: var(--red-600);
+      transform: translateY(-4px);
+    }
+
+    .benefit-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red-500);
+      margin-bottom: 8px;
+    }
+
+    .benefit-label {
+      font-size: 14px;
+      color: var(--gray-400);
+    }
+
+    /* CTA Section */
+    .cta-section {
+      padding: 100px 0;
+      text-align: center;
+      background: linear-gradient(180deg, var(--dark-900) 0%, var(--dark-950) 100%);
+    }
+
+    .cta-section h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .cta-section p {
+      font-size: 18px;
+      color: var(--gray-400);
+      margin-bottom: 30px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, var(--red-700), var(--red-500));
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s;
+      box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(220, 38, 38, 0.6);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: transparent;
+      border: 1px solid var(--dark-500);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: all 0.3s;
+      margin-left: 16px;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--red-600);
+      background: rgba(220, 38, 38, 0.1);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--dark-950);
+      border-top: 1px solid var(--dark-700);
+      padding: 60px 0 30px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(4, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin: 16px 0 20px;
+      max-width: 280px;
+    }
+
+    .footer-column h4 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      color: var(--red-500);
+    }
+
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--gray-400);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .footer-links a:hover { color: var(--red-500); }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--dark-700);
+    }
+
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) {
+      .challenges-grid, .usecase-grid { grid-template-columns: 1fr; }
+      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .page-hero h1 { font-size: 42px; }
+      .hero-stats { flex-wrap: wrap; gap: 30px; }
+    }
+
+    @media (max-width: 600px) {
+      .benefits-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .page-hero h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <a href="aethelred-website.html#use-cases" class="nav-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Use Cases
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        Healthcare Industry
+      </div>
+      <h1>Verifiable AI for <span class="gradient-text">Healthcare</span></h1>
+      <p class="subtitle">Privacy-preserving diagnostics, federated learning, and HIPAA-compliant AI computation with cryptographic verification for medical institutions worldwide.</p>
+      
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">100%</div>
+          <div class="hero-stat-label">HIPAA Compliant</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">47+</div>
+          <div class="hero-stat-label">Hospital Partners</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">2.1M</div>
+          <div class="hero-stat-label">Verified Diagnoses</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">0</div>
+          <div class="hero-stat-label">Data Breaches</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Challenges Section -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Industry Challenges</span>
+        <h2 class="section-title">Healthcare AI Faces Critical Trust Issues</h2>
+        <p class="section-desc">Medical AI must navigate strict regulations while maintaining patient privacy and demonstrating clinical validity.</p>
+      </div>
+
+      <div class="challenges-grid">
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <h3>Data Privacy Regulations</h3>
+          <p>HIPAA, GDPR, and regional regulations restrict how patient data can be processed, shared, and stored across healthcare institutions.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>Model Validation</h3>
+          <p>FDA and regulatory bodies require extensive documentation proving AI diagnostic accuracy, but model internals are often proprietary.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <h3>Multi-Institution Collaboration</h3>
+          <p>Training robust models requires diverse datasets from multiple hospitals, but data sharing agreements are complex and slow.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Diagram -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Solution Architecture</span>
+        <h2 class="section-title">Aethelred Healthcare Platform</h2>
+        <p class="section-desc">End-to-end verifiable AI infrastructure designed for healthcare compliance and privacy.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Healthcare AI Verification Architecture</div>
+        <svg class="diagram-svg" viewBox="0 0 900 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Grid -->
+          <defs>
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(220,38,38,0.1)" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="900" height="500" fill="url(#grid)"/>
+          
+          <!-- Hospital Nodes -->
+          <g id="hospitals">
+            <!-- Hospital A -->
+            <rect x="50" y="80" width="140" height="100" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="120" y="115" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">HOSPITAL A</text>
+            <rect x="70" y="130" width="100" height="35" rx="5" fill="#1A1A1A" stroke="#333" stroke-width="1"/>
+            <text x="120" y="152" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Patient Data</text>
+            
+            <!-- Hospital B -->
+            <rect x="50" y="210" width="140" height="100" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="120" y="245" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">HOSPITAL B</text>
+            <rect x="70" y="260" width="100" height="35" rx="5" fill="#1A1A1A" stroke="#333" stroke-width="1"/>
+            <text x="120" y="282" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Patient Data</text>
+            
+            <!-- Hospital C -->
+            <rect x="50" y="340" width="140" height="100" rx="10" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="120" y="375" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">HOSPITAL C</text>
+            <rect x="70" y="390" width="100" height="35" rx="5" fill="#1A1A1A" stroke="#333" stroke-width="1"/>
+            <text x="120" y="412" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Patient Data</text>
+          </g>
+          
+          <!-- Federated Learning Nodes -->
+          <g id="federated">
+            <rect x="280" y="130" width="120" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+            <text x="340" y="160" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Local Model</text>
+            <text x="340" y="180" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Training Node</text>
+            
+            <rect x="280" y="220" width="120" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+            <text x="340" y="250" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Local Model</text>
+            <text x="340" y="270" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Training Node</text>
+            
+            <rect x="280" y="310" width="120" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+            <text x="340" y="340" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Local Model</text>
+            <text x="340" y="360" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Training Node</text>
+          </g>
+          
+          <!-- Aethelred Core -->
+          <g id="aethelred-core">
+            <rect x="480" y="160" width="180" height="200" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <rect x="480" y="160" width="180" height="40" rx="12" fill="#DC2626"/>
+            <text x="570" y="185" fill="#FFF" font-family="Orbitron" font-size="12" text-anchor="middle">AETHELRED CORE</text>
+            
+            <!-- Core Components -->
+            <rect x="500" y="215" width="140" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="570" y="235" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Proof-of-Compute</text>
+            
+            <rect x="500" y="255" width="140" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="570" y="275" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">Digital Seal Engine</text>
+            
+            <rect x="500" y="295" width="140" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="570" y="315" fill="#EF4444" font-family="Space Grotesk" font-size="10" text-anchor="middle">HIPAA Compliance</text>
+            
+            <rect x="500" y="335" width="140" height="15" rx="3" fill="#1A1A1A" stroke="#333"/>
+            <text x="570" y="346" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Audit Trail</text>
+          </g>
+          
+          <!-- Output -->
+          <g id="output">
+            <rect x="720" y="120" width="150" height="80" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="795" y="150" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">VERIFIED MODEL</text>
+            <text x="795" y="175" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">+ Digital Seal</text>
+            <text x="795" y="190" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">+ Proof Certificate</text>
+            
+            <rect x="720" y="220" width="150" height="80" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="795" y="250" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">DIAGNOSIS API</text>
+            <text x="795" y="275" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Sealed Predictions</text>
+            <text x="795" y="290" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verifiable Results</text>
+            
+            <rect x="720" y="320" width="150" height="80" rx="10" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="795" y="350" fill="#EF4444" font-family="Orbitron" font-size="10" text-anchor="middle">REGULATORY</text>
+            <text x="795" y="375" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">FDA Submission Pkg</text>
+            <text x="795" y="390" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Compliance Reports</text>
+          </g>
+          
+          <!-- Arrows -->
+          <g id="arrows" stroke="#DC2626" stroke-width="1.5" fill="none">
+            <!-- Hospital to Local Models -->
+            <path d="M190 130 L270 165" marker-end="url(#arrowhead)"/>
+            <path d="M190 260 L270 255" marker-end="url(#arrowhead)"/>
+            <path d="M190 390 L270 345" marker-end="url(#arrowhead)"/>
+            
+            <!-- Local Models to Core -->
+            <path d="M400 165 L470 220" marker-end="url(#arrowhead)"/>
+            <path d="M400 255 L470 260" marker-end="url(#arrowhead)"/>
+            <path d="M400 345 L470 300" marker-end="url(#arrowhead)"/>
+            
+            <!-- Core to Output -->
+            <path d="M660 200 L710 160" marker-end="url(#arrowhead)"/>
+            <path d="M660 260 L710 260" marker-end="url(#arrowhead)"/>
+            <path d="M660 320 L710 360" marker-end="url(#arrowhead)"/>
+          </g>
+          
+          <!-- Arrow Marker -->
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626"/>
+            </marker>
+          </defs>
+          
+          <!-- Labels -->
+          <text x="230" y="120" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Encrypted</text>
+          <text x="230" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Gradients</text>
+          
+          <text x="430" y="185" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Model</text>
+          <text x="430" y="195" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Updates</text>
+          
+          <!-- Title Box -->
+          <rect x="350" y="20" width="200" height="35" rx="5" fill="#DC2626"/>
+          <text x="450" y="43" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">FEDERATED LEARNING FLOW</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Applications</span>
+        <h2 class="section-title">Healthcare Use Cases</h2>
+        <p class="section-desc">Real-world applications of verifiable AI in medical settings.</p>
+      </div>
+
+      <div class="usecase-grid">
+        <!-- Use Case 1: Cancer Detection -->
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Flow: Scan → AI Analysis → Sealed Result → Verification -->
+              <rect x="20" y="70" width="70" height="60" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="55" y="95" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">MEDICAL</text>
+              <text x="55" y="108" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">SCAN</text>
+              
+              <rect x="120" y="70" width="70" height="60" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="155" y="95" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">AI Model</text>
+              <text x="155" y="108" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Analysis</text>
+              
+              <rect x="220" y="70" width="70" height="60" rx="8" fill="#DC2626"/>
+              <text x="255" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">DIGITAL</text>
+              <text x="255" y="108" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEAL</text>
+              
+              <rect x="320" y="70" width="60" height="60" rx="8" fill="#1A1A1A" stroke="#991B1B" stroke-width="1.5"/>
+              <text x="350" y="95" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verified</text>
+              <text x="350" y="108" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Result</text>
+              
+              <!-- Arrows -->
+              <path d="M90 100 L115 100" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr)"/>
+              <path d="M190 100 L215 100" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr)"/>
+              <path d="M290 100 L315 100" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr)"/>
+              
+              <defs>
+                <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="#DC2626"/>
+                </marker>
+              </defs>
+              
+              <!-- Labels -->
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Every diagnosis cryptographically verified</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Cancer Detection & Screening</h3>
+            <p>Train cancer detection models across hospital consortiums without exposing patient data. Each diagnosis comes with a cryptographic proof of model accuracy and data provenance.</p>
+            <ul class="usecase-benefits">
+              <li>97.3% detection accuracy with verifiable proof</li>
+              <li>Zero patient data leaves hospital premises</li>
+              <li>Full audit trail for regulatory review</li>
+              <li>Real-time model performance monitoring</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Use Case 2: Drug Interaction -->
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Multiple Inputs → Analysis → Sealed Alert -->
+              <rect x="20" y="30" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="55" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Patient Rx</text>
+              
+              <rect x="20" y="80" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="105" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">New Drug</text>
+              
+              <rect x="20" y="130" width="60" height="40" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="155" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Allergies</text>
+              
+              <rect x="120" y="65" width="80" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="160" y="95" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Interaction</text>
+              <text x="160" y="110" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Analysis</text>
+              <text x="160" y="125" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">AI Engine</text>
+              
+              <rect x="240" y="65" width="70" height="70" rx="8" fill="#DC2626"/>
+              <text x="275" y="95" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">SEALED</text>
+              <text x="275" y="110" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">ALERT</text>
+              
+              <rect x="340" y="50" width="50" height="35" rx="5" fill="#111" stroke="#EF4444" stroke-width="1"/>
+              <text x="365" y="72" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">⚠ Alert</text>
+              
+              <rect x="340" y="95" width="50" height="35" rx="5" fill="#111" stroke="#22C55E" stroke-width="1"/>
+              <text x="365" y="117" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">✓ Safe</text>
+              
+              <!-- Arrows -->
+              <path d="M80 50 L115 85" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 100 L115 100" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 150 L115 115" stroke="#DC2626" stroke-width="1"/>
+              <path d="M200 100 L235 100" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M310 85 L335 67" stroke="#DC2626" stroke-width="1"/>
+              <path d="M310 115 L335 112" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="175" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Verifiable drug safety recommendations</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Drug Interaction Analysis</h3>
+            <p>Real-time verification of drug interactions and contraindications. Each safety recommendation is sealed with proof of the analysis model's accuracy and regulatory compliance.</p>
+            <ul class="usecase-benefits">
+              <li>Analyzes 10,000+ drug combinations</li>
+              <li>Sub-second response with full proof</li>
+              <li>Integrates with EHR systems</li>
+              <li>Liability protection through verification</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Use Case 3: Radiology AI -->
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Radiology Workflow -->
+              <rect x="30" y="60" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="65" y="85" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">X-RAY</text>
+              <text x="65" y="100" fill="#EF4444" font-family="Orbitron" font-size="8" text-anchor="middle">CT/MRI</text>
+              <text x="65" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">DICOM</text>
+              
+              <rect x="130" y="60" width="80" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="170" y="90" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Radiology</text>
+              <text x="170" y="105" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">AI Model</text>
+              <text x="170" y="125" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">CNN Analysis</text>
+              
+              <rect x="240" y="40" width="70" height="50" rx="6" fill="#DC2626"/>
+              <text x="275" y="60" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">FINDINGS</text>
+              <text x="275" y="75" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">+ Seal</text>
+              
+              <rect x="240" y="100" width="70" height="50" rx="6" fill="#1A1A1A" stroke="#991B1B" stroke-width="1"/>
+              <text x="275" y="120" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Confidence</text>
+              <text x="275" y="135" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Score: 98.2%</text>
+              
+              <rect x="340" y="60" width="50" height="80" rx="6" fill="#111" stroke="#333" stroke-width="1"/>
+              <text x="365" y="85" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Report</text>
+              <text x="365" y="100" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Verified</text>
+              <text x="365" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Findings</text>
+              <text x="365" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">+ Proof</text>
+              
+              <!-- Arrows -->
+              <path d="M100 100 L125 100" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M210 80 L235 65" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M210 120 L235 125" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M310 85 L335 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="175" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">AI-assisted radiology with cryptographic verification</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Radiology AI Assistant</h3>
+            <p>Augment radiologist workflows with AI-powered image analysis. Every finding is sealed with model provenance, confidence scores, and verification certificates for malpractice protection.</p>
+            <ul class="usecase-benefits">
+              <li>Supports X-Ray, CT, MRI, Ultrasound</li>
+              <li>Reduces radiologist review time by 40%</li>
+              <li>Legal protection through sealed findings</li>
+              <li>Continuous model accuracy monitoring</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Use Case 4: Clinical Trials -->
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Clinical Trial Flow -->
+              <rect x="20" y="40" width="60" height="45" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="60" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Site 1</text>
+              <text x="50" y="75" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Trial Data</text>
+              
+              <rect x="20" y="95" width="60" height="45" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="115" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Site 2</text>
+              <text x="50" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Trial Data</text>
+              
+              <rect x="20" y="150" width="60" height="45" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="50" y="170" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Site N</text>
+              <text x="50" y="185" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Trial Data</text>
+              
+              <rect x="110" y="75" width="80" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="150" y="100" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Federated</text>
+              <text x="150" y="115" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Analysis</text>
+              <text x="150" y="135" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Privacy-Preserving</text>
+              
+              <rect x="220" y="75" width="70" height="70" rx="8" fill="#DC2626"/>
+              <text x="255" y="100" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">VERIFIED</text>
+              <text x="255" y="115" fill="#FFF" font-family="Orbitron" font-size="8" text-anchor="middle">RESULTS</text>
+              <text x="255" y="135" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="7" text-anchor="middle">+ Seal</text>
+              
+              <rect x="320" y="55" width="70" height="45" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="355" y="75" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">FDA</text>
+              <text x="355" y="90" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Submission</text>
+              
+              <rect x="320" y="110" width="70" height="45" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="355" y="130" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Publication</text>
+              <text x="355" y="145" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Data Package</text>
+              
+              <!-- Arrows -->
+              <path d="M80 62 L105 95" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 117 L105 110" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 172 L105 125" stroke="#DC2626" stroke-width="1"/>
+              <path d="M190 110 L215 110" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M290 95 L315 77" stroke="#DC2626" stroke-width="1"/>
+              <path d="M290 125 L315 132" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="22" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">MULTI-SITE CLINICAL TRIAL ANALYSIS</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Clinical Trial Analysis</h3>
+            <p>Accelerate multi-site clinical trials with federated analysis. Data never leaves trial sites while enabling collaborative analysis with verifiable statistical results for regulatory submission.</p>
+            <ul class="usecase-benefits">
+              <li>50% faster trial analysis</li>
+              <li>Cryptographic proof of methodology</li>
+              <li>FDA-ready submission packages</li>
+              <li>Cross-border trial coordination</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integration Diagram -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Integration</span>
+        <h2 class="section-title">Healthcare System Integration</h2>
+        <p class="section-desc">Seamless integration with existing healthcare IT infrastructure.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">EHR & Healthcare IT Integration</div>
+        <svg class="diagram-svg" viewBox="0 0 900 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Healthcare Systems -->
+          <g id="ehr-systems">
+            <rect x="50" y="50" width="180" height="250" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="140" y="80" fill="#EF4444" font-family="Orbitron" font-size="12" text-anchor="middle">EHR SYSTEMS</text>
+            
+            <rect x="70" y="100" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="140" y="122" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Epic</text>
+            
+            <rect x="70" y="145" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="140" y="167" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Cerner</text>
+            
+            <rect x="70" y="190" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="140" y="212" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">MEDITECH</text>
+            
+            <rect x="70" y="235" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="140" y="257" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Custom HL7/FHIR</text>
+          </g>
+          
+          <!-- Aethelred Gateway -->
+          <g id="gateway">
+            <rect x="320" y="100" width="260" height="150" rx="12" fill="#DC2626"/>
+            <text x="450" y="135" fill="#FFF" font-family="Orbitron" font-size="14" text-anchor="middle">AETHELRED GATEWAY</text>
+            
+            <rect x="340" y="155" width="100" height="30" rx="5" fill="rgba(0,0,0,0.3)"/>
+            <text x="390" y="175" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">FHIR Adapter</text>
+            
+            <rect x="460" y="155" width="100" height="30" rx="5" fill="rgba(0,0,0,0.3)"/>
+            <text x="510" y="175" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">HL7 Adapter</text>
+            
+            <rect x="340" y="195" width="220" height="40" rx="5" fill="rgba(0,0,0,0.3)"/>
+            <text x="450" y="215" fill="#FFF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Verification Engine + Digital Seal</text>
+            <text x="450" y="228" fill="rgba(255,255,255,0.7)" font-family="Space Grotesk" font-size="8" text-anchor="middle">Zero-knowledge proofs • Audit logging</text>
+          </g>
+          
+          <!-- Output Systems -->
+          <g id="outputs">
+            <rect x="670" y="50" width="180" height="250" rx="12" fill="#111" stroke="#991B1B" stroke-width="2"/>
+            <text x="760" y="80" fill="#EF4444" font-family="Orbitron" font-size="12" text-anchor="middle">VERIFIED OUTPUTS</text>
+            
+            <rect x="690" y="100" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="760" y="122" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Sealed Diagnoses</text>
+            
+            <rect x="690" y="145" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="760" y="167" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Audit Reports</text>
+            
+            <rect x="690" y="190" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="760" y="212" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Compliance Certs</text>
+            
+            <rect x="690" y="235" width="140" height="35" rx="6" fill="#1A1A1A" stroke="#333"/>
+            <text x="760" y="257" fill="#FFF" font-family="Space Grotesk" font-size="11" text-anchor="middle">Analytics Dashboard</text>
+          </g>
+          
+          <!-- Arrows -->
+          <path d="M230 175 L310 175" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead2)"/>
+          <path d="M580 175 L660 175" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead2)"/>
+          
+          <defs>
+            <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626"/>
+            </marker>
+          </defs>
+          
+          <!-- Labels -->
+          <text x="270" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Encrypted</text>
+          <text x="270" y="185" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Data</text>
+          
+          <text x="620" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Verified</text>
+          <text x="620" y="185" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Results</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Impact</span>
+        <h2 class="section-title">Measurable Benefits</h2>
+        <p class="section-desc">Quantifiable improvements across healthcare AI deployments.</p>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-value">100%</div>
+          <div class="benefit-label">HIPAA Compliance</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">40%</div>
+          <div class="benefit-label">Faster Diagnoses</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">97%</div>
+          <div class="benefit-label">Model Accuracy</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">$2.1M</div>
+          <div class="benefit-label">Avg. Cost Savings</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Transform Healthcare AI?</h2>
+      <p>Join leading healthcare institutions using Aethelred for verifiable, compliant AI.</p>
+      <a href="#" class="btn-primary">Request Healthcare Demo</a>
+      <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn-secondary">View Documentation</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence. A Zhyra Holdings portfolio company.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Solutions</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/proof-of-compute.html">Proof-of-Compute</a>
+            <a href="computer:///mnt/user-data/outputs/digital-seal.html">Digital Seal</a>
+            <a href="computer:///mnt/user-data/outputs/spatial-verification.html">Spatial Verification</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use Cases</h4>
+          <div class="footer-links">
+            <a href="usecase-healthcare.html">Healthcare</a>
+            <a href="usecase-finance.html">Financial Services</a>
+            <a href="usecase-supplychain.html">Supply Chain</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Developers</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="computer:///mnt/user-data/outputs/sdk-tools.html">SDK & Tools</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+            <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+            <a href="computer:///mnt/user-data/outputs/governance.html">Governance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

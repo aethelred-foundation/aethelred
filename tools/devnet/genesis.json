@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Aethelred DevNet Genesis Configuration",
+  "chainInfo": {
+    "chainId": "aethelred-devnet-1",
+    "chainName": "Aethelred DevNet",
+    "nativeToken": {
+      "name": "Aethelred",
+      "symbol": "AETH",
+      "decimals": 18,
+      "totalSupply": "1000000000000000000000000000"
+    }
+  },
+  "genesisTime": "2024-01-01T00:00:00.000000000Z",
+  "consensus": {
+    "type": "proof-of-compute",
+    "params": {
+      "blockTime": "5s",
+      "maxBlockSize": 10485760,
+      "maxGasPerBlock": 100000000,
+      "minValidatorStake": "10000000000000000000000",
+      "unbondingPeriod": "259200s",
+      "slashingFractionDowntime": "0.0001",
+      "slashingFractionDoubleSign": "0.05",
+      "slashingFractionInvalidCompute": "0.10",
+      "minAttestationsForSeal": 3,
+      "maxJobLatencyMs": 30000
+    },
+    "quantumThreatLevel": 0
+  },
+  "staking": {
+    "bondDenom": "uaeth",
+    "unbondingTime": "259200s",
+    "maxValidators": 100,
+    "maxEntries": 7,
+    "historicalEntries": 10000,
+    "minCommissionRate": "0.05"
+  },
+  "governance": {
+    "minDeposit": [
+      {
+        "denom": "uaeth",
+        "amount": "10000000000000000000"
+      }
+    ],
+    "maxDepositPeriod": "172800s",
+    "votingPeriod": "172800s",
+    "quorum": "0.334",
+    "threshold": "0.5",
+    "vetoThreshold": "0.334"
+  },
+  "computeModule": {
+    "supportedVerificationMethods": [
+      "TEE_ONLY",
+      "ZKML_ONLY",
+      "HYBRID",
+      "MPC"
+    ],
+    "supportedTeePlatforms": [
+      "AWS_NITRO",
+      "INTEL_SGX",
+      "AMD_SEV"
+    ],
+    "modelRegistry": {
+      "maxModelsPerAccount": 100,
+      "maxModelSize": 1073741824,
+      "registrationFee": "1000000000000000000"
+    },
+    "jobConfig": {
+      "maxJobsPerBlock": 50,
+      "maxInputSize": 10485760,
+      "maxOutputSize": 10485760,
+      "defaultLatencyMs": 30000,
+      "minFee": "100000000000000"
+    },
+    "slaConfig": {
+      "defaultMinAttestations": 3,
+      "maxLatencyMs": 60000,
+      "penaltyRate": "0.01"
+    }
+  },
+  "complianceModule": {
+    "enabledFrameworks": [
+      "GDPR",
+      "HIPAA",
+      "PCI_DSS",
+      "CCPA",
+      "SOX"
+    ],
+    "piiScanningEnabled": true,
+    "auditRetentionDays": 2555,
+    "defaultDataResidency": null
+  },
+  "precompiles": {
+    "enabled": {
+      "standard": [
+        "0x0001",
+        "0x0002",
+        "0x0003",
+        "0x0004",
+        "0x0005",
+        "0x0006",
+        "0x0007",
+        "0x0008",
+        "0x0009"
+      ],
+      "pqc": [
+        "0x0100",
+        "0x0101",
+        "0x0102",
+        "0x0103",
+        "0x0104"
+      ],
+      "zkp": [
+        "0x0200",
+        "0x0201",
+        "0x0202",
+        "0x0203"
+      ],
+      "tee": [
+        "0x0300",
+        "0x0301",
+        "0x0302",
+        "0x0303"
+      ],
+      "aethelred": [
+        "0x0400",
+        "0x0401"
+      ]
+    },
+    "gasMultiplier": 1.0
+  },
+  "accounts": [
+    {
+      "address": "aeth1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5xhkxw",
+      "name": "Treasury",
+      "balances": [
+        {
+          "denom": "uaeth",
+          "amount": "500000000000000000000000000"
+        }
+      ],
+      "type": "SYSTEM"
+    },
+    {
+      "address": "aeth1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxjq9xd",
+      "name": "Rewards Pool",
+      "balances": [
+        {
+          "denom": "uaeth",
+          "amount": "100000000000000000000000000"
+        }
+      ],
+      "type": "SYSTEM"
+    },
+    {
+      "address": "aeth1devnet0000000000000000000000001zkv7mg",
+      "name": "DevNet Faucet",
+      "balances": [
+        {
+          "denom": "uaeth",
+          "amount": "100000000000000000000000000"
+        }
+      ],
+      "type": "FAUCET"
+    }
+  ],
+  "validators": [
+    {
+      "name": "validator-1",
+      "operatorAddress": "aethvaloper1devnetval1000000000000000001xz0v8g",
+      "consensusPubkey": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "PLACEHOLDER_VALIDATOR_1_PUBKEY"
+      },
+      "hybridPubkey": {
+        "ecdsa": "PLACEHOLDER_ECDSA_PUBKEY_1",
+        "dilithium": "PLACEHOLDER_DILITHIUM_PUBKEY_1"
+      },
+      "commission": {
+        "rate": "0.10",
+        "maxRate": "0.20",
+        "maxChangeRate": "0.01"
+      },
+      "minSelfDelegation": "1000000000000000000000",
+      "delegatorShares": "10000000000000000000000",
+      "tokens": "10000000000000000000000",
+      "status": "BONDED",
+      "hardwareCapabilities": {
+        "hasTee": true,
+        "teePlatform": "AWS_NITRO",
+        "hasGpu": true,
+        "gpuModel": "NVIDIA_A100",
+        "memoryGb": 256,
+        "computeUnits": 100
+      },
+      "teeAttestation": "PLACEHOLDER_ATTESTATION_DOC_1"
+    },
+    {
+      "name": "validator-2",
+      "operatorAddress": "aethvaloper1devnetval2000000000000000002yqfsgf",
+      "consensusPubkey": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "PLACEHOLDER_VALIDATOR_2_PUBKEY"
+      },
+      "hybridPubkey": {
+        "ecdsa": "PLACEHOLDER_ECDSA_PUBKEY_2",
+        "dilithium": "PLACEHOLDER_DILITHIUM_PUBKEY_2"
+      },
+      "commission": {
+        "rate": "0.10",
+        "maxRate": "0.20",
+        "maxChangeRate": "0.01"
+      },
+      "minSelfDelegation": "1000000000000000000000",
+      "delegatorShares": "10000000000000000000000",
+      "tokens": "10000000000000000000000",
+      "status": "BONDED",
+      "hardwareCapabilities": {
+        "hasTee": true,
+        "teePlatform": "INTEL_SGX",
+        "hasGpu": true,
+        "gpuModel": "NVIDIA_H100",
+        "memoryGb": 512,
+        "computeUnits": 150
+      },
+      "teeAttestation": "PLACEHOLDER_ATTESTATION_DOC_2"
+    },
+    {
+      "name": "validator-3",
+      "operatorAddress": "aethvaloper1devnetval3000000000000000003fv3z4x",
+      "consensusPubkey": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "PLACEHOLDER_VALIDATOR_3_PUBKEY"
+      },
+      "hybridPubkey": {
+        "ecdsa": "PLACEHOLDER_ECDSA_PUBKEY_3",
+        "dilithium": "PLACEHOLDER_DILITHIUM_PUBKEY_3"
+      },
+      "commission": {
+        "rate": "0.10",
+        "maxRate": "0.20",
+        "maxChangeRate": "0.01"
+      },
+      "minSelfDelegation": "1000000000000000000000",
+      "delegatorShares": "10000000000000000000000",
+      "tokens": "10000000000000000000000",
+      "status": "BONDED",
+      "hardwareCapabilities": {
+        "hasTee": true,
+        "teePlatform": "AMD_SEV",
+        "hasGpu": false,
+        "gpuModel": null,
+        "memoryGb": 128,
+        "computeUnits": 50
+      },
+      "teeAttestation": "PLACEHOLDER_ATTESTATION_DOC_3"
+    }
+  ],
+  "trustedModels": [
+    {
+      "id": "credit-score-v1",
+      "name": "Credit Scoring Model v1",
+      "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "income": {"type": "number"},
+          "debt_ratio": {"type": "number"},
+          "credit_history_months": {"type": "integer"},
+          "num_accounts": {"type": "integer"}
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "score": {"type": "integer", "minimum": 300, "maximum": 850},
+          "risk_category": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH"]}
+        }
+      },
+      "verificationMethod": "HYBRID",
+      "complianceFrameworks": ["GDPR", "CCPA"],
+      "circuitHash": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    {
+      "id": "fraud-detection-v1",
+      "name": "Fraud Detection Model v1",
+      "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000003",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "transaction_amount": {"type": "number"},
+          "merchant_category": {"type": "string"},
+          "time_since_last_tx": {"type": "integer"},
+          "device_fingerprint": {"type": "string"}
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "fraud_probability": {"type": "number", "minimum": 0, "maximum": 1},
+          "risk_factors": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "verificationMethod": "TEE_ONLY",
+      "complianceFrameworks": ["PCI_DSS"],
+      "circuitHash": null
+    }
+  ],
+  "trustedTeeImages": {
+    "nitro": [
+      {
+        "pcr0": "PLACEHOLDER_PCR0_HASH_1",
+        "description": "Aethelred Compute Enclave v1.0",
+        "modelId": "credit-score-v1"
+      }
+    ],
+    "sgx": [
+      {
+        "mrenclave": "PLACEHOLDER_MRENCLAVE_1",
+        "mrsigner": "PLACEHOLDER_MRSIGNER_1",
+        "description": "Aethelred Compute Enclave v1.0",
+        "modelId": "fraud-detection-v1"
+      }
+    ],
+    "sev": [
+      {
+        "measurement": "PLACEHOLDER_SEV_MEASUREMENT_1",
+        "description": "Aethelred Compute Enclave v1.0",
+        "modelId": null
+      }
+    ]
+  },
+  "zkmlCircuits": [
+    {
+      "id": "credit-score-circuit-v1",
+      "modelId": "credit-score-v1",
+      "circuitHash": "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+      "verifyingKeyHash": "sha256:0000000000000000000000000000000000000000000000000000000000000004",
+      "proofSystem": "EZKL",
+      "maxConstraints": 1000000,
+      "publicInputsCount": 4
+    }
+  ]
+}

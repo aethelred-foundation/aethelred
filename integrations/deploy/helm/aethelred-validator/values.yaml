@@ -1,0 +1,285 @@
+replicaCount: 3
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "26660"
+  prometheus.io/path: "/metrics"
+
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsNonRoot: true
+
+nodeSelector:
+  aethelred.io/tee-capable: "true"
+
+tolerations:
+  - key: aethelred.io/validator
+    operator: Exists
+    effect: NoSchedule
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: aethelred-validator
+          topologyKey: kubernetes.io/hostname
+
+validator:
+  image:
+    repository: ghcr.io/aethelred/validator
+    tag: latest
+    pullPolicy: IfNotPresent
+  command:
+    - aethelredd
+    - start
+    - --home=/data
+    - --p2p.laddr=tcp://0.0.0.0:26656
+    - --rpc.laddr=tcp://0.0.0.0:26657
+    - --grpc.address=0.0.0.0:9090
+    - --api.address=tcp://0.0.0.0:1317
+    - --pruning=nothing
+    - --log_format=json
+  env:
+    logLevel: info
+    minGasPrice: 0.025uaeth
+  resources:
+    requests:
+      cpu: "4"
+      memory: 16Gi
+      ephemeralStorage: 50Gi
+    limits:
+      cpu: "8"
+      memory: 32Gi
+      ephemeralStorage: 100Gi
+  livenessProbe:
+    path: /health
+    port: 26657
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+  readinessProbe:
+    path: /status
+    port: 26657
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+teeWorker:
+  enabled: true
+  image:
+    repository: ghcr.io/aethelred/tee-worker
+    tag: latest
+    pullPolicy: IfNotPresent
+  command:
+    - /usr/bin/tee-worker
+    - --listen=0.0.0.0:9091
+    - --attestation-service=attestation.aethelred.svc:443
+  privileged: true
+  resources:
+    requests:
+      cpu: "2"
+      memory: 8Gi
+      sgxEpc: 64Mi
+    limits:
+      cpu: "4"
+      memory: 16Gi
+      sgxEpc: 128Mi
+
+zkmlProver:
+  enabled: true
+  image:
+    repository: ghcr.io/aethelred/zkml-prover
+    tag: latest
+    pullPolicy: IfNotPresent
+  command:
+    - /usr/bin/zkml-prover
+    - --listen=0.0.0.0:9092
+    - --gpu-enabled=true
+  resources:
+    requests:
+      cpu: "2"
+      memory: 16Gi
+      gpu: "1"
+    limits:
+      cpu: "4"
+      memory: 32Gi
+      gpu: "1"
+
+persistence:
+  enabled: true
+  storageClassName: fast-ssd
+  size: 500Gi
+
+zkmlModels:
+  existingClaim: zkml-models-pvc
+
+network:
+  chainID: aethelred-mainnet-1
+  persistentPeers: ""
+
+secrets:
+  validatorKeysSecretName: aethelred-validator-keys
+  teeKeysSecretName: aethelred-tee-keys
+
+service:
+  headless:
+    type: ClusterIP
+    annotations: {}
+  rpc:
+    enabled: true
+    type: LoadBalancer
+    annotations: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true
+  allowIngressCIDRs:
+    - 10.0.0.0/8
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+secretProviderClass:
+  enabled: false
+  name: aethelred-validator-spc
+  provider: aws
+  parameters: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    partition: 0
+
+configFiles:
+  appToml: |
+    minimum-gas-prices = "0.025uaeth"
+    pruning = "nothing"
+    pruning-keep-recent = "0"
+    pruning-keep-every = "0"
+    pruning-interval = "0"
+    halt-height = 0
+    halt-time = 0
+    min-retain-blocks = 0
+    inter-block-cache = true
+    index-events = ["tx.hash", "tx.height", "seal.id", "job.id"]
+    iavl-cache-size = 10000
+    iavl-disable-fastnode = false
+    app-db-backend = "goleveldb"
+
+    [telemetry]
+    enabled = true
+    prometheus-retention-time = 60
+    global-labels = [["chain_id", "aethelred-mainnet-1"]]
+
+    [api]
+    enable = true
+    swagger = true
+    address = "tcp://0.0.0.0:1317"
+    max-open-connections = 1000
+    rpc-read-timeout = 10
+    rpc-write-timeout = 10
+    rpc-max-body-bytes = 10000000
+    enabled-unsafe-cors = false
+
+    [grpc]
+    enable = true
+    address = "0.0.0.0:9090"
+    max-recv-msg-size = "104857600"
+    max-send-msg-size = "104857600"
+
+    [state-sync]
+    snapshot-interval = 1000
+    snapshot-keep-recent = 2
+
+    [pouw]
+    max-compute-jobs-per-block = 100
+    compute-timeout = "30s"
+    min-validators-for-verification = 3
+
+    [tee]
+    enabled = true
+    attestation-service = "https://attestation.aethelred.io"
+    refresh-interval = "1h"
+
+    [zkml]
+    enabled = true
+    prover-address = "localhost:9092"
+    max-proof-size = 10000000
+    proof-timeout = "60s"
+
+    [seal]
+    auto-seal = true
+    seal-batch-size = 50
+    seal-interval = "5s"
+
+  configToml: |
+    proxy_app = "tcp://127.0.0.1:26658"
+    moniker = "validator"
+    db_backend = "goleveldb"
+    db_dir = "data"
+    log_level = "info"
+    log_format = "json"
+    genesis_file = "config/genesis.json"
+    priv_validator_key_file = "config/priv_validator_key.json"
+    priv_validator_state_file = "data/priv_validator_state.json"
+    priv_validator_laddr = ""
+    node_key_file = "config/node_key.json"
+    abci = "socket"
+    filter_peers = false
+
+    [rpc]
+    laddr = "tcp://0.0.0.0:26657"
+    grpc_laddr = ""
+    unsafe = false
+    max_body_bytes = 10000000
+    max_header_bytes = 1048576
+    pprof_laddr = "localhost:6060"
+
+    [p2p]
+    laddr = "tcp://0.0.0.0:26656"
+    seeds = ""
+    persistent_peers = ""
+    max_num_inbound_peers = 40
+    max_num_outbound_peers = 10
+
+    [mempool]
+    type = "flood"
+    size = 5000
+    max_txs_bytes = 1073741824
+    cache_size = 10000
+
+    [consensus]
+    timeout_propose = "3s"
+    timeout_prevote = "1s"
+    timeout_precommit = "1s"
+    timeout_commit = "5s"
+
+    [instrumentation]
+    prometheus = true
+    prometheus_listen_addr = ":26660"
+    namespace = "cometbft"

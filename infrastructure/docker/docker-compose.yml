@@ -1,0 +1,155 @@
+version: '3.8'
+
+# Aethelred Local Development Environment
+# Run with:
+#   mkdir -p secrets && printf 'your-secure-password\n' > secrets/grafana_admin_password.txt
+#   docker-compose up -d
+
+services:
+  # Primary validator node
+  validator-1:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: aethelred-validator-1
+    hostname: validator-1
+    ports:
+      - "26656:26656"  # P2P
+      - "26657:26657"  # RPC
+      - "1317:1317"    # REST API
+      - "9090:9090"    # gRPC
+    volumes:
+      - validator1-data:/root/.aethelred
+    environment:
+      - MONIKER=validator-1
+      - CHAIN_ID=aethelred-testnet-1
+    networks:
+      - aethelred-network
+    command: ["start"]
+
+  # Second validator node
+  validator-2:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: aethelred-validator-2
+    hostname: validator-2
+    ports:
+      - "26666:26656"
+      - "26667:26657"
+      - "1318:1317"
+      - "9091:9090"
+    volumes:
+      - validator2-data:/root/.aethelred
+    environment:
+      - MONIKER=validator-2
+      - CHAIN_ID=aethelred-testnet-1
+      - SEEDS=validator-1:26656
+    networks:
+      - aethelred-network
+    depends_on:
+      - validator-1
+    command: ["start"]
+
+  # Third validator node
+  validator-3:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: aethelred-validator-3
+    hostname: validator-3
+    ports:
+      - "26676:26656"
+      - "26677:26657"
+      - "1319:1317"
+      - "9092:9090"
+    volumes:
+      - validator3-data:/root/.aethelred
+    environment:
+      - MONIKER=validator-3
+      - CHAIN_ID=aethelred-testnet-1
+      - SEEDS=validator-1:26656
+    networks:
+      - aethelred-network
+    depends_on:
+      - validator-1
+    command: ["start"]
+
+  # zkML Prover Service
+  zkml-prover:
+    build:
+      context: ../..
+      dockerfile: services/zkml-prover/Dockerfile
+    container_name: aethelred-zkml-prover
+    ports:
+      - "8080:8080"
+    volumes:
+      - zkml-models:/app/models
+    environment:
+      - LOG_LEVEL=info
+      - PROOF_SYSTEM=ezkl
+      - GPU_ENABLED=false
+    networks:
+      - aethelred-network
+
+  # Block Explorer (Ping Dashboard)
+  explorer:
+    image: ping-pub/explorer:latest
+    container_name: aethelred-explorer
+    ports:
+      - "8088:80"
+    environment:
+      - API_URL=http://validator-1:1317
+      - RPC_URL=http://validator-1:26657
+      - CHAIN_NAME=Aethelred Testnet
+    networks:
+      - aethelred-network
+    depends_on:
+      - validator-1
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aethelred-prometheus
+    ports:
+      - "9099:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - aethelred-network
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aethelred-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+    secrets:
+      - grafana_admin_password
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - aethelred-network
+    depends_on:
+      - prometheus
+
+secrets:
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt
+
+volumes:
+  validator1-data:
+  validator2-data:
+  validator3-data:
+  zkml-models:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  aethelred-network:
+    driver: bridge

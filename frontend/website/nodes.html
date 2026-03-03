@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run a Node | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B; --red-700: #B91C1C;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --yellow-500: #EAB308;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 70% 30%, rgba(220, 38, 38, 0.15) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; margin-bottom: 30px; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Node Types */
+    .node-types-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .node-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; transition: all 0.3s; position: relative; overflow: hidden; }
+    .node-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .node-card.recommended { border-color: var(--red-700); }
+    .node-card.recommended::before { content: 'RECOMMENDED'; position: absolute; top: 20px; right: -35px; background: var(--red-600); color: white; font-size: 10px; padding: 4px 40px; transform: rotate(45deg); font-family: 'Orbitron', monospace; }
+    .node-icon { width: 70px; height: 70px; background: rgba(220, 38, 38, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .node-icon svg { width: 36px; height: 36px; color: var(--red-500); }
+    .node-card h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+    .node-card p { font-size: 14px; color: var(--gray-400); margin-bottom: 24px; }
+    .node-specs { list-style: none; margin-bottom: 24px; }
+    .node-specs li { font-size: 13px; color: var(--gray-300); padding: 8px 0; border-bottom: 1px solid var(--dark-600); display: flex; justify-content: space-between; }
+    .node-specs li:last-child { border-bottom: none; }
+    .node-specs span { color: var(--red-400); font-family: 'JetBrains Mono', monospace; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; font-size: 14px; }
+    .btn-primary { background: var(--red-600); color: white; }
+    .btn-primary:hover { background: var(--red-500); transform: translateY(-2px); }
+    .btn-secondary { background: var(--dark-700); color: white; border: 1px solid var(--dark-500); }
+    .btn-secondary:hover { border-color: var(--red-600); }
+
+    /* Requirements */
+    .requirements-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; align-items: start; }
+    .req-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; }
+    .req-card h3 { font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+    .req-card h3 svg { width: 24px; height: 24px; color: var(--red-500); }
+    .req-list { list-style: none; }
+    .req-list li { padding: 12px 0; border-bottom: 1px solid var(--dark-600); display: flex; align-items: center; gap: 12px; }
+    .req-list li:last-child { border-bottom: none; }
+    .req-list .check { color: var(--green-500); }
+    .req-list .label { flex: 1; font-size: 14px; color: var(--gray-300); }
+    .req-list .value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--red-400); }
+
+    /* Quick Start */
+    .quickstart { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; }
+    .quickstart h3 { font-size: 24px; margin-bottom: 30px; }
+    .step { display: flex; gap: 20px; margin-bottom: 30px; }
+    .step-num { width: 40px; height: 40px; background: var(--red-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', monospace; font-weight: 700; flex-shrink: 0; }
+    .step-content h4 { font-size: 16px; margin-bottom: 8px; }
+    .step-content p { font-size: 14px; color: var(--gray-400); margin-bottom: 12px; }
+    .code-block { background: var(--dark-900); border: 1px solid var(--dark-600); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green-500); overflow-x: auto; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 60px; }
+    .stat-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 12px; padding: 24px; text-align: center; }
+    .stat-value { font-family: 'Orbitron', monospace; font-size: 36px; color: var(--red-500); margin-bottom: 8px; }
+    .stat-label { font-size: 14px; color: var(--gray-400); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 992px) { .node-types-grid { grid-template-columns: 1fr; } .requirements-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .page-hero h1 { font-size: 36px; } .stats-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="glossary.html">Glossary</a>
+        <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        Infrastructure
+      </div>
+      <h1>Run an Aethelred <span class="gradient-text">Node</span></h1>
+      <p class="subtitle">Strengthen the network, earn rewards, and become a core participant in the verifiable AI infrastructure. Choose the node type that fits your resources and goals.</p>
+    </div>
+  </section>
+
+  <!-- Node Types -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Choose Your Role</span>
+        <h2 class="section-title">Node Types</h2>
+        <p class="section-desc">Different nodes serve different purposes. Select based on your resources and how you want to contribute.</p>
+      </div>
+
+      <div class="node-types-grid">
+        <div class="node-card">
+          <div class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          </div>
+          <h3>Light Node</h3>
+          <p>Verify sealed computations without storing the full chain. Perfect for applications and mobile devices.</p>
+          <ul class="node-specs">
+            <li>Storage <span>~50 GB</span></li>
+            <li>RAM <span>4 GB</span></li>
+            <li>CPU <span>2 cores</span></li>
+            <li>Bandwidth <span>10 Mbps</span></li>
+            <li>Staking <span>None</span></li>
+          </ul>
+          <a href="#" class="btn btn-secondary">Setup Guide →</a>
+        </div>
+
+        <div class="node-card recommended">
+          <div class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          </div>
+          <h3>Full Node</h3>
+          <p>Store complete chain history and serve data to the network. The backbone of decentralization.</p>
+          <ul class="node-specs">
+            <li>Storage <span>2 TB SSD</span></li>
+            <li>RAM <span>16 GB</span></li>
+            <li>CPU <span>4+ cores</span></li>
+            <li>Bandwidth <span>100 Mbps</span></li>
+            <li>Staking <span>Optional</span></li>
+          </ul>
+          <a href="#" class="btn btn-primary">Setup Guide →</a>
+        </div>
+
+        <div class="node-card">
+          <div class="node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3>Validator Node</h3>
+          <p>Verify AI computations and produce blocks. Earn AETHEL rewards for securing the network.</p>
+          <ul class="node-specs">
+            <li>Storage <span>4 TB NVMe</span></li>
+            <li>RAM <span>64 GB ECC</span></li>
+            <li>CPU <span>8+ cores</span></li>
+            <li>Bandwidth <span>1 Gbps</span></li>
+            <li>Staking <span>100,000 AETHEL</span></li>
+          </ul>
+          <a href="#" class="btn btn-secondary">Apply to Validate →</a>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">2,847</div>
+          <div class="stat-label">Active Nodes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">247</div>
+          <div class="stat-label">Validators</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">47</div>
+          <div class="stat-label">Countries</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">99.97%</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Requirements -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Technical Requirements</span>
+        <h2 class="section-title">What You'll Need</h2>
+        <p class="section-desc">Hardware and software requirements for running a full node.</p>
+      </div>
+
+      <div class="requirements-grid">
+        <div class="req-card">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Hardware Requirements
+          </h3>
+          <ul class="req-list">
+            <li><span class="check">✓</span><span class="label">Processor</span><span class="value">4+ core x86_64</span></li>
+            <li><span class="check">✓</span><span class="label">Memory</span><span class="value">16 GB RAM</span></li>
+            <li><span class="check">✓</span><span class="label">Storage</span><span class="value">2 TB NVMe SSD</span></li>
+            <li><span class="check">✓</span><span class="label">Network</span><span class="value">100 Mbps stable</span></li>
+            <li><span class="check">✓</span><span class="label">Uptime</span><span class="value">24/7 recommended</span></li>
+          </ul>
+        </div>
+
+        <div class="req-card">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Software Requirements
+          </h3>
+          <ul class="req-list">
+            <li><span class="check">✓</span><span class="label">Operating System</span><span class="value">Ubuntu 22.04+</span></li>
+            <li><span class="check">✓</span><span class="label">Docker</span><span class="value">24.0+</span></li>
+            <li><span class="check">✓</span><span class="label">Go</span><span class="value">1.21+ (optional)</span></li>
+            <li><span class="check">✓</span><span class="label">Ports</span><span class="value">30303, 8545</span></li>
+            <li><span class="check">✓</span><span class="label">SSL Certificate</span><span class="value">For RPC</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Get Started</span>
+        <h2 class="section-title">Quick Start Guide</h2>
+        <p class="section-desc">Get your full node running in under 30 minutes.</p>
+      </div>
+
+      <div class="quickstart">
+        <h3>Full Node Setup</h3>
+        
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Install Aethelred Client</h4>
+            <p>Download and install the official Aethelred node software.</p>
+            <div class="code-block">curl -sSL https://install.aethelred.io | bash</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Initialize the Node</h4>
+            <p>Create your node identity and configure the data directory.</p>
+            <div class="code-block">aethelred init --datadir ~/.aethelred --network mainnet</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Start Syncing</h4>
+            <p>Connect to the network and begin synchronizing the blockchain.</p>
+            <div class="code-block">aethelred start --syncmode snap --http --http.api eth,net,aethel</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Monitor Your Node</h4>
+            <p>Check sync status and node health.</p>
+            <div class="code-block">aethelred attach --exec "aethel.syncing"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="comparison.html">Why Aethelred</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

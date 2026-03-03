@@ -1,0 +1,6 @@
+./doc.go
+./event.go
+./genesis.go
+./module.go
+./option.go
+./register.go

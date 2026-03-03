@@ -1,0 +1,84 @@
+# =============================================================================
+# AETHELRED BRIDGE RELAYER - Production Dockerfile
+# =============================================================================
+#
+# Build: docker build -f Dockerfile.bridge -t aethelred/bridge:latest .
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build Environment
+# -----------------------------------------------------------------------------
+FROM rust:1.75-bookworm AS builder
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libssl-dev \
+    pkg-config \
+    librocksdb-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CARGO_HOME=/usr/local/cargo
+ENV CARGO_INCREMENTAL=0
+
+WORKDIR /build
+
+# Copy Cargo files
+COPY Cargo.toml Cargo.lock ./
+COPY crates/core/Cargo.toml ./crates/core/
+COPY crates/bridge/Cargo.toml ./crates/bridge/
+
+# Create dummy sources for caching
+RUN mkdir -p crates/core/src && echo "fn main() {}" > crates/core/src/lib.rs \
+    && mkdir -p crates/bridge/src && echo "fn main() {}" > crates/bridge/src/lib.rs \
+    && echo 'fn main() { println!("dummy"); }' > crates/bridge/src/main.rs
+
+# Build dependencies
+RUN cargo build --release -p aethelred-bridge 2>/dev/null || true
+
+# Remove dummies and copy real source
+RUN rm -rf crates/*/src
+COPY crates/ ./crates/
+
+# Build the bridge relayer
+RUN cargo build --release -p aethelred-bridge \
+    && strip /build/target/release/aethelred-bridge
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime
+# -----------------------------------------------------------------------------
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    librocksdb7.8 \
+    curl \
+    tini \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -r aethelred && useradd -r -g aethelred aethelred
+RUN mkdir -p /app /data /config /keys \
+    && chown -R aethelred:aethelred /app /data /config /keys
+
+WORKDIR /app
+
+COPY --from=builder /build/target/release/aethelred-bridge /app/aethelred-bridge
+RUN chmod +x /app/aethelred-bridge
+
+USER aethelred
+
+ENV RUST_LOG="info,aethelred_bridge=debug"
+ENV RUST_BACKTRACE="1"
+
+EXPOSE 9100/tcp
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -sf http://localhost:9100/health || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/aethelred-bridge"]
+CMD ["start", "--help"]
+
+LABEL org.opencontainers.image.title="Aethelred Bridge Relayer"
+LABEL org.opencontainers.image.description="Ethereum-Aethelred bridge relayer service"

@@ -1,0 +1,8 @@
+# Check allow_simulated / AllowSimulated in genesis artifacts
+FILE=config/genesis/mainnet-genesis.json
+NO_ALLOW_SIMULATED_FIELD
+FILE=integrations/deploy/config/genesis/genesis.json
+NO_ALLOW_SIMULATED_FIELD
+FILE=tools/devnet/genesis.json
+NO_ALLOW_SIMULATED_FIELD
+MISSING_DEPLOY_CONFIG_GENESIS_DIR=yes

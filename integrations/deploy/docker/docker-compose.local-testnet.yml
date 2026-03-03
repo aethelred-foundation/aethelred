@@ -1,0 +1,106 @@
+services:
+  aethelred-rpc-mock:
+    profiles: ["mock"]
+    image: python:3.11-alpine
+    container_name: aethelred-mock-rpc
+    working_dir: /srv
+    command: ["python", "/srv/mock-rpc-server.py"]
+    volumes:
+      - ./mock-rpc-server.py:/srv/mock-rpc-server.py:ro
+    ports:
+      - "26657:26657"
+    networks:
+      default:
+        aliases:
+          - aethelred-rpc
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:26657/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  aethelred-rpc-real:
+    profiles: ["real-node"]
+    image: ghcr.io/aethelred/validator:latest
+    container_name: aethelred-real-validator
+    command: ["aethelredd", "start", "--home=/data", "--rpc.laddr=tcp://0.0.0.0:26657"]
+    ports:
+      - "26657:26657"
+    environment:
+      AETHELRED_CHAIN_ID: aethelred-local-devtools-1
+      AETHELRED_MONIKER: aethelred-real-validator
+      AETHELRED_LOG_LEVEL: info
+    volumes:
+      - aethelred-real-validator-data:/data
+    networks:
+      default:
+        aliases:
+          - aethelred-rpc
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:26657/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  aethelred-fastapi-verifier:
+    build:
+      # Context is workspace root (3 levels up from integrations/deploy/docker/)
+      context: ../../..
+      dockerfile: integrations/deploy/docker/Dockerfile.fastapi-verifier
+      args:
+        APP_DIR: integrations/apps/fastapi-verifier
+    image: aethelred/fastapi-verifier-local:dev
+    environment:
+      AETHELRED_RPC_URL: http://aethelred-rpc:26657
+      AETHELRED_HEADER_PREFIX: x-aethelred
+      AETHELRED_VERIFY_MODE: seal-envelope
+    ports:
+      - "8000:8000"
+    # FastAPI image (python:3.11-slim) has curl installed, not wget
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  aethelred-nextjs-verifier:
+    build:
+      context: ../../..
+      dockerfile: integrations/deploy/docker/Dockerfile.nextjs-api
+      args:
+        APP_DIR: integrations/apps/nextjs-verifier
+    image: aethelred/nextjs-verifier-local:dev
+    environment:
+      AETHELRED_RPC_URL: http://aethelred-rpc:26657
+      AETHELRED_HEADER_PREFIX: x-aethelred
+      AETHELRED_VERIFY_MODE: seal-envelope
+    ports:
+      - "3000:3000"
+    # NextJS image (node:20-bookworm-slim) has no curl/wget; use node fetch
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  aethelred-dashboard-devtools:
+    build:
+      context: ../../..
+      dockerfile: integrations/deploy/docker/Dockerfile.dashboard-devtools
+    image: aethelred/dashboard-devtools-local:dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://aethelred-rpc:26657
+      NEXT_PUBLIC_DEVTOOLS_FASTAPI_URL: http://127.0.0.1:8000
+      NEXT_PUBLIC_DEVTOOLS_NEXTJS_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_DEVTOOLS_RPC_URL: http://127.0.0.1:26657
+    ports:
+      - "3101:3101"
+    depends_on:
+      aethelred-fastapi-verifier:
+        condition: service_healthy
+      aethelred-nextjs-verifier:
+        condition: service_healthy
+
+volumes:
+  aethelred-real-validator-data:

@@ -1,0 +1,44 @@
+{
+  "description": "Cross-SDK hybrid signature test vectors",
+  "generated_by": "aethelred-core v0.1.0 (Rust canonical implementation)",
+  "format_version": 1,
+  "vectors": [
+    {
+      "id": "sig_level3_with_metadata",
+      "description": "Dilithium3 hybrid signature with timestamp and chain_id",
+      "security_level": 3,
+      "message_hex": "48656c6c6f2c20416574686572656420776f726c6421",
+      "message_utf8": "Hello, Aethelred world!",
+      "timestamp": 1704067200,
+      "chain_id": 1,
+      "note": "Generate during CI: run `cargo test --features full-pqc -- generate_test_vectors --ignored` to populate these fields",
+      "public_key_hex": "PLACEHOLDER_GENERATE_FROM_CANONICAL_IMPL",
+      "signature_hex": "PLACEHOLDER_GENERATE_FROM_CANONICAL_IMPL",
+      "expected_valid": true
+    },
+    {
+      "id": "sig_level3_no_metadata",
+      "description": "Dilithium3 hybrid signature without optional metadata",
+      "security_level": 3,
+      "message_hex": "5472616e73616374696f6e2064617461",
+      "message_utf8": "Transaction data",
+      "timestamp": null,
+      "chain_id": null,
+      "note": "PLACEHOLDER — generate from canonical Rust implementation",
+      "public_key_hex": "PLACEHOLDER_GENERATE_FROM_CANONICAL_IMPL",
+      "signature_hex": "PLACEHOLDER_GENERATE_FROM_CANONICAL_IMPL",
+      "expected_valid": true
+    },
+    {
+      "id": "sig_tampered_classical",
+      "description": "Hybrid signature with tampered ECDSA component (should fail)",
+      "security_level": 3,
+      "message_hex": "54616d706572656420746573742064617461",
+      "message_utf8": "Tampered test data",
+      "note": "PLACEHOLDER — generate valid sig, then flip a byte in classical component",
+      "public_key_hex": "PLACEHOLDER",
+      "signature_hex": "PLACEHOLDER_WITH_TAMPERED_ECDSA",
+      "expected_valid": false
+    }
+  ]
+}

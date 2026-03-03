@@ -1,0 +1,83 @@
+[package]
+name = "aethelred-py"
+version = "2.0.0"
+edition = "2021"
+authors = ["Aethelred Team <dev@aethelred.io>"]
+description = "Python bindings for the Aethelred Sovereign AI Platform"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/sdk-py"
+keywords = ["blockchain", "ai", "tee", "sovereign", "python"]
+categories = ["api-bindings", "cryptography"]
+readme = "README.md"
+
+[lib]
+name = "aethelred"
+crate-type = ["cdylib"]
+
+[dependencies]
+# PyO3 for Python bindings
+pyo3 = { version = "0.20", features = [
+    "extension-module",
+    "abi3-py38",
+    "multiple-pymethods",
+    "anyhow",
+] }
+
+# Async support
+pyo3-asyncio = { version = "0.20", features = ["tokio-runtime"] }
+tokio = { version = "1.35", features = ["rt-multi-thread", "sync", "time"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Cryptography
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+hkdf = "0.12"
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+rand = "0.8"
+hex = "0.4"
+base64 = "0.21"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# UUID
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Numeric
+num-traits = "0.2"
+
+[dev-dependencies]
+pyo3 = { version = "0.20", features = ["auto-initialize"] }
+
+[build-dependencies]
+pyo3-build-config = "0.20"
+
+[features]
+default = ["python-bindings"]
+offline-minimal = []
+python-bindings = []
+# Enable hardware attestation (requires TEE SDK)
+hardware-attestation = []
+# Enable GPU acceleration
+gpu = []
+# Development mode with mock attestation
+dev-mode = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true

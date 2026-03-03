@@ -1,0 +1,79 @@
+name: SDK Rust Tests
+
+on:
+  pull_request:
+    paths:
+      - "sdk/rust/**"
+      - ".github/workflows/sdk-rust-tests.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "sdk/rust/**"
+      - ".github/workflows/sdk-rust-tests.yml"
+
+jobs:
+  sdk-rust-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/rust
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.75.0
+          components: llvm-tools-preview
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Run SDK Rust tests (lib + integration)
+        run: cargo test --lib --tests
+
+      - name: Run SDK Rust coverage with threshold
+        run: |
+          cargo llvm-cov \
+            --lib \
+            --tests \
+            --lcov \
+            --output-path lcov.info \
+            --fail-under-lines 17.5
+
+      - name: Print Rust coverage summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path("lcov.info")
+          if not p.exists():
+              raise SystemExit("lcov.info not found")
+
+          lf = 0
+          lh = 0
+          for line in p.read_text().splitlines():
+              if line.startswith("LF:"):
+                  lf += int(line[3:])
+              elif line.startswith("LH:"):
+                  lh += int(line[3:])
+
+          pct = (lh / lf * 100.0) if lf else 0.0
+          print("Rust coverage totals:")
+          print(f"  lines_hit: {lh}")
+          print(f"  lines_found: {lf}")
+          print(f"  line_coverage_percent: {pct:.2f}")
+          PY
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-rust-coverage
+          path: sdk/rust/lcov.info
+          if-no-files-found: error

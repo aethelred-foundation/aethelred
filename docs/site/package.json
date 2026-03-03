@@ -1,0 +1,19 @@
+{
+    "name": "aethelred-docs",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Aethelred SDK Documentation Site",
+    "scripts": {
+        "dev": "vitepress dev docs",
+        "build": "vitepress build docs",
+        "preview": "vitepress preview docs",
+        "generate:go": "node scripts/generate-go-api.js",
+        "generate:rust": "node scripts/generate-rust-api.js",
+        "generate:ts": "node scripts/generate-ts-api.js",
+        "generate:all": "npm run generate:go && npm run generate:rust && npm run generate:ts",
+        "prebuild": "npm run generate:all"
+    },
+    "devDependencies": {
+        "vitepress": "^1.5.0"
+    }
+}

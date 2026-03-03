@@ -1,0 +1,4 @@
+./annotations.pb.go
+./client.pb.go
+./http.pb.go
+./httpbody.pb.go

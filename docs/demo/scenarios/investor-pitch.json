@@ -1,0 +1,74 @@
+{
+  "name": "Investor Pitch",
+  "description": "5-7 minute demo showcasing Aethelred's value proposition",
+  "duration_minutes": 7,
+  "audience": "investors",
+  "sequence": [
+    {
+      "section": "Problem Statement",
+      "duration_seconds": 60,
+      "talking_points": [
+        "Global enterprises face $500B+ annual compliance costs",
+        "Cross-border AI computation is blocked by data sovereignty laws",
+        "Current solutions: Data replication (expensive) or no collaboration (limiting)",
+        "Aethelred enables compute without moving data"
+      ]
+    },
+    {
+      "section": "Demo: Falcon-Lion Trade Finance",
+      "demo": "falcon-lion",
+      "mode": "presentation",
+      "duration_seconds": 180,
+      "talking_points": [
+        "Watch: UAE company ships goods to Singapore",
+        "TEE enclave verifies compliance without exposing data",
+        "Digital Seal provides cryptographic proof",
+        "Audit trail is immutable and regulatory-ready"
+      ]
+    },
+    {
+      "section": "Demo: Helix-Guard Drug Discovery",
+      "demo": "helix-guard",
+      "mode": "presentation",
+      "duration_seconds": 180,
+      "talking_points": [
+        "Two pharma companies collaborate blindly",
+        "Neither sees the other's proprietary data",
+        "zkML proves computation correctness",
+        "Settlement in AETHEL tokens"
+      ]
+    },
+    {
+      "section": "Token Economics",
+      "duration_seconds": 60,
+      "talking_points": [
+        "AETHEL: Utility token for computation payments",
+        "Validators stake tokens, earn rewards",
+        "Bonding curve for fair price discovery",
+        "Deflationary through computation burns"
+      ]
+    },
+    {
+      "section": "Traction & Roadmap",
+      "duration_seconds": 60,
+      "talking_points": [
+        "MVP complete with 4 SDKs (Python, TypeScript, Rust, Go)",
+        "2 enterprise-grade demos ready",
+        "Testnet launch: Q2 2024",
+        "Mainnet: Q4 2024"
+      ]
+    }
+  ],
+  "key_metrics_to_highlight": [
+    { "metric": "TAM", "value": "$500B", "context": "Annual global compliance spend" },
+    { "metric": "Demo Value", "value": "$2.5M", "context": "Single trade finance deal" },
+    { "metric": "Drug Discovery", "value": "150K AETHEL", "context": "Per collaboration session" },
+    { "metric": "SDKs", "value": "4", "context": "Python, TypeScript, Rust, Go" }
+  ],
+  "objection_handlers": {
+    "Why blockchain?": "Immutable audit trail + decentralized trust + token economics for incentive alignment",
+    "TEE security concerns?": "Multiple TEE support (SGX, SEV, TDX) + attestation verification + zkML fallback",
+    "Regulatory approval?": "Built FOR regulators - provides more visibility, not less. Data sovereignty preserved.",
+    "Competition?": "Unique combination of TEE + zkML + sovereign boundaries. No direct competitor."
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "Sovereign Function": {
+    "prefix": ["#[sovereign]", "sovereign", "aeth-func"],
+    "body": [
+      "#[sovereign(",
+      "    hardware = HardwareType::${1|TeeRequired,IntelSgx,AmdSev,AwsNitro,NvidiaH100|},",
+      "    compliance = &[${2|Compliance::Gdpr,Compliance::Hipaa,Compliance::UaeDataResidency|}],",
+      ")]",
+      "pub fn ${3:function_name}(",
+      "    ${4:data}: SovereignData<${5:T}>,",
+      ") -> Result<SovereignData<${6:R}>, AethelredError> {",
+      "    ${0:todo!()}",
+      "}"
+    ],
+    "description": "Create a sovereign function with hardware and compliance"
+  },
+  "Sovereign Function Async": {
+    "prefix": ["#[sovereign-async]", "sov-async"],
+    "body": [
+      "#[sovereign(",
+      "    hardware = HardwareType::${1|TeeRequired,AwsNitro|},",
+      "    jurisdiction = Jurisdiction::${2|Uae,Eu,Us,Global|},",
+      ")]",
+      "pub async fn ${3:function_name}(",
+      "    ${4:data}: SovereignData<${5:T}>,",
+      ") -> Result<SovereignData<${6:R}>, AethelredError> {",
+      "    ${0:todo!()}",
+      "}"
+    ],
+    "description": "Create an async sovereign function"
+  },
+  "Sovereign Data": {
+    "prefix": ["SovereignData", "sov-data"],
+    "body": [
+      "SovereignData::new(",
+      "    ${1:data},",
+      "    Jurisdiction::${2|Uae,Eu,Us,Global|},",
+      "    DataClassification::${3|Sensitive,Restricted,Confidential|},",
+      ")"
+    ],
+    "description": "Create SovereignData with jurisdiction"
+  },
+  "Aethelred Use": {
+    "prefix": ["use-aethelred", "aeth-use"],
+    "body": [
+      "use aethelred::{",
+      "    sovereign,",
+      "    SovereignData,",
+      "    Jurisdiction,",
+      "    HardwareType,",
+      "    Compliance,",
+      "    DataClassification,",
+      "    AttestationProvider,",
+      "    AethelredError,",
+      "};"
+    ],
+    "description": "Import common Aethelred types"
+  },
+  "Attestation Provider": {
+    "prefix": ["AttestationProvider", "aeth-attest"],
+    "body": [
+      "let provider = AttestationProvider::detect()?;",
+      "let report = provider.get_attestation().await?;",
+      "",
+      "if !report.is_valid() {",
+      "    return Err(AethelredError::AttestationFailed);",
+      "}",
+      "${0:}"
+    ],
+    "description": "Get attestation from hardware"
+  },
+  "Compliance Engine": {
+    "prefix": ["ComplianceEngine", "aeth-compliance"],
+    "body": [
+      "let engine = ComplianceEngine::new(&[",
+      "    Compliance::${1|Gdpr,Hipaa,UaeDataResidency|},",
+      "    Compliance::${2|Ccpa,Pipl,PciDss|},",
+      "]);",
+      "",
+      "engine.validate_transfer(",
+      "    Jurisdiction::${3|Uae,Eu|},",
+      "    Jurisdiction::${4|Us,Eu|},",
+      ")?;",
+      "${0:}"
+    ],
+    "description": "Create compliance engine"
+  },
+  "Digital Seal": {
+    "prefix": ["DigitalSeal", "aeth-seal"],
+    "body": [
+      "let seal = DigitalSeal::create(",
+      "    &model_commitment,",
+      "    &input_commitment,",
+      "    &output_commitment,",
+      "    Jurisdiction::${1|Uae,Eu,Us|},",
+      "    &attestation,",
+      ")?;",
+      "",
+      "seal.verify()?;",
+      "${0:}"
+    ],
+    "description": "Create and verify digital seal"
+  },
+  "Execution Context": {
+    "prefix": ["ExecutionContext", "aeth-ctx"],
+    "body": [
+      "let ctx = ExecutionContext::new()",
+      "    .with_jurisdiction(Jurisdiction::${1|Uae,Eu,Us|})",
+      "    .with_hardware(HardwareType::${2|TeeRequired,AwsNitro|})",
+      "    .with_compliance(&[Compliance::${3|Gdpr,Hipaa|}])",
+      "    .build()?;",
+      "",
+      "ctx.execute(|| {",
+      "    ${0:// Sovereign execution}",
+      "})"
+    ],
+    "description": "Create execution context"
+  },
+  "Sovereign Module": {
+    "prefix": ["sovereign-module", "aeth-mod"],
+    "body": [
+      "//! ${1:Module description}",
+      "",
+      "use aethelred::{",
+      "    sovereign, SovereignData, Jurisdiction,",
+      "    HardwareType, Compliance, AethelredError,",
+      "};",
+      "",
+      "/// ${2:Function description}",
+      "#[sovereign(hardware = HardwareType::TeeRequired)]",
+      "pub fn ${3:process}(",
+      "    data: SovereignData<${4:Vec<u8>}>,",
+      ") -> Result<SovereignData<${5:Vec<u8>}>, AethelredError> {",
+      "    ${0:todo!()}",
+      "}"
+    ],
+    "description": "Create a sovereign module template"
+  },
+  "UAE Finance Implementation": {
+    "prefix": ["uae-finance", "aeth-uae"],
+    "body": [
+      "use aethelred::{",
+      "    sovereign, SovereignData, Jurisdiction,",
+      "    HardwareType, Compliance, DataClassification,",
+      "};",
+      "",
+      "/// UAE-compliant financial data processor.",
+      "/// ",
+      "/// Ensures data never leaves UAE jurisdiction.",
+      "#[sovereign(",
+      "    hardware = HardwareType::AwsNitro,",
+      "    jurisdiction = Jurisdiction::Uae,",
+      "    compliance = &[Compliance::UaeDataResidency, Compliance::Gdpr],",
+      ")]",
+      "pub fn ${1:process_transaction}(",
+      "    transaction: SovereignData<${2:Transaction}>,",
+      ") -> Result<SovereignData<${3:TransactionResult}>, AethelredError> {",
+      "    // Validate within UAE TEE",
+      "    let data = transaction.access()?;",
+      "    ",
+      "    ${0:// Process transaction}",
+      "    ",
+      "    SovereignData::new(",
+      "        result,",
+      "        Jurisdiction::Uae,",
+      "        DataClassification::Sensitive,",
+      "    )",
+      "}"
+    ],
+    "description": "UAE-compliant finance template"
+  }
+}

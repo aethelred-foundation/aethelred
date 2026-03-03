@@ -1,0 +1,1784 @@
+{
+  "components": {
+    "parameters": {
+      "Pagination": {
+        "in": "query",
+        "name": "pagination",
+        "schema": {
+          "properties": {
+            "count_total": {
+              "type": "boolean"
+            },
+            "key": {
+              "format": "byte",
+              "type": "string"
+            },
+            "limit": {
+              "format": "uint64",
+              "type": "string"
+            },
+            "offset": {
+              "format": "uint64",
+              "type": "string"
+            },
+            "reverse": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Bad request"
+      },
+      "NotFound": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Resource not found"
+      },
+      "RateLimited": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Rate limit exceeded"
+      }
+    },
+    "schemas": {
+      "Block": {
+        "properties": {
+          "block": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "chain_id": {
+                    "type": "string"
+                  },
+                  "height": {
+                    "type": "string"
+                  },
+                  "time": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "block_id": {
+            "properties": {
+              "hash": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "ComputeJob": {
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "creator": {
+            "description": "Address of job creator",
+            "type": "string"
+          },
+          "id": {
+            "description": "Unique job identifier",
+            "type": "string"
+          },
+          "input_hash": {
+            "description": "SHA-256 hash of input data",
+            "format": "byte",
+            "type": "string"
+          },
+          "max_gas": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "model_hash": {
+            "description": "SHA-256 hash of the model",
+            "format": "byte",
+            "type": "string"
+          },
+          "output_hash": {
+            "description": "SHA-256 hash of output (after completion)",
+            "format": "byte",
+            "type": "string"
+          },
+          "priority": {
+            "default": 1,
+            "format": "uint32",
+            "type": "integer"
+          },
+          "proof_type": {
+            "$ref": "#/components/schemas/ProofType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "timeout_blocks": {
+            "format": "uint32",
+            "type": "integer"
+          },
+          "validator_address": {
+            "description": "Assigned validator address",
+            "type": "string"
+          },
+          "verification_result": {
+            "$ref": "#/components/schemas/VerificationResult"
+          }
+        },
+        "required": [
+          "id",
+          "creator",
+          "model_hash",
+          "input_hash",
+          "status",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "CreateSealRequest": {
+        "properties": {
+          "expires_in_blocks": {
+            "format": "uint64",
+            "type": "integer"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "regulatory_info": {
+            "$ref": "#/components/schemas/RegulatoryInfo"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "CreateSealResponse": {
+        "properties": {
+          "seal_id": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DigitalSeal": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "input_commitment": {
+            "format": "byte",
+            "type": "string"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "model_commitment": {
+            "format": "byte",
+            "type": "string"
+          },
+          "model_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "output_commitment": {
+            "format": "byte",
+            "type": "string"
+          },
+          "regulatory_info": {
+            "$ref": "#/components/schemas/RegulatoryInfo"
+          },
+          "requester": {
+            "type": "string"
+          },
+          "revocation_reason": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SealStatus"
+          },
+          "tee_attestation": {
+            "$ref": "#/components/schemas/TEEAttestation"
+          },
+          "validators": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatorAttestation"
+            },
+            "type": "array"
+          },
+          "zkml_proof": {
+            "$ref": "#/components/schemas/ZKMLProof"
+          }
+        },
+        "required": [
+          "id",
+          "job_id",
+          "model_hash",
+          "status",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "EpochStats": {
+        "properties": {
+          "end_block": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "epoch": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "jobs_completed": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "start_block": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "total_rewards": {
+            "type": "string"
+          },
+          "useful_work_units": {
+            "type": "string"
+          },
+          "validator_count": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Error": {
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "details": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HardwareCapability": {
+        "properties": {
+          "cpu_cores": {
+            "type": "integer"
+          },
+          "gpu_memory_gb": {
+            "type": "integer"
+          },
+          "max_model_size_mb": {
+            "format": "uint64",
+            "type": "integer"
+          },
+          "tee_platforms": {
+            "items": {
+              "$ref": "#/components/schemas/TEEPlatform"
+            },
+            "type": "array"
+          },
+          "zkml_supported": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "JobStatus": {
+        "enum": [
+          "JOB_STATUS_UNSPECIFIED",
+          "JOB_STATUS_PENDING",
+          "JOB_STATUS_ASSIGNED",
+          "JOB_STATUS_COMPUTING",
+          "JOB_STATUS_VERIFYING",
+          "JOB_STATUS_COMPLETED",
+          "JOB_STATUS_FAILED",
+          "JOB_STATUS_CANCELLED",
+          "JOB_STATUS_EXPIRED"
+        ],
+        "type": "string"
+      },
+      "ListJobsResponse": {
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/ComputeJob"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PageResponse"
+          }
+        },
+        "type": "object"
+      },
+      "ListModelsResponse": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/RegisteredModel"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PageResponse"
+          }
+        },
+        "type": "object"
+      },
+      "ListSealsResponse": {
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/PageResponse"
+          },
+          "seals": {
+            "items": {
+              "$ref": "#/components/schemas/DigitalSeal"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ListValidatorsResponse": {
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/PageResponse"
+          },
+          "validators": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatorStats"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "NodeInfo": {
+        "properties": {
+          "default_node_id": {
+            "type": "string"
+          },
+          "listen_addr": {
+            "type": "string"
+          },
+          "moniker": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponse": {
+        "properties": {
+          "next_key": {
+            "format": "byte",
+            "type": "string"
+          },
+          "total": {
+            "format": "uint64",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProofSystem": {
+        "enum": [
+          "PROOF_SYSTEM_UNSPECIFIED",
+          "PROOF_SYSTEM_GROTH16",
+          "PROOF_SYSTEM_PLONK",
+          "PROOF_SYSTEM_STARK",
+          "PROOF_SYSTEM_EZKL"
+        ],
+        "type": "string"
+      },
+      "ProofType": {
+        "enum": [
+          "PROOF_TYPE_UNSPECIFIED",
+          "PROOF_TYPE_TEE",
+          "PROOF_TYPE_ZKML",
+          "PROOF_TYPE_HYBRID",
+          "PROOF_TYPE_OPTIMISTIC"
+        ],
+        "type": "string"
+      },
+      "RegisterCapabilityRequest": {
+        "properties": {
+          "attestation": {
+            "$ref": "#/components/schemas/TEEAttestation"
+          },
+          "hardware_capabilities": {
+            "$ref": "#/components/schemas/HardwareCapability"
+          }
+        },
+        "type": "object"
+      },
+      "RegisterModelRequest": {
+        "properties": {
+          "architecture": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UtilityCategory"
+          },
+          "input_schema": {
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "model_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "output_schema": {
+            "type": "string"
+          },
+          "storage_uri": {
+            "format": "uri",
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_hash",
+          "name"
+        ],
+        "type": "object"
+      },
+      "RegisterModelResponse": {
+        "properties": {
+          "model_hash": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RegisteredModel": {
+        "properties": {
+          "architecture": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UtilityCategory"
+          },
+          "input_schema": {
+            "type": "string"
+          },
+          "model_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "output_schema": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "registered_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "storage_uri": {
+            "format": "uri",
+            "type": "string"
+          },
+          "total_jobs": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RegulatoryInfo": {
+        "properties": {
+          "audit_trail_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "compliance_frameworks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "data_classification": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "retention_period": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RevokeSealRequest": {
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "SealStatus": {
+        "enum": [
+          "SEAL_STATUS_UNSPECIFIED",
+          "SEAL_STATUS_ACTIVE",
+          "SEAL_STATUS_REVOKED",
+          "SEAL_STATUS_EXPIRED",
+          "SEAL_STATUS_SUPERSEDED"
+        ],
+        "type": "string"
+      },
+      "SubmitJobRequest": {
+        "properties": {
+          "callback_url": {
+            "format": "uri",
+            "type": "string"
+          },
+          "input_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "max_gas": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "model_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "priority": {
+            "default": 1,
+            "format": "uint32",
+            "type": "integer"
+          },
+          "proof_type": {
+            "$ref": "#/components/schemas/ProofType"
+          },
+          "timeout_blocks": {
+            "format": "uint32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_hash",
+          "input_hash"
+        ],
+        "type": "object"
+      },
+      "SubmitJobResponse": {
+        "properties": {
+          "estimated_blocks": {
+            "type": "integer"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TEEAttestation": {
+        "properties": {
+          "enclave_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "pcr_values": {
+            "additionalProperties": {
+              "format": "byte",
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/TEEPlatform"
+          },
+          "quote": {
+            "format": "byte",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TEEPlatform": {
+        "enum": [
+          "TEE_PLATFORM_UNSPECIFIED",
+          "TEE_PLATFORM_INTEL_SGX",
+          "TEE_PLATFORM_AMD_SEV",
+          "TEE_PLATFORM_AWS_NITRO",
+          "TEE_PLATFORM_ARM_TRUSTZONE"
+        ],
+        "type": "string"
+      },
+      "UsefulWorkStats": {
+        "properties": {
+          "active_validators": {
+            "type": "integer"
+          },
+          "average_job_latency_ms": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "completed_jobs": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "failed_jobs": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "jobs_by_category": {
+            "additionalProperties": {
+              "format": "uint64",
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "total_jobs": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "total_useful_work_units": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UtilityCategory": {
+        "enum": [
+          "UTILITY_CATEGORY_UNSPECIFIED",
+          "UTILITY_CATEGORY_MEDICAL",
+          "UTILITY_CATEGORY_SCIENTIFIC",
+          "UTILITY_CATEGORY_FINANCIAL",
+          "UTILITY_CATEGORY_LEGAL",
+          "UTILITY_CATEGORY_EDUCATIONAL",
+          "UTILITY_CATEGORY_ENVIRONMENTAL",
+          "UTILITY_CATEGORY_GENERAL"
+        ],
+        "type": "string"
+      },
+      "ValidatorAttestation": {
+        "properties": {
+          "signature": {
+            "format": "byte",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validator_address": {
+            "type": "string"
+          },
+          "voting_power": {
+            "format": "uint64",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ValidatorStats": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "average_latency_ms": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "hardware_capabilities": {
+            "$ref": "#/components/schemas/HardwareCapability"
+          },
+          "jobs_completed": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "jobs_failed": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "reputation_score": {
+            "format": "double",
+            "type": "number"
+          },
+          "slashing_events": {
+            "type": "integer"
+          },
+          "total_rewards": {
+            "type": "string"
+          },
+          "uptime_percentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "VerificationResult": {
+        "properties": {
+          "consensus_validators": {
+            "type": "integer"
+          },
+          "output_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "proof_type": {
+            "$ref": "#/components/schemas/ProofType"
+          },
+          "tee_attestation": {
+            "$ref": "#/components/schemas/TEEAttestation"
+          },
+          "total_voting_power": {
+            "format": "uint64",
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "zkml_proof": {
+            "$ref": "#/components/schemas/ZKMLProof"
+          }
+        },
+        "type": "object"
+      },
+      "VerifySealResponse": {
+        "properties": {
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "seal": {
+            "$ref": "#/components/schemas/DigitalSeal"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "verification_details": {
+            "properties": {
+              "not_expired": {
+                "type": "boolean"
+              },
+              "not_revoked": {
+                "type": "boolean"
+              },
+              "signature_valid": {
+                "type": "boolean"
+              },
+              "tee_attestation_valid": {
+                "type": "boolean"
+              },
+              "zkml_proof_valid": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "VerifyTEEAttestationRequest": {
+        "properties": {
+          "attestation": {
+            "$ref": "#/components/schemas/TEEAttestation"
+          },
+          "expected_enclave_hash": {
+            "format": "byte",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attestation"
+        ],
+        "type": "object"
+      },
+      "VerifyTEEAttestationResponse": {
+        "properties": {
+          "enclave_hash": {
+            "format": "byte",
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/TEEPlatform"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "VerifyZKProofRequest": {
+        "properties": {
+          "proof": {
+            "format": "byte",
+            "type": "string"
+          },
+          "proof_system": {
+            "$ref": "#/components/schemas/ProofSystem"
+          },
+          "public_inputs": {
+            "items": {
+              "format": "byte",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "verifying_key_hash": {
+            "format": "byte",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proof",
+          "public_inputs",
+          "verifying_key_hash"
+        ],
+        "type": "object"
+      },
+      "VerifyZKProofResponse": {
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "verification_time_ms": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ZKMLProof": {
+        "properties": {
+          "proof": {
+            "format": "byte",
+            "type": "string"
+          },
+          "proof_system": {
+            "$ref": "#/components/schemas/ProofSystem"
+          },
+          "public_inputs": {
+            "items": {
+              "format": "byte",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "verifying_key_hash": {
+            "format": "byte",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      },
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "developers@aethelred.org",
+      "name": "Aethelred Team",
+      "url": "https://aethelred.org"
+    },
+    "description": "The Aethelred AI Blockchain API provides endpoints for submitting AI compute jobs,\ncreating digital seals, managing models, and verifying cryptographic proofs.\n",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title": "Aethelred API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/aethelred/pouw/v1/epochs/{epoch}/stats": {
+      "get": {
+        "operationId": "getEpochStats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "epoch",
+            "required": true,
+            "schema": {
+              "format": "uint64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EpochStats"
+                }
+              }
+            },
+            "description": "Epoch statistics"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Get epoch statistics",
+        "tags": [
+          "Network"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pagination"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "$ref": "#/components/schemas/JobStatus"
+            }
+          },
+          {
+            "in": "query",
+            "name": "creator",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListJobsResponse"
+                }
+              }
+            },
+            "description": "List of jobs"
+          }
+        },
+        "summary": "List all jobs",
+        "tags": [
+          "Jobs"
+        ]
+      },
+      "post": {
+        "operationId": "submitJob",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJobResponse"
+                }
+              }
+            },
+            "description": "Job submitted successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "summary": "Submit a compute job",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/jobs/pending": {
+      "get": {
+        "operationId": "listPendingJobs",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListJobsResponse"
+                }
+              }
+            },
+            "description": "List of pending jobs"
+          }
+        },
+        "summary": "List pending jobs",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComputeJob"
+                }
+              }
+            },
+            "description": "Job details"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Get job by ID",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/jobs/{job_id}/cancel": {
+      "post": {
+        "operationId": "cancelJob",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job cancelled"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Cancel a pending job",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/models": {
+      "get": {
+        "operationId": "listModels",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pagination"
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "$ref": "#/components/schemas/UtilityCategory"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListModelsResponse"
+                }
+              }
+            },
+            "description": "List of models"
+          }
+        },
+        "summary": "List models",
+        "tags": [
+          "Models"
+        ]
+      },
+      "post": {
+        "operationId": "registerModel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterModelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterModelResponse"
+                }
+              }
+            },
+            "description": "Model registered"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "Register a model",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/models/{model_hash}": {
+      "get": {
+        "operationId": "getModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_hash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisteredModel"
+                }
+              }
+            },
+            "description": "Model details"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Get model by hash",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/stats/useful_work": {
+      "get": {
+        "operationId": "getUsefulWorkStats",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsefulWorkStats"
+                }
+              }
+            },
+            "description": "Useful work statistics"
+          }
+        },
+        "summary": "Get useful work statistics",
+        "tags": [
+          "Network"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/validators": {
+      "get": {
+        "operationId": "listValidators",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListValidatorsResponse"
+                }
+              }
+            },
+            "description": "List of validators"
+          }
+        },
+        "summary": "List validators",
+        "tags": [
+          "Validators"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/validators/{address}/capability": {
+      "post": {
+        "operationId": "registerValidatorCapability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterCapabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Capability registered"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "Register validator capability",
+        "tags": [
+          "Validators"
+        ]
+      }
+    },
+    "/aethelred/pouw/v1/validators/{address}/stats": {
+      "get": {
+        "operationId": "getValidatorStats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidatorStats"
+                }
+              }
+            },
+            "description": "Validator statistics"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Get validator stats",
+        "tags": [
+          "Validators"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals": {
+      "get": {
+        "operationId": "listSeals",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Pagination"
+          },
+          {
+            "in": "query",
+            "name": "requester",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model_hash",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSealsResponse"
+                }
+              }
+            },
+            "description": "List of seals"
+          }
+        },
+        "summary": "List seals",
+        "tags": [
+          "Seals"
+        ]
+      },
+      "post": {
+        "operationId": "createSeal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSealResponse"
+                }
+              }
+            },
+            "description": "Seal created"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "Create a digital seal",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals/{seal_id}": {
+      "get": {
+        "operationId": "getSeal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seal_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DigitalSeal"
+                }
+              }
+            },
+            "description": "Seal details"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Get seal by ID",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals/{seal_id}/revoke": {
+      "post": {
+        "operationId": "revokeSeal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seal_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Seal revoked"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Revoke a seal",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/seal/v1/seals/{seal_id}/verify": {
+      "get": {
+        "operationId": "verifySeal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "seal_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifySealResponse"
+                }
+              }
+            },
+            "description": "Verification result"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Verify a seal",
+        "tags": [
+          "Seals"
+        ]
+      }
+    },
+    "/aethelred/verify/v1/tee/attestation:verify": {
+      "post": {
+        "operationId": "verifyTEEAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTEEAttestationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTEEAttestationResponse"
+                }
+              }
+            },
+            "description": "Attestation verification result"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "Verify TEE attestation",
+        "tags": [
+          "Verification"
+        ]
+      }
+    },
+    "/aethelred/verify/v1/zkproofs:verify": {
+      "post": {
+        "operationId": "verifyZKProof",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyZKProofRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyZKProofResponse"
+                }
+              }
+            },
+            "description": "Proof verification result"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        },
+        "summary": "Verify a ZK proof",
+        "tags": [
+          "Verification"
+        ]
+      }
+    },
+    "/cosmos/base/tendermint/v1beta1/blocks/latest": {
+      "get": {
+        "operationId": "getLatestBlock",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Block"
+                }
+              }
+            },
+            "description": "Latest block"
+          }
+        },
+        "summary": "Get latest block",
+        "tags": [
+          "Network"
+        ]
+      }
+    },
+    "/cosmos/base/tendermint/v1beta1/node_info": {
+      "get": {
+        "operationId": "getNodeInfo",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeInfo"
+                }
+              }
+            },
+            "description": "Node information"
+          }
+        },
+        "summary": "Get node info",
+        "tags": [
+          "Network"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    },
+    {
+      "BearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Mainnet",
+      "url": "https://rpc.mainnet.aethelred.org"
+    },
+    {
+      "description": "Testnet",
+      "url": "https://rpc.testnet.aethelred.org"
+    },
+    {
+      "description": "Local Development",
+      "url": "http://localhost:26657"
+    }
+  ],
+  "tags": [
+    {
+      "description": "AI Compute Job operations",
+      "name": "Jobs"
+    },
+    {
+      "description": "Digital Seal operations",
+      "name": "Seals"
+    },
+    {
+      "description": "AI Model Registry operations",
+      "name": "Models"
+    },
+    {
+      "description": "Validator operations",
+      "name": "Validators"
+    },
+    {
+      "description": "Proof verification operations",
+      "name": "Verification"
+    },
+    {
+      "description": "Network information",
+      "name": "Network"
+    }
+  ]
+}

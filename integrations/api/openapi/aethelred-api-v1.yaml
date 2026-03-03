@@ -1,0 +1,1392 @@
+openapi: 3.1.0
+info:
+  title: Aethelred API
+  description: |
+    Unified API specification for the Aethelred sovereign Layer 1 blockchain for Verifiable AI.
+
+    This specification defines the common API interface implemented by all official SDKs:
+    - Python SDK
+    - Rust SDK
+    - Go SDK
+    - TypeScript SDK
+
+    ## Authentication
+    All API requests require authentication via API key or wallet signature.
+
+    ## Rate Limiting
+    Default rate limits: 1000 requests/minute for authenticated users.
+
+    ## Error Handling
+    All errors follow the standard AethelredError format with error codes.
+  version: 1.0.0
+  contact:
+    name: Aethelred Team
+    url: https://aethelred.org
+    email: developers@aethelred.org
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.aethelred.org/v1
+    description: Production
+  - url: https://testnet-api.aethelred.org/v1
+    description: Testnet
+  - url: http://localhost:26657
+    description: Local development
+
+tags:
+  - name: Jobs
+    description: Compute job management
+  - name: Seals
+    description: AI Seal verification and retrieval
+  - name: Models
+    description: Registered model operations
+  - name: Validators
+    description: Validator operations
+  - name: Verification
+    description: Proof verification
+  - name: Chain
+    description: Blockchain queries
+  - name: Transactions
+    description: Transaction submission
+
+paths:
+  /jobs:
+    post:
+      operationId: submitJob
+      summary: Submit a compute job
+      description: |
+        Submit a new AI compute job for verification. The job will be assigned to
+        validators based on the specified proof type and model requirements.
+      tags:
+        - Jobs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitJobRequest'
+      responses:
+        '201':
+          description: Job submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitJobResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      operationId: listJobs
+      summary: List compute jobs
+      description: List compute jobs with optional filtering by status, requester, or model.
+      tags:
+        - Jobs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/JobStatus'
+        - name: requester
+          in: query
+          schema:
+            type: string
+          description: Filter by requester address
+        - name: model_hash
+          in: query
+          schema:
+            type: string
+            format: hex
+          description: Filter by model hash
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListJobsResponse'
+
+  /jobs/{job_id}:
+    get:
+      operationId: getJob
+      summary: Get job details
+      description: Retrieve detailed information about a specific compute job.
+      tags:
+        - Jobs
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComputeJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /jobs/{job_id}/status:
+    get:
+      operationId: getJobStatus
+      summary: Get job status
+      description: Get the current status of a compute job.
+      tags:
+        - Jobs
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+
+  /seals:
+    get:
+      operationId: listSeals
+      summary: List AI Seals
+      description: List AI Seals with optional filtering.
+      tags:
+        - Seals
+      parameters:
+        - name: model_hash
+          in: query
+          schema:
+            type: string
+            format: hex
+        - name: creator
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/SealStatus'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of seals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSealsResponse'
+
+  /seals/{seal_id}:
+    get:
+      operationId: getSeal
+      summary: Get seal details
+      description: Retrieve detailed information about a specific AI Seal.
+      tags:
+        - Seals
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Seal details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISeal'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /seals/{seal_id}/verify:
+    post:
+      operationId: verifySeal
+      summary: Verify an AI Seal
+      description: |
+        Verify the authenticity and integrity of an AI Seal.
+        This checks the cryptographic signatures and on-chain attestations.
+      tags:
+        - Seals
+      parameters:
+        - name: seal_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifySealRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySealResponse'
+
+  /models:
+    post:
+      operationId: registerModel
+      summary: Register a model
+      description: Register a new AI model for use with compute jobs.
+      tags:
+        - Models
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterModelRequest'
+      responses:
+        '201':
+          description: Model registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterModelResponse'
+
+    get:
+      operationId: listModels
+      summary: List registered models
+      tags:
+        - Models
+      parameters:
+        - name: owner
+          in: query
+          schema:
+            type: string
+        - name: architecture
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of models
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListModelsResponse'
+
+  /models/{model_hash}:
+    get:
+      operationId: getModel
+      summary: Get model details
+      tags:
+        - Models
+      parameters:
+        - name: model_hash
+          in: path
+          required: true
+          schema:
+            type: string
+            format: hex
+      responses:
+        '200':
+          description: Model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisteredModel'
+
+  /validators:
+    get:
+      operationId: listValidators
+      summary: List validators
+      description: List all validators with their capabilities and statistics.
+      tags:
+        - Validators
+      parameters:
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: capability
+          in: query
+          schema:
+            $ref: '#/components/schemas/ProofType'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of validators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListValidatorsResponse'
+
+  /validators/{address}:
+    get:
+      operationId: getValidator
+      summary: Get validator details
+      tags:
+        - Validators
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validator details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorDetails'
+
+  /validators/{address}/stats:
+    get:
+      operationId: getValidatorStats
+      summary: Get validator statistics
+      tags:
+        - Validators
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validator statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorStats'
+
+  /verify/proof:
+    post:
+      operationId: verifyProof
+      summary: Verify a proof
+      description: |
+        Verify a TEE attestation or zkML proof.
+        Supports multiple proof types: TEE, ZKML, and Hybrid.
+      tags:
+        - Verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyProofRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyProofResponse'
+
+  /chain/status:
+    get:
+      operationId: getChainStatus
+      summary: Get chain status
+      description: Get current blockchain status including height, hash, and sync status.
+      tags:
+        - Chain
+      responses:
+        '200':
+          description: Chain status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainStatus'
+
+  /chain/block/{height}:
+    get:
+      operationId: getBlock
+      summary: Get block by height
+      tags:
+        - Chain
+      parameters:
+        - name: height
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Block details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+
+  /chain/params:
+    get:
+      operationId: getChainParams
+      summary: Get chain parameters
+      description: Get current chain parameters including fee rates and limits.
+      tags:
+        - Chain
+      responses:
+        '200':
+          description: Chain parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChainParams'
+
+  /tx/broadcast:
+    post:
+      operationId: broadcastTransaction
+      summary: Broadcast a signed transaction
+      description: Submit a signed transaction to the network.
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastTxRequest'
+      responses:
+        '200':
+          description: Transaction broadcast result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastTxResponse'
+
+  /tx/{tx_hash}:
+    get:
+      operationId: getTransaction
+      summary: Get transaction by hash
+      tags:
+        - Transactions
+      parameters:
+        - name: tx_hash
+          in: path
+          required: true
+          schema:
+            type: string
+            format: hex
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+  /tx/simulate:
+    post:
+      operationId: simulateTransaction
+      summary: Simulate a transaction
+      description: Simulate transaction execution to estimate gas and check validity.
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateTxRequest'
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulateTxResponse'
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Core Types
+    ProofType:
+      type: string
+      enum:
+        - TEE
+        - ZKML
+        - HYBRID
+      description: Type of proof for verification
+
+    JobStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - EXPIRED
+      description: Status of a compute job
+
+    SealStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - REVOKED
+        - EXPIRED
+      description: Status of an AI Seal
+
+    # Error Types
+    AethelredError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - INVALID_REQUEST
+            - UNAUTHORIZED
+            - NOT_FOUND
+            - RATE_LIMITED
+            - INTERNAL_ERROR
+            - VALIDATION_ERROR
+            - CONSENSUS_ERROR
+            - CRYPTO_ERROR
+            - TEE_ERROR
+            - NETWORK_ERROR
+            - STORAGE_ERROR
+            - ZKML_ERROR
+            - BRIDGE_ERROR
+            - TIMEOUT
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context
+        request_id:
+          type: string
+          description: Request ID for debugging
+
+    # Job Types
+    SubmitJobRequest:
+      type: object
+      required:
+        - model_hash
+        - input_hash
+        - proof_type
+        - purpose
+      properties:
+        model_hash:
+          type: string
+          format: hex
+          description: SHA-256 hash of the model (64 hex chars)
+          minLength: 64
+          maxLength: 64
+        input_hash:
+          type: string
+          format: hex
+          description: SHA-256 hash of the input data (64 hex chars)
+          minLength: 64
+          maxLength: 64
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        purpose:
+          type: string
+          description: Human-readable purpose of the computation
+          maxLength: 256
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 10
+          default: 0
+          description: Job priority (higher = more urgent)
+        fee:
+          $ref: '#/components/schemas/Coin'
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional job metadata
+
+    SubmitJobResponse:
+      type: object
+      required:
+        - job_id
+        - status
+        - tx_hash
+      properties:
+        job_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        tx_hash:
+          type: string
+          format: hex
+        estimated_completion_blocks:
+          type: integer
+
+    ComputeJob:
+      type: object
+      required:
+        - id
+        - model_hash
+        - input_hash
+        - proof_type
+        - status
+        - requested_by
+        - created_at
+      properties:
+        id:
+          type: string
+        model_hash:
+          type: string
+          format: hex
+        input_hash:
+          type: string
+          format: hex
+        output_hash:
+          type: string
+          format: hex
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        purpose:
+          type: string
+        requested_by:
+          type: string
+        assigned_validators:
+          type: array
+          items:
+            type: string
+        verification_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationResult'
+        seal_id:
+          type: string
+        fee:
+          $ref: '#/components/schemas/Coin'
+        priority:
+          type: integer
+        block_height:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    JobStatusResponse:
+      type: object
+      required:
+        - job_id
+        - status
+      properties:
+        job_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        verifications_received:
+          type: integer
+        verifications_required:
+          type: integer
+        estimated_completion_time:
+          type: string
+          format: date-time
+
+    ListJobsResponse:
+      type: object
+      required:
+        - jobs
+        - total
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComputeJob'
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    # Seal Types
+    AISeal:
+      type: object
+      required:
+        - id
+        - model_hash
+        - output_hash
+        - proof_type
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+        model_hash:
+          type: string
+          format: hex
+        input_hash:
+          type: string
+          format: hex
+        output_hash:
+          type: string
+          format: hex
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        status:
+          $ref: '#/components/schemas/SealStatus'
+        creator:
+          type: string
+        job_id:
+          type: string
+        tee_attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+        zkml_proof:
+          $ref: '#/components/schemas/ZKMLProof'
+        validator_signatures:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorSignature'
+        block_height:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    ListSealsResponse:
+      type: object
+      required:
+        - seals
+        - total
+      properties:
+        seals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AISeal'
+        total:
+          type: integer
+
+    VerifySealRequest:
+      type: object
+      properties:
+        include_proof_verification:
+          type: boolean
+          default: true
+        include_signature_verification:
+          type: boolean
+          default: true
+
+    VerifySealResponse:
+      type: object
+      required:
+        - valid
+        - seal_id
+      properties:
+        valid:
+          type: boolean
+        seal_id:
+          type: string
+        verification_details:
+          type: object
+          properties:
+            proof_valid:
+              type: boolean
+            signatures_valid:
+              type: boolean
+            not_revoked:
+              type: boolean
+            not_expired:
+              type: boolean
+        error:
+          type: string
+
+    # Model Types
+    RegisterModelRequest:
+      type: object
+      required:
+        - model_hash
+        - name
+        - architecture
+      properties:
+        model_hash:
+          type: string
+          format: hex
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 1024
+        version:
+          type: string
+        architecture:
+          type: string
+          description: Model architecture (e.g., transformer, cnn, rnn)
+        input_schema:
+          type: object
+        output_schema:
+          type: object
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    RegisterModelResponse:
+      type: object
+      required:
+        - model_id
+        - tx_hash
+      properties:
+        model_id:
+          type: string
+        tx_hash:
+          type: string
+          format: hex
+
+    RegisteredModel:
+      type: object
+      required:
+        - model_hash
+        - model_id
+        - name
+        - owner
+      properties:
+        model_hash:
+          type: string
+          format: hex
+        model_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        architecture:
+          type: string
+        owner:
+          type: string
+        is_active:
+          type: boolean
+        registered_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    ListModelsResponse:
+      type: object
+      required:
+        - models
+        - total
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegisteredModel'
+        total:
+          type: integer
+
+    # Validator Types
+    ValidatorDetails:
+      type: object
+      required:
+        - address
+        - voting_power
+        - is_active
+      properties:
+        address:
+          type: string
+        operator_address:
+          type: string
+        consensus_pubkey:
+          type: string
+        voting_power:
+          type: integer
+          format: int64
+        is_active:
+          type: boolean
+        is_jailed:
+          type: boolean
+        commission_rate:
+          type: string
+        capabilities:
+          $ref: '#/components/schemas/ValidatorCapabilities'
+        stats:
+          $ref: '#/components/schemas/ValidatorStats'
+
+    ValidatorCapabilities:
+      type: object
+      properties:
+        tee_platforms:
+          type: array
+          items:
+            type: string
+            enum:
+              - SGX
+              - SEV
+              - TDX
+              - NITRO
+        zkml_systems:
+          type: array
+          items:
+            type: string
+            enum:
+              - EZKL
+              - RISC0
+              - GROTH16
+              - PLONK
+        max_concurrent_jobs:
+          type: integer
+        current_jobs:
+          type: integer
+        reputation_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    ValidatorStats:
+      type: object
+      properties:
+        total_jobs_processed:
+          type: integer
+          format: int64
+        successful_jobs:
+          type: integer
+          format: int64
+        failed_jobs:
+          type: integer
+          format: int64
+        average_execution_time_ms:
+          type: integer
+          format: int64
+        reputation_score:
+          type: integer
+        slashing_events:
+          type: integer
+        last_active_at:
+          type: string
+          format: date-time
+
+    ListValidatorsResponse:
+      type: object
+      required:
+        - validators
+        - total
+      properties:
+        validators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorDetails'
+        total:
+          type: integer
+
+    # Verification Types
+    VerificationResult:
+      type: object
+      required:
+        - validator_address
+        - success
+      properties:
+        validator_address:
+          type: string
+        success:
+          type: boolean
+        output_hash:
+          type: string
+          format: hex
+        proof:
+          type: string
+          format: base64
+        execution_time_ms:
+          type: integer
+          format: int64
+        verified_at:
+          type: string
+          format: date-time
+
+    TEEAttestation:
+      type: object
+      required:
+        - platform
+        - quote
+      properties:
+        platform:
+          type: string
+          enum:
+            - SGX
+            - SEV
+            - TDX
+            - NITRO
+        quote:
+          type: string
+          format: base64
+        mrenclave:
+          type: string
+          format: hex
+        mrsigner:
+          type: string
+          format: hex
+        report_data:
+          type: string
+          format: base64
+        timestamp:
+          type: string
+          format: date-time
+
+    ZKMLProof:
+      type: object
+      required:
+        - proof_system
+        - proof
+        - public_inputs
+      properties:
+        proof_system:
+          type: string
+          enum:
+            - EZKL
+            - RISC0
+            - GROTH16
+            - PLONK
+        proof:
+          type: string
+          format: base64
+        public_inputs:
+          type: array
+          items:
+            type: string
+        verifying_key_hash:
+          type: string
+          format: hex
+
+    ValidatorSignature:
+      type: object
+      required:
+        - validator_address
+        - signature
+      properties:
+        validator_address:
+          type: string
+        signature:
+          type: string
+          format: base64
+        timestamp:
+          type: string
+          format: date-time
+
+    VerifyProofRequest:
+      type: object
+      required:
+        - proof_type
+      properties:
+        proof_type:
+          $ref: '#/components/schemas/ProofType'
+        tee_attestation:
+          $ref: '#/components/schemas/TEEAttestation'
+        zkml_proof:
+          $ref: '#/components/schemas/ZKMLProof'
+        expected_output_hash:
+          type: string
+          format: hex
+
+    VerifyProofResponse:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+        error:
+          type: string
+        verification_time_ms:
+          type: integer
+
+    # Chain Types
+    ChainStatus:
+      type: object
+      required:
+        - chain_id
+        - latest_block_height
+        - latest_block_hash
+      properties:
+        chain_id:
+          type: string
+        latest_block_height:
+          type: integer
+          format: int64
+        latest_block_hash:
+          type: string
+          format: hex
+        latest_block_time:
+          type: string
+          format: date-time
+        catching_up:
+          type: boolean
+        validator_count:
+          type: integer
+        total_voting_power:
+          type: integer
+          format: int64
+
+    Block:
+      type: object
+      required:
+        - height
+        - hash
+        - time
+      properties:
+        height:
+          type: integer
+          format: int64
+        hash:
+          type: string
+          format: hex
+        previous_hash:
+          type: string
+          format: hex
+        time:
+          type: string
+          format: date-time
+        proposer_address:
+          type: string
+        tx_count:
+          type: integer
+        jobs_in_block:
+          type: integer
+        seals_in_block:
+          type: integer
+
+    ChainParams:
+      type: object
+      properties:
+        max_jobs_per_block:
+          type: integer
+        verification_timeout_blocks:
+          type: integer
+        min_verification_fee:
+          $ref: '#/components/schemas/Coin'
+        verification_reward:
+          $ref: '#/components/schemas/Coin'
+        slashing_penalty:
+          $ref: '#/components/schemas/Coin'
+        seal_validity_blocks:
+          type: integer
+
+    # Transaction Types
+    BroadcastTxRequest:
+      type: object
+      required:
+        - tx_bytes
+        - mode
+      properties:
+        tx_bytes:
+          type: string
+          format: base64
+        mode:
+          type: string
+          enum:
+            - SYNC
+            - ASYNC
+            - BLOCK
+
+    BroadcastTxResponse:
+      type: object
+      required:
+        - tx_hash
+      properties:
+        tx_hash:
+          type: string
+          format: hex
+        code:
+          type: integer
+        log:
+          type: string
+        gas_wanted:
+          type: integer
+          format: int64
+        gas_used:
+          type: integer
+          format: int64
+
+    Transaction:
+      type: object
+      required:
+        - hash
+        - height
+      properties:
+        hash:
+          type: string
+          format: hex
+        height:
+          type: integer
+          format: int64
+        index:
+          type: integer
+        code:
+          type: integer
+        log:
+          type: string
+        gas_wanted:
+          type: integer
+          format: int64
+        gas_used:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    SimulateTxRequest:
+      type: object
+      required:
+        - tx_bytes
+      properties:
+        tx_bytes:
+          type: string
+          format: base64
+
+    SimulateTxResponse:
+      type: object
+      required:
+        - gas_info
+      properties:
+        gas_info:
+          type: object
+          properties:
+            gas_wanted:
+              type: integer
+              format: int64
+            gas_used:
+              type: integer
+              format: int64
+        result:
+          type: object
+          properties:
+            log:
+              type: string
+            events:
+              type: array
+              items:
+                type: object
+
+    # Common Types
+    Coin:
+      type: object
+      required:
+        - denom
+        - amount
+      properties:
+        denom:
+          type: string
+        amount:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AethelredError'
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AethelredError'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AethelredError'
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AethelredError'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AethelredError'
+
+security:
+  - ApiKey: []
+  - BearerAuth: []

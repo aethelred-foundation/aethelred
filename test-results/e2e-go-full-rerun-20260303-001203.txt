@@ -1,0 +1,32 @@
+== go test -v -tags=e2e -timeout 20m ./tests/e2e/... ==
+# ./tests/e2e/...
+pattern ./tests/e2e/...: lstat ./tests/e2e/: no such file or directory
+FAIL	./tests/e2e/... [setup failed]
+FAIL
+EXIT_CODE=1
+
+== go test -v -tags=e2e -timeout 20m -run TestEndToEnd ./x/pouw/keeper/... ==
+# github.com/aethelred/aethelred/x/pouw/keeper_test [github.com/aethelred/aethelred/x/pouw/keeper.test]
+x/pouw/keeper/e2e_test.go:1614:36: too many arguments in call to scheduler.RegisterValidator
+	have ("context".Context, string, int64)
+	want (*"github.com/aethelred/aethelred/x/pouw/types".ValidatorCapability)
+x/pouw/keeper/e2e_test.go:1634:25: scheduler.ScheduleJobs undefined (type *"github.com/aethelred/aethelred/x/pouw/keeper".JobScheduler has no field or method ScheduleJobs)
+x/pouw/keeper/e2e_test.go:1650:19: cannot use fmt.Sprintf("%x", hash[:]) (value of type string) as []byte value in struct literal
+x/pouw/keeper/e2e_test.go:1651:6: unknown field LatencyMs in struct literal of type "github.com/aethelred/aethelred/x/pouw/keeper".VerificationWire
+x/pouw/keeper/e2e_test.go:1685:8: r.Success undefined (type *"github.com/aethelred/aethelred/x/pouw/keeper".AggregatedResult has no field or method Success)
+FAIL	github.com/aethelred/aethelred/x/pouw/keeper [build failed]
+FAIL
+EXIT_CODE=1
+
+== AETHELRED_REAL_NODE_E2E=1 go test -v -timeout 5m -run TestEndToEnd_RealNodeDockerSmokeGate ./x/pouw/keeper/... ==
+# github.com/aethelred/aethelred/x/pouw/keeper_test [github.com/aethelred/aethelred/x/pouw/keeper.test]
+x/pouw/keeper/e2e_test.go:1614:36: too many arguments in call to scheduler.RegisterValidator
+	have ("context".Context, string, int64)
+	want (*"github.com/aethelred/aethelred/x/pouw/types".ValidatorCapability)
+x/pouw/keeper/e2e_test.go:1634:25: scheduler.ScheduleJobs undefined (type *"github.com/aethelred/aethelred/x/pouw/keeper".JobScheduler has no field or method ScheduleJobs)
+x/pouw/keeper/e2e_test.go:1650:19: cannot use fmt.Sprintf("%x", hash[:]) (value of type string) as []byte value in struct literal
+x/pouw/keeper/e2e_test.go:1651:6: unknown field LatencyMs in struct literal of type "github.com/aethelred/aethelred/x/pouw/keeper".VerificationWire
+x/pouw/keeper/e2e_test.go:1685:8: r.Success undefined (type *"github.com/aethelred/aethelred/x/pouw/keeper".AggregatedResult has no field or method Success)
+FAIL	github.com/aethelred/aethelred/x/pouw/keeper [build failed]
+FAIL
+EXIT_CODE=1

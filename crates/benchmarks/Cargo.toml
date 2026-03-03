@@ -1,0 +1,70 @@
+[package]
+name = "aethelred-benchmarks"
+version = "2.0.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Performance benchmarking suite for Aethelred AI Blockchain SDK"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/benchmarks"
+keywords = ["benchmarking", "ai", "ml", "performance", "profiling"]
+categories = ["development-tools::profiling", "development-tools::testing"]
+
+[lib]
+name = "aethelred_benchmarks"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aethelred-bench"
+path = "src/bin/main.rs"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# CPU info
+num_cpus = "1.16"
+
+# Random for simulations
+rand = "0.8"
+
+# CLI (for binary)
+clap = { version = "4.4", features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3.10"
+
+[[bench]]
+name = "inference_bench"
+harness = false
+
+[[bench]]
+name = "training_bench"
+harness = false
+
+[[bench]]
+name = "memory_bench"
+harness = false
+
+[features]
+default = []
+# Enable GPU accelerator benchmarks
+gpu = []
+# Enable distributed benchmarks
+distributed = []
+# Enable all features
+full = ["gpu", "distributed"]
+
+[profile.bench]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

@@ -1,0 +1,12 @@
+node_modules/
+venv/
+__pycache__/
+target/
+.env
+dist/
+build/
+.DS_Store
+*.pt
+*.bin
+*.safetensors
+*.pth

@@ -1,0 +1,10 @@
+./autocli.go
+./codec.go
+./doc.go
+./errors.go
+./keyring.go
+./legacy_info.go
+./record.go
+./record.pb.go
+./signing_algorithms.go
+./types.go

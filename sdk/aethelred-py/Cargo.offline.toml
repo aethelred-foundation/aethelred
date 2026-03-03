@@ -1,0 +1,36 @@
+[package]
+name = "aethelred-py"
+version = "2.0.0"
+edition = "2021"
+authors = ["Aethelred Team <dev@aethelred.io>"]
+description = "Python bindings for the Aethelred Sovereign AI Platform"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/sdk-py"
+keywords = ["blockchain", "ai", "tee", "sovereign", "python"]
+categories = ["api-bindings", "cryptography"]
+readme = "README.md"
+
+[lib]
+name = "aethelred"
+crate-type = ["cdylib"]  # Compiles to .so/.pyd for Python
+
+[dependencies]
+
+[dev-dependencies]
+
+[features]
+default = ["offline-minimal"]
+offline-minimal = []
+python-bindings = []
+# Enable hardware attestation (requires TEE SDK)
+hardware-attestation = []
+# Enable GPU acceleration
+gpu = []
+# Development mode with mock attestation
+dev-mode = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true

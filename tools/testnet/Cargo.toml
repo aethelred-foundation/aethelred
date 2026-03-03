@@ -1,0 +1,98 @@
+[package]
+name = "aethelred-testnet"
+version = "2.0.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Industry-leading testnet infrastructure for Aethelred AI Blockchain"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/testnet"
+keywords = ["blockchain", "testnet", "ai", "development", "testing"]
+categories = ["development-tools", "development-tools::testing", "simulation"]
+readme = "README.md"
+
+[lib]
+name = "aethelred_testnet"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aethelred-testnet"
+path = "src/bin/main.rs"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# Random for simulations
+rand = "0.8"
+
+# Hashing
+sha2 = "0.10"
+hex = "0.4"
+
+# HTTP client/server
+reqwest = { version = "0.11", features = ["json"] }
+
+# WebSocket
+tokio-tungstenite = "0.21"
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Crypto
+ed25519-dalek = "2.1"
+
+# UUID generation
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Database (optional, for persistence)
+rusqlite = { version = "0.30", optional = true }
+
+# Metrics
+prometheus = { version = "0.13", optional = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+tokio-test = "0.4"
+criterion = "0.5"
+
+[features]
+default = []
+# Enable database persistence
+persistence = ["rusqlite"]
+# Enable Prometheus metrics
+metrics = ["prometheus"]
+# Enable GPU simulation
+gpu-sim = []
+# Enable all features
+full = ["persistence", "metrics", "gpu-sim"]
+
+[[bench]]
+name = "faucet_bench"
+harness = false
+
+[[bench]]
+name = "transaction_bench"
+harness = false
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+lto = true

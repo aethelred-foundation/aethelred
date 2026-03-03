@@ -1,0 +1,3 @@
+./query.pulsar.go
+./query_grpc.pb.go
+./types.pulsar.go

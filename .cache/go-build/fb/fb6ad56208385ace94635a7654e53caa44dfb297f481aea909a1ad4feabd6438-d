@@ -1,0 +1,3 @@
+./genesis.pulsar.go
+./tx.pulsar.go
+./tx_grpc.pb.go

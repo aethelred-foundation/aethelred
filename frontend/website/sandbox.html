@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Sandbox | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+      --green-500: #22C55E; --blue-500: #3B82F6; --yellow-500: #EAB308;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .sandbox-hero { padding: 100px 0 40px; background: var(--dark-900); border-bottom: 1px solid var(--dark-700); }
+    .sandbox-hero h1 { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; margin-bottom: 12px; }
+    .sandbox-hero p { font-size: 16px; color: var(--gray-400); }
+
+    /* IDE Layout */
+    .ide-container { display: grid; grid-template-columns: 250px 1fr 1fr; height: calc(100vh - 180px); }
+    
+    .file-explorer { background: var(--dark-900); border-right: 1px solid var(--dark-700); padding: 20px 0; overflow-y: auto; }
+    .explorer-header { padding: 0 16px 16px; font-size: 12px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 1px; font-family: 'Orbitron', monospace; }
+    .file-tree { list-style: none; }
+    .file-item { padding: 8px 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--gray-300); transition: all 0.2s; }
+    .file-item:hover { background: var(--dark-800); }
+    .file-item.active { background: var(--dark-700); color: var(--red-400); }
+    .file-item svg { width: 16px; height: 16px; color: var(--gray-400); }
+    .file-item.folder svg { color: var(--yellow-500); }
+    .file-item.file svg { color: var(--blue-500); }
+    .file-indent { margin-left: 20px; }
+
+    .code-editor { background: var(--dark-950); display: flex; flex-direction: column; }
+    .editor-tabs { display: flex; background: var(--dark-900); border-bottom: 1px solid var(--dark-700); }
+    .editor-tab { padding: 12px 20px; font-size: 13px; color: var(--gray-400); cursor: pointer; border-right: 1px solid var(--dark-700); display: flex; align-items: center; gap: 8px; }
+    .editor-tab.active { background: var(--dark-950); color: var(--white); border-bottom: 2px solid var(--red-500); }
+    .editor-tab svg { width: 14px; height: 14px; }
+    
+    .code-area { flex: 1; display: flex; overflow: hidden; }
+    .line-numbers { padding: 20px 12px; background: var(--dark-900); color: var(--dark-500); font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; text-align: right; user-select: none; }
+    .code-content { flex: 1; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow: auto; white-space: pre; }
+    .code-content .keyword { color: #C586C0; }
+    .code-content .function { color: #DCDCAA; }
+    .code-content .string { color: #CE9178; }
+    .code-content .comment { color: #6A9955; }
+    .code-content .type { color: #4EC9B0; }
+    .code-content .number { color: #B5CEA8; }
+    .code-content .variable { color: #9CDCFE; }
+
+    .output-panel { background: var(--dark-900); border-left: 1px solid var(--dark-700); display: flex; flex-direction: column; }
+    .output-header { display: flex; background: var(--dark-800); border-bottom: 1px solid var(--dark-700); }
+    .output-tab { padding: 12px 20px; font-size: 13px; color: var(--gray-400); cursor: pointer; }
+    .output-tab.active { color: var(--white); border-bottom: 2px solid var(--green-500); }
+    .output-content { flex: 1; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gray-300); overflow: auto; }
+    .output-line { margin-bottom: 4px; }
+    .output-line.success { color: var(--green-500); }
+    .output-line.error { color: var(--red-500); }
+    .output-line.info { color: var(--blue-500); }
+
+    .action-bar { display: flex; gap: 12px; padding: 12px 20px; background: var(--dark-800); border-top: 1px solid var(--dark-700); }
+    .action-btn { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .action-btn.run { background: var(--green-500); color: white; }
+    .action-btn.run:hover { background: #16A34A; }
+    .action-btn.deploy { background: var(--red-600); color: white; }
+    .action-btn.deploy:hover { background: var(--red-500); }
+    .action-btn.secondary { background: var(--dark-600); color: var(--gray-300); }
+
+    /* Template Selector */
+    .templates-sidebar { position: fixed; right: 0; top: 80px; width: 300px; background: var(--dark-800); border-left: 1px solid var(--dark-700); height: calc(100vh - 80px); padding: 20px; overflow-y: auto; transform: translateX(100%); transition: transform 0.3s; z-index: 100; }
+    .templates-sidebar.open { transform: translateX(0); }
+    .templates-header { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .template-card { background: var(--dark-700); border: 1px solid var(--dark-600); border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+    .template-card:hover { border-color: var(--red-600); }
+    .template-card h4 { font-size: 14px; margin-bottom: 8px; }
+    .template-card p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 1200px) {
+      .ide-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; height: auto; }
+      .file-explorer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="computer:///mnt/user-data/outputs/documentation.html">Docs</a>
+        <a href="smart-contracts.html">Contracts</a>
+        <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="sandbox-hero">
+    <div class="container">
+      <h1>⚡ Aethelred Code Sandbox</h1>
+      <p>Write, compile, and deploy smart contracts directly in your browser. Connected to Aethelred Testnet.</p>
+    </div>
+  </section>
+
+  <div class="ide-container">
+    <!-- File Explorer -->
+    <div class="file-explorer">
+      <div class="explorer-header">Explorer</div>
+      <ul class="file-tree">
+        <li class="file-item folder">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          contracts
+        </li>
+        <li class="file-item file file-indent active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+          AIVerifier.sol
+        </li>
+        <li class="file-item file file-indent">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+          SealRegistry.sol
+        </li>
+        <li class="file-item folder">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          scripts
+        </li>
+        <li class="file-item file file-indent">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+          deploy.js
+        </li>
+        <li class="file-item folder">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          tests
+        </li>
+      </ul>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="code-editor">
+      <div class="editor-tabs">
+        <div class="editor-tab active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/></svg>
+          AIVerifier.sol
+        </div>
+      </div>
+      <div class="code-area">
+        <div class="line-numbers">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37</div>
+        <div class="code-content"><span class="comment">// SPDX-License-Identifier: MIT</span>
+<span class="keyword">pragma</span> solidity ^<span class="number">0.8.19</span>;
+
+<span class="keyword">import</span> <span class="string">"@aethelred/contracts/ISealVerifier.sol"</span>;
+
+<span class="comment">/// @title AI Computation Verifier</span>
+<span class="comment">/// @notice Verify sealed AI computations on-chain</span>
+<span class="keyword">contract</span> <span class="type">AIVerifier</span> {
+    <span class="type">ISealVerifier</span> <span class="keyword">public</span> verifier;
+    
+    <span class="keyword">mapping</span>(<span class="type">bytes32</span> => <span class="type">bool</span>) <span class="keyword">public</span> verifiedSeals;
+    <span class="keyword">mapping</span>(<span class="type">bytes32</span> => <span class="type">address</span>) <span class="keyword">public</span> sealOwners;
+    
+    <span class="keyword">event</span> <span class="function">ComputationVerified</span>(
+        <span class="type">bytes32</span> <span class="keyword">indexed</span> sealId,
+        <span class="type">address</span> <span class="keyword">indexed</span> verifier,
+        <span class="type">uint256</span> timestamp
+    );
+    
+    <span class="keyword">constructor</span>(<span class="type">address</span> <span class="variable">_verifier</span>) {
+        verifier = <span class="type">ISealVerifier</span>(<span class="variable">_verifier</span>);
+    }
+    
+    <span class="keyword">function</span> <span class="function">verifySeal</span>(
+        <span class="type">bytes32</span> <span class="variable">sealId</span>,
+        <span class="type">bytes</span> <span class="keyword">calldata</span> <span class="variable">proof</span>
+    ) <span class="keyword">external</span> <span class="keyword">returns</span> (<span class="type">bool</span>) {
+        <span class="keyword">require</span>(!verifiedSeals[<span class="variable">sealId</span>], <span class="string">"Already verified"</span>);
+        <span class="keyword">require</span>(
+            verifier.<span class="function">verify</span>(<span class="variable">sealId</span>, <span class="variable">proof</span>),
+            <span class="string">"Invalid seal proof"</span>
+        );
+        
+        verifiedSeals[<span class="variable">sealId</span>] = <span class="keyword">true</span>;
+        sealOwners[<span class="variable">sealId</span>] = <span class="keyword">msg</span>.sender;
+        
+        <span class="keyword">emit</span> <span class="function">ComputationVerified</span>(
+            <span class="variable">sealId</span>,
+            <span class="keyword">msg</span>.sender,
+            <span class="keyword">block</span>.timestamp
+        );
+        
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+}</div>
+      </div>
+      <div class="action-bar">
+        <button class="action-btn run">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Compile
+        </button>
+        <button class="action-btn deploy">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          Deploy to Testnet
+        </button>
+        <button class="action-btn secondary">Format</button>
+        <button class="action-btn secondary">Share</button>
+      </div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="output-panel">
+      <div class="output-header">
+        <div class="output-tab active">Console</div>
+        <div class="output-tab">Artifacts</div>
+        <div class="output-tab">Transaction</div>
+      </div>
+      <div class="output-content">
+        <div class="output-line info">[INFO] Aethelred Sandbox v1.2.0</div>
+        <div class="output-line info">[INFO] Connected to Testnet (Chain ID: 8472)</div>
+        <div class="output-line">&nbsp;</div>
+        <div class="output-line success">[SUCCESS] Compilation successful!</div>
+        <div class="output-line">├── AIVerifier.sol</div>
+        <div class="output-line">│   ├── Contract: AIVerifier</div>
+        <div class="output-line">│   ├── Bytecode: 2,847 bytes</div>
+        <div class="output-line">│   └── ABI exported</div>
+        <div class="output-line">&nbsp;</div>
+        <div class="output-line info">[INFO] Gas estimate: 847,291</div>
+        <div class="output-line info">[INFO] Ready to deploy</div>
+        <div class="output-line">&nbsp;</div>
+        <div class="output-line">▶ Click "Deploy to Testnet" to deploy</div>
+        <div class="output-line">▶ Make sure your wallet is connected</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+# Aethelred Local Development Environment (DEV ONLY)
+# Usage: docker compose -f docker-compose.dev.yml up -d
+# SECURITY: This file intentionally enables mock/simulated execution for local testing.
+
+version: '3.8'
+
+services:
+  # ============ Aethelred Node ============
+  aethelred-node:
+    image: aethelred/node:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    container_name: aethelred-node
+    ports:
+      - "26657:26657"  # RPC
+      - "26656:26656"  # P2P
+      - "1317:1317"    # REST API
+      - "9090:9090"    # gRPC
+      - "9091:9091"    # gRPC-Web
+    volumes:
+      - aethelred-data:/root/.aethelred
+    environment:
+      - AETHELRED_CHAIN_ID=aethelred-local
+      - AETHELRED_MONIKER=local-validator
+      - AETHELRED_LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:26657/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aethelred-network
+
+  # ============ TEE Worker (Mock) ============
+  tee-worker:
+    image: aethelred/tee-worker:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.tee-worker
+    container_name: aethelred-tee-worker
+    ports:
+      - "8545:8545"
+    environment:
+      - TEE_MODE=mock
+      - AETHELRED_TEE_LISTEN_ADDR=:8545
+      - AETHELRED_ALLOW_SIMULATED=true
+      - AETHELRED_TEE_SUPPORTS_ZKML=true
+      - LOG_LEVEL=debug
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8545/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - aethelred-node
+    networks:
+      - aethelred-network
+
+  # ============ zkML Prover ============
+  zkml-prover:
+    image: aethelred/zkml-prover:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.zkml
+    container_name: aethelred-zkml-prover
+    ports:
+      - "8546:8546"
+    environment:
+      - PROVER_MODE=development
+      - AETHELRED_ZKML_LISTEN_ADDR=:8546
+      - AETHELRED_ALLOW_SIMULATED=true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8546/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - aethelred-node
+    networks:
+      - aethelred-network
+
+  # ============ Explorer UI ============
+  explorer:
+    image: aethelred/explorer:latest
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
+    container_name: aethelred-explorer
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_RPC_URL=http://aethelred-node:26657
+      - NEXT_PUBLIC_API_URL=http://aethelred-node:1317
+    depends_on:
+      - aethelred-node
+    networks:
+      - aethelred-network
+
+  # ============ Faucet ============
+  faucet:
+    image: aethelred/faucet:latest
+    container_name: aethelred-faucet
+    ports:
+      - "8000:8000"
+    environment:
+      - RPC_URL=http://aethelred-node:26657
+      - FAUCET_AMOUNT=1000000000uaeth
+      - RATE_LIMIT=100
+    depends_on:
+      - aethelred-node
+    networks:
+      - aethelred-network
+
+  # ============ Prometheus ============
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: aethelred-prometheus
+    ports:
+      - "9092:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - aethelred-network
+
+  # ============ Grafana ============
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: aethelred-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-dev-change-me}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - aethelred-network
+
+volumes:
+  aethelred-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  aethelred-network:
+    driver: bridge

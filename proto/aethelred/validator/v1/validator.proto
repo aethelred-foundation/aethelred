@@ -1,0 +1,141 @@
+syntax = "proto3";
+package aethelred.validator.v1;
+
+option go_package = "github.com/aethelred/aethelred/x/validator/types";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+// HardwareCapability represents a validator's hardware capabilities for Proof-of-Useful-Work
+message HardwareCapability {
+  string validator_address = 1;
+  string operator_address = 2;
+  TEECapabilities tee = 3;
+  ZKMLCapabilities zkml = 4;
+  ComputeResources compute = 5;
+  NetworkInfo network = 6;
+  CapabilityStatus status = 7;
+  CapabilityAttestation attestation = 8;
+  google.protobuf.Timestamp registered_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  string version = 11;
+}
+
+// TEECapabilities describes TEE hardware available to a validator
+message TEECapabilities {
+  repeated TEEPlatform platforms = 1;
+  bool active = 2;
+  repeated EnclaveInfo enclave_info = 3;
+}
+
+// TEEPlatform represents a supported TEE platform
+message TEEPlatform {
+  string name = 1;
+  string version = 2;
+  repeated string features = 3;
+  int32 security_level = 4;
+  int64 max_memory_mb = 5;
+  bool verified = 6;
+  google.protobuf.Timestamp last_verified = 7;
+}
+
+// EnclaveInfo contains information about a specific enclave
+message EnclaveInfo {
+  string enclave_id = 1;
+  string platform = 2;
+  bytes measurement = 3;
+  string status = 4;
+  string version = 5;
+}
+
+// ZKMLCapabilities describes zkML proving capabilities
+message ZKMLCapabilities {
+  repeated ProofSystem proof_systems = 1;
+  bool active = 2;
+  bool gpu_accelerated = 3;
+}
+
+// ProofSystem represents a supported zkML proof system
+message ProofSystem {
+  string name = 1;
+  string version = 2;
+  repeated string supported_models = 3;
+  int64 max_model_size_mb = 4;
+  int64 average_proof_time_ms = 5;
+}
+
+// ComputeResources describes available compute resources
+message ComputeResources {
+  int32 cpu_cores = 1;
+  int32 memory_gb = 2;
+  repeated GPUInfo gpus = 3;
+  int32 storage_gb = 4;
+  int32 max_concurrent_jobs = 5;
+}
+
+// GPUInfo describes an available GPU
+message GPUInfo {
+  string model = 1;
+  int32 memory_gb = 2;
+  string cuda_version = 3;
+}
+
+// NetworkInfo describes network capabilities
+message NetworkInfo {
+  string region = 1;
+  string provider = 2;
+  int32 bandwidth_mbps = 3;
+  string ipv4_address = 4;
+  string ipv6_address = 5;
+}
+
+// CapabilityStatus represents the current status of capabilities
+message CapabilityStatus {
+  bool online = 1;
+  google.protobuf.Timestamp last_heartbeat = 2;
+  int32 current_jobs = 3;
+  int64 total_jobs_processed = 4;
+  double success_rate = 5;
+  int64 average_latency_ms = 6;
+  int64 reputation_score = 7;
+}
+
+// CapabilityAttestation proves the capabilities are genuine
+message CapabilityAttestation {
+  string attestation_type = 1;
+  bytes attestation_data = 2;
+  bytes signature = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+// SlashingRecord represents a record of a slashing event
+message SlashingRecord {
+  string validator_address = 1;
+  int64 height = 2;
+  string reason = 3;
+  string slash_fraction = 4;
+  bool jailed = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  string job_id = 7;
+}
+
+// Params defines the parameters for the validator module
+message Params {
+  int64 min_reputation_score = 1;
+  google.protobuf.Duration heartbeat_timeout = 2;
+  int32 max_concurrent_jobs = 3;
+  string slash_fraction_invalid_output = 4;
+  string slash_fraction_fake_attestation = 5;
+  string slash_fraction_double_sign = 6;
+  string slash_fraction_downtime = 7;
+  google.protobuf.Duration jail_duration = 8;
+  int32 min_validators_required = 9;
+  int32 consensus_threshold = 10;
+}
+
+// GenesisState defines the genesis state for the validator module
+message GenesisState {
+  Params params = 1;
+  repeated HardwareCapability hardware_capabilities = 2;
+}

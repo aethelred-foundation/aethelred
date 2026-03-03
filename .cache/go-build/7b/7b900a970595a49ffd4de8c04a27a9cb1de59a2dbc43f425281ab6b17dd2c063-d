@@ -1,0 +1,142 @@
+=== RUN   TestDefaultEnclaveConfig
+=== PAUSE TestDefaultEnclaveConfig
+=== RUN   TestNewSGXEnclave
+=== PAUSE TestNewSGXEnclave
+=== RUN   TestNewSGXEnclave_CustomConfig
+=== PAUSE TestNewSGXEnclave_CustomConfig
+=== RUN   TestSGXEnclave_Execute
+=== PAUSE TestSGXEnclave_Execute
+=== RUN   TestSGXEnclave_Execute_NotInitialized
+=== PAUSE TestSGXEnclave_Execute_NotInitialized
+=== RUN   TestSGXEnclave_GetQuote
+=== PAUSE TestSGXEnclave_GetQuote
+=== RUN   TestSGXEnclave_GetQuote_NotInitialized
+=== PAUSE TestSGXEnclave_GetQuote_NotInitialized
+=== RUN   TestSGXEnclave_SealData
+=== PAUSE TestSGXEnclave_SealData
+=== RUN   TestSGXEnclave_UnsealData_ValidStructure
+=== PAUSE TestSGXEnclave_UnsealData_ValidStructure
+=== RUN   TestSGXEnclave_SealData_NotInitialized
+=== PAUSE TestSGXEnclave_SealData_NotInitialized
+=== RUN   TestSGXEnclave_UnsealData_NotInitialized
+=== PAUSE TestSGXEnclave_UnsealData_NotInitialized
+=== RUN   TestSGXEnclave_UnsealData_TooShort
+=== PAUSE TestSGXEnclave_UnsealData_TooShort
+=== RUN   TestSGXEnclave_UnsealData_MREnclaveMismatch
+=== PAUSE TestSGXEnclave_UnsealData_MREnclaveMismatch
+=== RUN   TestSGXEnclave_GetIdentity
+=== PAUSE TestSGXEnclave_GetIdentity
+=== RUN   TestSGXEnclave_GetMREnclave
+=== PAUSE TestSGXEnclave_GetMREnclave
+=== RUN   TestSGXEnclave_GetMRSigner
+=== PAUSE TestSGXEnclave_GetMRSigner
+=== RUN   TestSGXEnclave_GetExecutionLog
+=== PAUSE TestSGXEnclave_GetExecutionLog
+=== RUN   TestSGXEnclave_Destroy
+=== PAUSE TestSGXEnclave_Destroy
+=== RUN   TestSGXQuoteVerifier_VerifyQuote_Valid
+=== PAUSE TestSGXQuoteVerifier_VerifyQuote_Valid
+=== RUN   TestSGXQuoteVerifier_UntrustedEnclave
+=== PAUSE TestSGXQuoteVerifier_UntrustedEnclave
+=== RUN   TestSGXQuoteVerifier_TrustedEnclave
+=== PAUSE TestSGXQuoteVerifier_TrustedEnclave
+=== RUN   TestSGXQuoteVerifier_UntrustedSigner
+=== PAUSE TestSGXQuoteVerifier_UntrustedSigner
+=== RUN   TestSGXQuoteVerifier_SecurityVersionTooLow
+=== PAUSE TestSGXQuoteVerifier_SecurityVersionTooLow
+=== RUN   TestConstants_SGX
+=== PAUSE TestConstants_SGX
+=== RUN   TestNewSGXEnclave_ExpectedMREnclaveMismatch
+=== PAUSE TestNewSGXEnclave_ExpectedMREnclaveMismatch
+=== RUN   TestSGXQuoteVerifier_TrustedSigner_Match
+=== PAUSE TestSGXQuoteVerifier_TrustedSigner_Match
+=== RUN   TestSGXQuoteVerifier_VerifyQuote_ResultFields
+=== PAUSE TestSGXQuoteVerifier_VerifyQuote_ResultFields
+=== RUN   TestSGXEnclave_UnsealData_InvalidDataLength
+=== PAUSE TestSGXEnclave_UnsealData_InvalidDataLength
+=== RUN   TestSGXEnclave_Execute_AllOps
+=== PAUSE TestSGXEnclave_Execute_AllOps
+=== RUN   TestSGXEnclave_GetIdentity_Fields
+=== PAUSE TestSGXEnclave_GetIdentity_Fields
+=== RUN   TestSGXEnclave_Destroy_TwiceNoError
+=== PAUSE TestSGXEnclave_Destroy_TwiceNoError
+=== CONT  TestDefaultEnclaveConfig
+--- PASS: TestDefaultEnclaveConfig (0.00s)
+=== CONT  TestSGXEnclave_Destroy_TwiceNoError
+--- PASS: TestSGXEnclave_Destroy_TwiceNoError (0.00s)
+=== CONT  TestSGXEnclave_GetIdentity_Fields
+--- PASS: TestSGXEnclave_GetIdentity_Fields (0.00s)
+=== CONT  TestSGXEnclave_Execute_AllOps
+=== RUN   TestSGXEnclave_Execute_AllOps/hash
+=== RUN   TestSGXEnclave_Execute_AllOps/verify
+=== RUN   TestSGXEnclave_Execute_AllOps/inference
+=== RUN   TestSGXEnclave_Execute_AllOps/custom
+--- PASS: TestSGXEnclave_Execute_AllOps (0.00s)
+    --- PASS: TestSGXEnclave_Execute_AllOps/hash (0.00s)
+    --- PASS: TestSGXEnclave_Execute_AllOps/verify (0.00s)
+    --- PASS: TestSGXEnclave_Execute_AllOps/inference (0.00s)
+    --- PASS: TestSGXEnclave_Execute_AllOps/custom (0.00s)
+=== CONT  TestSGXEnclave_UnsealData_InvalidDataLength
+--- PASS: TestSGXEnclave_UnsealData_InvalidDataLength (0.00s)
+=== CONT  TestSGXQuoteVerifier_VerifyQuote_ResultFields
+--- PASS: TestSGXQuoteVerifier_VerifyQuote_ResultFields (0.00s)
+=== CONT  TestSGXQuoteVerifier_TrustedSigner_Match
+--- PASS: TestSGXQuoteVerifier_TrustedSigner_Match (0.00s)
+=== CONT  TestNewSGXEnclave_ExpectedMREnclaveMismatch
+--- PASS: TestNewSGXEnclave_ExpectedMREnclaveMismatch (0.00s)
+=== CONT  TestConstants_SGX
+--- PASS: TestConstants_SGX (0.00s)
+=== CONT  TestSGXQuoteVerifier_SecurityVersionTooLow
+--- PASS: TestSGXQuoteVerifier_SecurityVersionTooLow (0.00s)
+=== CONT  TestSGXQuoteVerifier_UntrustedSigner
+--- PASS: TestSGXQuoteVerifier_UntrustedSigner (0.00s)
+=== CONT  TestSGXQuoteVerifier_TrustedEnclave
+--- PASS: TestSGXQuoteVerifier_TrustedEnclave (0.00s)
+=== CONT  TestSGXQuoteVerifier_UntrustedEnclave
+--- PASS: TestSGXQuoteVerifier_UntrustedEnclave (0.00s)
+=== CONT  TestSGXQuoteVerifier_VerifyQuote_Valid
+--- PASS: TestSGXQuoteVerifier_VerifyQuote_Valid (0.00s)
+=== CONT  TestSGXEnclave_Destroy
+--- PASS: TestSGXEnclave_Destroy (0.00s)
+=== CONT  TestSGXEnclave_GetExecutionLog
+--- PASS: TestSGXEnclave_GetExecutionLog (0.00s)
+=== CONT  TestSGXEnclave_GetMRSigner
+--- PASS: TestSGXEnclave_GetMRSigner (0.00s)
+=== CONT  TestSGXEnclave_GetMREnclave
+--- PASS: TestSGXEnclave_GetMREnclave (0.00s)
+=== CONT  TestSGXEnclave_GetIdentity
+--- PASS: TestSGXEnclave_GetIdentity (0.00s)
+=== CONT  TestSGXEnclave_UnsealData_MREnclaveMismatch
+--- PASS: TestSGXEnclave_UnsealData_MREnclaveMismatch (0.00s)
+=== CONT  TestSGXEnclave_UnsealData_TooShort
+--- PASS: TestSGXEnclave_UnsealData_TooShort (0.00s)
+=== CONT  TestSGXEnclave_UnsealData_NotInitialized
+--- PASS: TestSGXEnclave_UnsealData_NotInitialized (0.00s)
+=== CONT  TestSGXEnclave_SealData_NotInitialized
+--- PASS: TestSGXEnclave_SealData_NotInitialized (0.00s)
+=== CONT  TestSGXEnclave_UnsealData_ValidStructure
+--- PASS: TestSGXEnclave_UnsealData_ValidStructure (0.00s)
+=== CONT  TestSGXEnclave_SealData
+--- PASS: TestSGXEnclave_SealData (0.00s)
+=== CONT  TestSGXEnclave_GetQuote_NotInitialized
+--- PASS: TestSGXEnclave_GetQuote_NotInitialized (0.00s)
+=== CONT  TestSGXEnclave_GetQuote
+--- PASS: TestSGXEnclave_GetQuote (0.00s)
+=== CONT  TestSGXEnclave_Execute_NotInitialized
+--- PASS: TestSGXEnclave_Execute_NotInitialized (0.00s)
+=== CONT  TestSGXEnclave_Execute
+=== RUN   TestSGXEnclave_Execute/hash
+=== RUN   TestSGXEnclave_Execute/verify
+=== RUN   TestSGXEnclave_Execute/inference
+=== RUN   TestSGXEnclave_Execute/unknown
+--- PASS: TestSGXEnclave_Execute (0.00s)
+    --- PASS: TestSGXEnclave_Execute/hash (0.00s)
+    --- PASS: TestSGXEnclave_Execute/verify (0.00s)
+    --- PASS: TestSGXEnclave_Execute/inference (0.00s)
+    --- PASS: TestSGXEnclave_Execute/unknown (0.00s)
+=== CONT  TestNewSGXEnclave_CustomConfig
+--- PASS: TestNewSGXEnclave_CustomConfig (0.00s)
+=== CONT  TestNewSGXEnclave
+--- PASS: TestNewSGXEnclave (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/tee/sgx	3.412s

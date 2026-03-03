@@ -1,0 +1,53 @@
+{
+  "Aethelred Client": {
+    "prefix": "aeth-client",
+    "body": [
+      "import { AethelredClient } from '@aethelred/sdk';",
+      "",
+      "const client = new AethelredClient({ network: '${1|mainnet,testnet,devnet,local|}' });",
+      "$0"
+    ],
+    "description": "Create Aethelred client"
+  },
+  "Submit Job": {
+    "prefix": "aeth-submit-job",
+    "body": [
+      "const { jobId, txHash } = await client.jobs.submit({",
+      "  modelHash: '${1:0x...}',",
+      "  inputHash: '${2:0x...}',",
+      "  proofType: '${3|TEE,ZKML,HYBRID|}',",
+      "  priority: ${4:1},",
+      "});",
+      "console.log(`Job submitted: ${jobId}`);",
+      "$0"
+    ],
+    "description": "Submit compute job"
+  },
+  "Verify Seal": {
+    "prefix": "aeth-verify-seal",
+    "body": [
+      "const result = await client.seals.verify('${1:seal_id}');",
+      "if (result.valid) {",
+      "  console.log('Seal verified successfully');",
+      "} else {",
+      "  console.error('Seal verification failed:', result.errors);",
+      "}",
+      "$0"
+    ],
+    "description": "Verify digital seal"
+  },
+  "Register Model": {
+    "prefix": "aeth-register-model",
+    "body": [
+      "const { modelHash, txHash } = await client.models.register({",
+      "  modelHash: '${1:0x...}',",
+      "  name: '${2:model-name}',",
+      "  architecture: '${3:transformer}',",
+      "  version: '${4:1.0.0}',",
+      "  category: '${5|MEDICAL,SCIENTIFIC,FINANCIAL,GENERAL|}',",
+      "});",
+      "$0"
+    ],
+    "description": "Register AI model"
+  }
+}

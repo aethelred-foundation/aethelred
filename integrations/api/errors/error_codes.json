@@ -1,0 +1,614 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Aethelred Error Code Specification",
+  "description": "Shared error code specification for all Aethelred SDKs (Python, Rust, Go, TypeScript)",
+  "version": "1.0.0",
+  "categories": {
+    "VALIDATION": {
+      "description": "Input validation errors",
+      "code_range": [1000, 1999]
+    },
+    "CONSENSUS": {
+      "description": "Consensus-related errors",
+      "code_range": [2000, 2999]
+    },
+    "CRYPTO": {
+      "description": "Cryptographic operation errors",
+      "code_range": [3000, 3999]
+    },
+    "TEE": {
+      "description": "Trusted Execution Environment errors",
+      "code_range": [4000, 4999]
+    },
+    "NETWORK": {
+      "description": "Network and RPC errors",
+      "code_range": [5000, 5999]
+    },
+    "STORAGE": {
+      "description": "Storage and persistence errors",
+      "code_range": [6000, 6999]
+    },
+    "ZKML": {
+      "description": "Zero-Knowledge ML proof errors",
+      "code_range": [7000, 7999]
+    },
+    "BRIDGE": {
+      "description": "Cross-chain bridge errors",
+      "code_range": [8000, 8999]
+    },
+    "INTERNAL": {
+      "description": "Internal system errors",
+      "code_range": [9000, 9999]
+    }
+  },
+  "errors": {
+    "VALIDATION_INVALID_ADDRESS": {
+      "code": 1001,
+      "category": "VALIDATION",
+      "message": "Invalid account address format",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "address": {"type": "string"},
+          "expected_format": {"type": "string"}
+        }
+      }
+    },
+    "VALIDATION_INVALID_HASH": {
+      "code": 1002,
+      "category": "VALIDATION",
+      "message": "Invalid hash format or length",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "hash": {"type": "string"},
+          "expected_length": {"type": "integer"}
+        }
+      }
+    },
+    "VALIDATION_INVALID_PROOF_TYPE": {
+      "code": 1003,
+      "category": "VALIDATION",
+      "message": "Invalid or unsupported proof type",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "provided": {"type": "string"},
+          "allowed": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "VALIDATION_MISSING_REQUIRED_FIELD": {
+      "code": 1004,
+      "category": "VALIDATION",
+      "message": "Required field is missing",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "field": {"type": "string"}
+        }
+      }
+    },
+    "VALIDATION_FIELD_TOO_LONG": {
+      "code": 1005,
+      "category": "VALIDATION",
+      "message": "Field exceeds maximum length",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "field": {"type": "string"},
+          "max_length": {"type": "integer"},
+          "actual_length": {"type": "integer"}
+        }
+      }
+    },
+    "VALIDATION_INVALID_FEE": {
+      "code": 1006,
+      "category": "VALIDATION",
+      "message": "Fee amount is invalid or below minimum",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "provided": {"type": "string"},
+          "minimum": {"type": "string"}
+        }
+      }
+    },
+    "VALIDATION_INVALID_SIGNATURE": {
+      "code": 1007,
+      "category": "VALIDATION",
+      "message": "Signature format is invalid",
+      "retryable": false,
+      "http_status": 400
+    },
+    "VALIDATION_EXPIRED_REQUEST": {
+      "code": 1008,
+      "category": "VALIDATION",
+      "message": "Request has expired",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "expired_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+
+    "CONSENSUS_JOB_NOT_FOUND": {
+      "code": 2001,
+      "category": "CONSENSUS",
+      "message": "Compute job not found",
+      "retryable": false,
+      "http_status": 404,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "job_id": {"type": "string"}
+        }
+      }
+    },
+    "CONSENSUS_JOB_ALREADY_COMPLETED": {
+      "code": 2002,
+      "category": "CONSENSUS",
+      "message": "Job has already been completed",
+      "retryable": false,
+      "http_status": 409
+    },
+    "CONSENSUS_JOB_EXPIRED": {
+      "code": 2003,
+      "category": "CONSENSUS",
+      "message": "Job has expired before completion",
+      "retryable": false,
+      "http_status": 410
+    },
+    "CONSENSUS_INSUFFICIENT_VERIFICATIONS": {
+      "code": 2004,
+      "category": "CONSENSUS",
+      "message": "Insufficient validator verifications",
+      "retryable": true,
+      "http_status": 425,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "required": {"type": "integer"},
+          "received": {"type": "integer"}
+        }
+      }
+    },
+    "CONSENSUS_VERIFICATION_MISMATCH": {
+      "code": 2005,
+      "category": "CONSENSUS",
+      "message": "Validator verification results do not match",
+      "retryable": false,
+      "http_status": 409
+    },
+    "CONSENSUS_INVALID_STATE_TRANSITION": {
+      "code": 2006,
+      "category": "CONSENSUS",
+      "message": "Invalid job state transition",
+      "retryable": false,
+      "http_status": 409,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "current_state": {"type": "string"},
+          "requested_state": {"type": "string"}
+        }
+      }
+    },
+    "CONSENSUS_NO_AVAILABLE_VALIDATORS": {
+      "code": 2007,
+      "category": "CONSENSUS",
+      "message": "No validators available for the requested proof type",
+      "retryable": true,
+      "http_status": 503
+    },
+    "CONSENSUS_SEAL_NOT_FOUND": {
+      "code": 2008,
+      "category": "CONSENSUS",
+      "message": "AI Seal not found",
+      "retryable": false,
+      "http_status": 404
+    },
+    "CONSENSUS_SEAL_REVOKED": {
+      "code": 2009,
+      "category": "CONSENSUS",
+      "message": "AI Seal has been revoked",
+      "retryable": false,
+      "http_status": 410
+    },
+
+    "CRYPTO_SIGNATURE_VERIFICATION_FAILED": {
+      "code": 3001,
+      "category": "CRYPTO",
+      "message": "Signature verification failed",
+      "retryable": false,
+      "http_status": 401
+    },
+    "CRYPTO_INVALID_PUBLIC_KEY": {
+      "code": 3002,
+      "category": "CRYPTO",
+      "message": "Invalid public key format",
+      "retryable": false,
+      "http_status": 400
+    },
+    "CRYPTO_HASH_MISMATCH": {
+      "code": 3003,
+      "category": "CRYPTO",
+      "message": "Hash verification failed",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "expected": {"type": "string"},
+          "actual": {"type": "string"}
+        }
+      }
+    },
+    "CRYPTO_ENCRYPTION_FAILED": {
+      "code": 3004,
+      "category": "CRYPTO",
+      "message": "Encryption operation failed",
+      "retryable": false,
+      "http_status": 500
+    },
+    "CRYPTO_DECRYPTION_FAILED": {
+      "code": 3005,
+      "category": "CRYPTO",
+      "message": "Decryption operation failed",
+      "retryable": false,
+      "http_status": 400
+    },
+    "CRYPTO_UNSUPPORTED_ALGORITHM": {
+      "code": 3006,
+      "category": "CRYPTO",
+      "message": "Cryptographic algorithm not supported",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "algorithm": {"type": "string"},
+          "supported": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "CRYPTO_KEY_DERIVATION_FAILED": {
+      "code": 3007,
+      "category": "CRYPTO",
+      "message": "Key derivation operation failed",
+      "retryable": false,
+      "http_status": 500
+    },
+    "CRYPTO_PQC_NOT_AVAILABLE": {
+      "code": 3008,
+      "category": "CRYPTO",
+      "message": "Post-quantum cryptography not available",
+      "retryable": false,
+      "http_status": 501
+    },
+
+    "TEE_ATTESTATION_FAILED": {
+      "code": 4001,
+      "category": "TEE",
+      "message": "TEE attestation verification failed",
+      "retryable": true,
+      "http_status": 401
+    },
+    "TEE_QUOTE_EXPIRED": {
+      "code": 4002,
+      "category": "TEE",
+      "message": "TEE quote has expired",
+      "retryable": true,
+      "http_status": 401
+    },
+    "TEE_ENCLAVE_MISMATCH": {
+      "code": 4003,
+      "category": "TEE",
+      "message": "Enclave measurement does not match expected value",
+      "retryable": false,
+      "http_status": 401,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "expected_mrenclave": {"type": "string"},
+          "actual_mrenclave": {"type": "string"}
+        }
+      }
+    },
+    "TEE_PLATFORM_NOT_SUPPORTED": {
+      "code": 4004,
+      "category": "TEE",
+      "message": "TEE platform not supported",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string"},
+          "supported": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "TEE_REMOTE_ATTESTATION_TIMEOUT": {
+      "code": 4005,
+      "category": "TEE",
+      "message": "Remote attestation service timed out",
+      "retryable": true,
+      "http_status": 504
+    },
+    "TEE_INVALID_REPORT_DATA": {
+      "code": 4006,
+      "category": "TEE",
+      "message": "TEE report data is invalid",
+      "retryable": false,
+      "http_status": 400
+    },
+
+    "NETWORK_CONNECTION_FAILED": {
+      "code": 5001,
+      "category": "NETWORK",
+      "message": "Failed to connect to node",
+      "retryable": true,
+      "http_status": 503
+    },
+    "NETWORK_REQUEST_TIMEOUT": {
+      "code": 5002,
+      "category": "NETWORK",
+      "message": "Request timed out",
+      "retryable": true,
+      "http_status": 504
+    },
+    "NETWORK_NODE_NOT_SYNCED": {
+      "code": 5003,
+      "category": "NETWORK",
+      "message": "Node is not synchronized",
+      "retryable": true,
+      "http_status": 503
+    },
+    "NETWORK_RATE_LIMITED": {
+      "code": 5004,
+      "category": "NETWORK",
+      "message": "Rate limit exceeded",
+      "retryable": true,
+      "http_status": 429,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "retry_after_seconds": {"type": "integer"}
+        }
+      }
+    },
+    "NETWORK_BROADCAST_FAILED": {
+      "code": 5005,
+      "category": "NETWORK",
+      "message": "Transaction broadcast failed",
+      "retryable": true,
+      "http_status": 500
+    },
+    "NETWORK_INVALID_RESPONSE": {
+      "code": 5006,
+      "category": "NETWORK",
+      "message": "Invalid response from node",
+      "retryable": true,
+      "http_status": 502
+    },
+
+    "STORAGE_NOT_FOUND": {
+      "code": 6001,
+      "category": "STORAGE",
+      "message": "Resource not found in storage",
+      "retryable": false,
+      "http_status": 404
+    },
+    "STORAGE_WRITE_FAILED": {
+      "code": 6002,
+      "category": "STORAGE",
+      "message": "Failed to write to storage",
+      "retryable": true,
+      "http_status": 500
+    },
+    "STORAGE_READ_FAILED": {
+      "code": 6003,
+      "category": "STORAGE",
+      "message": "Failed to read from storage",
+      "retryable": true,
+      "http_status": 500
+    },
+    "STORAGE_QUOTA_EXCEEDED": {
+      "code": 6004,
+      "category": "STORAGE",
+      "message": "Storage quota exceeded",
+      "retryable": false,
+      "http_status": 507
+    },
+
+    "ZKML_PROOF_VERIFICATION_FAILED": {
+      "code": 7001,
+      "category": "ZKML",
+      "message": "Zero-knowledge proof verification failed",
+      "retryable": false,
+      "http_status": 400
+    },
+    "ZKML_INVALID_PROOF_FORMAT": {
+      "code": 7002,
+      "category": "ZKML",
+      "message": "Invalid zero-knowledge proof format",
+      "retryable": false,
+      "http_status": 400
+    },
+    "ZKML_VERIFYING_KEY_MISMATCH": {
+      "code": 7003,
+      "category": "ZKML",
+      "message": "Verifying key does not match expected value",
+      "retryable": false,
+      "http_status": 400
+    },
+    "ZKML_PUBLIC_INPUT_MISMATCH": {
+      "code": 7004,
+      "category": "ZKML",
+      "message": "Public inputs do not match expected values",
+      "retryable": false,
+      "http_status": 400
+    },
+    "ZKML_PROOF_SYSTEM_NOT_SUPPORTED": {
+      "code": 7005,
+      "category": "ZKML",
+      "message": "Proof system not supported",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "system": {"type": "string"},
+          "supported": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "ZKML_PROOF_TOO_LARGE": {
+      "code": 7006,
+      "category": "ZKML",
+      "message": "Proof exceeds maximum size limit",
+      "retryable": false,
+      "http_status": 400,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "size": {"type": "integer"},
+          "max_size": {"type": "integer"}
+        }
+      }
+    },
+
+    "BRIDGE_CHAIN_NOT_SUPPORTED": {
+      "code": 8001,
+      "category": "BRIDGE",
+      "message": "Target chain not supported",
+      "retryable": false,
+      "http_status": 400
+    },
+    "BRIDGE_DEPOSIT_FAILED": {
+      "code": 8002,
+      "category": "BRIDGE",
+      "message": "Bridge deposit failed",
+      "retryable": true,
+      "http_status": 500
+    },
+    "BRIDGE_WITHDRAWAL_PENDING": {
+      "code": 8003,
+      "category": "BRIDGE",
+      "message": "Withdrawal is still in challenge period",
+      "retryable": true,
+      "http_status": 425,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "challenge_ends_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "BRIDGE_INSUFFICIENT_LIQUIDITY": {
+      "code": 8004,
+      "category": "BRIDGE",
+      "message": "Insufficient bridge liquidity",
+      "retryable": true,
+      "http_status": 503
+    },
+    "BRIDGE_INVALID_PROOF": {
+      "code": 8005,
+      "category": "BRIDGE",
+      "message": "Bridge proof verification failed",
+      "retryable": false,
+      "http_status": 400
+    },
+
+    "INTERNAL_UNKNOWN_ERROR": {
+      "code": 9001,
+      "category": "INTERNAL",
+      "message": "An unexpected error occurred",
+      "retryable": true,
+      "http_status": 500
+    },
+    "INTERNAL_SERVICE_UNAVAILABLE": {
+      "code": 9002,
+      "category": "INTERNAL",
+      "message": "Service temporarily unavailable",
+      "retryable": true,
+      "http_status": 503
+    },
+    "INTERNAL_CONFIGURATION_ERROR": {
+      "code": 9003,
+      "category": "INTERNAL",
+      "message": "Internal configuration error",
+      "retryable": false,
+      "http_status": 500
+    },
+    "INTERNAL_CIRCUIT_BREAKER_OPEN": {
+      "code": 9004,
+      "category": "INTERNAL",
+      "message": "Circuit breaker is open due to high error rate",
+      "retryable": true,
+      "http_status": 503,
+      "details_schema": {
+        "type": "object",
+        "properties": {
+          "recovery_time": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  },
+  "sdk_implementation_guide": {
+    "description": "Guidelines for implementing error handling in each SDK",
+    "required_fields": [
+      "code",
+      "message",
+      "category"
+    ],
+    "optional_fields": [
+      "details",
+      "request_id",
+      "timestamp"
+    ],
+    "retry_strategy": {
+      "default_max_retries": 3,
+      "backoff_type": "exponential",
+      "initial_delay_ms": 100,
+      "max_delay_ms": 30000,
+      "jitter": true
+    },
+    "language_specific": {
+      "python": {
+        "base_exception": "AethelredError",
+        "category_exceptions": true,
+        "notes": "Use Python's exception hierarchy with specific exception classes per category"
+      },
+      "rust": {
+        "base_error": "AethelredError",
+        "result_type": "Result<T, AethelredError>",
+        "notes": "Use thiserror for derive(Error), implement std::error::Error trait"
+      },
+      "go": {
+        "base_error": "AethelredError",
+        "notes": "Implement error interface, use errors.Is() and errors.As() for checking"
+      },
+      "typescript": {
+        "base_error": "AethelredError",
+        "notes": "Extend Error class, include type guards for each error category"
+      }
+    }
+  }
+}

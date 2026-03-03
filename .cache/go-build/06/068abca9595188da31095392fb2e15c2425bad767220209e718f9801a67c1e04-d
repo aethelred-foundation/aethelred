@@ -1,0 +1,6 @@
+./doc.go
+./encoding.go
+./group.go
+./hash.go
+./random.go
+./xof.go

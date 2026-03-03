@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Aethelred Seal Verifier",
+  "version": "0.1.0",
+  "description": "Offline Digital Seal verification in the browser",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Aethelred Seal Verifier"
+  },
+  "permissions": ["storage"]
+}

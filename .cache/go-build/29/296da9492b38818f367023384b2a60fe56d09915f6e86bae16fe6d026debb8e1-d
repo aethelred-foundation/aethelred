@@ -1,0 +1,2 @@
+./bn254_pairing.go
+./verifier.go

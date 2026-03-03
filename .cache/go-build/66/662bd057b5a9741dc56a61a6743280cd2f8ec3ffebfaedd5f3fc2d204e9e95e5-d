@@ -1,0 +1,12 @@
+./adapter.go
+./builder.go
+./config.go
+./decoder.go
+./direct.go
+./direct_aux.go
+./encoder.go
+./legacy_amino_json.go
+./query.go
+./service.go
+./sigs.go
+./textual.go

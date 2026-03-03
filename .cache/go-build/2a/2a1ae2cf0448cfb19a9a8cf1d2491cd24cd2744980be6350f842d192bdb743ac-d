@@ -1,0 +1,16 @@
+./compact.go
+./gen_node_key.go
+./gen_validator.go
+./init.go
+./inspect.go
+./light.go
+./reindex_event.go
+./replay.go
+./reset.go
+./rollback.go
+./root.go
+./run_node.go
+./show_node_id.go
+./show_validator.go
+./testnet.go
+./version.go

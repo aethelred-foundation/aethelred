@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #F87171; --red-800: #991B1B;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { color: var(--gray-400); text-decoration: none; font-size: 14px; }
+    .nav-links a:hover { color: var(--red-500); }
+
+    .page-hero { padding: 140px 0 80px; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); position: relative; text-align: center; }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(220, 38, 38, 0.12) 0%, transparent 50%); }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    .section { padding: 80px 0; }
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+
+    /* Team Grid */
+    .team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+    .team-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 30px; text-align: center; transition: all 0.3s; }
+    .team-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .team-avatar { width: 120px; height: 120px; background: linear-gradient(135deg, var(--red-600), var(--red-800)); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-family: 'Syne', sans-serif; font-weight: 700; }
+    .team-card h3 { font-size: 20px; margin-bottom: 4px; }
+    .team-card .role { font-size: 13px; color: var(--red-400); font-family: 'Orbitron', monospace; margin-bottom: 12px; }
+    .team-card p { font-size: 13px; color: var(--gray-400); margin-bottom: 16px; }
+    .team-socials { display: flex; justify-content: center; gap: 12px; }
+    .team-socials a { width: 36px; height: 36px; background: var(--dark-700); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--gray-400); text-decoration: none; transition: all 0.2s; }
+    .team-socials a:hover { background: var(--red-600); color: white; }
+    .team-socials svg { width: 18px; height: 18px; }
+
+    /* Leadership */
+    .leadership-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 60px; }
+    .leader-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; transition: all 0.3s; }
+    .leader-card:hover { border-color: var(--red-600); }
+    .leader-header { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+    .leader-avatar { width: 80px; height: 80px; background: linear-gradient(135deg, var(--red-600), var(--red-800)); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-family: 'Syne', sans-serif; font-weight: 700; flex-shrink: 0; }
+    .leader-info h3 { font-size: 22px; margin-bottom: 4px; }
+    .leader-info .role { font-size: 13px; color: var(--red-400); font-family: 'Orbitron', monospace; }
+    .leader-card p { font-size: 14px; color: var(--gray-400); margin-bottom: 16px; line-height: 1.7; }
+    .leader-bg { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bg-tag { padding: 4px 10px; background: var(--dark-700); border-radius: 4px; font-size: 11px; color: var(--gray-300); }
+
+    /* Advisors */
+    .advisors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .advisor-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 24px; text-align: center; }
+    .advisor-avatar { width: 70px; height: 70px; background: var(--dark-700); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .advisor-card h4 { font-size: 16px; margin-bottom: 4px; }
+    .advisor-card .role { font-size: 11px; color: var(--red-400); font-family: 'Orbitron', monospace; margin-bottom: 8px; }
+    .advisor-card p { font-size: 12px; color: var(--gray-400); }
+
+    /* Join Section */
+    .join-section { background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, var(--dark-900) 100%); border: 1px solid var(--red-800); border-radius: 20px; padding: 60px; text-align: center; }
+    .join-section h2 { font-family: 'Syne', sans-serif; font-size: 36px; margin-bottom: 16px; }
+    .join-section p { font-size: 18px; color: var(--gray-400); margin-bottom: 30px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+    .btn-primary { background: var(--red-600); color: white; }
+    .btn-primary:hover { background: var(--red-500); transform: translateY(-2px); }
+
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); margin: 16px 0; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+
+    @media (max-width: 1200px) { .team-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 992px) { .leadership-grid { grid-template-columns: 1fr; } .advisors-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .team-grid { grid-template-columns: 1fr; } .advisors-grid { grid-template-columns: 1fr; } .page-hero h1 { font-size: 36px; } .footer-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <div class="nav-links">
+        <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+        <a href="roadmap.html">Roadmap</a>
+        <a href="research.html">Research</a>
+        <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        About Us
+      </div>
+      <h1>Meet the <span class="gradient-text">Team</span></h1>
+      <p class="subtitle">World-class experts in cryptography, distributed systems, and AI safety building the infrastructure for trustworthy artificial intelligence.</p>
+    </div>
+  </section>
+
+  <!-- Leadership -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Leadership</span>
+        <h2 class="section-title">Executive Team</h2>
+      </div>
+
+      <div class="leadership-grid">
+        <div class="leader-card">
+          <div class="leader-header">
+            <div class="leader-avatar">RA</div>
+            <div class="leader-info">
+              <h3>Dr. Ramesh Aravind</h3>
+              <span class="role">CEO & Founder</span>
+            </div>
+          </div>
+          <p>Former Global CEO of Shine Harvest with experience across 12 countries. Electronics & Communication engineering background with deep expertise in quantum computing and blockchain convergence.</p>
+          <div class="leader-bg">
+            <span class="bg-tag">Zhyra Holdings</span>
+            <span class="bg-tag">Quantum Computing</span>
+            <span class="bg-tag">Enterprise</span>
+          </div>
+        </div>
+
+        <div class="leader-card">
+          <div class="leader-header">
+            <div class="leader-avatar">SK</div>
+            <div class="leader-info">
+              <h3>Dr. Sarah Kim</h3>
+              <span class="role">CTO</span>
+            </div>
+          </div>
+          <p>Former research scientist at DeepMind and MIT CSAIL. PhD in cryptography from Stanford with pioneering work on zero-knowledge proofs for machine learning.</p>
+          <div class="leader-bg">
+            <span class="bg-tag">DeepMind</span>
+            <span class="bg-tag">MIT CSAIL</span>
+            <span class="bg-tag">Stanford PhD</span>
+          </div>
+        </div>
+
+        <div class="leader-card">
+          <div class="leader-header">
+            <div class="leader-avatar">MR</div>
+            <div class="leader-info">
+              <h3>Marcus Rodriguez</h3>
+              <span class="role">COO</span>
+            </div>
+          </div>
+          <p>15 years building infrastructure at Google Cloud and AWS. Led the deployment of verification systems processing 10M+ daily transactions.</p>
+          <div class="leader-bg">
+            <span class="bg-tag">Google Cloud</span>
+            <span class="bg-tag">AWS</span>
+            <span class="bg-tag">Scale</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Team -->
+  <section class="section" style="background: var(--dark-900);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Core Team</span>
+        <h2 class="section-title">The People Building Aethelred</h2>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">AK</div>
+          <h3>Dr. Aisha Khan</h3>
+          <div class="role">Head of Research</div>
+          <p>Former Principal Scientist at IBM Research. Expert in verifiable computation.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">JC</div>
+          <h3>James Chen</h3>
+          <div class="role">Head of Engineering</div>
+          <p>Founding engineer at Chainlink. Built oracle networks securing $50B+ in value.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">EP</div>
+          <h3>Elena Petrov</h3>
+          <div class="role">Head of Cryptography</div>
+          <p>PhD ETH Zurich. Co-author of PLONK proof system with 500+ citations.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">DW</div>
+          <h3>David Wright</h3>
+          <div class="role">Head of Product</div>
+          <p>Former VP Product at Palantir. Built enterprise AI platforms for Fortune 100.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">LT</div>
+          <h3>Lisa Thompson</h3>
+          <div class="role">Head of Security</div>
+          <p>Former NSA. 20 years in cybersecurity. Led red teams at major defense contractors.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">YN</div>
+          <h3>Dr. Yuki Nakamura</h3>
+          <div class="role">AI Safety Lead</div>
+          <p>Former OpenAI safety researcher. Pioneer in interpretable ML verification.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">RB</div>
+          <h3>Robert Blake</h3>
+          <div class="role">Head of Partnerships</div>
+          <p>Former BD at Consensys. Built enterprise blockchain partnerships globally.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">AM</div>
+          <h3>Anna Martinez</h3>
+          <div class="role">Head of Developer Relations</div>
+          <p>Former Ethereum Foundation. Built developer communities with 50K+ members.</p>
+          <div class="team-socials">
+            <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Advisors -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Advisors</span>
+        <h2 class="section-title">Advisory Board</h2>
+      </div>
+
+      <div class="advisors-grid">
+        <div class="advisor-card">
+          <div class="advisor-avatar">🎓</div>
+          <h4>Prof. Andrew Ng</h4>
+          <div class="role">AI ADVISOR</div>
+          <p>Stanford Professor, Co-founder of Coursera</p>
+        </div>
+        <div class="advisor-card">
+          <div class="advisor-avatar">🔐</div>
+          <h4>Dr. Silvio Micali</h4>
+          <div class="role">CRYPTOGRAPHY</div>
+          <p>Turing Award Winner, MIT Professor</p>
+        </div>
+        <div class="advisor-card">
+          <div class="advisor-avatar">⚖️</div>
+          <h4>Jennifer Lee</h4>
+          <div class="role">REGULATORY</div>
+          <p>Former SEC Commissioner</p>
+        </div>
+        <div class="advisor-card">
+          <div class="advisor-avatar">🏦</div>
+          <h4>Michael Chang</h4>
+          <div class="role">ENTERPRISE</div>
+          <p>Former CTO, Goldman Sachs</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Join Us -->
+  <section class="section">
+    <div class="container">
+      <div class="join-section">
+        <h2>Join the Team</h2>
+        <p>We're building the future of trustworthy AI. Come help us make it happen.</p>
+        <a href="#" class="btn btn-primary">View Open Positions →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Learn</h4>
+          <div class="footer-links">
+            <a href="roadmap.html">Roadmap</a>
+            <a href="glossary.html">Glossary</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Build</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Code Sandbox</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use</h4>
+          <div class="footer-links">
+            <a href="wallets.html">Wallets</a>
+            <a href="nodes.html">Run a Node</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>About</h4>
+          <div class="footer-links">
+            <a href="team.html">Team</a>
+            <a href="research.html">Research</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

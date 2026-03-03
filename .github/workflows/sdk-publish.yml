@@ -1,0 +1,213 @@
+name: SDK Publish
+
+on:
+  push:
+    tags:
+      - "sdk-python-v*"
+      - "sdk-typescript-v*"
+      - "sdk-rust-v*"
+      - "sdk-go-v*"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "SDK target"
+        required: true
+        default: "python"
+        type: choice
+        options:
+          - python
+          - typescript
+          - rust
+          - go
+      version:
+        description: "Release version (semver)"
+        required: true
+        type: string
+      publish:
+        description: "Publish registry artifacts (true/false)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.24.6"
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+concurrency:
+  group: sdk-publish-${{ github.ref_name || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: SDK Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.release.outputs.target }}
+      version: ${{ steps.release.outputs.version }}
+      publish_requested: ${{ steps.release.outputs.publish_requested }}
+      publish_enabled: ${{ steps.release.outputs.publish_enabled }}
+      publish_python: ${{ steps.release.outputs.publish_python }}
+      publish_typescript: ${{ steps.release.outputs.publish_typescript }}
+      publish_rust: ${{ steps.release.outputs.publish_rust }}
+      publish_go: ${{ steps.release.outputs.publish_go }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve release target/version
+        id: release
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            python3 scripts/validate_sdk_release_tag.py \
+              --tag "${GITHUB_REF_NAME}" \
+              --publish-requested true \
+              --enforce-publishability \
+              --github-output "${GITHUB_OUTPUT}"
+          else
+            args=(
+              --target "${{ github.event.inputs.target }}"
+              --version "${{ github.event.inputs.version }}"
+              --publish-requested "${{ github.event.inputs.publish }}"
+              --github-output "${GITHUB_OUTPUT}"
+            )
+            if [[ "${{ github.event.inputs.publish }}" == "true" ]]; then
+              args+=(--enforce-publishability)
+            fi
+            python3 scripts/validate_sdk_release_tag.py "${args[@]}"
+          fi
+
+      - name: Release summary
+        run: |
+          echo "target=${{ steps.release.outputs.target }}"
+          echo "version=${{ steps.release.outputs.version }}"
+          echo "publish_requested=${{ steps.release.outputs.publish_requested }}"
+          echo "publish_enabled=${{ steps.release.outputs.publish_enabled }}"
+
+      - name: Version and OpenAPI checks
+        run: make sdk-release-check
+
+      - name: Python package build check
+        run: |
+          python -m pip install --upgrade pip build twine
+          rm -rf ./sdk/python/dist
+          python -m build ./sdk/python
+          python -m twine check ./sdk/python/dist/*
+
+      - name: TypeScript package build check
+        run: |
+          cd ./sdk/typescript
+          rm -rf ./node_modules
+          npm install
+          npm pack
+
+      - name: Rust package build check
+        run: cargo package --manifest-path ./sdk/rust/Cargo.toml --allow-dirty
+
+      - name: Go SDK test check
+        run: |
+          cd ./sdk/go
+          go test ./...
+
+  publish-python:
+    name: Publish Python (PyPI)
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: sdk-pypi
+    if: ${{ needs.preflight.result == 'success' && needs.preflight.outputs.publish_requested == 'true' && needs.preflight.outputs.publish_python == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Validate required secret
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [[ -z "${PYPI_API_TOKEN}" ]]; then
+            echo "::error::Missing PYPI_API_TOKEN secret"
+            exit 1
+          fi
+      - name: Build wheel/sdist
+        run: |
+          python -m pip install --upgrade pip build twine
+          rm -rf ./sdk/python/dist
+          python -m build ./sdk/python
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: python -m twine upload ./sdk/python/dist/*
+
+  publish-typescript:
+    name: Publish TypeScript (npm)
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: sdk-npm
+    if: ${{ needs.preflight.result == 'success' && needs.preflight.outputs.publish_requested == 'true' && needs.preflight.outputs.publish_typescript == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+      - name: Validate required secret
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [[ -z "${NPM_TOKEN}" ]]; then
+            echo "::error::Missing NPM_TOKEN secret"
+            exit 1
+          fi
+      - name: Install and build
+        working-directory: ./sdk/typescript
+        run: |
+          npm install
+          npm run build
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: ./sdk/typescript
+        run: npm publish --access public
+
+  publish-rust:
+    name: Publish Rust (crates.io)
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: sdk-crates
+    if: ${{ needs.preflight.result == 'success' && needs.preflight.outputs.publish_requested == 'true' && needs.preflight.outputs.publish_rust == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate required secret
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [[ -z "${CARGO_REGISTRY_TOKEN}" ]]; then
+            echo "::error::Missing CARGO_REGISTRY_TOKEN secret"
+            exit 1
+          fi
+      - name: Publish crate
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --manifest-path ./sdk/rust/Cargo.toml

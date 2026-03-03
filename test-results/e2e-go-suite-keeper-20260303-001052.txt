@@ -1,0 +1,2 @@
+FAIL	github.com/aethelred/aethelred/x/pouw/keeper [build failed]
+FAIL

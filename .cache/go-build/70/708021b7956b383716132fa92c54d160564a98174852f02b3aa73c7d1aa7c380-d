@@ -1,0 +1,4 @@
+./batch.go
+./encoding.go
+./privkey.go
+./pubkey.go

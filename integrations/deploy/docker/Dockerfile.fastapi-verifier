@@ -1,0 +1,60 @@
+# =============================================================================
+# AETHELRED FASTAPI VERIFICATION GATEWAY - Official Runtime Image Template
+# =============================================================================
+#
+# Builds a FastAPI service that uses the Aethelred Python SDK middleware and
+# framework wrappers for verified AI inference APIs.
+#
+# Usage:
+#   docker build -f deploy/docker/Dockerfile.fastapi-verifier \
+#     --build-arg APP_DIR=apps/fastapi-verifier \
+#     -t ghcr.io/aethelred/fastapi-verifier:latest .
+#
+# Expected app structure:
+#   ${APP_DIR}/requirements.txt
+#   ${APP_DIR}/app/main.py   (FastAPI app object at app.main:app)
+#
+# =============================================================================
+
+FROM python:3.11-slim AS builder
+
+ARG APP_DIR=apps/fastapi-verifier
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY sdk/python /build/sdk/python
+RUN pip install --upgrade pip && \
+    pip wheel --wheel-dir /wheels /build/sdk/python
+
+COPY ${APP_DIR}/requirements.txt /build/app-requirements.txt
+RUN pip wheel --wheel-dir /wheels -r /build/app-requirements.txt
+
+FROM python:3.11-slim AS runtime
+
+ARG APP_DIR=apps/fastapi-verifier
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV AETHELRED_RPC_URL="http://aethelred-node:26657"
+ENV AETHELRED_HEADER_PREFIX="x-aethelred"
+ENV AETHELRED_VERIFY_MODE="seal-envelope"
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+COPY ${APP_DIR} /app
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -sf http://127.0.0.1:8000/health || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,2 @@
+ERROR: required audit scope has no completed signoff; scope='/contracts/ethereum', statuses=[In progress] in docs/audits/STATUS.md
+make: *** [audit-signoff-check] Error 1

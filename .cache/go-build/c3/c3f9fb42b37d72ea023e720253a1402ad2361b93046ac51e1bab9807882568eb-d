@@ -1,0 +1,5 @@
+./api.go
+./cli.go
+./pipeline.go
+./processor.go
+./scenarios.go

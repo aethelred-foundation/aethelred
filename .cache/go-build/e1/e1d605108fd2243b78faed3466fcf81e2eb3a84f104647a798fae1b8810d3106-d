@@ -1,0 +1,190 @@
+=== RUN   TestDefaultGasConfig
+=== PAUSE TestDefaultGasConfig
+=== RUN   TestNewRuntime
+=== PAUSE TestNewRuntime
+=== RUN   TestNewRuntime_CustomGas
+=== PAUSE TestNewRuntime_CustomGas
+=== RUN   TestRuntime_SetStateStore
+=== PAUSE TestRuntime_SetStateStore
+=== RUN   TestRuntime_RegisterHostFunction
+=== PAUSE TestRuntime_RegisterHostFunction
+=== RUN   TestRuntime_LoadModule_Valid
+=== PAUSE TestRuntime_LoadModule_Valid
+=== RUN   TestRuntime_LoadModule_TooShort
+=== PAUSE TestRuntime_LoadModule_TooShort
+=== RUN   TestRuntime_LoadModule_InvalidMagic
+=== PAUSE TestRuntime_LoadModule_InvalidMagic
+=== RUN   TestRuntime_LoadModule_Dedup
+=== PAUSE TestRuntime_LoadModule_Dedup
+=== RUN   TestRuntime_Execute
+=== PAUSE TestRuntime_Execute
+=== RUN   TestRuntime_Execute_ModuleNotFound
+=== PAUSE TestRuntime_Execute_ModuleNotFound
+=== RUN   TestRuntime_Execute_OutOfGas
+=== PAUSE TestRuntime_Execute_OutOfGas
+=== RUN   TestRuntime_Execute_ContextCancelled
+=== PAUSE TestRuntime_Execute_ContextCancelled
+=== RUN   TestRuntime_UnloadModule
+=== PAUSE TestRuntime_UnloadModule
+=== RUN   TestRuntime_GetLoadedModules
+=== PAUSE TestRuntime_GetLoadedModules
+=== RUN   TestExecutionContext_ConsumeGas
+=== PAUSE TestExecutionContext_ConsumeGas
+=== RUN   TestExecutionContext_Log
+=== PAUSE TestExecutionContext_Log
+=== RUN   TestExecutionContext_SetState
+=== PAUSE TestExecutionContext_SetState
+=== RUN   TestExecutionContext_GetState_NoStore
+=== PAUSE TestExecutionContext_GetState_NoStore
+=== RUN   TestExecutionContext_GetState_WithStore
+=== PAUSE TestExecutionContext_GetState_WithStore
+=== RUN   TestExecutionContext_GrowMemory
+=== PAUSE TestExecutionContext_GrowMemory
+=== RUN   TestExecutionContext_ReadWriteMemory
+=== PAUSE TestExecutionContext_ReadWriteMemory
+=== RUN   TestExecutionContext_ReadMemory_OutOfBounds
+=== PAUSE TestExecutionContext_ReadMemory_OutOfBounds
+=== RUN   TestExecutionContext_WriteMemory_OutOfBounds
+=== PAUSE TestExecutionContext_WriteMemory_OutOfBounds
+=== RUN   TestStandardHostFunctions
+=== PAUSE TestStandardHostFunctions
+=== RUN   TestValueType_Constants
+=== PAUSE TestValueType_Constants
+=== RUN   TestRuntimeType_Constants
+=== PAUSE TestRuntimeType_Constants
+=== RUN   TestStandardHostFunction_EnvLog
+=== PAUSE TestStandardHostFunction_EnvLog
+=== RUN   TestStandardHostFunction_EnvSha256
+=== PAUSE TestStandardHostFunction_EnvSha256
+=== RUN   TestStandardHostFunction_EnvGasRemaining
+=== PAUSE TestStandardHostFunction_EnvGasRemaining
+=== RUN   TestStandardHostFunction_EnvStateGet
+=== PAUSE TestStandardHostFunction_EnvStateGet
+=== RUN   TestStandardHostFunction_EnvStateSet
+=== PAUSE TestStandardHostFunction_EnvStateSet
+=== RUN   TestRuntime_Execute_WithStateStore
+=== PAUSE TestRuntime_Execute_WithStateStore
+=== RUN   TestRuntime_Execute_GasJustEnough
+=== PAUSE TestRuntime_Execute_GasJustEnough
+=== RUN   TestRuntime_Execute_GasJustUnder
+=== PAUSE TestRuntime_Execute_GasJustUnder
+=== RUN   TestExecutionContext_GrowMemory_ZeroPages
+=== PAUSE TestExecutionContext_GrowMemory_ZeroPages
+=== RUN   TestExecutionContext_ConsumeGas_ExactAmount
+=== PAUSE TestExecutionContext_ConsumeGas_ExactAmount
+=== RUN   TestValueType_ExtendedConstants
+=== PAUSE TestValueType_ExtendedConstants
+=== RUN   TestStandardHostFunction_EnvLog_ReadMemoryError
+=== PAUSE TestStandardHostFunction_EnvLog_ReadMemoryError
+=== RUN   TestStandardHostFunction_EnvSha256_ReadMemoryError
+=== PAUSE TestStandardHostFunction_EnvSha256_ReadMemoryError
+=== RUN   TestStandardHostFunction_EnvSha256_WriteMemoryError
+=== PAUSE TestStandardHostFunction_EnvSha256_WriteMemoryError
+=== RUN   TestStandardHostFunction_EnvStateGet_ReadKeyError
+=== PAUSE TestStandardHostFunction_EnvStateGet_ReadKeyError
+=== RUN   TestStandardHostFunction_EnvStateGet_WriteValError
+=== PAUSE TestStandardHostFunction_EnvStateGet_WriteValError
+=== RUN   TestStandardHostFunction_EnvStateSet_ReadKeyError
+=== PAUSE TestStandardHostFunction_EnvStateSet_ReadKeyError
+=== RUN   TestStandardHostFunction_EnvStateSet_ReadValError
+=== PAUSE TestStandardHostFunction_EnvStateSet_ReadValError
+=== RUN   TestRuntime_Execute_ZeroTimeout
+=== PAUSE TestRuntime_Execute_ZeroTimeout
+=== RUN   TestRuntime_Execute_WithArgs
+=== PAUSE TestRuntime_Execute_WithArgs
+=== CONT  TestDefaultGasConfig
+--- PASS: TestDefaultGasConfig (0.00s)
+=== CONT  TestRuntime_Execute_WithArgs
+--- PASS: TestRuntime_Execute_WithArgs (0.00s)
+=== CONT  TestRuntime_Execute_ZeroTimeout
+--- PASS: TestRuntime_Execute_ZeroTimeout (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateSet_ReadValError
+--- PASS: TestStandardHostFunction_EnvStateSet_ReadValError (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateSet_ReadKeyError
+--- PASS: TestStandardHostFunction_EnvStateSet_ReadKeyError (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateGet_WriteValError
+--- PASS: TestStandardHostFunction_EnvStateGet_WriteValError (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateGet_ReadKeyError
+--- PASS: TestStandardHostFunction_EnvStateGet_ReadKeyError (0.00s)
+=== CONT  TestStandardHostFunction_EnvSha256_WriteMemoryError
+--- PASS: TestStandardHostFunction_EnvSha256_WriteMemoryError (0.00s)
+=== CONT  TestStandardHostFunction_EnvSha256_ReadMemoryError
+--- PASS: TestStandardHostFunction_EnvSha256_ReadMemoryError (0.00s)
+=== CONT  TestStandardHostFunction_EnvLog_ReadMemoryError
+--- PASS: TestStandardHostFunction_EnvLog_ReadMemoryError (0.00s)
+=== CONT  TestValueType_ExtendedConstants
+--- PASS: TestValueType_ExtendedConstants (0.00s)
+=== CONT  TestExecutionContext_ConsumeGas_ExactAmount
+--- PASS: TestExecutionContext_ConsumeGas_ExactAmount (0.00s)
+=== CONT  TestExecutionContext_GrowMemory_ZeroPages
+--- PASS: TestExecutionContext_GrowMemory_ZeroPages (0.00s)
+=== CONT  TestRuntime_Execute_GasJustUnder
+--- PASS: TestRuntime_Execute_GasJustUnder (0.00s)
+=== CONT  TestRuntime_Execute_GasJustEnough
+--- PASS: TestRuntime_Execute_GasJustEnough (0.00s)
+=== CONT  TestRuntime_Execute_WithStateStore
+--- PASS: TestRuntime_Execute_WithStateStore (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateSet
+--- PASS: TestStandardHostFunction_EnvStateSet (0.00s)
+=== CONT  TestStandardHostFunction_EnvStateGet
+--- PASS: TestStandardHostFunction_EnvStateGet (0.00s)
+=== CONT  TestStandardHostFunction_EnvGasRemaining
+--- PASS: TestStandardHostFunction_EnvGasRemaining (0.00s)
+=== CONT  TestRuntime_GetLoadedModules
+--- PASS: TestRuntime_GetLoadedModules (0.00s)
+=== CONT  TestRuntime_UnloadModule
+--- PASS: TestRuntime_UnloadModule (0.00s)
+=== CONT  TestRuntime_Execute_ContextCancelled
+--- PASS: TestRuntime_Execute_ContextCancelled (0.00s)
+=== CONT  TestExecutionContext_ConsumeGas
+--- PASS: TestExecutionContext_ConsumeGas (0.00s)
+=== CONT  TestExecutionContext_ReadMemory_OutOfBounds
+--- PASS: TestExecutionContext_ReadMemory_OutOfBounds (0.00s)
+=== CONT  TestStandardHostFunction_EnvSha256
+--- PASS: TestStandardHostFunction_EnvSha256 (0.00s)
+=== CONT  TestStandardHostFunction_EnvLog
+--- PASS: TestStandardHostFunction_EnvLog (0.00s)
+=== CONT  TestRuntimeType_Constants
+--- PASS: TestRuntimeType_Constants (0.00s)
+=== CONT  TestValueType_Constants
+--- PASS: TestValueType_Constants (0.00s)
+=== CONT  TestStandardHostFunctions
+--- PASS: TestStandardHostFunctions (0.00s)
+=== CONT  TestExecutionContext_WriteMemory_OutOfBounds
+--- PASS: TestExecutionContext_WriteMemory_OutOfBounds (0.00s)
+=== CONT  TestExecutionContext_GetState_WithStore
+--- PASS: TestExecutionContext_GetState_WithStore (0.00s)
+=== CONT  TestExecutionContext_ReadWriteMemory
+--- PASS: TestExecutionContext_ReadWriteMemory (0.00s)
+=== CONT  TestExecutionContext_GrowMemory
+--- PASS: TestExecutionContext_GrowMemory (0.00s)
+=== CONT  TestExecutionContext_SetState
+--- PASS: TestExecutionContext_SetState (0.00s)
+=== CONT  TestExecutionContext_GetState_NoStore
+--- PASS: TestExecutionContext_GetState_NoStore (0.00s)
+=== CONT  TestExecutionContext_Log
+--- PASS: TestExecutionContext_Log (0.00s)
+=== CONT  TestRuntime_Execute_OutOfGas
+--- PASS: TestRuntime_Execute_OutOfGas (0.00s)
+=== CONT  TestRuntime_Execute_ModuleNotFound
+--- PASS: TestRuntime_Execute_ModuleNotFound (0.00s)
+=== CONT  TestRuntime_Execute
+--- PASS: TestRuntime_Execute (0.00s)
+=== CONT  TestRuntime_LoadModule_Dedup
+--- PASS: TestRuntime_LoadModule_Dedup (0.00s)
+=== CONT  TestRuntime_LoadModule_InvalidMagic
+--- PASS: TestRuntime_LoadModule_InvalidMagic (0.00s)
+=== CONT  TestRuntime_LoadModule_TooShort
+--- PASS: TestRuntime_LoadModule_TooShort (0.00s)
+=== CONT  TestRuntime_LoadModule_Valid
+--- PASS: TestRuntime_LoadModule_Valid (0.00s)
+=== CONT  TestRuntime_RegisterHostFunction
+--- PASS: TestRuntime_RegisterHostFunction (0.00s)
+=== CONT  TestRuntime_SetStateStore
+--- PASS: TestRuntime_SetStateStore (0.00s)
+=== CONT  TestNewRuntime_CustomGas
+--- PASS: TestNewRuntime_CustomGas (0.00s)
+=== CONT  TestNewRuntime
+--- PASS: TestNewRuntime (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/vm/wasm	4.308s

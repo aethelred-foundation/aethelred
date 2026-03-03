@@ -1,0 +1,65 @@
+body {
+  margin: 0;
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #09111a;
+  color: #e6edf3;
+}
+
+.app {
+  width: 420px;
+  padding: 12px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.sub {
+  margin: 0 0 10px;
+  color: #9fb3c8;
+  font-size: 12px;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f1b2a;
+  color: #e6edf3;
+  border: 1px solid #25384d;
+  border-radius: 8px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+button {
+  border: 1px solid #2e7cff;
+  background: #2e7cff;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: transparent;
+  border-color: #34506f;
+}
+
+.output {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0f1b2a;
+  border: 1px solid #25384d;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow: auto;
+}

@@ -1,0 +1,313 @@
+# ============================================================================
+# Aethelred Validator Configuration
+# ============================================================================
+#
+# Configuration template for validator nodes in the DevNet.
+# This file is used by validator-alice and validator-bob.
+#
+# Environment variables:
+#   VALIDATOR_MONIKER - Validator name (e.g., "alice", "bob")
+#   VALIDATOR_P2P_PORT - P2P listen port
+#   VALIDATOR_RPC_PORT - RPC listen port
+#   EXTERNAL_ADDRESS - External P2P address
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+# ===========================================================================
+# Node Identity
+# ===========================================================================
+[node]
+# Node moniker - set via environment variable
+moniker = "${VALIDATOR_MONIKER:-validator}"
+
+# Node type
+type = "validator"
+
+# Chain ID
+chain_id = "aethelred-devnet-1"
+
+# Data directory
+data_dir = "/data/aethelred"
+
+# Log level
+log_level = "info"
+
+# ===========================================================================
+# Validator Configuration
+# ===========================================================================
+[validator]
+# Enable validator mode
+enabled = true
+
+# Validator key file
+key_file = "/keys/validator.json"
+
+# Commission rate (basis points, e.g., 1000 = 10%)
+commission_rate_bps = 1000
+
+# Maximum commission rate
+max_commission_rate_bps = 2000
+
+# Commission rate change limit per day
+max_commission_change_rate_bps = 100
+
+# Minimum self-delegation
+min_self_delegation = "10000000000000000000000"
+
+# ===========================================================================
+# Proof-of-Useful-Work Configuration
+# ===========================================================================
+[pouw]
+# Enable Proof-of-Useful-Work participation
+enabled = true
+
+# TEE type: sgx, nitro, sev, mock
+tee_type = "mock"
+
+# TEE attestation refresh interval
+attestation_refresh_interval = "1h"
+
+# Maximum compute jobs per block
+max_jobs_per_block = 10
+
+# Compute timeout per job
+compute_timeout = "30s"
+
+# Vote extension participation
+vote_extensions = true
+
+# ===========================================================================
+# P2P Configuration
+# ===========================================================================
+[p2p]
+# Listen address
+listen_addr = "tcp://0.0.0.0:26656"
+
+# External address
+external_addr = "${EXTERNAL_ADDRESS:-tcp://localhost:26656}"
+
+# Maximum inbound peers
+max_inbound_peers = 40
+
+# Maximum outbound peers
+max_outbound_peers = 10
+
+# Persistent peers (bootnode)
+persistent_peers = "bootnode:26656"
+
+# Seeds
+seeds = ""
+
+# Enable PEX
+pex = true
+
+# Allow duplicate IP
+allow_duplicate_ip = true
+
+# Handshake timeout
+handshake_timeout = "20s"
+
+# Dial timeout
+dial_timeout = "3s"
+
+# Flush throttle timeout
+flush_throttle_timeout = "100ms"
+
+# ===========================================================================
+# RPC Configuration
+# ===========================================================================
+[rpc]
+# Listen address
+listen_addr = "tcp://0.0.0.0:26657"
+
+# CORS allowed origins
+cors_allowed_origins = ["*"]
+
+# Maximum connections
+max_open_connections = 900
+
+# Timeout settings
+timeout_read = "10s"
+timeout_write = "10s"
+
+# ===========================================================================
+# gRPC Configuration
+# ===========================================================================
+[grpc]
+# Listen address
+listen_addr = "0.0.0.0:9090"
+
+# Enable gRPC
+enabled = true
+
+# ===========================================================================
+# Mempool Configuration
+# ===========================================================================
+[mempool]
+# Mempool size
+size = 5000
+
+# Maximum transaction size
+max_tx_bytes = 1048576
+
+# Total mempool size
+max_txs_bytes = 1073741824
+
+# Cache size
+cache_size = 10000
+
+# Recheck transactions
+recheck = true
+
+# Broadcast transactions
+broadcast = true
+
+# WAL directory
+wal_dir = "/data/aethelred/mempool"
+
+# ===========================================================================
+# Consensus Configuration
+# ===========================================================================
+[consensus]
+# Participate in consensus
+validator = true
+
+# WAL file
+wal_file = "/data/aethelred/cs.wal/wal"
+
+# Timeouts
+timeout_propose = "3s"
+timeout_propose_delta = "500ms"
+timeout_prevote = "1s"
+timeout_prevote_delta = "500ms"
+timeout_precommit = "1s"
+timeout_precommit_delta = "500ms"
+timeout_commit = "1s"
+
+# Create empty blocks
+create_empty_blocks = true
+create_empty_blocks_interval = "0s"
+
+# Peer gossip sleep
+peer_gossip_sleep_duration = "100ms"
+peer_query_maj23_sleep_duration = "2s"
+
+# Double sign check height
+double_sign_check_height = 10
+
+# ===========================================================================
+# Block Configuration
+# ===========================================================================
+[block]
+# Maximum block size (bytes)
+max_bytes = 22020096
+
+# Maximum gas per block
+max_gas = -1
+
+# Time iota (minimum time between blocks)
+time_iota_ms = 1000
+
+# ===========================================================================
+# Staking Configuration
+# ===========================================================================
+[staking]
+# Unbonding period
+unbonding_time = "300s"
+
+# Maximum validators
+max_validators = 100
+
+# Maximum entries per delegation
+max_entries = 7
+
+# Historical entries
+historical_entries = 10000
+
+# Bond denomination
+bond_denom = "uaeth"
+
+# ===========================================================================
+# Slashing Configuration
+# ===========================================================================
+[slashing]
+# Signed blocks window
+signed_blocks_window = 100
+
+# Minimum signed per window (percentage)
+min_signed_per_window = "0.50"
+
+# Downtime jail duration
+downtime_jail_duration = "600s"
+
+# Slash fraction for double sign
+slash_fraction_double_sign = "0.05"
+
+# Slash fraction for downtime
+slash_fraction_downtime = "0.01"
+
+# ===========================================================================
+# Metrics Configuration
+# ===========================================================================
+[metrics]
+# Enable Prometheus metrics
+enabled = true
+
+# Listen address
+listen_addr = "0.0.0.0:9100"
+
+# Namespace
+namespace = "aethelred"
+
+# Subsystem
+subsystem = "validator"
+
+# ===========================================================================
+# State Sync Configuration
+# ===========================================================================
+[state_sync]
+# Enable state sync
+enabled = false
+
+# Snapshot interval (blocks)
+snapshot_interval = 1000
+
+# Snapshot keep recent
+snapshot_keep_recent = 2
+
+# ===========================================================================
+# Pruning Configuration
+# ===========================================================================
+[pruning]
+# Pruning strategy
+strategy = "default"
+
+# Keep recent
+keep_recent = 100
+
+# Keep every
+keep_every = 0
+
+# Interval
+interval = 10
+
+# ===========================================================================
+# Instrumentation
+# ===========================================================================
+[instrumentation]
+# Enable profiling
+profiling = false
+
+# Prometheus retention time
+prometheus_retention_time = 0
+
+# Tracing enabled
+tracing = false
+
+# Tracing provider: jaeger, zipkin
+tracing_provider = "jaeger"
+
+# Tracing endpoint
+tracing_endpoint = ""

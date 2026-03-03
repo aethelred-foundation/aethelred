@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aethelred Seal Verifier</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Aethelred Seal Verifier</h1>
+      <p class="sub">Paste a seal JSON export to verify it offline.</p>
+      <textarea id="sealInput" rows="12" placeholder='{"seal": {...}}'></textarea>
+      <div class="row">
+        <button id="verifyBtn">Verify</button>
+        <button id="clearBtn" class="ghost">Clear</button>
+      </div>
+      <pre id="output" class="output"></pre>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+  </html>

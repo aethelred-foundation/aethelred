@@ -1,0 +1,76 @@
+=== RUN   TestDefaultHTTPConfig
+=== PAUSE TestDefaultHTTPConfig
+=== RUN   TestDefaultProofLimits
+=== PAUSE TestDefaultProofLimits
+=== RUN   TestGetMinProofSize
+=== PAUSE TestGetMinProofSize
+=== RUN   TestDefaultTEEConfig
+=== PAUSE TestDefaultTEEConfig
+=== RUN   TestDefaultCircuitBreakerConfig
+=== PAUSE TestDefaultCircuitBreakerConfig
+=== RUN   TestDefaultVerificationTimeouts
+=== PAUSE TestDefaultVerificationTimeouts
+=== RUN   TestDefaultJobLimits
+=== PAUSE TestDefaultJobLimits
+=== RUN   TestDefaultCryptoParams
+=== PAUSE TestDefaultCryptoParams
+=== RUN   TestDefaultNetworkConfig
+=== PAUSE TestDefaultNetworkConfig
+=== RUN   TestDefaultConfig
+=== PAUSE TestDefaultConfig
+=== RUN   TestGlobal
+--- PASS: TestGlobal (0.00s)
+=== CONT  TestDefaultHTTPConfig
+--- PASS: TestDefaultHTTPConfig (0.00s)
+=== CONT  TestDefaultConfig
+--- PASS: TestDefaultConfig (0.00s)
+=== CONT  TestDefaultNetworkConfig
+--- PASS: TestDefaultNetworkConfig (0.00s)
+=== CONT  TestDefaultCryptoParams
+--- PASS: TestDefaultCryptoParams (0.00s)
+=== CONT  TestDefaultJobLimits
+--- PASS: TestDefaultJobLimits (0.00s)
+=== CONT  TestDefaultVerificationTimeouts
+--- PASS: TestDefaultVerificationTimeouts (0.00s)
+=== CONT  TestDefaultCircuitBreakerConfig
+--- PASS: TestDefaultCircuitBreakerConfig (0.00s)
+=== CONT  TestDefaultTEEConfig
+--- PASS: TestDefaultTEEConfig (0.00s)
+=== CONT  TestGetMinProofSize
+=== RUN   TestGetMinProofSize/groth16
+=== PAUSE TestGetMinProofSize/groth16
+=== RUN   TestGetMinProofSize/ezkl
+=== PAUSE TestGetMinProofSize/ezkl
+=== RUN   TestGetMinProofSize/halo2
+=== PAUSE TestGetMinProofSize/halo2
+=== RUN   TestGetMinProofSize/plonky2
+=== PAUSE TestGetMinProofSize/plonky2
+=== RUN   TestGetMinProofSize/risc0
+=== PAUSE TestGetMinProofSize/risc0
+=== RUN   TestGetMinProofSize/stark
+=== PAUSE TestGetMinProofSize/stark
+=== RUN   TestGetMinProofSize/unknown
+=== PAUSE TestGetMinProofSize/unknown
+=== RUN   TestGetMinProofSize/#00
+=== PAUSE TestGetMinProofSize/#00
+=== CONT  TestGetMinProofSize/groth16
+=== CONT  TestDefaultProofLimits
+--- PASS: TestDefaultProofLimits (0.00s)
+=== CONT  TestGetMinProofSize/#00
+=== CONT  TestGetMinProofSize/unknown
+=== CONT  TestGetMinProofSize/stark
+=== CONT  TestGetMinProofSize/risc0
+=== CONT  TestGetMinProofSize/plonky2
+=== CONT  TestGetMinProofSize/halo2
+=== CONT  TestGetMinProofSize/ezkl
+--- PASS: TestGetMinProofSize (0.00s)
+    --- PASS: TestGetMinProofSize/groth16 (0.00s)
+    --- PASS: TestGetMinProofSize/#00 (0.00s)
+    --- PASS: TestGetMinProofSize/unknown (0.00s)
+    --- PASS: TestGetMinProofSize/stark (0.00s)
+    --- PASS: TestGetMinProofSize/risc0 (0.00s)
+    --- PASS: TestGetMinProofSize/plonky2 (0.00s)
+    --- PASS: TestGetMinProofSize/halo2 (0.00s)
+    --- PASS: TestGetMinProofSize/ezkl (0.00s)
+PASS
+ok  	github.com/aethelred/aethelred/internal/config	2.600s

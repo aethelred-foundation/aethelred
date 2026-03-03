@@ -1,0 +1,247 @@
+syntax = "proto3";
+package aethelred.seal.v1;
+
+option go_package = "github.com/aethelred/aethelred/x/seal/types";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+// DigitalSeal represents an immutable, cryptographically verifiable record
+// of a verified AI computation on the Aethelred blockchain.
+message DigitalSeal {
+  // Unique identifier of this seal
+  string id = 1;
+
+  // SHA-256 hash of the AI model weights
+  bytes model_commitment = 2;
+
+  // SHA-256 hash of the input data
+  bytes input_commitment = 3;
+
+  // SHA-256 hash of the computation output
+  bytes output_commitment = 4;
+
+  // Hardware attestations from validators
+  repeated TEEAttestation tee_attestations = 5;
+
+  // Optional zero-knowledge proof
+  ZKMLProof zk_proof = 6;
+
+  // Block height at which this seal was created
+  int64 block_height = 7;
+
+  // Timestamp when this seal was created
+  google.protobuf.Timestamp timestamp = 8;
+
+  // Addresses of validators who verified this computation
+  repeated string validator_set = 9;
+
+  // Address that requested this verification
+  string requested_by = 10;
+
+  // Use case description
+  string purpose = 11;
+
+  // Compliance markers
+  RegulatoryInfo regulatory_info = 12;
+
+  // Current status
+  SealStatus status = 13;
+}
+
+// TEEAttestation represents a hardware attestation from a Trusted Execution Environment
+message TEEAttestation {
+  // Validator address
+  string validator_address = 1;
+
+  // TEE platform (e.g., "aws-nitro", "intel-sgx")
+  string platform = 2;
+
+  // Enclave identifier
+  string enclave_id = 3;
+
+  // Enclave measurement (PCR values for Nitro)
+  bytes measurement = 4;
+
+  // Attestation quote/document
+  bytes quote = 5;
+
+  // Validator's signature
+  bytes signature = 6;
+
+  // When the attestation was created
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// ZKMLProof represents a zero-knowledge proof of ML computation
+message ZKMLProof {
+  // ZK system used (e.g., "ezkl", "risc0")
+  string proof_system = 1;
+
+  // Serialized proof data
+  bytes proof_bytes = 2;
+
+  // Public inputs to the proof
+  bytes public_inputs = 3;
+
+  // Hash of the verifying key
+  bytes verifying_key_hash = 4;
+
+  // Hash of the circuit definition
+  bytes circuit_hash = 5;
+}
+
+// RegulatoryInfo contains compliance and audit information
+message RegulatoryInfo {
+  // Sensitivity level
+  string data_classification = 1;
+
+  // Applicable frameworks (e.g., "GDPR", "HIPAA", "SOC2")
+  repeated string compliance_frameworks = 2;
+
+  // How long this seal should be retained
+  google.protobuf.Duration retention_period = 3;
+
+  // Whether audit is required
+  bool audit_required = 4;
+
+  // Geographic restrictions
+  repeated string jurisdiction_restrictions = 5;
+}
+
+// SealStatus represents the status of a Digital Seal
+enum SealStatus {
+  SEAL_STATUS_UNSPECIFIED = 0;
+  SEAL_STATUS_PENDING = 1;
+  SEAL_STATUS_ACTIVE = 2;
+  SEAL_STATUS_REVOKED = 3;
+  SEAL_STATUS_EXPIRED = 4;
+}
+
+// MsgCreateSeal creates a new Digital Seal
+message MsgCreateSeal {
+  string creator = 1;
+  string job_id = 2;
+  bytes model_commitment = 3;
+  bytes input_commitment = 4;
+  bytes output_commitment = 5;
+  string purpose = 6;
+  repeated TEEAttestation tee_attestations = 7;
+  ZKMLProof zk_proof = 8;
+}
+
+message MsgCreateSealResponse {
+  string seal_id = 1;
+}
+
+// MsgRevokeSeal revokes an existing seal
+message MsgRevokeSeal {
+  string authority = 1;
+  string seal_id = 2;
+  string reason = 3;
+}
+
+message MsgRevokeSealResponse {}
+
+// Msg defines the seal module Msg service
+service Msg {
+  rpc CreateSeal(MsgCreateSeal) returns (MsgCreateSealResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/seal/v1/seals"
+      body: "*"
+    };
+  }
+  rpc RevokeSeal(MsgRevokeSeal) returns (MsgRevokeSealResponse) {
+    option (google.api.http) = {
+      post: "/aethelred/seal/v1/seals/{seal_id}:revoke"
+      body: "*"
+    };
+  }
+}
+
+// Query service
+service Query {
+  rpc Seal(QuerySealRequest) returns (QuerySealResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals/{seal_id}"
+    };
+  }
+  rpc Seals(QuerySealsRequest) returns (QuerySealsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals"
+    };
+  }
+  rpc SealsByModel(QuerySealsByModelRequest) returns (QuerySealsByModelResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals/by_model"
+    };
+  }
+  rpc VerifySeal(QueryVerifySealRequest) returns (QueryVerifySealResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/seals/{seal_id}/verify"
+    };
+  }
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http) = {
+      get: "/aethelred/seal/v1/params"
+    };
+  }
+}
+
+message QuerySealRequest {
+  string seal_id = 1;
+}
+
+message QuerySealResponse {
+  DigitalSeal seal = 1;
+}
+
+message QuerySealsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message QuerySealsResponse {
+  repeated DigitalSeal seals = 1;
+  uint64 total = 2;
+}
+
+message QuerySealsByModelRequest {
+  bytes model_hash = 1;
+}
+
+message QuerySealsByModelResponse {
+  repeated DigitalSeal seals = 1;
+}
+
+message QueryVerifySealRequest {
+  string seal_id = 1;
+}
+
+message QueryVerifySealResponse {
+  bool valid = 1;
+  string verification_type = 2;
+  string status = 3;
+}
+
+message QueryParamsRequest {}
+
+message QueryParamsResponse {
+  Params params = 1;
+}
+
+// Params defines the seal module parameters
+message Params {
+  int64 min_validator_attestations = 1;
+  string seal_creation_fee = 2;
+  int64 default_retention_period_days = 3;
+  repeated string allowed_purposes = 4;
+}
+
+// GenesisState defines the seal module genesis state
+message GenesisState {
+  repeated DigitalSeal seals = 1;
+  Params params = 2;
+}

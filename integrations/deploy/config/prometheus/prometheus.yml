@@ -1,0 +1,281 @@
+# ============================================================================
+# Prometheus Configuration - Aethelred DevNet Monitoring
+# ============================================================================
+#
+# This configuration provides enterprise-grade monitoring for the Aethelred
+# DevNet environment including:
+# - Blockchain nodes (validators, compute nodes, bootnode)
+# - Bridge relayer service
+# - System-level metrics via node-exporter
+# - Custom Aethelred metrics
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+global:
+  # Scrape interval for all targets
+  scrape_interval: 15s
+
+  # Evaluation interval for alerting rules
+  evaluation_interval: 15s
+
+  # Timeout for scraping
+  scrape_timeout: 10s
+
+  # Labels attached to all time series and alerts
+  external_labels:
+    environment: devnet
+    chain: aethelred
+    cluster: local
+
+# ============================================================================
+# Alerting Configuration
+# ============================================================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # Alertmanager targets would go here in production
+          # - alertmanager:9093
+
+# ============================================================================
+# Rule Files for Alerting
+# ============================================================================
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# ============================================================================
+# Scrape Configurations
+# ============================================================================
+scrape_configs:
+  # --------------------------------------------------------------------------
+  # Prometheus Self-Monitoring
+  # --------------------------------------------------------------------------
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+        labels:
+          service: prometheus
+          component: monitoring
+
+  # --------------------------------------------------------------------------
+  # Aethelred Blockchain Nodes
+  # --------------------------------------------------------------------------
+
+  # Bootnode - P2P coordination node
+  - job_name: aethelred_bootnode
+    static_configs:
+      - targets:
+          - bootnode:9100
+        labels:
+          node_type: bootnode
+          role: coordinator
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: (.+):(\d+)
+        replacement: $1
+
+  # Validator Alice - Primary consensus validator
+  - job_name: aethelred_validator_alice
+    static_configs:
+      - targets:
+          - validator-alice:9100
+        labels:
+          node_type: validator
+          validator_name: alice
+          role: consensus
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: (.+):(\d+)
+        replacement: $1
+
+  # Validator Bob - Secondary consensus validator
+  - job_name: aethelred_validator_bob
+    static_configs:
+      - targets:
+          - validator-bob:9100
+        labels:
+          node_type: validator
+          validator_name: bob
+          role: consensus
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: (.+):(\d+)
+        replacement: $1
+
+  # Compute Charlie - TEE compute node
+  - job_name: aethelred_compute_charlie
+    static_configs:
+      - targets:
+          - compute-charlie:9100
+        labels:
+          node_type: compute
+          compute_name: charlie
+          role: prover
+          tee_type: mock
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: (.+):(\d+)
+        replacement: $1
+
+  # --------------------------------------------------------------------------
+  # Bridge Relayer Service
+  # --------------------------------------------------------------------------
+  - job_name: aethelred_bridge_relayer
+    static_configs:
+      - targets:
+          - bridge-relayer:9100
+        labels:
+          service: bridge
+          component: relayer
+          role: crosschain
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 10s
+    # Custom relabeling for bridge metrics
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: aethelred_bridge_(.*)
+        target_label: bridge_metric
+        replacement: $1
+
+  # --------------------------------------------------------------------------
+  # RPC Endpoints Monitoring
+  # --------------------------------------------------------------------------
+  - job_name: aethelred_rpc
+    static_configs:
+      - targets:
+          - bootnode:26657
+          - validator-alice:26657
+          - validator-bob:26657
+        labels:
+          protocol: tendermint_rpc
+          component: rpc
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 30s
+
+  # gRPC endpoints
+  - job_name: aethelred_grpc
+    static_configs:
+      - targets:
+          - bootnode:9090
+          - validator-alice:9090
+          - validator-bob:9090
+        labels:
+          protocol: grpc
+          component: query
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 30s
+
+  # --------------------------------------------------------------------------
+  # Faucet Service
+  # --------------------------------------------------------------------------
+  - job_name: aethelred_faucet
+    static_configs:
+      - targets:
+          - faucet:8080
+        labels:
+          service: faucet
+          component: devtools
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 30s
+
+  # --------------------------------------------------------------------------
+  # Block Explorer
+  # --------------------------------------------------------------------------
+  - job_name: aethelred_explorer
+    static_configs:
+      - targets:
+          - explorer:3000
+        labels:
+          service: explorer
+          component: ui
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 30s
+
+  # --------------------------------------------------------------------------
+  # Docker Container Metrics (via cAdvisor - optional)
+  # --------------------------------------------------------------------------
+  # Uncomment if cAdvisor is running
+  # - job_name: cadvisor
+  #   static_configs:
+  #     - targets:
+  #         - cadvisor:8080
+  #   metrics_path: /metrics
+  #   scheme: http
+  #   scrape_interval: 15s
+
+  # --------------------------------------------------------------------------
+  # Blackbox Exporter - Endpoint Probing
+  # --------------------------------------------------------------------------
+  # HTTP probes for health endpoints
+  - job_name: blackbox_http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://bootnode:26657/health
+          - http://validator-alice:26657/health
+          - http://validator-bob:26657/health
+          - http://compute-charlie:26657/health
+          - http://bridge-relayer:8080/health
+          - http://faucet:8080/health
+        labels:
+          probe_type: http_health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115  # Blackbox exporter address
+
+  # TCP probes for P2P connectivity
+  - job_name: blackbox_tcp
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+          - bootnode:26656
+          - validator-alice:26656
+          - validator-bob:26656
+          - compute-charlie:26656
+        labels:
+          probe_type: tcp_p2p
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+# ============================================================================
+# Recording Rules (for query optimization)
+# ============================================================================
+# These are defined in separate rule files for maintainability
+# See /etc/prometheus/rules/ directory

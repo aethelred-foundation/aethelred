@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "effective_date": "2026-02-24",
+  "purpose": "Machine-readable release provenance requirements for the Aethelred SDK monorepo.",
+  "required_repo_docs": [
+    "README.md",
+    "SECURITY.md",
+    "docs/security/release-provenance.md",
+    "docs/security/release-verification-guide.md"
+  ],
+  "required_workflows": [
+    ".github/workflows/docs-hygiene.yml",
+    ".github/workflows/repo-security-baseline.yml",
+    ".github/workflows/sdk-release-readiness.yml",
+    ".github/workflows/sdk-release-provenance-local.yml",
+    ".github/workflows/sdk-release-provenance-guard.yml"
+  ],
+  "required_release_bundle_files": [
+    "MANIFEST.json",
+    "SHA256SUMS.txt",
+    "build-metadata.json",
+    "version-matrix.sdk.json",
+    "sdk-release-status.json"
+  ],
+  "sdk_packages": [
+    {
+      "id": "python",
+      "display_name": "Python SDK",
+      "manifest_path": "python/pyproject.toml",
+      "matrix_key": "python",
+      "registry": "PyPI",
+      "expected_artifact_extensions": [".whl", ".tar.gz"],
+      "build_command_doc": "python -m build"
+    },
+    {
+      "id": "typescript",
+      "display_name": "TypeScript SDK",
+      "manifest_path": "typescript/package.json",
+      "matrix_key": "typescript",
+      "registry": "npm",
+      "expected_artifact_extensions": [".tgz"],
+      "build_command_doc": "npm pack"
+    },
+    {
+      "id": "rust",
+      "display_name": "Rust SDK",
+      "manifest_path": "rust/Cargo.toml",
+      "matrix_key": "rust",
+      "registry": "crates.io",
+      "expected_artifact_extensions": [".crate"],
+      "build_command_doc": "cargo package"
+    },
+    {
+      "id": "go",
+      "display_name": "Go SDK",
+      "manifest_path": "go/go.mod",
+      "matrix_key": "go",
+      "registry": "Go Module Proxy",
+      "expected_artifact_extensions": [".mod", ".info", ".zip"],
+      "build_command_doc": "git tag + module proxy indexing"
+    }
+  ]
+}

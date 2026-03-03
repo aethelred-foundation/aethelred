@@ -1,0 +1,8 @@
+./array.go
+./config.go
+./file.go
+./keychain.go
+./keyring.go
+./pass.go
+./prompt.go
+./tilde.go

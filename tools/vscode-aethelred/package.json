@@ -1,0 +1,128 @@
+{
+    "name": "vscode-aethelred",
+    "displayName": "Aethelred",
+    "description": "Aethelred blockchain development tools for VS Code — AIP syntax, Seal verification, local testnet integration",
+    "version": "0.1.0",
+    "publisher": "aethelred",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Other"
+    ],
+    "keywords": [
+        "aethelred",
+        "blockchain",
+        "solidity",
+        "cosmos",
+        "zkml",
+        "TEE"
+    ],
+    "icon": "images/aethelred-icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aethelred/vscode-aethelred"
+    },
+    "activationEvents": [
+        "onLanguage:aethelred-aip",
+        "workspaceContains:**/*.aip"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "aethelred-aip",
+                "aliases": [
+                    "Aethelred AIP",
+                    "AIP"
+                ],
+                "extensions": [
+                    ".aip"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "aethelred-aip",
+                "scopeName": "text.aip",
+                "path": "./syntaxes/aip.tmLanguage.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "aethelred.submitJob",
+                "title": "Aethelred: Submit Compute Job"
+            },
+            {
+                "command": "aethelred.verifySeal",
+                "title": "Aethelred: Verify Digital Seal"
+            },
+            {
+                "command": "aethelred.startDevnet",
+                "title": "Aethelred: Start Local Devnet"
+            },
+            {
+                "command": "aethelred.stopDevnet",
+                "title": "Aethelred: Stop Local Devnet"
+            },
+            {
+                "command": "aethelred.showNodeStatus",
+                "title": "Aethelred: Show Node Status"
+            }
+        ],
+        "configuration": {
+            "title": "Aethelred",
+            "properties": {
+                "aethelred.rpcUrl": {
+                    "type": "string",
+                    "default": "http://localhost:26657",
+                    "description": "Aethelred node RPC endpoint"
+                },
+                "aethelred.network": {
+                    "type": "string",
+                    "enum": [
+                        "local",
+                        "testnet",
+                        "mainnet"
+                    ],
+                    "default": "local",
+                    "description": "Active network"
+                },
+                "aethelred.autoStartDevnet": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically start the local devnet when opening an Aethelred project"
+                }
+            }
+        },
+        "statusBarItems": [
+            {
+                "id": "aethelred.nodeStatus",
+                "alignment": "right",
+                "priority": 100
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js",
+        "package": "vsce package",
+        "publish": "vsce publish"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^20.0.0",
+        "@typescript-eslint/eslint-plugin": "^7.0.0",
+        "@typescript-eslint/parser": "^7.0.0",
+        "eslint": "^8.0.0",
+        "typescript": "^5.3.0",
+        "@vscode/test-electron": "^2.3.0",
+        "@vscode/vsce": "^2.24.0"
+    }
+}

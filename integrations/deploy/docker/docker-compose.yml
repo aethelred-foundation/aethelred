@@ -1,0 +1,636 @@
+# =============================================================================
+# AETHELRED DEVNET - 4-NODE CLUSTER
+# =============================================================================
+#
+# Enterprise-grade local testnet for development and hackathon environments.
+#
+# Architecture:
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │                        AETHELRED DEVNET CLUSTER                              │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │                                                                              │
+# │   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                  │
+# │   │  Validator  │     │  Validator  │     │  Compute    │                  │
+# │   │   Alice     │◄───►│    Bob      │◄───►│   Charlie   │                  │
+# │   │  (Leader)   │     │ (Follower)  │     │  (Worker)   │                  │
+# │   └──────┬──────┘     └──────┬──────┘     └──────┬──────┘                  │
+# │          │                   │                   │                          │
+# │          └───────────────────┼───────────────────┘                          │
+# │                              │                                              │
+# │                       ┌──────┴──────┐                                       │
+# │                       │   Bootnode  │                                       │
+# │                       │  (P2P Hub)  │                                       │
+# │                       └──────┬──────┘                                       │
+# │                              │                                              │
+# │   ┌──────────────────────────┼──────────────────────────┐                  │
+# │   │                          │                          │                  │
+# │   ▼                          ▼                          ▼                  │
+# │ ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐               │
+# │ │   Bridge    │     │  Prometheus │     │    Grafana      │               │
+# │ │   Relayer   │     │  (Metrics)  │     │  (Dashboards)   │               │
+# │ └─────────────┘     └─────────────┘     └─────────────────┘               │
+# │                                                                              │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# Usage:
+#   docker-compose up -d                    # Start all services
+#   docker-compose logs -f validator-alice  # View logs
+#   docker-compose down -v                  # Stop and cleanup
+#
+# RPC Endpoints:
+#   - JSON-RPC:  http://localhost:8545
+#   - WebSocket: ws://localhost:8546
+#   - GraphQL:   http://localhost:8547/graphql
+#   - Metrics:   http://localhost:9090 (Prometheus)
+#   - Dashboard: http://localhost:3000 (Grafana)
+#
+# =============================================================================
+
+version: '3.8'
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+
+networks:
+  aethelred-devnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+
+volumes:
+  bootnode-data:
+  validator-alice-data:
+  validator-bob-data:
+  compute-charlie-data:
+  bridge-data:
+  prometheus-data:
+  grafana-data:
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+
+services:
+
+  # ===========================================================================
+  # BOOTNODE - P2P Discovery Service
+  # ===========================================================================
+  bootnode:
+    image: aethelred/node:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-bootnode
+    hostname: bootnode
+    restart: unless-stopped
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.1
+
+    ports:
+      - "30301:30301/tcp"   # P2P TCP
+      - "30301:30301/udp"   # P2P UDP (discovery)
+
+    volumes:
+      - bootnode-data:/data
+      - ./config/bootnode:/config:ro
+      - ./keys/bootnode:/keys:ro
+
+    environment:
+      # Node Identity
+      - NODE_NAME=bootnode
+      - NODE_ROLE=bootnode
+      - CHAIN_ID=aethelred-devnet-1
+
+      # Network
+      - P2P_PORT=30301
+      - P2P_MAX_PEERS=50
+      - P2P_ENABLE_UPNP=false
+
+      # Logging
+      - RUST_LOG=info,aethelred=debug,libp2p=info
+      - RUST_BACKTRACE=1
+
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9100
+
+    command:
+      - "start"
+      - "--role=bootnode"
+      - "--data-dir=/data"
+      - "--config=/config/bootnode.toml"
+      - "--key-file=/keys/bootnode.key"
+      - "--listen-addr=/ip4/0.0.0.0/tcp/30301"
+
+    healthcheck:
+      test: ["CMD", "aethelred-node", "health", "--rpc=http://localhost:9100"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9100"
+
+
+  # ===========================================================================
+  # VALIDATOR ALICE - Primary Block Producer
+  # ===========================================================================
+  validator-alice:
+    image: aethelred/node:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-validator-alice
+    hostname: validator-alice
+    restart: unless-stopped
+    depends_on:
+      bootnode:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.10
+
+    ports:
+      - "8545:8545"     # JSON-RPC HTTP
+      - "8546:8546"     # JSON-RPC WebSocket
+      - "8547:8547"     # GraphQL
+      - "30303:30303"   # P2P
+      - "9101:9100"     # Metrics
+
+    volumes:
+      - validator-alice-data:/data
+      - ./config/validator:/config:ro
+      - ./keys/alice:/keys:ro
+      - ./genesis:/genesis:ro
+
+    environment:
+      # Node Identity
+      - NODE_NAME=validator-alice
+      - NODE_ROLE=validator
+      - CHAIN_ID=aethelred-devnet-1
+
+      # Consensus
+      - VALIDATOR_ENABLED=true
+      - VALIDATOR_ADDRESS=0x${ALICE_ADDRESS:-0000000000000000000000000000000000000001}
+      - BLOCK_TIME_MS=3000
+      - EPOCH_LENGTH=100
+
+      # Cryptography
+      - PQC_MODE=enabled
+      - ECDSA_ENABLED=true
+      - DILITHIUM_ENABLED=true
+
+      # Network
+      - P2P_PORT=30303
+      - BOOTNODES=/dns4/bootnode/tcp/30301/p2p/${BOOTNODE_PEER_ID:-QmBootnode}
+      - P2P_MAX_PEERS=25
+
+      # RPC
+      - RPC_ENABLED=true
+      - RPC_HTTP_PORT=8545
+      - RPC_WS_PORT=8546
+      - RPC_GRAPHQL_PORT=8547
+      - RPC_CORS_ORIGINS=*
+      - RPC_MAX_CONNECTIONS=100
+
+      # Gas & Economics
+      - MIN_GAS_PRICE=1000000000
+      - MAX_BLOCK_GAS=30000000
+
+      # Logging
+      - RUST_LOG=info,aethelred=debug,consensus=debug
+      - RUST_BACKTRACE=1
+
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9100
+
+    command:
+      - "start"
+      - "--role=validator"
+      - "--data-dir=/data"
+      - "--config=/config/validator.toml"
+      - "--genesis=/genesis/genesis.json"
+      - "--validator-key=/keys/validator.key"
+      - "--unlock-account"
+      - "--bootnodes=/dns4/bootnode/tcp/30301"
+      - "--rpc-http-enabled"
+      - "--rpc-ws-enabled"
+      - "--graphql-enabled"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8545/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9100"
+      - "traefik.enable=true"
+      - "traefik.http.routers.alice-rpc.rule=Host(`rpc.devnet.aethelred.local`)"
+
+
+  # ===========================================================================
+  # VALIDATOR BOB - Secondary Validator
+  # ===========================================================================
+  validator-bob:
+    image: aethelred/node:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-validator-bob
+    hostname: validator-bob
+    restart: unless-stopped
+    depends_on:
+      bootnode:
+        condition: service_healthy
+      validator-alice:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.11
+
+    ports:
+      - "8555:8545"     # JSON-RPC HTTP
+      - "30304:30303"   # P2P
+      - "9102:9100"     # Metrics
+
+    volumes:
+      - validator-bob-data:/data
+      - ./config/validator:/config:ro
+      - ./keys/bob:/keys:ro
+      - ./genesis:/genesis:ro
+
+    environment:
+      # Node Identity
+      - NODE_NAME=validator-bob
+      - NODE_ROLE=validator
+      - CHAIN_ID=aethelred-devnet-1
+
+      # Consensus
+      - VALIDATOR_ENABLED=true
+      - VALIDATOR_ADDRESS=0x${BOB_ADDRESS:-0000000000000000000000000000000000000002}
+
+      # Cryptography
+      - PQC_MODE=enabled
+
+      # Network
+      - P2P_PORT=30303
+      - BOOTNODES=/dns4/bootnode/tcp/30301
+
+      # RPC
+      - RPC_ENABLED=true
+      - RPC_HTTP_PORT=8545
+
+      # Logging
+      - RUST_LOG=info,aethelred=debug
+
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9100
+
+    command:
+      - "start"
+      - "--role=validator"
+      - "--data-dir=/data"
+      - "--config=/config/validator.toml"
+      - "--genesis=/genesis/genesis.json"
+      - "--validator-key=/keys/validator.key"
+      - "--unlock-account"
+      - "--bootnodes=/dns4/bootnode/tcp/30301"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8545/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9100"
+
+
+  # ===========================================================================
+  # COMPUTE NODE CHARLIE - AI Worker with Mock TEE
+  # ===========================================================================
+  compute-charlie:
+    image: aethelred/node:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-compute-charlie
+    hostname: compute-charlie
+    restart: unless-stopped
+    depends_on:
+      bootnode:
+        condition: service_healthy
+      validator-alice:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.20
+
+    ports:
+      - "8565:8545"     # JSON-RPC HTTP
+      - "30305:30303"   # P2P
+      - "9103:9100"     # Metrics
+
+    volumes:
+      - compute-charlie-data:/data
+      - ./config/compute:/config:ro
+      - ./keys/charlie:/keys:ro
+      - ./genesis:/genesis:ro
+      - ./models:/models:ro  # Pre-loaded AI models
+
+    environment:
+      # Node Identity
+      - NODE_NAME=compute-charlie
+      - NODE_ROLE=compute
+      - CHAIN_ID=aethelred-devnet-1
+
+      # TEE Configuration (Mock for DevNet)
+      - MOCK_TEE=true
+      - TEE_TYPE=sgx
+      - TEE_MEASUREMENT=0x${MOCK_MRENCLAVE:-deadbeef}
+      - ATTESTATION_MODE=simulated
+
+      # Hardware Simulation
+      - HARDWARE_TYPE=gpu
+      - GPU_MODEL=NVIDIA_A100
+      - GPU_MEMORY_GB=40
+      - COMPUTE_SCORE=10000
+
+      # Compute Settings
+      - MAX_CONCURRENT_JOBS=5
+      - JOB_TIMEOUT_SECONDS=300
+      - PROOF_TYPE=tee
+
+      # Model Registry
+      - MODEL_CACHE_DIR=/models
+      - PRELOAD_MODELS=credit-score-v2,tumor-detection-resnet50
+
+      # Network
+      - P2P_PORT=30303
+      - BOOTNODES=/dns4/bootnode/tcp/30301
+
+      # RPC
+      - RPC_ENABLED=true
+      - RPC_HTTP_PORT=8545
+
+      # Logging
+      - RUST_LOG=info,aethelred=debug,compute=debug,tee=debug
+
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9100
+
+    command:
+      - "start"
+      - "--role=compute"
+      - "--data-dir=/data"
+      - "--config=/config/compute.toml"
+      - "--genesis=/genesis/genesis.json"
+      - "--compute-key=/keys/compute.key"
+      - "--bootnodes=/dns4/bootnode/tcp/30301"
+      - "--mock-tee"
+      - "--compute-score=10000"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8545/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9100"
+
+    # Resource limits for realistic simulation
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+
+  # ===========================================================================
+  # BRIDGE RELAYER - Ethereum <-> Aethelred
+  # ===========================================================================
+  bridge-relayer:
+    image: aethelred/bridge:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-bridge-relayer
+    hostname: bridge-relayer
+    restart: unless-stopped
+    depends_on:
+      validator-alice:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.30
+
+    ports:
+      - "9104:9100"     # Metrics
+
+    volumes:
+      - bridge-data:/data
+      - ./config/bridge:/config:ro
+      - ./keys/bridge:/keys:ro
+
+    environment:
+      # Ethereum Configuration
+      - ETH_RPC_URL=${ETH_RPC_URL:-https://sepolia.infura.io/v3/YOUR_KEY}
+      - ETH_WS_URL=${ETH_WS_URL:-wss://sepolia.infura.io/ws/v3/YOUR_KEY}
+      - ETH_CHAIN_ID=11155111
+      - ETH_BRIDGE_CONTRACT=${ETH_BRIDGE_CONTRACT:-0x0000000000000000000000000000000000000000}
+      - ETH_CONFIRMATIONS=6
+
+      # Aethelred Configuration
+      - AETHELRED_RPC_URL=http://validator-alice:8545
+      - AETHELRED_WS_URL=ws://validator-alice:8546
+      - AETHELRED_CHAIN_ID=aethelred-devnet-1
+      - AETHELRED_CONFIRMATIONS=1
+
+      # Relayer Identity
+      - RELAYER_KEY_FILE=/keys/relayer.key
+      - RELAYER_ADDRESS=${RELAYER_ADDRESS:-0x0000000000000000000000000000000000000003}
+
+      # Consensus
+      - CONSENSUS_THRESHOLD_BPS=6700
+      - PROPOSAL_TIMEOUT_SECS=1800
+      - VOTE_TIMEOUT_SECS=180
+
+      # Rate Limiting
+      - RATE_LIMIT_ENABLED=true
+      - MAX_DEPOSIT_PER_HOUR=100000000000000000000
+      - MAX_WITHDRAWAL_PER_HOUR=100000000000000000000
+
+      # Logging
+      - RUST_LOG=info,aethelred_bridge=debug,ethers=info
+
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9100
+
+    command:
+      - "start"
+      - "--config=/config/bridge.toml"
+      - "--data-dir=/data"
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9100/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    labels:
+      - "prometheus.scrape=true"
+      - "prometheus.port=9100"
+
+
+  # ===========================================================================
+  # PROMETHEUS - Metrics Collection
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: aethelred-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.100
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - prometheus-data:/prometheus
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/alerts:/etc/prometheus/alerts:ro
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  # ===========================================================================
+  # GRAFANA - Monitoring Dashboards
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: aethelred-grafana
+    hostname: grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.101
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-aethelred123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  # ===========================================================================
+  # FAUCET - Token Distribution Service
+  # ===========================================================================
+  faucet:
+    image: aethelred/faucet:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-faucet
+    hostname: faucet
+    restart: unless-stopped
+    depends_on:
+      validator-alice:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.40
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      - AETHELRED_RPC_URL=http://validator-alice:8545
+      - FAUCET_PRIVATE_KEY=${FAUCET_PRIVATE_KEY:-0x...}
+      - DRIP_AMOUNT=10000000000000000000
+      - COOLDOWN_SECONDS=60
+      - MAX_DRIPS_PER_DAY=100
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  # ===========================================================================
+  # BLOCK EXPLORER - Chain Visualization
+  # ===========================================================================
+  explorer:
+    image: aethelred/explorer:${AETHELRED_VERSION:-latest}
+    container_name: aethelred-explorer
+    hostname: explorer
+    restart: unless-stopped
+    depends_on:
+      validator-alice:
+        condition: service_healthy
+
+    networks:
+      aethelred-devnet:
+        ipv4_address: 172.28.1.50
+
+    ports:
+      - "4000:4000"
+
+    environment:
+      - RPC_URL=http://validator-alice:8545
+      - WS_URL=ws://validator-alice:8546
+      - CHAIN_ID=aethelred-devnet-1
+      - NETWORK_NAME=Aethelred DevNet
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

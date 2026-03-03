@@ -1,0 +1,59 @@
+# =============================================================================
+# AETHELRED NEXT.JS API - Official Runtime Image Template
+# =============================================================================
+#
+# Builds a Next.js app that uses the Aethelred TypeScript SDK `withAethelredApiRoute`
+# / `withAethelredRouteHandler` wrappers for API verification headers and envelopes.
+#
+# Usage:
+#   docker build -f deploy/docker/Dockerfile.nextjs-api \
+#     --build-arg APP_DIR=apps/nextjs-verifier \
+#     -t ghcr.io/aethelred/nextjs-api:latest .
+#
+# =============================================================================
+
+FROM node:20-bookworm-slim AS deps
+ARG APP_DIR=apps/nextjs-verifier
+WORKDIR /build
+
+COPY sdk/typescript/package.json sdk/typescript/package-lock.json /build/sdk/typescript/
+RUN cd /build/sdk/typescript && npm ci
+
+COPY sdk/typescript /build/sdk/typescript
+RUN cd /build/sdk/typescript && npm run build
+
+COPY ${APP_DIR}/package*.json /build/app/
+RUN cd /build/app && \
+    npm pkg set 'dependencies.@aethelred/sdk=file:../sdk/typescript' && \
+    npm install
+
+FROM node:20-bookworm-slim AS builder
+ARG APP_DIR=apps/nextjs-verifier
+WORKDIR /build/app
+
+COPY --from=deps /build/sdk/typescript /build/sdk/typescript
+COPY --from=deps /build/app/node_modules /build/app/node_modules
+COPY ${APP_DIR} /build/app
+
+ENV NODE_ENV=production
+ENV AETHELRED_RPC_URL="http://aethelred-node:26657"
+ENV AETHELRED_HEADER_PREFIX="x-aethelred"
+
+RUN npm install /build/sdk/typescript && npm run build
+
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV AETHELRED_RPC_URL="http://aethelred-node:26657"
+ENV AETHELRED_HEADER_PREFIX="x-aethelred"
+
+COPY --from=builder /build/app /app
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["npm", "run", "start"]

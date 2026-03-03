@@ -1,0 +1,551 @@
+{
+  "name": "aethelred-sovereign-copilot",
+  "displayName": "Aethelred Sovereign Copilot",
+  "description": "Enterprise-grade compliance linting and sovereignty enforcement for AI development. Catch regulatory violations as you type, not after deployment.",
+  "version": "2.0.0",
+  "publisher": "aethelred-protocol",
+  "license": "Apache-2.0",
+  "icon": "assets/icons/aethelred-logo.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "homepage": "https://aethelred.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aethelred/vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/aethelred/vscode-extension/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "aethelred",
+    "sovereign",
+    "compliance",
+    "gdpr",
+    "hipaa",
+    "tee",
+    "blockchain",
+    "ai",
+    "data-sovereignty"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:rust",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onLanguage:helix",
+    "workspaceContains:aethelred.toml",
+    "workspaceContains:Aethelred.toml",
+    "workspaceContains:.aethelred/**"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aethelred.checkCompliance",
+        "title": "Run Full Compliance Scan",
+        "category": "Aethelred",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "aethelred.checkCurrentFile",
+        "title": "Check Current File",
+        "category": "Aethelred",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "aethelred.simulateHardware",
+        "title": "Boot Local TEE Simulator",
+        "category": "Aethelred",
+        "icon": "$(server)"
+      },
+      {
+        "command": "aethelred.setJurisdiction",
+        "title": "Set Active Jurisdiction",
+        "category": "Aethelred",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "aethelred.showComplianceReport",
+        "title": "Show Compliance Report",
+        "category": "Aethelred",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "aethelred.generateSeal",
+        "title": "Generate Digital Seal",
+        "category": "Aethelred",
+        "icon": "$(verified)"
+      },
+      {
+        "command": "aethelred.initProject",
+        "title": "Initialize Aethelred Project",
+        "category": "Aethelred",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "aethelred.openDashboard",
+        "title": "Open Compliance Dashboard",
+        "category": "Aethelred",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "aethelred.toggleRealTimeLinting",
+        "title": "Toggle Real-Time Compliance Linting",
+        "category": "Aethelred",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "aethelred.showQuickFixes",
+        "title": "Show Compliance Quick Fixes",
+        "category": "Aethelred",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "aethelred.explainViolation",
+        "title": "Explain This Violation",
+        "category": "Aethelred",
+        "icon": "$(question)"
+      },
+      {
+        "command": "aethelred.exportAuditLog",
+        "title": "Export Audit Log",
+        "category": "Aethelred",
+        "icon": "$(export)"
+      },
+      {
+        "command": "aethelred.connectToNetwork",
+        "title": "Connect to Aethelred Network",
+        "category": "Aethelred",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "aethelred.refreshComplianceView",
+        "title": "Refresh Compliance View",
+        "category": "Aethelred",
+        "icon": "$(refresh)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "aethelred.checkCompliance",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "aethelred.checkCurrentFile",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "aethelred.showQuickFixes",
+        "key": "ctrl+.",
+        "mac": "cmd+.",
+        "when": "editorTextFocus && aethelred.hasViolations"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "aethelred.submenu",
+          "group": "aethelred"
+        }
+      ],
+      "aethelred.submenu": [
+        {
+          "command": "aethelred.checkCurrentFile",
+          "group": "1_check"
+        },
+        {
+          "command": "aethelred.showQuickFixes",
+          "group": "1_check"
+        },
+        {
+          "command": "aethelred.explainViolation",
+          "group": "2_info"
+        },
+        {
+          "command": "aethelred.generateSeal",
+          "group": "3_actions"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "aethelred.refreshComplianceView",
+          "when": "view == aethelred.complianceExplorer",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aethelred.checkCompliance"
+        },
+        {
+          "command": "aethelred.setJurisdiction"
+        },
+        {
+          "command": "aethelred.simulateHardware"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "aethelred.submenu",
+        "label": "Aethelred Sovereign"
+      }
+    ],
+    "configuration": {
+      "title": "Aethelred Sovereign Copilot",
+      "properties": {
+        "aethelred.jurisdiction": {
+          "type": "string",
+          "enum": [
+            "Global",
+            "UAE",
+            "UAE-ADGM",
+            "UAE-DIFC",
+            "Saudi-Arabia",
+            "EU",
+            "EU-Germany",
+            "EU-France",
+            "UK",
+            "US",
+            "US-California",
+            "US-NewYork",
+            "Singapore",
+            "China",
+            "Japan",
+            "Australia",
+            "India",
+            "Brazil",
+            "Canada"
+          ],
+          "default": "Global",
+          "description": "The active legal jurisdiction for compliance checks."
+        },
+        "aethelred.compliance.regulations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "GDPR",
+              "HIPAA",
+              "CCPA",
+              "UAE-DPL",
+              "PIPL",
+              "PDPA",
+              "UK-GDPR",
+              "PDPL-SA",
+              "PCI-DSS",
+              "SOX",
+              "GLBA",
+              "EU-AI-Act"
+            ]
+          },
+          "default": ["GDPR"],
+          "description": "Active compliance regulations to check."
+        },
+        "aethelred.linting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time compliance linting."
+        },
+        "aethelred.linting.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run compliance check on file save."
+        },
+        "aethelred.linting.onType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run compliance check as you type (may impact performance)."
+        },
+        "aethelred.linting.debounceMs": {
+          "type": "number",
+          "default": 500,
+          "minimum": 100,
+          "maximum": 5000,
+          "description": "Debounce delay for on-type linting in milliseconds."
+        },
+        "aethelred.linting.severity": {
+          "type": "string",
+          "enum": ["error", "warning", "info", "hint"],
+          "default": "error",
+          "description": "Default severity level for compliance violations."
+        },
+        "aethelred.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to the 'aeth' CLI binary. Leave empty for auto-detect."
+        },
+        "aethelred.cli.timeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 300000,
+          "description": "CLI command timeout in milliseconds."
+        },
+        "aethelred.hardware.target": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "generic",
+            "intel-sgx",
+            "intel-tdx",
+            "amd-sev",
+            "amd-sev-snp",
+            "aws-nitro",
+            "azure-confidential",
+            "gcp-confidential",
+            "nvidia-h100"
+          ],
+          "default": "auto",
+          "description": "Target hardware for cost estimation."
+        },
+        "aethelred.hardware.simulatorEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the local TEE simulator for development."
+        },
+        "aethelred.network.endpoint": {
+          "type": "string",
+          "default": "https://testnet-api.aethelred.io",
+          "description": "Aethelred network RPC endpoint."
+        },
+        "aethelred.network.chain": {
+          "type": "string",
+          "enum": ["mainnet", "testnet", "devnet", "local"],
+          "default": "testnet",
+          "description": "Aethelred network to connect to."
+        },
+        "aethelred.ui.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Aethelred status bar item."
+        },
+        "aethelred.ui.showInlineHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline hints for @sovereign decorators."
+        },
+        "aethelred.ui.showCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show code lens for sovereign functions."
+        },
+        "aethelred.telemetry.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable anonymous usage telemetry."
+        },
+        "aethelred.logging.level": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug", "trace"],
+          "default": "info",
+          "description": "Logging verbosity level."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aethelred-explorer",
+          "title": "Aethelred Sovereign",
+          "icon": "assets/icons/shield.svg"
+        }
+      ]
+    },
+    "views": {
+      "aethelred-explorer": [
+        {
+          "id": "aethelred.complianceExplorer",
+          "name": "Compliance Status"
+        },
+        {
+          "id": "aethelred.violationsExplorer",
+          "name": "Violations"
+        },
+        {
+          "id": "aethelred.hardwareExplorer",
+          "name": "Hardware & TEE"
+        },
+        {
+          "id": "aethelred.sealsExplorer",
+          "name": "Digital Seals"
+        },
+        {
+          "id": "aethelred.networkExplorer",
+          "name": "Network"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "aethelred.complianceExplorer",
+        "contents": "No Aethelred project detected.\n[Initialize Project](command:aethelred.initProject)\n[Learn More](https://docs.aethelred.io)"
+      }
+    ],
+    "languages": [
+      {
+        "id": "helix",
+        "aliases": ["Helix", "helix"],
+        "extensions": [".helix", ".hlx"],
+        "configuration": "./syntaxes/helix-language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "helix",
+        "scopeName": "source.helix",
+        "path": "./syntaxes/helix.tmLanguage.json"
+      }
+    ],
+    "colors": [
+      {
+        "id": "aethelred.violationError",
+        "description": "Color for critical data sovereignty violations",
+        "defaults": {
+          "dark": "#FF4444",
+          "light": "#CC0000",
+          "highContrast": "#FF0000"
+        }
+      },
+      {
+        "id": "aethelred.violationWarning",
+        "description": "Color for compliance warnings",
+        "defaults": {
+          "dark": "#FFAA00",
+          "light": "#CC8800",
+          "highContrast": "#FFFF00"
+        }
+      },
+      {
+        "id": "aethelred.compliant",
+        "description": "Color for compliant code",
+        "defaults": {
+          "dark": "#00FF88",
+          "light": "#00AA44",
+          "highContrast": "#00FF00"
+        }
+      },
+      {
+        "id": "aethelred.sovereignHighlight",
+        "description": "Background color for sovereign function highlights",
+        "defaults": {
+          "dark": "#1a3a5c40",
+          "light": "#a8d4ff40",
+          "highContrast": "#0066FF40"
+        }
+      }
+    ],
+    "icons": {
+      "aethelred-shield": {
+        "description": "Aethelred shield icon",
+        "default": {
+          "fontPath": "./assets/icons/aethelred-icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      },
+      "aethelred-violation": {
+        "description": "Violation icon",
+        "default": {
+          "fontPath": "./assets/icons/aethelred-icons.woff",
+          "fontCharacter": "\\E002"
+        }
+      }
+    },
+    "problemMatchers": [
+      {
+        "name": "aethelred",
+        "owner": "aethelred",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(ERROR|WARN|INFO)\\s+(.+):(\\d+):(\\d+)\\s+-\\s+(.+)$",
+          "severity": 1,
+          "file": 2,
+          "line": 3,
+          "column": 4,
+          "message": 5
+        }
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "aethelred",
+        "required": ["command"],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The Aethelred command to run"
+          },
+          "args": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Command arguments"
+          }
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "python",
+        "path": "./snippets/python.json"
+      },
+      {
+        "language": "rust",
+        "path": "./snippets/rust.json"
+      },
+      {
+        "language": "helix",
+        "path": "./snippets/helix.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "mocha --require ts-node/register 'src/test/**/*.test.ts'",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "clean": "rimraf out"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "chalk": "^5.3.0",
+    "luxon": "^3.4.4",
+    "semver": "^7.5.4",
+    "uuid": "^9.0.1"
+  }
+}

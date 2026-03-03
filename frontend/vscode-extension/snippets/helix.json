@@ -1,0 +1,22 @@
+{
+  "Helix Model Stub": {
+    "prefix": "helix-model",
+    "body": [
+      "model ${1:model_name} {",
+      "  fn infer(input: tensor) -> tensor {",
+      "    let output = ${2:input};",
+      "    return output;",
+      "  }",
+      "}",
+      "",
+      "proof {",
+      "  verify(model = \"${1:model_name}\", attestation = true, zkml = true);",
+      "}",
+      "",
+      "seal {",
+      "  emit(output_hash = \"${3:0x...}\");",
+      "}"
+    ],
+    "description": "Bootstrap a Helix verifiable model file"
+  }
+}

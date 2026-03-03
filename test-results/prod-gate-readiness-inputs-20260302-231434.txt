@@ -1,0 +1,27 @@
+Mainnet gate line from audit status:
+# Audit Status Tracker
+
+Updated: 2026-02-28
+
+Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with signed reports.
+
+## Engagements
+
+| ID | Auditor | Scope | Signed Ref | Signed On | Status | Report |
+|---|---|---|---|---|---|---|
+| AUD-2026-001 | Redacted External Auditor (under NDA) | `/contracts/ethereum` | SOW-ETH-2026-02-14-A | 2026-02-14 | In progress | `audits/reports/2026-02-14-preaudit-baseline.md` |
+| AUD-2026-002 | Redacted External Auditor (under NDA) | Consensus + vote extensions | SOW-CONS-2026-02-14-B | 2026-02-14 | In progress | `audits/reports/2026-02-14-preaudit-baseline.md` |
+
+README audit badge:
+# Aethelred: The Verifiable AI Blockchain
+
+<div align="center">
+
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)](https://www.rust-lang.org)
+[![Python Support](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Network Status](https://img.shields.io/badge/Network-Testnet%20Alpha-orange)](https://explorer.aethelred.org)
+[![Security Audit](https://img.shields.io/badge/Audit-In%20Progress-yellow)](./audits/)
+[![Documentation](https://img.shields.io/badge/docs-aethelred.dev-blueviolet)](https://docs.aethelred.org)
+
+**The First Sovereign L1 for Cryptographically Verified AI Computations**

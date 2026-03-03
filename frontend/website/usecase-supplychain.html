@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Chain Use Case | Aethelred</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red-950: #450a0a; --red-900: #7F1D1D; --red-800: #991B1B; --red-700: #B91C1C;
+      --red-600: #DC2626; --red-500: #EF4444; --red-400: #EF4444;
+      --dark-950: #030303; --dark-900: #0A0A0A; --dark-800: #111111;
+      --dark-700: #1A1A1A; --dark-600: #222222; --dark-500: #333333;
+      --gray-400: #9CA3AF; --gray-300: #D1D5DB; --white: #FFFFFF;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--dark-950); color: var(--white); overflow-x: hidden; line-height: 1.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 20px 0; background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--dark-700); }
+    .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo img { height: 36px; }
+    .nav-back { display: inline-flex; align-items: center; gap: 8px; color: var(--gray-400); text-decoration: none; font-size: 14px; transition: color 0.3s; }
+    .nav-back:hover { color: var(--red-500); }
+    .nav-back svg { width: 20px; height: 20px; }
+    .page-hero { padding: 140px 0 60px; position: relative; overflow: hidden; background: linear-gradient(180deg, var(--dark-950) 0%, var(--dark-900) 100%); }
+    .page-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 40%, rgba(220, 38, 38, 0.15) 0%, transparent 50%); pointer-events: none; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid var(--red-800); border-radius: 50px; font-size: 13px; color: var(--red-500); margin-bottom: 20px; }
+    .page-hero h1 { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+    .gradient-text { background: var(--red-600); color: var(--white); padding: 0 12px; margin: 0 4px; display: inline; }
+    .page-hero .subtitle { font-size: 20px; color: var(--gray-400); max-width: 700px; margin-bottom: 30px; }
+    .hero-stats { display: flex; gap: 40px; margin-top: 40px; }
+    .hero-stat { text-align: left; }
+    .hero-stat-value { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 700; color: var(--red-500); }
+    .hero-stat-label { font-size: 14px; color: var(--gray-400); }
+    .section { padding: 80px 0; border-bottom: 1px solid var(--dark-700); }
+    .section:last-of-type { border-bottom: none; }
+    .section-header { text-align: center; margin-bottom: 50px; }
+    .section-label { font-family: 'Orbitron', monospace; font-size: 12px; color: var(--red-500); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; display: block; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; }
+    .section-desc { font-size: 18px; color: var(--gray-400); max-width: 700px; margin: 0 auto; }
+    .challenges-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .challenge-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; transition: all 0.3s; }
+    .challenge-card:hover { border-color: var(--red-700); transform: translateY(-4px); }
+    .challenge-icon { width: 48px; height: 48px; background: rgba(220, 38, 38, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .challenge-icon svg { width: 24px; height: 24px; color: var(--red-500); }
+    .challenge-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+    .challenge-card p { font-size: 14px; color: var(--gray-400); line-height: 1.7; }
+    .diagram-container { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; padding: 40px; margin: 40px 0; }
+    .diagram-title { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--red-500); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; text-align: center; }
+    .diagram-svg { width: 100%; max-width: 1000px; margin: 0 auto; display: block; }
+    .usecase-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+    .usecase-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 20px; overflow: hidden; transition: all 0.3s; }
+    .usecase-card:hover { border-color: var(--red-600); box-shadow: 0 20px 40px rgba(220, 38, 38, 0.15); }
+    .usecase-diagram { background: var(--dark-900); padding: 30px; border-bottom: 1px solid var(--dark-600); }
+    .usecase-content { padding: 30px; }
+    .usecase-content h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    .usecase-content p { font-size: 14px; color: var(--gray-400); line-height: 1.7; margin-bottom: 20px; }
+    .usecase-benefits { list-style: none; }
+    .usecase-benefits li { font-size: 13px; color: var(--gray-300); padding: 8px 0; padding-left: 24px; position: relative; }
+    .usecase-benefits li::before { content: '✓'; position: absolute; left: 0; color: var(--red-500); }
+    .benefits-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .benefit-card { background: var(--dark-800); border: 1px solid var(--dark-600); border-radius: 16px; padding: 30px; text-align: center; transition: all 0.3s; }
+    .benefit-card:hover { border-color: var(--red-600); transform: translateY(-4px); }
+    .benefit-value { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 700; color: var(--red-500); margin-bottom: 8px; }
+    .benefit-label { font-size: 14px; color: var(--gray-400); }
+    .cta-section { padding: 100px 0; text-align: center; background: linear-gradient(180deg, var(--dark-900) 0%, var(--dark-950) 100%); }
+    .cta-section h2 { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 20px; }
+    .cta-section p { font-size: 18px; color: var(--gray-400); margin-bottom: 30px; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; background: linear-gradient(135deg, var(--red-700), var(--red-500)); color: var(--white); text-decoration: none; font-weight: 600; border-radius: 8px; transition: all 0.3s; box-shadow: 0 0 30px rgba(220, 38, 38, 0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(220, 38, 38, 0.6); }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; background: transparent; border: 1px solid var(--dark-500); color: var(--white); text-decoration: none; font-weight: 600; border-radius: 8px; transition: all 0.3s; margin-left: 16px; }
+    .btn-secondary:hover { border-color: var(--red-600); background: rgba(220, 38, 38, 0.1); }
+    .footer { background: var(--dark-950); border-top: 1px solid var(--dark-700); padding: 60px 0 30px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 40px; margin-bottom: 40px; }
+    .footer-brand p { font-size: 14px; color: var(--gray-400); line-height: 1.7; margin: 16px 0 20px; max-width: 280px; }
+    .footer-column h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--red-500); }
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: var(--gray-400); text-decoration: none; transition: all 0.3s; }
+    .footer-links a:hover { color: var(--red-500); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid var(--dark-700); }
+    .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+    @media (max-width: 992px) { .challenges-grid, .usecase-grid { grid-template-columns: 1fr; } .benefits-grid { grid-template-columns: repeat(2, 1fr); } .footer-grid { grid-template-columns: 1fr 1fr; } .page-hero h1 { font-size: 42px; } .hero-stats { flex-wrap: wrap; gap: 30px; } }
+    @media (max-width: 600px) { .benefits-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; } .page-hero h1 { font-size: 32px; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-container">
+      <a href="computer:///mnt/user-data/outputs/aethelred-website.html" class="nav-logo">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred">
+      </a>
+      <a href="aethelred-website.html#use-cases" class="nav-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Use Cases
+      </a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Supply Chain
+      </div>
+      <h1>Verifiable AI for <span class="gradient-text">Supply Chain</span></h1>
+      <p class="subtitle">Physical provenance attestation for global logistics. Cryptographic proof of geographic origin, transit conditions, and chain of custody across your entire supply network.</p>
+      
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">147</div>
+          <div class="hero-stat-label">Countries Covered</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">$890B</div>
+          <div class="hero-stat-label">Goods Tracked</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">99.7%</div>
+          <div class="hero-stat-label">Provenance Accuracy</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">12M+</div>
+          <div class="hero-stat-label">Shipments Verified</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Industry Challenges</span>
+        <h2 class="section-title">Supply Chain Opacity Crisis</h2>
+        <p class="section-desc">Complex global supply chains lack visibility, enabling counterfeits, compliance violations, and ESG failures.</p>
+      </div>
+
+      <div class="challenges-grid">
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h3>Counterfeit Infiltration</h3>
+          <p>$2.2 trillion in counterfeit goods enter supply chains annually. Traditional track-and-trace systems are easily spoofed without cryptographic verification.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3>Origin Verification</h3>
+          <p>Regulations like UFLPA require proof of origin, but paper-based certificates are easily forged. True geographic provenance requires spatial attestation.</p>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h3>ESG Compliance</h3>
+          <p>Scope 3 emissions reporting and sustainability claims require verifiable data from suppliers, but self-reported data lacks credibility.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Solution Architecture</span>
+        <h2 class="section-title">Supply Chain Verification Platform</h2>
+        <p class="section-desc">End-to-end provenance with spatial attestation and AI-powered anomaly detection.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Global Supply Chain Verification Flow</div>
+        <svg class="diagram-svg" viewBox="0 0 900 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(220,38,38,0.1)" stroke-width="0.5"/>
+            </pattern>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#DC2626"/>
+            </marker>
+          </defs>
+          <rect width="900" height="480" fill="url(#grid)"/>
+          
+          <!-- Supply Chain Stages -->
+          <!-- Origin -->
+          <g id="origin">
+            <rect x="30" y="150" width="120" height="180" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <text x="90" y="180" fill="#EF4444" font-family="Orbitron" font-size="11" text-anchor="middle">ORIGIN</text>
+            
+            <rect x="45" y="200" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="90" y="220" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Raw Material</text>
+            
+            <rect x="45" y="240" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="90" y="260" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">GPS + Time</text>
+            
+            <rect x="45" y="280" width="90" height="30" rx="5" fill="#DC2626"/>
+            <text x="90" y="300" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Origin Seal</text>
+          </g>
+          
+          <!-- Manufacturing -->
+          <g id="manufacturing">
+            <rect x="200" y="150" width="120" height="180" rx="12" fill="#111" stroke="#B91C1C" stroke-width="2"/>
+            <text x="260" y="180" fill="#EF4444" font-family="Orbitron" font-size="11" text-anchor="middle">MANUFACTURE</text>
+            
+            <rect x="215" y="200" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="260" y="220" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Production</text>
+            
+            <rect x="215" y="240" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="260" y="260" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">QC Data</text>
+            
+            <rect x="215" y="280" width="90" height="30" rx="5" fill="#DC2626"/>
+            <text x="260" y="300" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Mfg Seal</text>
+          </g>
+          
+          <!-- Logistics -->
+          <g id="logistics">
+            <rect x="370" y="150" width="120" height="180" rx="12" fill="#111" stroke="#B91C1C" stroke-width="2"/>
+            <text x="430" y="180" fill="#EF4444" font-family="Orbitron" font-size="11" text-anchor="middle">LOGISTICS</text>
+            
+            <rect x="385" y="200" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="430" y="220" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Route Track</text>
+            
+            <rect x="385" y="240" width="90" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="430" y="260" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Conditions</text>
+            
+            <rect x="385" y="280" width="90" height="30" rx="5" fill="#DC2626"/>
+            <text x="430" y="300" fill="#FFF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Transit Seal</text>
+          </g>
+          
+          <!-- Aethelred Core -->
+          <g id="core">
+            <rect x="540" y="100" width="160" height="280" rx="12" fill="#111" stroke="#DC2626" stroke-width="2"/>
+            <rect x="540" y="100" width="160" height="45" rx="12" fill="#DC2626"/>
+            <text x="620" y="128" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">AETHELRED</text>
+            
+            <rect x="555" y="160" width="130" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="620" y="180" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Spatial Attestation</text>
+            
+            <rect x="555" y="200" width="130" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="620" y="220" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Chain of Custody</text>
+            
+            <rect x="555" y="240" width="130" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="620" y="260" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">AI Anomaly Detect</text>
+            
+            <rect x="555" y="280" width="130" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="620" y="300" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">Compliance Check</text>
+            
+            <rect x="555" y="320" width="130" height="30" rx="5" fill="#1A1A1A" stroke="#333"/>
+            <text x="620" y="340" fill="#EF4444" font-family="Space Grotesk" font-size="9" text-anchor="middle">ESG Verification</text>
+          </g>
+          
+          <!-- Outputs -->
+          <g id="outputs">
+            <rect x="750" y="130" width="120" height="60" rx="8" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="810" y="157" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">PROVENANCE</text>
+            <text x="810" y="175" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Certificate</text>
+            
+            <rect x="750" y="205" width="120" height="60" rx="8" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="810" y="232" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">CUSTOMS</text>
+            <text x="810" y="250" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Clearance</text>
+            
+            <rect x="750" y="280" width="120" height="60" rx="8" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="810" y="307" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">ESG REPORT</text>
+            <text x="810" y="325" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Scope 3 Data</text>
+            
+            <rect x="750" y="355" width="120" height="60" rx="8" fill="#111" stroke="#991B1B" stroke-width="1.5"/>
+            <text x="810" y="382" fill="#EF4444" font-family="Orbitron" font-size="9" text-anchor="middle">CONSUMER</text>
+            <text x="810" y="400" fill="#9CA3AF" font-family="Space Grotesk" font-size="8" text-anchor="middle">QR Verify</text>
+          </g>
+          
+          <!-- Arrows -->
+          <path d="M150 240 L190 240" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M320 240 L360 240" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M490 240 L530 240" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowhead)"/>
+          <path d="M700 180 L740 160" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M700 220 L740 235" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M700 280 L740 310" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path d="M700 340 L740 385" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          
+          <!-- Title -->
+          <rect x="350" y="25" width="200" height="35" rx="5" fill="#DC2626"/>
+          <text x="450" y="48" fill="#FFF" font-family="Orbitron" font-size="11" text-anchor="middle">END-TO-END PROVENANCE</text>
+          
+          <!-- Legend -->
+          <text x="450" y="455" fill="#9CA3AF" font-family="Space Grotesk" font-size="10" text-anchor="middle">Every handoff sealed with spatial attestation and chain of custody verification</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Applications</span>
+        <h2 class="section-title">Supply Chain Use Cases</h2>
+        <p class="section-desc">Verifiable provenance across industries and geographies.</p>
+      </div>
+
+      <div class="usecase-grid">
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="50" width="60" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="50" y="80" fill="#EF4444" font-family="Orbitron" font-size="7" text-anchor="middle">PHARMA</text>
+              <text x="50" y="95" fill="#EF4444" font-family="Orbitron" font-size="7" text-anchor="middle">MFG</text>
+              <text x="50" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Batch + Lot</text>
+              
+              <rect x="100" y="50" width="60" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1"/>
+              <text x="130" y="80" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Cold</text>
+              <text x="130" y="95" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Chain</text>
+              <text x="130" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">IoT Sensors</text>
+              
+              <rect x="180" y="50" width="60" height="80" rx="8" fill="#DC2626"/>
+              <text x="210" y="80" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">SEAL</text>
+              <text x="210" y="95" fill="#FFF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Verified</text>
+              <text x="210" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="6" text-anchor="middle">DSCSA</text>
+              
+              <rect x="260" y="50" width="60" height="80" rx="8" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="290" y="80" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">Distrib</text>
+              <text x="290" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Verified</text>
+              <text x="290" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Authentic</text>
+              
+              <rect x="340" y="50" width="50" height="80" rx="6" fill="#111" stroke="#22C55E" stroke-width="1"/>
+              <text x="365" y="85" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">✓ Safe</text>
+              <text x="365" y="105" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Patient</text>
+              
+              <path d="M80 90 L95 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M160 90 L175 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M240 90 L255 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M320 90 L335 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">DSCSA compliant pharmaceutical serialization</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Pharmaceutical Track & Trace</h3>
+            <p>DSCSA-compliant drug serialization with cold chain verification. Every pharmaceutical package is sealed with manufacturing origin, temperature history, and chain of custody.</p>
+            <ul class="usecase-benefits">
+              <li>DSCSA 2023 compliance</li>
+              <li>Cold chain verification</li>
+              <li>Anti-counterfeit protection</li>
+              <li>Recall traceability</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="25" y="50" width="65" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="57" y="80" fill="#EF4444" font-family="Orbitron" font-size="7" text-anchor="middle">FARM</text>
+              <text x="57" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Origin</text>
+              <text x="57" y="112" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">GPS Seal</text>
+              
+              <rect x="110" y="50" width="65" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1"/>
+              <text x="142" y="80" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Process</text>
+              <text x="142" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Pack</text>
+              <text x="142" y="112" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">HACCP</text>
+              
+              <rect x="195" y="50" width="65" height="80" rx="8" fill="#DC2626"/>
+              <text x="227" y="80" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">FOOD</text>
+              <text x="227" y="95" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">SEAL</text>
+              <text x="227" y="112" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="6" text-anchor="middle">FSMA</text>
+              
+              <rect x="280" y="50" width="50" height="80" rx="6" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="305" y="80" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Retail</text>
+              <text x="305" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Verified</text>
+              
+              <rect x="350" y="50" width="40" height="80" rx="6" fill="#111" stroke="#333" stroke-width="1"/>
+              <text x="370" y="80" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">QR</text>
+              <text x="370" y="100" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Scan</text>
+              <text x="370" y="115" fill="#22C55E" font-family="Space Grotesk" font-size="6" text-anchor="middle">✓</text>
+              
+              <path d="M90 90 L105 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M175 90 L190 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M260 90 L275 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M330 90 L345 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">Farm-to-fork traceability with consumer verification</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Food Safety & Traceability</h3>
+            <p>FSMA 204 compliant food traceability from farm to fork. Consumers can verify origin, handling, and safety with a simple QR code scan.</p>
+            <ul class="usecase-benefits">
+              <li>FSMA 204 compliance</li>
+              <li>Rapid recall response (minutes vs days)</li>
+              <li>Consumer transparency</li>
+              <li>Organic/sustainable certification</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="25" y="30" width="55" height="45" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="52" y="50" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Cobalt</text>
+              <text x="52" y="65" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">DRC Mine</text>
+              
+              <rect x="25" y="85" width="55" height="45" rx="6" fill="#1A1A1A" stroke="#DC2626" stroke-width="1"/>
+              <text x="52" y="105" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Lithium</text>
+              <text x="52" y="120" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Chile</text>
+              
+              <rect x="100" y="55" width="70" height="70" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="135" y="80" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Battery</text>
+              <text x="135" y="95" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">Cell Mfg</text>
+              <text x="135" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">China/Korea</text>
+              
+              <rect x="190" y="55" width="70" height="70" rx="8" fill="#DC2626"/>
+              <text x="225" y="80" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">MINERAL</text>
+              <text x="225" y="95" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">SEAL</text>
+              <text x="225" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="6" text-anchor="middle">EU Battery Reg</text>
+              
+              <rect x="280" y="40" width="50" height="45" rx="5" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="305" y="58" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">ESG</text>
+              <text x="305" y="75" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Report</text>
+              
+              <rect x="280" y="95" width="50" height="45" rx="5" fill="#111" stroke="#991B1B" stroke-width="1"/>
+              <text x="305" y="113" fill="#EF4444" font-family="Space Grotesk" font-size="7" text-anchor="middle">Due</text>
+              <text x="305" y="130" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Diligence</text>
+              
+              <rect x="350" y="55" width="40" height="70" rx="5" fill="#111" stroke="#22C55E" stroke-width="1"/>
+              <text x="370" y="85" fill="#22C55E" font-family="Space Grotesk" font-size="7" text-anchor="middle">✓</text>
+              <text x="370" y="102" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Clean</text>
+              <text x="370" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Battery</text>
+              
+              <path d="M80 52 L95 75" stroke="#DC2626" stroke-width="1"/>
+              <path d="M80 107 L95 100" stroke="#DC2626" stroke-width="1"/>
+              <path d="M170 90 L185 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M260 75 L275 62" stroke="#DC2626" stroke-width="1"/>
+              <path d="M260 105 L275 117" stroke="#DC2626" stroke-width="1"/>
+              <path d="M330 90 L345 90" stroke="#DC2626" stroke-width="1"/>
+              
+              <text x="200" y="160" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">EU Battery Regulation compliant mineral tracing</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Critical Minerals & Batteries</h3>
+            <p>EU Battery Regulation compliant critical mineral tracing. Verify conflict-free sourcing, carbon footprint, and responsible mining practices with cryptographic proof.</p>
+            <ul class="usecase-benefits">
+              <li>EU Battery Regulation ready</li>
+              <li>Conflict mineral verification</li>
+              <li>Carbon footprint calculation</li>
+              <li>Responsible sourcing proof</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="usecase-card">
+          <div class="usecase-diagram">
+            <svg viewBox="0 0 400 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="30" y="50" width="60" height="80" rx="8" fill="#1A1A1A" stroke="#DC2626" stroke-width="1.5"/>
+              <text x="60" y="80" fill="#EF4444" font-family="Orbitron" font-size="7" text-anchor="middle">LUXURY</text>
+              <text x="60" y="95" fill="#EF4444" font-family="Orbitron" font-size="7" text-anchor="middle">ITEM</text>
+              <text x="60" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Serial + NFT</text>
+              
+              <rect x="110" y="50" width="70" height="80" rx="8" fill="#1A1A1A" stroke="#B91C1C" stroke-width="1.5"/>
+              <text x="145" y="80" fill="#FFF" font-family="Space Grotesk" font-size="8" text-anchor="middle">AI Vision</text>
+              <text x="145" y="95" fill="#9CA3AF" font-family="Space Grotesk" font-size="7" text-anchor="middle">Auth Check</text>
+              <text x="145" y="115" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Micro-features</text>
+              
+              <rect x="200" y="50" width="70" height="80" rx="8" fill="#DC2626"/>
+              <text x="235" y="80" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">AUTH</text>
+              <text x="235" y="95" fill="#FFF" font-family="Orbitron" font-size="7" text-anchor="middle">SEAL</text>
+              <text x="235" y="115" fill="rgba(255,255,255,0.8)" font-family="Space Grotesk" font-size="6" text-anchor="middle">Blockchain</text>
+              
+              <rect x="290" y="40" width="50" height="50" rx="5" fill="#111" stroke="#22C55E" stroke-width="1"/>
+              <text x="315" y="62" fill="#22C55E" font-family="Space Grotesk" font-size="8" text-anchor="middle">✓</text>
+              <text x="315" y="80" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Genuine</text>
+              
+              <rect x="290" y="100" width="50" height="50" rx="5" fill="#111" stroke="#EF4444" stroke-width="1"/>
+              <text x="315" y="122" fill="#EF4444" font-family="Space Grotesk" font-size="8" text-anchor="middle">✗</text>
+              <text x="315" y="140" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Fake</text>
+              
+              <rect x="360" y="60" width="30" height="60" rx="5" fill="#111" stroke="#333" stroke-width="1"/>
+              <text x="375" y="85" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">2nd</text>
+              <text x="375" y="100" fill="#9CA3AF" font-family="Space Grotesk" font-size="6" text-anchor="middle">Sale</text>
+              <text x="375" y="115" fill="#22C55E" font-family="Space Grotesk" font-size="6" text-anchor="middle">✓</text>
+              
+              <path d="M90 90 L105 90" stroke="#DC2626" stroke-width="1"/>
+              <path d="M180 90 L195 90" stroke="#DC2626" stroke-width="1.5"/>
+              <path d="M270 75 L285 65" stroke="#DC2626" stroke-width="1"/>
+              <path d="M270 105 L285 125" stroke="#DC2626" stroke-width="1"/>
+              <path d="M340 90 L355 90" stroke="#22C55E" stroke-width="1"/>
+              
+              <text x="200" y="165" fill="#9CA3AF" font-family="Space Grotesk" font-size="9" text-anchor="middle">AI-powered authentication with resale verification</text>
+            </svg>
+          </div>
+          <div class="usecase-content">
+            <h3>Luxury Authentication</h3>
+            <p>AI-powered authentication with digital provenance for luxury goods. Verify authenticity at purchase and enable trusted secondary market transactions with sealed ownership history.</p>
+            <ul class="usecase-benefits">
+              <li>AI vision authentication</li>
+              <li>Digital certificate of authenticity</li>
+              <li>Resale market verification</li>
+              <li>Brand protection</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">Impact</span>
+        <h2 class="section-title">Measurable Benefits</h2>
+        <p class="section-desc">Quantifiable improvements across supply chain deployments.</p>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-value">99.7%</div>
+          <div class="benefit-label">Provenance Accuracy</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">85%</div>
+          <div class="benefit-label">Counterfeit Reduction</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">4hrs</div>
+          <div class="benefit-label">Recall Response Time</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-value">$12M</div>
+          <div class="benefit-label">Avg. Brand Protection</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Verify Your Supply Chain?</h2>
+      <p>Join leading brands using Aethelred for end-to-end provenance.</p>
+      <a href="#" class="btn-primary">Request Supply Chain Demo</a>
+      <a href="computer:///mnt/user-data/outputs/documentation.html" class="btn-secondary">View Documentation</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0RDMjYyNiIvPjxwYXRoIGQ9Ik0yMCA4TDI4IDI4SDEyTDIwIDhaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==" alt="Aethelred" style="height: 36px;">
+          <p>The Digital Seal for Verifiable Intelligence. A Zhyra Holdings portfolio company.</p>
+        </div>
+        <div class="footer-column">
+          <h4>Solutions</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/proof-of-compute.html">Proof-of-Compute</a>
+            <a href="computer:///mnt/user-data/outputs/digital-seal.html">Digital Seal</a>
+            <a href="computer:///mnt/user-data/outputs/spatial-verification.html">Spatial Verification</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Use Cases</h4>
+          <div class="footer-links">
+            <a href="usecase-healthcare.html">Healthcare</a>
+            <a href="usecase-finance.html">Financial Services</a>
+            <a href="usecase-supplychain.html">Supply Chain</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Developers</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/documentation.html">Documentation</a>
+            <a href="computer:///mnt/user-data/outputs/sdk-tools.html">SDK & Tools</a>
+            <a href="computer:///mnt/user-data/outputs/testnet.html">Testnet</a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="computer:///mnt/user-data/outputs/aethelred-website.html">Home</a>
+            <a href="computer:///mnt/user-data/outputs/consortium.html">Consortium</a>
+            <a href="computer:///mnt/user-data/outputs/governance.html">Governance</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Aethelred. A Zhyra Holdings Company. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

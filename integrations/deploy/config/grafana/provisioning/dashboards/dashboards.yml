@@ -1,0 +1,25 @@
+# ============================================================================
+# Grafana Dashboard Provisioning
+# ============================================================================
+#
+# Auto-loads dashboards from the specified directories on Grafana startup.
+#
+# Author: Aethelred Team
+# License: Apache-2.0
+# ============================================================================
+
+apiVersion: 1
+
+providers:
+  # Aethelred DevNet Dashboards
+  - name: Aethelred DevNet
+    orgId: 1
+    folder: Aethelred
+    folderUid: aethelred
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false

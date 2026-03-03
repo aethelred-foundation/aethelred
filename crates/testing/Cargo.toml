@@ -1,0 +1,58 @@
+[package]
+name = "aethelred-testing"
+version = "2.0.0"
+edition = "2021"
+authors = ["Aethelred Team"]
+description = "Comprehensive testing framework for Aethelred AI Blockchain SDK"
+license = "Apache-2.0"
+repository = "https://github.com/aethelred/testing"
+keywords = ["testing", "ai", "ml", "property-based", "snapshot"]
+categories = ["development-tools::testing", "development-tools::debugging"]
+
+[lib]
+name = "aethelred_testing"
+path = "src/lib.rs"
+
+[dependencies]
+# Random number generation
+rand = "0.8"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Hashing
+sha2 = "0.10"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Temp files
+tempfile = "3.10"
+
+# Regex for pattern matching
+regex = "1.10"
+
+# Parallel execution
+num_cpus = "1.16"
+
+[dev-dependencies]
+# For testing the test framework
+criterion = "0.5"
+
+[[bench]]
+name = "framework_benchmarks"
+harness = false
+
+[features]
+default = []
+# Enable all features
+full = ["async", "coverage-instrumentation"]
+# Async test support
+async = []
+# Coverage instrumentation
+coverage-instrumentation = []
+
+[profile.release]
+lto = true
+codegen-units = 1
