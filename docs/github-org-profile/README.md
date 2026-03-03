@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/aethelred/.github/main/profile/banner.png" alt="Aethelred" width="900" />
+ <img src="https://raw.githubusercontent.com/aethelred/.github/main/profile/banner.png" alt="Aethelred" width="900" />
 </p>
 
-<h2 align="center">⚡ Aethelred — The Sovereign Layer 1 for Verifiable AI</h2>
+<h2 align="center">Aethelred — The Sovereign Layer 1 for Verifiable AI</h2>
 
 <p align="center">
-  Proof-of-Useful-Work · Zero-Knowledge ML Proofs · TEE-backed Consensus · Post-Quantum Ready
+ Proof-of-Useful-Work · Zero-Knowledge ML Proofs · TEE-backed Consensus · Post-Quantum Ready
 </p>
 
 <p align="center">
-  <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" /></a>
-  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" /></a>
-  <a href="https://twitter.com/aethelred_io"><img src="https://img.shields.io/badge/follow-%40aethelred__io-1DA1F2?style=flat-square&logo=twitter" /></a>
-  <img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" />
+ <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" /></a>
+ <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" /></a>
+ <a href="https://twitter.com/aethelred_io"><img src="https://img.shields.io/badge/follow-%40aethelred__io-1DA1F2?style=flat-square&logo=twitter" /></a>
+ <img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" />
 </p>
 
 ---
@@ -23,8 +23,8 @@ Aethelred is the first blockchain where **validator work has real-world value**.
 
 ```
 AI job arrives → Validator TEE executes → zkML proof generated
-                                              ↓
-                          2/3 BFT consensus → Digital Seal minted
+ ↓
+ 2/3 BFT consensus → Digital Seal minted
 ```
 
 ---
@@ -33,16 +33,16 @@ AI job arrives → Validator TEE executes → zkML proof generated
 
 | Repo | Description |
 |---|---|
-| [aethelred](https://github.com/AethelredFoundation/aethelred) | 🏛️ Core monorepo — Go node + Rust crates + x/ modules |
-| [contracts](https://github.com/AethelredFoundation/contracts) | 🔗 Solidity bridge, oracle, and governance contracts |
-| [aethelred-sdk-ts](https://github.com/AethelredFoundation/aethelred-sdk-ts) | 🌐 TypeScript / JavaScript SDK |
-| [aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | 🐍 Python SDK |
-| [aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | 🔵 Go SDK |
-| [aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | 🦀 Rust SDK |
-| [aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | ⌨️ `aethel` CLI |
-| [vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | 🧩 VS Code extension (unique in L1 space) |
-| [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | 📚 Documentation site |
-| [AIPs](https://github.com/AethelredFoundation/AIPs) | 📋 Aethelred Improvement Proposals |
+| [aethelred](https://github.com/AethelredFoundation/aethelred) | Core monorepo — Go node + Rust crates + x/ modules |
+| [contracts](https://github.com/AethelredFoundation/contracts) | Solidity bridge, oracle, and governance contracts |
+| [aethelred-sdk-ts](https://github.com/AethelredFoundation/aethelred-sdk-ts) | TypeScript / JavaScript SDK |
+| [aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | Python SDK |
+| [aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | Go SDK |
+| [aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | Rust SDK |
+| [aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | `aethel` CLI |
+| [vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | VS Code extension (unique in L1 space) |
+| [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | Documentation site |
+| [AIPs](https://github.com/AethelredFoundation/AIPs) | Aethelred Improvement Proposals |
 
 ---
 
@@ -63,9 +63,9 @@ AI job arrives → Validator TEE executes → zkML proof generated
 
 ### Quick Links
 
-- 📖 [Documentation](https://docs.aethelred.io)
-- 🗺️ [Roadmap](https://docs.aethelred.io/roadmap)
-- 💬 [Discord](https://discord.gg/aethelred)
-- 🐦 [Twitter](https://twitter.com/aethelred_io)
-- 📋 [AIPs](https://github.com/AethelredFoundation/AIPs)
-- 🔒 [Security Policy](https://github.com/AethelredFoundation/aethelred/blob/main/SECURITY.md)
+- [Documentation](https://docs.aethelred.io)
+- [Roadmap](https://docs.aethelred.io/roadmap)
+- [Discord](https://discord.gg/aethelred)
+- [Twitter](https://twitter.com/aethelred_io)
+- [AIPs](https://github.com/AethelredFoundation/AIPs)
+- [Security Policy](https://github.com/AethelredFoundation/aethelred/blob/main/SECURITY.md)

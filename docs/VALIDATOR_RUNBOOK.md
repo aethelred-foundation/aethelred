@@ -40,47 +40,47 @@ This document provides comprehensive operational guidance for running an Aethelr
 Your validator deployment MUST consist of three components:
 
 ```
-                    ┌─────────────────────────────────────────────────┐
-                    │                   INTERNET                      │
-                    └─────────────────────────────────────────────────┘
-                                         │
-                                         ▼
-            ┌────────────────────────────────────────────────────────┐
-            │                    SENTRY NODES (2+)                    │
-            │        • Public-facing                                  │
-            │        • Absorbs DDoS attacks                          │
-            │        • No signing keys                               │
-            │        • Connects to P2P network                       │
-            └────────────────────────────────────────────────────────┘
-                                         │
-                              Private Network Only
-                                         ▼
-            ┌────────────────────────────────────────────────────────┐
-            │                    VALIDATOR NODE                       │
-            │        • Private IP ONLY                               │
-            │        • Connects ONLY to Sentry nodes                 │
-            │        • HSM-protected signing keys                    │
-            │        • Minimal attack surface                        │
-            └────────────────────────────────────────────────────────┘
-                                         │
-                         Separate Availability Zone
-                                         ▼
-            ┌────────────────────────────────────────────────────────┐
-            │                    FAILOVER NODE                        │
-            │        • Cold standby                                  │
-            │        • Different AZ/Region                           │
-            │        • HSM key access DISABLED by default            │
-            │        • Activated ONLY when Primary confirmed dead    │
-            └────────────────────────────────────────────────────────┘
+ ┌─────────────────────────────────────────────────┐
+ │ INTERNET │
+ └─────────────────────────────────────────────────┘
+ │
+ ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ SENTRY NODES (2+) │
+ │ • Public-facing │
+ │ • Absorbs DDoS attacks │
+ │ • No signing keys │
+ │ • Connects to P2P network │
+ └────────────────────────────────────────────────────────┘
+ │
+ Private Network Only
+ ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ VALIDATOR NODE │
+ │ • Private IP ONLY │
+ │ • Connects ONLY to Sentry nodes │
+ │ • HSM-protected signing keys │
+ │ • Minimal attack surface │
+ └────────────────────────────────────────────────────────┘
+ │
+ Separate Availability Zone
+ ▼
+ ┌────────────────────────────────────────────────────────┐
+ │ FAILOVER NODE │
+ │ • Cold standby │
+ │ • Different AZ/Region │
+ │ • HSM key access DISABLED by default │
+ │ • Activated ONLY when Primary confirmed dead │
+ └────────────────────────────────────────────────────────┘
 ```
 
 ### Network Isolation Requirements
 
 | Component | Public IP | Private Network | HSM Access |
 |-----------|-----------|-----------------|------------|
-| Sentry Node | ✅ Required | ✅ Connected | ❌ None |
-| Validator Node | ❌ NEVER | ✅ Private Only | ✅ Active |
-| Failover Node | ❌ NEVER | ✅ Private Only | ❌ Disabled |
+| Sentry Node | Required | Connected | None |
+| Validator Node | NEVER | Private Only | Active |
+| Failover Node | NEVER | Private Only | Disabled |
 
 ---
 
@@ -125,22 +125,22 @@ Your validator deployment MUST consist of three components:
 
 # Connect to HSM
 pkcs11-tool --module /opt/cloudhsm/lib/libcloudhsm_pkcs11.so \
-  --login --pin "$HSM_PIN" \
-  --keypairgen \
-  --key-type EC:secp256k1 \
-  --label "aethelred-validator-key" \
-  --id 01
+ --login --pin "$HSM_PIN" \
+ --keypairgen \
+ --key-type EC:secp256k1 \
+ --label "aethelred-validator-key" \
+ --id 01
 
 # Verify key was created
 pkcs11-tool --module /opt/cloudhsm/lib/libcloudhsm_pkcs11.so \
-  --login --pin "$HSM_PIN" \
-  --list-objects
+ --login --pin "$HSM_PIN" \
+ --list-objects
 
 # Export PUBLIC key only (private key cannot be exported)
 pkcs11-tool --module /opt/cloudhsm/lib/libcloudhsm_pkcs11.so \
-  --login --pin "$HSM_PIN" \
-  --read-object --type pubkey --label "aethelred-validator-key" \
-  -o validator_public_key.der
+ --login --pin "$HSM_PIN" \
+ --read-object --type pubkey --label "aethelred-validator-key" \
+ -o validator_public_key.der
 ```
 
 ### Key Backup Procedure
@@ -150,8 +150,8 @@ HSM keys are backed up using **wrapped key export** (encrypted with master key):
 ```bash
 # AWS CloudHSM key backup
 aws cloudhsmv2 create-backup \
-  --cluster-id cluster-xxxxx \
-  --destination-backup-id "validator-backup-$(date +%Y%m%d)"
+ --cluster-id cluster-xxxxx \
+ --destination-backup-id "validator-backup-$(date +%Y%m%d)"
 ```
 
 **Storage Requirements:**
@@ -189,9 +189,9 @@ aws cloudhsmv2 create-backup \
 
 # 1. Install dependencies
 apt-get update && apt-get install -y \
-  docker.io \
-  jq \
-  prometheus-node-exporter
+ docker.io \
+ jq \
+ prometheus-node-exporter
 
 # 2. Create directories
 mkdir -p /data/aethelred/{config,data,keys}
@@ -234,14 +234,14 @@ EOF
 
 # 5. Start the node
 docker run -d \
-  --name aethelred-validator \
-  --restart unless-stopped \
-  --net host \
-  -v /data/aethelred:/data \
-  -v /opt/cloudhsm:/opt/cloudhsm:ro \
-  --device /dev/cloudhsm \
-  aethelred/node:mainnet-v1.0.0 \
-  start --config /data/config/config.toml
+ --name aethelred-validator \
+ --restart unless-stopped \
+ --net host \
+ -v /data/aethelred:/data \
+ -v /opt/cloudhsm:/opt/cloudhsm:ro \
+ --device /dev/cloudhsm \
+ aethelred/node:mainnet-v1.0.0 \
+ start --config /data/config/config.toml
 ```
 
 ### Verify Node Status
@@ -263,7 +263,7 @@ aethelredd admin hsm-status
 
 ### Critical Rules
 
-⚠️ **Double Signing = 50% Stake Slash + Permanent Jail**
+IMPORTANT: **Double Signing = 50% Stake Slash + Permanent Jail**
 
 Double signing occurs when the same validator key signs two different blocks at the same height. This is the most severe slashing offense.
 
@@ -285,11 +285,11 @@ set -e
 # 1. Verify primary is truly unreachable (wait 5 minutes)
 echo "Checking primary node status..."
 for i in {1..10}; do
-  if ping -c 1 primary-validator.internal; then
-    echo "PRIMARY IS STILL ALIVE! Aborting failover."
-    exit 1
-  fi
-  sleep 30
+ if ping -c 1 primary-validator.internal; then
+ echo "PRIMARY IS STILL ALIVE! Aborting failover."
+ exit 1
+ fi
+ sleep 30
 done
 
 # 2. Check with multiple sources that primary is not signing
@@ -297,9 +297,9 @@ LAST_SIGNED=$(curl -s https://api.aethelred.org/validators/$VALIDATOR_ADDR/last_
 CURRENT_HEIGHT=$(curl -s https://api.aethelred.org/status | jq .height)
 
 if [ $((CURRENT_HEIGHT - LAST_SIGNED)) -lt 100 ]; then
-  echo "PRIMARY MAY STILL BE ACTIVE! Last signed $LAST_SIGNED, current $CURRENT_HEIGHT"
-  echo "Waiting for 100 blocks of inactivity..."
-  exit 1
+ echo "PRIMARY MAY STILL BE ACTIVE! Last signed $LAST_SIGNED, current $CURRENT_HEIGHT"
+ echo "Waiting for 100 blocks of inactivity..."
+ exit 1
 fi
 
 # 3. Disable primary HSM session (if reachable)
@@ -308,14 +308,14 @@ ssh primary-validator "pkcs11-tool --logout || true"
 # 4. Enable failover HSM session
 echo "Activating failover HSM..."
 pkcs11-tool --module /opt/cloudhsm/lib/libcloudhsm_pkcs11.so \
-  --login --pin "$HSM_PIN"
+ --login --pin "$HSM_PIN"
 
 # 5. Start failover validator
 docker start aethelred-validator
 
 # 6. Notify operations team
 curl -X POST https://hooks.slack.com/services/xxx \
-  -d '{"text":"⚠️ FAILOVER ACTIVATED for validator '$VALIDATOR_ADDR'"}'
+ -d '{"text":"IMPORTANT: FAILOVER ACTIVATED for validator '$VALIDATOR_ADDR'"}'
 
 echo "Failover complete. Monitor for successful block signing."
 ```
@@ -337,43 +337,43 @@ echo "Failover complete. Monitor for successful block signing."
 ```yaml
 # prometheus-alerts.yml
 groups:
-  - name: aethelred-validator
-    rules:
-      # Block signing stopped
-      - alert: ValidatorNotSigning
-        expr: increase(aethelred_blocks_signed_total[5m]) == 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Validator has stopped signing blocks"
+ - name: aethelred-validator
+ rules:
+ # Block signing stopped
+ - alert: ValidatorNotSigning
+ expr: increase(aethelred_blocks_signed_total[5m]) == 0
+ for: 5m
+ labels:
+ severity: critical
+ annotations:
+ summary: "Validator has stopped signing blocks"
 
-      # HSM connectivity lost
-      - alert: HSMConnectionLost
-        expr: aethelred_hsm_connected == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "HSM connection lost - signing disabled"
+ # HSM connectivity lost
+ - alert: HSMConnectionLost
+ expr: aethelred_hsm_connected == 0
+ for: 1m
+ labels:
+ severity: critical
+ annotations:
+ summary: "HSM connection lost - signing disabled"
 
-      # Approaching slashing threshold
-      - alert: MissedBlocksWarning
-        expr: aethelred_consecutive_missed_blocks > 100
-        for: 1m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Approaching slashing threshold (500 blocks)"
+ # Approaching slashing threshold
+ - alert: MissedBlocksWarning
+ expr: aethelred_consecutive_missed_blocks > 100
+ for: 1m
+ labels:
+ severity: warning
+ annotations:
+ summary: "Approaching slashing threshold (500 blocks)"
 
-      # Disk space
-      - alert: DiskSpaceLow
-        expr: node_filesystem_avail_bytes{mountpoint="/data"} < 50*1024*1024*1024
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Less than 50GB disk space remaining"
+ # Disk space
+ - alert: DiskSpaceLow
+ expr: node_filesystem_avail_bytes{mountpoint="/data"} < 50*1024*1024*1024
+ for: 5m
+ labels:
+ severity: warning
+ annotations:
+ summary: "Less than 50GB disk space remaining"
 ```
 
 ### Dashboard URLs
@@ -422,9 +422,9 @@ echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log
 
 | Role | SSH Access | HSM Access | Console Access |
 |------|------------|------------|----------------|
-| Validator Operator | ✅ | ✅ | ✅ |
-| NOC Engineer | ✅ | ❌ | ✅ (read-only) |
-| Auditor | ❌ | ❌ | ✅ (read-only) |
+| Validator Operator | Yes | Yes | Yes |
+| NOC Engineer | Yes | No | Yes (read-only) |
+| Auditor | No | No | Yes (read-only) |
 
 ### Security Checklist (Weekly)
 
@@ -462,11 +462,11 @@ echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log
 
 ```
 L1: NOC Engineer
-    ↓ (15 min no response)
+ ↓ (15 min no response)
 L2: Platform Lead
-    ↓ (30 min no resolution)
+ ↓ (30 min no resolution)
 L3: VP Engineering
-    ↓ (Critical incident)
+ ↓ (Critical incident)
 L4: CTO / CEO
 ```
 

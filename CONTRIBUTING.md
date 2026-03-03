@@ -22,11 +22,11 @@ We follow the [Contributor Covenant](CODE_OF_CONDUCT.md). Be kind, constructive,
 
 ## Ways to Contribute
 
-- 🐛 **Bug reports**: [Open an issue](https://github.com/AethelredFoundation/aethelred/issues/new?template=bug_report.md)
-- 💡 **Feature proposals**: [Open a feature request](https://github.com/AethelredFoundation/aethelred/issues/new?template=feature_request.md) or [write an AIP](https://github.com/AethelredFoundation/AIPs)
-- 🔧 **Code**: Fork → branch → PR
-- 📝 **Documentation**: PRs to [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs)
-- 💬 **Discussion**: [Discord](https://discord.gg/aethelred)
+- **Bug reports**: [Open an issue](https://github.com/AethelredFoundation/aethelred/issues/new?template=bug_report.md)
+- **Feature proposals**: [Open a feature request](https://github.com/AethelredFoundation/aethelred/issues/new?template=feature_request.md) or [write an AIP](https://github.com/AethelredFoundation/AIPs)
+- **Code**: Fork → branch → PR
+- **Documentation**: PRs to [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs)
+- **Discussion**: [Discord](https://discord.gg/aethelred)
 
 ---
 
@@ -91,9 +91,9 @@ security(abci): bind TEE user_data to block height and chain ID
 7. **Respond to review** — address all comments before requesting re-review
 
 PRs require:
-- ✅ CI passing (all jobs)
-- ✅ At least 1 approving review from a core maintainer
-- ✅ No unresolved conversations
+- CI passing (all jobs)
+- At least 1 approving review from a core maintainer
+- No unresolved conversations
 
 ---
 

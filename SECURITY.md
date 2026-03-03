@@ -42,8 +42,8 @@ We maintain an active bug bounty program. Rewards are paid in AETHEL tokens.
 
 | Version | Supported |
 |---|---|
-| `main` | ✅ |
-| `v0.x.x` | ✅ |
+| `main` | Yes |
+| `v0.x.x` | Yes |
 
 ## Security Design Principles
 

@@ -27,8 +27,8 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** combining cl
 
 ```
 ┌─────────┬──────────────┬────────┬──────────────────┬───────┬──────────┐
-│ Version │ Hybrid Marker│ ECDSA  │ Sep │ Dilithium  │ Level │ Metadata │
-│  (1B)   │    (1B)      │ (64B)  │(1B) │ (variable) │ (1B)  │ (var)    │
+│ Version │ Hybrid Marker│ ECDSA │ Sep │ Dilithium │ Level │ Metadata │
+│ (1B) │ (1B) │ (64B) │(1B) │ (variable) │ (1B) │ (var) │
 └─────────┴──────────────┴────────┴─────┴────────────┴───────┴──────────┘
 ```
 
@@ -46,8 +46,8 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** combining cl
 
 ```
 ┌──────────┬──────────────┬──────────┬──────────────┐
-│ Has TS   │ Timestamp    │ Has CID  │ Chain ID     │
-│ 0x00/01  │ u64 LE (8B)  │ 0x00/01  │ u64 LE (8B)  │
+│ Has TS │ Timestamp │ Has CID │ Chain ID │
+│ 0x00/01 │ u64 LE (8B) │ 0x00/01 │ u64 LE (8B) │
 └──────────┴──────────────┴──────────┴──────────────┘
 ```
 
@@ -69,21 +69,21 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** combining cl
 
 | Primitive | Key Zeroization | Mechanism |
 |-----------|:---------------:|-----------|
-| `EcdsaSecretKey` | ✅ | `zeroize::ZeroizeOnDrop` |
-| `DilithiumSecretKey` | ✅ | `zeroize::ZeroizeOnDrop` |
-| `KyberSecretKey` | ✅ | `zeroize::ZeroizeOnDrop` |
-| `HybridKeyPair` | ✅ | Derives `ZeroizeOnDrop` |
-| `SharedSecret` | ✅ | `zeroize::ZeroizeOnDrop` |
-| Debug output | ✅ | `[REDACTED]` for all secret types |
+| `EcdsaSecretKey` | Yes | `zeroize::ZeroizeOnDrop` |
+| `DilithiumSecretKey` | Yes | `zeroize::ZeroizeOnDrop` |
+| `KyberSecretKey` | Yes | `zeroize::ZeroizeOnDrop` |
+| `HybridKeyPair` | Yes | Derives `ZeroizeOnDrop` |
+| `SharedSecret` | Yes | `zeroize::ZeroizeOnDrop` |
+| Debug output | Yes | `[REDACTED]` for all secret types |
 
 ## HSM Support
 
 | HSM Type | Module Path | Status |
 |----------|-------------|:------:|
-| AWS CloudHSM | `/opt/cloudhsm/lib/libcloudhsm_pkcs11.so` | ✅ Supported |
-| Thales Luna | `/usr/safenet/lunaclient/lib/libCryptoki2_64.so` | ✅ Supported |
-| YubiHSM 2 | `/usr/lib/libyubihsm_pkcs11.so` | ✅ Supported |
-| SoftHSM | `/usr/lib/softhsm/libsofthsm2.so` | 🧪 Dev Only |
+| AWS CloudHSM | `/opt/cloudhsm/lib/libcloudhsm_pkcs11.so` | Supported |
+| Thales Luna | `/usr/safenet/lunaclient/lib/libCryptoki2_64.so` | Supported |
+| YubiHSM 2 | `/usr/lib/libyubihsm_pkcs11.so` | Supported |
+| SoftHSM | `/usr/lib/softhsm/libsofthsm2.so` | Dev Only |
 
 ## Algorithm Agility Migration Plan
 

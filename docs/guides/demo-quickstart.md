@@ -17,16 +17,16 @@ cd demo/dashboard && npm install && npm start
 
 | Feature | Works Offline? | Notes |
 |---------|---------------|-------|
-| Trade Finance Demo | ✅ Yes | Full Falcon-Lion simulation |
-| Drug Discovery Demo | ✅ Yes | Full Helix-Guard simulation |
-| Credit Scoring Demo | ✅ Yes | TypeScript SDK example |
-| TEE Verification | ✅ Simulated | Realistic timing and flow |
-| zkML Proofs | ✅ Simulated | Shows proof generation |
-| Digital Seals | ✅ Yes | Real seal structures |
-| Compliance Engine | ✅ Yes | Real rule evaluation |
-| VS Code Extension | ✅ Yes | Full linting and snippets |
-| Local DevNet | ✅ Yes | 3-node local network |
-| Metrics Dashboard | ✅ Yes | Grafana + Prometheus |
+| Trade Finance Demo | Yes | Full Falcon-Lion simulation |
+| Drug Discovery Demo | Yes | Full Helix-Guard simulation |
+| Credit Scoring Demo | Yes | TypeScript SDK example |
+| TEE Verification | Simulated | Realistic timing and flow |
+| zkML Proofs | Simulated | Shows proof generation |
+| Digital Seals | Yes | Real seal structures |
+| Compliance Engine | Yes | Real rule evaluation |
+| VS Code Extension | Yes | Full linting and snippets |
+| Local DevNet | Yes | 3-node local network |
+| Metrics Dashboard | Yes | Grafana + Prometheus |
 
 ---
 

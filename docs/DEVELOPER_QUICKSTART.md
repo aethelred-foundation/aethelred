@@ -58,14 +58,14 @@ go get github.com/aethelred/sdk-go@v2.0.0
 package main
 
 import (
-    "fmt"
-    aethelred "github.com/aethelred/sdk-go"
+ "fmt"
+ aethelred "github.com/aethelred/sdk-go"
 )
 
 func main() {
-    client, _ := aethelred.NewClient(aethelred.Testnet)
-    info, _ := client.Network.GetInfo(context.Background())
-    fmt.Printf("Network: %s\n", info.Network)
+ client, _ := aethelred.NewClient(aethelred.Testnet)
+ info, _ := client.Network.GetInfo(context.Background())
+ fmt.Printf("Network: %s\n", info.Network)
 }
 ```
 
@@ -81,9 +81,9 @@ use aethelred_sdk::{AethelredClient, Network};
 
 #[tokio::main]
 async fn main() {
-    let client = AethelredClient::new(Network::Testnet).unwrap();
-    let info = client.network().get_info().await.unwrap();
-    println!("Network: {}", info.network);
+ let client = AethelredClient::new(Network::Testnet).unwrap();
+ let info = client.network().get_info().await.unwrap();
+ println!("Network: {}", info.network);
 }
 ```
 
@@ -99,8 +99,8 @@ from aethelred.utils import sha256
 
 # Connect with wallet
 client = AethelredClient(
-    "https://rpc.testnet.aethelred.org",
-    wallet_path="./wallet.json"
+ "https://rpc.testnet.aethelred.org",
+ wallet_path="./wallet.json"
 )
 
 # Prepare model and input hashes
@@ -109,10 +109,10 @@ input_hash = sha256(b'{"age": 35, "income": 75000}')
 
 # Submit job
 response = client.jobs.submit(SubmitJobRequest(
-    model_hash=model_hash,
-    input_hash=input_hash,
-    proof_type=ProofType.TEE,
-    priority=5
+ model_hash=model_hash,
+ input_hash=input_hash,
+ proof_type=ProofType.TEE,
+ priority=5
 ))
 
 print(f"Job ID: {response.job_id}")
@@ -133,13 +133,13 @@ from aethelred import CreateSealRequest, RegulatoryInfo
 
 # Create seal for the completed job
 seal_response = client.seals.create(CreateSealRequest(
-    job_id=response.job_id,
-    expires_in_blocks=10000,
-    regulatory_info=RegulatoryInfo(
-        jurisdiction="UAE",
-        compliance_frameworks=["SOC2", "GDPR"],
-        data_classification="confidential"
-    )
+ job_id=response.job_id,
+ expires_in_blocks=10000,
+ regulatory_info=RegulatoryInfo(
+ jurisdiction="UAE",
+ compliance_frameworks=["SOC2", "GDPR"],
+ data_classification="confidential"
+ )
 ))
 
 print(f"Seal ID: {seal_response.seal_id}")
@@ -167,7 +167,7 @@ docker-compose ps
 
 # Get testnet tokens
 curl -X POST http://localhost:8080/faucet \
-  -d '{"address": "aethel1..."}'
+ -d '{"address": "aethel1..."}'
 ```
 
 Services available:
@@ -202,10 +202,10 @@ aethel wallet balance
 ```bash
 # Submit job
 aethel job submit \
-  --model sha256:abc123... \
-  --input sha256:def456... \
-  --proof-type tee \
-  --priority 5
+ --model sha256:abc123... \
+ --input sha256:def456... \
+ --proof-type tee \
+ --priority 5
 
 # Check status
 aethel job status <job-id>
@@ -236,9 +236,9 @@ Features:
 ```python
 # With timeout and polling
 result = client.jobs.wait_for_completion(
-    job_id,
-    timeout=300,      # 5 minutes
-    poll_interval=2   # Check every 2 seconds
+ job_id,
+ timeout=300, # 5 minutes
+ poll_interval=2 # Check every 2 seconds
 )
 ```
 
@@ -249,14 +249,14 @@ import asyncio
 from aethelred import AsyncAethelredClient
 
 async def process_batch():
-    async with AsyncAethelredClient(url) as client:
-        # Submit multiple jobs concurrently
-        tasks = [
-            client.jobs.submit(job)
-            for job in job_requests
-        ]
-        responses = await asyncio.gather(*tasks)
-        return responses
+ async with AsyncAethelredClient(url) as client:
+ # Submit multiple jobs concurrently
+ tasks = [
+ client.jobs.submit(job)
+ for job in job_requests
+ ]
+ responses = await asyncio.gather(*tasks)
+ return responses
 ```
 
 ### Error Handling
@@ -265,21 +265,21 @@ async def process_batch():
 from aethelred import JobError, SealError, TimeoutError
 
 try:
-    result = client.jobs.wait_for_completion(job_id)
+ result = client.jobs.wait_for_completion(job_id)
 except TimeoutError:
-    print("Job took too long")
-    client.jobs.cancel(job_id)
+ print("Job took too long")
+ client.jobs.cancel(job_id)
 except JobError as e:
-    print(f"Job failed: {e.message}")
+ print(f"Job failed: {e.message}")
 ```
 
 ## 8. Next Steps
 
-- 📖 Read the [full SDK documentation](./SDK_GUIDE.md)
-- 🔐 Learn about [post-quantum cryptography](./PQC_GUIDE.md)
-- 🏛️ Explore [compliance features](./COMPLIANCE.md)
-- 🧪 Run the [example applications](../examples/)
-- 💬 Join [Discord](https://discord.gg/aethelred) for support
+- Read the [full SDK documentation](./SDK_GUIDE.md)
+- Learn about [post-quantum cryptography](./PQC_GUIDE.md)
+- Explore [compliance features](./COMPLIANCE.md)
+- Run the [example applications](../examples/)
+- Join [Discord](https://discord.gg/aethelred) for support
 
 ## Resources
 

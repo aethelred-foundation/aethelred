@@ -48,7 +48,7 @@ paste error output here
 - **OS**: 
 - **Go version**: 
 - **Aethelred version / commit**: 
-- **Network**: [ ] Mainnet  [ ] Testnet  [ ] Local devnet
+- **Network**: [ ] Mainnet [ ] Testnet [ ] Local devnet
 
 ## Additional Context
 
@@ -56,5 +56,5 @@ paste error output here
 
 ## Security Notice
 
-> ⚠️ If this bug has **security implications**, please do NOT file a public issue.  
+> IMPORTANT: If this bug has **security implications**, please do NOT file a public issue. 
 > Instead, email **security@aethelred.io** or follow [SECURITY.md](../../SECURITY.md).
