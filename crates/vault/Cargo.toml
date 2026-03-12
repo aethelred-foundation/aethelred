@@ -1,0 +1,58 @@
+[package]
+name = "aethelred-vault"
+version = "0.1.0"
+edition = "2021"
+description = "Crucible TEE enclave service — validator selection, MEV protection, and reward calculation"
+license = "Apache-2.0"
+
+[dependencies]
+# Core
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+anyhow = "1.0"
+thiserror = "1.0"
+
+# HTTP service
+axum = { version = "0.7", features = ["json"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+hyper = "1.0"
+
+# Cryptography
+sha2 = "0.10"
+sha3 = "0.10"
+k256 = { version = "0.13", features = ["ecdsa-core", "ecdsa", "sha256"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
+rand = "0.8"
+hex = "0.4"
+
+# Logging & metrics
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# TEE platform support (optional, feature-gated)
+ciborium = { version = "0.2", optional = true }
+libc = { version = "0.2", optional = true }
+
+# Remote attestation relay HTTP client (optional, feature-gated)
+# Uses reqwest's blocking client so VendorAttester::attest_platform_key()
+# can remain synchronous (called from hardware provider constructors).
+reqwest = { version = "0.11", features = ["blocking", "json"], optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"
+sha3 = "0.10"
+
+[features]
+default = []
+mock-tee = []
+sgx = []
+nitro = ["dep:ciborium", "dep:libc"]
+sev = ["dep:libc"]
+remote-attestation = ["dep:reqwest"]
