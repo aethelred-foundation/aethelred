@@ -124,7 +124,7 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── Claude / AI Tooling (local only) ────────────────────────────────
+# ── AI Tooling (local only) ──────────────────────────────────────────
 .claude/
 
 # ── Archives & Generated Reports ────────────────────────────────────
