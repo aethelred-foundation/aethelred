@@ -1,6 +1,6 @@
-// Package types defines the core types for the Crucible Cosmos SDK module.
+// Package types defines the core types for the Cruzible Cosmos SDK module.
 //
-// Crucible is a liquid staking protocol with TEE-verified validator selection,
+// Cruzible is a liquid staking protocol with TEE-verified validator selection,
 // MEV protection, and cryptographic reward distribution.
 package types
 

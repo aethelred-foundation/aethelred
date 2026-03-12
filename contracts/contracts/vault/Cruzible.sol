@@ -10,12 +10,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "./ICrucible.sol";
+import "./ICruzible.sol";
 import "./StAETHEL.sol";
 import "./VaultTEEVerifier.sol";
 
 /**
- * @title Crucible
+ * @title Cruzible
  * @author Aethelred Team
  * @notice Production-grade liquid staking vault with TEE-verified validator selection,
  *         MEV protection, and cryptographic reward distribution.
@@ -35,7 +35,7 @@ import "./VaultTEEVerifier.sol";
  *
  * Architecture:
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │                           CRUCIBLE                                       │
+ * │                           CRUZIBLE                                       │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │                                                                             │
  * │  ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐       │
@@ -121,9 +121,9 @@ import "./VaultTEEVerifier.sol";
  * @custom:security-contact security@aethelred.io
  * @custom:audit-status Pre-audit
  */
-contract Crucible is
+contract Cruzible is
     Initializable,
-    ICrucible,
+    ICruzible,
     AccessControlUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -372,7 +372,7 @@ contract Crucible is
     ///      while still obtaining a valid TEE attestation.
     ///
     ///      The hash is computed as:
-    ///        SHA-256("CrucibleSelectionPolicy-v1" ||
+    ///        SHA-256("CruzibleSelectionPolicy-v1" ||
     ///                float64_be(performance_weight) || float64_be(decentralization_weight) ||
     ///                float64_be(reputation_weight)  || float64_be(min_uptime_pct) ||
     ///                uint256(max_commission_bps)    || uint256(max_per_region) ||
@@ -555,7 +555,7 @@ contract Crucible is
     }
 
     /**
-     * @notice Initialize the Crucible.
+     * @notice Initialize the Cruzible.
      * @param admin Admin address (multisig on mainnet).
      * @param aethel The AETHEL token address.
      * @param stAethel The stAETHEL token address.
@@ -600,12 +600,12 @@ contract Crucible is
     // STAKING
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function stake(uint256 amount) external returns (uint256 shares) {
         return _stake(msg.sender, amount, 0);
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function stakeWithReferral(uint256 amount, uint256 referralCode)
         external
         returns (uint256 shares)
@@ -658,7 +658,7 @@ contract Crucible is
     // UNSTAKING & WITHDRAWAL
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function unstake(uint256 shares)
         external
         nonReentrant
@@ -704,7 +704,7 @@ contract Crucible is
         emit UnstakeRequested(msg.sender, shares, aethelAmount, withdrawalId, completionTime);
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function withdraw(uint256 withdrawalId)
         external
         nonReentrant
@@ -732,7 +732,7 @@ contract Crucible is
         emit Withdrawn(msg.sender, withdrawalId, amount);
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function batchWithdraw(uint256[] calldata withdrawalIds)
         external
         nonReentrant
@@ -772,7 +772,7 @@ contract Crucible is
     // VALIDATOR MANAGEMENT (TEE-CONTROLLED)
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function updateValidatorSet(
         bytes calldata teeAttestation,
         bytes calldata validatorData,
@@ -919,7 +919,7 @@ contract Crucible is
     // REWARD DISTRIBUTION (TEE-VERIFIED)
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function distributeRewards(
         bytes calldata teeAttestation,
         uint256 epoch,
@@ -1102,7 +1102,7 @@ contract Crucible is
         _advanceEpoch();
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function submitMEVRevenue(
         bytes calldata teeAttestation,
         uint256 epoch,
@@ -1217,7 +1217,7 @@ contract Crucible is
     // TEE ATTESTATION VERIFICATION
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function verifyAttestation(bytes calldata attestation)
         external
         view
@@ -1230,44 +1230,44 @@ contract Crucible is
     // VIEW FUNCTIONS
     // =========================================================================
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getExchangeRate() external view returns (uint256) {
         uint256 totalShares = stAethelToken.getTotalShares();
         if (totalShares == 0) return 1e18;
         return (totalPooledAethel * 1e18) / totalShares;
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getTotalPooledAethel() external view returns (uint256) {
         return totalPooledAethel;
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getTotalShares() external view returns (uint256) {
         return stAethelToken.getTotalShares();
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getSharesForAethel(uint256 aethelAmount) external view returns (uint256) {
         return stAethelToken.getSharesByAethel(aethelAmount);
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getAethelForShares(uint256 shares) external view returns (uint256) {
         return stAethelToken.getAethelByShares(shares);
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getCurrentEpoch() external view returns (uint256) {
         return currentEpoch;
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function getActiveValidatorCount() external view returns (uint256) {
         return activeValidators.length;
     }
 
-    /// @inheritdoc ICrucible
+    /// @inheritdoc ICruzible
     function isWithdrawalClaimable(uint256 withdrawalId) external view returns (bool) {
         WithdrawalRequest storage request = withdrawalRequests[withdrawalId];
         return !request.claimed && block.timestamp >= request.completionTime && request.owner != address(0);
@@ -2090,7 +2090,7 @@ contract Crucible is
      *          bytes32(teeKey) || uint256(commission)
      *        )
      *        canonical_hash = SHA-256(
-     *          "CrucibleValidatorSet-v1" || be8(epoch) || be4(count) ||
+     *          "CruzibleValidatorSet-v1" || be8(epoch) || be4(count) ||
      *          inner_hash_0 || inner_hash_1 || ...
      *        )
      *
@@ -2111,7 +2111,7 @@ contract Crucible is
     ) internal pure returns (bytes32) {
         // Build outer preimage: domain tag + header
         bytes memory outerPreimage = abi.encodePacked(
-            "CrucibleValidatorSet-v1",
+            "CruzibleValidatorSet-v1",
             uint64(epoch),
             uint32(addrs.length)
         );

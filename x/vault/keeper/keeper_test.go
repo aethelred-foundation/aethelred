@@ -2443,7 +2443,7 @@ func setupBenchKeeper(b *testing.B) (*Keeper, sdk.Context) {
 // Cross-Language Conformance Tests (Track 8)
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// These tests read shared JSON test vectors from the Crucible dApp repository
+// These tests read shared JSON test vectors from the Cruzible dApp repository
 // and verify that the Go keeper produces identical hashes to the TypeScript
 // and Python SDKs.
 
@@ -2504,7 +2504,7 @@ func parseStakeUint64(s string) uint64 {
 }
 
 func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
-	vectorPath := "../../../dApps/crucible/test-vectors/validator-selection/default.json"
+	vectorPath := "../../../dApps/cruzible/test-vectors/validator-selection/default.json"
 	data, err := os.ReadFile(vectorPath)
 	if err != nil {
 		t.Skipf("test vector file not found at %s: %v", vectorPath, err)
@@ -2554,7 +2554,7 @@ func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
 }
 
 func TestConformance_stakerRegistryRoot_fromVectors(t *testing.T) {
-	vectorPath := "../../../dApps/crucible/test-vectors/reward/default.json"
+	vectorPath := "../../../dApps/cruzible/test-vectors/reward/default.json"
 	data, err := os.ReadFile(vectorPath)
 	if err != nil {
 		t.Skipf("test vector file not found at %s: %v", vectorPath, err)

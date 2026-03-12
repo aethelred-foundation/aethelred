@@ -1,4 +1,4 @@
-// Package keeper implements the Crucible Cosmos SDK module keeper.
+// Package keeper implements the Cruzible Cosmos SDK module keeper.
 //
 // The keeper manages state for the liquid staking vault including:
 //   - Staker records and share balances
@@ -69,7 +69,7 @@ var (
 	AttestationRelaysKey       = collections.NewPrefix(25) // platformId (string) → JSON AttestationRelay
 )
 
-// Keeper manages the Crucible module state.
+// Keeper manages the Cruzible module state.
 //
 // All state is backed by the KVStore via collections.
 // No in-memory maps or mutexes — Cosmos SDK guarantees single-threaded
@@ -126,7 +126,7 @@ type Keeper struct {
 	OperatorAuditLog    collections.Map[string, string]  // auto-increment index → JSON OperatorAction
 }
 
-// NewKeeper creates a new Crucible keeper with store-backed collections.
+// NewKeeper creates a new Cruzible keeper with store-backed collections.
 // State initialization happens via InitializeDefaults (called from InitGenesis).
 func NewKeeper(
 	cdc codec.Codec,
@@ -934,16 +934,16 @@ func (k *Keeper) Withdraw(ctx context.Context, address string, withdrawalID uint
 //	  bytes32(tee_key) || uint256(commission)
 //	)
 //	canonical_hash = SHA-256(
-//	  "CrucibleValidatorSet-v1" || be8(epoch) || be4(count) ||
+//	  "CruzibleValidatorSet-v1" || be8(epoch) || be4(count) ||
 //	  inner_hash_0 || inner_hash_1 || ...
 //	)
 //
 // Matching implementations:
 //   - Rust: server::compute_validator_set_hash()
-//   - Solidity: Crucible._computeValidatorSetHash()
+//   - Solidity: Cruzible._computeValidatorSetHash()
 func computeValidatorSetHash(epoch uint64, validators []types.ValidatorRecord) [32]byte {
 	h := sha256.New()
-	h.Write([]byte("CrucibleValidatorSet-v1"))
+	h.Write([]byte("CruzibleValidatorSet-v1"))
 
 	var epochBuf [8]byte
 	binary.BigEndian.PutUint64(epochBuf[:], epoch)
@@ -1049,7 +1049,7 @@ func addressToBytes32(addr string) [32]byte {
 // Schema (domain-separated SHA-256):
 //
 //	policy_hash = SHA-256(
-//	  "CrucibleSelectionPolicy-v1" ||
+//	  "CruzibleSelectionPolicy-v1" ||
 //	  float64_be(performance_weight) || float64_be(decentralization_weight) ||
 //	  float64_be(reputation_weight)  || float64_be(min_uptime_pct) ||
 //	  uint256(max_commission_bps)    || uint256(max_per_region) ||
@@ -1058,7 +1058,7 @@ func addressToBytes32(addr string) [32]byte {
 //
 // Matching implementations:
 //   - Rust: server::compute_selection_policy_hash()
-//   - Solidity: Crucible.selectionPolicyHash (stored, set by governance)
+//   - Solidity: Cruzible.selectionPolicyHash (stored, set by governance)
 func computeSelectionPolicyHash(
 	performanceWeight float64,
 	decentralizationWeight float64,
@@ -1072,7 +1072,7 @@ func computeSelectionPolicyHash(
 	h := sha256.New()
 
 	// Domain separator
-	h.Write([]byte("CrucibleSelectionPolicy-v1"))
+	h.Write([]byte("CruzibleSelectionPolicy-v1"))
 
 	// Float64 fields as IEEE-754 big-endian (8 bytes each)
 	var floatBuf [8]byte
@@ -1361,12 +1361,12 @@ func (k *Keeper) verifyAttestation(ctx context.Context, att types.TEEAttestation
 
 // computeAttestationDigest builds the SHA-256 digest that the TEE operator signs.
 //
-// digest = SHA-256("CrucibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
+// digest = SHA-256("CruzibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
 //
 //	nonce ‖ enclaveHash ‖ signerHash ‖ payloadHash)
 func computeAttestationDigest(att types.TEEAttestation) [32]byte {
 	h := sha256.New()
-	h.Write([]byte("CrucibleTEEAttestation"))
+	h.Write([]byte("CruzibleTEEAttestation"))
 	h.Write([]byte{att.Platform})
 
 	var tsBuf [8]byte

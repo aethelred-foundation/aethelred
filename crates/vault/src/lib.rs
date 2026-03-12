@@ -1,4 +1,4 @@
-//! # Crucible TEE Enclave Service
+//! # Cruzible TEE Enclave Service
 //!
 //! Stateless HTTP service that runs validator selection, MEV protection, and
 //! reward calculation inside a Trusted Execution Environment (TEE).
@@ -7,7 +7,7 @@
 //!
 //! ```text
 //! ┌──────────────────────────────────────────────────────────────────────┐
-//! │                       CRUCIBLE TEE SERVICE                         │
+//! │                       CRUZIBLE TEE SERVICE                         │
 //! ├──────────────────────────────────────────────────────────────────────┤
 //! │                                                                      │
 //! │  HTTP API (:8547)                                                   │

@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "forge-std/StdInvariant.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "../contracts/vault/Crucible.sol";
+import "../contracts/vault/Cruzible.sol";
 import "../contracts/vault/StAETHEL.sol";
 import "../contracts/vault/VaultTEEVerifier.sol";
 import "../contracts/vault/PlatformVerifiers.sol";
-import "../contracts/vault/ICrucible.sol";
+import "../contracts/vault/ICruzible.sol";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Mock ERC20 (namespaced to avoid collision with Crucible.t.sol)
+// Mock ERC20 (namespaced to avoid collision with Cruzible.t.sol)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 contract MockAETHELInvariant {
@@ -54,8 +54,8 @@ contract MockAETHELInvariant {
 // Handler - called by Foundry's invariant fuzzer with random sequences
 // ═══════════════════════════════════════════════════════════════════════════════
 
-contract CrucibleHandler is Test {
-    Crucible public vault;
+contract CruzibleHandler is Test {
+    Cruzible public vault;
     StAETHEL public stAethel;
     MockAETHELInvariant public aethel;
 
@@ -65,8 +65,8 @@ contract CrucibleHandler is Test {
 
     // TEE key pair
     uint256 internal operatorPrivKey = 0xA11CE;
-    bytes32 internal constant ENCLAVE_HASH = keccak256("crucible-enclave-v1");
-    bytes32 internal constant SIGNER_HASH = keccak256("crucible-signer-v1");
+    bytes32 internal constant ENCLAVE_HASH = keccak256("cruzible-enclave-v1");
+    bytes32 internal constant SIGNER_HASH = keccak256("cruzible-signer-v1");
     uint256 internal constant P256_PRIV_KEY = 1;
     bytes32 internal constant TEST_POLICY_HASH = keccak256("test-selection-policy-v1");
     bytes32 internal constant TEST_UNIVERSE_HASH = keccak256("test-eligible-universe-v1");
@@ -88,7 +88,7 @@ contract CrucibleHandler is Test {
     uint256 public calls_distributeRewards;
 
     constructor(
-        Crucible _vault,
+        Cruzible _vault,
         StAETHEL _stAethel,
         MockAETHELInvariant _aethel,
         address _admin,
@@ -197,7 +197,7 @@ contract CrucibleHandler is Test {
         aethel.approve(address(vault), rewardAmount);
 
         // Read committed hashes
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(epoch);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(epoch);
         bytes32 vsHash = snap.validatorSetHash;
         bytes32 regRoot = snap.stakerRegistryRoot;
 
@@ -239,7 +239,7 @@ contract CrucibleHandler is Test {
         ghost_previousExchangeRate = vault.getExchangeRate();
     }
 
-    // ── Attestation helper (mirrors Crucible.t.sol) ─────────────────────────
+    // ── Attestation helper (mirrors Cruzible.t.sol) ─────────────────────────
 
     function _createAttestation(bytes memory payload) internal view returns (bytes memory) {
         uint8 platformId = 0; // SGX
@@ -248,7 +248,7 @@ contract CrucibleHandler is Test {
 
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             platformId,
             uint64(timestamp),
             nonce,
@@ -306,8 +306,8 @@ contract CrucibleHandler is Test {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * @title CrucibleInvariantTest
- * @notice Foundry invariant + fuzz tests for the Crucible liquid staking protocol.
+ * @title CruzibleInvariantTest
+ * @notice Foundry invariant + fuzz tests for the Cruzible liquid staking protocol.
  *
  * Invariant tests use a Handler contract that the fuzzer calls with random
  * sequences of (stake, unstake, withdraw, distributeRewards). After each call
@@ -315,14 +315,14 @@ contract CrucibleHandler is Test {
  *
  * Fuzz tests verify per-operation properties under random inputs.
  */
-contract CrucibleInvariantTest is StdInvariant, Test {
+contract CruzibleInvariantTest is StdInvariant, Test {
     // ── Contracts ───────────────────────────────────────────────────────────
-    Crucible public vault;
+    Cruzible public vault;
     StAETHEL public stAethel;
     MockAETHELInvariant public aethel;
     VaultTEEVerifier public verifier;
     SgxVerifier public sgxVerifier;
-    CrucibleHandler public handler;
+    CruzibleHandler public handler;
 
     // ── Addresses ───────────────────────────────────────────────────────────
     address public admin = address(0xAD);
@@ -337,8 +337,8 @@ contract CrucibleInvariantTest is StdInvariant, Test {
     uint256 internal constant P256_PRIV_KEY = 1;
     uint256 internal constant P256_PUB_X = 0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296;
     uint256 internal constant P256_PUB_Y = 0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5;
-    bytes32 internal constant ENCLAVE_HASH = keccak256("crucible-enclave-v1");
-    bytes32 internal constant SIGNER_HASH = keccak256("crucible-signer-v1");
+    bytes32 internal constant ENCLAVE_HASH = keccak256("cruzible-enclave-v1");
+    bytes32 internal constant SIGNER_HASH = keccak256("cruzible-signer-v1");
     bytes32 internal constant TEST_POLICY_HASH = keccak256("test-selection-policy-v1");
     bytes32 internal constant TEST_UNIVERSE_HASH = keccak256("test-eligible-universe-v1");
     bytes32 internal constant TEST_SNAPSHOT_HASH = keccak256("test-stake-snapshot-v1");
@@ -365,8 +365,8 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         // Deploy StAETHEL impl
         StAETHEL stAethelImpl = new StAETHEL();
 
-        // Deploy Crucible impl
-        Crucible vaultImpl = new Crucible();
+        // Deploy Cruzible impl
+        Cruzible vaultImpl = new Cruzible();
 
         // Deploy stAETHEL proxy with placeholder vault
         bytes memory stAethelInit = abi.encodeCall(StAETHEL.initialize, (admin, address(0xDEAD)));
@@ -375,11 +375,11 @@ contract CrucibleInvariantTest is StdInvariant, Test {
 
         // Deploy vault proxy
         bytes memory vaultInit = abi.encodeCall(
-            Crucible.initialize,
+            Cruzible.initialize,
             (admin, address(aethel), address(stAethel), address(verifier), treasury)
         );
         ERC1967Proxy vaultProxy = new ERC1967Proxy(address(vaultImpl), vaultInit);
-        vault = Crucible(address(vaultProxy));
+        vault = Cruzible(address(vaultProxy));
 
         // Grant stAETHEL VAULT_ROLE to the actual vault
         bytes32 vaultRole = stAethel.VAULT_ROLE();
@@ -396,7 +396,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         bytes32 keyAttestMsg = sha256(abi.encodePacked(P256_PUB_X, P256_PUB_Y, uint8(0)));
         (bytes32 vendorR, bytes32 vendorS) = vm.signP256(VENDOR_ROOT_PRIV, keyAttestMsg);
         verifier.registerEnclave(
-            ENCLAVE_HASH, SIGNER_HASH, bytes32(0), 0, "Crucible SGX Enclave v1",
+            ENCLAVE_HASH, SIGNER_HASH, bytes32(0), 0, "Cruzible SGX Enclave v1",
             P256_PUB_X, P256_PUB_Y, uint256(vendorR), uint256(vendorS)
         );
         bytes32 enclaveId = keccak256(abi.encodePacked(ENCLAVE_HASH, uint8(0)));
@@ -430,7 +430,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         }
 
         // Deploy handler
-        handler = new CrucibleHandler(vault, stAethel, aethel, admin, oracle, actors);
+        handler = new CruzibleHandler(vault, stAethel, aethel, admin, oracle, actors);
 
         // Tell Foundry to target the handler
         targetContract(address(handler));
@@ -494,13 +494,13 @@ contract CrucibleInvariantTest is StdInvariant, Test {
 
     /// @notice Epoch 1's snapshot hash must remain immutable.
     function invariant_stakeSnapshotImmutability() public view {
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.stakeSnapshotHash, TEST_SNAPSHOT_HASH, "Epoch 1 snapshot hash was mutated");
     }
 
     /// @notice Epoch 1's universe hash must remain immutable.
     function invariant_universeHashImmutability() public view {
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.eligibleUniverseHash, TEST_UNIVERSE_HASH, "Epoch 1 universe hash was mutated");
     }
 
@@ -513,7 +513,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         amount = bound(amount, 32 ether, 1_000_000 ether);
 
         // Deploy fresh vault for isolation
-        (Crucible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
+        (Cruzible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
         address user = address(0xFADE);
         freshToken.mint(user, amount);
         vm.prank(user);
@@ -542,7 +542,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
 
     /// @notice Multiple stakers at the same rate get proportional shares.
     function testFuzz_multipleStakersProportionalShares(uint256[4] memory amounts) public {
-        (Crucible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
+        (Cruzible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
 
         uint256 totalDeposited = 0;
         uint256 totalSharesIssued = 0;
@@ -570,7 +570,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         stakeAmount = bound(stakeAmount, 32 ether, 1_000_000 ether);
         extraShares = bound(extraShares, 1, 1_000_000 ether);
 
-        (Crucible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
+        (Cruzible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
         address user = address(0xBEEF);
         freshToken.mint(user, stakeAmount);
         vm.prank(user);
@@ -591,7 +591,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         // Warp between 0 and 13 days (less than unbonding period)
         timeWarp = bound(timeWarp, 0, 13 days);
 
-        (Crucible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
+        (Cruzible freshVault, StAETHEL freshSt, MockAETHELInvariant freshToken) = _deployFreshVault();
         address user = address(0xCAFE);
         freshToken.mint(user, stakeAmount);
         vm.prank(user);
@@ -613,10 +613,10 @@ contract CrucibleInvariantTest is StdInvariant, Test {
 
     /// @notice Zero-amount stake always reverts.
     function testFuzz_stakeRevertsOnZero(uint256 dummy) public {
-        (Crucible freshVault,,) = _deployFreshVault();
+        (Cruzible freshVault,,) = _deployFreshVault();
         address user = address(0xDEAF);
         vm.prank(user);
-        vm.expectRevert(Crucible.ZeroAmount.selector);
+        vm.expectRevert(Cruzible.ZeroAmount.selector);
         freshVault.stake(0);
     }
 
@@ -624,7 +624,7 @@ contract CrucibleInvariantTest is StdInvariant, Test {
     // HELPERS - Fresh vault deployment for isolated fuzz tests
     // ═════════════════════════════════════════════════════════════════════════
 
-    function _deployFreshVault() internal returns (Crucible, StAETHEL, MockAETHELInvariant) {
+    function _deployFreshVault() internal returns (Cruzible, StAETHEL, MockAETHELInvariant) {
         MockAETHELInvariant token = new MockAETHELInvariant();
         address adm = address(0xAD);
 
@@ -641,13 +641,13 @@ contract CrucibleInvariantTest is StdInvariant, Test {
         StAETHEL st = StAETHEL(address(stProxy));
 
         // Deploy vault
-        Crucible cImpl = new Crucible();
+        Cruzible cImpl = new Cruzible();
         bytes memory cInit = abi.encodeCall(
-            Crucible.initialize,
+            Cruzible.initialize,
             (adm, address(token), address(st), address(ver), treasury)
         );
         ERC1967Proxy cProxy = new ERC1967Proxy(address(cImpl), cInit);
-        Crucible c = Crucible(address(cProxy));
+        Cruzible c = Cruzible(address(cProxy));
 
         // Grant VAULT_ROLE
         bytes32 vRole = st.VAULT_ROLE();

@@ -1,4 +1,4 @@
-//! Crucible TEE HTTP Service
+//! Cruzible TEE HTTP Service
 //!
 //! Exposes the validator selection, MEV protection, and reward calculation
 //! algorithms as a stateless HTTP API. Designed to run inside a TEE enclave.
@@ -220,7 +220,7 @@ pub struct VaultServiceConfig {
     ///
     /// When `true`, the server will start without `auth_token` even on
     /// non-loopback interfaces or real TEE platforms. **NOT for production.**
-    /// Set via `CRUCIBLE_INSECURE_NO_AUTH=true`.
+    /// Set via `CRUZIBLE_INSECURE_NO_AUTH=true`.
     pub insecure_no_auth: bool,
     /// Allow `vendor_attestation_key_hex` (local vendor signing) on real TEE
     /// platforms.
@@ -239,7 +239,7 @@ pub struct VaultServiceConfig {
     ///    Production images must never enable `mock-tee`.
     /// 2. `listen_addr` resolves to a loopback interface (127.0.0.1 / ::1 /
     ///    localhost). Non-loopback bindings are unconditionally rejected.
-    /// 3. `CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY=true` (this flag, runtime gate).
+    /// 3. `CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true` (this flag, runtime gate).
     ///
     /// **NOT for production.**
     pub insecure_local_vendor_key: bool,
@@ -444,7 +444,7 @@ fn validate_production_config(config: &VaultServiceConfig) {
         warn!(
             listen_addr = %config.listen_addr,
             "Rate limiting is DISABLED on a non-loopback interface. \
-             Set CRUCIBLE_RATE_LIMIT_RPS to protect against API abuse."
+             Set CRUZIBLE_RATE_LIMIT_RPS to protect against API abuse."
         );
     }
 
@@ -452,7 +452,7 @@ fn validate_production_config(config: &VaultServiceConfig) {
     if config.operator_key_hex.is_none() {
         warn!(
             "No operator_key_hex configured — a random signing key will be generated. \
-             Attestations will not survive restarts. Set CRUCIBLE_OPERATOR_KEY_HEX \
+             Attestations will not survive restarts. Set CRUZIBLE_OPERATOR_KEY_HEX \
              for persistent enclave identity."
         );
     }
@@ -513,7 +513,7 @@ fn validate_production_config(config: &VaultServiceConfig) {
         max_commitments = config.max_commitments,
         attestation_relay = config.attestation_relay_url.is_some(),
         is_loopback = is_loopback,
-        "Crucible TEE service configuration validated"
+        "Cruzible TEE service configuration validated"
     );
 }
 
@@ -532,7 +532,7 @@ fn validate_production_config(config: &VaultServiceConfig) {
 /// | Any      | **no**   | None         | any                | **hard error** |
 /// | Any      | any      | set          | any                | starts |
 ///
-/// `CRUCIBLE_INSECURE_NO_AUTH` only relaxes the platform check and **only**
+/// `CRUZIBLE_INSECURE_NO_AUTH` only relaxes the platform check and **only**
 /// on loopback, so a misconfigured production deployment on a public
 /// interface can never silently start without authentication.
 ///
@@ -563,10 +563,10 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         // Non-loopback is NEVER allowed without auth — no override exists.
         if !is_loopback {
             return Err(format!(
-                "CRUCIBLE_AUTH_TOKEN is required when listen_addr is not loopback.\n  \
+                "CRUZIBLE_AUTH_TOKEN is required when listen_addr is not loopback.\n  \
                  Current: listen_addr={}\n  \
                  Bind to 127.0.0.1 / ::1 / localhost for development, \
-                 or set CRUCIBLE_AUTH_TOKEN for production.",
+                 or set CRUZIBLE_AUTH_TOKEN for production.",
                 config.listen_addr
             ).into());
         }
@@ -575,9 +575,9 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         // Loopback + Real platform requires the explicit insecure flag.
         if !is_mock && !config.insecure_no_auth {
             return Err(format!(
-                "CRUCIBLE_AUTH_TOKEN is required for real TEE platform '{}'.\n  \
-                 Set CRUCIBLE_AUTH_TOKEN to a bearer token, or for local testing \
-                 on loopback set CRUCIBLE_INSECURE_NO_AUTH=true (NOT for production).",
+                "CRUZIBLE_AUTH_TOKEN is required for real TEE platform '{}'.\n  \
+                 Set CRUZIBLE_AUTH_TOKEN to a bearer token, or for local testing \
+                 on loopback set CRUZIBLE_INSECURE_NO_AUTH=true (NOT for production).",
                 config.tee_platform
             ).into());
         }
@@ -586,13 +586,13 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
             warn!(
                 platform = %config.tee_platform,
                 addr = %config.listen_addr,
-                "CRUCIBLE_INSECURE_NO_AUTH=true — running real platform WITHOUT \
+                "CRUZIBLE_INSECURE_NO_AUTH=true — running real platform WITHOUT \
                  authentication on loopback. NOT safe for production."
             );
         } else {
             warn!(
                 "Starting WITHOUT authentication — mock platform on loopback only. \
-                 Set CRUCIBLE_AUTH_TOKEN for any non-development deployment."
+                 Set CRUZIBLE_AUTH_TOKEN for any non-development deployment."
             );
         }
     }
@@ -637,7 +637,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         None => {
             return Err(format!(
                 "real TEE platform '{}' requires enclave_hash_hex (MRENCLAVE / enclave measurement). \
-                 Set CRUCIBLE_ENCLAVE_HASH_HEX to the 64-char hex hash of the enclave binary.",
+                 Set CRUZIBLE_ENCLAVE_HASH_HEX to the 64-char hex hash of the enclave binary.",
                 config.tee_platform
             ).into());
         }
@@ -657,7 +657,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         None => {
             return Err(format!(
                 "real TEE platform '{}' requires signer_hash_hex (MRSIGNER / signer measurement). \
-                 Set CRUCIBLE_SIGNER_HASH_HEX to the 64-char hex hash of the enclave signer.",
+                 Set CRUZIBLE_SIGNER_HASH_HEX to the 64-char hex hash of the enclave signer.",
                 config.tee_platform
             ).into());
         }
@@ -675,7 +675,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         None if config.tee_platform == TEEPlatform::AWSNitro => {
             return Err(format!(
                 "Nitro platform requires application_hash_hex (PCR2 / application measurement). \
-                 Set CRUCIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application."
+                 Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application."
             ).into());
         }
         None => None,
@@ -771,7 +771,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                     "vendor_attestation_key_hex is not allowed for real TEE platform '{}'.\n  \
                      LocalVendorAttester ignores hardware evidence, defeating trust separation.\n  \
                      Configure attestation_relay_url for production, or for local dev set:\n  \
-                     • CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY=true\n  \
+                     • CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true\n  \
                      • Bind to loopback (127.0.0.1 / ::1 / localhost)",
                     config.tee_platform
                 ).into());
@@ -779,7 +779,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
 
             if !is_loopback {
                 return Err(format!(
-                    "CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY requires loopback binding.\n  \
+                    "CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY requires loopback binding.\n  \
                      Current: listen_addr={}\n  \
                      LocalVendorAttester ignores hardware evidence — non-loopback binding \
                      would allow network clients to receive unverified attestations.\n  \
@@ -808,11 +808,11 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         // Neither relay URL nor local vendor key configured for a real platform.
         return Err(format!(
             "real TEE platform '{}' requires vendor attestation.\n  \
-             Set CRUCIBLE_ATTESTATION_RELAY_URL to a remote attestation relay (production).\n  \
+             Set CRUZIBLE_ATTESTATION_RELAY_URL to a remote attestation relay (production).\n  \
              For development with real hardware but no relay, rebuild with --features mock-tee \
              and set:\n  \
-             • CRUCIBLE_VENDOR_KEY_HEX — local P-256 vendor key (64 hex chars)\n  \
-             • CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY=true — acknowledge insecure mode\n  \
+             • CRUZIBLE_VENDOR_KEY_HEX — local P-256 vendor key (64 hex chars)\n  \
+             • CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true — acknowledge insecure mode\n  \
              • Bind to loopback (127.0.0.1 / ::1 / localhost)",
             config.tee_platform
         ).into());
@@ -855,7 +855,7 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         platform = %config.tee_platform,
         auth_enabled = config.auth_token.is_some(),
         rate_limit_rps = config.rate_limit_rps,
-        "Crucible TEE service listening"
+        "Cruzible TEE service listening"
     );
 
     axum::serve(listener, app).await?;
@@ -884,18 +884,18 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
 /// )
 ///
 /// canonical_hash = SHA-256(
-///   "CrucibleValidatorSet-v1" || be8(epoch) || be4(count) ||
+///   "CruzibleValidatorSet-v1" || be8(epoch) || be4(count) ||
 ///   inner_hash_0 || inner_hash_1 || ...
 /// )
 /// ```
 ///
 /// ## Matching implementations
 ///
-/// - **Solidity**: `Crucible._computeValidatorSetHash()`
+/// - **Solidity**: `Cruzible._computeValidatorSetHash()`
 /// - **Go**: `keeper.computeValidatorSetHash()`
 pub fn compute_validator_set_hash(epoch: u64, validators: &[ScoredValidator]) -> [u8; 32] {
     let mut outer = Sha256::new();
-    outer.update(b"CrucibleValidatorSet-v1");
+    outer.update(b"CruzibleValidatorSet-v1");
     outer.update(epoch.to_be_bytes());
     outer.update((validators.len() as u32).to_be_bytes());
 
@@ -985,7 +985,7 @@ fn compute_validator_inner_hash(v: &ScoredValidator) -> [u8; 32] {
 ///
 /// ```text
 /// policy_hash = SHA-256(
-///   "CrucibleSelectionPolicy-v1" ||
+///   "CruzibleSelectionPolicy-v1" ||
 ///   float64_be(performance_weight) || float64_be(decentralization_weight) ||
 ///   float64_be(reputation_weight)  || float64_be(min_uptime_pct) ||
 ///   uint256(max_commission_bps)    || uint256(max_per_region) ||
@@ -999,13 +999,13 @@ fn compute_validator_inner_hash(v: &ScoredValidator) -> [u8; 32] {
 ///
 /// ## Matching implementations
 ///
-/// - **Solidity**: `Crucible.selectionPolicyHash` (stored, set by governance)
+/// - **Solidity**: `Cruzible.selectionPolicyHash` (stored, set by governance)
 /// - **Go**: `keeper.computeSelectionPolicyHash()`
 pub fn compute_selection_policy_hash(config: &SelectionConfig) -> [u8; 32] {
     let mut h = Sha256::new();
 
     // Domain separator
-    h.update(b"CrucibleSelectionPolicy-v1");
+    h.update(b"CruzibleSelectionPolicy-v1");
 
     // performance_weight as float64 big-endian (8 bytes)
     h.update(config.performance_weight.to_be_bytes());
@@ -1100,7 +1100,7 @@ pub fn compute_eligible_universe_hash(addresses: &[String]) -> [u8; 32] {
 /// )
 ///
 /// stake_snapshot_hash = SHA-256(
-///   "CrucibleStakeSnapshot-v1" || be8(epoch) || be4(count) ||
+///   "CruzibleStakeSnapshot-v1" || be8(epoch) || be4(count) ||
 ///   staker_inner_0 || staker_inner_1 || ...
 /// )
 /// ```
@@ -1116,7 +1116,7 @@ pub fn compute_stake_snapshot_hash(epoch: u64, stakers: &[StakerStake]) -> [u8; 
     sorted.sort_by(|a, b| a.address.cmp(&b.address));
 
     let mut outer = Sha256::new();
-    outer.update(b"CrucibleStakeSnapshot-v1");
+    outer.update(b"CruzibleStakeSnapshot-v1");
     outer.update(epoch.to_be_bytes());
     outer.update((sorted.len() as u32).to_be_bytes());
 
@@ -1367,7 +1367,7 @@ pub fn validate_unique_staker_addresses(stakers: &[StakerStake]) -> Result<(), S
 
 /// Compute the canonical reward-summary payload for TEE attestation.
 ///
-/// The result is the exact bytes that `Crucible.distributeRewards()` checks:
+/// The result is the exact bytes that `Cruzible.distributeRewards()` checks:
 ///
 /// ```solidity
 /// bytes memory expectedPayload = abi.encode(
@@ -1391,7 +1391,7 @@ pub fn validate_unique_staker_addresses(stakers: &[StakerStake]) -> Result<(), S
 ///
 /// ## Matching implementations
 ///
-/// - **Solidity**: `Crucible.distributeRewards()` line
+/// - **Solidity**: `Cruzible.distributeRewards()` line
 ///   `abi.encode(epoch, totalRewards, merkleRoot, protocolFee, snapshotHash, validatorSetHash, registryRoot, delegationRoot)`
 /// - **Go**: keeper reward relay (if applicable)
 pub fn compute_canonical_reward_payload(
@@ -1438,7 +1438,7 @@ pub fn compute_canonical_reward_payload(
 /// The layout matches `abi.encode(epoch, delegationRoot, stakerRegistryRoot)`
 /// in Solidity — three ABI-encoded uint256/bytes32 words (3 × 32 = 96 bytes).
 ///
-/// This payload is verified by `Crucible.commitDelegationSnapshot()` to prove
+/// This payload is verified by `Cruzible.commitDelegationSnapshot()` to prove
 /// the TEE independently computed the delegation root from native-chain state.
 pub fn compute_canonical_delegation_payload(
     epoch: u64,
@@ -1480,7 +1480,7 @@ async fn health_handler(State(state): State<Arc<AppState>>) -> Json<HealthRespon
 
     let m = &state.metrics;
     Json(HealthResponse {
-        service: "crucible-tee".to_string(),
+        service: "cruzible-tee".to_string(),
         status: "ok".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
         platform: state.config.tee_platform.to_string(),
@@ -1542,36 +1542,36 @@ async fn metrics_handler(State(state): State<Arc<AppState>>) -> impl IntoRespons
     let last_attest = m.last_attestation_at.load(Ordering::Relaxed);
 
     let body = format!(
-        "# HELP crucible_uptime_seconds Time since service start in seconds.\n\
-         # TYPE crucible_uptime_seconds gauge\n\
-         crucible_uptime_seconds {uptime}\n\
-         # HELP crucible_current_epoch Current epoch number.\n\
-         # TYPE crucible_current_epoch gauge\n\
-         crucible_current_epoch {epoch}\n\
-         # HELP crucible_attestations_total Total attestations generated.\n\
-         # TYPE crucible_attestations_total counter\n\
-         crucible_attestations_total {total}\n\
-         # HELP crucible_attestations_by_type Attestations by operation type.\n\
-         # TYPE crucible_attestations_by_type counter\n\
-         crucible_attestations_by_type{{type=\"validator_selection\"}} {vs}\n\
-         crucible_attestations_by_type{{type=\"reward_calculation\"}} {rc}\n\
-         crucible_attestations_by_type{{type=\"mev_ordering\"}} {mev}\n\
-         crucible_attestations_by_type{{type=\"delegation_attestation\"}} {da}\n\
-         # HELP crucible_errors_total Total handler errors (4xx + 5xx).\n\
-         # TYPE crucible_errors_total counter\n\
-         crucible_errors_total {errors}\n\
-         # HELP crucible_auth_failures_total Total authentication failures.\n\
-         # TYPE crucible_auth_failures_total counter\n\
-         crucible_auth_failures_total {auth_fail}\n\
-         # HELP crucible_last_attestation_timestamp Unix timestamp of last attestation.\n\
-         # TYPE crucible_last_attestation_timestamp gauge\n\
-         crucible_last_attestation_timestamp {last_attest}\n\
-         # HELP crucible_rate_limit_rps Configured rate limit (0=unlimited).\n\
-         # TYPE crucible_rate_limit_rps gauge\n\
-         crucible_rate_limit_rps {rps}\n\
-         # HELP crucible_auth_enabled Whether bearer auth is enabled (1=yes, 0=no).\n\
-         # TYPE crucible_auth_enabled gauge\n\
-         crucible_auth_enabled {auth_en}\n",
+        "# HELP cruzible_uptime_seconds Time since service start in seconds.\n\
+         # TYPE cruzible_uptime_seconds gauge\n\
+         cruzible_uptime_seconds {uptime}\n\
+         # HELP cruzible_current_epoch Current epoch number.\n\
+         # TYPE cruzible_current_epoch gauge\n\
+         cruzible_current_epoch {epoch}\n\
+         # HELP cruzible_attestations_total Total attestations generated.\n\
+         # TYPE cruzible_attestations_total counter\n\
+         cruzible_attestations_total {total}\n\
+         # HELP cruzible_attestations_by_type Attestations by operation type.\n\
+         # TYPE cruzible_attestations_by_type counter\n\
+         cruzible_attestations_by_type{{type=\"validator_selection\"}} {vs}\n\
+         cruzible_attestations_by_type{{type=\"reward_calculation\"}} {rc}\n\
+         cruzible_attestations_by_type{{type=\"mev_ordering\"}} {mev}\n\
+         cruzible_attestations_by_type{{type=\"delegation_attestation\"}} {da}\n\
+         # HELP cruzible_errors_total Total handler errors (4xx + 5xx).\n\
+         # TYPE cruzible_errors_total counter\n\
+         cruzible_errors_total {errors}\n\
+         # HELP cruzible_auth_failures_total Total authentication failures.\n\
+         # TYPE cruzible_auth_failures_total counter\n\
+         cruzible_auth_failures_total {auth_fail}\n\
+         # HELP cruzible_last_attestation_timestamp Unix timestamp of last attestation.\n\
+         # TYPE cruzible_last_attestation_timestamp gauge\n\
+         cruzible_last_attestation_timestamp {last_attest}\n\
+         # HELP cruzible_rate_limit_rps Configured rate limit (0=unlimited).\n\
+         # TYPE cruzible_rate_limit_rps gauge\n\
+         cruzible_rate_limit_rps {rps}\n\
+         # HELP cruzible_auth_enabled Whether bearer auth is enabled (1=yes, 0=no).\n\
+         # TYPE cruzible_auth_enabled gauge\n\
+         cruzible_auth_enabled {auth_en}\n",
         uptime = uptime,
         epoch = epoch,
         total = total,
@@ -1695,7 +1695,7 @@ async fn select_validators_handler(
     // Compute canonical validator set hash for the attestation payload.
     //
     // This 32-byte hash is the single source of truth verified identically by:
-    //   - Solidity:  Crucible._computeValidatorSetHash()
+    //   - Solidity:  Cruzible._computeValidatorSetHash()
     //   - Go native: keeper.computeValidatorSetHash()
     //
     // The canonical encoding uses domain-separated SHA-256 with uint256-padded
@@ -1895,7 +1895,7 @@ async fn calculate_rewards_handler(
 
     // Compute the XOR staker-registry root from the supplied staker set.
     // This matches StAETHEL.stakerRegistryRoot on-chain and is verified
-    // by Crucible.distributeRewards() to prove the TEE computed rewards
+    // by Cruzible.distributeRewards() to prove the TEE computed rewards
     // from the actual on-chain staker set.
     let registry_root = compute_staker_registry_root(&request.staker_stakes);
 
@@ -1911,7 +1911,7 @@ async fn calculate_rewards_handler(
     // The attested bytes are abi.encode(epoch, totalRewards, merkleRoot,
     // protocolFee, stakeSnapshotHash, validatorSetHash, registryRoot,
     // delegationRoot) — 256 bytes — the format that
-    // Crucible.distributeRewards() verifies on-chain.  The snapshot hash
+    // Cruzible.distributeRewards() verifies on-chain.  The snapshot hash
     // binds the attestation to the specific stake state, the validator set
     // hash binds it to the specific validator scores the TEE used for
     // reward distribution, the registry root proves the per-staker share
@@ -2085,7 +2085,7 @@ async fn verify_commitment_handler(
 /// accumulator) from the supplied staker set and produces a 96-byte
 /// attestation over `abi.encode(epoch, delegationRoot, stakerRegistryRoot)`.
 ///
-/// The keeper relays this attestation to `Crucible.commitDelegationSnapshot()`
+/// The keeper relays this attestation to `Cruzible.commitDelegationSnapshot()`
 /// on-chain, which verifies the TEE signature and payload before accepting
 /// the delegation commitment.  This closes the single-keeper trust gap:
 /// the keeper cannot forge the delegation root because the TEE independently
@@ -2231,7 +2231,7 @@ mod tests {
     /// Test vector:
     ///   epoch            = 1
     ///   totalRewards     = 100_000_000_000_000_000_000  (100e18)
-    ///   merkleRoot       = keccak256("rewards-merkle-root") (same as Crucible.t.sol)
+    ///   merkleRoot       = keccak256("rewards-merkle-root") (same as Cruzible.t.sol)
     ///   protocolFee      = 5_000_000_000_000_000_000    (5e18)
     ///   snapshotHash     = [0xCC; 32]  (test placeholder)
     ///   validatorSetHash = [0xDD; 32]  (test placeholder)
@@ -2243,7 +2243,7 @@ mod tests {
         let snapshot_hash: [u8; 32] = [0xCC; 32];
         let vs_hash: [u8; 32] = [0xDD; 32];
 
-        // merkleRoot = keccak256("rewards-merkle-root") matches Crucible.t.sol test
+        // merkleRoot = keccak256("rewards-merkle-root") matches Cruzible.t.sol test
         let merkle_root: [u8; 32] = {
             use sha3::{Digest, Keccak256};
             let mut hasher = Keccak256::new();
@@ -2386,7 +2386,7 @@ mod tests {
     /// the raw bytes must be identical.
     #[test]
     fn test_canonical_reward_payload_matches_abi_encode() {
-        // Reproduce the exact test from Crucible.t.sol test_distributeRewards:
+        // Reproduce the exact test from Cruzible.t.sol test_distributeRewards:
         //   epoch = 1, totalRewards = 100 ether, protocolFee = 5 ether
         //   merkleRoot = keccak256("rewards-merkle-root")
         //   snapshotHash = keccak256("test-stake-snapshot-v1")
@@ -2649,7 +2649,7 @@ mod tests {
 
     #[test]
     fn test_selection_policy_hash_domain_separation() {
-        // The hash uses "CrucibleSelectionPolicy-v1" prefix.
+        // The hash uses "CruzibleSelectionPolicy-v1" prefix.
         // Verify that the same field values produce a different hash
         // than a raw SHA-256 of the field bytes (no domain separator).
         let config = SelectionConfig::default();
@@ -2980,7 +2980,7 @@ mod tests {
 
     #[test]
     fn test_stake_snapshot_hash_domain_separation() {
-        // Hash must use domain prefix "CrucibleStakeSnapshot-v1"
+        // Hash must use domain prefix "CruzibleStakeSnapshot-v1"
         let stakers = vec![StakerStake {
             address: "0xAlice".to_string(),
             shares: 1000,

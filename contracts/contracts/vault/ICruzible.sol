@@ -2,19 +2,19 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title ICrucible
+ * @title ICruzible
  * @author Aethelred Team
- * @notice Interface for the Crucible liquid staking protocol with TEE-verified
+ * @notice Interface for the Cruzible liquid staking protocol with TEE-verified
  *         validator selection, MEV protection, and cryptographic reward verification.
  *
- * @dev Crucible is the flagship staking primitive for the Aethelred L1.
+ * @dev Cruzible is the flagship staking primitive for the Aethelred L1.
  *      Users stake AETHEL and receive stAETHEL (a rebasing liquid staking token).
  *      Validator selection, MEV ordering, and reward distribution all execute inside
  *      TEE enclaves and are verified on-chain via attestation proofs.
  *
  * Architecture:
  * ┌────────────────────────────────────────────────────────────────────────────┐
- * │                         CRUCIBLE LIFECYCLE                              │
+ * │                         CRUZIBLE LIFECYCLE                              │
  * ├────────────────────────────────────────────────────────────────────────────┤
  * │                                                                            │
  * │   stake(amount) ──► mint stAETHEL ──► TEE Validator Selection ──►         │
@@ -27,7 +27,7 @@ pragma solidity ^0.8.20;
  *
  * @custom:security-contact security@aethelred.io
  */
-interface ICrucible {
+interface ICruzible {
     // =========================================================================
     // EVENTS
     // =========================================================================

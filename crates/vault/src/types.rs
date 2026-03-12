@@ -1,4 +1,4 @@
-//! Core types for the Crucible TEE service.
+//! Core types for the Cruzible TEE service.
 
 use serde::{Deserialize, Serialize};
 
@@ -133,7 +133,7 @@ pub struct RewardAllocation {
 ///
 /// Note: `protocol_fee_bps` is intentionally absent. The protocol fee is
 /// derived inside the TEE from the enclave-internal constant
-/// `PROTOCOL_FEE_BPS` (matching Crucible.sol) so that a caller cannot
+/// `PROTOCOL_FEE_BPS` (matching Cruzible.sol) so that a caller cannot
 /// request a lower fee while still obtaining a valid attestation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CalculateRewardsRequest {
@@ -207,7 +207,7 @@ pub struct MerkleProofEntry {
 ///
 /// The TEE independently recomputes the delegation registry root from the
 /// supplied staker set and produces a 96-byte attestation that
-/// `Crucible.commitDelegationSnapshot()` verifies on-chain.
+/// `Cruzible.commitDelegationSnapshot()` verifies on-chain.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AttestDelegationRequest {
     pub epoch: u64,

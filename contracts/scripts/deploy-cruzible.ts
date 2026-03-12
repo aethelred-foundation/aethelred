@@ -1,13 +1,13 @@
 /**
- * Crucible Deployment Script
+ * Cruzible Deployment Script
  *
- * Deploys the complete Crucible liquid staking infrastructure:
+ * Deploys the complete Cruzible liquid staking infrastructure:
  *   1. VaultTEEVerifier — TEE attestation verification
  *   2. StAETHEL         — Liquid staking token
- *   3. Crucible       — Core staking vault
+ *   3. Cruzible       — Core staking vault
  *
  * Usage:
- *   npx hardhat run scripts/deploy-crucible.ts --network <network>
+ *   npx hardhat run scripts/deploy-cruzible.ts --network <network>
  *
  * Environment Variables:
  *   DEPLOYER_PRIVATE_KEY  — Deployer wallet private key
@@ -23,8 +23,8 @@ interface DeploymentAddresses {
   vaultTEEVerifierImpl: string;
   stAETHEL: string;
   stAETHELImpl: string;
-  crucible: string;
-  crucibleImpl: string;
+  cruzible: string;
+  cruzibleImpl: string;
   deployer: string;
   admin: string;
   treasury: string;
@@ -41,7 +41,7 @@ async function main() {
   const chainId = Number(network.chainId);
 
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║           CRUCIBLE DEPLOYMENT                       ║");
+  console.log("║           CRUZIBLE DEPLOYMENT                       ║");
   console.log("║           Liquid Staking with TEE Verification          ║");
   console.log("╠══════════════════════════════════════════════════════════╣");
   console.log(`║  Network:  ${network.name} (chain ID: ${chainId})`);
@@ -108,24 +108,24 @@ async function main() {
   console.log(`   ✅ StAETHEL Impl:  ${stAethelImplAddr}\n`);
 
   // ─────────────────────────────────────────────────────────────────────
-  // Step 3: Deploy Crucible
+  // Step 3: Deploy Cruzible
   // ─────────────────────────────────────────────────────────────────────
 
-  console.log("📦 Step 3/3: Deploying Crucible...");
-  const Crucible = await ethers.getContractFactory("Crucible");
+  console.log("📦 Step 3/3: Deploying Cruzible...");
+  const Cruzible = await ethers.getContractFactory("Cruzible");
   const vault = await upgrades.deployProxy(
-    Crucible,
+    Cruzible,
     [admin, aethelTokenAddr, stAethelAddr, verifierAddr, treasury],
     { kind: "uups" }
   );
   await vault.waitForDeployment();
   const vaultAddr = await vault.getAddress();
   const vaultImplAddr = await upgrades.erc1967.getImplementationAddress(vaultAddr);
-  console.log(`   ✅ Crucible Proxy: ${vaultAddr}`);
-  console.log(`   ✅ Crucible Impl:  ${vaultImplAddr}\n`);
+  console.log(`   ✅ Cruzible Proxy: ${vaultAddr}`);
+  console.log(`   ✅ Cruzible Impl:  ${vaultImplAddr}\n`);
 
   // ─────────────────────────────────────────────────────────────────────
-  // Post-deployment: Grant VAULT_ROLE to Crucible on StAETHEL
+  // Post-deployment: Grant VAULT_ROLE to Cruzible on StAETHEL
   // ─────────────────────────────────────────────────────────────────────
 
   console.log("🔧 Post-deployment configuration...");
@@ -136,7 +136,7 @@ async function main() {
   const stAethelContract = await ethers.getContractAt("StAETHEL", stAethelAddr);
   const grantTx = await stAethelContract.grantRole(VAULT_ROLE, vaultAddr);
   await grantTx.wait();
-  console.log(`   ✅ Granted VAULT_ROLE to Crucible on StAETHEL`);
+  console.log(`   ✅ Granted VAULT_ROLE to Cruzible on StAETHEL`);
 
   // Revoke VAULT_ROLE from admin (was temporary)
   const revokeTx = await stAethelContract.revokeRole(VAULT_ROLE, admin);
@@ -153,8 +153,8 @@ async function main() {
     vaultTEEVerifierImpl: verifierImplAddr,
     stAETHEL: stAethelAddr,
     stAETHELImpl: stAethelImplAddr,
-    crucible: vaultAddr,
-    crucibleImpl: vaultImplAddr,
+    cruzible: vaultAddr,
+    cruzibleImpl: vaultImplAddr,
     deployer: deployer.address,
     admin,
     treasury,
@@ -170,7 +170,7 @@ async function main() {
   console.log("╠══════════════════════════════════════════════════════════╣");
   console.log(`║  VaultTEEVerifier: ${verifierAddr}`);
   console.log(`║  StAETHEL:         ${stAethelAddr}`);
-  console.log(`║  Crucible:      ${vaultAddr}`);
+  console.log(`║  Cruzible:      ${vaultAddr}`);
   console.log(`║  AETHEL Token:     ${aethelTokenAddr}`);
   console.log(`║  Admin:            ${admin}`);
   console.log(`║  Treasury:         ${treasury}`);

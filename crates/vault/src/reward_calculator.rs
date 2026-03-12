@@ -19,7 +19,7 @@
 //! ## Protocol fee policy
 //!
 //! `PROTOCOL_FEE_BPS` (500 = 5 %) is an **enclave-internal constant** that
-//! mirrors Crucible.sol's `uint256 public constant PROTOCOL_FEE_BPS = 500`.
+//! mirrors Cruzible.sol's `uint256 public constant PROTOCOL_FEE_BPS = 500`.
 //! It is intentionally excluded from `CalculateRewardsRequest` so that
 //! a caller cannot request a lower fee while still obtaining a valid TEE
 //! attestation. The attested canonical payload includes the computed fee,
@@ -46,10 +46,10 @@ use sha2::{Digest, Sha256};
 
 use crate::types::*;
 
-/// Protocol fee on rewards (5% — matches Crucible.sol `PROTOCOL_FEE_BPS`).
+/// Protocol fee on rewards (5% — matches Cruzible.sol `PROTOCOL_FEE_BPS`).
 ///
 /// This is an enclave-internal constant, NOT a caller-supplied value.
-/// Crucible.sol declares `uint256 public constant PROTOCOL_FEE_BPS = 500;`
+/// Cruzible.sol declares `uint256 public constant PROTOCOL_FEE_BPS = 500;`
 /// and `distributeRewards()` verifies `protocolFee <= expectedFee + 1%`.
 /// Because the fee is TEE-attested and derived from the same constant,
 /// a caller cannot request a lower fee to undercharge the treasury.
@@ -541,7 +541,7 @@ mod tests {
                 },
             ],
             // Note: protocol_fee_bps is intentionally absent — the TEE uses its
-            // internal PROTOCOL_FEE_BPS constant (500 = 5%), matching Crucible.sol.
+            // internal PROTOCOL_FEE_BPS constant (500 = 5%), matching Cruzible.sol.
             stake_snapshot_hash: String::new(),
             validator_set_hash: String::new(),
         }
@@ -583,7 +583,7 @@ mod tests {
         let expected_fee = request.total_rewards * PROTOCOL_FEE_BPS as u128 / BPS_DENOMINATOR as u128;
         assert_eq!(response.protocol_fee, expected_fee);
 
-        // Verify the constant matches the Crucible.sol immutable.
+        // Verify the constant matches the Cruzible.sol immutable.
         assert_eq!(PROTOCOL_FEE_BPS, 500);
     }
 

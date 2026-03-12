@@ -2,7 +2,7 @@
 name = "aethelred-vault"
 version = "0.1.0"
 edition = "2021"
-description = "Crucible TEE enclave service — validator selection, MEV protection, and reward calculation"
+description = "Cruzible TEE enclave service — validator selection, MEV protection, and reward calculation"
 license = "Apache-2.0"
 
 [dependencies]

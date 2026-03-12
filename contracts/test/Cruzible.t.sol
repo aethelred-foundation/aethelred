@@ -3,11 +3,11 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "../contracts/vault/Crucible.sol";
+import "../contracts/vault/Cruzible.sol";
 import "../contracts/vault/StAETHEL.sol";
 import "../contracts/vault/VaultTEEVerifier.sol";
 import "../contracts/vault/PlatformVerifiers.sol";
-import "../contracts/vault/ICrucible.sol";
+import "../contracts/vault/ICruzible.sol";
 
 /**
  * @title MockAETHEL
@@ -57,8 +57,8 @@ contract MockAETHEL {
 }
 
 /**
- * @title CrucibleTest
- * @notice Comprehensive test suite for Crucible liquid staking protocol.
+ * @title CruzibleTest
+ * @notice Comprehensive test suite for Cruzible liquid staking protocol.
  *
  * Test Categories:
  * 1. Initialization & Setup
@@ -74,13 +74,13 @@ contract MockAETHEL {
  * 11. Rate Limiting
  * 12. Batch Operations
  */
-contract CrucibleTest is Test {
+contract CruzibleTest is Test {
     // =========================================================================
     // STATE
     // =========================================================================
 
-    Crucible public vaultImpl;
-    Crucible public vault;
+    Cruzible public vaultImpl;
+    Cruzible public vault;
     StAETHEL public stAethelImpl;
     StAETHEL public stAethel;
     VaultTEEVerifier public verifierImpl;
@@ -107,8 +107,8 @@ contract CrucibleTest is Test {
     uint256 internal constant P256_PUB_Y = 0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5;
 
     // Attestation constants
-    bytes32 internal constant ENCLAVE_HASH = keccak256("crucible-enclave-v1");
-    bytes32 internal constant SIGNER_HASH = keccak256("crucible-signer-v1");
+    bytes32 internal constant ENCLAVE_HASH = keccak256("cruzible-enclave-v1");
+    bytes32 internal constant SIGNER_HASH = keccak256("cruzible-signer-v1");
 
     // Selection policy hash — must be set on-chain before updateValidatorSet.
     // In production, this is SHA-256(SelectionConfig fields). In tests we use a
@@ -160,8 +160,8 @@ contract CrucibleTest is Test {
         // Deploy StAETHEL (implementation, proxy after vault)
         stAethelImpl = new StAETHEL();
 
-        // Deploy Crucible implementation
-        vaultImpl = new Crucible();
+        // Deploy Cruzible implementation
+        vaultImpl = new Cruzible();
 
         // Deploy StAETHEL proxy (needs vault address, so deploy vault first as predicted)
         // We'll use create2-style ordering: deploy vault proxy, then stAethel proxy with vault addr
@@ -169,7 +169,7 @@ contract CrucibleTest is Test {
 
         // Step 1: Deploy vault proxy
         bytes memory vaultInit = abi.encodeCall(
-            Crucible.initialize,
+            Cruzible.initialize,
             (admin, address(aethel), address(0xDEAD), address(verifier), treasury)
         );
         // We need the vault address to initialize stAETHEL, and stAETHEL address to init vault.
@@ -185,11 +185,11 @@ contract CrucibleTest is Test {
 
         // Now deploy vault proxy with correct stAETHEL address
         vaultInit = abi.encodeCall(
-            Crucible.initialize,
+            Cruzible.initialize,
             (admin, address(aethel), address(stAethel), address(verifier), treasury)
         );
         ERC1967Proxy vaultProxy = new ERC1967Proxy(address(vaultImpl), vaultInit);
-        vault = Crucible(address(vaultProxy));
+        vault = Cruzible(address(vaultProxy));
 
         // Grant stAETHEL VAULT_ROLE to the actual vault (update from predicted)
         // Cache the role hash before vm.prank to avoid prank being consumed by the view call
@@ -211,7 +211,7 @@ contract CrucibleTest is Test {
 
         // Register TEE enclave with its per-enclave platform key + vendor attestation
         verifier.registerEnclave(
-            ENCLAVE_HASH, SIGNER_HASH, bytes32(0), 0, "Crucible SGX Enclave v1",
+            ENCLAVE_HASH, SIGNER_HASH, bytes32(0), 0, "Cruzible SGX Enclave v1",
             P256_PUB_X, P256_PUB_Y, uint256(vendorR), uint256(vendorS)
         );
         bytes32 enclaveId = keccak256(abi.encodePacked(ENCLAVE_HASH, uint8(0)));
@@ -335,14 +335,14 @@ contract CrucibleTest is Test {
     function test_stakeRevertsBelowMinimum() public {
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.BelowMinStake.selector, 10 ether, 32 ether)
+            abi.encodeWithSelector(Cruzible.BelowMinStake.selector, 10 ether, 32 ether)
         );
         vault.stake(10 ether);
     }
 
     function test_stakeRevertsZeroAmount() public {
         vm.prank(alice);
-        vm.expectRevert(Crucible.ZeroAmount.selector);
+        vm.expectRevert(Cruzible.ZeroAmount.selector);
         vault.stake(0);
     }
 
@@ -353,7 +353,7 @@ contract CrucibleTest is Test {
         aethel.approve(address(vault), tooMuch);
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ExceedsMaxStake.selector, tooMuch, 10_000_000 ether)
+            abi.encodeWithSelector(Cruzible.ExceedsMaxStake.selector, tooMuch, 10_000_000 ether)
         );
         vault.stake(tooMuch);
     }
@@ -424,7 +424,7 @@ contract CrucibleTest is Test {
         // Try to claim again
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.WithdrawalAlreadyClaimed.selector, withdrawalId)
+            abi.encodeWithSelector(Cruzible.WithdrawalAlreadyClaimed.selector, withdrawalId)
         );
         vault.withdraw(withdrawalId);
     }
@@ -441,7 +441,7 @@ contract CrucibleTest is Test {
         // Bob tries to claim Alice's withdrawal
         vm.prank(bob);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.WithdrawalNotOwned.selector, withdrawalId)
+            abi.encodeWithSelector(Cruzible.WithdrawalNotOwned.selector, withdrawalId)
         );
         vault.withdraw(withdrawalId);
     }
@@ -541,7 +541,7 @@ contract CrucibleTest is Test {
 
         assertEq(vault.getActiveValidatorCount(), 4);
 
-        Crucible.ValidatorInfo memory v1 = vault.getValidator(address(0x1));
+        Cruzible.ValidatorInfo memory v1 = vault.getValidator(address(0x1));
         assertTrue(v1.isActive);
         assertEq(v1.performanceScore, 9500);
         assertEq(v1.delegatedStake, 1000 ether);
@@ -598,7 +598,7 @@ contract CrucibleTest is Test {
         // The canonical hash includes epoch, so the epoch-1 hash won't match
         // the epoch-2 hash computed by the contract. Attestation rejected.
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.updateValidatorSet(staleAttestation, validatorData, 2);
     }
 
@@ -620,7 +620,7 @@ contract CrucibleTest is Test {
 
         // Canonical reward payload — this is the exact format the Rust TEE worker
         // produces via compute_canonical_reward_payload() and that
-        // Crucible.distributeRewards() verifies on-chain.
+        // Cruzible.distributeRewards() verifies on-chain.
         // See: crates/vault/src/server.rs::compute_canonical_reward_payload()
         bytes memory rewardPayload = abi.encode(uint256(1), totalRewards, merkleRoot, protocolFee, TEST_SNAPSHOT_HASH, bytes32(0), bytes32(0), bytes32(0));
         bytes memory attestation = _createAttestation(rewardPayload);
@@ -641,7 +641,7 @@ contract CrucibleTest is Test {
 
     /// @notice distributeRewards rejects a protocol fee that exceeds the
     ///         deterministic formula by even 1 wei.  The Rust TEE worker and
-    ///         Crucible.sol use the same integer expression
+    ///         Cruzible.sol use the same integer expression
     ///         (totalRewards * PROTOCOL_FEE_BPS / BPS_DENOMINATOR), so exact
     ///         equality is required — no tolerance window.
     function test_distributeRewards_rejectsOverchargedFee() public {
@@ -660,7 +660,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ProtocolFeeMismatch.selector, overchargedFee, expectedFee)
+            abi.encodeWithSelector(Cruzible.ProtocolFeeMismatch.selector, overchargedFee, expectedFee)
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, overchargedFee);
     }
@@ -683,7 +683,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ProtocolFeeMismatch.selector, underchargedFee, expectedFee)
+            abi.encodeWithSelector(Cruzible.ProtocolFeeMismatch.selector, underchargedFee, expectedFee)
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, underchargedFee);
     }
@@ -728,7 +728,7 @@ contract CrucibleTest is Test {
         vault.submitMEVRevenue(mevAtt, 1, mevAmount);
 
         // Verify MEV is recorded in the (unfinalized) epoch snapshot.
-        Crucible.EpochSnapshot memory snapBefore = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapBefore = vault.getEpochSnapshot(1);
         assertEq(snapBefore.mevRedistributed, mevAmount);
         assertFalse(snapBefore.finalized);
 
@@ -737,7 +737,7 @@ contract CrucibleTest is Test {
         assertEq(vault.currentEpoch(), 2);
 
         // The finalized snapshot must still contain the MEV amount.
-        Crucible.EpochSnapshot memory snapAfter = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapAfter = vault.getEpochSnapshot(1);
         assertTrue(snapAfter.finalized);
         assertEq(snapAfter.mevRedistributed, mevAmount, "mevRedistributed wiped by finalization");
     }
@@ -831,7 +831,7 @@ contract CrucibleTest is Test {
         bytes memory attestation = _createAttestation(abi.encodePacked(vsHash, TEST_POLICY_HASH, TEST_UNIVERSE_HASH));
 
         vm.prank(oracle);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.DuplicateValidator.selector, address(0x1)));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.DuplicateValidator.selector, address(0x1)));
         vault.updateValidatorSet(attestation, validatorData, 1);
     }
 
@@ -848,7 +848,7 @@ contract CrucibleTest is Test {
         vm.prank(guardian);
         vault.slashValidator(address(0x1), "Downtime");
 
-        Crucible.ValidatorInfo memory v = vault.getValidator(address(0x1));
+        Cruzible.ValidatorInfo memory v = vault.getValidator(address(0x1));
         assertFalse(v.isActive);
         assertEq(v.slashCount, 1);
     }
@@ -1086,8 +1086,8 @@ contract CrucibleTest is Test {
 
     function test_operatorCannotAttestForUnboundEnclave() public {
         // Register a second enclave with different measurements and its own platform key
-        bytes32 enclaveHash2 = keccak256("crucible-enclave-v2");
-        bytes32 signerHash2 = keccak256("crucible-signer-v2");
+        bytes32 enclaveHash2 = keccak256("cruzible-enclave-v2");
+        bytes32 signerHash2 = keccak256("cruzible-signer-v2");
 
         // Create a second operator key pair
         uint256 operator2PrivKey = 0xBEEF;
@@ -1098,7 +1098,7 @@ contract CrucibleTest is Test {
         bytes32 keyAttestMsg2 = sha256(abi.encodePacked(P256_PUB_X, P256_PUB_Y, uint8(0)));
         (bytes32 vr2, bytes32 vs2) = vm.signP256(VENDOR_ROOT_PRIV, keyAttestMsg2);
         verifier.registerEnclave(
-            enclaveHash2, signerHash2, bytes32(0), 0, "Crucible SGX Enclave v2",
+            enclaveHash2, signerHash2, bytes32(0), 0, "Cruzible SGX Enclave v2",
             P256_PUB_X, P256_PUB_Y, uint256(vr2), uint256(vs2)
         );
         bytes32 enclave2Id = keccak256(abi.encodePacked(enclaveHash2, uint8(0)));
@@ -1116,7 +1116,7 @@ contract CrucibleTest is Test {
         // Tagged SHA-256 digest matching Go/Rust verifier format
         bytes32 payloadHash = sha256(fakePayload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             platform,
             uint64(timestamp),
             nonce,
@@ -1240,7 +1240,7 @@ contract CrucibleTest is Test {
 
         // Read the epoch's committed hashes so the reward attestation matches
         // the on-chain state exactly.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(epoch);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(epoch);
         bytes32 vsHash = snap.validatorSetHash;
         bytes32 regRoot = snap.stakerRegistryRoot;
 
@@ -1268,7 +1268,7 @@ contract CrucibleTest is Test {
         vault.distributeRewards(att, epoch, totalRewards, bytes32(0), fee);
     }
 
-    /// @notice Compute canonical validator set hash (mirrors Crucible._computeValidatorSetHash).
+    /// @notice Compute canonical validator set hash (mirrors Cruzible._computeValidatorSetHash).
     function _computeTestValidatorSetHash(
         uint256 epoch,
         address[] memory addrs,
@@ -1281,7 +1281,7 @@ contract CrucibleTest is Test {
         uint256[] memory commissions
     ) internal pure returns (bytes32) {
         bytes memory outerPreimage = abi.encodePacked(
-            "CrucibleValidatorSet-v1",
+            "CruzibleValidatorSet-v1",
             uint64(epoch),
             uint32(addrs.length)
         );
@@ -1309,7 +1309,7 @@ contract CrucibleTest is Test {
         // Build tagged SHA-256 digest (matches Go native verifier & Rust TEE producer)
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             platformId,
             uint64(timestamp),
             nonce,
@@ -1617,8 +1617,8 @@ contract CrucibleTest is Test {
         uint256 enclaveBKeyY = 0x8734640C4998FF7E374B06CE1A64A2ECD82AB036384FB83D9A79B127A27D5032;
         uint256 enclaveBPrivKey = 3;
 
-        bytes32 enclaveHashB = keccak256("crucible-enclave-B");
-        bytes32 signerHashB = keccak256("crucible-signer-B");
+        bytes32 enclaveHashB = keccak256("cruzible-enclave-B");
+        bytes32 signerHashB = keccak256("cruzible-signer-B");
 
         // Second operator
         uint256 operator2PrivKey = 0xBEEF;
@@ -1630,7 +1630,7 @@ contract CrucibleTest is Test {
         bytes32 keyAttestMsgB = sha256(abi.encodePacked(enclaveBKeyX, enclaveBKeyY, uint8(0)));
         (bytes32 vrB, bytes32 vsB) = vm.signP256(VENDOR_ROOT_PRIV, keyAttestMsgB);
         verifier.registerEnclave(
-            enclaveHashB, signerHashB, bytes32(0), 0, "Crucible SGX Enclave B",
+            enclaveHashB, signerHashB, bytes32(0), 0, "Cruzible SGX Enclave B",
             enclaveBKeyX, enclaveBKeyY, uint256(vrB), uint256(vsB)
         );
         bytes32 enclaveBId = keccak256(abi.encodePacked(enclaveHashB, uint8(0)));
@@ -1683,7 +1683,7 @@ contract CrucibleTest is Test {
 
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             platformId,
             uint64(timestamp),
             nonce,
@@ -1719,7 +1719,7 @@ contract CrucibleTest is Test {
         bytes32 nonce = keccak256("zero-hw-hash-test");
         bytes32 payloadHash = sha256("test-payload");
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation", platformId, uint64(timestamp),
+            "CruzibleTEEAttestation", platformId, uint64(timestamp),
             nonce, ENCLAVE_HASH, SIGNER_HASH, payloadHash
         ));
 
@@ -1783,7 +1783,7 @@ contract CrucibleTest is Test {
         bytes memory payload = abi.encode(uint256(1), uint256(0));
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation", platformId, uint64(overflowedTimestamp),
+            "CruzibleTEEAttestation", platformId, uint64(overflowedTimestamp),
             nonce, ENCLAVE_HASH, SIGNER_HASH, payloadHash
         ));
 
@@ -1818,7 +1818,7 @@ contract CrucibleTest is Test {
         bytes memory payload = abi.encode(uint256(1), uint256(0));
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation", platformId, uint64(futureTimestamp),
+            "CruzibleTEEAttestation", platformId, uint64(futureTimestamp),
             nonce, ENCLAVE_HASH, SIGNER_HASH, payloadHash
         ));
 
@@ -1852,7 +1852,7 @@ contract CrucibleTest is Test {
         bytes memory payload = abi.encode(uint256(1), uint256(0));
         bytes32 payloadHash = sha256(payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation", platformId, uint64(overflowedTimestamp),
+            "CruzibleTEEAttestation", platformId, uint64(overflowedTimestamp),
             nonce, ENCLAVE_HASH, SIGNER_HASH, payloadHash
         ));
 
@@ -1990,7 +1990,7 @@ contract CrucibleTest is Test {
         // Must revert with SelectionPolicyMismatch
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.SelectionPolicyMismatch.selector, wrongPolicy, TEST_POLICY_HASH)
+            abi.encodeWithSelector(Cruzible.SelectionPolicyMismatch.selector, wrongPolicy, TEST_POLICY_HASH)
         );
         vault.updateValidatorSet(attestation, validatorData, 1);
     }
@@ -2026,7 +2026,7 @@ contract CrucibleTest is Test {
 
         // Must revert because payload.length != 96
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.updateValidatorSet(attestation, validatorData, 1);
     }
 
@@ -2069,7 +2069,7 @@ contract CrucibleTest is Test {
 
         // Verify universe hash is stored and matches epoch-scoped commitment
         assertEq(vault.lastEligibleUniverseHash(), TEST_UNIVERSE_HASH);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.eligibleUniverseHash, TEST_UNIVERSE_HASH);
     }
 
@@ -2103,7 +2103,7 @@ contract CrucibleTest is Test {
         bytes memory attestation = _createAttestation(abi.encodePacked(vsHash));
 
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.updateValidatorSet(attestation, validatorData, 1);
     }
 
@@ -2114,7 +2114,7 @@ contract CrucibleTest is Test {
     /// @notice Governance can commit the epoch-scoped eligible-universe hash.
     function test_commitUniverseHash() public {
         // setUp already committed for epoch 1, so verify via epoch snapshot.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.eligibleUniverseHash, TEST_UNIVERSE_HASH);
     }
 
@@ -2133,7 +2133,7 @@ contract CrucibleTest is Test {
         // setUp already committed for epoch 1. Attempting again must revert.
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.UniverseHashAlreadyCommitted.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.UniverseHashAlreadyCommitted.selector, uint256(1))
         );
         vault.commitUniverseHash(1, keccak256("second-attempt"));
     }
@@ -2142,7 +2142,7 @@ contract CrucibleTest is Test {
     function test_commitUniverseHash_rejectsWrongEpoch() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.InvalidEpoch.selector, uint256(99), uint256(1))
+            abi.encodeWithSelector(Cruzible.InvalidEpoch.selector, uint256(99), uint256(1))
         );
         vault.commitUniverseHash(99, keccak256("future-epoch"));
     }
@@ -2182,7 +2182,7 @@ contract CrucibleTest is Test {
         // Must revert with EligibleUniverseMismatch
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.EligibleUniverseMismatch.selector, wrongUniverse, TEST_UNIVERSE_HASH)
+            abi.encodeWithSelector(Cruzible.EligibleUniverseMismatch.selector, wrongUniverse, TEST_UNIVERSE_HASH)
         );
         vault.updateValidatorSet(attestation, validatorData, 1);
     }
@@ -2223,7 +2223,7 @@ contract CrucibleTest is Test {
 
         // Verify last universe hash and epoch snapshot are consistent
         assertEq(vault.lastEligibleUniverseHash(), TEST_UNIVERSE_HASH);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.eligibleUniverseHash, TEST_UNIVERSE_HASH);
         assertEq(vault.getActiveValidatorCount(), 4);
     }
@@ -2272,7 +2272,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.EligibleUniverseMismatch.selector, TEST_UNIVERSE_HASH, bytes32(0))
+            abi.encodeWithSelector(Cruzible.EligibleUniverseMismatch.selector, TEST_UNIVERSE_HASH, bytes32(0))
         );
         vault.updateValidatorSet(attestation, validatorData, 2);
     }
@@ -2284,7 +2284,7 @@ contract CrucibleTest is Test {
     /// @notice Governance can commit the epoch-scoped stake snapshot hash.
     function test_commitStakeSnapshot() public {
         // setUp already committed for epoch 1, so verify via epoch snapshot.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.stakeSnapshotHash, TEST_SNAPSHOT_HASH);
     }
 
@@ -2305,7 +2305,7 @@ contract CrucibleTest is Test {
         uint256 shares = vault.getTotalShares();
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.StakeSnapshotAlreadyCommitted.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.StakeSnapshotAlreadyCommitted.selector, uint256(1))
         );
         vault.commitStakeSnapshot(1, keccak256("second-attempt"), shares);
     }
@@ -2315,7 +2315,7 @@ contract CrucibleTest is Test {
         uint256 shares = vault.getTotalShares();
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.InvalidEpoch.selector, uint256(99), uint256(1))
+            abi.encodeWithSelector(Cruzible.InvalidEpoch.selector, uint256(99), uint256(1))
         );
         vault.commitStakeSnapshot(99, keccak256("future-epoch"), shares);
     }
@@ -2336,7 +2336,7 @@ contract CrucibleTest is Test {
 
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.SnapshotSharesMismatch.selector, wrongShares, onChainShares)
+            abi.encodeWithSelector(Cruzible.SnapshotSharesMismatch.selector, wrongShares, onChainShares)
         );
         vault.commitStakeSnapshot(2, TEST_SNAPSHOT_HASH, wrongShares);
     }
@@ -2360,7 +2360,7 @@ contract CrucibleTest is Test {
         // Must revert with StakeSnapshotMismatch (checked before validator set hash)
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.StakeSnapshotMismatch.selector, wrongSnapshot, TEST_SNAPSHOT_HASH)
+            abi.encodeWithSelector(Cruzible.StakeSnapshotMismatch.selector, wrongSnapshot, TEST_SNAPSHOT_HASH)
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2385,7 +2385,7 @@ contract CrucibleTest is Test {
 
         // Verify epoch advanced and snapshot preserved in epoch 1 snapshot
         assertEq(vault.currentEpoch(), 2);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.stakeSnapshotHash, TEST_SNAPSHOT_HASH);
     }
 
@@ -2408,7 +2408,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.StakeSnapshotMismatch.selector, TEST_SNAPSHOT_HASH, bytes32(0))
+            abi.encodeWithSelector(Cruzible.StakeSnapshotMismatch.selector, TEST_SNAPSHOT_HASH, bytes32(0))
         );
         vault.distributeRewards(attestation, 2, totalRewards, merkleRoot, protocolFee);
     }
@@ -2428,7 +2428,7 @@ contract CrucibleTest is Test {
         bytes memory attestation = _createAttestation(payload);
 
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.distributeRewards(attestation, 1, totalRewards, bytes32(0), protocolFee);
     }
 
@@ -2447,7 +2447,7 @@ contract CrucibleTest is Test {
         bytes memory attestation = _createAttestation(payload);
 
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.distributeRewards(attestation, 1, totalRewards, bytes32(0), protocolFee);
     }
 
@@ -2466,7 +2466,7 @@ contract CrucibleTest is Test {
         bytes memory attestation = _createAttestation(payload);
 
         vm.prank(oracle);
-        vm.expectRevert(Crucible.InvalidAttestation.selector);
+        vm.expectRevert(Cruzible.InvalidAttestation.selector);
         vault.distributeRewards(attestation, 1, totalRewards, bytes32(0), protocolFee);
     }
 
@@ -2501,7 +2501,7 @@ contract CrucibleTest is Test {
         // Must revert — attested hash doesn't match the on-chain epoch hash
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ValidatorSetHashMismatch.selector, wrongVsHash, epochVsHash)
+            abi.encodeWithSelector(Cruzible.ValidatorSetHashMismatch.selector, wrongVsHash, epochVsHash)
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2529,7 +2529,7 @@ contract CrucibleTest is Test {
 
         // Verify epoch advanced and snapshot hash preserved in epoch 1 snapshot
         assertEq(vault.currentEpoch(), 2);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.stakeSnapshotHash, TEST_SNAPSHOT_HASH);
     }
 
@@ -2554,7 +2554,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ValidatorSetHashMismatch.selector, fakeVsHash, bytes32(0))
+            abi.encodeWithSelector(Cruzible.ValidatorSetHashMismatch.selector, fakeVsHash, bytes32(0))
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2679,7 +2679,7 @@ contract CrucibleTest is Test {
         vault.commitStakeSnapshot(2, TEST_SNAPSHOT_HASH, shares);
 
         // The epoch snapshot should have captured the live registry root.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(2);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(2);
         assertEq(snap.stakerRegistryRoot, liveRoot, "epoch snapshot should capture live registry root");
     }
 
@@ -2702,7 +2702,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.RegistryRootMismatch.selector, wrongRoot, bytes32(0))
+            abi.encodeWithSelector(Cruzible.RegistryRootMismatch.selector, wrongRoot, bytes32(0))
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2721,7 +2721,7 @@ contract CrucibleTest is Test {
         // stakerRegistryRoot was captured at commitStakeSnapshot() time (setUp,
         // before any staking) → bytes32(0).
         bytes32 testDelRoot = keccak256("specific-delegation-root");
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes memory delAtt = _createDelegationAttestation(1, testDelRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
         vault.commitDelegationSnapshot(delAtt, 1, testDelRoot, snapPre.stakerRegistryRoot, 1);
@@ -2745,7 +2745,7 @@ contract CrucibleTest is Test {
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
 
         // Verify the committed delegation root was preserved in the finalized snapshot.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, testDelRoot);
         assertTrue(snap.finalized);
     }
@@ -2753,13 +2753,13 @@ contract CrucibleTest is Test {
     /// @notice Keeper can commit the epoch-scoped delegation registry root.
     function test_commitDelegationSnapshot() public {
         // setUp committed stake snapshot for epoch 1 (stakerRegistryRoot = bytes32(0)).
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("test-del-commitment");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
         vault.commitDelegationSnapshot(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
 
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, delRoot);
     }
 
@@ -2773,7 +2773,7 @@ contract CrucibleTest is Test {
 
     /// @notice Delegation commitment is immutable per epoch.
     function test_commitDelegationSnapshot_alreadyCommitted() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes memory delAtt1 = _createDelegationAttestation(1, keccak256("first-delegation"), snapPre.stakerRegistryRoot);
         vm.prank(admin);
         vault.commitDelegationSnapshot(delAtt1, 1, keccak256("first-delegation"), snapPre.stakerRegistryRoot, 1);
@@ -2781,7 +2781,7 @@ contract CrucibleTest is Test {
         bytes memory delAtt2 = _createDelegationAttestation(1, keccak256("second-delegation"), snapPre.stakerRegistryRoot);
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationSnapshotAlreadyCommitted.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.DelegationSnapshotAlreadyCommitted.selector, uint256(1))
         );
         vault.commitDelegationSnapshot(delAtt2, 1, keccak256("second-delegation"), snapPre.stakerRegistryRoot, 1);
     }
@@ -2791,7 +2791,7 @@ contract CrucibleTest is Test {
         bytes memory delAtt = _createDelegationAttestation(99, keccak256("future-epoch"), bytes32(0));
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.InvalidEpoch.selector, uint256(99), uint256(1))
+            abi.encodeWithSelector(Cruzible.InvalidEpoch.selector, uint256(99), uint256(1))
         );
         vault.commitDelegationSnapshot(delAtt, 99, keccak256("future-epoch"), bytes32(0), 1);
     }
@@ -2806,7 +2806,7 @@ contract CrucibleTest is Test {
         bytes memory delAtt = _createDelegationAttestation(2, keccak256("delegation"), bytes32(0));
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.StakeSnapshotNotCommitted.selector, uint256(2))
+            abi.encodeWithSelector(Cruzible.StakeSnapshotNotCommitted.selector, uint256(2))
         );
         vault.commitDelegationSnapshot(delAtt, 2, keccak256("delegation"), bytes32(0), 1);
     }
@@ -2816,13 +2816,13 @@ contract CrucibleTest is Test {
     function test_commitDelegationSnapshot_rejectsRegistryAnchorMismatch() public {
         // setUp committed stake snapshot for epoch 1 with stakerRegistryRoot = bytes32(0).
         bytes32 wrongAnchor = keccak256("wrong-registry-anchor");
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
 
         bytes memory delAtt = _createDelegationAttestation(1, keccak256("delegation"), wrongAnchor);
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Crucible.StakerRegistryAnchorMismatch.selector,
+                Cruzible.StakerRegistryAnchorMismatch.selector,
                 wrongAnchor,
                 snapPre.stakerRegistryRoot
             )
@@ -2837,7 +2837,7 @@ contract CrucibleTest is Test {
         vault.stake(1000 ether);
 
         // Commit a specific delegation root for epoch 1.
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 committedRoot = keccak256("committed-delegation-root");
         bytes memory delAtt = _createDelegationAttestation(1, committedRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
@@ -2858,7 +2858,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationRootMismatch.selector, wrongRoot, committedRoot)
+            abi.encodeWithSelector(Cruzible.DelegationRootMismatch.selector, wrongRoot, committedRoot)
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2885,7 +2885,7 @@ contract CrucibleTest is Test {
 
         vm.prank(oracle);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationRootMismatch.selector, nonZeroDelRoot, bytes32(0))
+            abi.encodeWithSelector(Cruzible.DelegationRootMismatch.selector, nonZeroDelRoot, bytes32(0))
         );
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
     }
@@ -2897,7 +2897,7 @@ contract CrucibleTest is Test {
         vault.stake(1000 ether);
 
         // Commit a delegation root for epoch 1.
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("verified-delegation-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
@@ -2922,7 +2922,7 @@ contract CrucibleTest is Test {
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
 
         assertEq(vault.currentEpoch(), 2);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, delRoot);
     }
 
@@ -2938,7 +2938,7 @@ contract CrucibleTest is Test {
         vault.stake(1000 ether);
 
         // Commit a non-zero delegation root for epoch 1.
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("challenge-test-delegation");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
@@ -2960,7 +2960,7 @@ contract CrucibleTest is Test {
         vm.prank(oracle);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Crucible.DelegationChallengePeriodActive.selector,
+                Cruzible.DelegationChallengePeriodActive.selector,
                 uint256(1),
                 expectedAvailableAt
             )
@@ -3002,14 +3002,14 @@ contract CrucibleTest is Test {
     /// @notice Guardian can revoke a delegation commitment during the challenge
     ///         period, clearing the root and timestamp so the keeper can re-commit.
     function test_revokeDelegationSnapshot() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("revocable-delegation");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
         vault.commitDelegationSnapshot(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
 
         // Verify it was committed.
-        Crucible.EpochSnapshot memory snapMid = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapMid = vault.getEpochSnapshot(1);
         assertEq(snapMid.delegationRegistryRoot, delRoot);
         assertGt(vault.delegationCommitTimestamp(1), 0);
 
@@ -3018,14 +3018,14 @@ contract CrucibleTest is Test {
         vault.revokeDelegationSnapshot(1);
 
         // Verify cleared.
-        Crucible.EpochSnapshot memory snapPost = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPost = vault.getEpochSnapshot(1);
         assertEq(snapPost.delegationRegistryRoot, bytes32(0));
         assertEq(vault.delegationCommitTimestamp(1), 0);
     }
 
     /// @notice Only GUARDIAN_ROLE can revoke a delegation commitment.
     function test_revokeDelegationSnapshot_onlyGuardian() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("guardian-only-del");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
@@ -3041,7 +3041,7 @@ contract CrucibleTest is Test {
         // No delegation root committed for epoch 1.
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationNotCommitted.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.DelegationNotCommitted.selector, uint256(1))
         );
         vault.revokeDelegationSnapshot(1);
     }
@@ -3052,7 +3052,7 @@ contract CrucibleTest is Test {
         vm.prank(alice);
         vault.stake(1000 ether);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 badRoot = keccak256("fraudulent-delegation");
         bytes memory badAtt = _createDelegationAttestation(1, badRoot, snapPre.stakerRegistryRoot);
         vm.prank(admin);
@@ -3086,7 +3086,7 @@ contract CrucibleTest is Test {
         vault.distributeRewards(attestation, 1, totalRewards, merkleRoot, protocolFee);
 
         assertEq(vault.currentEpoch(), 2);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, goodRoot);
         assertTrue(snap.finalized);
     }
@@ -3098,7 +3098,7 @@ contract CrucibleTest is Test {
     /// @notice commitDelegationSnapshot reverts when the TEE attestation
     ///         payload does not match the supplied delegation parameters.
     function test_commitDelegationSnapshot_rejectsMismatchedAttestation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("attested-delegation");
 
         // Create an attestation for a DIFFERENT delegation root.
@@ -3106,14 +3106,14 @@ contract CrucibleTest is Test {
         bytes memory badAtt = _createDelegationAttestation(1, wrongRoot, snapPre.stakerRegistryRoot);
 
         vm.prank(admin);
-        vm.expectRevert(Crucible.DelegationAttestationInvalid.selector);
+        vm.expectRevert(Cruzible.DelegationAttestationInvalid.selector);
         vault.commitDelegationSnapshot(badAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
 
     /// @notice commitDelegationSnapshot reverts when the TEE attestation
     ///         has a wrong payload length (not 96 bytes).
     function test_commitDelegationSnapshot_rejectsWrongPayloadLength() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("length-test-delegation");
 
         // Create an attestation with a 256-byte payload (reward format, not delegation).
@@ -3124,13 +3124,13 @@ contract CrucibleTest is Test {
         bytes memory badAtt = _createAttestation(wrongPayload);
 
         vm.prank(admin);
-        vm.expectRevert(Crucible.DelegationAttestationInvalid.selector);
+        vm.expectRevert(Cruzible.DelegationAttestationInvalid.selector);
         vault.commitDelegationSnapshot(badAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
 
     /// @notice commitDelegationSnapshot reverts with an invalid (garbage) attestation.
     function test_commitDelegationSnapshot_rejectsInvalidAttestation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("invalid-att-delegation");
 
         vm.prank(admin);
@@ -3149,7 +3149,7 @@ contract CrucibleTest is Test {
     /// @notice distributeRewards reverts when the delegation commitment is older
     ///         than DELEGATION_MAX_AGE, even if the challenge period has passed.
     function test_distributeRewards_rejectsStaleDelegation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("stale-delegation");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3175,7 +3175,7 @@ contract CrucibleTest is Test {
         aethel.approve(address(vault), totalRewards);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Crucible.DelegationCommitmentStale.selector,
+                Cruzible.DelegationCommitmentStale.selector,
                 1, block.timestamp - vault.DELEGATION_MAX_AGE() - 1, vault.DELEGATION_MAX_AGE()
             )
         );
@@ -3186,7 +3186,7 @@ contract CrucibleTest is Test {
     /// @notice distributeRewards succeeds when delegation commitment is fresh
     ///         (within both challenge period and max-age window).
     function test_distributeRewards_acceptsFreshDelegation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("fresh-delegation");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3220,14 +3220,14 @@ contract CrucibleTest is Test {
 
     /// @notice commitDelegationSnapshot rejects zero staker count with non-zero root.
     function test_commitDelegation_rejectsZeroCardinalityWithNonZeroRoot() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("nonzero-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
         vm.prank(admin);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Crucible.DelegationCardinalityZeroWithNonZeroRoot.selector, 1
+                Cruzible.DelegationCardinalityZeroWithNonZeroRoot.selector, 1
             )
         );
         vault.commitDelegationSnapshot(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 0);
@@ -3235,7 +3235,7 @@ contract CrucibleTest is Test {
 
     /// @notice commitDelegationSnapshot accepts zero root with zero count (no delegation data).
     function test_commitDelegation_acceptsZeroRootWithZeroCount() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = bytes32(0);
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3247,7 +3247,7 @@ contract CrucibleTest is Test {
 
     /// @notice Guardian revocation clears the cardinality anchor alongside the root.
     function test_revokeDelegation_clearsCardinality() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("revoke-cardinality");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3275,7 +3275,7 @@ contract CrucibleTest is Test {
 
     /// @notice submitDelegationVote requires DELEGATION_ATTESTOR_ROLE.
     function test_submitDelegationVote_requiresAttestorRole() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("vote-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3293,13 +3293,13 @@ contract CrucibleTest is Test {
         vm.prank(admin);
         vault.grantRole(attestorRole, attestor1);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("vote-root-nobond");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
         vm.prank(attestor1);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.InsufficientKeeperBond.selector, uint256(0), bondMinimum)
+            abi.encodeWithSelector(Cruzible.InsufficientKeeperBond.selector, uint256(0), bondMinimum)
         );
         vault.submitDelegationVote(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
@@ -3312,7 +3312,7 @@ contract CrucibleTest is Test {
         vault.grantRole(attestorRole, attestor1);
         _depositKeeperBond(attestor1);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("quorum-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3321,7 +3321,7 @@ contract CrucibleTest is Test {
 
         // Vote is recorded but root is NOT committed (quorum not reached).
         assertEq(vault.delegationVoteCount(1, delRoot), 1);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, bytes32(0));
     }
 
@@ -3337,7 +3337,7 @@ contract CrucibleTest is Test {
         _depositKeeperBond(attestor1);
         _depositKeeperBond(attestor2);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("quorum-root-2");
 
         // Each attestor creates their own attestation (different block timestamps
@@ -3357,7 +3357,7 @@ contract CrucibleTest is Test {
         vault.submitDelegationVote(delAtt2, 1, delRoot, snapPre.stakerRegistryRoot, 5);
 
         // Root is now committed.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, delRoot);
         assertEq(vault.delegatingStakerCount(1), 5);
         assertTrue(vault.delegationCommitTimestamp(1) > 0);
@@ -3371,7 +3371,7 @@ contract CrucibleTest is Test {
         vault.grantRole(attestorRole, attestor1);
         _depositKeeperBond(attestor1);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("double-vote");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3384,7 +3384,7 @@ contract CrucibleTest is Test {
 
         vm.prank(attestor1);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationAttestorAlreadyVoted.selector, uint256(1), attestor1)
+            abi.encodeWithSelector(Cruzible.DelegationAttestorAlreadyVoted.selector, uint256(1), attestor1)
         );
         vault.submitDelegationVote(delAtt2, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
@@ -3401,7 +3401,7 @@ contract CrucibleTest is Test {
         _depositKeeperBond(attestor1);
         _depositKeeperBond(attestor2);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 rootA = keccak256("root-A");
         bytes32 rootB = keccak256("root-B");
         bytes memory attA = _createDelegationAttestation(1, rootA, snapPre.stakerRegistryRoot);
@@ -3418,7 +3418,7 @@ contract CrucibleTest is Test {
         // Neither root has quorum — delegation is not committed.
         assertEq(vault.delegationVoteCount(1, rootA), 1);
         assertEq(vault.delegationVoteCount(1, rootB), 1);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, bytes32(0));
     }
 
@@ -3427,13 +3427,13 @@ contract CrucibleTest is Test {
         vm.prank(admin);
         vault.setDelegationQuorumEnabled(true);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("quorum-blocked");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationQuorumRequired.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.DelegationQuorumRequired.selector, uint256(1))
         );
         vault.commitDelegationSnapshot(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
@@ -3478,7 +3478,7 @@ contract CrucibleTest is Test {
         address keeper = makeAddr("over-withdraw");
         vm.prank(keeper);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.BondWithdrawalExceedsDeposit.selector, uint256(1 ether), uint256(0))
+            abi.encodeWithSelector(Cruzible.BondWithdrawalExceedsDeposit.selector, uint256(1 ether), uint256(0))
         );
         vault.withdrawKeeperBond(1 ether);
     }
@@ -3497,7 +3497,7 @@ contract CrucibleTest is Test {
         _depositKeeperBond(attestor1);
         _depositKeeperBond(attestor2);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("lock-test-root");
 
         bytes memory delAtt1 = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
@@ -3513,14 +3513,14 @@ contract CrucibleTest is Test {
         // attestor1 voted and commitment is pending — bond is locked
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(attestor1);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondLocked.selector));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondLocked.selector));
         vault.withdrawKeeperBond(bondMinimum);
     }
 
     /// @notice withdrawKeeperBond is locked for single-keeper committer during challenge window.
     function test_withdrawKeeperBond_lockedDuringChallenge_singleKeeper() public {
         // admin has KEEPER_ROLE and a bond from setUp
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("single-keeper-lock-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3531,13 +3531,13 @@ contract CrucibleTest is Test {
         // admin committed via single-keeper path — bond should be locked
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondLocked.selector));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondLocked.selector));
         vault.withdrawKeeperBond(bondMinimum);
     }
 
     /// @notice Guardian fraud revocation freezes keeper bond — cannot withdraw until slashed or released.
     function test_withdrawKeeperBond_frozenAfterGuardianRevocation_singleKeeper() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("single-keeper-freeze-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3547,7 +3547,7 @@ contract CrucibleTest is Test {
         // Locked during challenge window
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondLocked.selector));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondLocked.selector));
         vault.withdrawKeeperBond(bondMinimum);
 
         // Guardian revokes the delegation (fraud determination)
@@ -3557,13 +3557,13 @@ contract CrucibleTest is Test {
         // Bond is now frozen — still cannot withdraw despite root being zero
         assertTrue(vault.keeperBondFrozen(admin));
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, admin));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, admin));
         vault.withdrawKeeperBond(bondMinimum);
     }
 
     /// @notice Slashing clears the freeze and allows withdrawal of remaining bond.
     function test_slashKeeperBond_clearsFreezeAndAllowsWithdrawal() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("slash-clears-freeze");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3592,7 +3592,7 @@ contract CrucibleTest is Test {
 
     /// @notice releaseKeeperBondFreeze allows guardian to unfreeze without slashing.
     function test_releaseKeeperBondFreeze() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("release-freeze");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3620,7 +3620,7 @@ contract CrucibleTest is Test {
     function test_releaseKeeperBondFreeze_rejectsNotFrozen() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.KeeperBondNotFrozen.selector, alice)
+            abi.encodeWithSelector(Cruzible.KeeperBondNotFrozen.selector, alice)
         );
         vault.releaseKeeperBondFreeze(alice);
     }
@@ -3634,7 +3634,7 @@ contract CrucibleTest is Test {
 
     /// @notice confirmDelegationFraud also freezes the keeper's bond.
     function test_confirmDelegationFraud_freezesKeeperBond() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("confirm-freezes-keeper");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3662,7 +3662,7 @@ contract CrucibleTest is Test {
         // Cannot withdraw
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, admin));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, admin));
         vault.withdrawKeeperBond(bondMinimum);
     }
 
@@ -3686,7 +3686,7 @@ contract CrucibleTest is Test {
         vault.setDelegationQuorumEnabled(true);
 
         // Both attestors vote for the same root — reaching quorum and auto-committing.
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("quorum-freeze-root");
         bytes memory delAtt1 = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3700,7 +3700,7 @@ contract CrucibleTest is Test {
         vault.submitDelegationVote(delAtt2, 1, delRoot, snapPre.stakerRegistryRoot, 5);
 
         // Confirm root was committed via quorum.
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, delRoot);
 
         // Verify getDelegationEpochAttestors returns both attestors.
@@ -3722,11 +3722,11 @@ contract CrucibleTest is Test {
         // Neither can withdraw while frozen.
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(attestor1);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, attestor1));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, attestor1));
         vault.withdrawKeeperBond(bondMinimum);
 
         vm.prank(attestor2);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, attestor2));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, attestor2));
         vault.withdrawKeeperBond(bondMinimum);
 
         // Slash attestor1 — clears freeze, allows withdrawal of remainder.
@@ -3766,7 +3766,7 @@ contract CrucibleTest is Test {
         vault.setDelegationQuorumEnabled(true);
 
         // Quorum commit via two attestors.
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("fraud-quorum-root");
         bytes memory delAtt1 = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3801,17 +3801,17 @@ contract CrucibleTest is Test {
         // Neither can withdraw.
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(attestor1);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, attestor1));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, attestor1));
         vault.withdrawKeeperBond(bondMinimum);
 
         vm.prank(attestor2);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondIsFrozen.selector, attestor2));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondIsFrozen.selector, attestor2));
         vault.withdrawKeeperBond(bondMinimum);
     }
 
     /// @notice Keeper bond remains locked during adjudication period after auto-revoke.
     function test_withdrawKeeperBond_lockedDuringAdjudication() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("adjudication-lock-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3827,14 +3827,14 @@ contract CrucibleTest is Test {
         vault.challengeDelegationCommitment(1);
 
         // Root is zero (auto-revoked) but adjudication is pending
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, bytes32(0));
         assertTrue(vault.delegationAutoRevokedAt(1) > 0);
 
         // Keeper bond should still be locked during adjudication
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(Crucible.KeeperBondLocked.selector));
+        vm.expectRevert(abi.encodeWithSelector(Cruzible.KeeperBondLocked.selector));
         vault.withdrawKeeperBond(bondMinimum);
 
         // Fast-forward past adjudication period — bond unlocks
@@ -3853,14 +3853,14 @@ contract CrucibleTest is Test {
         vm.prank(admin);
         vault.grantRole(keeperRole, unbondedKeeper);
 
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("bond-required");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
         uint256 bondMinimum = vault.KEEPER_BOND_MINIMUM();
         vm.prank(unbondedKeeper);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.InsufficientKeeperBond.selector, uint256(0), bondMinimum)
+            abi.encodeWithSelector(Cruzible.InsufficientKeeperBond.selector, uint256(0), bondMinimum)
         );
         vault.commitDelegationSnapshot(delAtt, 1, delRoot, snapPre.stakerRegistryRoot, 1);
     }
@@ -3896,7 +3896,7 @@ contract CrucibleTest is Test {
 
     /// @notice Anyone can challenge a delegation commitment during the challenge period (with bond).
     function test_challengeDelegationCommitment() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("challenge-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3915,13 +3915,13 @@ contract CrucibleTest is Test {
         assertEq(aethel.balanceOf(alice), aliceBefore - challengeBond);
 
         // Root is still committed (threshold not reached).
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, delRoot);
     }
 
     /// @notice Challenge auto-revokes when threshold is reached; bonds are NOT auto-refunded.
     function test_challengeDelegationCommitment_autoRevokes() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("auto-revoke-root");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3940,7 +3940,7 @@ contract CrucibleTest is Test {
 
         // Root is auto-revoked (circuit-breaker).
         assertEq(vault.delegationChallengeCount(1), 3);
-        Crucible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snap = vault.getEpochSnapshot(1);
         assertEq(snap.delegationRegistryRoot, bytes32(0));
         assertEq(vault.delegationCommitTimestamp(1), 0);
         assertEq(vault.delegatingStakerCount(1), 0);
@@ -3953,7 +3953,7 @@ contract CrucibleTest is Test {
 
     /// @notice Cannot challenge the same epoch twice from the same address.
     function test_challengeDelegationCommitment_rejectsDoubleChallenge() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("double-challenge");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3965,14 +3965,14 @@ contract CrucibleTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.AlreadyChallenged.selector, uint256(1), alice)
+            abi.encodeWithSelector(Cruzible.AlreadyChallenged.selector, uint256(1), alice)
         );
         vault.challengeDelegationCommitment(1);
     }
 
     /// @notice Cannot challenge after the challenge period expires.
     function test_challengeDelegationCommitment_rejectsAfterPeriod() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("late-challenge");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -3984,7 +3984,7 @@ contract CrucibleTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ChallengeOutsidePeriod.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.ChallengeOutsidePeriod.selector, uint256(1))
         );
         vault.challengeDelegationCommitment(1);
     }
@@ -3993,7 +3993,7 @@ contract CrucibleTest is Test {
     function test_challengeDelegationCommitment_rejectsWhenNotCommitted() public {
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.DelegationNotCommitted.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.DelegationNotCommitted.selector, uint256(1))
         );
         vault.challengeDelegationCommitment(1);
     }
@@ -4002,7 +4002,7 @@ contract CrucibleTest is Test {
 
     /// @notice Guardian direct revocation confirms fraud — bonds refundable immediately.
     function test_claimChallengerBond_refundOnGuardianRevocation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("refund-test");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4032,7 +4032,7 @@ contract CrucibleTest is Test {
 
     /// @notice Challenger bonds are slashed when commitment survives (no revocation).
     function test_claimChallengerBond_slashOnSurvival() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("slash-test");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4060,7 +4060,7 @@ contract CrucibleTest is Test {
 
     /// @notice Auto-revocation WITHOUT guardian confirmation → bonds slashed after adjudication.
     function test_claimChallengerBond_slashOnAutoRevokeWithoutConfirmation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("auto-revoke-slash");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4086,7 +4086,7 @@ contract CrucibleTest is Test {
         // Cannot claim during adjudication period
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ChallengeClaimTooEarly.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.ChallengeClaimTooEarly.selector, uint256(1))
         );
         vault.claimChallengerBond(1);
 
@@ -4108,7 +4108,7 @@ contract CrucibleTest is Test {
 
     /// @notice Auto-revocation WITH guardian confirmation → bonds refunded.
     function test_claimChallengerBond_refundOnAutoRevokeWithConfirmation() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("auto-revoke-confirm");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4153,14 +4153,14 @@ contract CrucibleTest is Test {
     function test_confirmDelegationFraud_rejectsIfNotAutoRevoked() public {
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.NotAutoRevoked.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.NotAutoRevoked.selector, uint256(1))
         );
         vault.confirmDelegationFraud(1);
     }
 
     /// @notice confirmDelegationFraud rejects after adjudication period expires.
     function test_confirmDelegationFraud_rejectsAfterAdjudicationExpires() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("adjudication-expired");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4180,14 +4180,14 @@ contract CrucibleTest is Test {
 
         vm.prank(admin);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.AdjudicationPeriodExpired.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.AdjudicationPeriodExpired.selector, uint256(1))
         );
         vault.confirmDelegationFraud(1);
     }
 
     /// @notice Only guardian can call confirmDelegationFraud.
     function test_confirmDelegationFraud_onlyGuardian() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("only-guardian");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4210,7 +4210,7 @@ contract CrucibleTest is Test {
 
     /// @notice Cannot claim challenger bond before outcome is known (challenge period active).
     function test_claimChallengerBond_rejectsTooEarly() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("too-early");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4223,7 +4223,7 @@ contract CrucibleTest is Test {
         // Try to claim while challenge period is still active
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ChallengeClaimTooEarly.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.ChallengeClaimTooEarly.selector, uint256(1))
         );
         vault.claimChallengerBond(1);
     }
@@ -4232,14 +4232,14 @@ contract CrucibleTest is Test {
     function test_claimChallengerBond_rejectsNoBond() public {
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.NoChallengerBond.selector, uint256(1), alice)
+            abi.encodeWithSelector(Cruzible.NoChallengerBond.selector, uint256(1), alice)
         );
         vault.claimChallengerBond(1);
     }
 
     /// @notice Cannot double-claim a challenger bond.
     function test_claimChallengerBond_rejectsDoubleClaim() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("double-claim");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4260,14 +4260,14 @@ contract CrucibleTest is Test {
         // Second claim fails
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.NoChallengerBond.selector, uint256(1), alice)
+            abi.encodeWithSelector(Cruzible.NoChallengerBond.selector, uint256(1), alice)
         );
         vault.claimChallengerBond(1);
     }
 
     /// @notice Cannot claim during adjudication period after auto-revoke.
     function test_claimChallengerBond_rejectsDuringAdjudication() public {
-        Crucible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
+        Cruzible.EpochSnapshot memory snapPre = vault.getEpochSnapshot(1);
         bytes32 delRoot = keccak256("adjudication-pending");
         bytes memory delAtt = _createDelegationAttestation(1, delRoot, snapPre.stakerRegistryRoot);
 
@@ -4285,7 +4285,7 @@ contract CrucibleTest is Test {
         // Try to claim during adjudication period (before guardian decides)
         vm.prank(alice);
         vm.expectRevert(
-            abi.encodeWithSelector(Crucible.ChallengeClaimTooEarly.selector, uint256(1))
+            abi.encodeWithSelector(Cruzible.ChallengeClaimTooEarly.selector, uint256(1))
         );
         vault.claimChallengerBond(1);
     }

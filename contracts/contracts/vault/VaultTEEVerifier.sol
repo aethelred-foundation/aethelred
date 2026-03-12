@@ -307,11 +307,11 @@ contract VaultTEEVerifier is
 
         // 5. Verify signature and recover signer
         //    Digest matches Go native verifier & Rust TEE producer:
-        //    SHA-256("CrucibleTEEAttestation" ‖ platform ‖ timestamp_u64 ‖
+        //    SHA-256("CruzibleTEEAttestation" ‖ platform ‖ timestamp_u64 ‖
         //            nonce ‖ enclaveHash ‖ signerHash ‖ sha256(payload))
         bytes32 payloadHash = sha256(decoded.payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             decoded.platform,
             uint64(decoded.timestamp),
             decoded.nonce,
@@ -387,7 +387,7 @@ contract VaultTEEVerifier is
         // Verify signature — tagged SHA-256 digest (matches Go & Rust verifiers)
         bytes32 payloadHash = sha256(decoded.payload);
         bytes32 digest = sha256(abi.encodePacked(
-            "CrucibleTEEAttestation",
+            "CruzibleTEEAttestation",
             decoded.platform,
             uint64(decoded.timestamp),
             decoded.nonce,

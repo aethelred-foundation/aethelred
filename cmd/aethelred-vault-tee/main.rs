@@ -1,4 +1,4 @@
-//! Crucible TEE Worker Binary
+//! Cruzible TEE Worker Binary
 //!
 //! Stateless HTTP service for TEE-verified vault operations:
 //!   - Validator selection with diversity scoring
@@ -9,14 +9,14 @@
 //!
 //! ```sh
 //! # Mock mode (development)
-//! CRUCIBLE_TEE_PLATFORM=mock aethelred-vault-tee
+//! CRUZIBLE_TEE_PLATFORM=mock aethelred-vault-tee
 //!
 //! # Real platform (production)
-//! CRUCIBLE_TEE_PLATFORM=sgx \
-//!   CRUCIBLE_OPERATOR_KEY_HEX=<64 hex chars> \
-//!   CRUCIBLE_ATTESTATION_RELAY_URL=https://relay.example.com/attest \
-//!   CRUCIBLE_ENCLAVE_HASH_HEX=<64 hex chars> \
-//!   CRUCIBLE_SIGNER_HASH_HEX=<64 hex chars> \
+//! CRUZIBLE_TEE_PLATFORM=sgx \
+//!   CRUZIBLE_OPERATOR_KEY_HEX=<64 hex chars> \
+//!   CRUZIBLE_ATTESTATION_RELAY_URL=https://relay.example.com/attest \
+//!   CRUZIBLE_ENCLAVE_HASH_HEX=<64 hex chars> \
+//!   CRUZIBLE_SIGNER_HASH_HEX=<64 hex chars> \
 //!   aethelred-vault-tee
 //! ```
 //!
@@ -26,53 +26,53 @@
 //!
 //! | Variable | Description | Default |
 //! |----------|-------------|---------|
-//! | `CRUCIBLE_LISTEN_ADDR` | HTTP listen address | `127.0.0.1:8547` |
-//! | `CRUCIBLE_TEE_PLATFORM` | TEE platform: `sgx`, `nitro`, `sev`, `mock` | `mock` |
-//! | `CRUCIBLE_ALLOW_SIMULATED` | Enable simulated attestations | `true` |
-//! | `CRUCIBLE_AUTH_TOKEN` | Bearer token for API auth (required in prod) | None |
-//! | `CRUCIBLE_RATE_LIMIT_RPS` | Max requests per second | `50` |
-//! | `CRUCIBLE_INSECURE_NO_AUTH` | Bypass auth check (dev only, NOT for prod) | `false` |
-//! | `CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY` | Allow local vendor key on real platforms (requires `mock-tee` build + loopback, dev only) | `false` |
+//! | `CRUZIBLE_LISTEN_ADDR` | HTTP listen address | `127.0.0.1:8547` |
+//! | `CRUZIBLE_TEE_PLATFORM` | TEE platform: `sgx`, `nitro`, `sev`, `mock` | `mock` |
+//! | `CRUZIBLE_ALLOW_SIMULATED` | Enable simulated attestations | `true` |
+//! | `CRUZIBLE_AUTH_TOKEN` | Bearer token for API auth (required in prod) | None |
+//! | `CRUZIBLE_RATE_LIMIT_RPS` | Max requests per second | `50` |
+//! | `CRUZIBLE_INSECURE_NO_AUTH` | Bypass auth check (dev only, NOT for prod) | `false` |
+//! | `CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY` | Allow local vendor key on real platforms (requires `mock-tee` build + loopback, dev only) | `false` |
 //! | `RUST_LOG` | Log level filter | `info` |
 //!
 //! ## Identity & Attestation
 //!
 //! | Variable | Description | Default |
 //! |----------|-------------|---------|
-//! | `CRUCIBLE_OPERATOR_KEY_HEX` | secp256k1 operator signing key (64 hex chars) | Random (dev only) |
-//! | `CRUCIBLE_ATTESTATION_RELAY_URL` | Production attestation relay URL | None |
-//! | `CRUCIBLE_VENDOR_KEY_HEX` | P-256 local vendor key for dev/test (64 hex chars) | None |
-//! | `CRUCIBLE_ENCLAVE_HASH_HEX` | Enclave measurement / MRENCLAVE (64 hex chars) | Placeholder (mock only) |
-//! | `CRUCIBLE_SIGNER_HASH_HEX` | Signer measurement / MRSIGNER (64 hex chars) | Placeholder (mock only) |
+//! | `CRUZIBLE_OPERATOR_KEY_HEX` | secp256k1 operator signing key (64 hex chars) | Random (dev only) |
+//! | `CRUZIBLE_ATTESTATION_RELAY_URL` | Production attestation relay URL | None |
+//! | `CRUZIBLE_VENDOR_KEY_HEX` | P-256 local vendor key for dev/test (64 hex chars) | None |
+//! | `CRUZIBLE_ENCLAVE_HASH_HEX` | Enclave measurement / MRENCLAVE (64 hex chars) | Placeholder (mock only) |
+//! | `CRUZIBLE_SIGNER_HASH_HEX` | Signer measurement / MRSIGNER (64 hex chars) | Placeholder (mock only) |
 //!
 //! ## Limits
 //!
 //! | Variable | Description | Default |
 //! |----------|-------------|---------|
-//! | `CRUCIBLE_MAX_VALIDATORS` | Maximum validators per selection | `200` |
-//! | `CRUCIBLE_MAX_STAKERS` | Maximum stakers per reward calculation | `100000` |
-//! | `CRUCIBLE_MAX_COMMITMENTS` | Maximum commitments/reveals per MEV ordering | `10000` |
+//! | `CRUZIBLE_MAX_VALIDATORS` | Maximum validators per selection | `200` |
+//! | `CRUZIBLE_MAX_STAKERS` | Maximum stakers per reward calculation | `100000` |
+//! | `CRUZIBLE_MAX_COMMITMENTS` | Maximum commitments/reveals per MEV ordering | `10000` |
 //!
 //! # Security Notes
 //!
-//! - **`CRUCIBLE_OPERATOR_KEY_HEX`**: In production, this MUST be set to a
+//! - **`CRUZIBLE_OPERATOR_KEY_HEX`**: In production, this MUST be set to a
 //!   stable key generated inside the TEE. Without it, the operator identity
 //!   rotates on every restart and attestations from previous runs become invalid.
 //!
-//! - **`CRUCIBLE_ATTESTATION_RELAY_URL`** vs **`CRUCIBLE_VENDOR_KEY_HEX`**:
+//! - **`CRUZIBLE_ATTESTATION_RELAY_URL`** vs **`CRUZIBLE_VENDOR_KEY_HEX`**:
 //!   The relay URL is the **required** production path — hardware evidence is
-//!   verified by an independent service. `CRUCIBLE_VENDOR_KEY_HEX` is
+//!   verified by an independent service. `CRUZIBLE_VENDOR_KEY_HEX` is
 //!   **rejected** for real platforms (SGX/Nitro/SEV) unless **all** of:
 //!   1. The binary was built with `--features mock-tee` (compile-time gate).
-//!   2. `CRUCIBLE_LISTEN_ADDR` is a loopback address (runtime gate).
-//!   3. `CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY=true` (runtime flag).
+//!   2. `CRUZIBLE_LISTEN_ADDR` is a loopback address (runtime gate).
+//!   3. `CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true` (runtime flag).
 //!
 //!   Production images must never enable `mock-tee`, so the local vendor
 //!   path is removed at compile time. In dev builds, both loopback binding
 //!   and the explicit flag are required — a non-loopback deployment will
 //!   hard-error even with the flag set.
 //!
-//! - **`CRUCIBLE_ENCLAVE_HASH_HEX`** / **`CRUCIBLE_SIGNER_HASH_HEX`**:
+//! - **`CRUZIBLE_ENCLAVE_HASH_HEX`** / **`CRUZIBLE_SIGNER_HASH_HEX`**:
 //!   Required for real platforms. These must match the values registered on-chain
 //!   via `setEnclaveConfig()`. Mismatches cause attestation failures.
 
@@ -99,10 +99,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // ── Core config ──────────────────────────────────────────────────────
 
-    let listen_addr = env::var("CRUCIBLE_LISTEN_ADDR")
+    let listen_addr = env::var("CRUZIBLE_LISTEN_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:8547".to_string());
 
-    let platform = match env::var("CRUCIBLE_TEE_PLATFORM")
+    let platform = match env::var("CRUZIBLE_TEE_PLATFORM")
         .unwrap_or_else(|_| "mock".to_string())
         .to_lowercase()
         .as_str()
@@ -118,56 +118,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let allow_simulated = env::var("CRUCIBLE_ALLOW_SIMULATED")
+    let allow_simulated = env::var("CRUZIBLE_ALLOW_SIMULATED")
         .unwrap_or_else(|_| "true".to_string())
         .parse::<bool>()
         .unwrap_or(true);
 
     // ── Identity & attestation ───────────────────────────────────────────
 
-    let operator_key_hex = opt_env("CRUCIBLE_OPERATOR_KEY_HEX");
-    let attestation_relay_url = opt_env("CRUCIBLE_ATTESTATION_RELAY_URL");
-    let vendor_attestation_key_hex = opt_env("CRUCIBLE_VENDOR_KEY_HEX");
-    let enclave_hash_hex = opt_env("CRUCIBLE_ENCLAVE_HASH_HEX");
-    let signer_hash_hex = opt_env("CRUCIBLE_SIGNER_HASH_HEX");
-    let application_hash_hex = opt_env("CRUCIBLE_APPLICATION_HASH_HEX");
+    let operator_key_hex = opt_env("CRUZIBLE_OPERATOR_KEY_HEX");
+    let attestation_relay_url = opt_env("CRUZIBLE_ATTESTATION_RELAY_URL");
+    let vendor_attestation_key_hex = opt_env("CRUZIBLE_VENDOR_KEY_HEX");
+    let enclave_hash_hex = opt_env("CRUZIBLE_ENCLAVE_HASH_HEX");
+    let signer_hash_hex = opt_env("CRUZIBLE_SIGNER_HASH_HEX");
+    let application_hash_hex = opt_env("CRUZIBLE_APPLICATION_HASH_HEX");
 
     // ── Limits ───────────────────────────────────────────────────────────
 
-    let max_validators: usize = env::var("CRUCIBLE_MAX_VALIDATORS")
+    let max_validators: usize = env::var("CRUZIBLE_MAX_VALIDATORS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(200);
 
-    let max_stakers: usize = env::var("CRUCIBLE_MAX_STAKERS")
+    let max_stakers: usize = env::var("CRUZIBLE_MAX_STAKERS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(100_000);
 
-    let max_commitments: usize = env::var("CRUCIBLE_MAX_COMMITMENTS")
+    let max_commitments: usize = env::var("CRUZIBLE_MAX_COMMITMENTS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(10_000);
 
     // ── Auth & rate limit ──────────────────────────────────────────────────
 
-    let auth_token = opt_env("CRUCIBLE_AUTH_TOKEN");
+    let auth_token = opt_env("CRUZIBLE_AUTH_TOKEN");
 
     // Explicit opt-in to bypass the fail-closed auth check.
     // Only useful for local dev with real hardware on loopback.
-    let insecure_no_auth = env::var("CRUCIBLE_INSECURE_NO_AUTH")
+    let insecure_no_auth = env::var("CRUZIBLE_INSECURE_NO_AUTH")
         .unwrap_or_else(|_| "false".to_string())
         .parse::<bool>()
         .unwrap_or(false);
 
     // Explicit opt-in to use a local vendor key on real platforms.
     // By default, real platforms require attestation_relay_url.
-    let insecure_local_vendor_key = env::var("CRUCIBLE_INSECURE_LOCAL_VENDOR_KEY")
+    let insecure_local_vendor_key = env::var("CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY")
         .unwrap_or_else(|_| "false".to_string())
         .parse::<bool>()
         .unwrap_or(false);
 
-    let rate_limit_rps: u32 = env::var("CRUCIBLE_RATE_LIMIT_RPS")
+    let rate_limit_rps: u32 = env::var("CRUZIBLE_RATE_LIMIT_RPS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(50);
@@ -210,7 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         max_validators = config.max_validators,
         max_stakers = config.max_stakers,
         max_commitments = config.max_commitments,
-        "Starting Crucible TEE service"
+        "Starting Cruzible TEE service"
     );
 
     start_server(config).await?;

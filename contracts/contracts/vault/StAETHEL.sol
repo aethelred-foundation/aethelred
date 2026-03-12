@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 /**
  * @title StAETHEL (Staked AETHEL)
  * @author Aethelred Team
- * @notice Liquid staking token representing staked AETHEL in Crucible.
+ * @notice Liquid staking token representing staked AETHEL in Cruzible.
  *
  * @dev StAETHEL is a share-based token (similar to Lido's stETH model).
  *      The token balance rebases based on the exchange rate between AETHEL
@@ -73,7 +73,7 @@ contract StAETHEL is
     /// @notice Total shares outstanding.
     uint256 internal _totalShares;
 
-    /// @notice The Crucible contract address.
+    /// @notice The Cruzible contract address.
     address public vault;
 
     /// @notice Blacklisted addresses (compliance).
@@ -84,7 +84,7 @@ contract StAETHEL is
     ///         share-changing operation (mint, burn, transfer).
     ///
     /// @dev The accumulator proves the exact per-staker share distribution at
-    ///      any point in time.  Crucible reads this value at snapshot-commit
+    ///      any point in time.  Cruzible reads this value at snapshot-commit
     ///      time and verifies it against the TEE attestation, eliminating admin
     ///      discretion over reward-recipient selection.
     bytes32 public stakerRegistryRoot;
@@ -130,7 +130,7 @@ contract StAETHEL is
     /**
      * @notice Initialize the stAETHEL token.
      * @param admin Admin address (multisig/contract on mainnet).
-     * @param vaultAddress The Crucible contract.
+     * @param vaultAddress The Cruzible contract.
      */
     function initialize(address admin, address vaultAddress) external initializer {
         if (admin == address(0)) revert ZeroAddress();

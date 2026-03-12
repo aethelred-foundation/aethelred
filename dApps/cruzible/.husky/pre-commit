@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pre-commit hook for Crucible
+# Pre-commit hook for Cruzible
 # Runs linting and tests before allowing commits
 
 echo "🔍 Running pre-commit checks..."

@@ -2,7 +2,7 @@
 #
 # run-conformance.sh — Cross-language conformance test runner (Track 8)
 #
-# Runs the Crucible canonical hash conformance tests across all SDK
+# Runs the Cruzible canonical hash conformance tests across all SDK
 # implementations (TypeScript, Python, Go) and reports a summary.
 #
 # Prerequisites:
@@ -20,8 +20,8 @@ set -uo pipefail
 # Note: -e is intentionally omitted so the script continues after a suite fails.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CRUCIBLE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-AETHELRED_ROOT="$(cd "$CRUCIBLE_ROOT/../../.." && pwd)"
+CRUZIBLE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+AETHELRED_ROOT="$(cd "$CRUZIBLE_ROOT/../../.." && pwd)"
 
 # Color codes (disabled if not a TTY)
 if [ -t 1 ]; then
@@ -66,20 +66,20 @@ run_suite() {
 }
 
 echo "=============================================="
-echo " Crucible Cross-Language Conformance (Track 8)"
+echo " Cruzible Cross-Language Conformance (Track 8)"
 echo "=============================================="
 echo ""
-echo "Crucible root: $CRUCIBLE_ROOT"
+echo "Cruzible root: $CRUZIBLE_ROOT"
 echo "Aethelred root: $AETHELRED_ROOT"
 
 # ── 1. TypeScript SDK ──────────────────────────────────────────────────────
 run_suite "TypeScript SDK" \
-  "$CRUCIBLE_ROOT/sdk/typescript" \
+  "$CRUZIBLE_ROOT/sdk/typescript" \
   sh -c "npx tsc -p tsconfig.json && node dist/test/conformance.test.js"
 
 # ── 2. Python SDK ──────────────────────────────────────────────────────────
 run_suite "Python SDK" \
-  "$CRUCIBLE_ROOT/sdk/python" \
+  "$CRUZIBLE_ROOT/sdk/python" \
   python -m pytest tests/test_conformance.py -v
 
 # ── 3. Go Keeper ───────────────────────────────────────────────────────────

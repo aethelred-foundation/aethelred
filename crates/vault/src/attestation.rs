@@ -8,7 +8,7 @@
 //! The digest format matches the Go native verifier:
 //!
 //! ```text
-//! digest = SHA-256("CrucibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
+//! digest = SHA-256("CruzibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
 //!                   nonce ‖ enclaveHash ‖ signerHash ‖ payloadHash)
 //! ```
 //!
@@ -1966,7 +1966,7 @@ impl AttestationGenerator {
 /// Compute the attestation digest matching the Go native verifier format.
 ///
 /// ```text
-/// digest = SHA-256("CrucibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
+/// digest = SHA-256("CruzibleTEEAttestation" ‖ platform ‖ timestamp_be64 ‖
 ///                   nonce ‖ enclaveHash ‖ signerHash ‖ payloadHash)
 /// ```
 ///
@@ -1980,7 +1980,7 @@ pub fn compute_attestation_digest(
     payload_hash_hex: &str,
 ) -> [u8; 32] {
     let mut hasher = Sha256::new();
-    hasher.update(b"CrucibleTEEAttestation");
+    hasher.update(b"CruzibleTEEAttestation");
     hasher.update([platform]);
     hasher.update(timestamp.to_be_bytes());
 
@@ -2475,9 +2475,9 @@ mod tests {
         );
 
         // Manually compute expected:
-        // SHA-256("CrucibleTEEAttestation" || 0x00 || 0x00..00_65_5A_2A_00 || nonce || enclave || signer || payload)
+        // SHA-256("CruzibleTEEAttestation" || 0x00 || 0x00..00_65_5A_2A_00 || nonce || enclave || signer || payload)
         let mut hasher = Sha256::new();
-        hasher.update(b"CrucibleTEEAttestation");
+        hasher.update(b"CruzibleTEEAttestation");
         hasher.update([0u8]); // platform
         hasher.update(1700000000u64.to_be_bytes()); // timestamp
         hasher.update([0x11u8; 32]); // nonce
