@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Services | Aethelred</title>
+  <meta name="description" content="Reference architecture for financial-services workloads on Aethelred: confidential models, sanctions-aware routing, Digital Seals, and governed treasury controls.">
+  <meta name="keywords" content="Aethelred finance use case, confidential finance models, sanctions screening, stablecoin routing, Digital Seals, governed AI">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/usecase-finance">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/usecase-finance">
+  <meta property="og:title" content="Financial Services | Aethelred">
+  <meta property="og:description" content="Reference architecture for financial-services workloads on Aethelred: confidential models, sanctions-aware routing, Digital Seals, and governed treasury controls.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Financial Services social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Financial Services | Aethelred">
+  <meta name="twitter:description" content="Reference architecture for financial-services workloads on Aethelred: confidential models, sanctions-aware routing, Digital Seals, and governed treasury controls.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Financial Services social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/usecase-finance#webpage",
+        "name": "Financial Services",
+        "headline": "Financial Services",
+        "url": "https://www.aethelred.io/usecase-finance",
+        "description": "Reference architecture for financial-services workloads on Aethelred: confidential models, sanctions-aware routing, Digital Seals, and governed treasury controls.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/usecase-finance#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Financial Services social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/usecase-finance#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Financial Services",
+            "item": "https://www.aethelred.io/usecase-finance"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-usecase usecase-finance">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="usecase-finance-resources">Resources</button>
+          <div class="dropdown-panel" id="usecase-finance-resources" role="menu">
+            <a href="#pressure" role="menuitem">Workload Pressure</a>
+            <a href="#fit" role="menuitem">Why Aethelred Fits</a>
+            <a href="#workflow" role="menuitem">Reference Workflow</a>
+            <a href="#controls" role="menuitem">Protocol Mapping</a>
+            <a href="use-cases.html" role="menuitem">All Use Cases</a>
+            <a href="developers.html" role="menuitem">Developer Docs</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="stablecoin-infrastructure.html" role="menuitem">Stablecoin Infrastructure</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="use-cases.html" class="btn btn-small btn-primary">Use Cases</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Finance Sections</summary>
+      <a href="#pressure" class="mobile-link">Workload Pressure</a>
+      <a href="#fit" class="mobile-link">Why Aethelred Fits</a>
+      <a href="#workflow" class="mobile-link">Reference Workflow</a>
+      <a href="#controls" class="mobile-link">Protocol Mapping</a>
+      <a href="use-cases.html" class="mobile-link">All Use Cases</a>
+      <a href="developers.html" class="mobile-link">Developer Docs</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="stablecoin-infrastructure.html" class="mobile-link">Stablecoin Infrastructure</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Governed Confidential Finance</p>
+          <h1 class="hero-title" id="page-title">Financial Services</h1>
+          <p class="hero-subtitle">Financial AI workloads sit at the intersection of confidentiality, auditability, and governance. Aethelred is a practical fit for risk, treasury, routing, and institutional automation because the protocol combines TEE-backed confidential execution, sanctions-aware compliance tooling, issuer-authorized stablecoin routing, Digital Seals, and timelocked governance controls.</p>
+          <div class="hero-tags" aria-label="Finance workload traits">
+            <span class="hero-tag">Confidential Models</span><span class="hero-tag">Sanctions Screening</span><span class="hero-tag">Timelocked Controls</span><span class="hero-tag">Stablecoin Routing</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#fit" class="btn btn-primary">See Protocol Fit</a>
+            <a href="use-cases.html" class="btn btn-secondary">All Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT REFERENCE ARCHITECTURE</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Private models can stay private</h4><p>TEE-backed blind compute protects portfolio, risk, and routing inputs from generic application or validator exposure.</p></div>
+          <div class="hero-card"><h4>Compliance is protocol-adjacent</h4><p>The regulatory sandbox covers OFAC, EU, and UN screening plus consent, transfer, and retention checks.</p></div>
+          <div class="hero-card"><h4>Governance controls matter</h4><p>Treasury and ecosystem flows are framed around multisig, timelocks, and auditable control boundaries.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>4-of-7</strong><span>Published ecosystem-fund control</span></div>
+            <div class="metric-pill"><strong>48 Hours</strong><span>Timelock boundary</span></div>
+            <div class="metric-pill"><strong>OFAC / EU / UN</strong><span>Current screening surface</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="pressure" aria-labelledby="pressure-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workload Pressure</p>
+          <h2 class="section-title" id="pressure-title">Why this workload is hard</h2>
+          <p class="section-lead">Finance workloads fail when confidentiality, policy control, and result evidence drift apart.</p>
+        </div>
+        <div class="grid grid-3 usecase-pressure-grid">
+          <article class="card"><h3>Model and portfolio data are sensitive</h3><p>Risk engines, treasury optimizers, and routing logic cannot be treated like public inference jobs.</p></article>
+          <article class="card"><h3>Sanctions and transfer rules are dynamic</h3><p>Cross-border value movement and account activity need explicit screening and audit support, not informal policy notes.</p></article>
+          <article class="card"><h3>Governed capital needs evidence</h3><p>Treasury, settlement, and policy workflows need observable control paths rather than ad hoc operator discretion.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="fit" aria-labelledby="fit-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Why Aethelred Fits</p>
+          <h2 class="section-title" id="fit-title">Map the workload to the current protocol surface</h2>
+          <p class="section-lead">The protocol surfaces line up well with financial workloads that need verifiable outputs and stricter operating controls.</p>
+        </div>
+        <div class="grid grid-3 usecase-fit-grid">
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>TEE-backed confidential execution</h3></div></div></div><p>Blind compute is explicitly positioned for financial models in the whitepaper, making TEE a natural trust surface for sensitive inference.</p><div class="tag-list stack-top-12"><span class="tag">Blind Compute</span><span class="tag">TEE</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Compliance-first policy tooling</h3></div></div></div><p>Sandbox rules already cover sanctions screening, data-transfer constraints, and retention checks using citation-backed logic.</p><div class="tag-list stack-top-12"><span class="tag">OFAC</span><span class="tag">EU</span><span class="tag">UN</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Issuer-authorized routing model</h3></div></div></div><p>Stablecoin routing is designed around authorized channels such as Circle CCTP V2 and TEE-attested issuer mints rather than AMM-style pools.</p><div class="tag-list stack-top-12"><span class="tag">CCTP</span><span class="tag">TEE Issuer Mint</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Workflow</p>
+          <h2 class="section-title" id="workflow-title">A current-state flow for finance workloads</h2>
+          <p class="section-lead">A finance-ready flow combines confidential compute with explicit policy and evidence gates.</p>
+        </div>
+        <div class="grid grid-4 usecase-workflow-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Classify the data and jurisdiction</h3><p>Set the policy boundary before running risk, treasury, or routing logic.</p><div class="tag-list"><span class="tag">Jurisdiction</span><span class="tag">Compliance</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>Execute protected inference</h3><p>Run the workload in a TEE or hybrid verification mode when confidentiality and output integrity both matter.</p><div class="tag-list"><span class="tag">TEE</span><span class="tag">Hybrid</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Seal the result and record evidence</h3><p>Convert the output into a verifiable object that can be referenced by downstream systems or governance actors.</p><div class="tag-list"><span class="tag">Digital Seal</span><span class="tag">Audit Trail</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Gate actions through policy and governance</h3><p>Before value movement or policy execution, verify the result and pass it through the intended governance or issuer-control boundary.</p><div class="tag-list"><span class="tag">Timelock</span><span class="tag">Multisig</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="controls" aria-labelledby="controls-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Protocol Mapping</p>
+          <h2 class="section-title" id="controls-title">Which Aethelred surfaces matter most</h2>
+          <p class="section-lead">These are the protocol surfaces that matter most in finance-oriented deployments.</p>
+        </div>
+        <div class="table-wrap usecase-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Protocol Surface</th><th>Why It Matters</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Confidential model execution</td><td>TEE attestation</td><td>The validator never sees plaintext inputs when a workload runs inside the enclave boundary.</td></tr>
+              <tr><td>Sanctions and policy review</td><td>Regulatory sandbox / compliance module</td><td>OFAC, EU, and UN screening plus transfer and retention checks are part of the documented surface.</td></tr>
+              <tr><td>Stablecoin movement</td><td>Issuer-authorized routing</td><td>The protocol documents authorized routing instead of open liquidity-pool bridges for institutional flows.</td></tr>
+              <tr><td>Governed capital actions</td><td>Timelocks and multisig controls</td><td>The current docs emphasize auditable release boundaries rather than purely discretionary treasury action.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Finance needs governed architecture, not a hand-wavy AI layer.</h3>
+            <p>Start with the documented confidential-compute, compliance, and routing surfaces, then validate the workflow in sandbox and testnet before attaching real-value operations. For the current issuer-authorized settlement path, use the dedicated <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a> reference.</p>
+          </div>
+          <a href="stablecoin-infrastructure.html" class="btn btn-primary">Open Stablecoin Reference</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testnet Dashboard | Aethelred</title>
+  <meta name="description" content="Aethelred testnet specifications and configuration. Review architecture, endpoints, and launch readiness for verifiable AI applications.">
+  <meta name="keywords" content="Aethelred testnet, blockchain configuration, faucet, bridge, endpoint">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/testnet">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/testnet">
+  <meta property="og:title" content="Testnet Dashboard | Aethelred">
+  <meta property="og:description" content="Target specs, architecture, and planned network configuration for Aethelred testnet.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Testnet Dashboard social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Testnet Dashboard | Aethelred">
+  <meta name="twitter:description" content="Prepare for testnet launch with planned architecture and network connection details.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Testnet Dashboard social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.aethelred.io/testnet#webpage",
+        "name": "Testnet Dashboard",
+        "url": "https://www.aethelred.io/testnet",
+        "description": "Aethelred testnet specifications and configuration. Review architecture, endpoints, and launch readiness for verifiable AI applications.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/testnet#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Testnet Dashboard social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/testnet#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Testnet",
+            "item": "https://www.aethelred.io/testnet"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-testnet">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link is-active">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="testnet-resources">Resources</button>
+          <div class="dropdown-panel" id="testnet-resources" role="menu">
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+            <a href="wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="#specifications" role="menuitem">Target Specs</a>
+            <a href="#architecture" role="menuitem">Architecture</a>
+            <a href="#features" role="menuitem">Features</a>
+            <a href="#bridge" role="menuitem">Bridge</a>
+            <a href="#faucet" role="menuitem">Faucet</a>
+            <a href="#network-config" role="menuitem">Network Config</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Get Started</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link is-active">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Testnet Sections</summary>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+      <a href="wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="#specifications" class="mobile-link">Target Specs</a>
+      <a href="#architecture" class="mobile-link">Architecture</a>
+      <a href="#features" class="mobile-link">Features</a>
+      <a href="#bridge" class="mobile-link">Bridge</a>
+      <a href="#faucet" class="mobile-link">Faucet</a>
+      <a href="#network-config" class="mobile-link">Network Config</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Launch Preparation</p>
+          <h1 class="hero-title" id="page-title">Testnet Dashboard</h1>
+          <p class="hero-subtitle">Prepare for the Aethelred testnet launch with the exact specifications, launch access model, and endpoint settings your team needs. Validate free token flows, weekly refresh cadence, bridge readiness, and observability before the network goes public, then move into the <a class="body-link" href="developers.html">integration docs</a> and the <a class="body-link" href="tools.html">tooling workflows</a> that support launch-day testing.</p>
+          <div class="hero-meta-stack">
+            <div class="hero-tags" aria-label="Testnet capabilities">
+              <span class="hero-tag">Launch Specs</span>
+              <span class="hero-tag">Free tAETHEL</span>
+              <span class="hero-tag">Weekly Refresh</span>
+              <span class="hero-tag">Analytics Ready</span>
+            </div>
+            <div class="status-pill"><span class="dot"></span> Testnet Coming Soon</div>
+          </div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Finality Goal</h4>
+            <p>Deterministic settlement with sub-2-second target finality.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Faucet Access Model</h4>
+            <p>Planned allocation: 10,000 tAETHEL per address every 24 hours for integration testing.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Launch Operations</h4>
+            <p>24-validator target cohort, explorer visibility, and developer support channels aligned for launch.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="specifications" aria-labelledby="specifications-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Target Specifications</p>
+          <h2 class="section-title" id="specifications-title">Planned network performance profile</h2>
+          <p class="section-lead">Reference specifications for testnet launch readiness and integration planning.</p>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="card"><p class="kpi-label">Target Throughput</p><p class="kpi-value">50K+ IPS</p></article>
+          <article class="card"><p class="kpi-label">Consensus</p><p class="kpi-value">PoUW</p></article>
+          <article class="card"><p class="kpi-label">Compute Capacity</p><p class="kpi-value">400 PFLOPS</p></article>
+          <article class="card"><p class="kpi-label">Block Finality</p><p class="kpi-value">&lt;2s</p></article>
+          <article class="card"><p class="kpi-label">Target Block Time</p><p class="kpi-value">Sub-2s</p></article>
+          <article class="card"><p class="kpi-label">Model Support</p><p class="kpi-value">32B params</p></article>
+          <article class="card"><p class="kpi-label">Token Supply</p><p class="kpi-value">10B</p></article>
+          <article class="card"><p class="kpi-label">Token Standard</p><p class="kpi-value">ERC-20</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="architecture" aria-labelledby="architecture-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Architecture</p>
+          <h2 class="section-title" id="architecture-title">Testnet architecture matrix</h2>
+          <p class="section-lead">Core components and current implementation status for launch planning.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Technology</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Settlement Layer</td>
+                <td>Cosmos SDK / CometBFT</td>
+                <td>Deterministic finality with sub-2s block times</td>
+                <td><span class="tag">In Development</span></td>
+              </tr>
+              <tr>
+                <td>Compute Layer</td>
+                <td>TEE Workers (SGX/TDX)</td>
+                <td>Hardware-attested AI inference with 400 PFLOPS target</td>
+                <td><span class="tag">In Development</span></td>
+              </tr>
+              <tr>
+                <td>Cryptography</td>
+                <td>ML-DSA-65 / ML-KEM-768</td>
+                <td>Post-quantum hybrid signatures and key encapsulation</td>
+                <td><span class="tag">Implemented</span></td>
+              </tr>
+              <tr>
+                <td>Bridge</td>
+                <td>AethelredBridge.sol</td>
+                <td>64-block finality, multi-sig guardian, rate-limited</td>
+                <td><span class="tag">In Development</span></td>
+              </tr>
+              <tr>
+                <td>Smart Contracts</td>
+                <td>Solidity (EVM)</td>
+                <td>6 audited contracts for tokenomics and governance</td>
+                <td><span class="tag">Deployed</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Feature Set</p>
+          <h2 class="section-title" id="features-title">What teams can validate before mainnet</h2>
+          <p class="section-lead">The reference testnet environment adds practical developer workflows beyond basic chain access. These are the feature expectations being carried into the Aethelred public testnet launch model.</p>
+        </div>
+
+        <div class="testnet-band">
+          <div class="testnet-band-copy">
+            <p class="detail-kicker">Developer Workflow</p>
+            <h3>Testnet is designed for rehearsal, not just connectivity</h3>
+            <p>Use the environment to validate onboarding, token issuance, endpoint failover, seal visibility, and post-reset recovery before production cutover.</p>
+          </div>
+          <div class="testnet-band-stats">
+            <div class="testnet-band-stat">
+              <span>Faucet Window</span>
+              <strong>Every 24 Hours</strong>
+            </div>
+            <div class="testnet-band-stat">
+              <span>Reset Cadence</span>
+              <strong>Sunday 00:00 UTC</strong>
+            </div>
+            <div class="testnet-band-stat">
+              <span>Support Path</span>
+              <strong>Community + Core Devs</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-3 testnet-feature-grid">
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">PARITY</span>
+              <p class="testnet-card-kicker">Protocol Readiness</p>
+            </div>
+            <h3>Full protocol parity</h3>
+            <p>Test the same Proof-of-Useful-Work, Digital Seal, and verification flows expected on mainnet so application logic does not fork between environments.</p>
+            <div class="tag-list">
+              <span class="tag">PoUW</span>
+              <span class="tag">Digital Seal</span>
+              <span class="tag">Verification</span>
+            </div>
+          </article>
+
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">TOKEN</span>
+              <p class="testnet-card-kicker">Access Policy</p>
+            </div>
+            <h3>Free test token access</h3>
+            <p>The reference faucet model allocates 10,000 <span class="mono">tAETHEL</span> per address every 24 hours so teams can run onboarding, integration, and load-testing workflows without financial exposure.</p>
+            <div class="tag-list">
+              <span class="tag">10,000 tAETHEL</span>
+              <span class="tag">24h Cadence</span>
+              <span class="tag">No Monetary Value</span>
+            </div>
+          </article>
+
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">SPEED</span>
+              <p class="testnet-card-kicker">Iteration Speed</p>
+            </div>
+            <h3>Rapid iteration loops</h3>
+            <p>Use faster block cadence and testnet-safe operating conditions to rehearse retries, failure paths, and deployment rollouts before production launch windows open.</p>
+            <div class="tag-list">
+              <span class="tag">Integration QA</span>
+              <span class="tag">Failure Drills</span>
+              <span class="tag">Load Testing</span>
+            </div>
+          </article>
+
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">TRACE</span>
+              <p class="testnet-card-kicker">Observability</p>
+            </div>
+            <h3>Explorer and analytics visibility</h3>
+            <p>The reference page highlights real-time visibility for transactions, seal generation, and request traces. This testnet page now carries those observability expectations into launch planning.</p>
+            <div class="tag-list">
+              <span class="tag">Explorer</span>
+              <span class="tag">Seal Tracking</span>
+              <span class="tag">Usage Logs</span>
+            </div>
+          </article>
+
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">RESET</span>
+              <p class="testnet-card-kicker">Environment Hygiene</p>
+            </div>
+            <h3>Planned weekly refresh window</h3>
+            <p>The reference environment uses a weekly reset cadence. For launch planning, teams should expect a scheduled refresh window every Sunday at <span class="mono">00:00 UTC</span> for clean-state testing.</p>
+            <div class="tag-list">
+              <span class="tag">Sunday 00:00 UTC</span>
+              <span class="tag">Clean State</span>
+              <span class="tag">Replay Testing</span>
+            </div>
+          </article>
+
+          <article class="card detail-card testnet-feature-card">
+            <div class="testnet-feature-top">
+              <span class="icon-chip">SUPPORT</span>
+              <p class="testnet-card-kicker">Developer Enablement</p>
+            </div>
+            <h3>Community support channel</h3>
+            <p>The reference testnet includes an active developer help path. Expect onboarding support through community channels so teams can resolve endpoint, faucet, and integration questions quickly.</p>
+            <div class="tag-list">
+              <span class="tag">Discord</span>
+              <span class="tag">Core Devs</span>
+              <span class="tag">Onboarding</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="bridge" aria-labelledby="bridge-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Bridge</p>
+          <h2 class="section-title" id="bridge-title">Testnet bridge</h2>
+          <p class="section-lead">Bridge test tokens between Ethereum Sepolia and Aethelred testnet once launch is activated.</p>
+        </div>
+
+        <div class="testnet-operational-shell">
+          <div class="testnet-operational-intro">
+            <div>
+              <p class="detail-kicker">Launch Guardrails</p>
+              <h3>Bridge access opens only when settlement and guardian workflows are ready</h3>
+              <p>Teams can pre-wire the cross-chain route now, then move into live transfer testing once confirmations, guardian approval, and rate-limit controls are active.</p>
+            </div>
+            <div class="testnet-operational-pillbox">
+              <div class="testnet-operational-pill">
+                <span>Source Route</span>
+                <strong>Ethereum Sepolia</strong>
+              </div>
+              <div class="testnet-operational-pill">
+                <span>Destination</span>
+                <strong>Aethelred Testnet</strong>
+              </div>
+              <div class="testnet-operational-pill">
+                <span>Status</span>
+                <strong>LOCKED UNTIL LAUNCH</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2 testnet-operational-grid">
+            <article class="card detail-card operational-card">
+              <div class="testnet-feature-top">
+                <span class="icon-chip">FLOW</span>
+                <p class="testnet-card-kicker">Transfer Path</p>
+              </div>
+              <h3>Rehearse asset movement before activation</h3>
+              <p>Plan application flows around Sepolia-to-Aethelred token transfers so deposit, settlement, and verification steps are ready on launch day.</p>
+              <ul class="list-clean">
+                <li>Cross-chain route targets Ethereum Sepolia and Aethelred testnet</li>
+                <li>Use it to validate deposit UX, explorer visibility, and downstream application handling</li>
+              </ul>
+            </article>
+
+            <article class="card detail-card operational-card">
+              <div class="testnet-feature-top">
+                <span class="icon-chip">RISK</span>
+                <p class="testnet-card-kicker">Security Controls</p>
+              </div>
+              <h3>Guarded transfer policy</h3>
+              <p>The planned bridge profile uses launch-time protection controls so teams can test asset flow without exposing an unbounded transfer surface prematurely.</p>
+              <div class="tag-list">
+                <span class="tag">64-Block Finality</span>
+                <span class="tag">Multi-Sig Guardian</span>
+                <span class="tag">Rate Limited</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="callout testnet-operational-callout">
+            <div>
+              <p class="detail-kicker">Availability</p>
+              <h3>Bridge is currently locked until testnet launch.</h3>
+              <p>Connectivity planning is available now; test token movement activates only when the public network window opens.</p>
+            </div>
+            <button class="btn btn-ghost" disabled aria-disabled="true">Available at Launch</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="faucet" aria-labelledby="faucet-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Faucet</p>
+          <h2 class="section-title" id="faucet-title">Testnet faucet</h2>
+          <p class="section-lead">Get free test AETHEL tokens for development workflows once public testnet is live.</p>
+        </div>
+
+        <div class="testnet-operational-shell">
+          <div class="testnet-operational-intro">
+            <div>
+              <p class="detail-kicker">Distribution Model</p>
+              <h3>Faucet policy is tuned for onboarding and repeat testing</h3>
+              <p>The reference access model is built for developer setup, QA loops, and failure rehearsal rather than one-time token drops.</p>
+            </div>
+            <div class="testnet-operational-pillbox">
+              <div class="testnet-operational-pill">
+                <span>Allocation</span>
+                <strong>10,000 tAETHEL</strong>
+              </div>
+              <div class="testnet-operational-pill">
+                <span>Cadence</span>
+                <strong>Every 24 Hours</strong>
+              </div>
+              <div class="testnet-operational-pill">
+                <span>Value</span>
+                <strong>TEST USE ONLY</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2 testnet-operational-grid">
+            <article class="card detail-card operational-card">
+              <div class="testnet-feature-top">
+                <span class="icon-chip">DROP</span>
+                <p class="testnet-card-kicker">Issuance Policy</p>
+              </div>
+              <h3>Designed for repeated developer workflows</h3>
+              <p>Teams can use recurring allocations to test wallet provisioning, API setup, automation loops, and reset recovery without exhausting a one-off balance.</p>
+              <ul class="list-clean">
+                <li>Per-address issuance follows the 24-hour request cycle</li>
+                <li>Tokens are intended for onboarding, integration, and load testing</li>
+              </ul>
+            </article>
+
+            <article class="card detail-card operational-card">
+              <div class="testnet-feature-top">
+                <span class="icon-chip">USE</span>
+                <p class="testnet-card-kicker">Operational Guidance</p>
+              </div>
+              <h3>Use faucet cycles to test edge cases</h3>
+              <p>Plan your launch drills around replenishment, exhaustion handling, and weekly refresh recovery so developer tooling behaves predictably during rollout.</p>
+              <div class="tag-list">
+                <span class="tag">Wallet Setup</span>
+                <span class="tag">Retry Paths</span>
+                <span class="tag">Load Tests</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="callout testnet-operational-callout">
+            <div>
+              <p class="detail-kicker">Availability</p>
+              <h3>Faucet requests open at launch.</h3>
+              <p>Planned issuance follows the reference access model: 10,000 <span class="mono">tAETHEL</span> per address every 24 hours for onboarding, integration testing, and failure-mode rehearsal.</p>
+              <div class="tag-list testnet-callout-tags">
+                <span class="tag">10,000 tAETHEL</span>
+                <span class="tag">24h Cadence</span>
+                <span class="tag">No Monetary Value</span>
+              </div>
+            </div>
+            <button class="btn btn-ghost" disabled aria-disabled="true">Available at Launch</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="network-config" aria-labelledby="network-config-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Network Configuration</p>
+          <h2 class="section-title" id="network-config-title">Planned connection details</h2>
+          <p class="section-lead">Endpoints will activate when testnet launches. The reference configuration adds GraphQL, gRPC, explorer, faucet, and native token details for faster integration prep.</p>
+        </div>
+
+        <div class="testnet-network-shell">
+          <div class="testnet-network-intro">
+            <div>
+              <p class="detail-kicker">Access Surfaces</p>
+              <h3>Prepare every connection path before activation</h3>
+              <p>Separate core chain endpoints from developer-facing services so teams can wire applications, dashboards, and support tooling before launch day.</p>
+            </div>
+            <div class="testnet-network-pillbox">
+              <div class="testnet-network-pill">
+                <span>Chain</span>
+                <strong class="mono">aethelred-testnet-1</strong>
+              </div>
+              <div class="testnet-network-pill">
+                <span>Token</span>
+                <strong class="mono">tAETHEL</strong>
+              </div>
+              <div class="testnet-network-pill">
+                <span>Status</span>
+                <strong>ACTIVATES AT LAUNCH</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2 testnet-network-grid">
+            <article class="card network-config-card">
+              <div class="network-config-head">
+                <p class="detail-kicker">Core Access</p>
+                <h3>Chain endpoints</h3>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">Chain ID</p>
+                  <p class="copy-value">aethelred-testnet-1</p>
+                </div>
+                <button class="copy-btn" data-copy="aethelred-testnet-1" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">Native Token</p>
+                  <p class="copy-value">tAETHEL</p>
+                </div>
+                <button class="copy-btn" data-copy="tAETHEL" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">HTTP RPC</p>
+                  <p class="copy-value">https://testnet-rpc.aethelred.io</p>
+                </div>
+                <button class="copy-btn" data-copy="https://testnet-rpc.aethelred.io" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">WebSocket</p>
+                  <p class="copy-value">wss://testnet-ws.aethelred.io</p>
+                </div>
+                <button class="copy-btn" data-copy="wss://testnet-ws.aethelred.io" data-copy-label="Copy">Copy</button>
+              </div>
+            </article>
+
+            <article class="card network-config-card">
+              <div class="network-config-head">
+                <p class="detail-kicker">Developer Surfaces</p>
+                <h3>Tooling and discovery</h3>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">GraphQL</p>
+                  <p class="copy-value">https://testnet-gql.aethelred.io</p>
+                </div>
+                <button class="copy-btn" data-copy="https://testnet-gql.aethelred.io" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">gRPC</p>
+                  <p class="copy-value">testnet-grpc.aethelred.io:443</p>
+                </div>
+                <button class="copy-btn" data-copy="testnet-grpc.aethelred.io:443" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">Explorer</p>
+                  <p class="copy-value">https://testnet.explorer.aethelred.io</p>
+                </div>
+                <button class="copy-btn" data-copy="https://testnet.explorer.aethelred.io" data-copy-label="Copy">Copy</button>
+              </div>
+
+              <div class="copy-row">
+                <div>
+                  <p class="copy-label">Faucet</p>
+                  <p class="copy-value">https://faucet.aethelred.io</p>
+                </div>
+                <button class="copy-btn" data-copy="https://faucet.aethelred.io" data-copy-label="Copy">Copy</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="testnet-network-note">
+            <div>
+              <h3>Activation note</h3>
+              <p>Use these values for integration planning now. RPC, explorer, GraphQL, gRPC, and faucet surfaces are expected to activate together when the public testnet window opens.</p>
+            </div>
+            <div class="tag-list">
+              <span class="tag">Launch Synchronized</span>
+              <span class="tag">Explorer Ready</span>
+              <span class="tag">Faucet Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

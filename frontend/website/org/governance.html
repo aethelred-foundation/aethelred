@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foundation &amp; Governance | Aethelred</title>
+  <meta name="description" content="Aethelred Foundation governance model: bi-cameral senate, AIP lifecycle, grants program, compliance framework, and community participation for sovereign AI infrastructure.">
+  <meta name="keywords" content="Aethelred governance, foundation, bi-cameral senate, AIP proposals, blockchain compliance, grants program">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.org/governance.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.aethelred.org/governance.html">
+  <meta property="og:title" content="Foundation &amp; Governance | Aethelred">
+  <meta property="og:description" content="Transparent protocol governance with dual-chamber voting and milestone gated treasury management.">
+  <meta property="og:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta property="og:image:alt" content="Foundation &amp; Governance social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredHQ">
+  <meta name="twitter:title" content="Foundation &amp; Governance | Aethelred">
+  <meta name="twitter:description" content="Explore Aethelred's governance architecture, compliance controls, grants program, and proposal lifecycle.">
+  <meta name="twitter:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta name="twitter:image:alt" content="Foundation &amp; Governance social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.org#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.org",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/aethelred-logo.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://x.com/AethelredHQ",
+          "https://t.me/AethelredHQ",
+          "https://discord.gg/aethelred"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.org#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.org",
+        "description": "Sovereign infrastructure for verifiable AI computation.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.aethelred.org/governance.html#webpage",
+        "name": "Foundation & Governance",
+        "url": "https://www.aethelred.org/governance.html",
+        "description": "Aethelred Foundation governance model: bi-cameral senate, AIP lifecycle, grants program, compliance framework, and community participation for sovereign AI infrastructure.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.org#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.org/governance.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/og-image.jpg",
+          "caption": "Foundation & Governance social preview"
+        },
+        "dateModified": "2026-03-10"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.org/governance.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Foundation",
+            "item": "https://www.aethelred.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Governance",
+            "item": "https://www.aethelred.org/governance.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/syne-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" href="aethelred-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-governance">
+  <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
+  <div class="bg-orbit" aria-hidden="true">
+    <span class="orbit orbit-a" data-parallax="0.02"></span>
+    <span class="orbit orbit-b" data-parallax="0.05"></span>
+    <span class="orbit orbit-c" data-parallax="0.08"></span>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header" data-header>
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aethelred home">
+        <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38">
+        <span class="brand-word">Aethelred</span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Primary navigation">
+        <a class="nav-link" data-nav-link href="index.html">Home</a>
+        <a class="nav-link" data-nav-link href="network.html">Network</a>
+        <a class="nav-link" data-nav-link href="token.html">Token</a>
+        <a class="nav-link" data-nav-link href="governance.html">Governance</a>
+        <a class="nav-link" data-nav-link href="investors.html">Investors</a>
+
+        <div class="dropdown" data-dropdown>
+          <button class="dropdown-trigger" data-dropdown-trigger aria-expanded="false" aria-haspopup="true">Sections</button>
+          <div class="dropdown-panel" data-dropdown-panel>
+            <a class="dropdown-item" href="#senate">
+              <span>Governance</span>
+              <strong>Bi Cameral Senate</strong>
+              <p>Two-chamber checks and supermajority enforcement.</p>
+            </a>
+            <a class="dropdown-item" href="#grants">
+              <span>Ecosystem</span>
+              <strong>Grants Program</strong>
+              <p>Milestone-gated treasury deployment for builders and research.</p>
+            </a>
+            <a class="dropdown-item" href="#proposals">
+              <span>Live Governance</span>
+              <strong>Active Proposals</strong>
+              <p>Current initiatives in review and voting stages.</p>
+            </a>
+            <a class="dropdown-item" href="#participate">
+              <span>Community</span>
+              <strong>Participation Guide</strong>
+              <p>How token holders join and influence governance outcomes.</p>
+            </a>
+            <a class="dropdown-item" href="#compliance">
+              <span>Regulatory</span>
+              <strong>Compliance Framework</strong>
+              <p>Jurisdiction policies and compliance attestation controls.</p>
+            </a>
+            <a class="dropdown-item" href="#aips">
+              <span>Standards</span>
+              <strong>AIP Lifecycle</strong>
+              <p>Draft to execution process for formal protocol improvements.</p>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="#proposals">Proposals</a>
+        <a class="btn btn-primary" href="investors.html">Institutional Contact</a>
+        <button class="menu-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false" data-menu-toggle>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-menu" data-mobile-menu>
+    <div class="mobile-menu-backdrop" data-mobile-backdrop></div>
+    <nav class="mobile-menu-panel" aria-label="Mobile navigation">
+      <a data-nav-link href="index.html">Home</a>
+      <a data-nav-link href="network.html">Network</a>
+      <a data-nav-link href="token.html">Token</a>
+      <a data-nav-link href="governance.html">Governance</a>
+      <a data-nav-link href="investors.html">Investors</a>
+      <a href="#overview">Overview</a>
+      <a href="#senate">Bi Cameral Senate</a>
+      <a href="#grants">Grants</a>
+      <a href="#proposals">Active Proposals</a>
+      <a href="#compliance">Compliance</a>
+      <a href="#aips">AIP Lifecycle</a>
+      <a href="#participate">Participation</a>
+    </nav>
+  </div>
+
+  <main id="main-content" class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div>
+          <span class="kicker" data-reveal>Foundation &amp; Governance</span>
+          <h1 class="hero-title" data-reveal="slow" id="page-title">Transparent protocol leadership for <span class="gradient">sovereign AI compute</span>.</h1>
+          <p class="hero-copy" data-reveal="stagger-1">
+            Aethelred governance is built to avoid capture. Token holders and validator operators each hold constitutional weight, with both chambers required for protocol changes. Treasury actions are timelocked, audited, and milestone gated, with economic parameters linked back to the <a class="body-link" href="token.html">token framework</a> and ecosystem participation flowing through the <a class="body-link" href="../io/community.html">community channels</a>.
+          </p>
+          <div class="hero-actions" data-reveal="stagger-2">
+            <a class="btn btn-primary" href="#senate">See Senate Structure</a>
+            <a class="btn btn-secondary" href="#participate">How to Participate</a>
+          </div>
+          <div class="badge-row spacer-24" data-reveal="stagger-3">
+            <span class="badge">Bi Cameral senate</span>
+            <span class="badge">67% dual threshold</span>
+            <span class="badge">Timelock execution</span>
+            <span class="badge">On chain transparency</span>
+          </div>
+        </div>
+
+        <aside class="hero-rail" data-reveal="stagger-2" aria-label="Governance highlights">
+          <article class="stat-card">
+            <span class="stat-label">Voting threshold</span>
+            <strong class="stat-value" data-count="67" data-count-suffix="%" data-count-label="67% supermajority">0</strong>
+            <p class="stat-note">Required independently in both governance chambers.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Grants reserve</span>
+            <strong class="stat-value" data-count="15" data-count-suffix="%" data-count-label="1.5B AETHEL">0</strong>
+            <p class="stat-note">Dedicated ecosystem funding allocation with 2% TGE unlock and staged vesting.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Timelock period</span>
+            <strong class="stat-value" data-count="7" data-count-suffix=" days" data-count-label="7-day timelock">0</strong>
+            <p class="stat-note">Mandatory execution buffer for approved protocol upgrades.</p>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Governance Overview</span>
+          <h2 class="section-title" id="overview-title">Mission and design principles</h2>
+          <p class="section-text">Operating under the ADGM DLT Foundation framework, Aethelred governs for cryptographic verifiability, neutrality, and long-term protocol resilience rather than short-term speculation.</p>
+        </div>
+
+        <div class="split">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>Mission</h3>
+            <p>Advance sovereign AI infrastructure where every inference is auditable, every upgrade is accountable, and every treasury allocation is traceable on-chain.</p>
+            <p class="spacer-12"><strong>Every inference proven. Every model auditable. Every computation trusted.</strong></p>
+          </article>
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Vision</h3>
+            <p>Establish trust in computation as a protocol guarantee, enabling regulated industries to deploy AI with transparent cryptographic assurance.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="flow" aria-labelledby="flow-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Architecture</span>
+          <h2 class="section-title" id="flow-title">Governance flow</h2>
+          <p class="section-text">Formal proposals move through a staged pipeline from discussion to enforceable on-chain execution.</p>
+        </div>
+
+        <div class="timeline" data-reveal="stagger-1">
+          <article class="timeline-item">
+            <h3>Draft and forum review</h3>
+            <p>Authors publish an AIP draft with rationale, technical impact, and migration strategy.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>Foundation screening</h3>
+            <p>Legal, security, and economic impact checks are completed before chamber voting.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>Dual chamber ratification</h3>
+            <p>House of Tokens and House of Validators each vote independently to supermajority.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>Timelock and execution</h3>
+            <p>Approved proposals enter mandatory timelock before governed smart contract execution.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="senate" aria-labelledby="senate-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Bi Cameral Senate</span>
+          <h2 class="section-title" id="senate-title">Checks against plutocratic or operational capture</h2>
+          <p class="section-text">Economic stakeholders and infrastructure operators must both approve core protocol changes.</p>
+        </div>
+
+        <div class="grid-2">
+          <article class="quote-card" data-reveal="stagger-1">
+            <h3>House of Tokens</h3>
+            <p>Represents AETHEL stakers with proportional voting rights. Focus areas include economic policy, treasury deployment, and ecosystem incentives.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">1 token = 1 vote</span>
+              <span class="badge">Time-weighted bonuses</span>
+              <span class="badge">Global participation</span>
+            </div>
+          </article>
+
+          <article class="quote-card" data-reveal="stagger-2">
+            <h3>House of Validators</h3>
+            <p>Represents active TEE node operators with equal-seat voting, protecting network safety and operational continuity.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">100k AETHEL Minimum</span>
+              <span class="badge">Infrastructure veto rights</span>
+              <span class="badge">Reliability safeguards</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout spacer-24" data-reveal="stagger-3">
+          <strong>Pass condition</strong>
+          <p>Every constitutional or protocol-level proposal requires independent 67% approval in both houses. Single-chamber passage is insufficient.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="powers" aria-labelledby="powers-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Authority</span>
+          <h2 class="section-title" id="powers-title">Governance powers</h2>
+          <p class="section-text">The senate governs core protocol levers while preserving execution safeguards.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Protocol upgrades</h3>
+            <p>Consensus parameters, cryptographic policies, and precompile activation.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Treasury allocations</h3>
+            <p>Ecosystem grants, R&amp;D funding, and strategic infrastructure investments.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Risk controls</h3>
+            <p>Circuit breaker policy and emergency multi-sig operations via geographically isolated key holders (UAE, Switzerland, Singapore, UK).</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Compliance policy</h3>
+            <p>Jurisdiction routing rules, attestation requirements, and reporting standards.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Economic configuration</h3>
+            <p>Allocation schedules, reserve controls, and token release parameter governance.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Ecosystem standards</h3>
+            <p>AIP framework updates and community participation criteria.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="grants" aria-labelledby="grants-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Ecosystem Grants</span>
+          <h2 class="section-title" id="grants-title"><span class="title-number">1.5B</span> AETHEL milestone gated builder program</h2>
+          <p class="section-text">Funding is released against deliverables with 2% TGE unlock, 6-month cliff, and 48-month linear vesting under governance oversight.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Verifiable AI apps</h3>
+            <p>Healthcare, finance, logistics, and enterprise automation built on attestable compute.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Developer tooling</h3>
+            <p>SDKs, CLI workflows, explorers, and model registry infrastructure.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Security research</h3>
+            <p>PQC hardening, enclave verification techniques, and audit instrumentation.</p>
+          </article>
+        </div>
+
+        <div class="hero-actions spacer-24" data-reveal="stagger-2">
+          <a class="btn btn-primary" href="mailto:grants@aethelred.org">Apply for Grants</a>
+          <a class="btn btn-secondary" href="investors.html">Request Ecosystem Briefing</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="proposals" aria-labelledby="proposals-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Live Governance</span>
+          <h2 class="section-title" id="proposals-title">Active proposal queue</h2>
+          <p class="section-text">Current and recently completed proposals in the bi-cameral pipeline.</p>
+        </div>
+
+        <div class="table-wrap" data-reveal="stagger-1">
+          <table aria-label="Active governance proposals">
+            <thead>
+              <tr>
+                <th>Proposal</th>
+                <th>Status</th>
+                <th>House of Tokens</th>
+                <th>House of Validators</th>
+                <th>Target window</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>AIP-021: PQC key rotation policy upgrade</td>
+                <td>Voting</td>
+                <td>71% yes</td>
+                <td>69% yes</td>
+                <td>Q2 2026</td>
+              </tr>
+              <tr>
+                <td>AIP-024: Enterprise jurisdiction corridor expansion</td>
+                <td>Committee review</td>
+                <td>Pending</td>
+                <td>Pending</td>
+                <td>Q2 2026</td>
+              </tr>
+              <tr>
+                <td>AIP-018: Grants tranche for confidential inference tooling</td>
+                <td>Timelock</td>
+                <td>82% yes</td>
+                <td>74% yes</td>
+                <td>Execution in 4 days</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="compliance" aria-labelledby="compliance-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Regulatory Framework</span>
+          <h2 class="section-title" id="compliance-title">Compliance built into protocol execution</h2>
+          <p class="section-text">Institutional control requirements are enforced at consensus and orchestration layers.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Sovereign Infrastructure Corridors</h3>
+            <p>Compute jobs strictly route through approved regional hardware, such as the Stargate UAE AI data centers.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>On chain compliance attestation</h3>
+            <p>KYC/AML and OFAC attestations can be bound to workload settlement trails.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Audit ready observability</h3>
+            <p>Proposal, treasury, and execution records are permanently queryable on-chain.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="aips" aria-labelledby="aips-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">AIP Framework</span>
+          <h2 class="section-title" id="aips-title">Aethelred Improvement Proposals lifecycle</h2>
+          <p class="section-text">AIPs are the formal governance mechanism for protocol changes, standards, and treasury policy.</p>
+        </div>
+
+        <div class="grid-4">
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">I</span>
+            <h3>Draft</h3>
+            <p>Initial proposal and technical rationale.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">II</span>
+            <h3>Community review</h3>
+            <p>Public feedback and refinement cycle.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">III</span>
+            <h3>Senate vote</h3>
+            <p>Dual chamber voting and supermajority checks.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">IV</span>
+            <h3>Execution</h3>
+            <p>Timelock completion and on-chain implementation.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="participate" aria-labelledby="participate-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Participate</span>
+          <h2 class="section-title" id="participate-title">How to join governance</h2>
+          <p class="section-text">Any AETHEL holder can contribute to policy direction through forum and on-chain voting workflows.</p>
+        </div>
+
+        <div class="split">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>Participation path</h3>
+            <div class="timeline spacer-16">
+              <article class="timeline-item">
+                <h3>Connect wallet</h3>
+                <p>Use MetaMask, Ledger, or EVM-compatible wallet tied to staked AETHEL.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>Review AIP packages</h3>
+                <p>Study impact assessments, parameter diffs, and implementation plans.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>Vote and delegate</h3>
+                <p>Cast direct votes or delegate to trusted policy representatives.</p>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Voting power multipliers</h3>
+            <div class="table-wrap spacer-16">
+              <table aria-label="Voting power multipliers">
+                <thead>
+                  <tr>
+                    <th>Lock duration</th>
+                    <th>Multiplier</th>
+                    <th>Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>90 days</td>
+                    <td>1.0x</td>
+                    <td>Base governance participation</td>
+                  </tr>
+                  <tr>
+                    <td>180 days</td>
+                    <td>1.25x</td>
+                    <td>Mid-term commitment incentive</td>
+                  </tr>
+                  <tr>
+                    <td>365 days</td>
+                    <td>1.6x</td>
+                    <td>Long-horizon policy alignment</td>
+                  </tr>
+                  <tr>
+                    <td>730 days</td>
+                    <td>2.0x</td>
+                    <td>Constitutional governance influence</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <div class="hero-actions spacer-32" data-reveal="stagger-3">
+          <a class="btn btn-primary" href="mailto:governance@aethelred.org">Join Governance Forum</a>
+          <a class="btn btn-secondary" href="token.html#staking">Review Staking Options</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-shell" data-reveal>
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="brand" href="index.html" aria-label="Aethelred home">
+              <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38" loading="lazy">
+              <span class="brand-word">Aethelred</span>
+            </a>
+            <p>Governance framework for a transparent, secure, and institution-ready verifiable AI protocol.</p>
+          </div>
+
+          <div>
+            <p class="footer-title">Governance</p>
+            <ul class="footer-list">
+              <li><a href="#senate">Bi Cameral Senate</a></li>
+              <li><a href="#powers">Governance Powers</a></li>
+              <li><a href="#proposals">Active Proposals</a></li>
+              <li><a href="#participate">Participation Guide</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Protocol</p>
+            <ul class="footer-list">
+              <li><a href="network.html">Network Architecture</a></li>
+              <li><a href="nodes.html">Node Operations</a></li>
+              <li><a href="token.html">Tokenomics</a></li>
+              <li><a href="investors.html">Institutional Access</a></li>
+              <li><a href="../io/developers.html">Developer Docs</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Community</p>
+            <ul class="footer-list">
+              <li><a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub</a></li>
+              <li><a href="https://discord.gg/aethelred" target="_blank" rel="noopener">Discord</a></li>
+              <li><a href="https://t.me/AethelredHQ" target="_blank" rel="noopener">Telegram</a></li>
+              <li><a href="https://x.com/AethelredHQ" target="_blank" rel="noopener">X</a></li>
+              <li><a href="mailto:governance@aethelred.org">governance@aethelred.org</a></li>
+              <li><a href="mailto:grants@aethelred.org">grants@aethelred.org</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>&copy; <span data-year></span> AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</div>
+          <div><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="cookies.html">Cookie Policy</a> · <button type="button" class="cookie-settings-link" data-cookie-settings>Cookie Settings</button></div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scientific Research | Aethelred</title>
+  <meta name="description" content="Reference architecture for scientific and R&D workloads on Aethelred: reproducibility, confidential datasets, Digital Seals, and cross-institution verification.">
+  <meta name="keywords" content="Aethelred research use case, scientific reproducibility, confidential datasets, Digital Seals, verifiable AI research">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/usecase-research">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/usecase-research">
+  <meta property="og:title" content="Scientific Research | Aethelred">
+  <meta property="og:description" content="Reference architecture for scientific and R&D workloads on Aethelred: reproducibility, confidential datasets, Digital Seals, and cross-institution verification.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Scientific Research social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Scientific Research | Aethelred">
+  <meta name="twitter:description" content="Reference architecture for scientific and R&D workloads on Aethelred: reproducibility, confidential datasets, Digital Seals, and cross-institution verification.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Scientific Research social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/usecase-research#webpage",
+        "name": "Scientific Research",
+        "headline": "Scientific Research",
+        "url": "https://www.aethelred.io/usecase-research",
+        "description": "Reference architecture for scientific and R&D workloads on Aethelred: reproducibility, confidential datasets, Digital Seals, and cross-institution verification.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/usecase-research#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Scientific Research social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/usecase-research#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Scientific Research",
+            "item": "https://www.aethelred.io/usecase-research"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-usecase usecase-research">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="usecase-research-resources">Resources</button>
+          <div class="dropdown-panel" id="usecase-research-resources" role="menu">
+            <a href="#pressure" role="menuitem">Workload Pressure</a>
+            <a href="#fit" role="menuitem">Why Aethelred Fits</a>
+            <a href="#workflow" role="menuitem">Reference Workflow</a>
+            <a href="#controls" role="menuitem">Protocol Mapping</a>
+            <a href="use-cases.html" role="menuitem">All Use Cases</a>
+            <a href="developers.html" role="menuitem">Developer Docs</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="use-cases.html" class="btn btn-small btn-primary">Use Cases</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Research Sections</summary>
+      <a href="#pressure" class="mobile-link">Workload Pressure</a>
+      <a href="#fit" class="mobile-link">Why Aethelred Fits</a>
+      <a href="#workflow" class="mobile-link">Reference Workflow</a>
+      <a href="#controls" class="mobile-link">Protocol Mapping</a>
+      <a href="use-cases.html" class="mobile-link">All Use Cases</a>
+      <a href="developers.html" class="mobile-link">Developer Docs</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Reproducibility and Provenance</p>
+          <h1 class="hero-title" id="page-title">Scientific Research</h1>
+          <p class="hero-subtitle">Scientific AI workflows need more than model accuracy. They need reproducibility, provenance, and a way to share results across institutions without asking every reviewer to trust a private runtime. Aethelred gives research teams TEE, zkML, and hybrid verification plus Digital Seals that can anchor peer review, sealed result exchange, and auditable experiment history.</p>
+          <div class="hero-tags" aria-label="Research workload traits">
+            <span class="hero-tag">Reproducibility</span><span class="hero-tag">Confidential Data</span><span class="hero-tag">Digital Seals</span><span class="hero-tag">Cross-Lab Validation</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#fit" class="btn btn-primary">See Protocol Fit</a>
+            <a href="use-cases.html" class="btn btn-secondary">All Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT REFERENCE ARCHITECTURE</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Sealed experiment outputs</h4><p>Digital Seals bind model hash, input hash, output hash, timestamp, and consensus evidence into one verifiable record.</p></div>
+          <div class="hero-card"><h4>Confidential dataset handling</h4><p>TEE-backed blind compute keeps sensitive research inputs inside an attested execution boundary.</p></div>
+          <div class="hero-card"><h4>Lab-to-lab portability</h4><p>Seals are relayable across IBC-compatible chains and queryable through SDKs and APIs.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>5 Systems</strong><span>Optional zkML proof coverage</span></div>
+            <div class="metric-pill"><strong>4 TEEs</strong><span>Confidential compute platforms</span></div>
+            <div class="metric-pill"><strong>10 Services</strong><span>Local devnet for rehearsal</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="pressure" aria-labelledby="pressure-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workload Pressure</p>
+          <h2 class="section-title" id="pressure-title">Why this workload is hard</h2>
+          <p class="section-lead">Research teams need verifiable results that survive peer review, institutional handoffs, and restricted-data constraints.</p>
+        </div>
+        <div class="grid grid-3 usecase-pressure-grid">
+          <article class="card"><h3>Reproducibility breaks down fast</h3><p>When code, model state, environment details, and output commitments are separated, reviewers inherit narrative claims instead of computation evidence.</p></article>
+          <article class="card"><h3>Restricted data cannot move freely</h3><p>Cross-lab studies and clinical or regulated datasets need blind-compute boundaries instead of broad dataset sharing.</p></article>
+          <article class="card"><h3>Collaboration needs shared proof</h3><p>Institutions need a portable record that another team can verify without re-trusting the original runtime or operator.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="fit" aria-labelledby="fit-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Why Aethelred Fits</p>
+          <h2 class="section-title" id="fit-title">Map the workload to the current protocol surface</h2>
+          <p class="section-lead">The protocol fits research when the goal is to prove what ran, preserve confidential inputs, and expose result provenance as a first-class artifact.</p>
+        </div>
+        <div class="grid grid-3 usecase-fit-grid">
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Digital Seals for experiment provenance</h3></div></div></div><p>A seal can act as the canonical record of an experiment outcome, including the model hash, output commitment, block height, and validator evidence.</p><div class="tag-list stack-top-12"><span class="tag">Seal ID</span><span class="tag">Result Provenance</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>TEE or hybrid execution for sensitive studies</h3></div></div></div><p>Confidential workloads can run inside SGX, Nitro, SEV-SNP, or H100 Confidential Computing, with zkML added when mathematical proof is also required.</p><div class="tag-list stack-top-12"><span class="tag">Blind Compute</span><span class="tag">Hybrid Mode</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Research does not need a separate stack</h3></div></div></div><p>The same SDKs, APIs, local devnet, and seal verification tools used for product workloads can back reproducible research pipelines.</p><div class="tag-list stack-top-12"><span class="tag">SDKs</span><span class="tag">10-Service Devnet</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Workflow</p>
+          <h2 class="section-title" id="workflow-title">A current-state flow for research workloads</h2>
+          <p class="section-lead">A practical research workflow looks like sealed execution, not just a paper appendix.</p>
+        </div>
+        <div class="grid grid-4 usecase-workflow-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Package the experiment boundary</h3><p>Bind the model version, input dataset reference, and execution assumptions before submission.</p><div class="tag-list"><span class="tag">Model Hash</span><span class="tag">Input Hash</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>Run with the right verification mode</h3><p>Use TEE for confidential data, zkML for mathematical proof, or hybrid mode when both must agree.</p><div class="tag-list"><span class="tag">TEE</span><span class="tag">zkML</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Promote the result into a Digital Seal</h3><p>Once supermajority agreement is reached, the result becomes a verifiable computation artifact rather than an internal log line.</p><div class="tag-list"><span class="tag">>= 2/3 + 1</span><span class="tag">Digital Seal</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Share the seal instead of a trust me claim</h3><p>Reviewers, collaborators, and downstream systems can verify the output through APIs, SDKs, or on-chain interfaces.</p><div class="tag-list"><span class="tag">API</span><span class="tag">SDK Verification</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="controls" aria-labelledby="controls-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Protocol Mapping</p>
+          <h2 class="section-title" id="controls-title">Which Aethelred surfaces matter most</h2>
+          <p class="section-lead">These are the protocol surfaces that matter most in research-oriented deployments.</p>
+        </div>
+        <div class="table-wrap usecase-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Protocol Surface</th><th>Why It Matters</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Reproducible output record</td><td>Digital Seals</td><td>Seal records preserve hashes, provenance, agreement power, and validator evidence in one portable object.</td></tr>
+              <tr><td>Confidential dataset handling</td><td>TEE attestation</td><td>Blind compute prevents validators from seeing plaintext inputs while still producing auditable evidence.</td></tr>
+              <tr><td>Mathematical proof of execution</td><td>zkML / hybrid verification</td><td>Five proof systems are available when reviewers need proof-backed result reproduction.</td></tr>
+              <tr><td>Lab-to-lab verification path</td><td>SDKs, APIs, and IBC relay</td><td>Results can be checked programmatically and consumed outside the originating environment.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Move from research prototype to a sealed verification flow.</h3>
+            <p>Start in the developer docs, rehearse the workload in Infinite Sandbox, and use the current verification surfaces instead of carrying the old standalone research mock forward.</p>
+          </div>
+          <a href="developers.html" class="btn btn-primary">Open Developer Docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node Operations | Aethelred</title>
+  <meta name="description" content="Run Aethelred validator, worker, full, and sentry infrastructure with current topology, hardware expectations, and operational checks for Proof of Useful Work participation.">
+  <meta name="keywords" content="Aethelred nodes, validator operations, sentry nodes, full nodes, Proof of Useful Work, Aethelred infrastructure">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.org/nodes.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.aethelred.org/nodes.html">
+  <meta property="og:title" content="Node Operations | Aethelred">
+  <meta property="og:description" content="Validator, sentry, worker, and full-node operations for Aethelred's Proof of Useful Work network.">
+  <meta property="og:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta property="og:image:alt" content="Node Operations social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredHQ">
+  <meta name="twitter:title" content="Node Operations | Aethelred">
+  <meta name="twitter:description" content="Review the current Aethelred node topology, validator requirements, and operator checks.">
+  <meta name="twitter:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta name="twitter:image:alt" content="Node Operations social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.org#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.org",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/aethelred-logo.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://x.com/AethelredHQ",
+          "https://t.me/AethelredHQ",
+          "https://discord.gg/aethelred"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.org#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.org",
+        "description": "Sovereign infrastructure for verifiable AI computation.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.org/nodes.html#webpage",
+        "name": "Node Operations",
+        "url": "https://www.aethelred.org/nodes.html",
+        "description": "Run Aethelred validator, worker, full, and sentry infrastructure with current topology, hardware expectations, and operational checks for Proof of Useful Work participation.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.org#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.org/nodes.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/og-image.jpg",
+          "caption": "Node Operations social preview"
+        },
+        "dateModified": "2026-03-10",
+        "headline": "Node Operations",
+        "author": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.org/nodes.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Foundation",
+            "item": "https://www.aethelred.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Nodes",
+            "item": "https://www.aethelred.org/nodes.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/syne-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" href="aethelred-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-nodes">
+  <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
+  <div class="bg-orbit" aria-hidden="true">
+    <span class="orbit orbit-a" data-parallax="0.03"></span>
+    <span class="orbit orbit-b" data-parallax="0.05"></span>
+    <span class="orbit orbit-c" data-parallax="0.08"></span>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header" data-header>
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aethelred home">
+        <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38">
+        <span class="brand-word">Aethelred</span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Primary navigation">
+        <a class="nav-link" data-nav-link href="index.html">Home</a>
+        <a class="nav-link is-active" data-nav-link href="network.html">Network</a>
+        <a class="nav-link" data-nav-link href="token.html">Token</a>
+        <a class="nav-link" data-nav-link href="governance.html">Governance</a>
+        <a class="nav-link" data-nav-link href="investors.html">Investors</a>
+
+        <div class="dropdown" data-dropdown>
+          <button class="dropdown-trigger" data-dropdown-trigger aria-expanded="false" aria-haspopup="true">Sections</button>
+          <div class="dropdown-panel" data-dropdown-panel>
+            <a class="dropdown-item" href="#roles">
+              <span>Roles</span>
+              <strong>Node Participation</strong>
+              <p>Validator, worker, sentry, and full-node responsibilities on the live network.</p>
+            </a>
+            <a class="dropdown-item" href="#topology">
+              <span>Topology</span>
+              <strong>Reference Deployment</strong>
+              <p>Public sentries, private validator boundary, and isolated failover design.</p>
+            </a>
+            <a class="dropdown-item" href="#requirements">
+              <span>Infra</span>
+              <strong>Hardware Baselines</strong>
+              <p>Current compute, storage, network, TEE, and key custody expectations.</p>
+            </a>
+            <a class="dropdown-item" href="#checks">
+              <span>Ops</span>
+              <strong>Operational Checks</strong>
+              <p>Production-safe command references for health, staking, and HSM verification.</p>
+            </a>
+            <a class="dropdown-item" href="#contact">
+              <span>Access</span>
+              <strong>Operator Review</strong>
+              <p>Direct admission inquiry path for validator and infrastructure operators.</p>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="#requirements">Requirements</a>
+        <a class="btn btn-primary" href="../io/developers.html">Developer Docs</a>
+        <button class="menu-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false" data-menu-toggle>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-menu" data-mobile-menu>
+    <div class="mobile-menu-backdrop" data-mobile-backdrop></div>
+    <nav class="mobile-menu-panel" aria-label="Mobile navigation">
+      <a data-nav-link href="index.html">Home</a>
+      <a data-nav-link class="is-active" href="network.html">Network</a>
+      <a data-nav-link href="token.html">Token</a>
+      <a data-nav-link href="governance.html">Governance</a>
+      <a data-nav-link href="investors.html">Investors</a>
+      <a href="#roles">Roles</a>
+      <a href="#topology">Topology</a>
+      <a href="#requirements">Requirements</a>
+      <a href="#checks">Operational Checks</a>
+      <a href="#contact">Operator Review</a>
+    </nav>
+  </div>
+
+  <main id="main-content" class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div>
+          <span class="kicker" data-reveal>Node Operations</span>
+          <h1 class="hero-title" data-reveal="slow" id="page-title">Operate <span class="gradient">Aethelred infrastructure</span> with a production-grade boundary.</h1>
+          <p class="hero-copy" data-reveal="stagger-1">
+            Aethelred node operations are structured for institutional Proof of Useful Work participation: public sentry ingress, private validator signing, attested compute, and deterministic settlement. Use this guide with the <a class="body-link" href="network.html">network architecture</a>, the <a class="body-link" href="governance.html">governance framework</a>, and the <a class="body-link" href="../io/developers.html">developer portal</a> when preparing validator admission or scaling regional capacity.
+          </p>
+          <div class="hero-actions" data-reveal="stagger-2">
+            <a class="btn btn-primary" href="#topology">View Topology</a>
+            <a class="btn btn-secondary" href="#requirements">Review Requirements</a>
+          </div>
+          <div class="badge-row spacer-24" data-reveal="stagger-3">
+            <span class="badge">100,000 AETHEL stake</span>
+            <span class="badge">2+ sentry nodes</span>
+            <span class="badge">FIPS-level key custody</span>
+            <span class="badge">99.5% uptime target</span>
+          </div>
+        </div>
+
+        <aside class="hero-rail" data-reveal="stagger-2" aria-label="Node operations highlights">
+          <article class="stat-card">
+            <span class="stat-label">Validator threshold</span>
+            <strong class="stat-value">100,000 AETHEL</strong>
+            <p class="stat-note">Minimum economic commitment for validator admission on the current public baseline.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Public edge pattern</span>
+            <strong class="stat-value">2+ sentries</strong>
+            <p class="stat-note">Recommended ingress layer before any private validator signer is exposed to peer traffic.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Attested execution</span>
+            <strong class="stat-value">TEE required</strong>
+            <p class="stat-note">Intel SGX, AMD SEV-SNP, AWS Nitro Enclaves, and Azure Confidential VMs are supported profiles.</p>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="roles" aria-labelledby="roles-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Participation Model</span>
+          <h2 class="section-title" id="roles-title">Node roles across the network</h2>
+          <p class="section-text">The live architecture separates settlement, useful compute, ingress, and data serving so that validators can remain hardened while public services scale independently.</p>
+        </div>
+
+        <div class="grid-4">
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">01</span>
+            <h3>Validator Node</h3>
+            <p>Participates in consensus, governance voting, reward distribution, and final settlement with signer access kept behind a private boundary.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">Consensus</span>
+              <span class="badge">100,000 AETHEL</span>
+              <span class="badge">HSM signer</span>
+            </div>
+          </article>
+
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">02</span>
+            <h3>Worker Node</h3>
+            <p>Executes AI jobs in attested enclaves, produces proof-bound outputs, and feeds verified work into the Proof of Useful Work reward loop.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">TEE execution</span>
+              <span class="badge">H100 / MI300</span>
+              <span class="badge">Attestation</span>
+            </div>
+          </article>
+
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">03</span>
+            <h3>Sentry Node</h3>
+            <p>Maintains public peer connectivity, absorbs hostile traffic, and keeps the validator signer and failover estate off the public internet.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">Public ingress</span>
+              <span class="badge">No signing keys</span>
+              <span class="badge">2+ recommended</span>
+            </div>
+          </article>
+
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">04</span>
+            <h3>Full / Archive Node</h3>
+            <p>Serves RPC, indexing, replay, and historical data workloads so explorers, analytics, and clients never need to share the validator footprint.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">RPC surface</span>
+              <span class="badge">Historical state</span>
+              <span class="badge">No signer</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="topology" aria-labelledby="topology-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Reference Topology</span>
+          <h2 class="section-title" id="topology-title">Production deployment boundary</h2>
+          <p class="section-text">The recommended operating model is simple: only public edge nodes face the network, the validator signer stays private, and failover capacity remains isolated until primary health is conclusively lost.</p>
+        </div>
+
+        <div class="split">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>Recommended flow</h3>
+            <div class="timeline spacer-16">
+              <article class="timeline-item">
+                <h3>1. Public sentry ingress</h3>
+                <p>Deploy at least two sentry nodes with public peer connectivity and no signer material.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>2. Private validator signer</h3>
+                <p>Route validator traffic only through sentries across a private network boundary with HSM-backed signing.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>3. Isolated failover node</h3>
+                <p>Keep a cold or warm standby in a separate availability zone with signer access disabled until failover conditions are met.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>4. Dedicated full-node services</h3>
+                <p>Expose public RPC, indexing, explorer, and analytics workloads through full or archive replicas instead of the validator estate.</p>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Operating principles</h3>
+            <p>Public IPs belong on sentries and public data nodes, not on validators. Signer access should stay isolated inside HSM-backed infrastructure, while attested compute stays tied to approved TEE profiles and policy controls.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">Private validator only</span>
+              <span class="badge">Separate failover zone</span>
+              <span class="badge">Region-aware routing</span>
+            </div>
+            <div class="callout spacer-24">
+              <strong>Operator note</strong>
+              <p>Light clients and application-facing services can sit on top of full or archive nodes. They should not share the validator signer, HSM path, or public peer boundary.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="requirements" aria-labelledby="requirements-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Infrastructure Baseline</span>
+          <h2 class="section-title" id="requirements-title">Current hardware and control requirements</h2>
+          <p class="section-text">The public validator baseline combines stake, compute, storage, network, attestation, and custody requirements so useful-work execution does not compromise settlement integrity.</p>
+        </div>
+
+        <div class="table-wrap" data-reveal="stagger-1">
+          <table aria-label="Node operations requirements">
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Baseline</th>
+                <th>Recommended</th>
+                <th>Why it matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CPU</td>
+                <td>32-core AMD EPYC class</td>
+                <td>64-core AMD EPYC class</td>
+                <td>Consensus, proof verification, and scheduling stability under sustained job load.</td>
+              </tr>
+              <tr>
+                <td>Memory</td>
+                <td>128 GB ECC</td>
+                <td>256 GB ECC</td>
+                <td>Supports large mempools, state access, and inference blob handling without swap pressure.</td>
+              </tr>
+              <tr>
+                <td>Storage</td>
+                <td>2 TB NVMe SSD</td>
+                <td>4 TB NVMe RAID-1</td>
+                <td>High-IOPS state access, logs, and recovery margin for validator or archive services.</td>
+              </tr>
+              <tr>
+                <td>Network</td>
+                <td>10 Gbps</td>
+                <td>25 Gbps</td>
+                <td>Improves peer convergence, low-latency block propagation, and regional failover handling.</td>
+              </tr>
+              <tr>
+                <td>Key custody</td>
+                <td>FIPS 140-2 Level 3 HSM</td>
+                <td>Dedicated network or PCIe HSM</td>
+                <td>Signing keys remain non-exportable and isolated from host compromise paths.</td>
+              </tr>
+              <tr>
+                <td>TEE profile</td>
+                <td>SGX / SEV-SNP / Nitro / Azure CVM</td>
+                <td>Attestation-monitored fleet</td>
+                <td>Required for proof-bound AI execution and trusted compute enrollment.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-3 spacer-24">
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Validator boundary</h3>
+            <p>Validator nodes should never expose a public IP, and they should peer only with approved sentry infrastructure across a private network segment.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Compliance posture</h3>
+            <p>Institutional routing expects KYC/AML and OFAC-aware operational workflows before validator admission for regulated workloads.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Availability target</h3>
+            <p>Public baseline remains 99.5% monthly uptime, with reward efficiency and slashing exposure tied directly to availability.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="checks" aria-labelledby="checks-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Operational Readiness</span>
+          <h2 class="section-title" id="checks-title">Production-safe verification checks</h2>
+          <p class="section-text">These commands are suitable for provisioned operator environments and reflect the current node runtime and validator inspection flow rather than demo-only placeholders.</p>
+        </div>
+
+        <div class="table-wrap" data-reveal="stagger-1">
+          <table aria-label="Node operations command reference">
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>Purpose</th>
+                <th>Healthy signal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code class="inline-code">aethelredd status | jq '.sync_info'</code></td>
+                <td>Confirm the node is tracking block height and finality progression.</td>
+                <td>Latest height advances steadily and <code class="inline-code">catching_up</code> resolves to <code class="inline-code">false</code>.</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">VAL_ADDR="$(aethelredd keys show validator -a --bech val)" &amp;&amp; aethelredd query staking validator "$VAL_ADDR"</code></td>
+                <td>Inspect validator admission state, commission data, and jailed status from the active signer environment.</td>
+                <td>The validator is bonded, not jailed, and reports the expected operator address.</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">aethelredd admin hsm-status</code></td>
+                <td>Verify HSM connectivity and signer availability without exposing key material.</td>
+                <td>Signer is reachable and key custody remains non-exportable inside the HSM boundary.</td>
+              </tr>
+              <tr>
+                <td><code class="inline-code">docker logs -f aethelred-validator</code></td>
+                <td>Tail consensus, peer, and attestation events during deployment, incident response, or failover rehearsal.</td>
+                <td>No repeated timeout loops, attestation failures, or peer churn storms under steady load.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout spacer-24" data-reveal="stagger-2">
+          <strong>Do not rely on demo install snippets</strong>
+          <p>Operator documentation should reflect the actual <code class="inline-code">aethelredd</code> runtime, staking query path, and HSM controls. Public pages should not publish placeholder bootstrap commands that cannot be executed against the current stack.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="access" aria-labelledby="access-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Next Steps</span>
+          <h2 class="section-title" id="access-title">Admission, tooling, and deployment planning</h2>
+          <p class="section-text">Node operations sit between protocol policy and application delivery. Operators should review network standards, governance controls, and developer tooling together before any mainnet admission process begins.</p>
+        </div>
+
+        <div class="split">
+          <article class="quote-card" data-reveal="stagger-1">
+            <h3>Prepare the validator footprint</h3>
+            <p>Start with the public network architecture and governance model to confirm stake policy, regional routing expectations, and validator controls before planning production capacity.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-secondary" href="network.html">See Network Standards</a>
+              <a class="btn btn-ghost" href="governance.html">Review Governance</a>
+            </div>
+          </article>
+
+          <article class="quote-card" data-reveal="stagger-2">
+            <h3>Build against the developer stack</h3>
+            <p>Use the developer portal and public testnet materials to validate application logic, Digital Seal handling, and verification flows before node onboarding expands.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-secondary" href="../io/developers.html">Developer Docs</a>
+              <a class="btn btn-ghost" href="../io/testnet.html">Testnet Readiness</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="contact" aria-labelledby="contact-title">
+      <div class="container">
+        <div class="split">
+          <article class="quote-card operator-cta" data-reveal>
+            <span class="kicker">Operator Contact</span>
+            <h2 class="section-title" id="contact-title">Ready to pursue validator admission?</h2>
+            <p class="section-text">Request an operator review with your target region, sentry layout, HSM vendor, TEE profile, and expected useful-compute capacity. This gives the foundation team enough information to align your deployment with current network and compliance requirements before launch sequencing.</p>
+          </article>
+
+          <article class="panel operator-cta" data-reveal>
+            <h3>Include these details in your request</h3>
+            <div class="badge-row spacer-16">
+              <span class="badge">Target region</span>
+              <span class="badge">Sentry topology</span>
+              <span class="badge">HSM vendor</span>
+              <span class="badge">TEE profile</span>
+              <span class="badge">GPU class</span>
+              <span class="badge">Expected capacity</span>
+            </div>
+            <p class="spacer-24">Use the primary contact path for validator and infrastructure review. If you are still validating application flows, keep the developer portal and testnet materials in parallel so node onboarding and software readiness stay aligned.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-primary" href="mailto:contact@aethelred.org?subject=Validator%20Operator%20Review">Request Operator Review</a>
+              <a class="btn btn-secondary" href="../io/developers.html">Open Developer Docs</a>
+              <a class="btn btn-ghost" href="network.html#validators">Validator Standards</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-shell" data-reveal>
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="brand" href="index.html" aria-label="Aethelred home">
+              <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38" loading="lazy">
+              <span class="brand-word">Aethelred</span>
+            </a>
+            <p>Production guidance for validator, sentry, worker, and full-node participation across the Aethelred network.</p>
+          </div>
+
+          <div>
+            <p class="footer-title">Protocol</p>
+            <ul class="footer-list">
+              <li><a href="network.html">Network Architecture</a></li>
+              <li><a href="nodes.html">Node Operations</a></li>
+              <li><a href="token.html">Tokenomics</a></li>
+              <li><a href="governance.html">Governance</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Resources</p>
+            <ul class="footer-list">
+              <li><a href="investors.html">Investor Access</a></li>
+              <li><a href="../io/developers.html">Developer Docs</a></li>
+              <li><a href="../io/index.html">Developer Portal</a></li>
+              <li><a href="../io/testnet.html">Testnet</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Community</p>
+            <ul class="footer-list">
+              <li><a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub</a></li>
+              <li><a href="https://discord.gg/aethelred" target="_blank" rel="noopener">Discord</a></li>
+              <li><a href="https://t.me/AethelredHQ" target="_blank" rel="noopener">Telegram</a></li>
+              <li><a href="https://x.com/AethelredHQ" target="_blank" rel="noopener">X</a></li>
+              <li><a href="mailto:contact@aethelred.org">contact@aethelred.org</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>&copy; <span data-year></span> AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</div>
+          <div><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="cookies.html">Cookie Policy</a> · <button type="button" class="cookie-settings-link" data-cookie-settings>Cookie Settings</button></div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

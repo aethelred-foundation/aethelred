@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethelred | Build Verifiable AI dApps in Minutes</title>
+  <meta name="description" content="Aethelred is the sovereign Layer 1 blockchain for verifiable AI inference. Submit AI jobs, verify proofs on-chain, and earn compute rewards.">
+  <meta name="keywords" content="Aethelred, verifiable AI, blockchain, Layer 1, zkML, TEE, Proof of Useful Work, EVM, SDK">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/">
+  <meta property="og:title" content="Aethelred | Build Verifiable AI dApps in Minutes">
+  <meta property="og:description" content="Submit AI inference jobs, verify proofs on-chain, and earn compute rewards with multi-language SDKs.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Aethelred | Build Verifiable AI dApps in Minutes social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Aethelred | Build Verifiable AI dApps in Minutes">
+  <meta name="twitter:description" content="Submit AI inference jobs, verify proofs on-chain, and earn compute rewards with multi-language SDKs.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Aethelred | Build Verifiable AI dApps in Minutes social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.aethelred.io/#webpage",
+        "name": "Aethelred Developer Portal",
+        "url": "https://www.aethelred.io/",
+        "description": "Aethelred is the sovereign Layer 1 blockchain for verifiable AI inference. Submit AI jobs, verify proofs on-chain, and earn compute rewards.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Aethelred Developer Portal social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-home">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="nav-resources">Resources</button>
+          <div class="dropdown-panel" id="nav-resources" role="menu">
+            <a href="documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+            <a href="digital-seal.html" role="menuitem">Digital Seals</a>
+            <a href="zk-proofs.html" role="menuitem">ZK Proofs</a>
+            <a href="tee.html" role="menuitem">TEE Attestation</a>
+            <a href="wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="glossary.html" role="menuitem">Glossary</a>
+            <a href="comparison.html" role="menuitem">Comparison</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="stablecoin-infrastructure.html" role="menuitem">Stablecoin Infrastructure</a>
+            <a href="developers.html#api" role="menuitem">API Reference</a>
+            <a href="tools.html#github" role="menuitem">Open Source</a>
+            <a href="community.html#developer-community" role="menuitem">Community Programs</a>
+            <a href="use-cases.html" role="menuitem">Use Cases</a>
+            <a href="grants-program.html" role="menuitem">Grants Program</a>
+            <a href="../org/index.html" role="menuitem">Aethelred Foundation</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Start Building</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Resources</summary>
+      <a href="documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+      <a href="digital-seal.html" class="mobile-link">Digital Seals</a>
+      <a href="zk-proofs.html" class="mobile-link">ZK Proofs</a>
+      <a href="tee.html" class="mobile-link">TEE Attestation</a>
+      <a href="wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="glossary.html" class="mobile-link">Glossary</a>
+      <a href="comparison.html" class="mobile-link">Comparison</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="stablecoin-infrastructure.html" class="mobile-link">Stablecoin Infrastructure</a>
+      <a href="developers.html#api" class="mobile-link">API Reference</a>
+      <a href="tools.html#github" class="mobile-link">Open Source</a>
+      <a href="community.html#developer-community" class="mobile-link">Community Programs</a>
+      <a href="use-cases.html" class="mobile-link">Use Cases</a>
+      <a href="grants-program.html" class="mobile-link">Grants Program</a>
+      <a href="../org/index.html" class="mobile-link">Foundation</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Developer Preview - Testnet Coming Soon</p>
+          <h1 class="hero-title" id="page-title">Build <span class="gradient-word">Verifiable AI</span> dApps in Minutes.</h1>
+          <p class="hero-subtitle">Submit AI inference jobs, verify execution with cryptographic and hardware-backed proofs, and settle results on-chain with deterministic finality. Move from the <a class="body-link" href="developers.html">developer docs</a> to the <a class="body-link" href="tools.html">tooling stack</a> and into the <a class="body-link" href="testnet.html">testnet rollout path</a> without changing your integration model.</p>
+
+          <div class="hero-tags" aria-label="Platform capabilities">
+            <span class="hero-tag">EVM Precompiles</span>
+            <span class="hero-tag">TEE Attestation</span>
+            <span class="hero-tag">zkML Verification</span>
+            <span class="hero-tag">PoUW Consensus</span>
+          </div>
+
+          <div class="hero-actions">
+            <a href="developers.html" class="btn btn-primary">Start Building &rarr;</a>
+            <a href="testnet.html" class="btn btn-secondary">Access Testnet Details</a>
+          </div>
+
+          <div class="scroll-cue">Scroll to explore platform capabilities</div>
+        </div>
+
+        <div class="hero-code-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="code-shell" data-tab-group data-code-typing-group>
+            <div class="code-top">
+              <div class="code-dots"><span></span><span></span><span></span></div>
+              <span class="code-label">submit_inference</span>
+            </div>
+            <div class="code-tabs">
+              <button class="code-tab is-active" data-tab-target="python" aria-selected="true">Python</button>
+              <button class="code-tab" data-tab-target="typescript" aria-selected="false">TypeScript</button>
+              <button class="code-tab" data-tab-target="rust" aria-selected="false">Rust</button>
+              <button class="code-tab" data-tab-target="go" aria-selected="false">Go</button>
+            </div>
+
+            <div class="code-panel is-active" data-tab-panel="python">
+<pre><code># pip install aethelred-sdk
+import hashlib
+
+from aethelred import AethelredClient, ProofType
+
+client = AethelredClient("https://rpc.testnet.aethelred.org")
+prompt = b'{"prompt":"Hello AI"}'
+
+submit = client.jobs.submit(
+    model_hash=bytes.fromhex("09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3"),
+    input_hash=hashlib.sha256(prompt).digest(),
+    proof_type=ProofType.HYBRID,
+    priority=5,
+    max_gas=1_000_000,
+    timeout_blocks=120,
+    metadata={"source": "website-home-hero"},
+)
+
+job = client.jobs.wait_for_completion(submit.job_id, poll_interval=2.0, timeout=120.0)
+if job.status.value != "JOB_STATUS_COMPLETED":
+    raise RuntimeError(f"job failed with status={job.status.value}")
+
+seals = client.seals.list(model_hash="09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3")
+seal = next((item for item in seals if item.job_id == job.id), None)
+if seal is None:
+    raise RuntimeError(f"no seal found for job {job.id}")
+
+verification = client.seals.verify(seal.id)
+print(f"seal valid: {verification.valid}")</code></pre>
+            </div>
+
+            <div class="code-panel" data-tab-panel="typescript">
+<pre><code>// npm install @aethelred/sdk
+import { AethelredClient, JobStatus, Network, ProofType } from '@aethelred/sdk';
+
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function main() {
+  const modelHash = '09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3';
+  const client = new AethelredClient({ network: Network.TESTNET });
+
+  const submit = await client.jobs.submit({
+    modelHash,
+    inputHash: await sha256Hex(JSON.stringify({ prompt: 'Hello AI' })),
+    proofType: ProofType.HYBRID,
+    priority: 5,
+    maxGas: '1000000',
+    timeoutBlocks: 120,
+    metadata: { source: 'website-home-hero' },
+  });
+
+  const job = await client.jobs.waitForCompletion(submit.jobId, {
+    pollInterval: 2000,
+    timeout: 120000,
+  });
+  if (job.status !== JobStatus.COMPLETED) {
+    throw new Error(`job failed with status=${job.status}`);
+  }
+
+  const seals = await client.seals.list();
+  const seal = seals.find((item) => item.jobId === job.id);
+  if (!seal) {
+    throw new Error(`no seal found for job ${job.id}`);
+  }
+
+  const verification = await client.seals.verify(seal.id);
+  console.log(`seal valid: ${verification.valid}`);
+}
+
+main().catch((error) => {
+  console.error(error);
+});</code></pre>
+            </div>
+
+            <div class="code-panel" data-tab-panel="rust">
+<pre><code>// Cargo.toml: aethelred-sdk = "1"
+use aethelred_sdk::{
+    jobs::SubmitJobRequest, AethelredClient, JobStatus, Network, ProofType,
+};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let client = AethelredClient::new(Network::Testnet).await?;
+
+    let submit = client
+        .jobs()
+        .submit(SubmitJobRequest {
+            model_hash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3".into(),
+            input_hash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09".into(),
+            proof_type: Some(ProofType::ProofTypeHybrid),
+            priority: Some(5),
+            max_gas: Some("1000000".into()),
+            timeout_blocks: Some(120),
+        })
+        .await?;
+
+    let job = client
+        .jobs()
+        .wait_for_completion(
+            &amp;submit.job_id,
+            Duration::from_secs(2),
+            Duration::from_secs(120),
+        )
+        .await?;
+    if job.status != JobStatus::JobStatusCompleted {
+        return Err(format!("job failed with status {:?}", job.status).into());
+    }
+
+    let seals = client.seals().list(None).await?;
+    let seal = seals
+        .into_iter()
+        .find(|item| item.job_id == job.id)
+        .ok_or_else(|| format!("no seal found for job {}", job.id))?;
+
+    let verification = client.seals().verify(&amp;seal.id).await?;
+    println!("seal valid: {}", verification.valid);
+    Ok(())
+}</code></pre>
+            </div>
+
+            <div class="code-panel" data-tab-panel="go">
+<pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/aethelred/sdk-go/client"
+    "github.com/aethelred/sdk-go/jobs"
+    "github.com/aethelred/sdk-go/types"
+)
+
+func main() {
+    ctx := context.Background()
+
+    c, err := client.NewClient(client.Testnet)
+    if err != nil {
+        panic(err)
+    }
+
+    submit, err := c.Jobs.Submit(ctx, jobs.SubmitRequest{
+        ModelHash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3",
+        InputHash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09",
+        ProofType: types.ProofTypeHybrid,
+        Priority:  5,
+        MaxGas:    "1000000",
+        TimeoutBlocks: 120,
+        Metadata:  map[string]string{"source": "website-home-hero"},
+    })
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("job id: %s\n", submit.JobID)
+
+    job, err := c.Jobs.WaitForCompletion(ctx, submit.JobID, 2*time.Second, 120*time.Second)
+    if err != nil {
+        panic(err)
+    }
+    if job.Status != types.JobStatusCompleted {
+        panic(fmt.Sprintf("job failed with status %s", job.Status))
+    }
+
+    seals, err := c.Seals.List(ctx, nil)
+    if err != nil {
+        panic(err)
+    }
+
+    var sealID string
+    for _, seal := range seals {
+        if seal.JobID == job.ID {
+            sealID = seal.ID
+            break
+        }
+    }
+    if sealID == "" {
+        panic(fmt.Sprintf("no seal found for job %s", job.ID))
+    }
+
+    verification, err := c.Seals.Verify(ctx, sealID)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("seal valid: %t\n", verification.Valid)
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>Sub-2s</strong>
+              <span>Deterministic finality</span>
+            </div>
+            <div class="metric-pill">
+              <strong>400 PFLOPS</strong>
+              <span>TEE compute target</span>
+            </div>
+            <div class="metric-pill">
+              <strong>50K+ IPS</strong>
+              <span>Inference throughput</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="platform-capabilities" aria-labelledby="platform-capabilities-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Why Aethelred</p>
+          <h2 class="section-title" id="platform-capabilities-title">Purpose-built infrastructure for verifiable AI inference</h2>
+          <p class="section-lead">Aethelred gives developers predictable performance, proof-backed execution, and a practical toolchain from prototype to production.</p>
+        </div>
+
+        <div class="grid grid-3">
+          <article class="card">
+            <span class="icon-chip">0x0400</span>
+            <h3>EVM-Compatible Precompiles</h3>
+            <p>Use <span class="mono">0x0400</span> (TEE) and <span class="mono">0x0300</span> (zkML) precompiles directly from Solidity without external oracles.</p>
+          </article>
+          <article class="card">
+            <span class="icon-chip">SDKs</span>
+            <h3>Multi-Language SDKs</h3>
+            <p>Python, TypeScript, Rust, and Go SDKs with consistent API shape, async support, and production-ready docs.</p>
+          </article>
+          <article class="card">
+            <span class="icon-chip">PQ</span>
+            <h3>Post-Quantum Security</h3>
+            <p>ML-DSA-65 + ECDSA hybrid signatures ship by default so applications can plan for long-term cryptographic resilience.</p>
+          </article>
+          <article class="card">
+            <span class="icon-chip">&lt;2s</span>
+            <h3>Instant Finality</h3>
+            <p>Sub-2-second block times and deterministic CometBFT finality remove reorg uncertainty from critical AI workflows.</p>
+          </article>
+          <article class="card">
+            <span class="icon-chip">AI</span>
+            <h3>Framework Integrations</h3>
+            <p>Native support for PyTorch, LangChain, and Hugging Face lets teams onboard existing model workflows quickly.</p>
+          </article>
+          <article class="card">
+            <span class="icon-chip">&gt;_</span>
+            <h3>Developer Tooling</h3>
+            <p>Use CLI automation, VS Code Sovereign Copilot, local Docker devnet tooling, and integrated diagnostics.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="reference-usecases" aria-labelledby="reference-usecases-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Architectures</p>
+          <h2 class="section-title" id="reference-usecases-title">Where the current protocol fits best</h2>
+          <p class="section-lead">These use-case pages translate the current Aethelred protocol surface into workload-specific architectures without inventing production stats, customer names, or unsupported capabilities.</p>
+        </div>
+
+        <div class="grid grid-3 usecase-home-grid">
+          <a class="card usecase-home-card" href="usecase-research.html">
+            <span class="icon-chip">R&amp;D</span>
+            <h3>Scientific Research</h3>
+            <p>Reproducibility, confidential datasets, and sealed experiment outputs for cross-institution verification.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-healthcare.html">
+            <span class="icon-chip">HLTH</span>
+            <h3>Healthcare and Life Sciences</h3>
+            <p>Blind compute, sovereign data controls, and audit-ready result provenance for regulated clinical workflows.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-finance.html">
+            <span class="icon-chip">FIN</span>
+            <h3>Financial Services</h3>
+            <p>Confidential models, sanctions-aware routing, and governed decision evidence for treasury and risk systems.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-defense.html">
+            <span class="icon-chip">DEF</span>
+            <h3>Defense and Mission Systems</h3>
+            <p>Post-quantum crypto, hybrid verification, and fail-closed evidence handling for high-assurance workloads.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-autonomous.html">
+            <span class="icon-chip">AUTO</span>
+            <h3>Autonomous and Robotic Systems</h3>
+            <p>Sealed decision trails, low-latency verification, and route-event auditing for autonomous workflows.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-supplychain.html">
+            <span class="icon-chip">SCM</span>
+            <h3>Supply Chain and Trade</h3>
+            <p>Origin evidence, transfer audit trails, and verifiable partner-side provenance across global logistics.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="usecase-agent-to-agent.html">
+            <span class="icon-chip">A2A</span>
+            <h3>AI Agent to AI Agent</h3>
+            <p>Seal-verified handoffs and proof-aware telemetry so one agent can verify another agent's result before acting.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+          <a class="card usecase-home-card" href="enterprise-corridors.html">
+            <span class="icon-chip">ENT</span>
+            <h3>Enterprise Corridors</h3>
+            <p>Policy-gated enterprise workflows with sovereign data boundaries, Digital Seals, and signer-aware control paths.</p>
+            <span class="card-link">Open reference &rarr;</span>
+          </a>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Need the full workload library?</h3>
+            <p>Use the central <a class="body-link" href="use-cases.html">Use Cases</a> page to compare all eight reference architectures, then continue into the dedicated <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a> page when the workflow includes issuer-authorized settlement or reserve-controlled routing.</p>
+          </div>
+          <a href="use-cases.html" class="btn btn-primary">Open Use Cases</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="get-started" aria-labelledby="get-started-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Quick Start</p>
+          <h2 class="section-title" id="get-started-title">Get started in 3 steps</h2>
+          <p class="section-lead">From zero to your first on-chain AI inference in under five minutes.</p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-index">STEP 01</span>
+            <h3>Install the CLI</h3>
+            <p>Install the Aethelred CLI via Homebrew or Cargo on macOS, Linux, and WSL.</p>
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">terminal</span>
+              </div>
+<pre><code>brew install AethelredFoundation/tap/aeth
+# or: cargo install aeth</code></pre>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <span class="step-index">STEP 02</span>
+            <h3>Connect to Testnet</h3>
+            <p>Configure the network and create a wallet. Fund it from the testnet faucet at launch.</p>
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">terminal</span>
+              </div>
+<pre><code>aeth config set --network testnet
+aeth config set --rpc https://rpc.testnet.aethelred.io
+aeth wallet create --name mykey</code></pre>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <span class="step-index">STEP 03</span>
+            <h3>Submit your first job</h3>
+            <p>Submit an AI inference job in one command while the network handles verification and settlement.</p>
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">terminal</span>
+              </div>
+<pre><code>aeth pouw submit-job \
+  --model-hash abc123 \
+  --input ./prompt.json \
+  --verification-type hybrid \
+  --from mykey</code></pre>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="developer-tools-home" aria-labelledby="developer-tools-home-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Ecosystem</p>
+          <h2 class="section-title" id="developer-tools-home-title">Developer tools</h2>
+          <p class="section-lead">Everything needed to build, test, and deploy verifiable AI applications.</p>
+        </div>
+
+        <div class="tool-grid">
+          <a class="card tool-card" href="tools.html#cli">
+            <span class="icon-chip">CLI</span>
+            <h3>Aethelred CLI</h3>
+            <p class="mono">brew install AethelredFoundation/tap/aeth</p>
+            <span class="card-link">Command guide &rarr;</span>
+          </a>
+          <a class="card tool-card" href="tools.html#sdks">
+            <span class="icon-chip">SDK</span>
+            <h3>Official SDKs</h3>
+            <p class="mono">pip install aethelred-sdk / npm i @aethelred/sdk</p>
+            <span class="card-link">Libraries &rarr;</span>
+          </a>
+          <a class="card tool-card" href="tools.html#vscode">
+            <span class="icon-chip">VS</span>
+            <h3>Sovereign Copilot</h3>
+            <p>Compliance linting, cost insights, and TEE development support in VS Code.</p>
+            <span class="card-link">Extension details &rarr;</span>
+          </a>
+          <a class="card tool-card" href="tools.html#local-dev">
+            <span class="icon-chip">DK</span>
+            <h3>Local Devnet</h3>
+            <p class="mono">docker compose -f tools/devnet/docker-compose.yml up -d</p>
+            <span class="card-link">Local environment &rarr;</span>
+          </a>
+          <a class="card tool-card" href="smart-contracts.html">
+            <span class="icon-chip">EVM</span>
+            <h3>AI Precompiles</h3>
+            <p>Build directly against native TEE and zkML precompiles from Solidity contracts.</p>
+            <span class="card-link">Contract interfaces &rarr;</span>
+          </a>
+          <a class="card tool-card" href="tools.html#github">
+            <span class="icon-chip">OSS</span>
+            <h3>Open Source Repos</h3>
+            <p>Core protocol, SDKs, CLI, VS Code extension, and AIPs under Apache 2.0.</p>
+            <span class="card-link">Browse GitHub &rarr;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="network-specifications" aria-labelledby="network-specifications-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Network</p>
+          <h2 class="section-title" id="network-specifications-title">Network specifications</h2>
+          <p class="section-lead">Designed for institutional-grade verifiable AI compute at scale.</p>
+        </div>
+
+        <div class="kpi-grid">
+          <article class="kpi">
+            <p class="kpi-label">Consensus</p>
+            <p class="kpi-value">PoUW</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Finality</p>
+            <p class="kpi-value">Sub-2s</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Compute</p>
+            <p class="kpi-value">400 PFLOPS</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Inference</p>
+            <p class="kpi-value">50K+ IPS</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Supply</p>
+            <p class="kpi-value">10B AETHEL</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="builder-community" aria-labelledby="builder-community-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Community</p>
+          <h2 class="section-title" id="builder-community-title">Join the builder community</h2>
+          <p class="section-lead">Connect with engineers building the future of verifiable AI.</p>
+        </div>
+
+        <div class="community-grid">
+          <article class="card">
+            <h3>GitHub</h3>
+            <p>Open-source repos, SDKs, and core protocol development under Aethelred Foundation.</p>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer" class="card-link">AethelredFoundation &rarr;</a>
+          </article>
+          <article class="card">
+            <h3>Discord</h3>
+            <p>Real-time discussion with developers, validators, and protocol engineers.</p>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer" class="card-link">Join server &rarr;</a>
+          </article>
+          <article class="card">
+            <h3>Developer Forum</h3>
+            <p>Technical discussions, AIP proposals, and governance-focused research threads.</p>
+            <a href="https://forum.aethelred.io" target="_blank" rel="noopener noreferrer" class="card-link">Browse forum &rarr;</a>
+          </article>
+          <article class="card">
+            <h3>Twitter / X</h3>
+            <p>Release updates, roadmap milestones, and ecosystem announcements.</p>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer" class="card-link">@AethelredL1 &rarr;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="start-building" aria-labelledby="start-building-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="start-building-title">Start building on Aethelred</h2>
+            <h3>Build your first verifiable AI workflow today.</h3>
+            <p>Start in the <a class="body-link" href="developers.html">developer docs</a>, prepare deployments with the <a class="body-link" href="tools.html">tooling stack</a>, and validate planned connectivity in the <a class="body-link" href="testnet.html">testnet dashboard</a>.</p>
+          </div>
+          <a href="developers.html" class="btn btn-primary">Open Developer Docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

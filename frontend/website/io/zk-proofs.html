@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZK Proofs | Aethelred</title>
+  <meta name="description" content="Current zkML verification surface for Aethelred: supported proof systems, deterministic on-chain checks, hybrid validation, and the developer build path.">
+  <meta name="keywords" content="Aethelred zk proofs, zkML, zero-knowledge proofs, x/verify, EZKL, RISC Zero, Halo2, Groth16, Plonky2">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/zk-proofs">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/zk-proofs">
+  <meta property="og:title" content="ZK Proofs | Aethelred">
+  <meta property="og:description" content="Understand the current zkML verification model on Aethelred, from proof systems and x/verify invariants to hybrid validation and Digital Seals.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="ZK Proofs social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="ZK Proofs | Aethelred">
+  <meta name="twitter:description" content="Current zkML verification on Aethelred: proof systems, deterministic checks, and hybrid validation.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="ZK Proofs social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/zk-proofs#webpage",
+        "name": "ZK Proofs",
+        "headline": "ZK Proofs",
+        "url": "https://www.aethelred.io/zk-proofs",
+        "description": "Current zkML verification surface for Aethelred: supported proof systems, deterministic on-chain checks, hybrid validation, and the developer build path.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/zk-proofs#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "ZK Proofs social preview"
+        },
+        "dateModified": "2026-03-11",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/zk-proofs#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "ZK Proofs",
+            "item": "https://www.aethelred.io/zk-proofs"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-zk">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="zk-resources">Resources</button>
+          <div class="dropdown-panel" id="zk-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#systems" role="menuitem">Proof Systems</a>
+            <a href="#verification" role="menuitem">On-Chain Verification</a>
+            <a href="#hybrid" role="menuitem">Hybrid Verification</a>
+            <a href="#build-path" role="menuitem">Build Path</a>
+            <a href="tee.html" role="menuitem">TEE Attestation</a>
+            <a href="wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="../org/index.html" role="menuitem">Foundation</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Developer Docs</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Verification Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#systems" class="mobile-link">Proof Systems</a>
+      <a href="#verification" class="mobile-link">On-Chain Verification</a>
+      <a href="#hybrid" class="mobile-link">Hybrid Verification</a>
+      <a href="#build-path" class="mobile-link">Build Path</a>
+      <a href="tee.html" class="mobile-link">TEE Attestation</a>
+      <a href="wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="../org/index.html" class="mobile-link">Foundation</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Verified Cryptography</p>
+          <h1 class="hero-title" id="page-title">Zero-Knowledge <span class="gradient-word">Proofs</span></h1>
+          <p class="hero-subtitle">Aethelred treats zkML verification as a first-class protocol surface in the March 2026 whitepaper. Validators can attach proofs to Proof-of-Useful-Work execution, the <span class="mono">x/verify</span> module enforces deterministic checks, and smart contracts can verify proof envelopes through the <a class="body-link" href="developers.html#contracts">zkML precompile</a> at <span class="mono">0x0300</span>. Use this page alongside <a class="body-link" href="tee.html">TEE attestation</a>, <a class="body-link" href="sandbox.html">Infinite Sandbox</a>, and the <a class="body-link" href="tools.html">toolchain stack</a> when choosing how a workload should be verified.</p>
+          <div class="hero-tags" aria-label="ZK proof coverage">
+            <span class="hero-tag">5 Proof Systems</span>
+            <span class="hero-tag">EVM 0x0300</span>
+            <span class="hero-tag">Hybrid Verification</span>
+            <span class="hero-tag">Digital Seals</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#systems" class="btn btn-primary">Review Proof Systems</a>
+            <a href="tee.html" class="btn btn-secondary">Open TEE Surface</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> WHITEPAPER V1.1 / MARCH 2026</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Protocol-native verification path</h4>
+            <p>Proofs are part of the current consensus and verification architecture, not an off-chain afterthought or a generic research note.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Deterministic, gas-metered checks</h4>
+            <p>The verifier enforces proof size limits, verifying key matches, domain binding, and fail-closed behavior before a result is accepted.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Designed for hybrid assurance</h4>
+            <p>Jobs can combine zkML proofs with TEE attestation so the same output hash is cross-validated before seal minting.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>5 Systems</strong>
+              <span>Current proof-system matrix</span>
+            </div>
+            <div class="metric-pill">
+              <strong>1 MB Max</strong>
+              <span>Global proof-size ceiling</span>
+            </div>
+            <div class="metric-pill">
+              <strong>18s EZKL</strong>
+              <span>Achieved on small models</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">What zkML means on Aethelred right now</h2>
+          <p class="section-lead">This page reflects the current protocol model, not the older standalone marketing copy. On Aethelred, a zkML proof is one of the documented verification modalities available per job, alongside TEE attestation and the hybrid mode that cross-checks both.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">ZKML</span>
+                <div>
+                  <p class="detail-kicker">Current Role</p>
+                  <h3>Proof-backed model execution without disclosing private inputs or weights</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current whitepaper defines zkML proofs as mathematical evidence that a specific model was applied to a specific input to produce a specific output, without revealing the model weights or raw input data. This makes zkML useful when verifiability matters but confidential application logic still needs to stay private.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Protocol Placement</span>
+                <p>Validators may generate proofs during vote extension execution, while <span class="mono">x/verify</span> and the <span class="mono">0x0300</span> precompile enforce deterministic verification.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Operational Outcome</span>
+                <p>Accepted proofs contribute to a workload result that can later be minted as a Digital Seal when supermajority agreement is reached.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Evidence Package</span>
+                <strong>Proof bytes, proof-system identifier, verifying key hash, job identity, and output commitment validation.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Contract Surface</span>
+                <strong>Smart contracts consume proof verification through the zkML precompile and sealed result flows.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Build Surface</span>
+                <strong>Use the <a class="body-link" href="developers.html">developer docs</a>, <a class="body-link" href="sandbox.html">Infinite Sandbox</a>, and <a class="body-link" href="testnet.html">testnet path</a> to move from local proof generation into public rehearsal.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SEAL</span>
+                <div>
+                  <p class="detail-kicker">Network Effect</p>
+                  <h3>Proofs are useful because they flow into consensus evidence</h3>
+                </div>
+              </div>
+            </div>
+            <p>Aethelred does not stop at proof generation. When validators converge on the same output hash and the network reaches <span class="mono">&gt;= 2/3 + 1</span> agreement power, that result can be promoted into a Digital Seal with provenance, consensus evidence, and relayable verification data.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Seal Binding</span>
+                <p>Each seal records model hash, input hash, output hash, block height, timestamp, chain ID, and the validator evidence that supported the result.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Cross-Chain Path</span>
+                <p>Proof-backed seals can be consumed on-chain via <span class="mono">0x0500</span> or relayed across IBC on port <span class="mono">aethelred.seal</span>.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Model Registry</span>
+                <strong>Current documentation stores model hashes, circuit hashes, verifying keys, TEE measurements, and per-circuit gas multipliers.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Auto-Compilation</span>
+                <strong>ONNX models auto-compile to EZKL circuits when that mode is enabled in the registry workflow.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Dev Surface</span>
+                <strong>The documented local environment includes a zkML prover with GPU passthrough inside the 10-service devnet.</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="kpi-grid stack-top-16" aria-label="ZK proof metrics">
+          <article class="kpi">
+            <p class="kpi-label">Supported Systems</p>
+            <p class="kpi-value">5</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Precompile</p>
+            <p class="kpi-value">0x0300</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Seal Threshold</p>
+            <p class="kpi-value">2/3 + 1</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Max Proof Size</p>
+            <p class="kpi-value">1 MB</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Achieved EZKL</p>
+            <p class="kpi-value">18s</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="systems" aria-labelledby="systems-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Proof Systems</p>
+          <h2 class="section-title" id="systems-title">The current proof-system matrix in the whitepaper</h2>
+          <p class="section-lead">The protocol currently documents five supported proof systems. These values are taken from the March 2026 verification framework table and should be treated as the current reference surface for proof selection.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>System</th>
+                <th>Min Proof Size</th>
+                <th>Gas Multiplier</th>
+                <th>Primary Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EZKL</td>
+                <td>256 bytes</td>
+                <td>2x</td>
+                <td>ML model inference</td>
+              </tr>
+              <tr>
+                <td>RISC Zero</td>
+                <td>512 bytes</td>
+                <td>4x</td>
+                <td>General zkVM computation</td>
+              </tr>
+              <tr>
+                <td>Plonky2</td>
+                <td>256 bytes</td>
+                <td>3x</td>
+                <td>FRI-based, fast proving</td>
+              </tr>
+              <tr>
+                <td>Halo2</td>
+                <td>384 bytes</td>
+                <td>2x</td>
+                <td>IPA commitment, no trusted setup</td>
+              </tr>
+              <tr>
+                <td>Groth16</td>
+                <td>192 bytes</td>
+                <td>1x</td>
+                <td>Most compact proofs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Proof selection should follow workload shape, not aesthetics</h3>
+            <p>Compact proofs, fast proving, and general zkVM flexibility are different tradeoffs. Use the precompile and SDK surface in <a class="body-link" href="developers.html">Developer Documentation</a> to match the proof system to the application path you are actually shipping.</p>
+          </div>
+          <a href="developers.html#contracts" class="btn btn-primary">Open Precompiles</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="verification" aria-labelledby="verification-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">On-Chain Verification</p>
+          <h2 class="section-title" id="verification-title">Deterministic checks in <span class="mono">x/verify</span></h2>
+          <p class="section-lead">The verifier is strict by design. Proof handling is gas-metered, registry-aware, domain-bound, and fail-closed when a production requirement is missing.</p>
+        </div>
+
+        <div class="code-block stack-bottom-16">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">x/verify</span>
+          </div>
+<pre><code>gas = base_gas + (proof_size * gas_per_byte) * system_multiplier * circuit_multiplier
+
+domain_binding = SHA-256(job_id || chain_id || block_height)</code></pre>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">RULES</span>
+                <div>
+                  <p class="detail-kicker">Security Invariants</p>
+                  <h3>What the verifier checks before a proof is accepted</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Proof size is gated against the global maximum and any circuit-specific ceiling.</li>
+              <li>Gas is calculated deterministically from proof size, proof system, and circuit multiplier.</li>
+              <li>Unregistered circuits are rejected in production mode.</li>
+              <li>Verifying key hashes must match the circuit registry entry.</li>
+              <li>The in-memory circuit cache is rebuilt atomically from on-chain state at each BeginBlock.</li>
+            </ul>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">FAIL</span>
+                <div>
+                  <p class="detail-kicker">Fail-Closed Model</p>
+                  <h3>How the current verifier blocks bad or replayed proof data</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Anti-replay is embedded through <span class="mono">SHA-256(job_id || chain_id || block_height)</span> in the public inputs.</li>
+              <li>Groth16 proofs receive subgroup and field checks before acceptance.</li>
+              <li>If a registered verifier is missing and simulated mode is disabled, verification fails immediately.</li>
+              <li>Proof envelopes without the right shape, domain binding, or registry context do not degrade gracefully into acceptance.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="hybrid" aria-labelledby="hybrid-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Hybrid Verification</p>
+          <h2 class="section-title" id="hybrid-title">The high-assurance path cross-checks TEE output and zkML output</h2>
+          <p class="section-lead">Hybrid verification is the current highest-assurance mode documented by Aethelred. TEE attestation and zkML verification run in parallel, then the protocol checks that both sides agree on the same output commitment.</p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-index">STEP 01</span>
+            <h3>Execute the workload</h3>
+            <p>The validator runs the job inside a TEE and/or generates a zkML proof during the vote-extension window.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 02</span>
+            <h3>Cross-validate commitments</h3>
+            <p>The TEE output hash must match the output commitment published through the zkML public inputs. A mismatch fails both results.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 03</span>
+            <h3>Promote into seal evidence</h3>
+            <p>When the network reaches supermajority agreement, the result can be minted as a Digital Seal with proof and attestation evidence attached.</p>
+          </article>
+        </div>
+
+        <div class="table-wrap stack-top-16">
+          <table>
+            <thead>
+              <tr>
+                <th>Verification Mode</th>
+                <th>Evidence</th>
+                <th>Security Level</th>
+                <th>Best Fit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TEE</td>
+                <td>Attestation quote bound to workload and chain</td>
+                <td>High</td>
+                <td>Confidential execution and regulated inference</td>
+              </tr>
+              <tr>
+                <td>ZKML</td>
+                <td>Proof bytes plus verifying-key and domain checks</td>
+                <td>High</td>
+                <td>Privacy-preserving proof of model execution</td>
+              </tr>
+              <tr>
+                <td>Hybrid</td>
+                <td>TEE + ZKML cross-validation</td>
+                <td>Highest</td>
+                <td>High-value or adversarial workloads that need defense in depth</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="build-path" aria-labelledby="build-path-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Build Path</p>
+          <h2 class="section-title" id="build-path-title">How teams move from proof design into network rehearsal</h2>
+          <p class="section-lead">The current zk surface already connects the model registry, the local devnet, the SDKs, and public network rehearsal. There is no separate research-only stack required to start using it.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">MODEL</span>
+                <div>
+                  <p class="detail-kicker">Registry</p>
+                  <h3>Model registration and proof compilation are part of the same control plane</h3>
+                </div>
+              </div>
+            </div>
+            <p>When ONNX auto-compilation is enabled, models are compiled into EZKL circuits and registered with the hashes and keys needed for deterministic verification. That means the proof surface is tied to the same operational registry that defines deployable model state.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Stored Data</span>
+                <strong>Model hashes, circuit hashes, verifying keys, TEE measurements, and per-circuit gas multipliers.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Developer Surface</span>
+                <strong>The <a class="body-link" href="developers.html">SDK docs</a> and <a class="body-link" href="tools.html">tooling page</a> already expose the surrounding workflow.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Contract Surface</span>
+                <strong>Use <a class="body-link" href="developers.html#contracts">EVM precompiles</a> when proof verification needs to be consumed directly in smart contracts.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">DEVNET</span>
+                <div>
+                  <p class="detail-kicker">Rehearsal</p>
+                  <h3>The documented local environment already contains the prover path</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current development environment includes a 10-service Docker Compose devnet with three validators on heterogeneous TEE platforms, a zkML prover with GPU passthrough, API and explorer surfaces, and monitoring. That is the shortest path from experimentation to testnet readiness.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Local Control</span>
+                <strong><a class="body-link" href="sandbox.html">Infinite Sandbox</a> gives teams a place to inspect proof-backed execution before exposing workloads to public infrastructure.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Public Rehearsal</span>
+                <strong><a class="body-link" href="testnet.html">Testnet</a> moves the same operational model into a public validation environment.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Assurance Pairing</span>
+                <strong>Use <a class="body-link" href="tee.html">TEE attestation</a> when the workload also needs hardware-backed confidential execution.</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Choose the verifier to match the risk model</h3>
+            <p>Use pure zkML when mathematical proof is the center of trust, TEE attestation when blind compute is the center of trust, and hybrid mode when both need to agree before a result is promotable.</p>
+          </div>
+          <a href="sandbox.html" class="btn btn-primary">Open Infinite Sandbox</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="contract-integration" aria-labelledby="contract-integration-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Implementation References</p>
+          <h2 class="section-title" id="contract-integration-title">Where zk verification meets the contract surface</h2>
+          <p class="section-lead">Teams that get through proof-system selection usually need the next layer immediately: how those proofs are consumed in Solidity, precompiles, and application policy.</p>
+        </div>
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SOL</span>
+                <div>
+                  <p class="detail-kicker">Contract Reference</p>
+                  <h3>Smart Contracts</h3>
+                </div>
+              </div>
+            </div>
+            <p>The Smart Contracts page documents the current contract-facing path for zk-aware integrations: precompile lanes, oracle reads, callback patterns, seal gating, and the supporting token, bridge, and governance contracts in the live repository.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Best For</span>
+                <strong>Application teams that need to consume proof-backed outcomes in Solidity instead of only at the SDK or module layer.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Current Surfaces</span>
+                <strong><span class="mono">0x0300</span>, <span class="mono">0x0500</span>, <span class="mono">IAethelredOracle</span>, and conservative copyable contract patterns.</strong>
+              </div>
+            </div>
+            <a href="smart-contracts.html" class="card-link">Open Smart Contracts &rarr;</a>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">RUN</span>
+                <div>
+                  <p class="detail-kicker">Rehearsal Path</p>
+                  <h3>Sandbox and precompile workflow</h3>
+                </div>
+              </div>
+            </div>
+            <p>If the contract path is still too early, the better next stop is the rehearsal surface. The sandbox and developer docs let teams compile, test, and verify proof-backed execution before they wire contract policy around it.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Best For</span>
+                <strong>Teams moving from circuit experimentation into devnet testing, SDK integration, and staged contract rollout.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Next Pages</span>
+                <strong><a class="body-link" href="sandbox.html">Infinite Sandbox</a>, <a class="body-link" href="developers.html#contracts">Developer Precompiles</a>, and <a class="body-link" href="tools.html">Developer Tools</a>.</strong>
+              </div>
+            </div>
+            <a href="sandbox.html" class="card-link">Open Infinite Sandbox &rarr;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

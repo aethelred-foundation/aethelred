@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallets &amp; Signing | Aethelred</title>
+  <meta name="description" content="Current wallet and signing surface for Aethelred: CLI wallet operations, Python dual-key signing, offline manifest flows, and custody guidance grounded in the current codebase.">
+  <meta name="keywords" content="Aethelred wallets, signing, CLI wallet, DualKeyWallet, offline signing, HSM, wallet security">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/wallets">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/wallets">
+  <meta property="og:title" content="Wallets &amp; Signing | Aethelred">
+  <meta property="og:description" content="Review the current Aethelred wallet surface: CLI provisioning, Python dual-key signing, offline manifests, and production custody guidance.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Wallets &amp; Signing social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Wallets &amp; Signing | Aethelred">
+  <meta name="twitter:description" content="Source-backed wallet and signing guidance for the current Aethelred codebase.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Wallets &amp; Signing social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/wallets#webpage",
+        "name": "Wallets & Signing",
+        "headline": "Wallets & Signing",
+        "url": "https://www.aethelred.io/wallets",
+        "description": "Current wallet and signing surface for Aethelred: CLI wallet operations, Python dual-key signing, offline manifest flows, and custody guidance grounded in the current codebase.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/wallets#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Wallets & Signing social preview"
+        },
+        "dateModified": "2026-03-11",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/wallets#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Wallets & Signing",
+            "item": "https://www.aethelred.io/wallets"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-wallets">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="wallet-resources">Resources</button>
+          <div class="dropdown-panel" id="wallet-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#surfaces" role="menuitem">Access Models</a>
+            <a href="#examples" role="menuitem">Examples</a>
+            <a href="#workflow" role="menuitem">Workflow</a>
+            <a href="#security" role="menuitem">Security</a>
+            <a href="#matrix" role="menuitem">Current Matrix</a>
+            <a href="tools.html#cli" role="menuitem">Developer Tools</a>
+            <a href="testnet.html" role="menuitem">Testnet</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Developer Docs</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Wallet Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#surfaces" class="mobile-link">Access Models</a>
+      <a href="#examples" class="mobile-link">Examples</a>
+      <a href="#workflow" class="mobile-link">Workflow</a>
+      <a href="#security" class="mobile-link">Security</a>
+      <a href="#matrix" class="mobile-link">Current Matrix</a>
+      <a href="tools.html#cli" class="mobile-link">Developer Tools</a>
+      <a href="testnet.html" class="mobile-link">Testnet</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Wallet Access Layer</p>
+          <h1 class="hero-title" id="page-title">Wallets <span class="gradient-word">&amp;</span> Signing</h1>
+          <p class="hero-subtitle">This page documents the current Aethelred wallet surface as it exists in the codebase today: CLI wallet provisioning, Python dual-key signing, and offline manifests that can be signed by your preferred wallet or HSM. It deliberately replaces the older placeholder wallet directory with source-backed guidance that fits the <a class="body-link" href="tools.html">developer toolchain</a>, the <a class="body-link" href="developers.html">documentation path</a>, and the <a class="body-link" href="testnet.html">testnet rollout</a>.</p>
+          <div class="hero-tags" aria-label="Wallet capabilities">
+            <span class="hero-tag">CLI Wallet Ops</span>
+            <span class="hero-tag">Dual-Key Signing</span>
+            <span class="hero-tag">Offline Manifests</span>
+            <span class="hero-tag">HSM Handoff</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#surfaces" class="btn btn-primary">Explore Access Models</a>
+            <a href="#security" class="btn btn-secondary">Review Security Posture</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT CODEBASE ONLY</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Source-backed custody surface</h4>
+            <p>The current public guidance is centered on CLI bootstrap, Python dual-key signing, and offline signing flows, not speculative consumer wallet listings.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Post-quantum aware by design</h4>
+            <p>Aethelred keeps ECDSA for wallet compatibility while introducing Dilithium-backed signing paths in the dual-key wallet implementation.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Cold boundary available now</h4>
+            <p>Unsigned transfer manifests can be produced ahead of time and handed to a preferred wallet or HSM before broadcast.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>aeth1...</strong>
+              <span>Current Bech32 address family</span>
+            </div>
+            <div class="metric-pill">
+              <strong>480K PBKDF2</strong>
+              <span>Encrypted export hardening in Python</span>
+            </div>
+            <div class="metric-pill">
+              <strong>12+ Chars</strong>
+              <span>Minimum export passphrase length</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">What a wallet means on Aethelred right now</h2>
+          <p class="section-lead">A wallet on Aethelred is currently an operational signing surface, not a generic browser-extension marketing object. The codebase supports key provisioning, signing, encrypted backup, and offline transaction handoff. Digital Seal verification and broader read-only protocol inspection can still happen without loading hot keys into the same environment.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">CORE</span>
+                <div>
+                  <p class="detail-kicker">Current Role</p>
+                  <h3>Wallets authorize value transfer and signed protocol actions</h3>
+                </div>
+              </div>
+            </div>
+            <p>Use wallets to provision addresses, sign protocol payloads, move tokens, and maintain a clean custody boundary between application logic and privileged signing material. In the current public stack, the strongest documented paths are CLI wallet operations, Python dual-key signing, and offline handoff for external custody systems.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">What Requires Keys</span>
+                <p>Wallet creation, mnemonic import, signed transfers, and any workflow that needs account-level authorization.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">What Does Not</span>
+                <p>Seal inspection, explorer checks, diagnostics, and other read-only protocol queries can be run without placing signing keys on the same host.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Addressing</span>
+                <strong>Current Python tests assert Bech32 addresses in the <span class="mono">aeth1...</span> family.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Read Path</span>
+                <strong>Use the verifier and protocol clients for audit and inspection workflows that do not need custody material.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Write Path</span>
+                <strong>Keep transfer and signing boundaries explicit so wallet material is not embedded into application servers by default.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">PQC</span>
+                <div>
+                  <p class="detail-kicker">Compatibility Model</p>
+                  <h3>Classical compatibility with a post-quantum migration path</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current cryptography guidance keeps ECDSA for wallet compatibility while the Python wallet implements a dual-key model that adds Dilithium-backed signatures. That matters operationally: a mnemonic-derived classical key is not the whole recovery surface once you adopt dual-key signing.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Compatibility Boundary</span>
+                <p>ECDSA remains available specifically to preserve interoperability with the broader wallet ecosystem while Dilithium provides the stronger post-quantum signature path.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Recovery Boundary</span>
+                <p>In the current Python implementation, the mnemonic derives the classical key while the Dilithium key is generated separately. Full recovery therefore depends on an encrypted export, not the mnemonic alone.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Export Policy</span>
+                <strong>Plaintext key export has been removed. Exports are encrypted with AES-256 via Fernet and PBKDF2-HMAC-SHA256.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Operational Takeaway</span>
+                <strong>Back up the full encrypted wallet export whenever you move beyond compatibility-only signing.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Best Fit</span>
+                <strong>Production teams that need compatibility now without blocking the path to stronger signing requirements later.</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="surfaces" aria-labelledby="surfaces-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Access Models</p>
+          <h2 class="section-title" id="surfaces-title">The wallet surfaces that are actually documented today</h2>
+          <p class="section-lead">Instead of listing speculative browser and mobile brands, this page tracks the concrete wallet and signing models the current repo and documentation expose.</p>
+        </div>
+
+        <div class="grid grid-2 wallet-surface-grid">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">CLI</span>
+                <div>
+                  <p class="detail-kicker">Provisioning</p>
+                  <h3>CLI wallet bootstrap for local, devnet, and testnet workflows</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current CLI docs cover wallet creation and mnemonic import alongside network selection. This is the fastest path to getting a signing identity into a controlled developer workflow without building custom custody code first.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Documented Commands</span>
+                <p><span class="mono">aeth wallet create</span> and <span class="mono">aeth wallet import --mnemonic</span> are part of the current CLI quick start.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Best Fit</span>
+                <p>Developer onboarding, local test rehearsals, and operators who need a fast bootstrap path before moving into stricter custody.</p>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <a href="tools.html#cli" class="btn btn-small btn-primary">Open CLI Section</a>
+              <a href="testnet.html" class="btn btn-small btn-outline">Testnet Planning</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">PY</span>
+                <div>
+                  <p class="detail-kicker">Programmatic Signing</p>
+                  <h3><span class="mono">DualKeyWallet</span> for application-side signing and backup</h3>
+                </div>
+              </div>
+            </div>
+            <p>The Python SDK exposes a real dual-key wallet object with signing, verification, encrypted export, restore, fingerprint inspection, and explicit zeroization on close. This is the most complete source-backed wallet implementation in the current repo.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Current Methods</span>
+                <p><span class="mono">from_mnemonic</span>, <span class="mono">sign_transaction</span>, <span class="mono">verify_signature</span>, <span class="mono">export_keys</span>, and <span class="mono">close</span>.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Best Fit</span>
+                <p>Service backends, test harnesses, controlled signing environments, and teams that need encrypted backup and PQ-aware key handling.</p>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <a href="#examples" class="btn btn-small btn-primary">View Python Example</a>
+              <a href="developers.html#quickstart" class="btn btn-small btn-outline">Open Docs</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">OFF</span>
+                <div>
+                  <p class="detail-kicker">Cold Boundary</p>
+                  <h3>Unsigned manifests for preferred wallet or HSM signing</h3>
+                </div>
+              </div>
+            </div>
+            <p>The developer CLI can emit unsigned transfer manifests and explicitly instruct operators to sign them with a preferred wallet or HSM. That is the cleanest current path for keeping transaction assembly and private-key usage on different trust boundaries.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Current Command</span>
+                <p><span class="mono">aeth wallet send --out tx-send.json</span> produces the transfer manifest for offline signing.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Best Fit</span>
+                <p>Production operations, regulated token movement, and teams that require HSM or external signer participation before broadcast.</p>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <a href="#workflow" class="btn btn-small btn-primary">Review Workflow</a>
+              <a href="tools.html#developer-tools" class="btn btn-small btn-outline">Developer Tools</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">OPS</span>
+                <div>
+                  <p class="detail-kicker">Separation of Duties</p>
+                  <h3>Keep verification, diagnostics, and custody on the right hosts</h3>
+                </div>
+              </div>
+            </div>
+            <p>Not every protocol action should happen where keys live. The current stack already supports read-only diagnostics, seal verification, and testnet inspection without forcing hot-wallet placement into the same runtime as your observability or compliance tooling.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Read-Only Surfaces</span>
+                <p>Seal verification, validator inspection, explorer review, and launch-readiness checks remain useful even when signing keys stay offline.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Best Fit</span>
+                <p>Teams that want clean production boundaries between monitoring, compliance review, and transaction authorization.</p>
+              </div>
+            </div>
+            <div class="detail-actions">
+              <a href="zk-proofs.html" class="btn btn-small btn-primary">ZK Proofs</a>
+              <a href="tee.html" class="btn btn-small btn-outline">TEE Attestation</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="examples" aria-labelledby="examples-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Examples</p>
+          <h2 class="section-title" id="examples-title">Source-backed examples you can actually build from</h2>
+          <p class="section-lead">These snippets are based on the current docs and source surface, not the older placeholder page. They focus on wallet creation, dual-key signing, and offline handoff.</p>
+        </div>
+
+        <div class="grid grid-2 wallet-example-grid">
+          <div class="tabs-wrap" data-tab-group data-code-typing-group>
+            <div class="tab-buttons" role="tablist" aria-label="Wallet examples">
+              <button class="tab-button is-active" data-tab-target="cli" aria-selected="true">CLI</button>
+              <button class="tab-button" data-tab-target="python" aria-selected="false">Python</button>
+              <button class="tab-button" data-tab-target="offline" aria-selected="false">Offline Flow</button>
+            </div>
+
+            <div class="tab-pane is-active" data-tab-panel="cli">
+              <div class="terminal">
+                <div class="terminal-head">
+                  <div class="terminal-dots"><span></span><span></span><span></span></div>
+                  <span class="terminal-label">bash wallet bootstrap</span>
+                </div>
+<pre><code data-code-typing data-lang="bash"># Configure testnet access
+aeth config set --network testnet
+aeth config set --rpc https://rpc.testnet.aethelred.io
+
+# Create a new wallet
+aeth wallet create --name mykey
+
+# Or import an existing mnemonic
+AETH_MNEMONIC="${AETH_MNEMONIC:?set AETH_MNEMONIC}"
+aeth wallet import --mnemonic "$AETH_MNEMONIC"</code></pre>
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-panel="python">
+              <div class="terminal">
+                <div class="terminal-head">
+                  <div class="terminal-dots"><span></span><span></span><span></span></div>
+                  <span class="terminal-label">python dual-key wallet</span>
+                </div>
+<pre><code data-code-typing data-lang="python">import os
+
+from aethelred import DualKeyWallet
+
+mnemonic = os.environ["AETH_MNEMONIC"]
+export_password = os.environ["AETH_EXPORT_PASSWORD"]
+
+wallet = DualKeyWallet.from_mnemonic(mnemonic)
+payload = b'{"kind":"wallet-handshake"}'
+
+signature = wallet.sign_transaction(payload)
+assert wallet.verify_signature(payload, signature)
+
+backup = wallet.export_keys(export_password)
+print(wallet.address)
+print(signature.signer_address)
+print(backup["encrypted"])
+
+wallet.close()</code></pre>
+              </div>
+            </div>
+
+            <div class="tab-pane" data-tab-panel="offline">
+              <div class="terminal">
+                <div class="terminal-head">
+                  <div class="terminal-dots"><span></span><span></span><span></span></div>
+                  <span class="terminal-label">bash offline manifest</span>
+                </div>
+<pre><code data-code-typing data-lang="bash"># Build an unsigned transfer manifest
+AETH_FROM_ADDRESS="${AETH_FROM_ADDRESS:?set AETH_FROM_ADDRESS}"
+AETH_TO_ADDRESS="${AETH_TO_ADDRESS:?set AETH_TO_ADDRESS}"
+
+aeth wallet send \
+  --from "$AETH_FROM_ADDRESS" \
+  --to "$AETH_TO_ADDRESS" \
+  --amount 1000000uaethel \
+  --out tx-send.json
+
+# Sign tx-send.json with your preferred wallet or HSM
+# Then submit the signed transaction with your broadcast flow</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <article class="card detail-card wallet-guardrails-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">RULES</span>
+                <div>
+                  <p class="detail-kicker">Current Guardrails</p>
+                  <h3>Operational details that matter before you ship custody code</h3>
+                </div>
+              </div>
+            </div>
+            <p>The most important wallet details in the current codebase are easy to miss if you look only at the old marketing page. These are the implementation-level rules that should shape deployment decisions.</p>
+            <div class="copy-row">
+              <div>
+                <p class="copy-label">Address Family</p>
+                <p class="copy-value">aeth1...</p>
+              </div>
+            </div>
+            <div class="copy-row">
+              <div>
+                <p class="copy-label">Encrypted Export</p>
+                <p class="copy-value">AES-256 via Fernet + PBKDF2-HMAC-SHA256 (480000 iterations)</p>
+              </div>
+            </div>
+            <div class="copy-row">
+              <div>
+                <p class="copy-label">Export Passphrase Floor</p>
+                <p class="copy-value">12 characters minimum</p>
+              </div>
+            </div>
+            <div class="copy-row">
+              <div>
+                <p class="copy-label">Full Recovery Rule</p>
+                <p class="copy-value">Back up the encrypted wallet export, not only the mnemonic.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="workflow" aria-labelledby="workflow-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workflow</p>
+          <h2 class="section-title" id="workflow-title">A professional wallet flow keeps custody separate from app logic</h2>
+          <p class="section-lead">The production-grade pattern is straightforward: provision the wallet, assemble unsigned intent, sign outside the app boundary when necessary, and validate results on read-only surfaces.</p>
+        </div>
+
+        <div class="grid grid-4 wallet-flow-grid">
+          <article class="step-card">
+            <span class="step-index">STEP 01</span>
+            <h3>Provision the account surface</h3>
+            <p>Create or import a wallet through the CLI, or initialize a controlled Python dual-key wallet when the workflow needs programmatic signing.</p>
+            <div class="tag-list">
+              <span class="tag">CLI Bootstrap</span>
+              <span class="tag">Mnemonic Import</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 02</span>
+            <h3>Assemble unsigned intent</h3>
+            <p>Generate the transfer manifest before touching custody material. This gives operations teams an inspectable artifact rather than an opaque signing event inside application code.</p>
+            <div class="tag-list">
+              <span class="tag">Manifest JSON</span>
+              <span class="tag">Offline Review</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 03</span>
+            <h3>Sign with the right trust boundary</h3>
+            <p>Route the manifest to the preferred wallet or HSM instead of assuming that every application runtime should own private keys.</p>
+            <div class="tag-list">
+              <span class="tag">HSM Handoff</span>
+              <span class="tag">Cold Signing</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 04</span>
+            <h3>Broadcast and verify separately</h3>
+            <p>Once the signed transaction is submitted, keep follow-on verification on read-only surfaces such as explorer, seal verification, and diagnostics.</p>
+            <div class="tag-list">
+              <span class="tag">Read-Only Audit</span>
+              <span class="tag">Operational Hygiene</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Wallets should fit the trust model of the workload</h3>
+            <p>If the workload needs purely local rehearsal first, use <a class="body-link" href="sandbox.html">Infinite Sandbox</a>. If it needs public endpoint planning next, move into the <a class="body-link" href="testnet.html">testnet dashboard</a>. If it needs stricter signing controls, keep using unsigned manifests and external custody instead of collapsing everything into one runtime.</p>
+          </div>
+          <a href="sandbox.html" class="btn btn-primary">Open Infinite Sandbox</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="security" aria-labelledby="security-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Security</p>
+          <h2 class="section-title" id="security-title">Security expectations that match the current implementation</h2>
+          <p class="section-lead">The older wallet mock focused on UX. The real constraints in the current codebase are key recovery, encryption, and host separation. Those are the details that determine whether a wallet flow is credible in production.</p>
+        </div>
+
+        <div class="grid grid-4 wallet-security-grid">
+          <article class="card">
+            <h3>Encrypted Exports Only</h3>
+            <p>The Python wallet no longer permits plaintext key export. Backups are encrypted and wrapped with a deliberate KDF policy before they leave memory.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">AES-256</span>
+              <span class="tag">Fernet</span>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Use Strong Export Passphrases</h3>
+            <p>The current export path enforces a minimum 12-character password. Treat that as a floor, not a target, for backup hygiene.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">12+ Characters</span>
+              <span class="tag">PBKDF2</span>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Mnemonic Is Not Full Recovery</h3>
+            <p>In the current Python dual-key implementation, the mnemonic does not deterministically recreate the Dilithium key. Teams need the encrypted export for full wallet recovery.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">Dual-Key</span>
+              <span class="tag">Recovery Planning</span>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Prefer Cold or External Signing</h3>
+            <p>For regulated or higher-value flows, use the manifest handoff path so application infrastructure can stay separate from wallets and HSMs.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">Offline First</span>
+              <span class="tag">HSM Ready</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="matrix" aria-labelledby="matrix-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Current Matrix</p>
+          <h2 class="section-title" id="matrix-title">A quick map of the wallet surface by function</h2>
+          <p class="section-lead">This matrix is intentionally narrow. It captures the current surfaces that are directly grounded in documentation or implementation, rather than listing future-facing integrations as if they were already live.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>What It Does</th>
+                <th>Best Fit</th>
+                <th>Current Basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="mono">aeth wallet create/import</span></td>
+                <td>Bootstraps a wallet identity for local, devnet, and testnet workflows.</td>
+                <td>Developer setup, test environments, early operator bootstrap.</td>
+                <td>Current CLI README quick start.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">DualKeyWallet.from_mnemonic</span></td>
+                <td>Creates a programmatic dual-key wallet with signing and verification support.</td>
+                <td>Python services, test harnesses, controlled signing workflows.</td>
+                <td>Current Python SDK source.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">DualKeyWallet.export_keys</span></td>
+                <td>Produces encrypted wallet backups with hardened KDF settings.</td>
+                <td>Backup, recovery, migration planning.</td>
+                <td>Current Python SDK source.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">aeth wallet send --out</span></td>
+                <td>Builds an unsigned token transfer manifest for offline signing.</td>
+                <td>Operations, HSM participation, strict custody boundaries.</td>
+                <td>Current developer CLI source.</td>
+              </tr>
+              <tr>
+                <td>Seal verification and diagnostics</td>
+                <td>Audits protocol outputs and runtime health without colocating signing keys.</td>
+                <td>Compliance review, monitoring, operational inspection.</td>
+                <td>Current tools and verifier documentation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Move from wallet setup into the rest of the protocol stack</h3>
+            <p>Once custody and signing are handled correctly, continue into the <a class="body-link" href="developers.html">developer docs</a>, the <a class="body-link" href="tools.html">toolchain stack</a>, and the <a class="body-link" href="../org/network.html">foundation research pages</a> that describe how wallets fit inside Proof-of-Useful-Work, Digital Seals, and verifiable AI operations.</p>
+          </div>
+          <a href="developers.html" class="btn btn-primary">Open Developer Docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

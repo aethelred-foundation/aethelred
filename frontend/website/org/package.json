@@ -1,0 +1,14 @@
+{
+  "name": "aethelred-org-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aethelred marketing website with production-ready lead intake backend",
+  "scripts": {
+    "start": "node lead-server.js",
+    "dev": "NODE_ENV=development node lead-server.js",
+    "check": "node --check lead-server.js && node --check main.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}

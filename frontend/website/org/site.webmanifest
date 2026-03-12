@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Aethelred",
+  "short_name": "Aethelred",
+  "description": "Sovereign Layer 1 infrastructure for verifiable AI computation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef3fb",
+  "theme_color": "#9f0a24",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/aethelred-logo.png",
+      "sizes": "512x501",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

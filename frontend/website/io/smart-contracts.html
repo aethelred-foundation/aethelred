@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contracts | Aethelred</title>
+  <meta name="description" content="Current Aethelred smart-contract reference for Solidity interfaces, oracle and callback patterns, EVM precompiles, tokenomics contracts, bridge contracts, and governance timelocks.">
+  <meta name="keywords" content="Aethelred smart contracts, Solidity, IAethelredOracle, IAethelredTEE, EVM precompile, Digital Seals, Aethelred bridge">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/smart-contracts">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/smart-contracts">
+  <meta property="og:title" content="Smart Contracts | Aethelred">
+  <meta property="og:description" content="Current Solidity contract surface for Aethelred: interfaces, precompiles, token, vesting, bridge, and governance contracts.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Smart Contracts social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Smart Contracts | Aethelred">
+  <meta name="twitter:description" content="Current Solidity contract surface for oracle reads, TEE jobs, Digital Seals, tokenomics, bridges, and governance on Aethelred.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Smart Contracts social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/smart-contracts#webpage",
+        "name": "Smart Contracts",
+        "headline": "Smart Contracts",
+        "url": "https://www.aethelred.io/smart-contracts",
+        "description": "Current Aethelred smart-contract reference for Solidity interfaces, oracle and callback patterns, EVM precompiles, tokenomics contracts, bridge contracts, and governance timelocks.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/smart-contracts#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Smart Contracts social preview"
+        },
+        "dateModified": "2026-03-12",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/smart-contracts#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Smart Contracts",
+            "item": "https://www.aethelred.io/smart-contracts"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-smart-contracts page-docs-hub">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="smart-contracts-resources">Resources</button>
+          <div class="dropdown-panel" id="smart-contracts-resources" role="menu">
+            <a href="#surface" role="menuitem">Current Surface</a>
+            <a href="#entrypoints" role="menuitem">Entry Points</a>
+            <a href="#patterns" role="menuitem">Verified Patterns</a>
+            <a href="#catalog" role="menuitem">Contract Catalog</a>
+            <a href="#workflow" role="menuitem">Workflow</a>
+            <a href="#boundary" role="menuitem">Current Boundary</a>
+            <a href="developers.html#contracts" role="menuitem">Developer Precompiles</a>
+            <a href="documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="stablecoin-infrastructure.html" role="menuitem">Stablecoin Infrastructure</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Quick Start</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Smart Contract Sections</summary>
+      <a href="#surface" class="mobile-link">Current Surface</a>
+      <a href="#entrypoints" class="mobile-link">Entry Points</a>
+      <a href="#patterns" class="mobile-link">Verified Patterns</a>
+      <a href="#catalog" class="mobile-link">Contract Catalog</a>
+      <a href="#workflow" class="mobile-link">Workflow</a>
+      <a href="#boundary" class="mobile-link">Current Boundary</a>
+      <a href="developers.html#contracts" class="mobile-link">Developer Precompiles</a>
+      <a href="documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="stablecoin-infrastructure.html" class="mobile-link">Stablecoin Infrastructure</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Solidity and Contract Interfaces</p>
+          <h1 class="hero-title" id="page-title">Smart <span class="gradient-word">Contracts</span></h1>
+          <p class="hero-subtitle">This page replaces the older generic smart-contracts mock with the current Aethelred contract surface: Solidity interfaces for <a class="body-link" href="digital-seal.html">Digital Seals</a> and verified jobs, contract-facing precompile lanes, and the live token, vesting, bridge, and governance contracts in the repository. It is anchored to the current contracts package, whitepaper, tokenomics, and developer docs rather than to placeholder EVM marketing claims.</p>
+          <div class="hero-tags" aria-label="Smart contract scope">
+            <span class="hero-tag">Solidity ^0.8.20</span>
+            <span class="hero-tag">Oracle + Callback</span>
+            <span class="hero-tag">EVM Precompiles</span>
+            <span class="hero-tag">Token + Bridge</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#patterns" class="btn btn-primary">Open Patterns</a>
+            <a href="developers.html#contracts" class="btn btn-secondary">Developer Precompiles</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> SOURCE-BACKED AGAINST THE CURRENT CONTRACTS PACKAGE AND PROTOCOL DOCS</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Package surface</h4>
+            <p>The current Solidity package is <span class="mono">@aethelred/bridge-contracts</span> at version <span class="mono">1.0.0</span>, with TypeScript deployment and test scripts around it.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Verification from contracts</h4>
+            <p>Contracts can submit jobs, receive callbacks, read results, and verify seals through the current oracle and TEE interfaces.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Economic and governance layer</h4>
+            <p>The repo already contains the current token, vesting, bridge, timelock, and stablecoin-routing contracts instead of just interface stubs.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>1.0.0</strong><span>Contracts package version</span></div>
+            <div class="metric-pill"><strong>10B</strong><span>AETHEL supply cap</span></div>
+            <div class="metric-pill"><strong>64</strong><span>Bridge ETH confirmations</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="surface" aria-labelledby="surface-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Current Surface</p>
+          <h2 class="section-title" id="surface-title">What the current smart-contract layer actually contains</h2>
+          <p class="section-lead">Aethelred's contract layer is not just a generic Solidity wrapper around a chain. The current repo exposes contract-facing interfaces for verified jobs and seals, plus tokenomics, bridge, and governance contracts with explicit operational constraints.</p>
+        </div>
+        <div class="grid grid-4 docs-quick-grid">
+          <article class="card docs-quick-card">
+            <span class="icon-chip">TEE</span>
+            <h3>Job submission and callbacks</h3>
+            <p><span class="mono">IAethelredTEE</span> exposes payable job submission, fee estimation, lifecycle queries, and callback-target support for completion flows.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">SEAL</span>
+            <h3>Oracle and seal reads</h3>
+            <p><span class="mono">IAethelredOracle</span> exposes <span class="mono">getResult</span>, <span class="mono">getSeal</span>, <span class="mono">verifySeal</span>, and output-commitment matching for downstream contracts.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">AI</span>
+            <h3>Precompile-aware runtime</h3>
+            <p>The public docs expose <span class="mono">0x0300</span> for zkML and <span class="mono">0x0400</span> for TEE flows, while the whitepaper documents seal and tensor lanes beyond those entry points.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">GOV</span>
+            <h3>Economic primitives</h3>
+            <p>Token, vesting, bridge, governance timelock, stablecoin routing, reserve automation, and circuit-breaker contracts all exist in the current repository.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="entrypoints" aria-labelledby="entrypoints-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Entry Points</p>
+          <h2 class="section-title" id="entrypoints-title">The contract-facing surfaces that matter today</h2>
+          <p class="section-lead">Use the interfaces and precompile lanes that are actually documented in the current package and protocol docs. Where a surface is documented in the whitepaper but not yet published as a site-level ABI catalog, this page says so explicitly.</p>
+        </div>
+        <div class="docs-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Current Path</th>
+                <th>What It Does</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="mono">IAethelredTEE</span></td>
+                <td><span class="mono">contracts/interfaces/IAethelredTEE.sol</span></td>
+                <td>Submit jobs, estimate fees, inspect job status, list requester jobs, and register an optional callback target.</td>
+                <td>Current Solidity-first path for contract-triggered verified compute.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">IAethelredOracle</span></td>
+                <td><span class="mono">contracts/interfaces/IAethelredOracle.sol</span></td>
+                <td>Read verified results, inspect seals, verify seal status, confirm output commitments, and query model commitments.</td>
+                <td>Primary trust gate for downstream settlement and automation contracts.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">0x0400</span></td>
+                <td>TEE precompile lane</td>
+                <td>Contract-level TEE submission and attestation flows documented on the Developer page.</td>
+                <td>Use when hardware-backed verification must be triggered directly from Solidity.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">0x0300</span></td>
+                <td>zkML precompile lane</td>
+                <td>On-chain proof verification for model execution, exposed in the current zk proof surface.</td>
+                <td>Matches the current site documentation for contract-level zk verification.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">0x0500</span></td>
+                <td>Seal verification precompile</td>
+                <td>Documented in the whitepaper and tokenomics as the contract-facing Digital Seal verification lane.</td>
+                <td>The public site does not yet publish a full standalone ABI page for this entry point, so prefer the oracle interface where possible.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">0x1000-0x10FF</span></td>
+                <td>Tensor precompile range</td>
+                <td>Whitepaper-documented matrix, activation, transformer, quantisation, and verification operations for AI execution.</td>
+                <td>The current site documents the range, but not a final public ABI-by-ABI catalog.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="docs-note stack-top-16">
+          <strong>Practical contract choice:</strong>
+          <p>If you need something copyable today, build first against <span class="mono">IAethelredTEE</span> and <span class="mono">IAethelredOracle</span>. Use precompile-specific flows only when your contract logic truly depends on direct TEE or zk verification semantics.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="patterns" aria-labelledby="patterns-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Verified Patterns</p>
+          <h2 class="section-title" id="patterns-title">Copyable Solidity patterns based on the current package layout</h2>
+          <p class="section-lead">The snippets below use the actual import paths and interfaces from the current contracts repository. They are conservative by design: fewer assumptions, real interfaces, and no invented helper packages.</p>
+        </div>
+
+        <div class="tabs-wrap" data-tab-group data-code-typing-group>
+          <div class="tab-buttons" role="tablist" aria-label="Smart contract examples">
+            <button class="tab-button is-active" data-tab-target="consumer" aria-selected="true">VerifiedJobConsumer.sol</button>
+            <button class="tab-button" data-tab-target="escrow" aria-selected="false">SealGatedEscrow.sol</button>
+            <button class="tab-button" data-tab-target="workflow" aria-selected="false">contracts-workflow.sh</button>
+          </div>
+
+          <div class="tab-pane is-active" data-tab-panel="consumer">
+            <div class="code-block">
+              <div class="code-head">
+                <div class="code-dots"><span></span><span></span><span></span></div>
+                <span class="code-label">solidity</span>
+              </div>
+<pre><code data-code-typing data-lang="solidity">// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.20;
+
+import {IAethelredTEE, IAethelredCallback} from "./interfaces/IAethelredTEE.sol";
+import {IAethelredOracle} from "./interfaces/IAethelredOracle.sol";
+import {AethelredTypes} from "./types/AethelredTypes.sol";
+
+contract VerifiedJobConsumer is IAethelredCallback {
+    IAethelredTEE public immutable tee;
+    IAethelredOracle public immutable oracle;
+
+    struct PendingJob {
+        address requester;
+        bytes32 sealId;
+        bool fulfilled;
+        bytes result;
+    }
+
+    mapping(bytes32 =&gt; PendingJob) public jobs;
+
+    error UnknownJob();
+    error CallbackOnly();
+    error ResultNotReady();
+    error SealNotVerified();
+
+    constructor(address teeAddress, address oracleAddress) {
+        tee = IAethelredTEE(teeAddress);
+        oracle = IAethelredOracle(oracleAddress);
+    }
+
+    function requestHybridJob(
+        string calldata modelId,
+        bytes32 inputCommitment,
+        uint64 slaDeadline,
+        bytes calldata metadata
+    ) external payable returns (bytes32 jobId) {
+        AethelredTypes.JobRequest memory request = AethelredTypes.JobRequest({
+            modelId: modelId,
+            inputCommitment: inputCommitment,
+            verificationType: AethelredTypes.VerificationType.Hybrid,
+            maxBudget: msg.value,
+            slaDeadline: slaDeadline,
+            callbackTarget: address(this),
+            metadata: metadata
+        });
+
+        jobId = tee.submitJob{value: msg.value}(request);
+        jobs[jobId].requester = msg.sender;
+    }
+
+    function onJobCompleted(
+        bytes32 jobId,
+        bytes32 sealId,
+        bytes32,
+        bytes calldata result
+    ) external override {
+        if (msg.sender != address(oracle)) revert CallbackOnly();
+
+        PendingJob storage job = jobs[jobId];
+        if (job.requester == address(0)) revert UnknownJob();
+
+        job.sealId = sealId;
+        job.fulfilled = true;
+        job.result = result;
+    }
+
+    function verifiedResult(bytes32 jobId)
+        external
+        view
+        returns (bytes memory result, bytes32 sealId)
+    {
+        PendingJob storage job = jobs[jobId];
+        if (job.requester == address(0)) revert UnknownJob();
+        if (!job.fulfilled) revert ResultNotReady();
+        if (!oracle.verifySeal(job.sealId)) revert SealNotVerified();
+
+        return (job.result, job.sealId);
+    }
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" data-tab-panel="escrow">
+            <div class="code-block">
+              <div class="code-head">
+                <div class="code-dots"><span></span><span></span><span></span></div>
+                <span class="code-label">solidity</span>
+              </div>
+<pre><code data-code-typing data-lang="solidity">// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.20;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IAethelredOracle} from "./interfaces/IAethelredOracle.sol";
+
+contract SealGatedEscrow {
+    IAethelredOracle public immutable oracle;
+    IERC20 public immutable asset;
+    address public immutable beneficiary;
+    bytes32 public immutable sealId;
+    bytes32 public immutable expectedOutputCommitment;
+    bool public released;
+
+    error AlreadyReleased();
+    error SealNotVerified();
+    error OutputMismatch();
+    error TransferFailed();
+
+    constructor(
+        address oracleAddress,
+        address assetAddress,
+        address beneficiaryAddress,
+        bytes32 sealIdentifier,
+        bytes32 outputCommitment
+    ) {
+        oracle = IAethelredOracle(oracleAddress);
+        asset = IERC20(assetAddress);
+        beneficiary = beneficiaryAddress;
+        sealId = sealIdentifier;
+        expectedOutputCommitment = outputCommitment;
+    }
+
+    function release(uint256 amount) external {
+        if (released) revert AlreadyReleased();
+        if (!oracle.verifySeal(sealId)) revert SealNotVerified();
+        if (!oracle.verifySealWithOutput(sealId, expectedOutputCommitment)) {
+            revert OutputMismatch();
+        }
+
+        released = true;
+        if (!asset.transfer(beneficiary, amount)) revert TransferFailed();
+    }
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" data-tab-panel="workflow">
+            <div class="code-block">
+              <div class="code-head">
+                <div class="code-dots"><span></span><span></span><span></span></div>
+                <span class="code-label">bash</span>
+              </div>
+<pre><code data-code-typing data-lang="bash">cd contracts
+npm install
+npx hardhat compile
+npx hardhat test
+forge test -vvv
+npx hardhat run scripts/deploy.ts --network devnet</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="catalog" aria-labelledby="catalog-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Contract Catalog</p>
+          <h2 class="section-title" id="catalog-title">The main contracts currently in the repository</h2>
+          <p class="section-lead">These are the Solidity contracts that define the present economic, governance, and interoperability layer. The descriptions below come from the actual source files and package metadata, not from a generic contract-template narrative.</p>
+        </div>
+        <div class="grid grid-3 docs-link-grid">
+          <article class="card docs-link-card">
+            <span class="icon-chip">TOKEN</span>
+            <h3>AethelredToken.sol</h3>
+            <p>Upgradeable ERC-20 with <span class="mono">18</span> decimals, permit, votes, pause controls, compliance burn, blacklist controls, and bridge authorization.</p>
+            <div class="tag-list"><span class="tag">10B cap</span><span class="tag">Permit</span><span class="tag">Votes</span></div>
+          </article>
+          <article class="card docs-link-card">
+            <span class="icon-chip">VEST</span>
+            <h3>AethelredVesting.sol</h3>
+            <p>Role-based vesting engine with nine allocation categories, cliff-plus-linear schedules, milestone support, revocation, and category caps tied to tokenomics.</p>
+            <div class="tag-list"><span class="tag">9 categories</span><span class="tag">Cliff + Linear</span><span class="tag">UUPS</span></div>
+          </article>
+          <article class="card docs-link-card">
+            <span class="icon-chip">BRDG</span>
+            <h3>AethelredBridge.sol</h3>
+            <p>Lock-and-mint bridge with relayer consensus, <span class="mono">64</span> ETH confirmation minimums, a <span class="mono">7 day</span> challenge period, guardian approvals, and a <span class="mono">27 day</span> upgrade timelock floor.</p>
+            <div class="tag-list"><span class="tag">UUPS</span><span class="tag">67% votes</span><span class="tag">2-of-N guardians</span></div>
+          </article>
+          <article class="card docs-link-card">
+            <span class="icon-chip">TIME</span>
+            <h3>SovereignGovernanceTimelock.sol</h3>
+            <p>Key-rotation controller built on OpenZeppelin TimelockController with dual Issuer/Foundation consent and a <span class="mono">7 day</span> minimum rotation delay.</p>
+            <div class="tag-list"><span class="tag">7 day delay</span><span class="tag">Dual signatures</span></div>
+          </article>
+          <article class="card docs-link-card">
+            <span class="icon-chip">USD</span>
+            <h3>InstitutionalStablecoinBridge.sol</h3>
+            <p>Upgradeable testnet stablecoin routing contract with CCTP and TEE issuer-mint flows, proof-of-reserve checks, quotas, circuit breakers, and joint-signature unpause.</p>
+            <div class="tag-list"><span class="tag">CCTP</span><span class="tag">TEE issuer mint</span><span class="tag">PoR</span></div>
+          </article>
+          <article class="card docs-link-card">
+            <span class="icon-chip">SEAL</span>
+            <h3>SealVerifier.sol</h3>
+            <p>Repository bridge-side seal verifier with EIP-712 domain separation, validator signature checks, model registry hooks, and verified output validation.</p>
+            <div class="tag-list"><span class="tag">EIP-712</span><span class="tag">Validator signatures</span><span class="tag">Model registry</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workflow</p>
+          <h2 class="section-title" id="workflow-title">How to work with the current contracts package</h2>
+          <p class="section-lead">The current repository uses a Solidity and TypeScript deployment workflow around Hardhat, with Foundry test coverage available alongside it. The page below sticks to that real toolchain instead of advertising Rust smart-contract authoring that the public contract package does not expose.</p>
+        </div>
+        <div class="grid grid-2 docs-install-grid">
+          <article class="card docs-install-card">
+            <p class="docs-kicker">Package Metadata</p>
+            <h3>Current package facts</h3>
+            <ul class="docs-meta-list">
+              <li><strong>Package</strong><span class="mono">@aethelred/bridge-contracts</span></li>
+              <li><strong>Version</strong><span class="mono">1.0.0</span></li>
+              <li><strong>License</strong><span class="mono">Apache-2.0</span></li>
+              <li><strong>Solidity</strong><span class="mono">^0.8.20</span></li>
+              <li><strong>Node</strong><span class="mono">&gt;= 18.0.0</span></li>
+            </ul>
+          </article>
+          <article class="card docs-install-card">
+            <p class="docs-kicker">Current Build Path</p>
+            <h3>Compile, test, deploy</h3>
+            <ul class="docs-meta-list">
+              <li><strong>Compile</strong><span class="mono">npx hardhat compile</span></li>
+              <li><strong>Tests</strong><span class="mono">npx hardhat test</span></li>
+              <li><strong>Foundry</strong><span class="mono">forge test -vvv</span></li>
+              <li><strong>Devnet Deploy</strong><span class="mono">scripts/deploy.ts --network devnet</span></li>
+              <li><strong>Static Checks</strong><span class="mono">solhint</span> and <span class="mono">slither</span></li>
+            </ul>
+          </article>
+        </div>
+        <div class="grid grid-4 docs-rollout-grid stack-top-16">
+          <article class="card docs-rollout-card"><span class="step-index">STEP 01</span><h3>Use the interfaces first</h3><p>Anchor early contract logic to <span class="mono">IAethelredTEE</span> and <span class="mono">IAethelredOracle</span> so you do not depend on unpublished ABI details.</p></article>
+          <article class="card docs-rollout-card"><span class="step-index">STEP 02</span><h3>Test against current contract tooling</h3><p>Use Hardhat and Foundry inside the contracts package rather than inventing a separate toolchain or import surface.</p></article>
+          <article class="card docs-rollout-card"><span class="step-index">STEP 03</span><h3>Rehearse with sandbox and testnet docs</h3><p>Pair contract work with the <a class="body-link" href="sandbox.html">Infinite Sandbox</a> and <a class="body-link" href="testnet.html">Testnet</a> pages for current rollout expectations.</p></article>
+          <article class="card docs-rollout-card"><span class="step-index">STEP 04</span><h3>Keep addresses overrideable</h3><p>Do not hardcode final production addresses into docs or app logic while public deployment tables remain unpublished.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="boundary" aria-labelledby="boundary-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Current Boundary</p>
+          <h2 class="section-title" id="boundary-title">What this page does not claim as of March 12, 2026</h2>
+          <p class="section-lead">The safest contract page is the one that distinguishes current source-backed capability from unresolved publication gaps. This page intentionally stays on that line.</p>
+        </div>
+        <div class="grid grid-2 docs-rollout-grid">
+          <article class="card docs-rollout-card"><h3>No published mainnet address table</h3><p>The current contracts README still lists mainnet contract addresses as <span class="mono">TBD</span>. This page therefore documents interfaces and behaviors, not final live address maps.</p></article>
+          <article class="card docs-rollout-card"><h3>No blanket “fully audited mainnet package” claim</h3><p>Several individual contracts embed remediated audit annotations, but the package README still labels overall audit status as in progress. This page does not collapse those into one broader claim.</p></article>
+          <article class="card docs-rollout-card"><h3>No Rust smart-contract authoring claim</h3><p>The VM and runtime use Rust, but the public contract authoring path documented here is Solidity plus TypeScript deployment tooling.</p></article>
+          <article class="card docs-rollout-card"><h3>No final public ABI catalog for every tensor precompile</h3><p>The whitepaper documents the tensor precompile range, but this site does not yet publish a final ABI-by-ABI contract reference for the full <span class="mono">0x1000-0x10FF</span> surface.</p></article>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Start from the real interfaces, then widen only when the docs widen.</h3>
+            <p>For current implementation work, use this page together with the <a class="body-link" href="developers.html">Developer page</a>, the <a class="body-link" href="documentation.html">Documentation Hub</a>, the <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure reference</a>, the <a class="body-link" href="zk-proofs.html">zk proofs reference</a>, and the <a class="body-link" href="digital-seal.html">Digital Seal reference</a>.</p>
+          </div>
+          <a href="documentation.html" class="btn btn-primary">Open Documentation</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

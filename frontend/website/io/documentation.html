@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation | Aethelred</title>
+  <meta name="description" content="Current Aethelred documentation reference for SDK installation, first verified jobs, API and network surfaces, Digital Seals, stablecoin infrastructure, zk proof systems, TEE attestation, enterprise corridors, and rollout planning.">
+  <meta name="keywords" content="Aethelred documentation, SDK installation, Digital Seals, stablecoin infrastructure, zkML, TEE attestation, enterprise corridors, Proof of Useful Work">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/documentation">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/documentation">
+  <meta property="og:title" content="Documentation | Aethelred">
+  <meta property="og:description" content="Current long-form Aethelred documentation for installation, first verified jobs, API surfaces, network endpoints, stablecoin infrastructure, enterprise corridors, and rollout planning.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Documentation social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Documentation | Aethelred">
+  <meta name="twitter:description" content="Current Aethelred installation, API, verification, stablecoin infrastructure, enterprise corridor, and rollout reference.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Documentation social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/documentation#article",
+        "headline": "Aethelred Documentation",
+        "name": "Documentation",
+        "url": "https://www.aethelred.io/documentation",
+        "description": "Current Aethelred documentation reference for SDK installation, first verified jobs, API and network surfaces, Digital Seals, zk proof systems, TEE attestation, enterprise corridors, and rollout planning.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "articleSection": [
+          "Overview",
+          "Installation",
+          "First Verified Job",
+          "Access Model",
+          "API Surfaces",
+          "Network Surfaces",
+          "Verification",
+          "Rollout"
+        ],
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/documentation#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Documentation social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/documentation#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Documentation",
+            "item": "https://www.aethelred.io/documentation"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-docs-hub">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="documentation-resources">Resources</button>
+          <div class="dropdown-panel" id="documentation-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#installation" role="menuitem">Installation</a>
+            <a href="#first-job" role="menuitem">First Verified Job</a>
+            <a href="#access-model" role="menuitem">Access Model</a>
+            <a href="#api-surfaces" role="menuitem">API Surfaces</a>
+            <a href="#network-surfaces" role="menuitem">Network Surfaces</a>
+            <a href="#verification" role="menuitem">Verification</a>
+            <a href="#rollout" role="menuitem">Rollout Path</a>
+            <a href="digital-seal.html" role="menuitem">Digital Seals</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="stablecoin-infrastructure.html" role="menuitem">Stablecoin Infrastructure</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Quick Start</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Documentation Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#installation" class="mobile-link">Installation</a>
+      <a href="#first-job" class="mobile-link">First Verified Job</a>
+      <a href="#access-model" class="mobile-link">Access Model</a>
+      <a href="#api-surfaces" class="mobile-link">API Surfaces</a>
+      <a href="#network-surfaces" class="mobile-link">Network Surfaces</a>
+      <a href="#verification" class="mobile-link">Verification</a>
+      <a href="#rollout" class="mobile-link">Rollout Path</a>
+      <a href="digital-seal.html" class="mobile-link">Digital Seals</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="stablecoin-infrastructure.html" class="mobile-link">Stablecoin Infrastructure</a>
+      <a href="glossary.html" class="mobile-link">Glossary</a>
+      <a href="comparison.html" class="mobile-link">Comparison</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Current Developer Reference</p>
+          <h1 class="hero-title" id="page-title">Aethelred <span class="gradient-word">Documentation</span></h1>
+          <p class="hero-subtitle">This page replaces the older long-form documentation mock with a March 12, 2026 reference that stays aligned to the current SDK metadata, live developer pages, published testnet planning, and the active protocol trust model. Use it to install the official SDKs, submit a first verified job, understand the current API and endpoint surfaces, and then continue into <a class="body-link" href="digital-seal.html">Digital Seals</a>, <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>, <a class="body-link" href="zk-proofs.html">zk proofs</a>, <a class="body-link" href="tee.html">TEE attestation</a>, <a class="body-link" href="enterprise-corridors.html">Enterprise Corridors</a>, and <a class="body-link" href="sandbox.html">Infinite Sandbox</a>.</p>
+          <div class="hero-tags" aria-label="Documentation scope">
+            <span class="hero-tag">4 SDKs</span>
+            <span class="hero-tag">First Job Flow</span>
+            <span class="hero-tag">API + Network Surfaces</span>
+            <span class="hero-tag">Rollout Path</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#overview" class="btn btn-primary">Start Reading</a>
+            <a href="developers.html" class="btn btn-secondary">Open Quick Start</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> SOURCE-BACKED AGAINST CURRENT SDKS, TESTNET PAGE, WHITEPAPER, AND TOKENOMICS</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>What changed</h4>
+            <p>This is no longer a generic docs mock with stale legacy protocol language or hosted-product assumptions.</p>
+          </div>
+          <div class="hero-card">
+            <h4>What this page does</h4>
+            <p>It gives one technical route from installation through verification and rollout without forcing readers to stitch the site together themselves.</p>
+          </div>
+          <div class="hero-card">
+            <h4>What stays separate</h4>
+            <p>Deep protocol concepts still live on dedicated pages for Digital Seals, stablecoin infrastructure, zk proof systems, TEE attestation, wallets, and comparison.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>4 SDKs</strong><span>Python, TypeScript, Rust, Go</span></div>
+            <div class="metric-pill"><strong>10 services</strong><span>Documented local devnet</span></div>
+            <div class="metric-pill"><strong>2/3 + 1</strong><span>Seal minting threshold</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="overview-title">
+      <div class="container section-shell docs-layout docs-article-layout">
+        <aside class="docs-sidebar" aria-label="Documentation navigation">
+          <nav class="docs-nav">
+            <p class="docs-nav-label">On this page</p>
+            <a href="#overview">Overview</a>
+            <a href="#installation">Installation</a>
+            <a href="#first-job">First Verified Job</a>
+            <a href="#access-model">Access Model</a>
+            <a href="#api-surfaces">API Surfaces</a>
+            <a href="#network-surfaces">Network Surfaces</a>
+            <a href="#verification">Verification</a>
+            <a href="#rollout">Rollout Path</a>
+            <a href="#next-steps">Related Docs</a>
+          </nav>
+        </aside>
+
+        <div class="docs-content-stack docs-article">
+          <article class="card docs-anchor-section" id="overview" aria-labelledby="overview-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Overview</p>
+              <h2 class="section-title" id="overview-title">Start with the route that matches the work</h2>
+              <p class="section-lead">Aethelred is a sovereign Layer 1 for verifiable AI inference. The useful workflow is: install an SDK, submit a job, verify the result path, rehearse on the local stack, and only then promote toward public testnet or production operations.</p>
+            </div>
+            <p>This page deliberately keeps the reference practical. It covers package names, import names, first-job execution, the current REST and WebSocket surfaces, the published public-testnet endpoint plan, and the protocol objects that matter most in implementation: <a class="body-link" href="digital-seal.html">Digital Seals</a>, <a class="body-link" href="stablecoin-infrastructure.html">stablecoin infrastructure</a>, <a class="body-link" href="zk-proofs.html">zk proof systems</a>, <a class="body-link" href="tee.html">TEE attestation</a>, <a class="body-link" href="enterprise-corridors.html">enterprise corridor architecture</a>, and wallet-controlled signing boundaries.</p>
+            <div class="grid grid-2 docs-quick-grid">
+              <a class="card docs-quick-card" href="developers.html">
+                <span class="icon-chip">01</span>
+                <h3>Developer Quick Start</h3>
+                <p>Use the quick-start tabs, precompile references, API table, and SDK module index when you need the shortest path into code.</p>
+              </a>
+              <a class="card docs-quick-card" href="tools.html">
+                <span class="icon-chip">02</span>
+                <h3>Developer Tools</h3>
+                <p>Review the CLI, verifier, SDK packages, framework integrations, and local devnet tooling before formal integration planning.</p>
+              </a>
+              <a class="card docs-quick-card" href="digital-seal.html">
+                <span class="icon-chip">03</span>
+                <h3>Digital Seal Reference</h3>
+                <p>Open the core trust object page when you need the exact seal model, minting threshold, verification rules, and relay posture.</p>
+              </a>
+              <a class="card docs-quick-card" href="sandbox.html">
+                <span class="icon-chip">04</span>
+                <h3>Infinite Sandbox</h3>
+                <p>Move into the local rehearsal surface for compliance checks, seal inspection, and launch-readiness validation.</p>
+              </a>
+              <a class="card docs-quick-card" href="enterprise-corridors.html">
+                <span class="icon-chip">05</span>
+                <h3>Enterprise Corridors</h3>
+                <p>Open the reference architecture for policy-gated enterprise workflows, sovereign data boundaries, evidence return paths, and signer-aware controls.</p>
+              </a>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="installation" aria-labelledby="installation-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Installation</p>
+              <h2 class="section-title" id="installation-title">Install the official SDKs with the package names that actually exist</h2>
+              <p class="section-lead">The current SDK metadata is at version <span class="mono">1.0.0</span> for Python, TypeScript, and Rust. Package names and import names are not identical in every language, so this page keeps them explicit.</p>
+            </div>
+            <div class="grid grid-2 docs-install-grid">
+              <article class="card docs-install-card">
+                <p class="docs-kicker">Python SDK</p>
+                <h3>Aethelred Python client</h3>
+                <ul class="docs-meta-list">
+                  <li><strong>Package</strong><span class="mono">aethelred-sdk</span></li>
+                  <li><strong>Import</strong><span class="mono">from aethelred import AethelredClient</span></li>
+                  <li><strong>Version</strong><span class="mono">1.0.0</span></li>
+                  <li><strong>License</strong><span class="mono">Apache-2.0</span></li>
+                </ul>
+                <div class="docs-command mono">pip install aethelred-sdk</div>
+              </article>
+              <article class="card docs-install-card">
+                <p class="docs-kicker">TypeScript SDK</p>
+                <h3>TypeScript and JavaScript client</h3>
+                <ul class="docs-meta-list">
+                  <li><strong>Package</strong><span class="mono">@aethelred/sdk</span></li>
+                  <li><strong>Import</strong><span class="mono">import { AethelredClient } from '@aethelred/sdk'</span></li>
+                  <li><strong>Version</strong><span class="mono">1.0.0</span></li>
+                  <li><strong>License</strong><span class="mono">Apache-2.0</span></li>
+                </ul>
+                <div class="docs-command mono">npm install @aethelred/sdk</div>
+              </article>
+              <article class="card docs-install-card">
+                <p class="docs-kicker">Rust SDK</p>
+                <h3>Rust crate for async clients</h3>
+                <ul class="docs-meta-list">
+                  <li><strong>Crate</strong><span class="mono">aethelred-sdk</span></li>
+                  <li><strong>Import</strong><span class="mono">use aethelred_sdk::AethelredClient;</span></li>
+                  <li><strong>Version</strong><span class="mono">1.0.0</span></li>
+                  <li><strong>License</strong><span class="mono">Apache-2.0</span></li>
+                </ul>
+                <div class="docs-command mono">cargo add aethelred-sdk</div>
+              </article>
+              <article class="card docs-install-card">
+                <p class="docs-kicker">Go SDK</p>
+                <h3>Go module for source-first integration</h3>
+                <ul class="docs-meta-list">
+                  <li><strong>Module</strong><span class="mono">github.com/aethelred/sdk-go</span></li>
+                  <li><strong>Go version</strong><span class="mono">1.21+</span></li>
+                  <li><strong>Import path</strong><span class="mono">github.com/aethelred/sdk-go</span></li>
+                  <li><strong>License</strong><span class="mono">Apache-2.0</span></li>
+                </ul>
+                <div class="docs-command mono">go get github.com/aethelred/sdk-go</div>
+              </article>
+            </div>
+            <div class="docs-note">
+              <strong>Implementation note:</strong>
+              <p>The Python packaging name is <span class="mono">aethelred-sdk</span>, but the runtime import remains <span class="mono">aethelred</span>. This is the kind of mismatch the older documentation page hid; this page keeps it explicit.</p>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="first-job" aria-labelledby="first-job-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">First Verified Job</p>
+              <h2 class="section-title" id="first-job-title">Submit once, wait for completion, and verify the result path</h2>
+              <p class="section-lead">The current flow is consistent across languages: submit a PoUW job, wait for the network result, then inspect or verify the resulting seal. The two examples below are grounded in the current developer page and SDK method surface.</p>
+            </div>
+            <div class="grid grid-2 docs-code-grid">
+              <div class="code-block">
+                <div class="code-head">
+                  <div class="code-dots"><span></span><span></span><span></span></div>
+                  <span class="code-label">curl</span>
+                </div>
+<pre><code data-code-typing data-lang="bash"># Submit a compute job against the current REST example
+curl -X POST https://api.testnet.aethelred.org/aethelred/pouw/v1/jobs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${AETHELRED_API_KEY}" \
+  -d '{
+    "model_hash": "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3",
+    "input_hash": "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09",
+    "proof_type": "PROOF_TYPE_HYBRID",
+    "priority": 5,
+    "max_gas": "1000000",
+    "timeout_blocks": 120,
+    "metadata": {"source": "documentation-first-job"}
+  }'</code></pre>
+              </div>
+              <div class="terminal">
+                <div class="terminal-head">
+                  <div class="terminal-dots"><span></span><span></span><span></span></div>
+                  <span class="terminal-label">python</span>
+                </div>
+<pre><code data-code-typing data-lang="python"># Package install: pip install aethelred-sdk
+import hashlib
+
+from aethelred import AethelredClient, ProofType
+
+client = AethelredClient("https://rpc.testnet.aethelred.org")
+payload = b'{"prompt":"Hello AI"}'
+model_hash = "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3"
+
+submit = client.jobs.submit(
+    model_hash=bytes.fromhex(model_hash),
+    input_hash=hashlib.sha256(payload).digest(),
+    proof_type=ProofType.HYBRID,
+    priority=5,
+    max_gas=1_000_000,
+    timeout_blocks=120,
+    metadata={"source": "documentation-first-job"},
+)
+print(f"job id: {submit.job_id}")
+
+job = client.jobs.wait_for_completion(submit.job_id, poll_interval=2.0, timeout=120.0)
+print(f"job status: {job.status.value}")
+
+seals = client.seals.list(model_hash=model_hash)
+seal = next((item for item in seals if item.job_id == job.id), None)
+if seal is None:
+    raise RuntimeError(f"no seal found for job {job.id}")
+
+verification = client.seals.verify(seal.id)
+print(f"seal valid: {verification.valid}")</code></pre>
+              </div>
+            </div>
+            <div class="grid grid-3 docs-step-grid">
+              <article class="card docs-step-card"><span class="step-index">STEP 01</span><h3>Submit the workload</h3><p>Provide a model hash, input hash, proof type, and execution budget. The job becomes the tracked unit of work.</p></article>
+              <article class="card docs-step-card"><span class="step-index">STEP 02</span><h3>Wait for completion</h3><p>Poll or subscribe until the job reaches a completed state. The SDKs expose helpers so applications do not need to hand-roll this loop.</p></article>
+              <article class="card docs-step-card"><span class="step-index">STEP 03</span><h3>Verify the seal path</h3><p>The output becomes operationally useful only when the seal and its verification context can be consumed by the rest of your system.</p></article>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="access-model" aria-labelledby="access-model-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Access Model</p>
+              <h2 class="section-title" id="access-model-title">Use the currently published access rules, not the assumptions from the old docs page</h2>
+              <p class="section-lead">The older page treated Aethelred like a finished hosted API product. The current documentation surface is more precise: some flows are already coded in the SDKs, some REST examples use API keys, and the public testnet endpoints are still in launch-preparation status.</p>
+            </div>
+            <div class="grid grid-3 docs-surface-grid">
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">REST Examples</p>
+                <h3>Header-based access appears in current examples</h3>
+                <p>The published curl reference sends <span class="mono">X-API-Key: ${AETHELRED_API_KEY}</span> when posting jobs to the testnet REST surface.</p>
+              </article>
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">SDK Access</p>
+                <h3>Clients can use network presets or custom URLs</h3>
+                <p>The official SDKs expose network configuration and custom endpoint overrides, which is the safer integration path while endpoint naming is still converging toward launch.</p>
+              </article>
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">Launch Status</p>
+                <h3>Public launch policy is not fully frozen</h3>
+                <p>No contractual public rate-limit policy is published on this site as of March 12, 2026. Treat the testnet dashboard as the launch-facing source for public endpoint activation.</p>
+              </article>
+            </div>
+            <div class="docs-note">
+              <strong>Why this matters:</strong>
+              <p>This page intentionally does not repeat the draft request-per-minute tiers that still appear on the broader developer page, because they are not presented elsewhere as final launch policy.</p>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="api-surfaces" aria-labelledby="api-surfaces-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">API Surfaces</p>
+              <h2 class="section-title" id="api-surfaces-title">Current endpoints published on the developer surface</h2>
+              <p class="section-lead">These are the operational API paths currently documented on the live developer page. They cover job submission, job status, seal retrieval, model registration, validator discovery, and WebSocket subscriptions.</p>
+            </div>
+            <div class="docs-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="tag">POST</span></td>
+                    <td class="mono">/aethelred/pouw/v1/jobs</td>
+                    <td>Submit a new Proof-of-Useful-Work job.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tag">GET</span></td>
+                    <td class="mono">/aethelred/pouw/v1/jobs/{job_id}</td>
+                    <td>Query the state of a submitted job.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tag">GET</span></td>
+                    <td class="mono">/aethelred/seal/v1/seals/{seal_id}</td>
+                    <td>Retrieve the Digital Seal associated with a verified result.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tag">POST</span></td>
+                    <td class="mono">/aethelred/pouw/v1/models</td>
+                    <td>Register or publish model metadata for later job execution.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tag">GET</span></td>
+                    <td class="mono">/aethelred/pouw/v1/validators</td>
+                    <td>List validators and inspect the current validator surface.</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tag">WS</span></td>
+                    <td class="mono">/websocket</td>
+                    <td>Subscribe to state changes without polling every status transition manually.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="grid grid-2 docs-quick-grid">
+              <article class="card docs-quick-card">
+                <span class="icon-chip">REST</span>
+                <h3>Use REST for deterministic flows</h3>
+                <p>Job submission, seal retrieval, validator discovery, and model registration fit cleanly into REST-driven service backends.</p>
+              </article>
+              <article class="card docs-quick-card">
+                <span class="icon-chip">WS</span>
+                <h3>Use WebSocket for event-driven status changes</h3>
+                <p>Applications that need live job status or asynchronous job orchestration should keep WebSocket subscriptions in the architecture.</p>
+              </article>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="network-surfaces" aria-labelledby="network-surfaces-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Network Surfaces</p>
+              <h2 class="section-title" id="network-surfaces-title">Separate current SDK defaults from public testnet launch hosts</h2>
+              <p class="section-lead">The current source tree exposes one set of network defaults in the SDK packages and a more launch-oriented set of public hosts on the Testnet page. This page keeps both visible so implementation teams can plan correctly.</p>
+            </div>
+            <div class="grid grid-2 docs-copy-grid">
+              <article class="card docs-copy-card">
+                <div class="network-config-head">
+                  <p class="detail-kicker">Current SDK Defaults</p>
+                  <h3>Package-level testnet configuration</h3>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">REST</p>
+                    <p class="copy-value">https://api.testnet.aethelred.org</p>
+                  </div>
+                  <button class="copy-btn" data-copy="https://api.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">RPC</p>
+                    <p class="copy-value">https://rpc.testnet.aethelred.org</p>
+                  </div>
+                  <button class="copy-btn" data-copy="https://rpc.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">WebSocket</p>
+                    <p class="copy-value">wss://ws.testnet.aethelred.org</p>
+                  </div>
+                  <button class="copy-btn" data-copy="wss://ws.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">gRPC</p>
+                    <p class="copy-value">grpc.testnet.aethelred.org:9090</p>
+                  </div>
+                  <button class="copy-btn" data-copy="grpc.testnet.aethelred.org:9090" data-copy-label="Copy">Copy</button>
+                </div>
+              </article>
+              <article class="card docs-copy-card">
+                <div class="network-config-head">
+                  <p class="detail-kicker">Public Testnet Plan</p>
+                  <h3>Launch-facing hosts from the Testnet page</h3>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">HTTP RPC</p>
+                    <p class="copy-value">https://testnet-rpc.aethelred.io</p>
+                  </div>
+                  <button class="copy-btn" data-copy="https://testnet-rpc.aethelred.io" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">WebSocket</p>
+                    <p class="copy-value">wss://testnet-ws.aethelred.io</p>
+                  </div>
+                  <button class="copy-btn" data-copy="wss://testnet-ws.aethelred.io" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">GraphQL</p>
+                    <p class="copy-value">https://testnet-gql.aethelred.io</p>
+                  </div>
+                  <button class="copy-btn" data-copy="https://testnet-gql.aethelred.io" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">gRPC</p>
+                    <p class="copy-value">testnet-grpc.aethelred.io:443</p>
+                  </div>
+                  <button class="copy-btn" data-copy="testnet-grpc.aethelred.io:443" data-copy-label="Copy">Copy</button>
+                </div>
+                <div class="copy-row">
+                  <div>
+                    <p class="copy-label">Explorer</p>
+                    <p class="copy-value">https://testnet.explorer.aethelred.io</p>
+                  </div>
+                  <button class="copy-btn" data-copy="https://testnet.explorer.aethelred.io" data-copy-label="Copy">Copy</button>
+                </div>
+              </article>
+            </div>
+            <div class="docs-note">
+              <strong>Planning note:</strong>
+              <p>The package defaults and public launch hosts are not fully normalized yet. For launch-facing connectivity, prefer the Testnet page at activation time and keep your SDK configuration overrideable rather than hard-coded.</p>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="verification" aria-labelledby="verification-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Verification</p>
+              <h2 class="section-title" id="verification-title">Anchor implementation work to the current trust model</h2>
+              <p class="section-lead">Aethelred is not just an inference API. The protocol value comes from Proof-of-Useful-Work consensus, Digital Seals as the portable result object, and the ability to mix TEE and zk proof systems depending on workload requirements.</p>
+            </div>
+            <div class="grid grid-3 docs-surface-grid">
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">Consensus</p>
+                <h3>Proof-of-Useful-Work</h3>
+                <p>Validator work is tied to useful AI execution rather than synthetic hashing. That is the base assumption for job submission, scheduling, and validator economics throughout the site.</p>
+                <div class="tag-list stack-top-12"><span class="tag">PoUW</span><span class="tag">Useful Inference</span></div>
+              </article>
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">Portable Result</p>
+                <h3>Digital Seals</h3>
+                <p>A Digital Seal is minted when at least <span class="mono">2/3 + 1</span> of validator power agrees on the result. It becomes the object other applications, contracts, or chains can verify later.</p>
+                <div class="tag-list stack-top-12"><span class="tag">Digital Seal</span><span class="tag">aethelred.seal</span></div>
+              </article>
+              <article class="card docs-surface-card">
+                <p class="docs-kicker">Execution Evidence</p>
+                <h3>TEE and zk proof systems</h3>
+                <p>The current documentation surface supports TEE, zkML, and hybrid verification. The published zk proof set includes EZKL, RISC Zero, Plonky2, Halo2, and Groth16, while the TEE page documents Intel SGX, AWS Nitro, AMD SEV-SNP, and NVIDIA H100 Confidential Computing.</p>
+                <div class="tag-list stack-top-12"><span class="tag">TEE</span><span class="tag">zkML</span><span class="tag">Hybrid</span></div>
+              </article>
+            </div>
+            <div class="grid grid-2 docs-quick-grid">
+              <a class="card docs-quick-card" href="digital-seal.html">
+                <span class="icon-chip">SEAL</span>
+                <h3>Open the seal reference</h3>
+                <p>Use the dedicated page for minting rules, relay posture, field definitions, and verification options.</p>
+              </a>
+              <a class="card docs-quick-card" href="zk-proofs.html">
+                <span class="icon-chip">ZK</span>
+                <h3>Open zk proof systems</h3>
+                <p>Use the dedicated page for the current proof systems, x/verify rules, and hybrid verification model.</p>
+              </a>
+              <a class="card docs-quick-card" href="enterprise-corridors.html">
+                <span class="icon-chip">ENT</span>
+                <h3>Open enterprise corridors</h3>
+                <p>Use the enterprise reference when policy gates, confidential execution, Digital Seals, and signer boundaries must operate as one design.</p>
+              </a>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="rollout" aria-labelledby="rollout-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Rollout Path</p>
+              <h2 class="section-title" id="rollout-title">Move from local rehearsal to public exposure in controlled stages</h2>
+              <p class="section-lead">The current site already describes a sensible promotion path. Teams should not jump directly from code snippets to public launch assumptions.</p>
+            </div>
+            <div class="grid grid-2 docs-rollout-grid">
+              <article class="card docs-rollout-card">
+                <span class="step-index">STAGE 01</span>
+                <h3>Local devnet</h3>
+                <p>Start against the documented <span class="mono">10-service</span> local stack with a <span class="mono">3-validator</span> topology so job execution, seal inspection, and observability are repeatable.</p>
+                <div class="tag-list"><span class="tag">Devnet</span><span class="tag">3 Validators</span></div>
+              </article>
+              <article class="card docs-rollout-card">
+                <span class="step-index">STAGE 02</span>
+                <h3>Infinite Sandbox</h3>
+                <p>Use the sandbox to rehearse compliance checks, sanctions-aware flows, Digital Seal validation, and workflow promotion without changing the operating model.</p>
+                <div class="tag-list"><span class="tag">Compliance</span><span class="tag">Seal Replay</span></div>
+              </article>
+              <article class="card docs-rollout-card">
+                <span class="step-index">STAGE 03</span>
+                <h3>Public testnet</h3>
+                <p>Move into the public launch surface when faucet, explorer, GraphQL, gRPC, bridge, and RPC activate together. Keep config values overrideable until activation.</p>
+                <div class="tag-list"><span class="tag">tAETHEL</span><span class="tag">Explorer</span></div>
+              </article>
+              <article class="card docs-rollout-card">
+                <span class="step-index">STAGE 04</span>
+                <h3>Production boundary</h3>
+                <p>Keep wallet signing, HSM boundaries, node operations, and verification consumption separate. Use the wallet, nodes, and foundation research pages for the operational layer.</p>
+                <div class="tag-list"><span class="tag">Wallets</span><span class="tag">Node Ops</span></div>
+              </article>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section" id="next-steps" aria-labelledby="next-steps-title" data-reveal>
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Related Docs</p>
+              <h2 class="section-title" id="next-steps-title">Open the page that matches the next decision</h2>
+              <p class="section-lead">Documentation is only useful when it gets the reader to the exact next reference page without ambiguity.</p>
+            </div>
+            <div class="grid grid-3 docs-link-grid">
+              <a class="card docs-link-card" href="developers.html"><span class="icon-chip">DEV</span><h3>Developers</h3><p>Quick starts, API tables, SDK modules, and EVM precompile references.</p></a>
+              <a class="card docs-link-card" href="tools.html"><span class="icon-chip">TOOLS</span><h3>Tools</h3><p>SDK libraries, framework integrations, CLI, verifier, and local devnet support.</p></a>
+              <a class="card docs-link-card" href="sandbox.html"><span class="icon-chip">SBOX</span><h3>Infinite Sandbox</h3><p>Compliance rehearsal, seal-centric validation, and testnet readiness.</p></a>
+              <a class="card docs-link-card" href="testnet.html"><span class="icon-chip">NET</span><h3>Testnet</h3><p>Launch targets, public endpoint planning, faucet, bridge, and network config.</p></a>
+              <a class="card docs-link-card" href="enterprise-corridors.html"><span class="icon-chip">ENT</span><h3>Enterprise Corridors</h3><p>Policy-gated enterprise reference for sovereign data, confidential compute, Digital Seals, and HSM-aware operations.</p></a>
+              <a class="card docs-link-card" href="smart-contracts.html"><span class="icon-chip">SOL</span><h3>Smart Contracts</h3><p>Current Solidity reference for oracle reads, callbacks, precompiles, tokenomics contracts, bridges, and governance timelocks.</p></a>
+              <a class="card docs-link-card" href="stablecoin-infrastructure.html"><span class="icon-chip">SC</span><h3>Stablecoin Infrastructure</h3><p>Issuer-authorized routing reference for CCTP V2, TEE issuer mint flows, reserve controls, relayer bonds, and governance boundaries.</p></a>
+              <a class="card docs-link-card" href="wallets.html"><span class="icon-chip">WAL</span><h3>Wallets and Signing</h3><p>Operational signing surfaces, custody boundaries, and offline handoff patterns.</p></a>
+              <a class="card docs-link-card" href="glossary.html"><span class="icon-chip">TERM</span><h3>Glossary</h3><p>Current terminology for PoUW, seals, TEE, zkML, relay, and node operations.</p></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="documentation-cta" aria-labelledby="documentation-cta-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="documentation-cta-title">Move from documentation into implementation</h2>
+            <h3>Install first, verify second, promote later.</h3>
+            <p>Use this page as the long-form reference, then continue into the <a class="body-link" href="developers.html">developer quick start</a>, <a class="body-link" href="sandbox.html">Infinite Sandbox</a>, <a class="body-link" href="testnet.html">Testnet</a>, the <a class="body-link" href="enterprise-corridors.html">Enterprise Corridors</a> architecture reference, the <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a> reference, and the deeper protocol references for <a class="body-link" href="digital-seal.html">Digital Seals</a>, <a class="body-link" href="zk-proofs.html">zk proofs</a>, and <a class="body-link" href="tee.html">TEE attestation</a>.</p>
+          </div>
+          <a href="developers.html" class="btn btn-primary">Open Quick Start</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

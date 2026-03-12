@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glossary | Aethelred</title>
+  <meta name="description" content="Search the current Aethelred glossary for the active protocol terminology: Proof-of-Useful-Work, Digital Seals, vote extensions, TEE attestation, zkML, and more.">
+  <meta name="keywords" content="Aethelred glossary, Digital Seals, Proof of Useful Work, TEE attestation, zkML, vote extensions">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/glossary">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/glossary">
+  <meta property="og:title" content="Glossary | Aethelred">
+  <meta property="og:description" content="Current glossary for the Aethelred protocol and developer surface.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Glossary social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Glossary | Aethelred">
+  <meta name="twitter:description" content="Searchable glossary for the active Aethelred terminology.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Glossary social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.aethelred.io/glossary#webpage",
+        "name": "Glossary",
+        "headline": "Glossary",
+        "url": "https://www.aethelred.io/glossary",
+        "description": "Search the current Aethelred glossary for the active protocol terminology: Proof-of-Useful-Work, Digital Seals, vote extensions, TEE attestation, zkML, and more.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/glossary#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Glossary social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/glossary#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Glossary",
+            "item": "https://www.aethelred.io/glossary"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-glossary">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="glossary-resources">Resources</button>
+          <div class="dropdown-panel" id="glossary-resources" role="menu">
+            <a href="#terms" role="menuitem">Terms</a>
+            <a href="documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="digital-seal.html" role="menuitem">Digital Seals</a>
+            <a href="comparison.html" role="menuitem">Comparison</a>
+            <a href="use-cases.html" role="menuitem">Use Cases</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="documentation.html" class="btn btn-small btn-primary">Documentation Hub</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Glossary Links</summary>
+      <a href="#terms" class="mobile-link">Terms</a>
+      <a href="documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="digital-seal.html" class="mobile-link">Digital Seals</a>
+      <a href="comparison.html" class="mobile-link">Comparison</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Searchable Protocol Terminology</p>
+          <h1 class="hero-title" id="page-title">Aethelred <span class="gradient-word">Glossary</span></h1>
+          <p class="hero-subtitle">This glossary replaces stale terminology from older site concepts and keeps the language aligned with the current protocol. Use it when you need a quick definition for Proof-of-Useful-Work, Digital Seals, vote extensions, TEE attestation, zkML verification, and the operating surfaces that appear across the site.</p>
+          <div class="hero-tags" aria-label="Glossary scope">
+            <span class="hero-tag">Current Terminology</span>
+            <span class="hero-tag">Searchable</span>
+            <span class="hero-tag">Protocol + Tooling</span>
+            <span class="hero-tag">March 2026 State</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#terms" class="btn btn-primary">Browse Terms</a>
+            <a href="documentation.html" class="btn btn-secondary">Open Documentation Hub</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> LEGACY TERMS REMOVED OR RENAMED TO MATCH THE LIVE DOC SET</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Use this page to normalize vocabulary</h4><p>The fastest way to break architectural discussions is to mix current protocol terms with older site language.</p></div>
+          <div class="hero-card"><h4>Search by feature, module, or trust surface</h4><p>Terms cover consensus, verification, wallets, relay, builder tooling, and operating model concepts.</p></div>
+          <div class="hero-card"><h4>Glossary entries point back to the right pages</h4><p>When a term matters operationally, the surrounding site already has a deeper page for it.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>25+</strong><span>Current terms</span></div>
+            <div class="metric-pill"><strong>Search</strong><span>Protocol and tooling phrases</span></div>
+            <div class="metric-pill"><strong>Direct</strong><span>Links into the docs surface</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="terms" aria-labelledby="terms-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Terms</p>
+          <h2 class="section-title" id="terms-title">Search or jump by letter</h2>
+          <p class="section-lead">Definitions below are constrained to the current Aethelred protocol, tooling, and operating surface.</p>
+        </div>
+
+        <div class="glossary-search-shell">
+          <label class="visually-hidden" for="glossary-search">Search glossary terms</label>
+          <input id="glossary-search" type="search" placeholder="Search terms, concepts, or modules" data-glossary-search>
+        </div>
+
+        <nav class="glossary-letter-nav" aria-label="Glossary letters">
+          <a href="#A" data-glossary-letter>A</a>
+          <a href="#C" data-glossary-letter>C</a>
+          <a href="#D" data-glossary-letter>D</a>
+          <a href="#E" data-glossary-letter>E</a>
+          <a href="#G" data-glossary-letter>G</a>
+          <a href="#H" data-glossary-letter>H</a>
+          <a href="#I" data-glossary-letter>I</a>
+          <a href="#J" data-glossary-letter>J</a>
+          <a href="#M" data-glossary-letter>M</a>
+          <a href="#P" data-glossary-letter>P</a>
+          <a href="#S" data-glossary-letter>S</a>
+          <a href="#T" data-glossary-letter>T</a>
+          <a href="#V" data-glossary-letter>V</a>
+          <a href="#W" data-glossary-letter>W</a>
+          <a href="#Z" data-glossary-letter>Z</a>
+        </nav>
+
+        <p class="glossary-empty" data-glossary-empty hidden>No glossary terms match the current filter.</p>
+
+        <div class="glossary-section" id="A" data-glossary-section>
+          <h3 class="glossary-letter">A</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="AETHEL token"><h4 class="glossary-term">AETHEL Token <span class="glossary-tag">TOKEN</span></h4><p>The fixed-supply native asset of the network. It powers staking, fees, governance, and the tokenomics around Proof-of-Useful-Work rewards.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="attestation"><h4 class="glossary-term">Attestation</h4><p>A cryptographic statement tied to a computation. In the current protocol this most often refers to TEE-backed evidence bound to model, input, output, block height, and chain ID.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="C" data-glossary-section>
+          <h3 class="glossary-letter">C</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="CometBFT"><h4 class="glossary-term">CometBFT</h4><p>The consensus engine Aethelred extends through ABCI++ so verified AI execution can participate in the block lifecycle.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="consensus evidence"><h4 class="glossary-term">Consensus Evidence</h4><p>The validator agreement data attached to a verified job and later preserved in the Digital Seal context.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="circuit registry"><h4 class="glossary-term">Circuit Registry</h4><p>The registry that stores proof-system verification artifacts such as verifying key hashes and model-linked zk metadata.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="D" data-glossary-section>
+          <h3 class="glossary-letter">D</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="Digital Seal"><h4 class="glossary-term">Digital Seal <span class="glossary-tag">CORE</span></h4><p>The on-chain attestation record minted when a supermajority of validators agrees on a computation result. It is the portable trust object of the protocol.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="Dilithium3 ML-DSA-65"><h4 class="glossary-term">Dilithium3 / ML-DSA-65</h4><p>The post-quantum signature primitive referenced in the whitepaper as part of Aethelred's hybrid cryptographic posture.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="E" data-glossary-section>
+          <h3 class="glossary-letter">E</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="EVM precompile"><h4 class="glossary-term">EVM Precompile <span class="glossary-tag">DEV</span></h4><p>Native contract entry points for zk proof verification and TEE job submission. The current docs expose them at <span class="mono">0x0300</span> and <span class="mono">0x0400</span>.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="G" data-glossary-section>
+          <h3 class="glossary-letter">G</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="governance timelock"><h4 class="glossary-term">Governance Timelock</h4><p>The governance and treasury control posture that delays sensitive protocol actions rather than allowing immediate privileged execution.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="H" data-glossary-section>
+          <h3 class="glossary-letter">H</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="hybrid verification"><h4 class="glossary-term">Hybrid Verification <span class="glossary-tag">VERIFY</span></h4><p>The verification mode that requires TEE attestation and zkML proof output commitments to match, providing defense-in-depth.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="Hardware Security Module HSM"><h4 class="glossary-term">Hardware Security Module (HSM)</h4><p>A dedicated hardware trust boundary for protecting keys. HSM-aware operational posture appears in the node standards and validator model.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="I" data-glossary-section>
+          <h3 class="glossary-letter">I</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="IBC seal relay"><h4 class="glossary-term">IBC Seal Relay</h4><p>The cross-chain relay path for Digital Seals. The current port name in the docs is <span class="mono">aethelred.seal</span>.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="Infinite Sandbox"><h4 class="glossary-term">Infinite Sandbox <span class="glossary-tag">TOOL</span></h4><p>The local rehearsal environment for devnet orchestration, compliance linting, seal inspection, and policy-aware experimentation.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="J" data-glossary-section>
+          <h3 class="glossary-letter">J</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="job ID"><h4 class="glossary-term">Job ID</h4><p>The unique identifier for a submitted workload. It is central to job tracking and Digital Seal creation.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="M" data-glossary-section>
+          <h3 class="glossary-letter">M</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="measurement registry"><h4 class="glossary-term">Measurement Registry</h4><p>The trusted on-chain reference set used to validate acceptable TEE measurements for attestation verification.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="model hash"><h4 class="glossary-term">Model Hash</h4><p>The committed hash of the model artifact associated with a computation, registry entry, and eventual seal context.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="P" data-glossary-section>
+          <h3 class="glossary-letter">P</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="Proof-of-Useful-Work PoUW"><h4 class="glossary-term">Proof-of-Useful-Work (PoUW) <span class="glossary-tag">CONSENSUS</span></h4><p>The consensus mechanism where validators earn rewards by performing and verifying useful AI inference workloads rather than arbitrary puzzles.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="post-quantum cryptography"><h4 class="glossary-term">Post-Quantum Cryptography</h4><p>The protocol's hybrid cryptographic posture that combines familiar blockchain primitives with post-quantum signature support.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="PrepareProposal"><h4 class="glossary-term">PrepareProposal</h4><p>The ABCI++ stage where valid seal creation transactions are injected at the front of the block when the conditions are satisfied.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="S" data-glossary-section>
+          <h3 class="glossary-letter">S</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="seal verifier"><h4 class="glossary-term">Seal Verifier <span class="glossary-tag">TOOL</span></h4><p>The tooling surface for inspecting and validating Digital Seal evidence outside the application runtime.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="sovereign data model"><h4 class="glossary-term">Sovereign Data Model</h4><p>The protocol posture that keeps jurisdiction, confidentiality, and data handling rules in scope for workload design.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="stablecoin routing"><h4 class="glossary-term">Stablecoin Routing</h4><p>The institutional transfer model described in the tokenomics and whitepaper, including issuer-authorized channels and TEE-attested issuance flows.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="T" data-glossary-section>
+          <h3 class="glossary-letter">T</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="TEE attestation"><h4 class="glossary-term">TEE Attestation <span class="glossary-tag">VERIFY</span></h4><p>The hardware-backed proof surface using SGX, Nitro, SEV-SNP, or H100 Confidential Computing to attest execution.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="testnet"><h4 class="glossary-term">Testnet</h4><p>The public network rehearsal path described on the site with faucet, bridge, explorer, and endpoint categories.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="V" data-glossary-section>
+          <h3 class="glossary-letter">V</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="validator"><h4 class="glossary-term">Validator</h4><p>A node that participates in consensus and AI inference verification. The current site documents TEE-capable GPU validators and a 100,000 AETHEL minimum stake.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="vote extension"><h4 class="glossary-term">Vote Extension</h4><p>The CometBFT/ABCI++ vehicle that carries computation verification data into the consensus process.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="W" data-glossary-section>
+          <h3 class="glossary-letter">W</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="wallet"><h4 class="glossary-term">Wallet</h4><p>The signing surface for network actions. The current site documents CLI wallet flows, Python dual-key operations, and offline manifest handoff.</p></article>
+          </div>
+        </div>
+
+        <div class="glossary-section" id="Z" data-glossary-section>
+          <h3 class="glossary-letter">Z</h3>
+          <div class="glossary-grid">
+            <article class="card glossary-item" data-glossary-item data-term="zkML"><h4 class="glossary-term">zkML <span class="glossary-tag">VERIFY</span></h4><p>Zero-knowledge machine-learning proof generation and verification. The current site documents five proof systems and contract-level precompile support.</p></article>
+            <article class="card glossary-item" data-glossary-item data-term="zk precompile"><h4 class="glossary-term">zk Precompile</h4><p>The EVM verification entry point at <span class="mono">0x0300</span> used for zero-knowledge proof verification inside contracts.</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="glossary-cta" aria-labelledby="glossary-cta-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="glossary-cta-title">Continue into the deeper references</h2>
+            <h3>Use the glossary to normalize vocabulary, then open the deeper reference that matters.</h3>
+            <p>Most terms here map directly into the <a class="body-link" href="documentation.html">documentation hub</a>, the <a class="body-link" href="digital-seal.html">Digital Seal page</a>, the <a class="body-link" href="comparison.html">comparison page</a>, or the workload-specific <a class="body-link" href="use-cases.html">use cases</a>.</p>
+          </div>
+          <a href="documentation.html" class="btn btn-primary">Open Documentation Hub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

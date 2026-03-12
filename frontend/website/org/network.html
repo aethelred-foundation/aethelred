@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Architecture | Aethelred</title>
+  <meta name="description" content="Deep dive into Aethelred network architecture: Proof of Useful Work consensus, hybrid TEE compute engine, post-quantum cryptography, validator requirements, and benchmarked performance.">
+  <meta name="keywords" content="Aethelred network, Proof of Useful Work, verifiable AI blockchain, post-quantum Layer-1, TEE validator architecture">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.org/network.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.aethelred.org/network.html">
+  <meta property="og:title" content="Network Architecture | Aethelred">
+  <meta property="og:description" content="Hybrid architecture for sovereign AI: deterministic settlement plus attestable TEE inference execution.">
+  <meta property="og:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta property="og:image:alt" content="Network Architecture social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredHQ">
+  <meta name="twitter:title" content="Network Architecture | Aethelred">
+  <meta name="twitter:description" content="Explore PoUW consensus, post-quantum security, and enterprise validator design in the Aethelred network.">
+  <meta name="twitter:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta name="twitter:image:alt" content="Network Architecture social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.org#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.org",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/aethelred-logo.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://x.com/AethelredHQ",
+          "https://t.me/AethelredHQ",
+          "https://discord.gg/aethelred"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.org#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.org",
+        "description": "Sovereign infrastructure for verifiable AI computation.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.org/network.html#webpage",
+        "name": "Network Architecture",
+        "url": "https://www.aethelred.org/network.html",
+        "description": "Deep dive into Aethelred network architecture: Proof of Useful Work consensus, hybrid TEE compute engine, post-quantum cryptography, validator requirements, and benchmarked performance.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.org#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.org/network.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/og-image.jpg",
+          "caption": "Network Architecture social preview"
+        },
+        "dateModified": "2026-03-12",
+        "headline": "Network Architecture",
+        "author": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.org/network.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Foundation",
+            "item": "https://www.aethelred.org/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Network",
+            "item": "https://www.aethelred.org/network.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/syne-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" href="aethelred-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-network">
+  <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
+  <div class="bg-orbit" aria-hidden="true">
+    <span class="orbit orbit-a" data-parallax="0.03"></span>
+    <span class="orbit orbit-b" data-parallax="0.05"></span>
+    <span class="orbit orbit-c" data-parallax="0.08"></span>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header" data-header>
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aethelred home">
+        <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38">
+        <span class="brand-word">Aethelred</span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Primary navigation">
+        <a class="nav-link" data-nav-link href="index.html">Home</a>
+        <a class="nav-link" data-nav-link href="network.html">Network</a>
+        <a class="nav-link" data-nav-link href="token.html">Token</a>
+        <a class="nav-link" data-nav-link href="governance.html">Governance</a>
+        <a class="nav-link" data-nav-link href="investors.html">Investors</a>
+
+        <div class="dropdown" data-dropdown>
+          <button class="dropdown-trigger" data-dropdown-trigger aria-expanded="false" aria-haspopup="true">Sections</button>
+          <div class="dropdown-panel" data-dropdown-panel>
+            <a class="dropdown-item" href="#pouw">
+              <span>Consensus</span>
+              <strong>Proof of Useful Work</strong>
+              <p>How inference jobs become consensus-grade economic security.</p>
+            </a>
+            <a class="dropdown-item" href="#compute-engine">
+              <span>Execution</span>
+              <strong>Hybrid Compute Engine</strong>
+              <p>On chain orchestration and off chain trusted execution pipeline.</p>
+            </a>
+            <a class="dropdown-item" href="#pqc">
+              <span>Security</span>
+              <strong>Post Quantum Stack</strong>
+              <p>ML-DSA, ML-KEM, and integrity layers for long-term resilience.</p>
+            </a>
+            <a class="dropdown-item" href="#validators">
+              <span>Infra</span>
+              <strong>Validator Requirements</strong>
+              <p>Stake, hardware, operations, and regional topology standards.</p>
+            </a>
+            <a class="dropdown-item" href="nodes.html">
+              <span>Ops</span>
+              <strong>Node Operations</strong>
+              <p>Validator, sentry, worker, and full-node deployment guidance.</p>
+            </a>
+            <a class="dropdown-item" href="#performance">
+              <span>Benchmarks</span>
+              <strong>Performance Envelope</strong>
+              <p>Latency, throughput, failover windows, and scale targets.</p>
+            </a>
+            <a class="dropdown-item" href="#stablecoin-settlement">
+              <span>Settlement</span>
+              <strong>Stablecoin Infrastructure</strong>
+              <p>Issuer-authorized routing, reserve checks, relayer bonds, and bounded recovery controls.</p>
+            </a>
+            <a class="dropdown-item" href="#security">
+              <span>Controls</span>
+              <strong>Security and Compliance</strong>
+              <p>Protocol hardening and regulatory policy enforcement model.</p>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="#performance">Performance</a>
+        <a class="btn btn-primary" href="../io/developers.html">Developer Docs</a>
+        <button class="menu-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false" data-menu-toggle>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-menu" data-mobile-menu>
+    <div class="mobile-menu-backdrop" data-mobile-backdrop></div>
+    <nav class="mobile-menu-panel" aria-label="Mobile navigation">
+      <a data-nav-link href="index.html">Home</a>
+      <a data-nav-link href="network.html">Network</a>
+      <a data-nav-link href="token.html">Token</a>
+      <a data-nav-link href="governance.html">Governance</a>
+      <a data-nav-link href="investors.html">Investors</a>
+      <a href="#pouw">Consensus</a>
+      <a href="#compute-engine">Compute Engine</a>
+      <a href="#pqc">Post Quantum</a>
+      <a href="#validators">Validators</a>
+      <a href="nodes.html">Node Operations</a>
+      <a href="#performance">Performance</a>
+      <a href="#stablecoin-settlement">Stablecoin Infrastructure</a>
+      <a href="#security">Security</a>
+    </nav>
+  </div>
+
+  <main id="main-content" class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div>
+          <span class="kicker" data-reveal>Network Architecture</span>
+          <h1 class="hero-title" data-reveal="slow" id="page-title">Built for <span class="gradient">deterministic settlement</span> and sovereign AI throughput.</h1>
+          <p class="hero-copy" data-reveal="stagger-1">
+            Aethelred is engineered as a dual plane system: a CometBFT financial settlement layer and an enclave-native inference mesh. Protocol economics reward useful compute while preserving predictable state transitions and governance controls. Pair this architecture with the <a class="body-link" href="../io/developers.html">developer documentation</a>, the <a class="body-link" href="governance.html">governance framework</a>, and the <a class="body-link" href="token.html">token design</a> that secures incentives.
+          </p>
+          <div class="hero-actions" data-reveal="stagger-2">
+            <a class="btn btn-primary" href="#pouw">Explore Consensus</a>
+            <a class="btn btn-secondary" href="#validators">Validator Requirements</a>
+          </div>
+          <div class="badge-row spacer-24" data-reveal="stagger-3">
+            <span class="badge">Proof of Useful Work</span>
+            <span class="badge">Post quantum security</span>
+            <span class="badge">TEE attestations</span>
+            <span class="badge">CometBFT finality</span>
+          </div>
+        </div>
+
+        <aside class="hero-rail" data-reveal="stagger-2" aria-label="Network key metrics">
+          <article class="stat-card">
+            <span class="stat-label">Settlement throughput</span>
+            <strong class="stat-value" data-count="4000" data-count-suffix=" TPS" data-count-label="1K-4K TPS">0</strong>
+            <p class="stat-note">Economic finality layer benchmark under validator load.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Useful compute ratio</span>
+            <strong class="stat-value" data-count="80" data-count-suffix="%" data-count-label="80%">0</strong>
+            <p class="stat-note">Validator compute dedicated to productive AI inference.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Minimum stake</span>
+            <strong class="stat-value" data-count="100000" data-count-label="100,000 AETHEL">0</strong>
+            <p class="stat-note">Economic security threshold for validator admission.</p>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="pouw" aria-labelledby="pouw-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Consensus</span>
+          <h2 class="section-title" id="pouw-title">Proof of Useful Work</h2>
+          <p class="section-text">
+            Aethelred replaces hash-only mining with inference-backed validator work. Instead of burning energy on arbitrary puzzles, validators execute signed AI jobs in TEE environments and receive rewards for measurable utility.
+          </p>
+        </div>
+
+        <div class="split">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>Job lifecycle</h3>
+            <div class="timeline spacer-16">
+              <article class="timeline-item">
+                <h3>1. Job commitment</h3>
+                <p>Clients submit workload metadata, latency targets, jurisdiction constraints, and model policy requirements.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>2. TEE scheduling</h3>
+                <p>Orchestrator assigns workload to validators based on attestation health, hardware profile, and stake weight.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>3. Proof generation</h3>
+                <p>Inference outputs are signed in-enclave and bound to execution context hashes.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>4. On chain settlement</h3>
+                <p>Proof references settle on the Layer-1 ledger with fee split and burn routing.</p>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Category multipliers</h3>
+            <p>Reward coefficients prioritize sectors with high societal and institutional value.</p>
+            <div class="table-wrap spacer-16">
+              <table aria-label="Inference category reward multipliers">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Multiplier</th>
+                    <th>Policy Rationale</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Healthcare &amp; Biotech</td>
+                    <td>1.8x</td>
+                    <td>Clinical diagnostics and life science acceleration</td>
+                  </tr>
+                  <tr>
+                    <td>Scientific Research</td>
+                    <td>1.6x</td>
+                    <td>Academic and industrial research workloads</td>
+                  </tr>
+                  <tr>
+                    <td>Finance &amp; Risk</td>
+                    <td>1.4x</td>
+                    <td>Auditability-sensitive institution workflows</td>
+                  </tr>
+                  <tr>
+                    <td>General Inference</td>
+                    <td>1.0x</td>
+                    <td>Baseline market computation</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="compute-engine" aria-labelledby="compute-engine-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Execution Architecture</span>
+          <h2 class="section-title" id="compute-engine-title">Hybrid Compute Engine</h2>
+          <p class="section-text">
+            The engine separates orchestration from execution, utilizing TEEs as the primary high-throughput execution layer alongside optional EZKL zkML co-processing for absolute cryptographic trustlessness.
+          </p>
+        </div>
+
+        <div class="grid-4">
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">A</span>
+            <h3>Ingress &amp; policy check</h3>
+            <p>Requests are validated for compliance profile, quota limits, and data residency constraints.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">B</span>
+            <h3>Secure dispatch</h3>
+            <p>Workloads route to attested enclaves with matching hardware and cryptographic capabilities.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">C</span>
+            <h3>Attested inference</h3>
+            <p>TEE workers run model execution and emit signed output bundles with context hashes.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">D</span>
+            <h3>Settlement &amp; Verification</h3>
+            <p>Proofs settle natively via custom EVM precompiles (0x0400 for TEE, 0x0300 for ZKP) for sub-2 second on-chain verification.</p>
+          </article>
+        </div>
+
+        <div class="callout spacer-24" data-reveal="stagger-3">
+          <strong>Supported confidential compute profiles</strong>
+          <p>Intel SGX, AMD SEV-SNP, AWS Nitro Enclaves, and Azure Confidential VMs housed within sovereign clusters like Stargate UAE, with HSM-backed key custody.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="pqc" aria-labelledby="pqc-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Cryptography</span>
+          <h2 class="section-title" id="pqc-title">Three layer post quantum security</h2>
+          <p class="section-text">Cryptographic agility is embedded in the protocol design, not deferred as a future migration burden.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Identity and signatures</h3>
+            <p>ML-DSA-65 (Dilithium 3) secures validator identity, block signatures, and governance attestations.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Transport security</h3>
+            <p>ML-KEM-1024 (Kyber) provides quantum-safe key exchange for validator and client channels.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Integrity anchoring</h3>
+            <p>SHA-256 merkleized state commitments enforce deterministic ledger verification.</p>
+          </article>
+        </div>
+
+        <div class="split spacer-24">
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Hardware security module support</h3>
+            <p>Validator operations support Thales and Fortanix HSM custody workflows for key isolation, rotation policy, and secure signing ceremonies.</p>
+          </article>
+
+          <article class="panel" data-reveal="stagger-3">
+            <h3>Migration readiness playbook</h3>
+            <p>
+              If cryptographically relevant quantum advances emerge, governance can initiate rapid key policy upgrades, disable deprecated algorithms, and freeze compromised signature families before final state transition execution.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="validators" aria-labelledby="validators-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Infrastructure</span>
+          <h2 class="section-title" id="validators-title">Validator admission and operating standards</h2>
+          <p class="section-text">Validator participation requires stake, hardened infrastructure, and policy compliance appropriate for institutional workloads.</p>
+        </div>
+
+        <div class="table-wrap" data-reveal="stagger-1">
+          <table aria-label="Validator requirements">
+            <thead>
+              <tr>
+                <th>Requirement</th>
+                <th>Baseline</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Minimum stake</td>
+                <td>100,000 AETHEL</td>
+                <td>Staking lock establishes economic accountability.</td>
+              </tr>
+              <tr>
+                <td>TEE hardware profile</td>
+                <td>SGX / SEV-SNP / Nitro / Azure CVM</td>
+                <td>Remote attestation required for worker enrollment.</td>
+              </tr>
+              <tr>
+                <td>GPU class</td>
+                <td>H100 / MI300 equivalent</td>
+                <td>Optimized for 32B parameter inference classes.</td>
+              </tr>
+              <tr>
+                <td>Compliance controls</td>
+                <td>KYC/AML + OFAC workflow</td>
+                <td>Mandatory for institutional compute routing.</td>
+              </tr>
+              <tr>
+                <td>Uptime target</td>
+                <td>99.5% monthly</td>
+                <td>Availability impacts reward and slashing profile.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-3 spacer-24">
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Validator Nodes</h3>
+            <p>Participate in consensus, finality, governance voting, and reward distribution.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Worker Nodes</h3>
+            <p>Execute AI jobs in enclaves and generate attested outputs for settlement.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Sentinel Nodes</h3>
+            <p>Provide DDoS shielding and regional ingress resilience across operators.</p>
+          </article>
+        </div>
+
+        <div class="badge-row spacer-24" data-reveal="stagger-3">
+          <span class="badge">North America</span>
+          <span class="badge">Europe</span>
+          <span class="badge">MENA</span>
+          <span class="badge">APAC</span>
+          <span class="badge">Sovereign cloud corridors</span>
+        </div>
+
+        <div class="callout spacer-24" data-reveal="stagger-3">
+          <strong>Need the operator view?</strong>
+          <p>See the dedicated <a class="body-link" href="nodes.html">Node Operations guide</a> for role definitions, deployment topology, and production-safe runtime checks.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="performance" aria-labelledby="performance-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Benchmarks</span>
+          <h2 class="section-title" id="performance-title">Production oriented performance envelope</h2>
+          <p class="section-text">Measurements reflect sustained testnet workloads with 100+ validator participants and enterprise model mixes.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>p50 inference latency</small>
+            <strong>80-150 ms</strong>
+            <p>Optimized 32B-parameter enterprise models in enclave mode.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>p95 inference latency</small>
+            <strong>220-340 ms</strong>
+            <p>Enterprise and regulated workload profile.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>Model throughput</small>
+            <strong>50,000+ IPS</strong>
+            <p>Aggregate throughput for 32B class models.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>State finality</small>
+            <strong>&lt;2 sec</strong>
+            <p>Deterministic settlement across validator cluster.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>Failover time</small>
+            <strong>&lt;12 sec</strong>
+            <p>Region-aware load transfer with worker redundancy.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>Network target 2027</small>
+            <strong>1,000+ PFLOPS</strong>
+            <p>Scale path based on validator expansion program.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="stablecoin-settlement" aria-labelledby="stablecoin-settlement-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Institutional Settlement</span>
+          <h2 class="section-title" id="stablecoin-settlement-title">Stablecoin settlement runs as a bounded network service</h2>
+          <p class="section-text">The same network that verifies AI outputs also hosts a constrained stablecoin lane for issuer-authorized settlement. The design is intentionally bounded by routing-type checks, reserve feeds, relayer bonds, governance delays, and fail-closed recovery logic.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Authorized ingress only</h3>
+            <p>Assets are explicitly configured by routing type rather than admitted through open pool liquidity.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Bonded relay path</h3>
+            <p>Relayers post 500,000 AETHEL before moving messages through the settlement lane.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <h3>Fail-closed reserve logic</h3>
+            <p>Proof-of-reserve deviation, stale feeds, velocity breaches, and tx-limit breaches can stop issuance paths.</p>
+          </article>
+        </div>
+
+        <div class="split spacer-24">
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Operational flow</h3>
+            <div class="timeline spacer-16">
+              <article class="timeline-item">
+                <h3>1. Asset configuration</h3>
+                <p>Governance configures routing type, reserve feed, quotas, and outflow thresholds.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>2. Route through CCTP or TEE issuer mint</h3>
+                <p>USDC-class flows use CCTP V2 while non-CCTP assets use issuer-gated TEE mint and redemption paths.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>3. Monitor reserve and velocity</h3>
+                <p>Automation and pause roles watch proof-of-reserve, transaction ceilings, and outflow windows.</p>
+              </article>
+              <article class="timeline-item">
+                <h3>4. Recover only with joint control</h3>
+                <p>Unpause requires coordinated institutional signatures rather than a single operator override.</p>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel" data-reveal="stagger-3">
+            <h3>Why this matters architecturally</h3>
+            <div class="table-wrap spacer-16">
+              <table aria-label="Stablecoin settlement architecture controls">
+                <thead>
+                  <tr>
+                    <th>Control</th>
+                    <th>Network Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Routing type enforcement</td>
+                    <td>Prevents assets from drifting between incompatible settlement models.</td>
+                  </tr>
+                  <tr>
+                    <td>Reserve monitoring</td>
+                    <td>Keeps issuance and redemption tied to external reserve evidence.</td>
+                  </tr>
+                  <tr>
+                    <td>Relayer bonds</td>
+                    <td>Turns message relay into an economically accountable network role.</td>
+                  </tr>
+                  <tr>
+                    <td>Joint unpause</td>
+                    <td>Reduces unilateral recovery risk during stressed settlement conditions.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout spacer-24" data-reveal="stagger-3">
+          <strong>See the economic control side next.</strong>
+          <p>The network view explains how the settlement lane behaves in operation. The <a class="body-link" href="token.html#stablecoin">Token</a> page covers the bonded and governance thresholds, while the <a class="body-link" href="investors.html#stablecoin-diligence">Investors</a> page frames what institutions should diligence first.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="security" aria-labelledby="security-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Trust and Compliance</span>
+          <h2 class="section-title" id="security-title">Security architecture designed for institutions</h2>
+          <p class="section-text">Aethelred combines cryptographic guarantees with policy enforceability required by regulated sectors.</p>
+        </div>
+
+        <div class="split">
+          <article class="quote-card" data-reveal="stagger-1">
+            <h3>Protocol controls</h3>
+            <p>Slashing for malicious behavior, timelocked upgrades, attestation revocation, and transparent on-chain governance records.</p>
+            <div class="badge-row spacer-16">
+              <span class="badge">Attestation verification</span>
+              <span class="badge">Circuit breaker hooks</span>
+              <span class="badge">Auditability by default</span>
+            </div>
+          </article>
+
+          <article class="quote-card" data-reveal="stagger-2">
+            <h3>Regulatory controls</h3>
+            <p>Jurisdiction aware routing, policy-bound data corridors, and verifiable KYC/AML attestations for institutional onboarding.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-secondary" href="governance.html">See Governance &amp; Compliance</a>
+              <a class="btn btn-ghost" href="investors.html">Institutional Materials</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-shell" data-reveal>
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="brand" href="index.html" aria-label="Aethelred home">
+              <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38" loading="lazy">
+              <span class="brand-word">Aethelred</span>
+            </a>
+            <p>Enterprise-ready network architecture for verifiable AI inference and deterministic settlement.</p>
+          </div>
+
+          <div>
+            <p class="footer-title">Protocol</p>
+            <ul class="footer-list">
+              <li><a href="index.html#architecture">Octagon Protocol</a></li>
+              <li><a href="#pouw">PoUW Consensus</a></li>
+              <li><a href="#validators">Validator Standards</a></li>
+              <li><a href="#performance">Benchmark Envelope</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Resources</p>
+            <ul class="footer-list">
+              <li><a href="token.html">Token Design</a></li>
+              <li><a href="token.html#stablecoin">Stablecoin Infrastructure</a></li>
+              <li><a href="nodes.html">Node Operations</a></li>
+              <li><a href="governance.html">Governance Model</a></li>
+              <li><a href="investors.html">Investor Access</a></li>
+              <li><a href="../io/developers.html">Developer Docs</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Community</p>
+            <ul class="footer-list">
+              <li><a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub</a></li>
+              <li><a href="https://discord.gg/aethelred" target="_blank" rel="noopener">Discord</a></li>
+              <li><a href="https://t.me/AethelredHQ" target="_blank" rel="noopener">Telegram</a></li>
+              <li><a href="https://x.com/AethelredHQ" target="_blank" rel="noopener">X</a></li>
+              <li><a href="mailto:contact@aethelred.org">contact@aethelred.org</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>&copy; <span data-year></span> AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</div>
+          <div><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="cookies.html">Cookie Policy</a> · <button type="button" class="cookie-settings-link" data-cookie-settings>Cookie Settings</button></div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEE Attestation | Aethelred</title>
+  <meta name="description" content="Current Trusted Execution Environment surface for Aethelred: supported platforms, attestation binding, production controls, and operator economics.">
+  <meta name="keywords" content="Aethelred TEE, Trusted Execution Environment, SGX, AWS Nitro, AMD SEV-SNP, NVIDIA H100 Confidential Computing, attestation">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/tee">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/tee">
+  <meta property="og:title" content="TEE Attestation | Aethelred">
+  <meta property="og:description" content="Understand the current TEE attestation model on Aethelred, from supported hardware and binding rules to production guards and economics.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="TEE Attestation social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="TEE Attestation | Aethelred">
+  <meta name="twitter:description" content="Current TEE surface on Aethelred: supported platforms, attestation binding, production controls, and economics.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="TEE Attestation social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/tee#webpage",
+        "name": "TEE Attestation",
+        "headline": "TEE Attestation",
+        "url": "https://www.aethelred.io/tee",
+        "description": "Current Trusted Execution Environment surface for Aethelred: supported platforms, attestation binding, production controls, and operator economics.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/tee#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "TEE Attestation social preview"
+        },
+        "dateModified": "2026-03-11",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/tee#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "TEE Attestation",
+            "item": "https://www.aethelred.io/tee"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-tee">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="tee-resources">Resources</button>
+          <div class="dropdown-panel" id="tee-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#platforms" role="menuitem">Platforms</a>
+            <a href="#binding" role="menuitem">Binding Rules</a>
+            <a href="#production" role="menuitem">Production Guards</a>
+            <a href="#operations" role="menuitem">Operations</a>
+            <a href="zk-proofs.html" role="menuitem">ZK Proofs</a>
+            <a href="wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="../org/index.html" role="menuitem">Foundation</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="sandbox.html" class="btn btn-small btn-primary">Infinite Sandbox</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>TEE Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#platforms" class="mobile-link">Platforms</a>
+      <a href="#binding" class="mobile-link">Binding Rules</a>
+      <a href="#production" class="mobile-link">Production Guards</a>
+      <a href="#operations" class="mobile-link">Operations</a>
+      <a href="zk-proofs.html" class="mobile-link">ZK Proofs</a>
+      <a href="wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="../org/index.html" class="mobile-link">Foundation</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Confidential Compute</p>
+          <h1 class="hero-title" id="page-title">TEE <span class="gradient-word">Attestation</span></h1>
+          <p class="hero-subtitle">Aethelred uses a multi-TEE verification framework supporting Intel SGX, AWS Nitro, AMD SEV-SNP, and NVIDIA H100 Confidential Computing. Data enters the enclave encrypted, is processed in isolation, and exits as an attested result. The validator does not see plaintext input, and the resulting quote is validated against chain-specific binding rules before it can contribute to Proof-of-Useful-Work or a Digital Seal. Pair this surface with <a class="body-link" href="zk-proofs.html">zkML proofs</a> when a workload needs hybrid verification.</p>
+          <div class="hero-tags" aria-label="TEE coverage">
+            <span class="hero-tag">Blind Compute</span>
+            <span class="hero-tag">4 Platforms</span>
+            <span class="hero-tag">EVM 0x0400</span>
+            <span class="hero-tag">1.5x TEE Bonus</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#platforms" class="btn btn-primary">Review Platforms</a>
+            <a href="zk-proofs.html" class="btn btn-secondary">Open ZK Surface</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT MULTI-TEE MODEL</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Blind compute is a protocol primitive</h4>
+            <p>Encrypted data enters the enclave, is processed in isolation, and exits only as an attested result bound to the workload.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Production checks are explicit</h4>
+            <p>Signature validation, measurement lookup, quote schema checks, timestamp bounds, and chain binding are required in production mode.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Economics reward secure hardware</h4>
+            <p>TEE-equipped validators receive a 1.5x compute bonus multiplier, with hardware-specific fee multipliers reflecting operating cost and security level.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>4 Platforms</strong>
+              <span>Current multi-TEE framework</span>
+            </div>
+            <div class="metric-pill">
+              <strong>2.3s</strong>
+              <span>Achieved attestation time</span>
+            </div>
+            <div class="metric-pill">
+              <strong>100,000 AETHEL</strong>
+              <span>Validator minimum stake</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">TEE attestations are the current hardware-backed trust surface</h2>
+          <p class="section-lead">This page reflects the current production model in the March 2026 whitepaper and tokenomics. TEE attestation is one of the documented verification modes per job, and it is the foundation of Aethelred's blind-compute posture for regulated and confidential workloads.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">BLIND</span>
+                <div>
+                  <p class="detail-kicker">Why TEEs Matter</p>
+                  <h3>Confidential execution without trusting the validator with plaintext data</h3>
+                </div>
+              </div>
+            </div>
+            <p>Aethelred's sovereign privacy model describes blind compute: sensitive data enters a hardware Trusted Execution Environment encrypted, is processed in isolation, and exits as an attested result. This is the hardware-backed path for workloads where the operator should verify execution but must not see the underlying data.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best Fit</span>
+                <p>Medical, financial, private-model, and jurisdiction-sensitive inference where confidential execution is part of the trust model.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Protocol Role</span>
+                <p>The validator includes the TEE quote inside vote-extension verification data so consensus can reason about both compute and evidence.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Proof Surface</span>
+                <strong>TEE attestation stands alone for hardware-backed assurance and also pairs with <a class="body-link" href="zk-proofs.html">zkML proofs</a> in hybrid mode.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Contract Surface</span>
+                <strong>The current developer docs expose the TEE precompile at <span class="mono">0x0400</span> for smart-contract level attestation flows.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Operator Surface</span>
+                <strong>Validators are documented as TEE-capable GPU servers with HSM-aware operational flows and a 100,000 AETHEL minimum stake.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">QUOTE</span>
+                <div>
+                  <p class="detail-kicker">Attestation Model</p>
+                  <h3>The quote is useful only when it is bound to the exact workload and chain context</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current attestation document binds enclave measurement, input hash, output hash, block height, and chain ID. Production mode rejects simulated platforms and unbound attestations because a quote that is not attached to chain context is replayable and therefore not trustworthy enough for consensus evidence.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Validation Surface</span>
+                <p>Quote format, measurement registry lookup, timestamp skew, signature validation, and binding hash checks all happen before acceptance.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Consensus Outcome</span>
+                <p>Accepted attestations become part of the evidence set that can support a Digital Seal when the network reaches supermajority agreement.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Seal Access</span>
+                <strong>Full TEE attestation records are exposed through the seal query surface once a result is promoted into a seal.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Developer Rehearsal</span>
+                <strong>The <a class="body-link" href="sandbox.html">Infinite Sandbox</a> and documented devnet path let teams inspect the operational behavior before public rollout.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Tooling Support</span>
+                <strong>The current VS Code extension includes in-editor TEE simulation to keep iteration local until the workflow is ready.</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="kpi-grid stack-top-16" aria-label="TEE metrics">
+          <article class="kpi">
+            <p class="kpi-label">Supported Platforms</p>
+            <p class="kpi-value">4</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Precompile</p>
+            <p class="kpi-value">0x0400</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Achieved Attestation</p>
+            <p class="kpi-value">2.3s</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">TEE Bonus</p>
+            <p class="kpi-value">1.5x</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Verification Reward</p>
+            <p class="kpi-value">100 uaeth</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="platforms" aria-labelledby="platforms-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Platforms</p>
+          <h2 class="section-title" id="platforms-title">The current multi-TEE framework and its fee profile</h2>
+          <p class="section-lead">The whitepaper and tokenomics document the active hardware environments below. The fee multipliers reflect the cost and assurance profile of each environment, while the protocol itself verifies attestation data against the correct platform-specific rules.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Attestation Path</th>
+                <th>Current Role</th>
+                <th>Fee Multiplier</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Intel SGX</td>
+                <td>SGX DCAP quote</td>
+                <td>Enclave-backed verified inference</td>
+                <td>1.2x</td>
+              </tr>
+              <tr>
+                <td>AWS Nitro Enclave</td>
+                <td>Nitro NSM document</td>
+                <td>Cloud-isolated confidential compute</td>
+                <td>1.5x</td>
+              </tr>
+              <tr>
+                <td>AMD SEV-SNP</td>
+                <td>SEV-SNP attestation report</td>
+                <td>Confidential VM execution for validator inference</td>
+                <td>1.2x</td>
+              </tr>
+              <tr>
+                <td>NVIDIA H100 Confidential</td>
+                <td>Confidential GPU attestation</td>
+                <td>Highest-assurance GPU workloads</td>
+                <td>2.0x</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Hardware choice is an economic and operational decision</h3>
+            <p>The protocol rewards stronger confidential-compute postures, but the platform should still match the workload, the deployment model, and the operational maturity of the validator team.</p>
+          </div>
+          <a href="tools.html#verifier" class="btn btn-primary">Open Verification Tools</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="binding" aria-labelledby="binding-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Binding Rules</p>
+          <h2 class="section-title" id="binding-title">Attestations are bound to the exact chain and block context</h2>
+          <p class="section-lead">A quote without chain context is replayable. The current production model binds attestation data to workload output, block height, and chain identity before the network will treat it as valid evidence.</p>
+        </div>
+
+        <div class="code-block stack-bottom-16">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">tee binding</span>
+          </div>
+<pre><code>UserData = SHA-256(output_hash || LE64(block_height) || chain_id)</code></pre>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">BIND</span>
+                <div>
+                  <p class="detail-kicker">Required Fields</p>
+                  <h3>What the protocol expects inside the attestation record</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Enclave measurement or equivalent code identity.</li>
+              <li>Input hash and output hash for the workload.</li>
+              <li>Block height and chain ID binding for replay protection.</li>
+              <li>Platform-specific quote structure that matches the selected TEE type.</li>
+            </ul>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">TIME</span>
+                <div>
+                  <p class="detail-kicker">Replay Resistance</p>
+                  <h3>The timestamp window is deliberately narrow</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Attestation timestamps are validated within a 10-minute past window and a 1-minute future window relative to block time.</li>
+              <li>Cross-chain and cross-block replay are blocked by the user-data binding rule.</li>
+              <li>Measurement registry lookup ensures the quote maps to a trusted code identity before acceptance.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="production" aria-labelledby="production-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Production Guards</p>
+          <h2 class="section-title" id="production-title">Current production mode is designed to fail closed</h2>
+          <p class="section-lead">The whitepaper explicitly states that a three-layer defense prevents simulated verification from reaching production, while vote-extension verification rejects malformed, unsigned, or insufficiently bound attestation data.</p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-index">GATE 01</span>
+            <h3>Build-tag enforcement</h3>
+            <p>The production build tag forces a compile-time production flag so runtime configuration cannot quietly switch the node back into simulated behavior.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">GATE 02</span>
+            <h3>One-way governance gate</h3>
+            <p><span class="mono">AllowSimulated</span> can move from true to false, but once disabled it cannot be re-enabled through governance.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-index">GATE 03</span>
+            <h3>Runtime readiness checks</h3>
+            <p>The first production BeginBlock runs readiness checks and panics if the environment does not meet the required security posture.</p>
+          </article>
+        </div>
+
+        <div class="grid grid-2 stack-top-16">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">VERIFY</span>
+                <div>
+                  <p class="detail-kicker">Vote Extension Checks</p>
+                  <h3>What peers validate on incoming attestation data</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Signature verification against the validator consensus key.</li>
+              <li>Timestamp skew validation before accepting quote freshness.</li>
+              <li>Platform-specific schema validation and measurement registry lookup.</li>
+              <li>Binding-hash verification and job existence checks on-chain.</li>
+            </ul>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">REJECT</span>
+                <div>
+                  <p class="detail-kicker">Explicit Rejections</p>
+                  <h3>What production mode refuses to accept</h3>
+                </div>
+              </div>
+            </div>
+            <ul class="list-clean">
+              <li>Unsigned vote extensions.</li>
+              <li>Simulated TEE platforms.</li>
+              <li>Attestations missing block-height and chain-ID binding.</li>
+              <li>Quotes that do not resolve cleanly against the trusted measurement registry.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="operations" aria-labelledby="operations-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Operations</p>
+          <h2 class="section-title" id="operations-title">Current economics and operator implications</h2>
+          <p class="section-lead">TEE use is not only a security posture. It also changes validator economics, deployment requirements, and the rehearsal path through tools, devnet, and the <a class="body-link" href="../org/nodes.html">foundation node standards</a>.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Current Value</th>
+                <th>Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Validator Entry</td>
+                <td>100,000 AETHEL minimum stake</td>
+                <td>The current validator profile is a TEE-capable GPU server participating in consensus and AI inference.</td>
+              </tr>
+              <tr>
+                <td>Compute Bonus</td>
+                <td>1.5x reward multiplier</td>
+                <td>TEE-equipped validators receive additional reward weight reflecting hardware cost and security guarantees.</td>
+              </tr>
+              <tr>
+                <td>Verification Reward</td>
+                <td>100 uaeth per verified job</td>
+                <td>Attestation-backed verification contributes directly to validator revenue alongside PoUW rewards and fees.</td>
+              </tr>
+              <tr>
+                <td>Devnet</td>
+                <td>10 services, 3 validators on heterogeneous TEE platforms</td>
+                <td>The local environment already mirrors the confidential-compute path teams need to rehearse before public rollout.</td>
+              </tr>
+              <tr>
+                <td>Tooling</td>
+                <td>Seal verifier, diagnostics, VS Code TEE simulation</td>
+                <td>Operational support already exists across the tools page, the developer docs, and the local iteration surface.</td>
+              </tr>
+              <tr>
+                <td>Operations Stack</td>
+                <td>HSM-aware node operations and production-readiness checks</td>
+                <td>TEE usage belongs inside a mature validator operating model, not as a detached demo capability.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Use TEE alone when confidentiality is central, pair it with zkML when proof and confidentiality both matter</h3>
+            <p>For many regulated workloads, hardware-backed isolation is the primary requirement. When the workload also needs mathematical proof of execution, move to the <a class="body-link" href="zk-proofs.html">zkML and hybrid verification surface</a>.</p>
+          </div>
+          <a href="zk-proofs.html" class="btn btn-primary">Open ZK Proofs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

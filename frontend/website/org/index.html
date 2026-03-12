@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aethelred | Verifiable Compute Layer for the AI Economy</title>
+  <meta name="description" content="Aethelred is a sovereign Layer-1 blockchain for verifiable AI. Enterprise validators run TEE-secured inference, proofs settle on-chain, and institutions gain auditable AI infrastructure.">
+  <meta name="keywords" content="Aethelred, verifiable AI, Layer-1 blockchain, Trusted Execution Environment, proof-of-useful-work, post-quantum cryptography, sovereign compute">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.org/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.org/">
+  <meta property="og:title" content="Aethelred | Verifiable Compute Layer for the AI Economy">
+  <meta property="og:description" content="Dual architecture: deterministic Layer-1 settlement plus enterprise TEE inference with cryptographic verification.">
+  <meta property="og:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta property="og:image:alt" content="Aethelred | Verifiable Compute Layer for the AI Economy social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredHQ">
+  <meta name="twitter:title" content="Aethelred | Verifiable Compute Layer for the AI Economy">
+  <meta name="twitter:description" content="Sovereign Layer-1 for auditable AI inference with post-quantum security and TEE-based execution.">
+  <meta name="twitter:image" content="https://www.aethelred.org/og-image.jpg">
+  <meta name="twitter:image:alt" content="Aethelred | Verifiable Compute Layer for the AI Economy social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.org#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.org",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/aethelred-logo.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://x.com/AethelredHQ",
+          "https://t.me/AethelredHQ",
+          "https://discord.gg/aethelred"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.org#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.org",
+        "description": "Sovereign infrastructure for verifiable AI computation.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.org#organization"
+        }
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "@id": "https://www.aethelred.org/#primary-navigation",
+        "name": [
+          "Home",
+          "Network",
+          "Token",
+          "Governance",
+          "Investors",
+          "Node Operations"
+        ],
+        "url": [
+          "https://www.aethelred.org/",
+          "https://www.aethelred.org/network.html",
+          "https://www.aethelred.org/token.html",
+          "https://www.aethelred.org/governance.html",
+          "https://www.aethelred.org/investors.html",
+          "https://www.aethelred.org/nodes.html"
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.aethelred.org/#webpage",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.org/",
+        "description": "Aethelred is a sovereign Layer-1 blockchain for verifiable AI. Enterprise validators run TEE-secured inference, proofs settle on-chain, and institutions gain auditable AI infrastructure.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.org#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.org#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.org/#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.org/og-image.jpg",
+          "caption": "Aethelred Foundation social preview"
+        },
+        "dateModified": "2026-03-10"
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.aethelred.org/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What makes Aethelred different from a generic Layer 1 blockchain?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Aethelred is purpose-built for verifiable AI inference. It combines deterministic Layer 1 settlement, enclave-backed execution, optional zkML co-processing, and EVM proof-verification precompiles rather than retrofitting those features onto a general-purpose chain."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How are inference results verified on Aethelred?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Inference jobs execute inside attested trusted execution environments, results are signed against execution context, and proof references settle on-chain through Aethelred's verification layer for auditable finality."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who can participate as a validator or operator?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Validator participation is aimed at institutional-grade operators that satisfy stake, uptime, hardware, HSM, and attestation requirements. Node topology, sentry boundaries, and control expectations are documented on the Node Operations and Network Architecture pages."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which sectors is Aethelred designed for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Aethelred targets sectors where both AI performance and auditability matter, including healthcare, finance, defense, autonomy, supply chain, and sovereign or academic research infrastructure."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does governance avoid unilateral protocol control?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Aethelred uses a bi-cameral governance model that requires supermajority approval from both token holders and validator operators, combined with timelock execution and compliance-aware controls."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where should institutions begin due diligence?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Institutional users should begin with the Investors page for gated materials, then review the Network, Token, Governance, and Node Operations pages for technical, economic, and operational context."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.org/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Foundation",
+            "item": "https://www.aethelred.org/"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/syne-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" href="aethelred-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-home">
+  <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
+  <div class="bg-orbit" aria-hidden="true">
+    <span class="orbit orbit-a" data-parallax="0.02"></span>
+    <span class="orbit orbit-b" data-parallax="0.04"></span>
+    <span class="orbit orbit-c" data-parallax="0.07"></span>
+  </div>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header" data-header>
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Aethelred home">
+        <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38">
+        <span class="brand-word">Aethelred</span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Primary navigation">
+        <a class="nav-link" data-nav-link href="index.html">Home</a>
+        <a class="nav-link" data-nav-link href="network.html">Network</a>
+        <a class="nav-link" data-nav-link href="token.html">Token</a>
+        <a class="nav-link" data-nav-link href="governance.html">Governance</a>
+        <a class="nav-link" data-nav-link href="investors.html">Investors</a>
+
+        <div class="dropdown" data-dropdown>
+          <button class="dropdown-trigger" data-dropdown-trigger aria-expanded="false" aria-haspopup="true">Explore</button>
+          <div class="dropdown-panel" data-dropdown-panel>
+            <a class="dropdown-item" href="#architecture">
+              <span>Protocol</span>
+              <strong>Octagon Architecture</strong>
+              <p>Eight specialized subsystems for verifiable AI at enterprise throughput.</p>
+            </a>
+            <a class="dropdown-item" href="#performance">
+              <span>Benchmarks</span>
+              <strong>Dual Physics Performance</strong>
+              <p>Settlement finality and inference throughput measured independently.</p>
+            </a>
+            <a class="dropdown-item" href="#use-cases">
+              <span>Applications</span>
+              <strong>Industry Use Cases</strong>
+              <p>Healthcare, finance, supply chain, autonomy, and sovereign research.</p>
+            </a>
+            <a class="dropdown-item" href="#partners">
+              <span>Infrastructure</span>
+              <strong>Execution Partners</strong>
+              <p>Confidential compute partners and hardware profile categories.</p>
+            </a>
+            <a class="dropdown-item" href="nodes.html">
+              <span>Operators</span>
+              <strong>Node Operations</strong>
+              <p>Validator topology, hardware baselines, and operator admission guidance.</p>
+            </a>
+            <a class="dropdown-item" href="#cta">
+              <span>Next Steps</span>
+              <strong>Institutional and Builder Paths</strong>
+              <p>Choose diligence workflow or developer onboarding track.</p>
+            </a>
+            <a class="dropdown-item" href="#faq">
+              <span>Answers</span>
+              <strong>FAQ</strong>
+              <p>Review core diligence questions from institutions, operators, and builders.</p>
+            </a>
+            <a class="dropdown-item" href="investors.html#diligence-access">
+              <span>Institutional</span>
+              <strong>Due Diligence Package</strong>
+              <p>NDA gated materials, architecture deep-dives, and allocation frameworks.</p>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="#use-cases">Use Cases</a>
+        <a class="btn btn-primary" href="../io/index.html">Developer Portal</a>
+        <button class="menu-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false" data-menu-toggle>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-menu" data-mobile-menu>
+    <div class="mobile-menu-backdrop" data-mobile-backdrop></div>
+    <nav class="mobile-menu-panel" aria-label="Mobile navigation">
+      <a data-nav-link href="index.html">Home</a>
+      <a data-nav-link href="network.html">Network</a>
+      <a data-nav-link href="token.html">Token</a>
+      <a data-nav-link href="governance.html">Governance</a>
+      <a data-nav-link href="investors.html">Investors</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#performance">Performance</a>
+      <a href="#use-cases">Use Cases</a>
+      <a href="#partners">Partners</a>
+      <a href="nodes.html">Node Operations</a>
+      <a href="#cta">Next Steps</a>
+      <a href="#faq">FAQ</a>
+      <a href="../io/index.html">Developer Portal</a>
+    </nav>
+  </div>
+
+  <main id="main-content" class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div>
+          <span class="kicker" data-reveal>Layer 1 for Verifiable AI</span>
+          <h1 class="hero-title" data-reveal="slow" id="page-title">
+            Trusted AI on a <span class="gradient">sovereign Layer 1</span>.
+          </h1>
+          <p class="hero-copy" data-reveal="stagger-1">
+            Aethelred unifies confidential AI execution and deterministic settlement in one protocol. Inference runs inside attested TEE clusters, and every result is anchored on-chain with verifiable cryptographic proof. Inspect the <a class="body-link" href="network.html">network architecture</a> or move directly into the <a class="body-link" href="../io/index.html">developer portal</a> for implementation workflows.
+          </p>
+          <div class="hero-actions" data-reveal="stagger-2">
+            <a class="btn btn-primary" href="network.html">Inspect Network Architecture</a>
+            <a class="btn btn-secondary" href="token.html">Review Token Design</a>
+          </div>
+          <div class="badge-row spacer-24" data-reveal="stagger-3">
+            <span class="badge">Post Quantum by default</span>
+            <span class="badge">100+ Enterprise validators</span>
+            <span class="badge">TEE-backed inference market</span>
+            <span class="badge">Institution ready compliance</span>
+          </div>
+        </div>
+
+        <aside class="hero-rail" aria-label="Network highlights" data-reveal="stagger-2">
+          <article class="stat-card">
+            <span class="stat-label">Compute capacity</span>
+            <strong class="stat-value" data-count="400" data-count-suffix=" PFLOPS" data-count-label="400 PFLOPS">0</strong>
+            <p class="stat-note">Aggregate verifiable inference throughput from enterprise TEE workers.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Settlement finality</span>
+            <strong class="stat-value" data-count="2" data-count-suffix=" s" data-count-label="<2 s">0</strong>
+            <p class="stat-note">Deterministic block finality for economic transactions and proof settlement.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Inference scale</span>
+            <strong class="stat-value" data-count="50000" data-count-suffix="+ IPS" data-count-label="50,000+ IPS">0</strong>
+            <p class="stat-note">Natively optimized for 32B-parameter enterprise models using vLLM and TensorRT-LLM runtimes.</p>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Cryptographic stack</span>
+            <strong class="stat-value">ML-DSA + ML-KEM</strong>
+            <p class="stat-note">NIST-standardized post-quantum identity and transport protection from genesis.</p>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="why" aria-labelledby="why-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Why Aethelred</span>
+          <h2 class="section-title" id="why-title">AI systems need cryptographic accountability.</h2>
+          <p class="section-text">
+            Today, most high-value inference happens inside opaque cloud boundaries. Aethelred introduces a verifiable execution market where outputs are signed, provenance is tracked, and compliance controls are policy-native.
+          </p>
+        </div>
+
+        <div class="split">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>Current state: high performance, low trust</h3>
+            <p>
+              Centralized AI APIs are difficult to audit, difficult to govern, and difficult to localize for strict jurisdictions. Enterprises cannot prove which model ran, how data was handled, or whether output was tampered with before delivery.
+            </p>
+          </article>
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Aethelred state: sovereign, provable, enforceable</h3>
+            <p>
+              Compute jobs execute in confidential hardware enclaves, results are signed with post-quantum keys, and settlement happens on-chain. Governance can enforce jurisdiction routing, timelocks, and compliance attestations at the protocol layer.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture" aria-labelledby="architecture-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Architecture</span>
+          <h2 class="section-title" id="architecture-title">The Octagon Protocol</h2>
+          <p class="section-text">
+            Eight interlocking subsystems coordinate settlement, inference, governance, token economics, security, and cross-chain settlement. This separation of concerns lets the chain scale both economically and computationally.
+          </p>
+        </div>
+
+        <div class="grid-4">
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">01</span>
+            <h3>Proof of Useful Work</h3>
+            <p>Validator incentives are tied to real AI inference workloads instead of wasteful hash races.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-1">
+            <span class="feature-number">02</span>
+            <h3>Hybrid Proof Fabric</h3>
+            <p>Primary execution inside AWS Nitro/Intel SGX enclaves, with optional EZKL zkML co-processing for absolute trustlessness.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">03</span>
+            <h3>EVM Verification Layer</h3>
+            <p>Sub-2 second finality featuring custom 0x0400 (TEE) and 0x0300 (ZKP) precompiles for instant on-chain proof settlement.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-2">
+            <span class="feature-number">04</span>
+            <h3>Post Quantum Identity</h3>
+            <p>Validator signatures and key exchange are lattice-based from genesis.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-3">
+            <span class="feature-number">05</span>
+            <h3>Quadratic Fee Burn</h3>
+            <p>Congestion squared fees create stronger deflationary pressure during high demand windows.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-3">
+            <span class="feature-number">06</span>
+            <h3>Bi Cameral Governance</h3>
+            <p>House of Tokens and House of Validators both require supermajority for upgrades.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-3">
+            <span class="feature-number">07</span>
+            <h3>Sovereign Compliance Layer</h3>
+            <p>Policy-aware routing and attestations for regulated geographies and institutions.</p>
+          </article>
+          <article class="feature-card" data-reveal="stagger-3">
+            <span class="feature-number">08</span>
+            <h3>Native Bridging</h3>
+            <p>Cross-chain settlement paths with cryptographic finality to Ethereum ecosystems.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="partners" aria-labelledby="partners-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Infrastructure Partners</span>
+          <h2 class="section-title" id="partners-title">Trusted execution across sovereign hardware.</h2>
+          <p class="section-text">Strategically aligned with Abu Dhabi's 200MW Stargate UAE infrastructure, seamlessly orchestrating decentralized inference across AWS Nitro and Azure Confidential hardware.</p>
+        </div>
+
+        <div class="logo-grid" data-reveal="stagger-1" aria-label="Infrastructure partner categories">
+          <div class="logo-tile">AWS Nitro</div>
+          <div class="logo-tile">Azure Confidential</div>
+          <div class="logo-tile">Intel SGX</div>
+          <div class="logo-tile">AMD SEV-SNP</div>
+          <div class="logo-tile">Google Confidential</div>
+          <div class="logo-tile">NVIDIA H100</div>
+          <div class="logo-tile">Stargate UAE</div>
+          <div class="logo-tile">Sovereign DC</div>
+          <div class="logo-tile">Fortanix HSM</div>
+          <div class="logo-tile">Thales HSM</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="performance" aria-labelledby="performance-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Dual Architecture Performance</span>
+          <h2 class="section-title" id="performance-title">Two sets of physics, one sovereign network.</h2>
+          <p class="section-text">
+            Traditional chains scale by tuning software limits. Aethelred scales by adding real compute hardware while keeping settlement deterministic. Every net-new worker node increases protocol-wide inference capacity.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>Settlement TPS</small>
+            <strong data-count="4000" data-count-suffix=" TPS" data-count-label="1K-4K TPS">0</strong>
+            <p>CometBFT throughput under enterprise-grade validator topology.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>Block finality</small>
+            <strong data-count="2" data-count-suffix=" s" data-count-label="&lt;2 seconds">0</strong>
+            <p>Deterministic finality designed for financial and regulatory workflows.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-1">
+            <small>Inference latency</small>
+            <strong data-count="80" data-count-suffix=" ms" data-count-label="80-150 ms">0</strong>
+            <p>p50 response times for optimized models inside certified enclaves.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>Validator count</small>
+            <strong data-count="100" data-count-suffix="+" data-count-label="100+ validators">0</strong>
+            <p>Launch design supports globally distributed enterprise-grade operators.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>Worker expansion</small>
+            <strong>+4,000 TFLOPS</strong>
+            <p>Incremental compute per added H100 enclave, scaling network capacity horizontally without protocol bottlenecks.</p>
+          </article>
+          <article class="metric-card" data-reveal="stagger-2">
+            <small>Security baseline</small>
+            <strong>NIST PQC</strong>
+            <p>ML-DSA-65 and ML-KEM-1024 integrated into validator and transport pipelines.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="use-cases" aria-labelledby="use-cases-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Applications</span>
+          <h2 class="section-title" id="use-cases-title">Verifiable AI for regulated and mission critical sectors.</h2>
+          <p class="section-text">Aethelred serves organizations where performance matters, but auditability and jurisdictional control are non-negotiable.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Healthcare Diagnostics</h3>
+            <p>Cryptographically verified model execution for triage and imaging workflows under clinical compliance.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Financial Audit Automation</h3>
+            <p>Attested AI inference for risk engines, anomaly detection, and supervisory reporting.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-1">
+            <h3>Defense &amp; Intelligence</h3>
+            <p>Jurisdiction-locked compute with signed outputs for sovereign security operations.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Autonomous Fleets</h3>
+            <p>Provable decision trails for mobility systems and logistics autonomy environments.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Supply Chain Integrity</h3>
+            <p>AI-driven quality and routing decisions with immutable proof trails for compliance audits.</p>
+          </article>
+          <article class="info-card" data-reveal="stagger-2">
+            <h3>Research Compute Markets</h3>
+            <p>Shared, accountable inference capacity for universities, labs, and consortiums.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="cta" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">Get Started</span>
+          <h2 class="section-title" id="cta-title">Build on provable compute infrastructure.</h2>
+          <p class="section-text">Choose an institutional due-diligence path, an operator admission path, or move directly into the developer stack.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="quote-card" data-reveal="stagger-1">
+            <h3>For institutions</h3>
+            <p>Access token design docs, governance architecture, security posture, and compliance workflows.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-secondary" href="investors.html">Open Investor Hub</a>
+              <a class="btn btn-ghost" href="governance.html">Review Governance</a>
+            </div>
+          </article>
+
+          <article class="quote-card" data-reveal="stagger-2">
+            <h3>For node operators</h3>
+            <p>Review validator topology, hardware baselines, HSM expectations, and the production-safe runtime checks required before operator onboarding.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-primary" href="nodes.html">Open Node Operations</a>
+              <a class="btn btn-ghost" href="network.html#validators">Validator Standards</a>
+            </div>
+          </article>
+
+          <article class="quote-card" data-reveal="stagger-3">
+            <h3>For builders</h3>
+            <p>Deploy contracts, integrate precompiles, and run verifiable inference jobs in testnet environments.</p>
+            <div class="hero-actions spacer-24">
+              <a class="btn btn-secondary" href="../io/developers.html">Developer Docs</a>
+              <a class="btn btn-ghost" href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tight" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="section-intro" data-reveal>
+          <span class="kicker">FAQ</span>
+          <h2 class="section-title" id="faq-title">Common diligence questions</h2>
+          <p class="section-text">Core questions from institutions, operators, and builders evaluating Aethelred's production surface.</p>
+        </div>
+
+        <div class="grid-3">
+          <article class="panel" data-reveal="stagger-1">
+            <h3>What makes Aethelred different?</h3>
+            <p>It is purpose-built for verifiable AI inference: enclave-backed execution, optional zkML co-processing, and deterministic Layer 1 settlement in one stack.</p>
+          </article>
+          <article class="panel" data-reveal="stagger-1">
+            <h3>How are results verified?</h3>
+            <p>Inference runs inside attested TEEs, outputs bind to execution context, and proofs settle on-chain through Aethelred's verification layer.</p>
+          </article>
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Who can operate infrastructure?</h3>
+            <p>Institutional-grade operators that meet stake, attestation, HSM, uptime, and hardware standards can pursue validator or worker admission.</p>
+          </article>
+          <article class="panel" data-reveal="stagger-2">
+            <h3>Which sectors benefit most?</h3>
+            <p>Healthcare, finance, defense, autonomy, supply chain, and sovereign research teams benefit where performance and auditability must coexist.</p>
+          </article>
+          <article class="panel" data-reveal="stagger-3">
+            <h3>How is governance controlled?</h3>
+            <p>A bi-cameral senate requires separate supermajorities from token holders and validators, with timelocks and compliance-aware execution controls.</p>
+          </article>
+          <article class="panel" data-reveal="stagger-3">
+            <h3>Where should institutions start?</h3>
+            <p>Begin with the investor hub for gated materials, then review network, token, governance, and node operations for technical and operational diligence.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-shell" data-reveal>
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="brand" href="index.html" aria-label="Aethelred home">
+              <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38" loading="lazy">
+              <span class="brand-word">Aethelred</span>
+            </a>
+            <p>The sovereign Layer-1 designed for verifiable AI inference, ML-DSA-65 post-quantum security, and institutional-grade hardware orchestration.</p>
+          </div>
+
+          <div>
+            <p class="footer-title">Protocol</p>
+            <ul class="footer-list">
+              <li><a href="network.html">Network Architecture</a></li>
+              <li><a href="nodes.html">Node Operations</a></li>
+              <li><a href="token.html">Tokenomics</a></li>
+              <li><a href="governance.html">Governance</a></li>
+              <li><a href="investors.html">Investors</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Developers</p>
+            <ul class="footer-list">
+              <li><a href="../io/developers.html">Developer Docs</a></li>
+              <li><a href="../io/index.html">Developer Portal</a></li>
+              <li><a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub Organization</a></li>
+              <li><a href="network.html#performance">Performance Benchmarks</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="footer-title">Community</p>
+            <ul class="footer-list">
+              <li><a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener">GitHub</a></li>
+              <li><a href="https://discord.gg/aethelred" target="_blank" rel="noopener">Discord</a></li>
+              <li><a href="https://t.me/AethelredHQ" target="_blank" rel="noopener">Telegram</a></li>
+              <li><a href="https://x.com/AethelredHQ" target="_blank" rel="noopener">X</a></li>
+              <li><a href="mailto:contact@aethelred.org">contact@aethelred.org</a></li>
+              <li><a href="mailto:press@aethelred.org">Press Inquiries</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div>&copy; <span data-year></span> AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</div>
+          <div><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="cookies.html">Cookie Policy</a> · <button type="button" class="cookie-settings-link" data-cookie-settings>Cookie Settings</button></div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

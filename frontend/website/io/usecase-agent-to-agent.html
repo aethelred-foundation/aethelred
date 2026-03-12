@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent to AI Agent | Aethelred</title>
+  <meta name="description" content="Reference architecture for AI-agent-to-AI-agent workflows on Aethelred: seal-verified handoffs, proof-aware telemetry, SDK orchestration, and policy-gated action chains.">
+  <meta name="keywords" content="Aethelred agent to agent use case, multi-agent workflows, Digital Seals, LangChain, SDK orchestration, verified AI handoffs">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/usecase-agent-to-agent">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/usecase-agent-to-agent">
+  <meta property="og:title" content="AI Agent to AI Agent | Aethelred">
+  <meta property="og:description" content="Reference architecture for AI-agent-to-AI-agent workflows on Aethelred: seal-verified handoffs, proof-aware telemetry, SDK orchestration, and policy-gated action chains.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="AI Agent to AI Agent social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="AI Agent to AI Agent | Aethelred">
+  <meta name="twitter:description" content="Reference architecture for AI-agent-to-AI-agent workflows on Aethelred: seal-verified handoffs, proof-aware telemetry, SDK orchestration, and policy-gated action chains.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="AI Agent to AI Agent social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/usecase-agent-to-agent#webpage",
+        "name": "AI Agent to AI Agent",
+        "headline": "AI Agent to AI Agent",
+        "url": "https://www.aethelred.io/usecase-agent-to-agent",
+        "description": "Reference architecture for AI-agent-to-AI-agent workflows on Aethelred: seal-verified handoffs, proof-aware telemetry, SDK orchestration, and policy-gated action chains.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/usecase-agent-to-agent#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "AI Agent to AI Agent social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/usecase-agent-to-agent#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "AI Agent to AI Agent",
+            "item": "https://www.aethelred.io/usecase-agent-to-agent"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-usecase usecase-agent-to-agent">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="usecase-agent-to-agent-resources">Resources</button>
+          <div class="dropdown-panel" id="usecase-agent-to-agent-resources" role="menu">
+            <a href="#pressure" role="menuitem">Workload Pressure</a>
+            <a href="#fit" role="menuitem">Why Aethelred Fits</a>
+            <a href="#workflow" role="menuitem">Reference Workflow</a>
+            <a href="#controls" role="menuitem">Protocol Mapping</a>
+            <a href="use-cases.html" role="menuitem">All Use Cases</a>
+            <a href="developers.html" role="menuitem">Developer Docs</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="use-cases.html" class="btn btn-small btn-primary">Use Cases</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Agent to Agent Sections</summary>
+      <a href="#pressure" class="mobile-link">Workload Pressure</a>
+      <a href="#fit" class="mobile-link">Why Aethelred Fits</a>
+      <a href="#workflow" class="mobile-link">Reference Workflow</a>
+      <a href="#controls" class="mobile-link">Protocol Mapping</a>
+      <a href="use-cases.html" class="mobile-link">All Use Cases</a>
+      <a href="developers.html" class="mobile-link">Developer Docs</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Verified Multi-Agent Handoffs</p>
+          <h1 class="hero-title" id="page-title">AI Agent to AI Agent</h1>
+          <p class="hero-subtitle">Multi-agent systems break down when one agent has to trust another agent's opaque runtime, logs, or cached output. Aethelred gives agent-to-agent workflows a cleaner trust model: one agent can submit or consume a workload, produce a sealed result, and hand that result to another agent that verifies the seal before acting. SDK parity, LangChain wrappers, and proof-aware telemetry make that pattern practical without pretending a bespoke A2A protocol already exists.</p>
+          <div class="hero-tags" aria-label="Agent to Agent workload traits">
+            <span class="hero-tag">Agent Handoffs</span><span class="hero-tag">Seal Verification</span><span class="hero-tag">LangChain</span><span class="hero-tag">SDK Orchestration</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#fit" class="btn btn-primary">See Protocol Fit</a>
+            <a href="use-cases.html" class="btn btn-secondary">All Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT REFERENCE ARCHITECTURE</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>One agent can verify another agent's result</h4><p>Instead of inheriting a trust-me JSON blob, downstream agents can verify a sealed result before using it in planning or action.</p></div>
+          <div class="hero-card"><h4>Framework wrappers already exist</h4><p>LangChain wrappers emit proof-aware telemetry and trace metadata that fit naturally into agent backends and orchestration layers.</p></div>
+          <div class="hero-card"><h4>Custody and action gates stay separate</h4><p>Wallets, signing boundaries, and contract verification can stay outside the agent runtime when a workflow needs stronger control.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>4 SDKs</strong><span>Python, TypeScript, Rust, Go</span></div>
+            <div class="metric-pill"><strong>LangChain</strong><span>Proof-aware runnable wrapper</span></div>
+            <div class="metric-pill"><strong>Digital Seals</strong><span>Portable result trust object</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="pressure" aria-labelledby="pressure-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workload Pressure</p>
+          <h2 class="section-title" id="pressure-title">Why this workload is hard</h2>
+          <p class="section-lead">Agent systems need a stronger trust boundary than raw tool calls and shared logs.</p>
+        </div>
+        <div class="grid grid-3 usecase-pressure-grid">
+          <article class="card"><h3>Opaque handoffs create hidden trust</h3><p>If Agent B cannot verify what Agent A actually ran, the chain inherits Agent A's runtime assumptions.</p></article>
+          <article class="card"><h3>Toolchain sprawl weakens observability</h3><p>Multi-agent systems quickly spread across different runtimes, wrappers, queues, and orchestration layers.</p></article>
+          <article class="card"><h3>Automated actions need gating</h3><p>The moment an agent can trigger a transaction or a critical workflow, result verification needs to be explicit.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="fit" aria-labelledby="fit-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Why Aethelred Fits</p>
+          <h2 class="section-title" id="fit-title">Map the workload to the current protocol surface</h2>
+          <p class="section-lead">Aethelred fits agent-to-agent workflows when the design goal is to let one agent verify another agent's computational output before acting on it.</p>
+        </div>
+        <div class="grid grid-3 usecase-fit-grid">
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Sealed outputs for agent handoff</h3></div></div></div><p>Agent A can produce a verifiable output object and Agent B can check the seal or output commitment before using it.</p><div class="tag-list stack-top-12"><span class="tag">Seal Verify</span><span class="tag">Output Commitment</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Proof-aware telemetry for orchestration</h3></div></div></div><p>The current LangChain integration wraps runnables so invoke, ainvoke, batch, and abatch emit verification-aware trace metadata.</p><div class="tag-list stack-top-12"><span class="tag">Trace Metadata</span><span class="tag">Runnable Wrapper</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Cross-language agent surfaces</h3></div></div></div><p>Four official SDKs keep jobs, seals, models, and verification flows aligned across different agent runtimes.</p><div class="tag-list stack-top-12"><span class="tag">Python</span><span class="tag">TypeScript</span><span class="tag">Rust</span><span class="tag">Go</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Workflow</p>
+          <h2 class="section-title" id="workflow-title">A current-state flow for agent to agent workloads</h2>
+          <p class="section-lead">A sensible A2A workflow verifies the handoff before the next agent consumes it.</p>
+        </div>
+        <div class="grid grid-4 usecase-workflow-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Agent A submits or evaluates a job</h3><p>The upstream agent runs the model through the current SDK or toolchain surface.</p><div class="tag-list"><span class="tag">SDK Submit</span><span class="tag">Toolchain</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>The network verifies and seals the result</h3><p>TEE, zkML, or hybrid verification turns the output into a portable trust object.</p><div class="tag-list"><span class="tag">TEE / zkML</span><span class="tag">Digital Seal</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Agent B verifies before using the output</h3><p>The downstream agent checks the seal or output commitment rather than inheriting runtime trust from Agent A.</p><div class="tag-list"><span class="tag">Seal Verify</span><span class="tag">API / SDK</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Action gates stay outside the agent if needed</h3><p>If the workflow triggers value movement or contracts, keep signing and policy checks in their own trust boundary.</p><div class="tag-list"><span class="tag">Wallets</span><span class="tag">Contracts</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="controls" aria-labelledby="controls-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Protocol Mapping</p>
+          <h2 class="section-title" id="controls-title">Which Aethelred surfaces matter most</h2>
+          <p class="section-lead">These are the protocol surfaces that matter most in multi-agent systems.</p>
+        </div>
+        <div class="table-wrap usecase-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Protocol Surface</th><th>Why It Matters</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Inter-agent result trust</td><td>Digital Seals</td><td>A downstream agent can verify a seal instead of accepting an upstream agent's claim at face value.</td></tr>
+              <tr><td>Trace and orchestration context</td><td>LangChain wrapper / proof-aware telemetry</td><td>Verification-aware traces make it easier to audit which agent produced which result.</td></tr>
+              <tr><td>Cross-runtime parity</td><td>Official SDKs</td><td>Agents written in different languages can share the same job and seal model.</td></tr>
+              <tr><td>Action authorization</td><td>Wallet and signing boundary</td><td>Critical follow-on actions can be gated outside the agent runtime instead of collapsing trust into one process.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Use sealed handoffs before you claim agent trust.</h3>
+            <p>The current platform is already strong for verifiable inter-agent result exchange through SDKs, seals, and proof-aware telemetry. Build to that concrete surface first.</p>
+          </div>
+          <a href="developers.html" class="btn btn-primary">Open Developer Docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise Corridors | Aethelred</title>
+  <meta name="description" content="Current reference architecture for enterprise corridors on Aethelred: policy-gated routing, sovereign data boundaries, TEE and zk or hybrid verification, Digital Seals, and HSM-aware operational controls.">
+  <meta name="keywords" content="Aethelred enterprise corridors, sovereign data, confidential compute, Digital Seals, TEE attestation, zk proofs, enterprise AI architecture">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/enterprise-corridors">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/enterprise-corridors">
+  <meta property="og:title" content="Enterprise Corridors | Aethelred">
+  <meta property="og:description" content="Current-state enterprise workflow reference for policy gates, sovereign data handling, confidential compute, Digital Seals, and HSM-aware operations on Aethelred.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Enterprise Corridors social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Enterprise Corridors | Aethelred">
+  <meta name="twitter:description" content="Reference architecture for enterprise-grade AI corridors on Aethelred using policy gates, TEE and zk verification, Digital Seals, and sovereign data controls.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Enterprise Corridors social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/enterprise-corridors#webpage",
+        "name": "Enterprise Corridors",
+        "headline": "Enterprise Corridors",
+        "url": "https://www.aethelred.io/enterprise-corridors",
+        "description": "Current reference architecture for enterprise corridors on Aethelred: policy-gated routing, sovereign data boundaries, TEE and zk or hybrid verification, Digital Seals, and HSM-aware operational controls.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/enterprise-corridors#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Enterprise Corridors social preview"
+        },
+        "dateModified": "2026-03-12",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/enterprise-corridors#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Enterprise Corridors",
+            "item": "https://www.aethelred.io/enterprise-corridors"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-usecase usecase-enterprise">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="enterprise-resources">Resources</button>
+          <div class="dropdown-panel" id="enterprise-resources" role="menu">
+            <a href="#pressure" role="menuitem">Workload Pressure</a>
+            <a href="#architecture" role="menuitem">Architecture</a>
+            <a href="#modes" role="menuitem">Corridor Modes</a>
+            <a href="#workflow" role="menuitem">Reference Workflow</a>
+            <a href="#controls" role="menuitem">Protocol Mapping</a>
+            <a href="#boundary" role="menuitem">Current Boundary</a>
+            <a href="use-cases.html" role="menuitem">All Use Cases</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="use-cases.html" class="btn btn-small btn-primary">Use Cases</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Enterprise Sections</summary>
+      <a href="#pressure" class="mobile-link">Workload Pressure</a>
+      <a href="#architecture" class="mobile-link">Architecture</a>
+      <a href="#modes" class="mobile-link">Corridor Modes</a>
+      <a href="#workflow" class="mobile-link">Reference Workflow</a>
+      <a href="#controls" class="mobile-link">Protocol Mapping</a>
+      <a href="#boundary" class="mobile-link">Current Boundary</a>
+      <a href="use-cases.html" class="mobile-link">All Use Cases</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Policy-Gated Enterprise AI</p>
+          <h1 class="hero-title" id="page-title">Enterprise <span class="gradient-word">Corridors</span></h1>
+          <p class="hero-subtitle">This page turns the older corridor mock into a current-state reference architecture for enterprise and institutional workflows on Aethelred. The corridor is not a separate managed product. It is the operating path created when private systems, policy checks, confidential compute, zk or hybrid verification, Digital Seals, and HSM-aware controls are composed correctly using the protocol surfaces already documented across the site.</p>
+          <div class="hero-tags" aria-label="Enterprise corridor traits">
+            <span class="hero-tag">Sovereign Data</span>
+            <span class="hero-tag">Policy Gates</span>
+            <span class="hero-tag">TEE + zk + Hybrid</span>
+            <span class="hero-tag">Digital Seals</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#architecture" class="btn btn-primary">Review Architecture</a>
+            <a href="use-cases.html" class="btn btn-secondary">All Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT PROTOCOL REFERENCE ARCHITECTURE</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Keep private systems private</h4><p>Enterprise applications can preserve internal policy, data-classification, and signer boundaries instead of collapsing everything into one runtime.</p></div>
+          <div class="hero-card"><h4>Promote only policy-clean workloads</h4><p>Use sanctions, transfer, retention, and jurisdiction checks before jobs move from internal preparation into shared verification infrastructure.</p></div>
+          <div class="hero-card"><h4>Export evidence, not blind trust</h4><p>The useful output is a Digital Seal and verification trail that downstream systems can inspect before acting.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>4 TEEs</strong><span>Current confidential-compute platforms</span></div>
+            <div class="metric-pill"><strong>5 Proofs</strong><span>Current zk proof systems</span></div>
+            <div class="metric-pill"><strong>10 services</strong><span>Documented local rehearsal stack</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="pressure" aria-labelledby="pressure-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workload Pressure</p>
+          <h2 class="section-title" id="pressure-title">Why enterprise AI needs a corridor model</h2>
+          <p class="section-lead">Enterprise and institutional AI systems rarely fail because a model was unavailable. They fail when data boundaries, policy, execution evidence, and action controls are not kept aligned.</p>
+        </div>
+        <div class="grid grid-3 usecase-pressure-grid">
+          <article class="card"><h3>Private data cannot move casually</h3><p>Financial, healthcare, defense, and industrial workloads often require confidential execution and explicit jurisdiction or transfer controls before compute starts.</p></article>
+          <article class="card"><h3>Multiple trust zones must agree</h3><p>The application, policy engine, wallet or HSM boundary, validator cohort, and downstream action system all have different trust assumptions.</p></article>
+          <article class="card"><h3>Evidence must outlive the runtime</h3><p>An enterprise decision path is weak if the output is only a log line. It is stronger when another system can inspect the seal, evidence, and policy trail later.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="architecture" aria-labelledby="architecture-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Architecture</p>
+          <h2 class="section-title" id="architecture-title">A current corridor architecture built from documented protocol surfaces</h2>
+          <p class="section-lead">The corridor is the path from internal systems to verifiable outputs. It combines enterprise policy controls with Aethelred's current verification, sealing, and rollout surfaces.</p>
+        </div>
+        <div class="grid grid-4 stack-bottom-16">
+          <article class="card"><p class="kpi-label">TEE Platforms</p><p class="kpi-value">4</p><p class="detail-label">SGX, Nitro, SEV-SNP, H100 CC</p></article>
+          <article class="card"><p class="kpi-label">Proof Systems</p><p class="kpi-value">5</p><p class="detail-label">EZKL, RISC Zero, Plonky2, Halo2, Groth16</p></article>
+          <article class="card"><p class="kpi-label">Seal Threshold</p><p class="kpi-value mono">&gt;= 2/3 + 1</p><p class="detail-label">Validator agreement power</p></article>
+          <article class="card"><p class="kpi-label">IBC Port</p><p class="kpi-value mono">aethelred.seal</p><p class="detail-label">Relay path for seals</p></article>
+        </div>
+        <div class="enterprise-diagram-shell">
+          <p class="enterprise-diagram-title">Enterprise Corridor Architecture</p>
+          <svg class="enterprise-diagram" viewBox="0 0 1200 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="enterprise-arch-title enterprise-arch-desc">
+            <title id="enterprise-arch-title">Enterprise Corridor Architecture</title>
+            <desc id="enterprise-arch-desc">A left to right diagram showing enterprise systems, policy gates, Aethelred verification lanes, validator agreement, and downstream seal consumption.</desc>
+            <defs>
+              <linearGradient id="enterpriseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7f1224"/>
+                <stop offset="100%" stop-color="#c8102e"/>
+              </linearGradient>
+              <linearGradient id="enterpriseSoft" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.96"/>
+                <stop offset="100%" stop-color="#f4eeee" stop-opacity="0.92"/>
+              </linearGradient>
+              <marker id="enterpriseArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                <path d="M0 0L10 5L0 10Z" fill="#c8102e"/>
+              </marker>
+            </defs>
+
+            <rect x="40" y="40" width="250" height="360" rx="24" fill="url(#enterpriseSoft)" stroke="#c8102e" stroke-opacity="0.22"/>
+            <text x="165" y="82" text-anchor="middle" fill="#c8102e" font-size="18" font-weight="700">Enterprise Domain</text>
+            <rect x="70" y="110" width="190" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="165" y="145" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">Private datasets and models</text>
+            <rect x="70" y="188" width="190" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="165" y="223" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">Internal apps and orchestration</text>
+            <rect x="70" y="266" width="190" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="165" y="301" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">Policy registry and classifiers</text>
+            <rect x="70" y="344" width="190" height="58" rx="16" fill="#fff6f7" stroke="#c8102e" stroke-opacity="0.3"/>
+            <text x="165" y="374" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">Wallet or HSM action boundary</text>
+            <text x="165" y="394" text-anchor="middle" fill="#6b5e60" font-size="12">Keep private keys and runtime separate</text>
+
+            <rect x="350" y="120" width="220" height="200" rx="28" fill="url(#enterpriseGrad)"/>
+            <text x="460" y="158" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Corridor Controls</text>
+            <rect x="382" y="184" width="156" height="44" rx="14" fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-opacity="0.28"/>
+            <text x="460" y="212" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="600">Jurisdiction and sanctions gate</text>
+            <rect x="382" y="240" width="156" height="44" rx="14" fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-opacity="0.28"/>
+            <text x="460" y="268" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="600">Verification mode selector</text>
+            <rect x="382" y="296" width="156" height="44" rx="14" fill="#ffffff" fill-opacity="0.18" stroke="#ffffff" stroke-opacity="0.28"/>
+            <text x="460" y="324" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="600">Submission and replay controls</text>
+
+            <rect x="630" y="40" width="300" height="360" rx="24" fill="url(#enterpriseSoft)" stroke="#c8102e" stroke-opacity="0.22"/>
+            <text x="780" y="82" text-anchor="middle" fill="#c8102e" font-size="18" font-weight="700">Aethelred Verification Fabric</text>
+            <rect x="662" y="110" width="236" height="54" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="780" y="144" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">TEE execution lane</text>
+            <rect x="662" y="176" width="236" height="54" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="780" y="210" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">zk or hybrid verification lane</text>
+            <rect x="662" y="242" width="236" height="54" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="780" y="276" text-anchor="middle" fill="#111111" font-size="16" font-weight="600">Validator agreement and vote extensions</text>
+            <rect x="662" y="308" width="236" height="70" rx="16" fill="#fff6f7" stroke="#c8102e" stroke-opacity="0.32"/>
+            <text x="780" y="340" text-anchor="middle" fill="#111111" font-size="16" font-weight="700">Digital Seal</text>
+            <text x="780" y="361" text-anchor="middle" fill="#6b5e60" font-size="12">Portable evidence once agreement reaches &gt;= 2/3 + 1</text>
+
+            <rect x="970" y="120" width="190" height="200" rx="24" fill="url(#enterpriseSoft)" stroke="#c8102e" stroke-opacity="0.22"/>
+            <text x="1065" y="158" text-anchor="middle" fill="#c8102e" font-size="18" font-weight="700">Downstream Use</text>
+            <rect x="998" y="186" width="134" height="42" rx="14" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="1065" y="212" text-anchor="middle" fill="#111111" font-size="14" font-weight="600">Internal review systems</text>
+            <rect x="998" y="240" width="134" height="42" rx="14" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="1065" y="266" text-anchor="middle" fill="#111111" font-size="14" font-weight="600">Contracts and APIs</text>
+            <rect x="998" y="294" width="134" height="42" rx="14" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="1065" y="320" text-anchor="middle" fill="#111111" font-size="14" font-weight="600">IBC relay on aethelred.seal</text>
+
+            <path d="M290 220H336" stroke="#c8102e" stroke-width="4" marker-end="url(#enterpriseArrow)"/>
+            <path d="M570 220H616" stroke="#c8102e" stroke-width="4" marker-end="url(#enterpriseArrow)"/>
+            <path d="M930 220H956" stroke="#c8102e" stroke-width="4" marker-end="url(#enterpriseArrow)"/>
+            <path d="M165 420V456H1065V344" stroke="#c8102e" stroke-width="3" stroke-dasharray="10 10" fill="none"/>
+            <text x="618" y="486" text-anchor="middle" fill="#6b5e60" font-size="14" font-weight="600">Evidence returns to enterprise systems before higher-risk actions are approved</text>
+          </svg>
+          <p class="enterprise-diagram-caption">This diagram shows a current protocol composition path rather than a managed-service product tier.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="modes" aria-labelledby="modes-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Corridor Modes</p>
+          <h2 class="section-title" id="modes-title">Different lanes solve different enterprise trust problems</h2>
+          <p class="section-lead">A usable corridor is usually a combination of policy, compute, evidence, and action lanes rather than one monolithic deployment claim.</p>
+        </div>
+        <div class="grid grid-4 usecase-fit-grid">
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">LANE</span><div><p class="detail-kicker">Confidentiality</p><h3>TEE lane</h3></div></div></div><p>Use TEE-backed blind compute when the input, model, or intermediate state should stay inside an attested boundary.</p><div class="tag-list stack-top-12"><span class="tag">SGX</span><span class="tag">Nitro</span><span class="tag">SEV-SNP</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">LANE</span><div><p class="detail-kicker">Mathematical Assurance</p><h3>zk or hybrid lane</h3></div></div></div><p>Use zk proof systems when mathematical verification matters, and hybrid verification when confidentiality and proof both matter.</p><div class="tag-list stack-top-12"><span class="tag">5 Proofs</span><span class="tag">Hybrid</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">LANE</span><div><p class="detail-kicker">Policy</p><h3>Regulatory gate lane</h3></div></div></div><p>Use the sandbox and policy tooling to gate workloads with GDPR, UAE Federal Decree-Law, PDPA, HIPAA, OFAC, EU, and UN-aligned checks before promotion.</p><div class="tag-list stack-top-12"><span class="tag">GDPR</span><span class="tag">HIPAA</span><span class="tag">OFAC / EU / UN</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">LANE</span><div><p class="detail-kicker">Action</p><h3>Signer-controlled action lane</h3></div></div></div><p>Keep value transfer and final action approval behind wallet or HSM boundaries so the application runtime never becomes the final authority alone.</p><div class="tag-list stack-top-12"><span class="tag">Wallets</span><span class="tag">HSM</span></div></article>
+        </div>
+        <div class="enterprise-diagram-shell stack-top-16">
+          <p class="enterprise-diagram-title">Policy to Evidence Lifecycle</p>
+          <svg class="enterprise-diagram" viewBox="0 0 1200 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="enterprise-flow-title enterprise-flow-desc">
+            <title id="enterprise-flow-title">Policy to Evidence Lifecycle</title>
+            <desc id="enterprise-flow-desc">A horizontal lifecycle diagram showing classify, select mode, execute, seal, and consume stages across policy, compute, evidence, and action lanes.</desc>
+            <defs>
+              <marker id="enterpriseArrowSmall" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                <path d="M0 0L10 5L0 10Z" fill="#c8102e"/>
+              </marker>
+            </defs>
+            <rect x="40" y="52" width="1120" height="246" rx="28" fill="#ffffff" fill-opacity="0.92" stroke="#c8102e" stroke-opacity="0.18"/>
+            <text x="100" y="100" fill="#c8102e" font-size="14" font-weight="700">POLICY</text>
+            <text x="100" y="158" fill="#c8102e" font-size="14" font-weight="700">COMPUTE</text>
+            <text x="100" y="216" fill="#c8102e" font-size="14" font-weight="700">EVIDENCE</text>
+            <text x="100" y="274" fill="#c8102e" font-size="14" font-weight="700">ACTION</text>
+
+            <rect x="160" y="76" width="176" height="58" rx="16" fill="#fff6f7" stroke="#c8102e" stroke-opacity="0.28"/>
+            <text x="248" y="104" text-anchor="middle" fill="#111111" font-size="15" font-weight="700">Classify workload</text>
+            <text x="248" y="123" text-anchor="middle" fill="#6b5e60" font-size="12">jurisdiction, retention, sanctions scope</text>
+
+            <rect x="380" y="134" width="176" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="468" y="162" text-anchor="middle" fill="#111111" font-size="15" font-weight="700">Select trust mode</text>
+            <text x="468" y="181" text-anchor="middle" fill="#6b5e60" font-size="12">TEE, zk, or hybrid</text>
+
+            <rect x="600" y="134" width="176" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="688" y="162" text-anchor="middle" fill="#111111" font-size="15" font-weight="700">Execute and verify</text>
+            <text x="688" y="181" text-anchor="middle" fill="#6b5e60" font-size="12">validator and proof-aware execution</text>
+
+            <rect x="820" y="192" width="176" height="58" rx="16" fill="#fff6f7" stroke="#c8102e" stroke-opacity="0.28"/>
+            <text x="908" y="220" text-anchor="middle" fill="#111111" font-size="15" font-weight="700">Mint Digital Seal</text>
+            <text x="908" y="239" text-anchor="middle" fill="#6b5e60" font-size="12">portable evidence after agreement</text>
+
+            <rect x="1040" y="250" width="88" height="58" rx="16" fill="#ffffff" stroke="#d8c9cc"/>
+            <text x="1084" y="278" text-anchor="middle" fill="#111111" font-size="15" font-weight="700">Act</text>
+            <text x="1084" y="297" text-anchor="middle" fill="#6b5e60" font-size="12">behind signer gate</text>
+
+            <path d="M336 105H364" stroke="#c8102e" stroke-width="3" marker-end="url(#enterpriseArrowSmall)"/>
+            <path d="M556 163H584" stroke="#c8102e" stroke-width="3" marker-end="url(#enterpriseArrowSmall)"/>
+            <path d="M776 221H804" stroke="#c8102e" stroke-width="3" marker-end="url(#enterpriseArrowSmall)"/>
+            <path d="M996 279H1022" stroke="#c8102e" stroke-width="3" marker-end="url(#enterpriseArrowSmall)"/>
+
+            <path d="M248 134V158" stroke="#c8102e" stroke-width="2" stroke-dasharray="6 6"/>
+            <path d="M908 250V274" stroke="#c8102e" stroke-width="2" stroke-dasharray="6 6"/>
+            <text x="600" y="330" text-anchor="middle" fill="#6b5e60" font-size="13" font-weight="600">Policy must gate compute, compute must produce evidence, and evidence should be verified before higher-risk actions proceed.</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="workflow" aria-labelledby="workflow-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Workflow</p>
+          <h2 class="section-title" id="workflow-title">How to rehearse an enterprise corridor with the current stack</h2>
+          <p class="section-lead">The shortest honest route is to rehearse the corridor locally, validate policy and evidence, then promote toward public infrastructure only when the workflow is stable.</p>
+        </div>
+        <div class="grid grid-4 usecase-workflow-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Model the policy boundary</h3><p>Classify the workload by jurisdiction, sensitivity, transfer constraints, and sanctions exposure before it reaches the network surface.</p><div class="tag-list"><span class="tag">Jurisdiction</span><span class="tag">Retention</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>Rehearse in local and sandbox environments</h3><p>Use the documented 10-service devnet and Infinite Sandbox to test policy logic, verification mode selection, and evidence handling before public rollout.</p><div class="tag-list"><span class="tag">10 Services</span><span class="tag">3 Validators</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Execute under the right verification mode</h3><p>Use TEE for confidentiality, zk for proof, or hybrid when both must agree before the workload is accepted.</p><div class="tag-list"><span class="tag">TEE</span><span class="tag">Hybrid</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Seal, verify, then approve action</h3><p>Downstream systems should inspect the Digital Seal or related evidence before transfer, settlement, publication, or irreversible operational action occurs.</p><div class="tag-list"><span class="tag">Digital Seal</span><span class="tag">Signer Gate</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="controls" aria-labelledby="controls-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Protocol Mapping</p>
+          <h2 class="section-title" id="controls-title">Which documented surfaces matter most in enterprise corridors</h2>
+          <p class="section-lead">These are the current Aethelred surfaces that form a realistic corridor design without inventing managed infrastructure offerings.</p>
+        </div>
+        <div class="table-wrap usecase-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Protocol Surface</th><th>Why It Matters</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Jurisdiction and policy gating</td><td>Infinite Sandbox and regulatory checks</td><td>The documented policy surface covers GDPR, UAE Federal Decree-Law, PDPA, HIPAA, and OFAC, EU, and UN screening before workload promotion.</td></tr>
+              <tr><td>Confidential execution</td><td>TEE attestation</td><td>Blind compute keeps sensitive inputs inside an attested boundary while still producing reviewable evidence.</td></tr>
+              <tr><td>Mathematical verification</td><td>zk proofs and hybrid mode</td><td>The current zk surface exposes five proof systems and supports hybrid flows when proof and confidentiality both matter.</td></tr>
+              <tr><td>Portable audit evidence</td><td>Digital Seals</td><td>Once validator agreement reaches <span class="mono">&gt;= 2/3 + 1</span>, the result can be promoted into a seal and later relayed over <span class="mono">aethelred.seal</span>.</td></tr>
+              <tr><td>Custody separation</td><td>Wallet manifests and HSM handoff</td><td>The documented wallet surface supports unsigned manifests so application runtimes do not need to hold final signing authority.</td></tr>
+              <tr><td>Operator-grade deployment</td><td>Foundation node standards</td><td>The node and network pages describe sentry boundaries, HSM-aware signer isolation, approved TEE profiles, and operator review requirements.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Enterprise corridors are strongest when they treat evidence as a first-class output.</h3>
+            <p>Use policy gating, confidential compute, seal generation, and signer separation as one design, not as disconnected features.</p>
+          </div>
+          <a href="documentation.html" class="btn btn-primary">Open Documentation</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="boundary" aria-labelledby="boundary-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Current Boundary</p>
+          <h2 class="section-title" id="boundary-title">What this page does not claim as of March 12, 2026</h2>
+          <p class="section-lead">The attached legacy page marketed a product tier, uptime guarantees, and compliance certifications that the current public site does not publish. This page keeps those claims out on purpose.</p>
+        </div>
+        <div class="grid grid-2 enterprise-boundary-grid">
+          <article class="card enterprise-boundary-card"><h3>No public enterprise pricing sheet</h3><p>The current public Aethelred site does not publish monthly pricing tiers, fixed request bundles, or contract pricing for enterprise corridors.</p></article>
+          <article class="card enterprise-boundary-card"><h3>No public SLA commitment</h3><p>The site does not currently publish contractual uptime, latency, or support-response guarantees for a corridor-specific service.</p></article>
+          <article class="card enterprise-boundary-card"><h3>No public managed private-validator SKU</h3><p>The protocol documents validator standards and operator review, but it does not publish a managed private validator product page with dedicated-cluster promises.</p></article>
+          <article class="card enterprise-boundary-card"><h3>Public testnet still activates at launch</h3><p>Endpoint hosts, faucet, explorer, GraphQL, and gRPC are documented for launch planning, but public activation remains tied to the testnet rollout window.</p></article>
+        </div>
+        <div class="enterprise-note stack-top-16">
+          <strong>Practical reading:</strong>
+          <p>If your team needs a corridor today, use this page as a reference architecture and then validate the exact operating model through the <a class="body-link" href="sandbox.html">Infinite Sandbox</a>, the <a class="body-link" href="wallets.html">wallet and signing surface</a>, the <a class="body-link" href="tee.html">TEE page</a>, the <a class="body-link" href="zk-proofs.html">zk proofs page</a>, and the <a class="body-link" href="../org/nodes.html">foundation node standards</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

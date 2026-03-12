@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Documentation | Aethelred</title>
+  <meta name="description" content="Complete developer documentation for Aethelred: quick starts for Python, TypeScript, Rust, and Go, EVM precompiles, APIs, and SDK modules.">
+  <meta name="keywords" content="Aethelred developer docs, SDK, API reference, EVM precompile, verifiable AI">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/developers">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/developers">
+  <meta property="og:title" content="Developer Documentation | Aethelred">
+  <meta property="og:description" content="Everything needed to build verifiable AI applications on Aethelred.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Developer Documentation social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Developer Documentation | Aethelred">
+  <meta name="twitter:description" content="SDK quick starts, precompiles, API reference, and integration guides for verifiable AI apps.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Developer Documentation social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/developers#webpage",
+        "name": "Developer Documentation",
+        "url": "https://www.aethelred.io/developers",
+        "description": "Complete developer documentation for Aethelred: quick starts for Python, TypeScript, Rust, and Go, EVM precompiles, APIs, and SDK modules.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/developers#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Developer Documentation social preview"
+        },
+        "dateModified": "2026-03-12",
+        "headline": "Developer Documentation",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/developers#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Developers",
+            "item": "https://www.aethelred.io/developers"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-developers">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="developers.html" class="nav-link is-active">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="dev-resources">Resources</button>
+          <div class="dropdown-panel" id="dev-resources" role="menu">
+            <a href="#quickstart" role="menuitem">Quick Starts</a>
+            <a href="documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+            <a href="digital-seal.html" role="menuitem">Digital Seals</a>
+            <a href="zk-proofs.html" role="menuitem">ZK Proofs</a>
+            <a href="tee.html" role="menuitem">TEE Attestation</a>
+            <a href="wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="glossary.html" role="menuitem">Glossary</a>
+            <a href="comparison.html" role="menuitem">Comparison</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="stablecoin-infrastructure.html" role="menuitem">Stablecoin Infrastructure</a>
+            <a href="#contracts" role="menuitem">EVM Precompiles</a>
+            <a href="#api" role="menuitem">API Reference</a>
+            <a href="../org/index.html" role="menuitem">Foundation</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="tools.html" class="btn btn-small btn-primary">Explore Tools</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link">Platform</a>
+    <a href="developers.html" class="mobile-link is-active">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Developer Sections</summary>
+      <a href="#quickstart" class="mobile-link">Quick Starts</a>
+      <a href="documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+      <a href="digital-seal.html" class="mobile-link">Digital Seals</a>
+      <a href="zk-proofs.html" class="mobile-link">ZK Proofs</a>
+      <a href="tee.html" class="mobile-link">TEE Attestation</a>
+      <a href="wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="glossary.html" class="mobile-link">Glossary</a>
+      <a href="comparison.html" class="mobile-link">Comparison</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="stablecoin-infrastructure.html" class="mobile-link">Stablecoin Infrastructure</a>
+      <a href="#contracts" class="mobile-link">Precompiles</a>
+      <a href="#api" class="mobile-link">API</a>
+      <a href="#modules" class="mobile-link">SDK Modules</a>
+      <a href="../org/index.html" class="mobile-link">Foundation</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Developer Hub</p>
+          <h1 class="hero-title" id="page-title">Developer <span class="gradient-word">Documentation</span></h1>
+          <p class="hero-subtitle">Everything you need to build, test, and ship verifiable AI applications on Aethelred with production-grade APIs and SDKs. Follow an implementation path that starts with local iteration, extends through the <a class="body-link" href="tools.html">developer tools stack</a>, validates against the <a class="body-link" href="testnet.html">testnet configuration</a>, and continues into the <a class="body-link" href="community.html">builder community</a> for support and governance feedback.</p>
+          <div class="hero-tags" aria-label="Developer capabilities">
+            <span class="hero-tag">SDK Quickstarts</span>
+            <span class="hero-tag">EVM Precompiles</span>
+            <span class="hero-tag">REST + WebSocket API</span>
+            <span class="hero-tag">Framework Integrations</span>
+          </div>
+          <div class="hero-actions">
+            <a href="documentation.html" class="btn btn-primary">Open Documentation Hub</a>
+            <a href="#quickstart" class="btn btn-secondary">View Quick Start</a>
+          </div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Coverage</h4>
+            <p>SDK quick starts, smart contract precompiles, API docs, and framework integrations.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Languages</h4>
+            <p>Python, TypeScript, Rust, and Go with consistent abstractions for job, seal, and verification flows.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Build Path</h4>
+            <p>From local devnet simulation to testnet deployment and production-grade observability patterns.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="quickstart" aria-labelledby="quickstart-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Quick Start Guides</p>
+          <h2 class="section-title" id="quickstart-title">Run your first verifiable AI workflow</h2>
+          <p class="section-lead">Get up and running quickly in your preferred language.</p>
+        </div>
+
+        <div class="tabs-wrap" data-tab-group data-code-typing-group>
+          <div class="tab-buttons" role="tablist" aria-label="SDK quick starts">
+            <button class="tab-button is-active" data-tab-target="python" aria-selected="true">Python</button>
+            <button class="tab-button" data-tab-target="typescript" aria-selected="false">TypeScript</button>
+            <button class="tab-button" data-tab-target="rust" aria-selected="false">Rust</button>
+            <button class="tab-button" data-tab-target="go" aria-selected="false">Go</button>
+          </div>
+
+          <div class="tab-pane is-active" data-tab-panel="python">
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">python quick start</span>
+              </div>
+<pre><code data-code-typing># Install: pip install aethelred-sdk
+import hashlib
+
+from aethelred import AethelredClient, ProofType
+
+client = AethelredClient("https://rpc.testnet.aethelred.org")
+prompt = b'{"prompt":"Hello AI"}'
+
+submit = client.jobs.submit(
+    model_hash=bytes.fromhex("09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3"),
+    input_hash=hashlib.sha256(prompt).digest(),
+    proof_type=ProofType.HYBRID,
+    priority=5,
+    max_gas=1_000_000,
+    timeout_blocks=120,
+    metadata={"source": "developers-quickstart"},
+)
+print(f"job id: {submit.job_id}")
+
+job = client.jobs.wait_for_completion(submit.job_id, poll_interval=2.0, timeout=120.0)
+if job.status.value != "JOB_STATUS_COMPLETED":
+    raise RuntimeError(f"job failed with status={job.status.value}")
+
+seals = client.seals.list(model_hash="09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3")
+seal = next((item for item in seals if item.job_id == job.id), None)
+if seal is None:
+    raise RuntimeError(f"no seal found for job {job.id}")
+
+verification = client.seals.verify(seal.id)
+print(f"seal valid: {verification.valid}")</code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" data-tab-panel="typescript">
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">typescript quick start</span>
+              </div>
+<pre><code data-code-typing>// Install: npm install @aethelred/sdk
+import { AethelredClient, JobStatus, Network, ProofType } from '@aethelred/sdk';
+
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function main() {
+  const modelHash = '09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3';
+  const client = new AethelredClient({ network: Network.TESTNET });
+
+  const submit = await client.jobs.submit({
+    modelHash,
+    inputHash: await sha256Hex(JSON.stringify({ prompt: 'Hello AI' })),
+    proofType: ProofType.HYBRID,
+    priority: 5,
+    maxGas: '1000000',
+    timeoutBlocks: 120,
+    metadata: { source: 'developers-quickstart' },
+  });
+  console.log(`job id: ${submit.jobId}`);
+
+  const job = await client.jobs.waitForCompletion(submit.jobId, {
+    pollInterval: 2000,
+    timeout: 120000,
+  });
+  if (job.status !== JobStatus.COMPLETED) {
+    throw new Error(`job failed with status=${job.status}`);
+  }
+
+  const seals = await client.seals.list();
+  const seal = seals.find((item) => item.jobId === job.id);
+  if (!seal) {
+    throw new Error(`no seal found for job ${job.id}`);
+  }
+
+  const verification = await client.seals.verify(seal.id);
+  console.log(`seal valid: ${verification.valid}`);
+}
+
+main().catch((error) => {
+  console.error(error);
+});</code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" data-tab-panel="rust">
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">rust quick start</span>
+              </div>
+<pre><code data-code-typing>// Cargo.toml: aethelred-sdk = "1"
+use aethelred_sdk::{
+    jobs::SubmitJobRequest, AethelredClient, JobStatus, Network, ProofType,
+};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    let client = AethelredClient::new(Network::Testnet).await?;
+
+    let submit = client
+        .jobs()
+        .submit(SubmitJobRequest {
+            model_hash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3".into(),
+            input_hash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09".into(),
+            proof_type: Some(ProofType::ProofTypeHybrid),
+            priority: Some(5),
+            max_gas: Some("1000000".into()),
+            timeout_blocks: Some(120),
+        })
+        .await?;
+    println!("job id: {}", submit.job_id);
+
+    let job = client
+        .jobs()
+        .wait_for_completion(
+            &amp;submit.job_id,
+            Duration::from_secs(2),
+            Duration::from_secs(120),
+        )
+        .await?;
+    if job.status != JobStatus::JobStatusCompleted {
+        return Err(format!("job failed with status {:?}", job.status).into());
+    }
+
+    let seals = client.seals().list(None).await?;
+    let seal = seals
+        .into_iter()
+        .find(|item| item.job_id == job.id)
+        .ok_or_else(|| format!("no seal found for job {}", job.id))?;
+
+    let verification = client.seals().verify(&amp;seal.id).await?;
+    println!("seal valid: {}", verification.valid);
+    Ok(())
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" data-tab-panel="go">
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="terminal-dots"><span></span><span></span><span></span></div>
+                <span class="terminal-label">go quick start</span>
+              </div>
+<pre><code data-code-typing>// Install: go get github.com/aethelred/sdk-go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/aethelred/sdk-go/client"
+    "github.com/aethelred/sdk-go/jobs"
+    "github.com/aethelred/sdk-go/types"
+)
+
+func main() {
+    ctx := context.Background()
+
+    c, err := client.NewClient(client.Testnet)
+    if err != nil {
+        panic(err)
+    }
+
+    submit, err := c.Jobs.Submit(ctx, jobs.SubmitRequest{
+        ModelHash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3",
+        InputHash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09",
+        ProofType: types.ProofTypeHybrid,
+        Priority:  5,
+        MaxGas:    "1000000",
+        TimeoutBlocks: 120,
+        Metadata:  map[string]string{"source": "developers-quickstart"},
+    })
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("job id: %s\n", submit.JobID)
+
+    job, err := c.Jobs.WaitForCompletion(ctx, submit.JobID, 2*time.Second, 120*time.Second)
+    if err != nil {
+        panic(err)
+    }
+    if job.Status != types.JobStatusCompleted {
+        panic(fmt.Sprintf("job failed with status %s", job.Status))
+    }
+
+    seals, err := c.Seals.List(ctx, nil)
+    if err != nil {
+        panic(err)
+    }
+
+    var sealID string
+    for _, seal := range seals {
+        if seal.JobID == job.ID {
+            sealID = seal.ID
+            break
+        }
+    }
+    if sealID == "" {
+        panic(fmt.Sprintf("no seal found for job %s", job.ID))
+    }
+
+    verification, err := c.Seals.Verify(ctx, sealID)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("seal valid: %t\n", verification.Valid)
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="contracts" aria-labelledby="contracts-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Smart Contracts</p>
+          <h2 class="section-title" id="contracts-title">EVM precompiles for AI verification</h2>
+          <p class="section-lead">Native on-chain primitives for <a class="body-link" href="tee.html">TEE attestation</a> and <a class="body-link" href="zk-proofs.html">zero-knowledge ML proof verification</a>.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card">
+            <span class="icon-chip">0x0400</span>
+            <h3>TEE Precompile</h3>
+            <p>Submit and verify hardware-backed attestations directly from Solidity contracts.</p>
+            <div class="code-block stack-top-14">
+              <div class="code-head">
+                <div class="code-dots"><span></span><span></span><span></span></div>
+                <span class="code-label">solidity</span>
+              </div>
+<pre><code data-code-typing>interface ITEEPrecompile {
+  function submitInference(
+    bytes32 modelHash,
+    bytes calldata inputData,
+    uint8 enclaveType
+  ) external returns (bytes32 jobId);
+
+  function verifyAttestation(
+    bytes32 jobId,
+    bytes calldata attestationQuote
+  ) external view returns (bool valid);
+}
+
+contract VerifiableInference {
+  ITEEPrecompile constant TEE = ITEEPrecompile(address(0x0400));
+
+  function submit(bytes32 modelHash, bytes calldata inputData)
+    external
+    returns (bytes32 jobId)
+  {
+    jobId = TEE.submitInference(modelHash, inputData, 0);
+  }
+}</code></pre>
+            </div>
+          </article>
+
+          <article class="card">
+            <span class="icon-chip">0x0300</span>
+            <h3>zkML Precompile</h3>
+            <p>Verify model execution proofs on-chain with pluggable proof system support.</p>
+            <div class="code-block stack-top-14">
+              <div class="code-head">
+                <div class="code-dots"><span></span><span></span><span></span></div>
+                <span class="code-label">solidity</span>
+              </div>
+<pre><code data-code-typing>interface IZkMLPrecompile {
+  function verifyProof(
+    bytes32 modelHash,
+    bytes calldata proof,
+    bytes calldata publicInputs
+  ) external view returns (bool valid);
+}</code></pre>
+            </div>
+            <div class="tag-list stack-top-12">
+              <span class="tag">EZKL</span>
+              <span class="tag">RISC Zero</span>
+              <span class="tag">Groth16</span>
+              <span class="tag">Halo2</span>
+              <span class="tag">Plonky2</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="frameworks" aria-labelledby="frameworks-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Frameworks</p>
+          <h2 class="section-title" id="frameworks-title">Connect your AI stack</h2>
+          <p class="section-lead">Drop-in integrations for mainstream model and orchestration frameworks.</p>
+        </div>
+
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>PyTorch</h3>
+            <p>Sovereign decorators for verifiable training and inference flows.</p>
+            <div class="code-block stack-top-12">
+              <div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">python</span></div>
+<pre><code data-code-typing>from aethelred.integrations import VerificationRecorder, wrap_pytorch_model
+
+class FraudModel:
+    def __call__(self, features, threshold: float = 0.5):
+        score = sum(features) / max(len(features), 1)
+        return {"score": score, "fraud": score >= threshold}
+
+recorder = VerificationRecorder()
+model = wrap_pytorch_model(FraudModel(), recorder=recorder, component_name="FraudScorerV1")
+print(model([0.2, 0.8, 0.9], threshold=0.6))</code></pre>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>LangChain</h3>
+            <p>Custom Aethelred LLM provider with digital seal verification.</p>
+            <div class="code-block stack-top-12">
+              <div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">python</span></div>
+<pre><code data-code-typing>from aethelred.integrations import VerificationRecorder, wrap_langchain_runnable
+
+class Chain:
+    def invoke(self, payload, config=None):
+        return {"answer": payload["question"].upper(), "trace": config}
+
+recorder = VerificationRecorder()
+verified_chain = wrap_langchain_runnable(Chain(), recorder=recorder)
+print(verified_chain.invoke({"question": "aml screening status?"}, config={"tenant": "fab"}))</code></pre>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Hugging Face</h3>
+            <p>Model registry integration for verifiable execution routing.</p>
+            <div class="code-block stack-top-12">
+              <div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">python</span></div>
+<pre><code data-code-typing>from aethelred.integrations import VerificationRecorder, wrap_transformers_pipeline
+
+class FakePipeline:
+    task = "text-classification"
+
+    def __call__(self, text: str):
+        return [{"label": "APPROVE", "score": 0.97, "text": text}]
+
+recorder = VerificationRecorder()
+pipeline = wrap_transformers_pipeline(FakePipeline(), recorder=recorder)
+print(pipeline("Approve payment for vendor INV-2381"))</code></pre>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="api" aria-labelledby="api-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">API</p>
+          <h2 class="section-title" id="api-title">REST and WebSocket API</h2>
+          <p class="section-lead">Full programmatic access to jobs, seals, models, and validator telemetry.</p>
+        </div>
+
+        <div class="grid grid-3 stack-bottom-16">
+          <article class="card">
+            <p class="kpi-label">Mainnet</p>
+            <p class="kpi-value mono">api.mainnet.aethelred.org</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Testnet</p>
+            <p class="kpi-value mono">api.testnet.aethelred.org</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Local</p>
+            <p class="kpi-value mono">localhost:1317</p>
+          </article>
+        </div>
+
+        <div class="table-wrap stack-bottom-16">
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag">POST</span></td>
+                <td class="mono">/aethelred/pouw/v1/jobs</td>
+                <td>Submit compute job</td>
+              </tr>
+              <tr>
+                <td><span class="tag">GET</span></td>
+                <td class="mono">/aethelred/pouw/v1/jobs/{job_id}</td>
+                <td>Query job status</td>
+              </tr>
+              <tr>
+                <td><span class="tag">GET</span></td>
+                <td class="mono">/aethelred/seal/v1/seals/{seal_id}</td>
+                <td>Get digital seal</td>
+              </tr>
+              <tr>
+                <td><span class="tag">POST</span></td>
+                <td class="mono">/aethelred/pouw/v1/models</td>
+                <td>Register AI model</td>
+              </tr>
+              <tr>
+                <td><span class="tag">GET</span></td>
+                <td class="mono">/aethelred/pouw/v1/validators</td>
+                <td>List validators</td>
+              </tr>
+              <tr>
+                <td><span class="tag">WS</span></td>
+                <td class="mono">/websocket</td>
+                <td>WebSocket subscriptions</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-3 stack-bottom-16">
+          <article class="card">
+            <p class="kpi-label">Anonymous</p>
+            <p class="kpi-value">30 rpm</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Authenticated</p>
+            <p class="kpi-value">300 rpm</p>
+          </article>
+          <article class="card">
+            <p class="kpi-label">Enterprise</p>
+            <p class="kpi-value">3,000 rpm</p>
+          </article>
+        </div>
+
+        <div class="code-block">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">curl</span>
+          </div>
+<pre><code data-code-typing># Submit a compute job
+curl -X POST https://api.testnet.aethelred.org/aethelred/pouw/v1/jobs \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${AETHELRED_API_KEY}" \
+  -d '{
+    "model_hash": "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3",
+    "input_hash": "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09",
+    "proof_type": "PROOF_TYPE_HYBRID",
+    "priority": 5,
+    "max_gas": "1000000",
+    "timeout_blocks": 120,
+    "metadata": {"source": "developers-api"}
+  }'</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="modules" aria-labelledby="modules-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">SDK Modules</p>
+          <h2 class="section-title" id="modules-title">Consistent API surface across languages</h2>
+          <p class="section-lead">Each official SDK keeps parity for job submission, seal verification, and core network primitives.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Description</th>
+                <th>Languages</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">client.jobs</td>
+                <td>Submit jobs, query status, wait for completion</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">client.seals</td>
+                <td>Query digital seals, verify proofs</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">client.models</td>
+                <td>Model registration and metadata queries</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">client.validators</td>
+                <td>Validator stats and capability discovery</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">client.verification</td>
+                <td>ZK proof and verification utilities</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono">client.get_node_info()</td>
+                <td>Health checks and node metadata</td>
+                <td>
+                  <div class="sdk-lang-logos" aria-label="Python, TypeScript, Rust and Go">
+                    <img src="assets/logos/python.svg" alt="Python" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/typescript.svg" alt="TypeScript" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/rust.svg" alt="Rust" class="sdk-lang-logo" width="18" height="18">
+                    <img src="assets/logos/go.svg" alt="Go" class="sdk-lang-logo" width="18" height="18">
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="implementation-next" aria-labelledby="implementation-next-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="implementation-next-title">Implementation next steps</h2>
+            <h3>Need implementation examples next?</h3>
+            <p>Use the <a class="body-link" href="tools.html">tools page</a> for CLI workflows, VS Code integration, and local devnet setup patterns, then validate against the <a class="body-link" href="testnet.html">testnet plan</a> or join the <a class="body-link" href="community.html">community channels</a>.</p>
+          </div>
+          <a href="tools.html" class="btn btn-primary">Open Tools &rarr;</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

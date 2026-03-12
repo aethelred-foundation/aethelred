@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Use Cases | Aethelred</title>
+  <meta name="description" content="Reference use-case architectures for Aethelred across research, healthcare, finance, defense, autonomous systems, supply chain, AI-agent-to-AI-agent, and enterprise corridor workflows.">
+  <meta name="keywords" content="Aethelred use cases, verifiable AI workloads, healthcare AI, finance AI, research AI, supply chain AI, agent to agent, enterprise corridors">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/use-cases">
+  <link rel="icon" type="image/png" href="aethelred-mark.png">
+  <link rel="apple-touch-icon" href="aethelred-mark.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/use-cases">
+  <meta property="og:title" content="Use Cases | Aethelred">
+  <meta property="og:description" content="Reference use-case architectures for real Aethelred workload categories, built from the current protocol surface.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Use Cases social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Use Cases | Aethelred">
+  <meta name="twitter:description" content="Research, healthcare, finance, defense, autonomous, supply-chain, agent-to-agent, and enterprise-corridor reference architectures on Aethelred.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Use Cases social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/AethelredFoundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.aethelred.io/use-cases#webpage",
+        "name": "Use Cases",
+        "headline": "Use Cases",
+        "url": "https://www.aethelred.io/use-cases",
+        "description": "Reference use-case architectures for Aethelred across research, healthcare, finance, defense, autonomous systems, supply chain, AI-agent-to-AI-agent, and enterprise corridor workflows.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/use-cases#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Use Cases social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/use-cases#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Use Cases",
+            "item": "https://www.aethelred.io/use-cases"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body class="page-usecase-hub">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="index.html" class="brand" aria-label="Aethelred home">
+        <img src="aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="index.html" class="nav-link is-active">Platform</a>
+        <a href="developers.html" class="nav-link">Developers</a>
+        <a href="tools.html" class="nav-link">Tools</a>
+        <a href="testnet.html" class="nav-link">Testnet</a>
+        <a href="community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="usecase-hub-resources">Resources</button>
+          <div class="dropdown-panel" id="usecase-hub-resources" role="menu">
+            <a href="#library" role="menuitem">Use Case Library</a>
+            <a href="#surfaces" role="menuitem">Common Surfaces</a>
+            <a href="developers.html" role="menuitem">Developer Docs</a>
+            <a href="smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="sandbox.html" role="menuitem">Infinite Sandbox</a>
+            <a href="testnet.html" role="menuitem">Testnet</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="../org/index.html" class="btn btn-small btn-outline">Foundation</a>
+        <a href="developers.html" class="btn btn-small btn-primary">Developer Docs</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="index.html" class="mobile-link is-active">Platform</a>
+    <a href="developers.html" class="mobile-link">Developers</a>
+    <a href="tools.html" class="mobile-link">Tools</a>
+    <a href="testnet.html" class="mobile-link">Testnet</a>
+    <a href="community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Use Case Sections</summary>
+      <a href="#library" class="mobile-link">Use Case Library</a>
+      <a href="#surfaces" class="mobile-link">Common Surfaces</a>
+      <a href="developers.html" class="mobile-link">Developer Docs</a>
+      <a href="smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="sandbox.html" class="mobile-link">Infinite Sandbox</a>
+      <a href="testnet.html" class="mobile-link">Testnet</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Vertical Reference Architectures</p>
+          <h1 class="hero-title" id="page-title">Use <span class="gradient-word">Cases</span></h1>
+          <p class="hero-subtitle">These pages show how the current Aethelred protocol surface maps to real workload categories: research, healthcare, finance, defense, autonomous systems, supply chain, AI-agent-to-AI-agent workflows, and enterprise corridors. They are reference architectures grounded in the March 2026 protocol state and the current public documentation.</p>
+          <div class="hero-tags" aria-label="Use-case page scope">
+            <span class="hero-tag">Digital Seals</span>
+            <span class="hero-tag">TEE / zk / Hybrid</span>
+            <span class="hero-tag">Compliance-Aware</span>
+            <span class="hero-tag">8 Reference Workloads</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#library" class="btn btn-primary">Explore Workloads</a>
+            <a href="developers.html" class="btn btn-secondary">Open Developer Docs</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT PROTOCOL SURFACE ONLY</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Reference architectures grounded in current docs</h4><p>These pages map real Aethelred protocol surfaces to common workload types without inventing customers, volume, or production rollouts.</p></div>
+          <div class="hero-card"><h4>One trust model across many sectors</h4><p>PoUW, Digital Seals, TEE, zkML, sovereign data controls, and compliance tooling can be composed differently for each vertical.</p></div>
+          <div class="hero-card"><h4>Enterprise corridors now sit alongside sector pages</h4><p>The library now includes a current-state enterprise corridor reference for policy-gated, evidence-first institutional workflows built from the public protocol surface.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>8 Pages</strong><span>Reference workloads</span></div>
+            <div class="metric-pill"><strong>4 TEEs</strong><span>Confidential compute options</span></div>
+            <div class="metric-pill"><strong>5 Proofs</strong><span>zkML system coverage</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="library" aria-labelledby="library-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Library</p>
+          <h2 class="section-title" id="library-title">Reference pages by workload</h2>
+          <p class="section-lead">Pick the workload that best matches the operational constraints you need to solve, then trace it back to the current protocol surfaces.</p>
+        </div>
+        <div class="grid grid-3 usecase-hub-grid">
+          <a class="card usecase-topic-card" href="usecase-research.html"><span class="icon-chip">CASE</span><h3>Scientific Research</h3><p>Reference architecture for scientific and R&amp;D workloads on Aethelred: reproducibility, confidential datasets, Digital Seals, and cross-institution verification.</p><div class="tag-list stack-top-12"><span class="tag">Reproducibility</span><span class="tag">Confidential Data</span><span class="tag">Digital Seals</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-healthcare.html"><span class="icon-chip">CASE</span><h3>Healthcare and Life Sciences</h3><p>Reference architecture for healthcare and life-sciences workloads on Aethelred: TEE-backed blind compute, sovereign data controls, Digital Seals, and compliance-aware execution.</p><div class="tag-list stack-top-12"><span class="tag">Blind Compute</span><span class="tag">HIPAA / GDPR</span><span class="tag">Sovereign Data</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-finance.html"><span class="icon-chip">CASE</span><h3>Financial Services</h3><p>Reference architecture for financial-services workloads on Aethelred: confidential models, sanctions-aware routing, Digital Seals, and governed treasury controls.</p><div class="tag-list stack-top-12"><span class="tag">Confidential Models</span><span class="tag">Sanctions Screening</span><span class="tag">Timelocked Controls</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-defense.html"><span class="icon-chip">CASE</span><h3>Defense and Mission Systems</h3><p>Reference architecture for defense and mission-system workloads on Aethelred: sovereign data controls, post-quantum cryptography, hybrid verification, and fail-closed execution.</p><div class="tag-list stack-top-12"><span class="tag">PQ Security</span><span class="tag">Sovereign Data</span><span class="tag">Hybrid Verification</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-autonomous.html"><span class="icon-chip">CASE</span><h3>Autonomous and Robotic Systems</h3><p>Reference architecture for autonomous and robotic workloads on Aethelred: hybrid verification, sealed decision records, route-event auditing, and low-latency finality.</p><div class="tag-list stack-top-12"><span class="tag">Low-Latency Finality</span><span class="tag">Hybrid Verification</span><span class="tag">Decision Logs</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-supplychain.html"><span class="icon-chip">CASE</span><h3>Supply Chain and Trade</h3><p>Reference architecture for supply-chain and trade workloads on Aethelred: origin evidence, sanctions-aware checks, Digital Seals, and transfer audit trails.</p><div class="tag-list stack-top-12"><span class="tag">Origin Evidence</span><span class="tag">Transfer Audit Trails</span><span class="tag">Sanctions Screening</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="usecase-agent-to-agent.html"><span class="icon-chip">CASE</span><h3>AI Agent to AI Agent</h3><p>Reference architecture for AI-agent-to-AI-agent workflows on Aethelred: seal-verified handoffs, proof-aware telemetry, SDK orchestration, and policy-gated action chains.</p><div class="tag-list stack-top-12"><span class="tag">Agent Handoffs</span><span class="tag">Seal Verification</span><span class="tag">LangChain</span></div><span class="card-link">Open Reference &rarr;</span></a><a class="card usecase-topic-card" href="enterprise-corridors.html"><span class="icon-chip">CASE</span><h3>Enterprise Corridors</h3><p>Reference architecture for enterprise and institutional workflows on Aethelred: policy gates, sovereign data boundaries, confidential compute, Digital Seals, and HSM-aware operating controls.</p><div class="tag-list stack-top-12"><span class="tag">Policy Gates</span><span class="tag">Sovereign Data</span><span class="tag">Digital Seals</span></div><span class="card-link">Open Reference &rarr;</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="surfaces" aria-labelledby="surfaces-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Common Surfaces</p>
+          <h2 class="section-title" id="surfaces-title">The same protocol primitives show up across sectors</h2>
+          <p class="section-lead">Each use case page emphasizes a different operating model, but the technical building blocks are the same current Aethelred surfaces.</p>
+        </div>
+        <div class="grid grid-4 usecase-surface-grid">
+          <article class="card"><h3>Proof-of-Useful-Work</h3><p>Consensus embeds verified AI inference directly into the block lifecycle instead of treating compute as off-chain decoration.</p></article>
+          <article class="card"><h3>Digital Seals</h3><p>Seal outputs become portable, verifiable certificates of computation with provenance and consensus evidence attached.</p></article>
+          <article class="card"><h3>TEE / zkML / Hybrid</h3><p>Per-job verification modes let teams trade off confidentiality, mathematical proof, or defense in depth depending on the workload.</p></article>
+          <article class="card"><h3>Sovereign Data and Compliance</h3><p>Jurisdiction, classification, sanctions, transfer, consent, and retention controls can be tested before workloads touch public infrastructure.</p></article>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Start with the documented protocol surfaces and map them into the right workload architecture.</h3>
+            <p>These use cases are strongest when they stay connected to the current developer docs, Infinite Sandbox, verification pages, and testnet rollout path.</p>
+          </div>
+          <a href="sandbox.html" class="btn btn-primary">Open Infinite Sandbox</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="documentation.html">Documentation Hub</a>
+            <a href="developers.html">Quick Start</a>
+            <a href="tools.html">SDK &amp; Tools</a>
+            <a href="developers.html#api">API Reference</a>
+            <a href="smart-contracts.html">Smart Contracts</a>
+            <a href="sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="testnet.html">Testnet</a>
+            <a href="digital-seal.html">Digital Seals</a>
+            <a href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="zk-proofs.html">ZK Proofs</a>
+            <a href="tee.html">TEE Attestation</a>
+            <a href="wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="community.html">Community Hub</a>
+            <a href="quiz.html">Knowledge Quiz</a>
+            <a href="grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/AethelredFoundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="../org/index.html">About</a>
+            <a href="../org/network.html">Research</a>
+            <a href="../org/governance.html">Governance</a>
+            <a href="../org/token.html">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="../org/privacy.html">PRIVACY POLICY</a>
+          &middot;
+          <a href="../org/terms.html">TERMS OF SERVICE</a>
+          &middot;
+          <a href="../org/cookies.html">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

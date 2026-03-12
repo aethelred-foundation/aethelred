@@ -1,0 +1,60 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  DirectoryIndex index.html
+
+  # Enforce the canonical production host without affecting preview domains.
+  RewriteCond %{HTTP_HOST} ^(?:www\.)?aethelred\.org$ [NC]
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} !^www\.aethelred\.org$ [NC]
+  RewriteRule ^ https://www.aethelred.org%{REQUEST_URI} [R=301,L]
+
+  # Prevent direct access to captured lead data files.
+  RewriteRule ^data/ - [F,L]
+
+  # Serve root as index.html.
+  RewriteRule ^$ index.html [L]
+
+  # Serve extensionless page routes from HTML files.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^([A-Za-z0-9_-]+)/?$ $1.html [L]
+</IfModule>
+
+ErrorDocument 404 /404.html
+
+# Disable directory listing for safety on shared hosting.
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always unset X-Powered-By
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  Header always set Permissions-Policy "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), browsing-topics=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header always set Cross-Origin-Resource-Policy "same-site"
+  Header always set Content-Security-Policy "upgrade-insecure-requests; default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self' mailto:; frame-ancestors 'self'; manifest-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';"
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType application/manifest+json "access plus 7 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/plain text/html text/css application/javascript application/json application/manifest+json image/svg+xml
+</IfModule>

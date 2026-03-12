@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /data/
+Disallow: /lead-handler.php
+
+Sitemap: https://www.aethelred.org/sitemap.xml
