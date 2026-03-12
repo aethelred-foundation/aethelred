@@ -824,7 +824,7 @@ func TestEndToEnd_MultiProofTypeVerification(t *testing.T) {
 	config.MaxJobsPerBlock = 10
 	scheduler := keeper.NewJobScheduler(logger, &k, config)
 
-	// Register validators — all with dual capability so each can verify any
+	// Register validators - all with dual capability so each can verify any
 	// proof type. This ensures every validator votes on every job and the
 	// 67% threshold is met for TEE, zkML, and hybrid jobs alike.
 	validators := []*types.ValidatorCapability{
@@ -1022,7 +1022,7 @@ func TestEndToEnd_ValidatorSlashingOnTimeout(t *testing.T) {
 		t.Fatalf("expected job re-selected after timeout, got %d", len(selected))
 	}
 
-	t.Log("Validator slashing on timeout test passed — job correctly re-queued")
+	t.Log("Validator slashing on timeout test passed - job correctly re-queued")
 }
 
 // TestEndToEnd_ConcurrentJobSubmission verifies that many concurrent job
@@ -1123,7 +1123,7 @@ func TestEndToEnd_ConcurrentJobSubmission(t *testing.T) {
 		t.Error("expected at least some jobs to be scheduled")
 	}
 
-	t.Logf("Concurrent job submission test passed — %d/%d jobs submitted successfully", expectedJobs, numJobs)
+	t.Logf("Concurrent job submission test passed - %d/%d jobs submitted successfully", expectedJobs, numJobs)
 }
 
 // ---------------------------------------------------------------------------
@@ -1195,7 +1195,7 @@ func TestEndToEnd_DoubleVoteDetection(t *testing.T) {
 		t.Errorf("expected ≤6 total votes (5 unique validators + 1 dup), got %d", result.TotalVotes)
 	}
 
-	t.Logf("Double-vote detection test passed — consensus reached with %d/%d votes",
+	t.Logf("Double-vote detection test passed - consensus reached with %d/%d votes",
 		result.AgreementCount, result.TotalVotes)
 }
 
@@ -1251,11 +1251,11 @@ func TestEndToEnd_ReplayAttackVoteExtensions(t *testing.T) {
 	// vote content and that the results contain the job.
 	result, ok := results[job.Id]
 	if !ok {
-		t.Log("No result returned — aggregation may have correctly rejected stale votes")
+		t.Log("No result returned - aggregation may have correctly rejected stale votes")
 		return
 	}
 
-	t.Logf("Replay attack test — %d/%d votes counted, consensus=%v",
+	t.Logf("Replay attack test - %d/%d votes counted, consensus=%v",
 		result.AgreementCount, result.TotalVotes, result.HasConsensus)
 }
 
@@ -1323,7 +1323,7 @@ func TestEndToEnd_MalformedVoteExtension(t *testing.T) {
 		t.Error("expected consensus from 2 valid voters despite malformed extensions")
 	}
 
-	t.Log("Malformed vote extension test passed — pipeline did not crash")
+	t.Log("Malformed vote extension test passed - pipeline did not crash")
 }
 
 // TestEndToEnd_OversizedPayloadRejection verifies that an extremely large vote
@@ -1401,7 +1401,7 @@ func TestEndToEnd_OversizedPayloadRejection(t *testing.T) {
 		t.Error("expected consensus from valid votes despite oversized third vote")
 	}
 
-	t.Logf("Oversized payload test passed — %d/%d votes counted", result.AgreementCount, result.TotalVotes)
+	t.Logf("Oversized payload test passed - %d/%d votes counted", result.AgreementCount, result.TotalVotes)
 }
 
 // TestEndToEnd_RealNodeDockerSmokeGate is a CI gate test that verifies the
@@ -1588,7 +1588,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 		resp2.Body.Close()
 
 		if block1.Block.Header.Height == block2.Block.Header.Height {
-			t.Fatal("block height did not advance between calls — mock may be static")
+			t.Fatal("block height did not advance between calls - mock may be static")
 		}
 		t.Logf("Block progression OK: %s -> %s", block1.Block.Header.Height, block2.Block.Header.Height)
 

@@ -29,7 +29,7 @@
 //! their "Corporate Brain" on Aethelred for 1/100th the cost of AWS or Filecoin,
 //! ready for instant AI querying.
 
-// H-08: Production safety — prevent shipping dev vector vault stubs.
+// H-08: Production safety - prevent shipping dev vector vault stubs.
 #[cfg(feature = "production")]
 compile_error!(
     "vector_vault stub is active in a production build. \

@@ -2,7 +2,7 @@
 
 package app
 
-// allow_simulated_dev.go — development/test build defaults.
+// allow_simulated_dev.go - development/test build defaults.
 //
 // This file is included in all non-production builds (default).
 // It provides the same symbols as allow_simulated_prod.go but

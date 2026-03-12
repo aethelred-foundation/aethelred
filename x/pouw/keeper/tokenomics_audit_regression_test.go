@@ -65,14 +65,14 @@ func TestC01_VestedAmount_MaxSupplyWithTGE_NoOverflow(t *testing.T) {
 		TGEUnlockBps:     2250,                   // 22.5% TGE
 		CliffBlocks:      keeper.BlocksPerYear,
 		VestingBlocks:    keeper.BlocksPerYear * 5,
-		CliffPercent:     2500, // 25% cliff
+		CliffPercent:     1500, // 15% cliff (stress test)
 		LinearAfterCliff: true,
 	}
 
-	// At cliff: should get TGE + cliff = 47.5% of 10^16
+	// At cliff: should get TGE + cliff = 35% of 10^16
 	vested := keeper.VestedAmount(schedule, keeper.BlocksPerYear)
-	expectedTGE := int64(10_000_000_000_000_000 * 2250 / 10000)
-	expectedCliff := int64(10_000_000_000_000_000 * 2500 / 10000)
+	expectedTGE := int64(10_000_000_000_000_000 * 2000 / 10000)
+	expectedCliff := int64(10_000_000_000_000_000 * 1500 / 10000)
 	expected := expectedTGE + expectedCliff
 
 	require.Equal(t, expected, vested, "TGE + cliff at max supply must not overflow")
@@ -140,7 +140,7 @@ func TestH03_VestedAmount_GenesisBlock_ReturnsTGE(t *testing.T) {
 		TotalUAETHEL:       1_000_000_000_000_000, // 1B AETHEL
 		TGEUnlockBps:     2250,                  // 22.5%
 		CliffBlocks:      0,
-		VestingBlocks:    keeper.BlocksPerYear * 2,
+		VestingBlocks:    keeper.BlocksPerYear * 18 / 12,
 		CliffPercent:     0,
 		LinearAfterCliff: true,
 	}
@@ -156,18 +156,18 @@ func TestH03_VestedAmount_GenesisBlock_ReturnsTGE(t *testing.T) {
 }
 
 func TestH03_VestedAmount_GenesisBlock_WithCliff_ReturnsTGE(t *testing.T) {
-	// Ecosystem grants: 5% TGE, 6-month cliff
+	// Ecosystem grants: 2% TGE, 6-month cliff
 	schedule := keeper.VestingSchedule{
 		Category:         "ecosystem",
 		TotalUAETHEL:       1_500_000_000_000_000,
 		TGEUnlockBps:     500, // 5%
 		CliffBlocks:      keeper.BlocksPerYear / 2,
-		VestingBlocks:    keeper.BlocksPerYear * 5,
+		VestingBlocks:    keeper.BlocksPerYear * 54 / 12,
 		CliffPercent:     0,
 		LinearAfterCliff: true,
 	}
 
-	// At genesis: should get TGE (5%), NOT zero
+	// At genesis: should get TGE (2%), NOT zero
 	vestedAtGenesis := keeper.VestedAmount(schedule, 0)
 	expectedTGE := int64(1_500_000_000_000_000 * 500 / 10000) // 75B uAETHEL
 
@@ -227,7 +227,7 @@ func TestM05_ExponentialDecay_Deterministic(t *testing.T) {
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.DecayPeriodYears = 6
 
-	// Run the same schedule computation twice — must be bit-identical
+	// Run the same schedule computation twice - must be bit-identical
 	schedule1 := keeper.ComputeEmissionSchedule(config, 30)
 	schedule2 := keeper.ComputeEmissionSchedule(config, 30)
 
@@ -251,7 +251,7 @@ func TestM05_ExponentialDecay_HalvesCorrectly(t *testing.T) {
 
 	schedule := keeper.ComputeEmissionSchedule(config, 30)
 
-	// Year 1 inflation should be near 800 BPS (8%) — with DecayPeriodYears=6,
+	// Year 1 inflation should be near 800 BPS (8%) - with DecayPeriodYears=6,
 	// year 1 is 1/6 toward first halving, so interpolation yields ~734 BPS.
 	require.InDelta(t, 800, schedule[0].InflationBps, 100,
 		"year 1 inflation should be near initial")
@@ -597,23 +597,23 @@ func TestVestedAmount_ExactCliffBoundary(t *testing.T) {
 		Category:         "cliff-boundary",
 		TotalUAETHEL:       2_000_000_000_000_000,
 		TGEUnlockBps:     0,
-		CliffBlocks:      keeper.BlocksPerYear,
+		CliffBlocks:      keeper.BlocksPerYear / 2,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
-		CliffPercent:     2500,
+		CliffPercent:     1500,
 		LinearAfterCliff: true,
 	}
 
 	// One block before cliff: TGE only (which is 0)
-	vestedBeforeCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear-1)
+	vestedBeforeCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear/2-1)
 	require.Equal(t, int64(0), vestedBeforeCliff, "one block before cliff should be TGE (0)")
 
 	// Exactly at cliff
-	expectedCliff := int64(2_000_000_000_000_000 * 2500 / 10000)
-	vestedAtCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear)
+	expectedCliff := int64(2_000_000_000_000_000 * 1500 / 10000)
+	vestedAtCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear/2)
 	require.Equal(t, expectedCliff, vestedAtCliff, "exactly at cliff should get cliff amount")
 
 	// One block after cliff: cliff + small linear increment
-	vestedAfterCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear+1)
+	vestedAfterCliff := keeper.VestedAmount(schedule, keeper.BlocksPerYear/2+1)
 	require.Greater(t, vestedAfterCliff, expectedCliff,
 		"one block after cliff should exceed cliff-only amount with linear")
 }
@@ -1712,7 +1712,7 @@ func TestProperty_SafeMath_NoOverflow_LargeInputs(t *testing.T) {
 					require.True(t, result.GT(sdkmath.ZeroInt()) || result.Equal(sdkmath.ZeroInt()),
 						"valid addition result must be non-negative")
 				}
-				// Error is acceptable for overflow — that is the safe behavior
+				// Error is acceptable for overflow - that is the safe behavior
 			})
 		}
 	}
@@ -1722,7 +1722,7 @@ func TestProperty_FeeBreakdown_Deterministic(t *testing.T) {
 	config := keeper.DefaultFeeDistributionConfig()
 	fee := sdk.NewInt64Coin("uaethel", 7_777_777)
 
-	// Run the same calculation 100 times — must produce identical results
+	// Run the same calculation 100 times - must produce identical results
 	first := keeper.CalculateFeeBreakdown(fee, config, 17)
 
 	for i := 0; i < 100; i++ {

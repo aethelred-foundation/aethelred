@@ -69,7 +69,7 @@ impl VrfKeys {
 
         #[cfg(not(feature = "vrf"))]
         {
-            // Mock implementation for development — SECURITY (RS-02 fix):
+            // Mock implementation for development - SECURITY (RS-02 fix):
             // Public key is derived via SHA-256("mock-vrf-pk:" || seed) to avoid
             // embedding the raw secret key in the public key.
             use sha2::{Sha256, Digest};
@@ -493,7 +493,7 @@ impl VrfEngine {
         Ok(output == &expected_output)
     }
 
-    /// Hash to curve — Constant-time RFC 9380 Simplified SWU (RS-01 fix).
+    /// Hash to curve - Constant-time RFC 9380 Simplified SWU (RS-01 fix).
     ///
     /// Uses the `k256::hash2curve` module implementing the Simplified Shallue–van de
     /// Woestijne–Ulas (SWU) map with 3-isogeny, as specified in RFC 9380 §6.6.2
@@ -509,12 +509,12 @@ impl VrfEngine {
     ///
     /// ## Algorithm (RFC 9380 §5)
     /// 1. `msg_prime = expand_message_xmd(SHA-256, message, DST, 96)`
-    /// 2. `u[0], u[1] = hash_to_field(msg_prime)` — two 48-byte field elements
-    /// 3. `Q0 = map_to_curve(u[0])` — OSSWU map to isogenous curve E'
-    /// 4. `Q1 = map_to_curve(u[1])` — OSSWU map to isogenous curve E'
-    /// 5. `R = Q0 + Q1` — point addition on E'
-    /// 6. `P = iso_map(R)` — 3-isogeny from E' to secp256k1
-    /// 7. `return clear_cofactor(P)` — identity for secp256k1 (cofactor = 1)
+    /// 2. `u[0], u[1] = hash_to_field(msg_prime)` - two 48-byte field elements
+    /// 3. `Q0 = map_to_curve(u[0])` - OSSWU map to isogenous curve E'
+    /// 4. `Q1 = map_to_curve(u[1])` - OSSWU map to isogenous curve E'
+    /// 5. `R = Q0 + Q1` - point addition on E'
+    /// 6. `P = iso_map(R)` - 3-isogeny from E' to secp256k1
+    /// 7. `return clear_cofactor(P)` - identity for secp256k1 (cofactor = 1)
     #[cfg(feature = "vrf")]
     fn hash_to_curve(&self, message: &[u8]) -> ConsensusResult<k256::ProjectivePoint> {
         use k256::Secp256k1;
@@ -526,7 +526,7 @@ impl VrfEngine {
         const DST: &[u8] = b"Aethelred-PoUW-VRF-v1_XMD:SHA-256_SSWU_RO_";
 
         // RFC 9380 §5.3: hash_to_curve using random oracle (RO) variant.
-        // This is constant-time with respect to the input message —
+        // This is constant-time with respect to the input message:
         // execution path and timing are identical for all inputs.
         let point = Secp256k1::hash_from_bytes::<ExpandMsgXmd<Sha256>>(
             &[message],
@@ -714,7 +714,7 @@ mod tests {
     use super::*;
 
     // =========================================================================
-    // KEY GENERATION — Unit tests
+    // KEY GENERATION - Unit tests
     // =========================================================================
 
     #[test]
@@ -786,7 +786,7 @@ mod tests {
     }
 
     // =========================================================================
-    // KEY GENERATION — Boundary tests
+    // KEY GENERATION - Boundary tests
     // =========================================================================
 
     #[test]
@@ -794,7 +794,7 @@ mod tests {
         // Zero seed should still produce a valid keypair
         let keys = VrfKeys::from_seed(&[0u8; 32]);
         // Depending on the curve implementation, zero might be invalid as a scalar
-        // Either it succeeds or returns an error — it must not panic
+        // Either it succeeds or returns an error - it must not panic
         match keys {
             Ok(k) => assert!(!k.public_key().is_empty()),
             Err(_) => {} // Acceptable: zero is not a valid secp256k1 scalar
@@ -902,7 +902,7 @@ mod tests {
     }
 
     // =========================================================================
-    // PROVE & VERIFY — Core correctness
+    // PROVE & VERIFY - Core correctness
     // =========================================================================
 
     #[test]
@@ -1011,7 +1011,7 @@ mod tests {
     }
 
     // =========================================================================
-    // VERIFY — Negative tests
+    // VERIFY - Negative tests
     // =========================================================================
 
     #[test]
@@ -1128,7 +1128,7 @@ mod tests {
     }
 
     // =========================================================================
-    // DOMAIN SEPARATION — Chain ID isolation
+    // DOMAIN SEPARATION - Chain ID isolation
     // =========================================================================
 
     #[test]
@@ -1155,7 +1155,7 @@ mod tests {
         // Prove on chain 1
         let (output, proof) = engine1.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
 
-        // Verify on chain 2 — should fail
+        // Verify on chain 2 - should fail
         let result = engine2.verify_for_slot(
             keys.public_key(),
             &epoch_seed,
@@ -1382,7 +1382,7 @@ mod tests {
     }
 
     // =========================================================================
-    // INTEGRATION — Full prove/verify cycle variations
+    // INTEGRATION - Full prove/verify cycle variations
     // =========================================================================
 
     #[test]
@@ -1478,7 +1478,7 @@ mod tests {
     }
 
     // =========================================================================
-    // PROPERTY — Statistical properties
+    // PROPERTY - Statistical properties
     // =========================================================================
 
     #[test]
@@ -1801,7 +1801,7 @@ mod tests {
     fn test_unit_epoch_derivation_same_epoch_same_result_repeated() {
         let master = VrfKeys::from_seed(&[42u8; 32]).unwrap();
 
-        // Derive the same epoch 20 times — must always give identical results
+        // Derive the same epoch 20 times - must always give identical results
         let reference = master.derive_epoch_keys(7).unwrap();
         for _ in 0..20 {
             let derived = master.derive_epoch_keys(7).unwrap();

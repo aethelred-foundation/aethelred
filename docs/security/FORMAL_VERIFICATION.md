@@ -17,7 +17,7 @@ eliminating entire classes of bugs that testing alone cannot catch.
 
 ## 2. Scope & Priority
 
-### 2.1 Tier 1 — Must Verify Before Mainnet
+### 2.1 Tier 1 - Must Verify Before Mainnet
 
 | Component | Tool | Properties to Verify |
 |-----------|------|----------------------|
@@ -26,7 +26,7 @@ eliminating entire classes of bugs that testing alone cannot catch.
 | **AethelredBridge.sol** | Certora | Replay protection completeness, rate limit correctness, mint <= deposit |
 | **SovereignGovernanceTimelock.sol** | Certora | Dual-signature enforcement, delay bounds, execution-after-timelock |
 
-### 2.2 Tier 2 — Should Verify Before Mainnet v2
+### 2.2 Tier 2 - Should Verify Before Mainnet v2
 
 | Component | Tool | Properties to Verify |
 |-----------|------|----------------------|
@@ -34,7 +34,7 @@ eliminating entire classes of bugs that testing alone cannot catch.
 | Tokenomics (Go) | Dafny / TLA+ | Emission schedule determinism, supply cap invariant |
 | Bridge Processor (Rust) | Kani | State machine transitions, no stuck states |
 
-### 2.3 Tier 3 — Long-term
+### 2.3 Tier 3 - Long-term
 
 | Component | Tool | Properties to Verify |
 |-----------|------|----------------------|
@@ -46,7 +46,7 @@ eliminating entire classes of bugs that testing alone cannot catch.
 
 ## 3. Solidity Verification (Certora / Halmos)
 
-### 3.1 AethelredToken.sol — Key Invariants
+### 3.1 AethelredToken.sol - Key Invariants
 
 ```
 // INV-1: Total supply is constant after deployment (no mint function)
@@ -81,7 +81,7 @@ rule batchBlacklistBounded(address[] accounts) {
 }
 ```
 
-### 3.2 AethelredVesting.sol — Key Invariants
+### 3.2 AethelredVesting.sol - Key Invariants
 
 ```
 // INV-1: Vested amount is monotonically non-decreasing
@@ -108,7 +108,7 @@ rule tgeUnlockAtStart(bytes32 scheduleId) {
 }
 ```
 
-### 3.3 AethelredBridge.sol — Key Invariants
+### 3.3 AethelredBridge.sol - Key Invariants
 
 ```
 // INV-1: No withdrawal can be processed twice (replay protection)

@@ -524,7 +524,7 @@ func TestGenesisValidatorSet_ValidateSet(t *testing.T) {
 func TestGenesisValidatorSet_ValidateSet_PowerConcentration(t *testing.T) {
 	gvs := keeper.NewGenesisValidatorSet(100)
 
-	// One validator with 80% power — clearly dominant
+	// One validator with 80% power - clearly dominant
 	_ = gvs.AddValidator(keeper.GenesisValidator{
 		Address: "val-0", Moniker: "big", Power: 8000, SupportsTEE: true, TEEPlatform: "nitro",
 	})
@@ -649,7 +649,7 @@ func TestFullLaunchSequence(t *testing.T) {
 	review := keeper.RunLaunchReview(ctx, k, cohort)
 	if review.Decision == "NO-GO" {
 		for _, f := range review.BlockingFailures {
-			t.Logf("BLOCKING: %s — %s", f.ID, f.Details)
+			t.Logf("BLOCKING: %s - %s", f.ID, f.Details)
 		}
 	}
 	require.NotEqual(t, "NO-GO", review.Decision,

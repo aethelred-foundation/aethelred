@@ -139,7 +139,7 @@ func TestPositive_SupportedProofSystems(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 4: Orchestrator — hybrid output mismatch (fail-closed)
+// Section 4: Orchestrator - hybrid output mismatch (fail-closed)
 // ---------------------------------------------------------------------------
 
 func TestNegative_Orchestrator_HybridMismatch_Sequential(t *testing.T) {
@@ -223,7 +223,7 @@ func TestNegative_Orchestrator_HybridMismatch_Parallel(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 5: Orchestrator — missing/empty request fields
+// Section 5: Orchestrator - missing/empty request fields
 // ---------------------------------------------------------------------------
 
 func TestNegative_Orchestrator_NilRequest(t *testing.T) {
@@ -264,7 +264,7 @@ func TestNegative_Orchestrator_EmptyModelHash(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 6: Orchestrator — verification type routing
+// Section 6: Orchestrator - verification type routing
 // ---------------------------------------------------------------------------
 
 func TestNegative_Orchestrator_UnknownVerificationType(t *testing.T) {
@@ -293,7 +293,7 @@ func TestNegative_Orchestrator_UnknownVerificationType(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Section 7: Registry — model registration validation
+// Section 7: Registry - model registration validation
 // ---------------------------------------------------------------------------
 
 func TestNegative_Registry_EmptyModelBytes(t *testing.T) {
@@ -315,7 +315,7 @@ func TestNegative_Registry_EmptyModelBytes(t *testing.T) {
 		return
 	}
 	// NOTE: Currently the registry accepts empty model bytes and computes
-	// hash of empty slice. This is a minor gap — empty model registration
+	// hash of empty slice. This is a minor gap - empty model registration
 	// should ideally be rejected. The model hash will be the SHA-256 of "".
 	if model != nil {
 		t.Logf("NOTE: registry accepted nil model bytes (hash=%x), consider adding validation", model.ModelHash[:8])
@@ -470,7 +470,7 @@ func TestPolicy_DefaultParamsAreProductionSafe(t *testing.T) {
 	params := types.DefaultParams()
 
 	if params.AllowSimulated {
-		t.Fatal("POLICY VIOLATION: DefaultParams has AllowSimulated=true — this must be false for production safety")
+		t.Fatal("POLICY VIOLATION: DefaultParams has AllowSimulated=true - this must be false for production safety")
 	}
 
 	if params.ZkVerifierEndpoint != "" {

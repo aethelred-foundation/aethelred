@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost4_test.go — Fourth wave of tests using real Keeper with in-memory stores.
+// coverage_boost4_test.go - Fourth wave of tests using real Keeper with in-memory stores.
 // Targets: invariants, keeper operations (SubmitJob, UpdateJob, GetPendingJobs),
 // validator stats, attestation registry, governance UpdateParams, and more.
 
@@ -28,7 +28,7 @@ func testBech32Addr() string {
 }
 
 // =============================================================================
-// INVARIANTS.GO — All invariant functions with data
+// INVARIANTS.GO - All invariant functions with data
 // =============================================================================
 
 func TestCB4_JobStateMachineInvariant_ValidPending(t *testing.T) {
@@ -418,7 +418,7 @@ func TestCB4_AllInvariants_AllPass(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — SubmitJob, UpdateJob, GetPendingJobs
+// KEEPER.GO - SubmitJob, UpdateJob, GetPendingJobs
 // =============================================================================
 
 func TestCB4_SubmitJob_Success(t *testing.T) {
@@ -539,7 +539,7 @@ func TestCB4_GetJob_NotFound(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — RegisterValidatorCapability, SetParams, GetParams
+// KEEPER.GO - RegisterValidatorCapability, SetParams, GetParams
 // =============================================================================
 
 func TestCB4_RegisterValidatorCapability_WithKeeper(t *testing.T) {
@@ -575,7 +575,7 @@ func TestCB4_SetParams_Valid(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — RegisterModel
+// KEEPER.GO - RegisterModel
 // =============================================================================
 
 func TestCB4_RegisterModel_Success(t *testing.T) {
@@ -614,7 +614,7 @@ func TestCB4_RegisterModel_Duplicate(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — InitGenesis, ExportGenesis
+// KEEPER.GO - InitGenesis, ExportGenesis
 // =============================================================================
 
 func TestCB4_InitGenesis_DefaultParams(t *testing.T) {
@@ -640,7 +640,7 @@ func TestCB4_ExportGenesis_RoundTrip(t *testing.T) {
 }
 
 // =============================================================================
-// ATTESTATION_REGISTRY.GO — RegisterValidatorMeasurement paths
+// ATTESTATION_REGISTRY.GO - RegisterValidatorMeasurement paths
 // =============================================================================
 
 func TestCB4_RegisterValidatorMeasurement_WithKeeper(t *testing.T) {
@@ -721,7 +721,7 @@ func TestCB4_IsRegisteredMeasurement_NotRegistered(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — SelectValidators, getValidatorStakingPower (with real keeper)
+// STAKING.GO - SelectValidators, getValidatorStakingPower (with real keeper)
 // =============================================================================
 
 func TestCB4_SelectValidators_WithRealKeeper_NoCapabilities(t *testing.T) {
@@ -815,7 +815,7 @@ func TestCB4_CheckValidatorEligibility_NotRegistered(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — ValidateValidatorForJob
+// STAKING.GO - ValidateValidatorForJob
 // =============================================================================
 
 func TestCB4_ValidateValidatorForJob_NotAssigned(t *testing.T) {
@@ -831,7 +831,7 @@ func TestCB4_ValidateValidatorForJob_NotAssigned(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — getValidatorStakingPower (fallback paths with real keeper)
+// STAKING.GO - getValidatorStakingPower (fallback paths with real keeper)
 // =============================================================================
 
 func TestCB4_GetValidatorStakingPower_WithStats(t *testing.T) {
@@ -862,7 +862,7 @@ func TestCB4_GetValidatorStakingPower_NoStats(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — SelectCommitteeForJob
+// STAKING.GO - SelectCommitteeForJob
 // =============================================================================
 
 func TestCB4_SelectCommitteeForJob_InsufficientValidators(t *testing.T) {
@@ -883,7 +883,7 @@ func TestCB4_SelectCommitteeForJob_InsufficientValidators(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE.GO — ValidateParams more edge cases
+// GOVERNANCE.GO - ValidateParams more edge cases
 // =============================================================================
 
 func TestCB4_ValidateParams_ZeroMinValidators(t *testing.T) {
@@ -903,7 +903,7 @@ func TestCB4_ValidateParams_NegativeReward(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_DISTRIBUTION.GO — DistributeJobFee, ValidateFeeDistribution with real data
+// FEE_DISTRIBUTION.GO - DistributeJobFee, ValidateFeeDistribution with real data
 // =============================================================================
 
 func TestCB4_FeeDistributor_Creation(t *testing.T) {
@@ -924,7 +924,7 @@ func TestCB4_ValidateFeeDistribution_SumExceedsBPS(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — SafeAdd, SafeSub, SafeMul edge cases
+// TOKENOMICS_SAFE.GO - SafeAdd, SafeSub, SafeMul edge cases
 // =============================================================================
 
 func TestCB4_SafeMath_Add_Overflow(t *testing.T) {
@@ -964,7 +964,7 @@ func TestCB4_SafeMath_MulDiv_DivByZero(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — BondingCurve more paths
+// TOKENOMICS_SAFE.GO - BondingCurve more paths
 // =============================================================================
 
 func TestCB4_BondingCurve_ExecuteSale(t *testing.T) {
@@ -1004,7 +1004,7 @@ func TestCB4_BondingCurve_CalculateSaleReturn(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — ComputeEmissionScheduleSafe
+// TOKENOMICS_SAFE.GO - ComputeEmissionScheduleSafe
 // =============================================================================
 
 func TestCB4_ComputeEmissionScheduleSafe_AllYears(t *testing.T) {
@@ -1019,7 +1019,7 @@ func TestCB4_ComputeEmissionScheduleSafe_AllYears(t *testing.T) {
 }
 
 // =============================================================================
-// SLASHING_INTEGRATION.GO — SlashForDowntime more paths
+// SLASHING_INTEGRATION.GO - SlashForDowntime more paths
 // =============================================================================
 
 func TestCB4_SlashForDowntime_Config(t *testing.T) {
@@ -1030,7 +1030,7 @@ func TestCB4_SlashForDowntime_Config(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — ValidateSealTransaction more branches
+// CONSENSUS.GO - ValidateSealTransaction more branches
 // =============================================================================
 
 func TestCB4_ValidateSealTransaction_InvalidType(t *testing.T) {
@@ -1062,7 +1062,7 @@ func TestCB4_ValidateSealTransaction_ValidMinimal(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — AggregateVoteExtensions more branches
+// CONSENSUS.GO - AggregateVoteExtensions more branches
 // =============================================================================
 
 func TestCB4_AggregateVoteExtensions_Empty(t *testing.T) {
@@ -1074,7 +1074,7 @@ func TestCB4_AggregateVoteExtensions_Empty(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — getConsensusThreshold
+// CONSENSUS.GO - getConsensusThreshold
 // =============================================================================
 
 func TestCB4_GetConsensusThreshold_WithKeeper(t *testing.T) {
@@ -1089,7 +1089,7 @@ func TestCB4_GetConsensusThreshold_WithKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — GetValidatorStats
+// KEEPER.GO - GetValidatorStats
 // =============================================================================
 
 func TestCB4_GetValidatorStats_NoStats(t *testing.T) {
@@ -1120,7 +1120,7 @@ func TestCB4_GetValidatorStats_WithStats(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE.GO — ProcessEndBlockEvidence
+// EVIDENCE.GO - ProcessEndBlockEvidence
 // =============================================================================
 
 func TestCB4_ProcessEndBlockEvidence_NoEvidence(t *testing.T) {
@@ -1137,7 +1137,7 @@ func TestCB4_ProcessEndBlockEvidence_NoEvidence(t *testing.T) {
 }
 
 // =============================================================================
-// PERFORMANCE.GO — RunSLACheck
+// PERFORMANCE.GO - RunSLACheck
 // =============================================================================
 
 func TestCB4_RunSLACheck_NoPeers(t *testing.T) {
@@ -1149,7 +1149,7 @@ func TestCB4_RunSLACheck_NoPeers(t *testing.T) {
 }
 
 // =============================================================================
-// HARDENING.GO — NewJobRateLimiter more paths
+// HARDENING.GO - NewJobRateLimiter more paths
 // =============================================================================
 
 func TestCB4_JobRateLimiter_ExceedLimit(t *testing.T) {
@@ -1166,14 +1166,14 @@ func TestCB4_JobRateLimiter_ExceedLimit(t *testing.T) {
 }
 
 // =============================================================================
-// DRAND_PULSE.GO — LatestPulse
+// DRAND_PULSE.GO - LatestPulse
 // =============================================================================
 
 // LatestPulse is on HTTPDrandPulseProvider, not Keeper.
 // Tested via drand_pulse integration tests.
 
 // =============================================================================
-// TOKENOMICS_TREASURY_VESTING.GO — ValidateVestingSchedules more branches
+// TOKENOMICS_TREASURY_VESTING.GO - ValidateVestingSchedules more branches
 // =============================================================================
 
 func TestCB4_ValidateVestingSchedules_Valid(t *testing.T) {
@@ -1183,7 +1183,7 @@ func TestCB4_ValidateVestingSchedules_Valid(t *testing.T) {
 }
 
 // =============================================================================
-// MAINNET_PARAMS.GO — CheckParameterCompatibility more branches
+// MAINNET_PARAMS.GO - CheckParameterCompatibility more branches
 // =============================================================================
 
 func TestCB4_CheckParameterCompatibility(t *testing.T) {
@@ -1194,7 +1194,7 @@ func TestCB4_CheckParameterCompatibility(t *testing.T) {
 }
 
 // =============================================================================
-// VALIDATOR_ONBOARDING.GO — BuildOnboardingDashboard
+// VALIDATOR_ONBOARDING.GO - BuildOnboardingDashboard
 // =============================================================================
 
 func TestCB4_BuildOnboardingDashboard_WithData(t *testing.T) {
@@ -1221,7 +1221,7 @@ func TestCB4_BuildOnboardingDashboard_WithData(t *testing.T) {
 }
 
 // =============================================================================
-// ROADMAP_TRACKER.GO — evaluateMilestoneStatus
+// ROADMAP_TRACKER.GO - evaluateMilestoneStatus
 // =============================================================================
 
 func TestCB4_CanonicalMilestones_WithKeeper(t *testing.T) {
@@ -1239,7 +1239,7 @@ func TestCB4_CanonicalMilestones_WithKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// UPGRADE.GO — PostUpgradeValidation
+// UPGRADE.GO - PostUpgradeValidation
 // =============================================================================
 
 func TestCB4_PostUpgradeValidation(t *testing.T) {
@@ -1250,14 +1250,14 @@ func TestCB4_PostUpgradeValidation(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_EARMARK_STORE.GO — addEarmarkAmount, getEarmarkAmount (via keeper)
+// FEE_EARMARK_STORE.GO - addEarmarkAmount, getEarmarkAmount (via keeper)
 // =============================================================================
 
 // These methods are on the Keeper and require state store access.
 // Already tested indirectly through DistributeJobFee.
 
 // =============================================================================
-// AUDIT.GO — AuditLogger more audit event types
+// AUDIT.GO - AuditLogger more audit event types
 // =============================================================================
 
 func TestCB4_AuditLogger_AllEventTypes(t *testing.T) {
@@ -1311,7 +1311,7 @@ func TestCB4_AuditLogger_AllEventTypes(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — simulatedVerificationEnabled with real keeper
+// CONSENSUS.GO - simulatedVerificationEnabled with real keeper
 // =============================================================================
 
 func TestCB4_SimulatedVerificationEnabled_WithKeeper(t *testing.T) {
@@ -1336,14 +1336,14 @@ func TestCB4_ProductionVerificationMode_WithKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — aggregateBLSSignatures, more paths
+// CONSENSUS.GO - aggregateBLSSignatures, more paths
 // =============================================================================
 
 // AggregateVoteExtensions takes []abci.ExtendedVoteInfo, not []VoteExtensionWire.
 // Already tested in coverage_boost2_test.go and coverage_boost3_test.go.
 
 // =============================================================================
-// SCHEDULER.GO — Update (JobPriorityQueue)
+// SCHEDULER.GO - Update (JobPriorityQueue)
 // =============================================================================
 
 func TestCB4_Scheduler_EnqueueAndProcess(t *testing.T) {
@@ -1371,7 +1371,7 @@ func TestCB4_Scheduler_EnqueueAndProcess(t *testing.T) {
 }
 
 // =============================================================================
-// QUERY_SERVER.GO — more query paths
+// QUERY_SERVER.GO - more query paths
 // =============================================================================
 
 func TestCB4_QueryServer_GetJob(t *testing.T) {

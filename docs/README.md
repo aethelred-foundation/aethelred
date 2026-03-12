@@ -1,18 +1,13 @@
-# Aethelred Protocol Documentation
+<h1 align="center">Aethelred Documentation</h1>
 
 <p align="center">
-  <img src="assets/images/aethelred-logo.svg" alt="Aethelred Protocol" width="200"/>
+  <strong>Official documentation for the Aethelred sovereign L1 blockchain</strong>
 </p>
 
 <p align="center">
-  <strong>The Verifiable Compute Cloud for Sovereign AI</strong>
-</p>
-
-<p align="center">
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#documentation">Documentation</a> •
-  <a href="#sdks">SDKs</a> •
-  <a href="#community">Community</a>
+  <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/live_docs-docs.aethelred.io-orange?style=flat-square" alt="Live Docs"></a>
+  <a href="https://github.com/AethelredFoundation/aethelred-docs/actions"><img src="https://img.shields.io/github/actions/workflow/status/AethelredFoundation/aethelred-docs/docs-ci.yml?branch=main&style=flat-square&label=Build" alt="Build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
 </p>
 
 ---
@@ -33,7 +28,7 @@
 
 ## Executive Summary
 
-Aethelred is a **Layer-1 blockchain** purpose-built for **Verifiable AI Computation**. Unlike legacy blockchains that sell "blockspace," Aethelred sells **"Verified Intelligence"** — cryptographically proven AI outputs that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
+Aethelred is a **Layer-1 blockchain** purpose-built for **Verifiable AI Computation**. Unlike legacy blockchains that sell "blockspace," Aethelred sells **"Verified Intelligence"** - cryptographically proven AI outputs that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
 
 ### The Trust Trilemma Solution
 
@@ -153,70 +148,52 @@ aethel run src/main.py --network testnet --hardware aws-nitro
 ### Appendices
 
 | Document | Description |
-|----------|-------------|
-| [NIST PQC Standards](appendices/nist-pqc.md) | Post-quantum cryptography |
-| [Intel SGX DCAP](appendices/sgx-dcap.md) | Attestation flow |
-| [UAE Data Law](appendices/uae-data-law.md) | Regulatory requirements |
-| [Glossary](appendices/glossary.md) | Terminology reference |
+|---|---|
+| [Developer Quickstart](DEVELOPER_QUICKSTART.md) | Get a local node running in 10 minutes |
+| [Architecture](architecture.md) | System architecture deep-dive |
+| [API Reference](API_REFERENCE.md) | Full REST + gRPC + WebSocket API |
+| [SDK Guide](SDK_GUIDE.md) | Using the TypeScript, Python, Go, and Rust SDKs |
+| [Validator Runbook](VALIDATOR_RUNBOOK.md) | Running a production validator node |
+| [Cosmos Node](cosmos-node.md) | Cosmos SDK specifics |
 
 ---
 
-## Network Information
+## Sections
 
-### Mainnet (Coming Q3 2026)
-
-| Parameter | Value |
-|-----------|-------|
-| Chain ID | `8821` |
-| Native Token | `AETHEL` |
-| RPC Endpoint | `https://rpc.aethelred.io` |
-| Explorer | `https://explorer.aethelred.io` |
-| WebSocket | `wss://ws.aethelred.io` |
-
-### Testnet (Nebula)
-
-| Parameter | Value |
-|-----------|-------|
-| Chain ID | `88210` |
-| Native Token | `tAETHEL` |
-| RPC Endpoint | `https://testnet-rpc.aethelred.io` |
-| Explorer | `https://testnet.aethelred.io` |
-| Faucet | `https://faucet.aethelred.io` |
+```
+docs/
+├── architecture.md          # System architecture
+├── API_REFERENCE.md         # REST / gRPC / WS API reference
+├── DEVELOPER_QUICKSTART.md  # Get started in 10 minutes
+├── SDK_GUIDE.md             # SDK usage guide
+├── VALIDATOR_RUNBOOK.md     # Validator operations
+├── AIPs/                    # Aethelred Improvement Proposals (mirrored)
+├── api/                     # Detailed API schemas
+├── architecture/            # Architecture diagrams
+├── cryptography/            # Cryptography specifications
+├── governance/              # Governance process
+├── guides/                  # Step-by-step guides
+├── operations/              # Node operations
+├── audits/                  # Security audit reports
+└── appendices/              # Reference material
+```
 
 ---
 
-## SDKs
+## Contributing to Docs
 
-| Language | Package | Status | Documentation |
-|----------|---------|--------|---------------|
-| Python | `aethelred` | Stable | [Guide](sdk/python.md) |
-| TypeScript | `@aethelred/sdk` | Stable | [Guide](sdk/typescript.md) |
-| Rust | `aethelred-sdk` | Stable | [Guide](sdk/rust.md) |
-| Go | `aethelred-go` | Beta | [Guide](sdk/go.md) |
-| Java | `aethelred-java` | Alpha | [Guide](sdk/java.md) |
+Found an error or want to improve the docs?
 
----
+1. Fork this repo
+2. Edit the relevant `.md` file
+3. Open a PR - docs PRs are reviewed within 48 hours
 
-## Community & Support
-
-### Official Channels
-
-- **Documentation**: https://docs.aethelred.io
-- **GitHub**: https://github.com/aethelred
-- **Discord**: https://discord.gg/aethelred
-- **Twitter**: https://twitter.com/aethelred_io
-
-### Enterprise Support
-
-For enterprise integrations, SLA guarantees, and dedicated support:
-
-- **Email**: enterprise@aethelred.io
-- **Portal**: https://enterprise.aethelred.io
+For major doc changes or new sections, please open an [issue](https://github.com/AethelredFoundation/aethelred-docs/issues) first.
 
 ---
 
-## Confidentiality Notice
+## Live Site
 
-This document contains proprietary architecture for the Aethelred Protocol. Distribution is restricted to authorized personnel only. Unauthorized disclosure may result in legal action.
+Docs are deployed automatically on every push to `main` via GitHub Pages / Vercel.
 
-© 2026 Aethelred Protocol Foundation. All Rights Reserved.
+Live: **[docs.aethelred.io](https://docs.aethelred.io)**

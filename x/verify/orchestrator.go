@@ -489,7 +489,7 @@ func (vo *VerificationOrchestrator) verifyHybrid(ctx context.Context, req *Verif
 
 	// Cross-validate outputs: TEE and zkML MUST agree when both succeed.
 	// A mismatch indicates either a hardware fault, a compromised enclave,
-	// or an incorrect proof — in all cases, the result is invalid.
+	// or an incorrect proof - in all cases, the result is invalid.
 	if teeResult.Success && zkmlResult.Success {
 		if zkmlResult.PublicInputs == nil || len(zkmlResult.PublicInputs.OutputCommitment) == 0 {
 			vo.logger.Error("CRITICAL: zkML public inputs missing for hybrid output binding",
@@ -500,7 +500,7 @@ func (vo *VerificationOrchestrator) verifyHybrid(ctx context.Context, req *Verif
 			zkmlResult.Success = false
 			zkmlResult.Error = "hybrid output binding missing (no zkML public inputs)"
 		} else if !bytesEqual(teeResult.OutputHash, zkmlResult.PublicInputs.OutputCommitment) {
-			vo.logger.Error("CRITICAL: TEE and zkML output mismatch — marking both as failed",
+			vo.logger.Error("CRITICAL: TEE and zkML output mismatch - marking both as failed",
 				"request_id", req.RequestID,
 				"tee_output", fmt.Sprintf("%x", teeResult.OutputHash),
 				"zkml_output", fmt.Sprintf("%x", zkmlResult.PublicInputs.OutputCommitment),

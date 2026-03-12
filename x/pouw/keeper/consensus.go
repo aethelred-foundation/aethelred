@@ -282,7 +282,7 @@ func (ch *ConsensusHandler) executeVerification(ctx sdk.Context, job *types.Comp
 		return result
 	}
 
-	ch.logger.Warn("SIMULATED verification — NOT FOR PRODUCTION",
+	ch.logger.Warn("SIMULATED verification - NOT FOR PRODUCTION",
 		"job_id", job.Id,
 		"validator", validatorAddr,
 		"proof_type", job.ProofType,
@@ -530,7 +530,7 @@ func (ch *ConsensusHandler) validateVerificationWireWithCtx(ctxPtr *sdk.Context,
 			return fmt.Errorf("execution time must be positive for successful verification")
 		}
 
-		// Validate attestation based on type — parse and structurally verify
+		// Validate attestation based on type - parse and structurally verify
 		switch v.AttestationType {
 		case "tee":
 			if err := ch.validateTEEAttestationWireWithCtx(ctxPtr, v); err != nil {

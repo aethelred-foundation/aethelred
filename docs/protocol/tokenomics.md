@@ -291,69 +291,76 @@ impl TokenModule {
 
 | Category | % | Token Amount | Notes |
 |----------|---|--------------|-------|
-| Compute / PoUW Rewards | 30% | 3,000,000,000 | Incentivize H100 validators |
+| PoUW Rewards | 30% | 3,000,000,000 | Validator incentives (10-year program) |
 | Core Contributors | 20% | 2,000,000,000 | Team alignment |
-| Ecosystem & Grants | 15% | 1,500,000,000 | Developer adoption (target 30,000+) |
-| Aethelred Labs Treasury | 10% | 1,000,000,000 | Operational runway |
-| Public Sale (Community) | 10% | 1,000,000,000 | Validators, devs, community |
-| Strategic Investors | 5% | 500,000,000 | Enterprise partners, funds |
-| Insurance / Stability | 5% | 500,000,000 | Slashing protection |
-| Foundation Reserve | 5% | 500,000,000 | Future initiatives |
+| Ecosystem & Grants | 15% | 1,500,000,000 | Developer adoption & dApp grants |
+| Public Sales | 7.5% | 750,000,000 | Echo + Exchange sales |
+| Airdrop (Seals) | 7% | 700,000,000 | Community incentives |
+| Treasury & MM | 6% | 600,000,000 | Operational runway + Market Maker loans |
+| Strategic / Seed | 5.5% | 550,000,000 | Seed + Strategic investors |
+| Insurance Fund | 5% | 500,000,000 | Slashing appeals & hack indemnification |
+| Contingency Reserve | 4% | 400,000,000 | Unknown unknowns; strategic pivots |
 | **TOTAL** | **100%** | **10,000,000,000** | **Math verified** |
 
 ### 3.2 Vesting Schedules
 
-**Compute / PoUW Rewards (30% — 3B tokens)**
-- No cliff, no TGE unlock — rewards begin at genesis
+**Compute / PoUW Rewards (30% - 3B tokens)**
+- No cliff, no TGE unlock - rewards begin at genesis
 - 10-year linear release (120 months, ~25M/month)
 - Validator incentives for H100/TEE operators
 
-**Core Contributors (20% — 2B tokens)**
-- 12-month cliff, 25% released at cliff (500M)
-- 4-year total vest (48 months), 36 months linear post-cliff (~41.7M/month)
-- Team alignment with mainnet milestone lock
+**Core Contributors (20% - 2B tokens)**
+- 6-month cliff, 15% released at cliff (300M)
+- 5-year total vest (60 months), 42 months linear post-cliff (~41.7M/month)
+- Team alignment; 6-month cliff for operational liquidity
 
-**Ecosystem & Grants (15% — 1.5B tokens)**
-- 5% TGE unlock (75M tokens at genesis)
-- 6-month cliff, then 54 months linear post-cliff (~23.8M/month)
-- 5-year total vest (60 months)
+**Ecosystem & Grants (15% - 1.5B tokens)**
+- 2% TGE unlock (30M tokens at genesis)
+- 6-month cliff, then 48 months linear post-cliff (~23.75M/month)
+- 54 months total vest
 - Developer adoption, dApp incentives
 
-**Aethelred Labs Treasury (10% — 1B tokens)**
+**Treasury & MM (6% - 600M tokens)**
+- No cliff, 25% TGE unlock (150M tokens)
+- 3-year total vest (36 months), linear (~12.5M/month)
+- Operational runway + Market Maker loans (Wintermute, GSR)
+
+**Public Sales (7.5% - 750M tokens)**
+- 20% TGE unlock (150M tokens)
+- No cliff, 18 months linear (~29.2M/month)
+- Echo + Exchange sales; 80% locked
+
+**Airdrop / Seals (7% - 700M tokens)**
+- 25% TGE unlock (175M tokens)
+- No cliff, 12 months linear (~43.75M/month)
+- Points program starts Mar 2026; snapshot Nov 2026
+
+**Strategic / Seed (5.5% - 550M tokens)**
 - 12-month cliff, no TGE unlock
-- 5-year total vest (60 months), 48 months linear post-cliff (~20.8M/month)
-- Operational runway, working capital
+- 36 months total (12 cliff + 24 linear, ~22.9M/month)
+- Seed + Strategic investor rounds
 
-**Public Sale / Community (10% — 1B tokens)**
-- 22.5% TGE unlock (225M tokens — Echo + Exchange + Airdrop)
-- No cliff, 2-year total vest (24 months)
-- Remaining 77.5% linear over 24 months (~32.3M/month)
-
-**Strategic Investors (5% — 500M tokens)**
-- 12-month cliff, no TGE unlock
-- 4-year total vest (48 months), 36 months linear post-cliff (~13.9M/month)
-- Seed + Strategic + Binance allocations
-
-**Insurance / Stability (5% — 500M tokens)**
+**Insurance Fund (5% - 500M tokens)**
 - 10% TGE unlock (50M tokens)
-- No cliff, 2.5-year linear release (30 months)
-- Slashing appeals, bridge hack indemnification
+- No cliff, 30 months linear (~12.5M/month)
+- Max 10M per incident; 3-of-5 multi-sig governance
 
-**Foundation Reserve (5% — 500M tokens)**
-- 12-month cliff, no TGE unlock
-- 5-year total vest (60 months), 48 months linear post-cliff (~10.4M/month)
-- Future initiatives, strategic partnerships
+**Contingency Reserve (4% - 400M tokens)**
+- No TGE unlock, 12-month cliff
+- Vesting TBD; team + advisor majority vote; 30-day timelock
+- Reserved for unforeseen circumstances, emergency funding, strategic pivots
 
-**TGE Unlock Summary: 3.5% of total supply (350M tokens)**
+**TGE Unlock Summary: 6.3% of total supply (630M tokens)**
+- TGE market cap: $63M at $0.10/token
 
 ### 3.3 Strategic Characteristics
 
-- **Insider allocation** (Core Contributors + Strategic Investors) = **25%** (Tier-1 standard range)
-- **Compute allocation** (**30%**) — protocol infrastructure engine, 10-year program for H100 validators
-- **Ecosystem + Labs** (**25%**) — growth and venture multiplier with staggered cliff schedules
-- **Community float** (**10%**) — broad participation with 22.5% TGE for immediate ecosystem bootstrapping
-- **Insurance + Reserve** (**10%**) — institutional trust, risk buffer, 10% insurance TGE for launch readiness
-- **TGE circulating supply**: ~3.5% (350M tokens) — conservative float for price discovery
+- **Insider allocation** (Core Contributors + Strategic/Seed) = **25.5%** (Tier-1 standard range)
+- **Compute allocation** (**30%**) - protocol infrastructure engine, 10-year program for H100 validators
+- **Ecosystem + Treasury** (**21%**) - growth and venture multiplier with staggered cliff schedules
+- **Community float** (**14.5%**) - Public Sales (7.5%) + Airdrop/Seals (7%), broad participation with 20% / 25% TGE
+- **Insurance + Contingency** (**9%**) - institutional trust, risk buffer, 10% insurance TGE for launch readiness
+- **TGE circulating supply**: ~6.3% (630M tokens) - float for price discovery at $63M market cap ($0.10/token)
 
 ### 3.4 Clarification of Final Model
 
@@ -363,8 +370,9 @@ Earlier drafts discussed:
 3. Different vesting models
 4. Different public unlock ratios
 5. 10%/5% Investor/Public Sale split
+6. 8-category allocation (now 9 categories)
 
-The final approved model is the 10B hard-capped structure above with a 5%/10% Strategic Investor/Public Sale split, and supersedes those earlier drafts.
+The final approved model is the 10B hard-capped structure above with a 5.5%/7.5% Strategic-Seed/Public Sales split, a new 7% Airdrop (Seals) category, and supersedes those earlier drafts.
 
 ### 3.5 Vesting Contract
 
@@ -1034,10 +1042,14 @@ impl StakingModule {
 | Emission Source | Allocation | Release Model |
 |-----------------|------------|---------------|
 | Compute / PoUW Rewards | 3,000,000,000 | 15-year algorithmic decay, contribution-gated |
-| Core Contributors | 2,000,000,000 | 12m cliff + 48m linear |
-| Investors | 1,000,000,000 | 12m cliff + 24m linear |
-| Public Sale | 500,000,000 | 20% TGE + 80% over 6 months |
-| Ecosystem & Grants | 1,500,000,000 | Milestone-based governance releases |
+| Core Contributors | 2,000,000,000 | 6m cliff + 42m linear |
+| Strategic/Seed | 550,000,000 | 12m cliff + 24m linear |
+| Public Sales | 750,000,000 | 20% TGE + 80% over 18 months |
+| Airdrop (Seals) | 700,000,000 | 25% TGE + 75% over 12 months |
+| Treasury & MM | 600,000,000 | 25% TGE + 75% over 36 months |
+| Ecosystem & Grants | 1,500,000,000 | 2% TGE + 48m linear (54m total) |
+| Insurance Fund | 500,000,000 | 10% TGE + 30m linear |
+| Contingency Reserve | 400,000,000 | 12m cliff, TBD vesting |
 
 ### 7.2 Deflation Mechanics
 

@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost5_test.go — Fifth wave of tests. Targets the largest remaining
+// coverage_boost5_test.go - Fifth wave of tests. Targets the largest remaining
 // coverage gaps: slashing_integration, fee_distribution, attestation_registry,
 // governance, consensus, keeper, msg_server, evidence_system, and more.
 //
@@ -31,7 +31,7 @@ func cb5SDKCtx() sdk.Context {
 }
 
 // =============================================================================
-// ATTESTATION_REGISTRY.GO — AppendTrustedMeasurementByAuthority and related
+// ATTESTATION_REGISTRY.GO - AppendTrustedMeasurementByAuthority and related
 // =============================================================================
 
 func TestCB5_AppendTrustedMeasurement_Unauthorized(t *testing.T) {
@@ -84,7 +84,7 @@ func TestCB5_RevokeTrustedMeasurement_NotCommitteeMember(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_DISTRIBUTION.GO — Module account addresses, fee distributor
+// FEE_DISTRIBUTION.GO - Module account addresses, fee distributor
 // =============================================================================
 
 func TestCB5_GetModuleAccountAddress(t *testing.T) {
@@ -152,7 +152,7 @@ func TestCB5_RewardScaleByReputation(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE.GO — ValidatePositiveCoin, UpdateParams via msg server
+// GOVERNANCE.GO - ValidatePositiveCoin, UpdateParams via msg server
 // =============================================================================
 
 func TestCB5_ValidatePositiveCoin(t *testing.T) {
@@ -179,7 +179,7 @@ func TestCB5_ValidatePositiveCoin(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — UpdateJob state transitions (boost from 40.5%)
+// KEEPER.GO - UpdateJob state transitions (boost from 40.5%)
 // =============================================================================
 
 func TestCB5_UpdateJob_PendingToProcessing(t *testing.T) {
@@ -250,7 +250,7 @@ func TestCB5_UpdateJob_PendingToExpired(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — executeVerification, aggregateBLSSignatures, PrepareVoteExtension
+// CONSENSUS.GO - executeVerification, aggregateBLSSignatures, PrepareVoteExtension
 // =============================================================================
 
 func TestCB5_ExecuteVerification_ModelNotFound(t *testing.T) {
@@ -312,7 +312,7 @@ func TestCB5_PrepareVoteExtension_NoJobs(t *testing.T) {
 }
 
 // =============================================================================
-// SLASHING_INTEGRATION.GO — NewIntegratedEvidenceProcessor and accessors
+// SLASHING_INTEGRATION.GO - NewIntegratedEvidenceProcessor and accessors
 // =============================================================================
 
 func TestCB5_NewIntegratedEvidenceProcessor(t *testing.T) {
@@ -441,7 +441,7 @@ func TestCB5_EmitEventIfEnabled(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE_SYSTEM.GO — SlashingIntegration record/getStake, recordSlashingEvent
+// EVIDENCE_SYSTEM.GO - SlashingIntegration record/getStake, recordSlashingEvent
 // =============================================================================
 
 func TestCB5_SlashingIntegration_RecordSlashingEvent_NilKeeper(t *testing.T) {
@@ -494,7 +494,7 @@ func TestCB5_SlashingIntegration_GetValidatorStake_WithKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE.GO — ProcessEndBlockEvidence, checkMissedBlocks boost
+// EVIDENCE.GO - ProcessEndBlockEvidence, checkMissedBlocks boost
 // =============================================================================
 
 func TestCB5_EvidenceProcessor_ProcessEndBlockEvidence(t *testing.T) {
@@ -509,7 +509,7 @@ func TestCB5_EvidenceProcessor_ProcessEndBlockEvidence(t *testing.T) {
 }
 
 // =============================================================================
-// MSG_SERVER.GO — CancelJob via MsgServer
+// MSG_SERVER.GO - CancelJob via MsgServer
 // =============================================================================
 
 func TestCB5_MsgServer_CancelJob_NotFound(t *testing.T) {
@@ -604,7 +604,7 @@ func TestCB5_MsgServer_SubmitJob_ReservedMetadata(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — RegisterValidatorCapability
+// KEEPER.GO - RegisterValidatorCapability
 // =============================================================================
 
 func TestCB5_RegisterValidatorCapability(t *testing.T) {
@@ -640,7 +640,7 @@ func TestCB5_RegisterValidatorCapability_EmptyAddress(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — SetParams edge cases
+// KEEPER.GO - SetParams edge cases
 // =============================================================================
 
 func TestCB5_SetParams_ValidParams(t *testing.T) {
@@ -658,7 +658,7 @@ func TestCB5_SetParams_ValidParams(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — CountValidators
+// KEEPER.GO - CountValidators
 // =============================================================================
 
 func TestCB5_CountValidators_Empty(t *testing.T) {
@@ -689,7 +689,7 @@ func TestCB5_CountValidators_WithCapabilities(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — GetJob, GetPendingJobs (boost existing coverage)
+// KEEPER.GO - GetJob, GetPendingJobs (boost existing coverage)
 // =============================================================================
 
 func TestCB5_GetJob_NotFound(t *testing.T) {
@@ -707,7 +707,7 @@ func TestCB5_GetPendingJobs_Multiple(t *testing.T) {
 }
 
 // =============================================================================
-// KEEPER.GO — InitGenesis and ExportGenesis
+// KEEPER.GO - InitGenesis and ExportGenesis
 // =============================================================================
 
 func TestCB5_InitGenesis_WithJobs(t *testing.T) {
@@ -750,7 +750,7 @@ func TestCB5_ExportGenesis_WithValidatorStats(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — ValidateSealTransaction and ProcessSealTransaction boost
+// CONSENSUS.GO - ValidateSealTransaction and ProcessSealTransaction boost
 // =============================================================================
 
 func TestCB5_ValidateSealTransaction_InvalidJSON(t *testing.T) {
@@ -772,7 +772,7 @@ func TestCB5_ProcessSealTransaction_InvalidJSON(t *testing.T) {
 }
 
 // =============================================================================
-// QUERY_SERVER.GO — More query paths
+// QUERY_SERVER.GO - More query paths
 // =============================================================================
 
 func TestCB5_QueryServer_ValidatorStats_NotFound(t *testing.T) {
@@ -819,7 +819,7 @@ func TestCB5_QueryServer_PendingJobs(t *testing.T) {
 }
 
 // =============================================================================
-// HARDENING.GO — ShouldAcceptJob, NewJobRateLimiter paths
+// HARDENING.GO - ShouldAcceptJob, NewJobRateLimiter paths
 // =============================================================================
 
 func TestCB5_ShouldAcceptJob_WithLimiter(t *testing.T) {
@@ -865,7 +865,7 @@ func TestCB5_JobRateLimiter_SubmissionsInWindow(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER.GO — JobPriorityQueue Update, Stop
+// SCHEDULER.GO - JobPriorityQueue Update, Stop
 // =============================================================================
 
 func TestCB5_Scheduler_Stop(t *testing.T) {
@@ -915,7 +915,7 @@ func TestCB5_Scheduler_EnqueueAndGetJobs(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — SelectCommitteeForJob (boost from 55.6%)
+// STAKING.GO - SelectCommitteeForJob (boost from 55.6%)
 // =============================================================================
 
 func TestCB5_SelectCommitteeForJob_InsufficientValidators(t *testing.T) {
@@ -980,7 +980,7 @@ func TestCB5_CheckValidatorEligibility_NotRegistered(t *testing.T) {
 }
 
 // =============================================================================
-// PERFORMANCE.GO — RunSLACheck with real keeper data
+// PERFORMANCE.GO - RunSLACheck with real keeper data
 // =============================================================================
 
 func TestCB5_RunSLACheck_AllPassing(t *testing.T) {
@@ -1000,7 +1000,7 @@ func TestCB5_RunSLACheck_AllPassing(t *testing.T) {
 }
 
 // =============================================================================
-// INVARIANTS.GO — boost from 72.4%
+// INVARIANTS.GO - boost from 72.4%
 // =============================================================================
 
 func TestCB5_ValidatorStatsNonNegativeInvariant_Valid(t *testing.T) {
@@ -1016,7 +1016,7 @@ func TestCB5_ValidatorStatsNonNegativeInvariant_Valid(t *testing.T) {
 }
 
 // =============================================================================
-// ROADMAP_TRACKER.GO — boost evaluateMilestoneStatus
+// ROADMAP_TRACKER.GO - boost evaluateMilestoneStatus
 // =============================================================================
 
 func TestCB5_CanonicalMilestones_WithRealKeeper(t *testing.T) {
@@ -1026,7 +1026,7 @@ func TestCB5_CanonicalMilestones_WithRealKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// MAINNET_PARAMS.GO — CheckParameterCompatibility boost
+// MAINNET_PARAMS.GO - CheckParameterCompatibility boost
 // =============================================================================
 
 func TestCB5_CheckParameterCompatibility_WithDefaults(t *testing.T) {
@@ -1045,7 +1045,7 @@ func TestCB5_CheckParameterCompatibility_LowThreshold(t *testing.T) {
 }
 
 // =============================================================================
-// UPGRADE.GO — PostUpgradeValidation, PreUpgradeValidation
+// UPGRADE.GO - PostUpgradeValidation, PreUpgradeValidation
 // =============================================================================
 
 func TestCB5_PostUpgradeValidation_WithOrphans(t *testing.T) {
@@ -1078,7 +1078,7 @@ func TestCB5_PreUpgradeValidation_Clean(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — SafeMulDiv, ComputeEmissionScheduleSafe boost
+// TOKENOMICS_SAFE.GO - SafeMulDiv, ComputeEmissionScheduleSafe boost
 // =============================================================================
 
 func TestCB5_SafeMulDiv_DivByZero(t *testing.T) {
@@ -1103,7 +1103,7 @@ func TestCB5_ComputeEmissionScheduleSafe_LongSchedule(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_TREASURY_VESTING.GO — boost ValidateVestingSchedules
+// TOKENOMICS_TREASURY_VESTING.GO - boost ValidateVestingSchedules
 // =============================================================================
 
 func TestCB5_ValidateVestingSchedules_EmptySchedule(t *testing.T) {
@@ -1119,7 +1119,7 @@ func TestCB5_DefaultVestingSchedules_Valid(t *testing.T) {
 }
 
 // =============================================================================
-// SECURITY_AUDIT.GO — AuditReport and SecurityAudit boost
+// SECURITY_AUDIT.GO - AuditReport and SecurityAudit boost
 // =============================================================================
 
 func TestCB5_AuditReport_Accessors(t *testing.T) {
@@ -1132,7 +1132,7 @@ func TestCB5_AuditReport_Accessors(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_EARMARK_STORE.GO — boost addEarmarkAmount, getEarmarkAmount
+// FEE_EARMARK_STORE.GO - boost addEarmarkAmount, getEarmarkAmount
 // =============================================================================
 
 func TestCB5_FeeEarmarkStore_ZeroEarmarks(t *testing.T) {
@@ -1149,7 +1149,7 @@ func TestCB5_FeeEarmarkStore_ZeroEarmarks(t *testing.T) {
 }
 
 // =============================================================================
-// DRAND_PULSE.GO — LatestPulse, NewHTTPDrandPulseProvider paths
+// DRAND_PULSE.GO - LatestPulse, NewHTTPDrandPulseProvider paths
 // =============================================================================
 
 func TestCB5_NewHTTPDrandPulseProvider_DefaultEndpoint(t *testing.T) {
@@ -1163,7 +1163,7 @@ func TestCB5_NewHTTPDrandPulseProvider_CustomEndpoint(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT.GO — AuditLogger comprehensive event types
+// AUDIT.GO - AuditLogger comprehensive event types
 // =============================================================================
 
 func TestCB5_AuditLogger_AllSeverities(t *testing.T) {
@@ -1187,7 +1187,7 @@ func TestCB5_AuditLogger_AllSeverities(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH.GO — boost RenderLaunchReviewReport, RenderGenesisCeremonyReport
+// ECOSYSTEM_LAUNCH.GO - boost RenderLaunchReviewReport, RenderGenesisCeremonyReport
 // =============================================================================
 
 // RenderLaunchReviewReport and RenderGenesisCeremonyReport are tested
@@ -1195,7 +1195,7 @@ func TestCB5_AuditLogger_AllSeverities(t *testing.T) {
 // (see below in the ecosystem section).
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH.GO — LaunchReviewResult and GenesisCeremonyResult
+// ECOSYSTEM_LAUNCH.GO - LaunchReviewResult and GenesisCeremonyResult
 // =============================================================================
 
 func TestCB5_LaunchReviewResult_Empty(t *testing.T) {

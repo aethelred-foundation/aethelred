@@ -632,7 +632,7 @@ func TestScheduler_GetJobsForValidator(t *testing.T) {
 
 	_ = s.EnqueueJob(ctx, makeJob("job-1", 10, types.ProofTypeTEE))
 
-	// Process — jobs get assigned
+	// Process - jobs get assigned
 	_ = s.GetNextJobs(ctx, 100)
 
 	// Check that at least val1 has jobs assigned
@@ -761,7 +761,7 @@ func TestScheduler_ValidatorAtCapacity_SkipsToNextValidator(t *testing.T) {
 
 func TestScheduler_ValidatorConcurrentJobLimit_AcrossBlocks(t *testing.T) {
 	// Even though within-block enforcement has a gap, across blocks the
-	// getAvailableValidators check does work — a validator at capacity
+	// getAvailableValidators check does work - a validator at capacity
 	// won't be included in the available set for the next block.
 	cfg := keeper.DefaultSchedulerConfig()
 	cfg.MinValidatorsRequired = 1

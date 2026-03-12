@@ -628,7 +628,7 @@ func (ta *TEEAttestationData) validate(mode ValidationMode) error {
 		"intel-tdx":     true,
 		"amd-sev":       true,
 		"arm-trustzone": true,
-		"simulated":     true, // testnet only — production validators MUST use real TEE
+		"simulated":     true, // testnet only - production validators MUST use real TEE
 	}
 
 	if !validPlatforms[ta.Platform] {

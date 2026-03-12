@@ -19,24 +19,34 @@
 //! │  │                     GENESIS ALLOCATION (10B AETHEL)                        │ │
 //! │  │                                                                            │ │
 //! │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │ │
-//! │  │  │  Compute    │ │    Core     │ │  Ecosystem  │ │    Labs     │         │ │
-//! │  │  │  PoUW       │ │  Contribs   │ │   Grants    │ │  Treasury   │         │ │
-//! │  │  │    30%      │ │    20%      │ │    15%      │ │    10%      │         │ │
-//! │  │  │   3.0B      │ │   2.0B      │ │   1.5B      │ │   1.0B      │         │ │
+//! │  │  │  PoUW       │ │    Core     │ │  Ecosystem  │ │ Strategic   │         │ │
+//! │  │  │  Rewards    │ │  Contribs   │ │   Grants    │ │   /Seed     │         │ │
+//! │  │  │    30%      │ │    20%      │ │    15%      │ │    5.5%     │         │ │
+//! │  │  │   3.0B      │ │   2.0B      │ │   1.5B      │ │   550M      │         │ │
 //! │  │  ├─────────────┤ ├─────────────┤ ├─────────────┤ ├─────────────┤         │ │
-//! │  │  │ 10yr Linear │ │ 12mo Cliff  │ │ 5% TGE      │ │ 12mo Cliff  │         │ │
-//! │  │  │ Compute Pay │ │ 25%@Cliff   │ │ 6mo Cliff   │ │ 5yr Linear  │         │ │
+//! │  │  │ 10yr Linear │ │ 6mo Cliff   │ │ 2% TGE      │ │ 12mo Cliff  │         │ │
+//! │  │  │ Compute Pay │ │ 42mo Linear │ │ 6mo Cliff   │ │ 24mo Linear │         │ │
 //! │  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │ │
 //! │  │                                                                            │ │
 //! │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐         │ │
-//! │  │  │   Public    │ │  Strategic  │ │  Insurance  │ │ Foundation  │         │ │
-//! │  │  │    Sale     │ │  Investors  │ │  Stability  │ │  Reserve    │         │ │
-//! │  │  │    10%      │ │     5%      │ │     5%      │ │     5%      │         │ │
-//! │  │  │   1.0B      │ │   500M      │ │   500M      │ │   500M      │         │ │
+//! │  │  │   Public    │ │  Airdrop    │ │ Treasury    │ │  Insurance  │         │ │
+//! │  │  │   Sales     │ │   Seals     │ │   & MM      │ │    Fund     │         │ │
+//! │  │  │    7.5%     │ │     7%      │ │     6%      │ │     5%      │         │ │
+//! │  │  │   750M      │ │   700M      │ │   600M      │ │   500M      │         │ │
 //! │  │  ├─────────────┤ ├─────────────┤ ├─────────────┤ ├─────────────┤         │ │
-//! │  │  │ 22.5% TGE   │ │ 12mo Cliff  │ │ 10% TGE     │ │ 12mo Cliff  │         │ │
-//! │  │  │ 2yr Linear  │ │ 4yr Total   │ │ 30mo Linear │ │ 5yr Total   │         │ │
+//! │  │  │ 20% TGE     │ │ 25% TGE     │ │ 25% TGE     │ │ 10% TGE     │         │ │
+//! │  │  │ 18mo Linear │ │ 12mo Linear │ │ 36mo Linear │ │ 30mo Linear │         │ │
 //! │  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘         │ │
+//! │  │                                                                            │ │
+//! │  │  ┌─────────────┐                                                           │ │
+//! │  │  │ Contingency │                                                           │ │
+//! │  │  │  Reserve    │                                                           │ │
+//! │  │  │     4%      │                                                           │ │
+//! │  │  │   400M      │                                                           │ │
+//! │  │  ├─────────────┤                                                           │ │
+//! │  │  │ 12mo Cliff  │                                                           │ │
+//! │  │  │ Vest TBD    │                                                           │ │
+//! │  │  └─────────────┘                                                           │ │
 //! │  │                                                                            │ │
 //! │  └────────────────────────────────────────────────────────────────────────────┘ │
 //! │                                      │                                          │
@@ -95,7 +105,7 @@ use super::types::{Address, TokenAmount};
 
 /// Token precision (18 decimals).
 ///
-/// CROSS-LAYER DENOMINATION NOTE — Audit fix [C-02]:
+/// CROSS-LAYER DENOMINATION NOTE - Audit fix [C-02]:
 /// The Rust VM uses 18-decimal wei, while the Go/Cosmos L1 uses 6-decimal uaethel.
 /// Bridging between layers requires a 10^12 scaling factor:
 ///   EVM/Rust wei = uaethel * 10^12
@@ -121,20 +131,23 @@ pub const CORE_CONTRIBUTORS_POOL: TokenAmount = 2_000_000_000 * ONE_AETHEL;
 /// Ecosystem & Grants pool (15%)
 pub const ECOSYSTEM_GRANTS_POOL: TokenAmount = 1_500_000_000 * ONE_AETHEL;
 
-/// Aethelred Labs Treasury pool (10%)
-pub const LABS_TREASURY_POOL: TokenAmount = 1_000_000_000 * ONE_AETHEL;
+/// Strategic / Seed pool (5.5%)
+pub const STRATEGIC_SEED_POOL: TokenAmount = 550_000_000 * ONE_AETHEL;
 
-/// Public Sale / Community pool (10%)
-pub const PUBLIC_SALE_POOL: TokenAmount = 1_000_000_000 * ONE_AETHEL;
+/// Public Sales pool (7.5%)
+pub const PUBLIC_SALES_POOL: TokenAmount = 750_000_000 * ONE_AETHEL;
 
-/// Strategic Investors pool (5%)
-pub const STRATEGIC_INVESTORS_POOL: TokenAmount = 500_000_000 * ONE_AETHEL;
+/// Airdrop / Seals pool (7%)
+pub const AIRDROP_SEALS_POOL: TokenAmount = 700_000_000 * ONE_AETHEL;
 
-/// Insurance / Stability Fund pool (5%)
-pub const INSURANCE_STABILITY_POOL: TokenAmount = 500_000_000 * ONE_AETHEL;
+/// Treasury & Market Maker pool (6%)
+pub const TREASURY_MM_POOL: TokenAmount = 600_000_000 * ONE_AETHEL;
 
-/// Foundation Reserve pool (5%)
-pub const FOUNDATION_RESERVE_POOL: TokenAmount = 500_000_000 * ONE_AETHEL;
+/// Insurance Fund pool (5%)
+pub const INSURANCE_FUND_POOL: TokenAmount = 500_000_000 * ONE_AETHEL;
+
+/// Contingency Reserve pool (4%)
+pub const CONTINGENCY_RESERVE_POOL: TokenAmount = 400_000_000 * ONE_AETHEL;
 
 /// Halving interval in seconds (4 years)
 pub const HALVING_INTERVAL_SECS: u64 = 4 * 365 * 24 * 60 * 60;
@@ -155,32 +168,35 @@ pub const SECONDS_PER_YEAR: u64 = 365 * 24 * 60 * 60;
 // ALLOCATION CATEGORIES
 // =============================================================================
 
-/// Token allocation category (10B total supply, 8 categories)
+/// Token allocation category (10B total supply, 9 categories)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AllocationCategory {
-    /// Compute / PoUW rewards (30%) — H100 validator incentives, 10yr linear
+    /// PoUW Rewards (30%) - Validator incentives, 10yr linear, no cliff
     ComputePoUW,
 
-    /// Core Contributors (20%) — 12mo cliff, 25% at cliff, 4yr total
+    /// Core Contributors (20%) - 6mo cliff, 42mo linear, no TGE
     CoreContributors,
 
-    /// Ecosystem & Grants (15%) — 5% TGE, 6mo cliff, 5yr total
+    /// Ecosystem & Grants (15%) - 2% TGE, 6mo cliff, 48mo linear
     EcosystemGrants,
 
-    /// Aethelred Labs Treasury (10%) — 12mo cliff, 5yr total
-    LabsTreasury,
+    /// Strategic / Seed (5.5%) - 12mo cliff, 24mo linear, no TGE
+    StrategicSeed,
 
-    /// Public Sale / Community (10%) — 22.5% TGE, no cliff, 2yr vest
-    PublicSale,
+    /// Public Sales (7.5%) - 20% TGE, no cliff, 18mo linear
+    PublicSales,
 
-    /// Strategic Investors (5%) — 12mo cliff, 4yr total
-    StrategicInvestors,
+    /// Airdrop / Seals (7%) - 25% TGE, no cliff, 12mo linear
+    AirdropSeals,
 
-    /// Insurance / Stability Fund (5%) — 10% TGE, 30mo linear
-    InsuranceStability,
+    /// Treasury & MM (6%) - 25% TGE, no cliff, 36mo linear
+    TreasuryMM,
 
-    /// Foundation Reserve (5%) — 12mo cliff, 5yr total
-    FoundationReserve,
+    /// Insurance Fund (5%) - 10% TGE, no cliff, 30mo linear
+    InsuranceFund,
+
+    /// Contingency Reserve (4%) - 12mo cliff, vesting TBD
+    ContingencyReserve,
 }
 
 impl AllocationCategory {
@@ -190,25 +206,27 @@ impl AllocationCategory {
             Self::ComputePoUW => COMPUTE_POUW_POOL,
             Self::CoreContributors => CORE_CONTRIBUTORS_POOL,
             Self::EcosystemGrants => ECOSYSTEM_GRANTS_POOL,
-            Self::LabsTreasury => LABS_TREASURY_POOL,
-            Self::PublicSale => PUBLIC_SALE_POOL,
-            Self::StrategicInvestors => STRATEGIC_INVESTORS_POOL,
-            Self::InsuranceStability => INSURANCE_STABILITY_POOL,
-            Self::FoundationReserve => FOUNDATION_RESERVE_POOL,
+            Self::StrategicSeed => STRATEGIC_SEED_POOL,
+            Self::PublicSales => PUBLIC_SALES_POOL,
+            Self::AirdropSeals => AIRDROP_SEALS_POOL,
+            Self::TreasuryMM => TREASURY_MM_POOL,
+            Self::InsuranceFund => INSURANCE_FUND_POOL,
+            Self::ContingencyReserve => CONTINGENCY_RESERVE_POOL,
         }
     }
 
     /// Get the percentage allocation (basis points)
     pub fn percentage_bps(&self) -> u16 {
         match self {
-            Self::ComputePoUW => 3000,        // 30%
-            Self::CoreContributors => 2000,   // 20%
-            Self::EcosystemGrants => 1500,    // 15%
-            Self::LabsTreasury => 1000,       // 10%
-            Self::PublicSale => 1000,         // 10%
-            Self::StrategicInvestors => 500,  // 5%
-            Self::InsuranceStability => 500,  // 5%
-            Self::FoundationReserve => 500,   // 5%
+            Self::ComputePoUW => 3000,          // 30%
+            Self::CoreContributors => 2000,     // 20%
+            Self::EcosystemGrants => 1500,      // 15%
+            Self::StrategicSeed => 550,         // 5.5%
+            Self::PublicSales => 750,           // 7.5%
+            Self::AirdropSeals => 700,          // 7%
+            Self::TreasuryMM => 600,            // 6%
+            Self::InsuranceFund => 500,         // 5%
+            Self::ContingencyReserve => 400,    // 4%
         }
     }
 
@@ -221,38 +239,43 @@ impl AllocationCategory {
                 tge_percent: 0,                                       // No TGE unlock
             },
             Self::CoreContributors => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
-                duration: Duration::from_secs(4 * SECONDS_PER_YEAR), // 4yr total (48mo)
-                tge_percent: 0,                                       // 25% at cliff (handled by cliff_percent)
+                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2),    // 6mo cliff
+                duration: Duration::from_secs(4 * SECONDS_PER_YEAR), // 48mo total (6mo cliff + 42mo linear)
+                tge_percent: 0,                                       // No TGE unlock
             },
             Self::EcosystemGrants => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2),    // 6mo cliff
-                duration: Duration::from_secs(5 * SECONDS_PER_YEAR), // 5yr total (60mo)
-                tge_percent: 5,                                       // 5% at TGE (75M)
+                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2),        // 6mo cliff
+                duration: Duration::from_secs(9 * SECONDS_PER_YEAR / 2), // 54mo total (6mo cliff + 48mo linear)
+                tge_percent: 2,                                           // 2% at TGE (30M)
             },
-            Self::LabsTreasury => VestingSchedule::Linear {
+            Self::StrategicSeed => VestingSchedule::Linear {
                 cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
-                duration: Duration::from_secs(5 * SECONDS_PER_YEAR), // 5yr total (60mo)
+                duration: Duration::from_secs(3 * SECONDS_PER_YEAR), // 36mo total (12mo cliff + 24mo linear)
                 tge_percent: 0,                                       // No TGE unlock
             },
-            Self::PublicSale => VestingSchedule::Linear {
-                cliff: Duration::from_secs(0),                        // No cliff
-                duration: Duration::from_secs(2 * SECONDS_PER_YEAR), // 2yr total (24mo)
-                tge_percent: 22,                                      // ~22.5% at TGE (225M)
-            },
-            Self::StrategicInvestors => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
-                duration: Duration::from_secs(4 * SECONDS_PER_YEAR), // 4yr total (48mo)
-                tge_percent: 0,                                       // No TGE unlock
-            },
-            Self::InsuranceStability => VestingSchedule::Linear {
+            Self::PublicSales => VestingSchedule::Linear {
                 cliff: Duration::from_secs(0),                            // No cliff
-                duration: Duration::from_secs(5 * SECONDS_PER_YEAR / 2), // 2.5yr (30mo)
+                duration: Duration::from_secs(3 * SECONDS_PER_YEAR / 2), // 18mo linear
+                tge_percent: 20,                                          // 20% at TGE (150M)
+            },
+            Self::AirdropSeals => VestingSchedule::Linear {
+                cliff: Duration::from_secs(0),              // No cliff
+                duration: Duration::from_secs(SECONDS_PER_YEAR), // 12mo linear
+                tge_percent: 25,                             // 25% at TGE (175M)
+            },
+            Self::TreasuryMM => VestingSchedule::Linear {
+                cliff: Duration::from_secs(0),                        // No cliff
+                duration: Duration::from_secs(3 * SECONDS_PER_YEAR), // 36mo linear
+                tge_percent: 25,                                      // 25% at TGE (150M)
+            },
+            Self::InsuranceFund => VestingSchedule::Linear {
+                cliff: Duration::from_secs(0),                            // No cliff
+                duration: Duration::from_secs(5 * SECONDS_PER_YEAR / 2), // 30mo linear
                 tge_percent: 10,                                          // 10% at TGE (50M)
             },
-            Self::FoundationReserve => VestingSchedule::Linear {
+            Self::ContingencyReserve => VestingSchedule::Linear {
                 cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
-                duration: Duration::from_secs(5 * SECONDS_PER_YEAR), // 5yr total (60mo)
+                duration: Duration::from_secs(5 * SECONDS_PER_YEAR), // Placeholder: 60mo (vesting TBD per governance)
                 tge_percent: 0,                                       // No TGE unlock
             },
         }
@@ -297,7 +320,7 @@ pub enum VestingSchedule {
 impl VestingSchedule {
     /// Calculate vested amount at a given timestamp.
     ///
-    /// # Overflow Safety — Audit fix [M-08]
+    /// # Overflow Safety - Audit fix [M-08]
     ///
     /// All intermediate arithmetic uses `u128`. The worst-case multiplication is:
     ///   `total_amount * elapsed_secs`
@@ -944,8 +967,8 @@ impl TokenomicsManager {
             )?;
         }
 
-        // Add public sale to circulating supply immediately
-        self.circulating_supply += PUBLIC_SALE_POOL;
+        // Add public sales TGE unlock to circulating supply immediately
+        self.circulating_supply += PUBLIC_SALES_POOL;
 
         self.events.push(TokenomicsEvent::GenesisInitialized {
             total_supply: TOTAL_GENESIS_SUPPLY,
@@ -1237,11 +1260,12 @@ mod tests {
         let total = COMPUTE_POUW_POOL
             + CORE_CONTRIBUTORS_POOL
             + ECOSYSTEM_GRANTS_POOL
-            + LABS_TREASURY_POOL
-            + PUBLIC_SALE_POOL
-            + STRATEGIC_INVESTORS_POOL
-            + INSURANCE_STABILITY_POOL
-            + FOUNDATION_RESERVE_POOL;
+            + STRATEGIC_SEED_POOL
+            + PUBLIC_SALES_POOL
+            + AIRDROP_SEALS_POOL
+            + TREASURY_MM_POOL
+            + INSURANCE_FUND_POOL
+            + CONTINGENCY_RESERVE_POOL;
 
         assert_eq!(total, TOTAL_GENESIS_SUPPLY);
     }
@@ -1252,11 +1276,12 @@ mod tests {
             AllocationCategory::ComputePoUW,
             AllocationCategory::CoreContributors,
             AllocationCategory::EcosystemGrants,
-            AllocationCategory::LabsTreasury,
-            AllocationCategory::PublicSale,
-            AllocationCategory::StrategicInvestors,
-            AllocationCategory::InsuranceStability,
-            AllocationCategory::FoundationReserve,
+            AllocationCategory::StrategicSeed,
+            AllocationCategory::PublicSales,
+            AllocationCategory::AirdropSeals,
+            AllocationCategory::TreasuryMM,
+            AllocationCategory::InsuranceFund,
+            AllocationCategory::ContingencyReserve,
         ]
         .iter()
         .map(|c| c.percentage_bps())

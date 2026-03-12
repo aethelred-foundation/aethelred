@@ -34,12 +34,12 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** combining cl
 
 | Field | Bytes | Description |
 |-------|------:|-------------|
-| Version | 1 | `0x01` — wire format version |
-| Marker | 1 | `0xAE` — hybrid signature identifier |
+| Version | 1 | `0x01` - wire format version |
+| Marker | 1 | `0xAE` - hybrid signature identifier |
 | ECDSA | 64 | `r \|\| s` concatenation |
-| Separator | 1 | `0xFF` — component boundary |
+| Separator | 1 | `0xFF` - component boundary |
 | Dilithium | 2420/3293/4595 | Level-dependent signature bytes |
-| Level | 1 | `0x02`/`0x03`/`0x05` — Dilithium security level |
+| Level | 1 | `0x02`/`0x03`/`0x05` - Dilithium security level |
 | Metadata | 0–18 | Optional: timestamp (9B) + chain_id (9B) |
 
 ### Metadata Encoding
@@ -89,5 +89,5 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** combining cl
 
 1. **Current**: ECDSA + Dilithium3 (hybrid, both required on mainnet)
 2. **Phase 2**: Dilithium-only (drop ECDSA once ecosystem migrates)
-3. **Emergency**: Panic Mode — instant Dilithium-only via `VerifierConfig::enter_panic_mode()`
+3. **Emergency**: Panic Mode - instant Dilithium-only via `VerifierConfig::enter_panic_mode()`
 4. **Future**: Algorithm rotation via governance parameter update (`allowed_proof_types`)

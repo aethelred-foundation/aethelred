@@ -56,7 +56,7 @@ console.log(`Agreement: ${seal.agreementPower}/${seal.totalPower}`);
 
 | Module | Description |
 |---|---|
-| `AethelredClient` | Main entry point — connects to an Aethelred node |
+| `AethelredClient` | Main entry point - connects to an Aethelred node |
 | `client.pouw` | Submit jobs, query job status, get rewards |
 | `client.seal` | Query Digital Seals, verify proofs |
 | `client.verify` | ZK proof utilities |
@@ -82,5 +82,5 @@ pnpm lint
 
 ## Related
 
-- [aethelred/aethelred](https://github.com/aethelred/aethelred) — Core node
-- [aethelred/aethelred-cli](https://github.com/aethelred/aethelred-cli) — CLI
+- [aethelred/aethelred](https://github.com/aethelred/aethelred) - Core node
+- [aethelred/aethelred-cli](https://github.com/aethelred/aethelred-cli) - CLI

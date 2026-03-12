@@ -133,51 +133,52 @@ type VestingSchedule struct {
 }
 
 // DefaultVestingSchedules returns the standard vesting schedules.
-// Revised Token Allocation (10B total supply):
+// Revised Token Allocation (10B total supply, 9 categories):
 //
-//	Category                   %     Tokens    TGE     Cliff    Vest     Notes
-//	Compute / PoUW Rewards    30%    3B        0%      0mo      120mo    H100 validator incentives (10-year program)
-//	Core Contributors         20%    2B        0%      12mo     48mo     25% at cliff, then 36mo linear
-//	Ecosystem & Grants        15%    1.5B      5%      6mo      60mo     Developer adoption, dApp incentives
-//	Aethelred Labs Treasury   10%    1B        0%      12mo     60mo     Operational runway, working capital
-//	Public Sale (Community)   10%    1B        22.5%   0mo      24mo     Echo + Exchange + Airdrop
-//	Strategic Investors        5%    500M      0%      12mo     48mo     Seed + Strategic + Binance
-//	Insurance / Stability      5%    500M      10%     0mo      30mo     Slashing appeals, bridge hack indemnification
-//	Foundation Reserve         5%    500M      0%      12mo     60mo     Future initiatives, strategic partnerships
+//	Category                   %      Tokens    TGE     Cliff    Vest     Notes
+//	PoUW Rewards              30%     3B        0%      0mo      120mo    Validator incentives (10-year program)
+//	Core Contributors         20%     2B        0%      6mo      48mo     6mo cliff then 42mo linear
+//	Ecosystem & Grants        15%     1.5B      2%      6mo      54mo     Developer adoption, dApp grants
+//	Strategic/Seed             5.5%   550M      0%      12mo     36mo     12 cliff + 24 linear
+//	Public Sales               7.5%   750M      20%     0mo      18mo     Echo + Exchange sales
+//	Airdrop (Seals)            7%     700M      25%     0mo      12mo     Community incentives
+//	Treasury & MM              6%     600M      25%     0mo      36mo     Operational runway + Market Maker loans
+//	Insurance Fund             5%     500M      10%     0mo      30mo     Slashing appeals & hack indemnification
+//	Contingency Reserve        4%     400M      0%      12mo     TBD      Unknown unknowns; 30-day timelock
 //
-// TGE Unlock Total: 3.5% (350M tokens)
+// TGE Unlock Total: 6.3% (630M tokens)
 func DefaultVestingSchedules() []VestingSchedule {
 	return []VestingSchedule{
 		{
 			Category:         "compute_pouw_rewards",
-			TotalUAETHEL:       3_000_000_000_000_000, // 30% of supply — H100 validator incentives
+			TotalUAETHEL:       3_000_000_000_000_000, // 30% of supply - H100 validator incentives
 			TGEUnlockBps:     0,                     // No TGE unlock
-			CliffBlocks:      0,                     // No cliff — rewards from genesis
+			CliffBlocks:      0,                     // No cliff - rewards from genesis
 			VestingBlocks:    BlocksPerYear * 10,    // 10-year linear release (120 months)
 			CliffPercent:     0,
 			LinearAfterCliff: true,
 		},
 		{
 			Category:         "core_contributors",
-			TotalUAETHEL:       2_000_000_000_000_000, // 20% of supply — Team alignment
+			TotalUAETHEL:       2_000_000_000_000_000, // 20% of supply - Team alignment
 			TGEUnlockBps:     0,                     // No TGE unlock
-			CliffBlocks:      BlocksPerYear,         // 12-month cliff
-			VestingBlocks:    BlocksPerYear * 4,     // 4-year total vest (48 months)
-			CliffPercent:     2500,                   // 25% at cliff (500M), then 36mo linear
+			CliffBlocks:      BlocksPerYear / 2,     // 6-month cliff (operational liquidity from month 6)
+			VestingBlocks:    BlocksPerYear * 4,     // 48 months total (6mo cliff + 42mo linear)
+			CliffPercent:     0,                     // No cliff unlock; linear from month 6
 			LinearAfterCliff: true,
 		},
 		{
 			Category:         "ecosystem_grants",
-			TotalUAETHEL:       1_500_000_000_000_000, // 15% of supply — Developer adoption, dApp incentives
+			TotalUAETHEL:       1_500_000_000_000_000, // 15% of supply - Developer adoption, dApp incentives
 			TGEUnlockBps:     500,                   // 5% at TGE (75M tokens)
 			CliffBlocks:      BlocksPerYear / 2,     // 6-month cliff
-			VestingBlocks:    BlocksPerYear * 5,     // 5-year total vest (60 months)
+			VestingBlocks:    BlocksPerYear * 9 / 2, // 54 months total (6mo cliff + 48mo linear)
 			CliffPercent:     0,                     // No additional cliff unlock
 			LinearAfterCliff: true,
 		},
 		{
 			Category:         "aethelred_labs_treasury",
-			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply — Operational runway
+			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply - Operational runway
 			TGEUnlockBps:     0,                     // No TGE unlock
 			CliffBlocks:      BlocksPerYear,         // 12-month cliff
 			VestingBlocks:    BlocksPerYear * 5,     // 5-year total vest (60 months)
@@ -186,7 +187,7 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "public_sale_community",
-			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply — Echo + Exchange + Airdrop
+			TotalUAETHEL:       1_000_000_000_000_000, // 10% of supply - Echo + Exchange + Airdrop
 			TGEUnlockBps:     2250,                  // 22.5% at TGE (225M tokens)
 			CliffBlocks:      0,                     // No cliff
 			VestingBlocks:    BlocksPerYear * 2,     // 2-year total vest (24 months)
@@ -195,28 +196,28 @@ func DefaultVestingSchedules() []VestingSchedule {
 		},
 		{
 			Category:         "strategic_investors",
-			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Seed + Strategic + Binance
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply - Seed + Strategic + Binance
 			TGEUnlockBps:     0,                   // No TGE unlock
 			CliffBlocks:      BlocksPerYear,       // 12-month cliff
-			VestingBlocks:    BlocksPerYear * 4,   // 4-year total vest (48 months)
-			CliffPercent:     0,                   // No cliff unlock, then 36mo linear post-cliff
+			VestingBlocks:    BlocksPerYear * 3,   // 36 months total (12mo cliff + 24mo linear)
+			CliffPercent:     0,
 			LinearAfterCliff: true,
 		},
 		{
 			Category:         "insurance_stability",
-			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Slashing appeals, bridge indemnification
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply - Slashing appeals, bridge indemnification
 			TGEUnlockBps:     1000,                // 10% at TGE (50M tokens)
 			CliffBlocks:      0,                   // No cliff
-			VestingBlocks:    BlocksPerYear * 5 / 2, // 2.5-year linear (30 months)
+			VestingBlocks:    BlocksPerYear * 5 / 2, // 30 months linear
 			CliffPercent:     0,
 			LinearAfterCliff: true,
 		},
 		{
 			Category:         "foundation_reserve",
-			TotalUAETHEL:       500_000_000_000_000, // 5% of supply — Future initiatives, strategic partnerships
+			TotalUAETHEL:       500_000_000_000_000, // 5% of supply - Future initiatives, strategic partnerships
 			TGEUnlockBps:     0,                   // No TGE unlock
 			CliffBlocks:      BlocksPerYear,       // 12-month cliff
-			VestingBlocks:    BlocksPerYear * 5,   // 5-year total vest (60 months)
+			VestingBlocks:    BlocksPerYear * 5,   // Placeholder: 60 months (vesting TBD per governance)
 			CliffPercent:     0,
 			LinearAfterCliff: true,
 		},
@@ -301,12 +302,12 @@ func VestedAmount(schedule VestingSchedule, blockHeight int64) int64 {
 	tgeAmount := new(big.Int).Mul(total, big.NewInt(schedule.TGEUnlockBps))
 	tgeAmount.Div(tgeAmount, bpsBase)
 
-	// Before cliff — only TGE portion is available.
+	// Before cliff - only TGE portion is available.
 	if blockHeight < schedule.CliffBlocks {
 		return tgeAmount.Int64()
 	}
 
-	// At/after cliff — add cliff amount.
+	// At/after cliff - add cliff amount.
 	// cliffAmount = total * CliffPercent / BpsBase
 	cliffAmount := new(big.Int).Mul(total, big.NewInt(schedule.CliffPercent))
 	cliffAmount.Div(cliffAmount, bpsBase)

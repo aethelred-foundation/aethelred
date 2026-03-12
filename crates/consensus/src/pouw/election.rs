@@ -1240,7 +1240,7 @@ mod tests {
 
         let weighted_before = election.stats().total_weighted_stake;
 
-        // Advance epoch — should trigger recalculate_weighted_stakes internally
+        // Advance epoch - should trigger recalculate_weighted_stakes internally
         election.set_current_epoch(5);
 
         // Total weighted stake must still be positive and consistent
@@ -1255,7 +1255,7 @@ mod tests {
         let election = PoUWElection::new(PoUWConfig::devnet());
 
         election.set_current_epoch(10);
-        // Trying to set a lower epoch should be a no-op — no panic expected
+        // Trying to set a lower epoch should be a no-op - no panic expected
         election.set_current_epoch(5);
 
         // We cannot directly read current_epoch, but verifying no panic is sufficient.
@@ -1358,7 +1358,7 @@ mod tests {
         election.register_validator(validator).unwrap();
 
         let keys = VrfKeys::from_seed(&[20u8; 32]).unwrap();
-        // At slot 0 the validator is jailed — should get NotEligible
+        // At slot 0 the validator is jailed - should get NotEligible
         let result = election.check_eligibility(&addr, 0, &keys);
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -1615,7 +1615,7 @@ mod tests {
         let mut score = UsefulWorkScore::new();
         score.total_uwu = 50;
 
-        // Apply 200% penalty — saturating_sub prevents underflow
+        // Apply 200% penalty - saturating_sub prevents underflow
         score.apply_penalty(200);
 
         // Penalty = 50 * 200 / 100 = 100; saturating_sub(100) from 50 = 0
@@ -1662,7 +1662,7 @@ mod tests {
     }
 
     // =========================================================================
-    // UsefulWorkScore::is_suspicious — re-execution dominance
+    // UsefulWorkScore::is_suspicious - re-execution dominance
     // =========================================================================
 
     #[test]
@@ -1704,7 +1704,7 @@ mod tests {
     }
 
     // =========================================================================
-    // UsefulWorkScore::category_diversity_score — edge cases
+    // UsefulWorkScore::category_diversity_score - edge cases
     // =========================================================================
 
     #[test]
@@ -1751,7 +1751,7 @@ mod tests {
     }
 
     // =========================================================================
-    // LeaderElection trait — compute_multiplier delegation
+    // LeaderElection trait - compute_multiplier delegation
     // =========================================================================
 
     #[test]
@@ -1857,7 +1857,7 @@ mod tests {
         let proof_bytes = vrf_proof.to_bytes();
         let output_bytes = vrf_output.as_bytes();
 
-        // Actual score is 0, we claim 0 — score matches
+        // Actual score is 0, we claim 0 - score matches
         let claimed_score = 0u64;
 
         let result = election.verify_proposer(&addr, 0, claimed_score, output_bytes, &proof_bytes);
@@ -1865,7 +1865,7 @@ mod tests {
         // The VRF proof itself is valid; the only remaining check is the threshold.
         // If below threshold: Ok(()); if above: VrfThresholdNotMet.
         match result {
-            Ok(()) => {} // Proposer was eligible — test passes
+            Ok(()) => {} // Proposer was eligible - test passes
             Err(ConsensusError::VrfThresholdNotMet { .. }) => {} // Also valid: VRF passed but threshold not met
             Err(other) => panic!("Unexpected error in verify_proposer: {:?}", other),
         }
@@ -1905,7 +1905,7 @@ mod tests {
         let stats_before = election.stats();
         assert_eq!(stats_before.total_stake, 1_000_000);
 
-        // Re-register with a higher stake — should update totals correctly
+        // Re-register with a higher stake - should update totals correctly
         let v2 = create_validator(addr, 3_000_000);
         election.register_validator(v2).unwrap();
 

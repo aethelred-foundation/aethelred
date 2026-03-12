@@ -94,9 +94,9 @@ pub use tokenomics::{
     EmissionCalculator, EmissionScheduleInfo, FeeDistribution, GenesisAllocation, SupplyInfo,
     TokenomicsConfig, TokenomicsManager, VestingPosition,
     VestingSchedule as TokenomicsVestingSchedule, COMPUTE_POUW_POOL, CORE_CONTRIBUTORS_POOL,
-    DECIMALS, ECOSYSTEM_GRANTS_POOL, FOUNDATION_RESERVE_POOL, HALVING_INTERVAL_SECS,
-    INSURANCE_STABILITY_POOL, LABS_TREASURY_POOL, ONE_AETHEL, PUBLIC_SALE_POOL,
-    STRATEGIC_INVESTORS_POOL, TOTAL_GENESIS_SUPPLY,
+    AIRDROP_SEALS_POOL, CONTINGENCY_RESERVE_POOL, DECIMALS, ECOSYSTEM_GRANTS_POOL,
+    HALVING_INTERVAL_SECS, INSURANCE_FUND_POOL, ONE_AETHEL, PUBLIC_SALES_POOL,
+    STRATEGIC_SEED_POOL, TOTAL_GENESIS_SUPPLY, TREASURY_MM_POOL,
 };
 pub use types::{
     generate_job_id, is_zero_address, Address, ComplianceRequirement, ComplianceTag, Did, Hash,

@@ -1,9 +1,9 @@
-# Aethelred Protocol — Threat Model
+# Aethelred Protocol - Threat Model
 
 **Version**: 2.0
 **Status**: Active (Reviewed 2026-02-28)
 **Owner**: Security Engineering
-**Classification**: Internal — Share with auditors and security partners
+**Classification**: Internal - Share with auditors and security partners
 **Last Updated**: 2026-02-28
 
 ---
@@ -291,8 +291,8 @@ verifiable AI compute (Proof of Useful Work). This threat model covers:
 
 ## 10. References
 
-- [Verification Policy](./VERIFICATION_POLICY.md) — AI verification security invariants
-- [Gating Plan](./GATING_PLAN.md) — Production vs. development simulation gating
-- [Best Practices](./best-practices.md) — Operational security checklist
-- [HSM Requirements](./hsm-requirements.md) — Hardware security module specifications
-- [Validator Runbook](../VALIDATOR_RUNBOOK.md) — Validator operations manual
+- [Verification Policy](./VERIFICATION_POLICY.md) - AI verification security invariants
+- [Gating Plan](./GATING_PLAN.md) - Production vs. development simulation gating
+- [Best Practices](./best-practices.md) - Operational security checklist
+- [HSM Requirements](./hsm-requirements.md) - Hardware security module specifications
+- [Validator Runbook](../VALIDATOR_RUNBOOK.md) - Validator operations manual

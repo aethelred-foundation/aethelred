@@ -379,7 +379,7 @@ func (ps *PartitionSimulator) SimulateBlockProduction() []*SimulatedBlock {
 
 	for _, partition := range ps.partitions {
 		if !partition.CanPropose {
-			// Partition correctly halts — this is desired BFT safety behavior.
+			// Partition correctly halts - this is desired BFT safety behavior.
 			// A minority partition SHOULD NOT produce blocks to prevent split-brain.
 			atomic.AddInt64(&ps.metrics.SafetyHalts, 1)
 			continue
@@ -859,7 +859,7 @@ func (nsr *NetworkScenarioRunner) calculateGrades() {
 		durationScale = 1.0
 	}
 
-	// Attack resilience grading — based on true failures (split-brain/unexpected).
+	// Attack resilience grading - based on true failures (split-brain/unexpected).
 	if trueFailures == 0 {
 		nsr.results.AttackResilienceGrade = "A+"
 	} else if trueFailures < int64(5*durationScale) {
@@ -885,7 +885,7 @@ func (nsr *NetworkScenarioRunner) calculateGrades() {
 		nsr.results.RecoveryGrade = "D"
 	}
 
-	// Overall grade — weighted average (resilience 60%, recovery 40%)
+	// Overall grade - weighted average (resilience 60%, recovery 40%)
 	grades := map[string]int{"A+": 5, "A": 4, "B": 3, "C": 2, "D": 1, "F": 0}
 	weightedScore := float64(grades[nsr.results.AttackResilienceGrade])*0.6 +
 		float64(grades[nsr.results.RecoveryGrade])*0.4

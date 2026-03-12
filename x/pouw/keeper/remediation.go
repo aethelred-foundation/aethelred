@@ -13,7 +13,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Week 29-30: Remediation Sprint 1 — Critical Findings
+// Week 29-30: Remediation Sprint 1 - Critical Findings
 // ---------------------------------------------------------------------------
 //
 // This file addresses the open attack surfaces identified during the Week 27
@@ -530,7 +530,7 @@ func VerifyRemediations(ctx sdk.Context, k Keeper) *RemediationTracker {
 	testParams := types.DefaultParams()
 	testParams.ConsensusThreshold = 50
 	if err := ValidateParams(testParams); err != nil {
-		// Good — threshold 50 is rejected
+		// Good - threshold 50 is rejected
 		for i, e := range tracker.entries {
 			if e.FindingID == "PARAM-03" {
 				tracker.entries[i].Status = RemediationVerified

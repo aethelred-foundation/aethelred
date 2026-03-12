@@ -38,6 +38,6 @@ Aethelred implements a **hybrid post-quantum cryptographic scheme** that provide
 
 ## Further Reading
 
-- [Security Parameters](/cryptography/security-parameters) — Wire format, key sizes, network configs
-- [HSM Deployment](/cryptography/hsm-deployment) — Hardware Security Module setup guide
-- [Key Management](/cryptography/key-management) — Key generation, rotation, backup
+- [Security Parameters](/cryptography/security-parameters) - Wire format, key sizes, network configs
+- [HSM Deployment](/cryptography/hsm-deployment) - Hardware Security Module setup guide
+- [Key Management](/cryptography/key-management) - Key generation, rotation, backup

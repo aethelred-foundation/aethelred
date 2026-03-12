@@ -515,7 +515,7 @@ func AssertProductionInvariants(app *AethelredApp, logger log.Logger) error {
 		logger.Warn("SECURITY WARNING: validator private key not configured in production build; "+
 			"this node will not be able to sign vote extensions",
 		)
-		// Not a fatal error — non-validator nodes don't need a signing key.
+		// Not a fatal error - non-validator nodes don't need a signing key.
 	}
 
 	logger.Info("All production invariant checks passed")

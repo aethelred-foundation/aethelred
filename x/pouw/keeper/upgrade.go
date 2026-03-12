@@ -163,7 +163,7 @@ func migrateV1ToV2(ctx sdk.Context, k Keeper) error {
 		// Look up the authoritative record from the Jobs collection.
 		authJob, err := k.Jobs.Get(ctx, id)
 		if err != nil {
-			// Job doesn't exist in Jobs — definitely orphaned.
+			// Job doesn't exist in Jobs - definitely orphaned.
 			orphanIDs = append(orphanIDs, id)
 			return false, nil
 		}
@@ -240,7 +240,7 @@ func PreUpgradeValidation(ctx sdk.Context, k Keeper) []string {
 	pendingJobs := k.GetPendingJobs(ctx)
 	if len(pendingJobs) > 0 {
 		warnings = append(warnings, fmt.Sprintf(
-			"WARNING: %d pending jobs in flight — these may be lost during upgrade",
+			"WARNING: %d pending jobs in flight - these may be lost during upgrade",
 			len(pendingJobs),
 		))
 	}
@@ -268,7 +268,7 @@ func PreUpgradeValidation(ctx sdk.Context, k Keeper) []string {
 
 	// Check 4: AllowSimulated should be false on production chains
 	if params != nil && params.AllowSimulated {
-		warnings = append(warnings, "WARNING: AllowSimulated is true — this should be false on production chains before upgrade")
+		warnings = append(warnings, "WARNING: AllowSimulated is true - this should be false on production chains before upgrade")
 	}
 
 	return warnings

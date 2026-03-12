@@ -11,16 +11,16 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// ROADMAP EXECUTION TRACKER — Milestones, Sprint Plans, Readiness Gates
+// ROADMAP EXECUTION TRACKER - Milestones, Sprint Plans, Readiness Gates
 // ---------------------------------------------------------------------------
 //
 // This file implements the phased roadmap execution framework for the
 // Aethelred Sovereign L1, tracking milestones, sprint deliverables, and
 // readiness gates across three phases:
 //
-//   Phase 1 — Stabilize Core (Feb–Apr 2026)
-//   Phase 2 — Economic & Governance Hardening (May–Jul 2026)
-//   Phase 3 — Scale & Ecosystem (Aug–Nov 2026)
+//   Phase 1 - Stabilize Core (Feb–Apr 2026)
+//   Phase 2 - Economic & Governance Hardening (May–Jul 2026)
+//   Phase 3 - Scale & Ecosystem (Aug–Nov 2026)
 //
 // Each milestone has:
 //   - Owner assignment
@@ -566,7 +566,7 @@ func RenderRoadmapSummary(summary *RoadmapSummary) string {
 	var sb strings.Builder
 
 	sb.WriteString("╔══════════════════════════════════════════════════════════════╗\n")
-	sb.WriteString("║          AETHELRED ROADMAP 2026 — EXECUTION TRACKER         ║\n")
+	sb.WriteString("║          AETHELRED ROADMAP 2026 - EXECUTION TRACKER         ║\n")
 	sb.WriteString("╚══════════════════════════════════════════════════════════════╝\n\n")
 
 	sb.WriteString("Mission: Make Aethelred the most verifiable, auditable L1\n")

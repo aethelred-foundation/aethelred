@@ -23,7 +23,7 @@
 //! This ensures that if Aethelred becomes the global AI layer, the supply shock
 //! is **massive**, rewarding early adopters.
 
-// H-08: Production safety — prevent shipping dev tokenomics stubs.
+// H-08: Production safety - prevent shipping dev tokenomics stubs.
 // Building with `--features production` will fail here, forcing
 // the integrator to wire in the production-grade implementation.
 #[cfg(feature = "production")]

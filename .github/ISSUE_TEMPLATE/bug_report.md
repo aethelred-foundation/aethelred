@@ -52,7 +52,7 @@ paste error output here
 
 ## Additional Context
 
-<!-- Anything else that might help — config files, screenshots, reproducible test cases -->
+<!-- Anything else that might help - config files, screenshots, reproducible test cases -->
 
 ## Security Notice
 

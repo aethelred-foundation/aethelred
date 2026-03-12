@@ -15,14 +15,14 @@ import (
 )
 
 // =============================================================================
-// WEEK 27: Security Audit Prep — Threat Model & Audit Runner Tests
+// WEEK 27: Security Audit Prep - Threat Model & Audit Runner Tests
 //
 // These tests exercise every entry in the threat model and verify the audit
 // runner produces correct findings for both clean and compromised states.
 //
 //   1.  Threat model completeness (6 tests)
-//   2.  Audit runner — clean state (5 tests)
-//   3.  Audit runner — compromised state (8 tests)
+//   2.  Audit runner - clean state (5 tests)
+//   3.  Audit runner - compromised state (8 tests)
 //   4.  Security property verification (12 tests)
 //   5.  Attack surface coverage (6 tests)
 //
@@ -103,7 +103,7 @@ func TestThreatModel_Summary(t *testing.T) {
 }
 
 // =============================================================================
-// Section 2: Audit Runner — Clean State
+// Section 2: Audit Runner - Clean State
 // =============================================================================
 
 func TestAuditRunner_CleanState_AllPass(t *testing.T) {
@@ -176,7 +176,7 @@ func TestAuditRunner_CleanState_Summary(t *testing.T) {
 }
 
 // =============================================================================
-// Section 3: Audit Runner — Compromised State
+// Section 3: Audit Runner - Compromised State
 // =============================================================================
 
 func TestAuditRunner_BadParams_LowConsensusThreshold(t *testing.T) {
@@ -270,7 +270,7 @@ func TestAuditRunner_OrphanedPendingJobs(t *testing.T) {
 	require.NoError(t, err)
 	job.Status = types.JobStatusCompleted
 	require.NoError(t, k.Jobs.Set(ctx, "job-0", job))
-	// PendingJobs still has job-0 with Pending status — orphan
+	// PendingJobs still has job-0 with Pending status - orphan
 
 	report := keeper.RunSecurityAudit(ctx, k)
 
@@ -426,7 +426,7 @@ func TestSecurityProperty_OneWayGate(t *testing.T) {
 	//
 	// The one-way gate is enforced at the UpdateParams handler level
 	// (msgServer.UpdateParams), NOT in MergeParams. MergeParams is a pure
-	// merge function that always applies bool fields (by design — see
+	// merge function that always applies bool fields (by design - see
 	// MergeParams doc comment). The handler checks:
 	//
 	//   if !currentParams.AllowSimulated && mergedParams.AllowSimulated {
@@ -518,32 +518,32 @@ func TestSecurityProperty_ValidateParamsRejectsExtremes(t *testing.T) {
 	// Boundary testing for ValidateParams.
 	// SECURITY FIX: ValidateParams now enforces [67, 100] for BFT safety.
 
-	// Below BFT minimum (50) — rejected
+	// Below BFT minimum (50) - rejected
 	p := types.DefaultParams()
 	p.ConsensusThreshold = 50
 	require.Error(t, keeper.ValidateParams(p), "threshold 50 should fail (below BFT minimum)")
 
-	// At old minimum (51) — now rejected (BFT requires 67%)
+	// At old minimum (51) - now rejected (BFT requires 67%)
 	p2 := types.DefaultParams()
 	p2.ConsensusThreshold = 51
 	require.Error(t, keeper.ValidateParams(p2), "threshold 51 should fail (below BFT minimum of 67)")
 
-	// At BFT minimum (67) — accepted
+	// At BFT minimum (67) - accepted
 	p5 := types.DefaultParams()
 	p5.ConsensusThreshold = 67
 	require.NoError(t, keeper.ValidateParams(p5), "threshold 67 should pass (BFT minimum)")
 
-	// Above max (101) — rejected
+	// Above max (101) - rejected
 	p3 := types.DefaultParams()
 	p3.ConsensusThreshold = 101
 	require.Error(t, keeper.ValidateParams(p3), "threshold 101 should fail")
 
-	// At max (100) — accepted
+	// At max (100) - accepted
 	p4 := types.DefaultParams()
 	p4.ConsensusThreshold = 100
 	require.NoError(t, keeper.ValidateParams(p4), "threshold 100 should pass")
 
-	// Zero — rejected
+	// Zero - rejected
 	p6 := types.DefaultParams()
 	p6.ConsensusThreshold = 0
 	require.Error(t, keeper.ValidateParams(p6), "threshold 0 should fail")
@@ -618,7 +618,7 @@ func TestAttackSurface_OpenItemsDocumented(t *testing.T) {
 	for _, as := range keeper.AttackSurfaces {
 		if as.Status == "open" || as.Status == "partial" {
 			openItems++
-			t.Logf("OPEN: [%s] %s — %s (impact: %s)", as.ID, as.Name, as.Mitigation, as.Impact)
+			t.Logf("OPEN: [%s] %s - %s (impact: %s)", as.ID, as.Name, as.Mitigation, as.Impact)
 		}
 	}
 	t.Logf("Total open/partial items: %d", openItems)

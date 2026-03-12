@@ -541,20 +541,20 @@ func auditGovernanceOneWayGate(ctx sdk.Context, k Keeper) []AuditFinding {
 	}
 
 	if !params.AllowSimulated {
-		// AllowSimulated is disabled — this is the secure production state.
+		// AllowSimulated is disabled - this is the secure production state.
 		// The one-way gate in UpdateParams prevents re-enablement.
 		findings = append(findings, AuditFinding{
 			ID: "GATE-01", CheckName: "one_way_gate_status",
 			Severity: FindingInfo,
-			Description: "AllowSimulated=false (production mode); one-way gate active — UpdateParams handler prevents re-enablement",
+			Description: "AllowSimulated=false (production mode); one-way gate active - UpdateParams handler prevents re-enablement",
 			Passed:      true,
 		})
 	} else {
-		// AllowSimulated is still true — not yet locked for production.
+		// AllowSimulated is still true - not yet locked for production.
 		findings = append(findings, AuditFinding{
 			ID: "GATE-01", CheckName: "one_way_gate_status",
 			Severity: FindingCritical,
-			Description: "AllowSimulated=true — simulation mode is active. Must be disabled before mainnet launch.",
+			Description: "AllowSimulated=true - simulation mode is active. Must be disabled before mainnet launch.",
 			Passed:      false,
 			Remediation: "Set AllowSimulated=false via governance before mainnet. Once set, the one-way gate in UpdateParams prevents re-enablement.",
 		})

@@ -26,7 +26,7 @@ assignees: ''
 
 - [ ] Small (< 1 week)
 - [ ] Medium (1–4 weeks)
-- [ ] Large (> 1 month — should probably be an AIP)
+- [ ] Large (> 1 month - should probably be an AIP)
 
 ## Breaking Change?
 

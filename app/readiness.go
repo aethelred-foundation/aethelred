@@ -36,7 +36,7 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 	// AllowSimulated to false regardless of governance params. This provides
 	// defense-in-depth against governance bypass attacks.
 	if IsProductionBuild() && params != nil && params.AllowSimulated {
-		app.Logger().Error("SECURITY: AllowSimulated=true detected in production build — overriding to false")
+		app.Logger().Error("SECURITY: AllowSimulated=true detected in production build - overriding to false")
 		params.AllowSimulated = false
 	}
 
@@ -80,7 +80,7 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 		report.Checks = append(report.Checks, verify.ReadinessCheck{
 			Name:    "pqc_production_ready",
 			Passed:  true,
-			Message: fmt.Sprintf("dev mode (%s) — PQC enforcement skipped", pqc.GetPQCMode().String()),
+			Message: fmt.Sprintf("dev mode (%s) - PQC enforcement skipped", pqc.GetPQCMode().String()),
 		})
 	}
 
@@ -96,7 +96,7 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 				"or configure all required endpoints for mainnet.",
 			report.String(),
 		)
-		// In test environments, don't panic — return the report and let
+		// In test environments, don't panic - return the report and let
 		// the caller decide how to handle it.
 		if isTestEnvironment() {
 			app.Logger().Error(msg)

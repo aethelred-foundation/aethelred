@@ -406,7 +406,7 @@ func BuildAuditChecklist(ctx sdk.Context, k Keeper) *AuditChecklist {
 		Phase:       ChecklistPhase1,
 		Category:    "verification",
 		Description: "zkML proof verification is deterministic and reproducible",
-		Verified:    true, // Structural — verified by test suite
+		Verified:    true, // Structural - verified by test suite
 		Evidence:    "Deterministic proof verification in keeper verify path",
 		Owner:       "VL",
 		Blocking:    true,
@@ -806,7 +806,7 @@ func EvaluateSecurityInvariants(ctx sdk.Context, k Keeper) []SecurityInvariantRe
 			result.Evidence = fmt.Sprintf("%d locked params", len(locked))
 
 		case "SI-10": // Deterministic Execution
-			// Structural invariant — verified by code review and test suite
+			// Structural invariant - verified by code review and test suite
 			result.Holds = true
 			result.Evidence = "Integer math only; no float in consensus paths"
 		}
@@ -965,7 +965,7 @@ func RenderComplianceSummary(summary *ComplianceSummary) string {
 		if !c.Passed {
 			icon = "✗"
 		}
-		sb.WriteString(fmt.Sprintf("  %s [%s] %-6s %s — %s\n",
+		sb.WriteString(fmt.Sprintf("  %s [%s] %-6s %s - %s\n",
 			icon, c.Severity, c.ID, c.Description, c.Details))
 	}
 	sb.WriteString("\n")
@@ -981,7 +981,7 @@ func RenderComplianceSummary(summary *ComplianceSummary) string {
 		if r.Invariant.CriticalPath {
 			critical = " [CRITICAL]"
 		}
-		sb.WriteString(fmt.Sprintf("  %s %s: %s — %s%s\n",
+		sb.WriteString(fmt.Sprintf("  %s %s: %s - %s%s\n",
 			icon, r.Invariant.ID, r.Invariant.Name, r.Evidence, critical))
 	}
 	sb.WriteString("\n")
@@ -1013,7 +1013,7 @@ func RenderComplianceSummary(summary *ComplianceSummary) string {
 		if !j.Compliant {
 			icon = "✗"
 		}
-		sb.WriteString(fmt.Sprintf("  %s [%s] %s — %s\n", icon, j.Code, j.Name, j.TokenStatus))
+		sb.WriteString(fmt.Sprintf("  %s [%s] %s - %s\n", icon, j.Code, j.Name, j.TokenStatus))
 	}
 	sb.WriteString("\n")
 

@@ -83,7 +83,7 @@ func TestProtocolFreeze_CheckFreezeGate_Unfrozen(t *testing.T) {
 }
 
 func TestProtocolFreeze_CheckFreezeGate_NilState(t *testing.T) {
-	// Nil freeze state means no freeze — all operations allowed
+	// Nil freeze state means no freeze - all operations allowed
 	err := keeper.CheckFreezeGate(nil, "SubmitJob")
 	require.NoError(t, err)
 }
@@ -141,7 +141,7 @@ func TestBlockBudget_RunTask(t *testing.T) {
 }
 
 func TestBlockBudget_ExhaustedSkipsTasks(t *testing.T) {
-	// Very tiny budget — 1 nanosecond
+	// Very tiny budget - 1 nanosecond
 	budget := keeper.NewBlockBudget(1 * time.Nanosecond)
 
 	// First task will execute but exceed the budget

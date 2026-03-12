@@ -232,7 +232,7 @@ func CompletedJobsHaveSealsInvariant(k Keeper) sdk.Invariant {
 		_ = k.Jobs.Walk(ctx, nil, func(id string, job types.ComputeJob) (bool, error) {
 			if job.Status == types.JobStatusCompleted {
 				if job.SealId == "" {
-					msg += fmt.Sprintf("INVARIANT BROKEN: completed job %s missing seal ID — audit trail broken\n", id)
+					msg += fmt.Sprintf("INVARIANT BROKEN: completed job %s missing seal ID - audit trail broken\n", id)
 					broken = true
 				}
 				if len(job.OutputHash) != 32 {

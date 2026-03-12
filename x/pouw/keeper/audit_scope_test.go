@@ -242,7 +242,7 @@ func TestUncoveredAttackSurfaces_Documented(t *testing.T) {
 	uncovered := keeper.UncoveredAttackSurfaces(matrix)
 
 	for _, as := range uncovered {
-		t.Logf("UNCOVERED: [%s] %s — impact: %s, status: %s",
+		t.Logf("UNCOVERED: [%s] %s - impact: %s, status: %s",
 			as.ID, as.Name, as.Impact, as.Status)
 	}
 

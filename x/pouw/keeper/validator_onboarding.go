@@ -16,11 +16,11 @@ import (
 // ---------------------------------------------------------------------------
 //
 // This file implements the complete validator onboarding pipeline:
-//   1. Onboarding application — structured registration request
-//   2. Capability verification — hardware and software checks
-//   3. Onboarding checklist — automated prerequisite validation
-//   4. Validator readiness scoring — composite readiness assessment
-//   5. Onboarding report — human-readable onboarding status dashboard
+//   1. Onboarding application - structured registration request
+//   2. Capability verification - hardware and software checks
+//   3. Onboarding checklist - automated prerequisite validation
+//   4. Validator readiness scoring - composite readiness assessment
+//   5. Onboarding report - human-readable onboarding status dashboard
 //
 // The onboarding flow:
 //   Application → Capability Check → Prerequisite Checklist → Readiness Score → Approval

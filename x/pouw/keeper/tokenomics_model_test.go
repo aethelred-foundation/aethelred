@@ -368,7 +368,7 @@ func TestSlashing_DeterrenceAboveOne(t *testing.T) {
 		ratio := keeper.DeterrenceRatio(slash, 1000*keeper.BlocksPerDay)
 
 		if tier.Name == "minor_fault" {
-			// Minor faults are warnings — deterrence ratio < 1 is acceptable
+			// Minor faults are warnings - deterrence ratio < 1 is acceptable
 			require.Greater(t, ratio, 0.0,
 				"tier %s should have positive deterrence ratio", tier.Name)
 		} else {
@@ -456,7 +456,7 @@ func TestTreasuryProjection_InsuranceReservePositive(t *testing.T) {
 func TestDefaultVestingSchedules(t *testing.T) {
 	schedules := keeper.DefaultVestingSchedules()
 	require.NoError(t, keeper.ValidateVestingSchedules(schedules))
-	require.Len(t, schedules, 8)
+	require.Len(t, schedules, 9)
 }
 
 func TestVestingSchedules_TotalAllocated(t *testing.T) {
@@ -497,20 +497,20 @@ func TestVestedAmount_BeforeCliff(t *testing.T) {
 }
 
 func TestVestedAmount_BeforeCliff_WithTGEUnlock(t *testing.T) {
-	// Ecosystem-grants pattern: 5% TGE, 6-month cliff, 5-year vest.
+	// Ecosystem-grants pattern: 2% TGE, 6-month cliff, 54-month vest.
 	schedule := keeper.VestingSchedule{
 		Category:         "ecosystem",
 		TotalUAETHEL:       1_500_000_000,
 		TGEUnlockBps:     500, // 5% at TGE
 		CliffBlocks:      keeper.BlocksPerYear / 2,
-		VestingBlocks:    keeper.BlocksPerYear * 5,
+		VestingBlocks:    keeper.BlocksPerYear * 54 / 12,
 		CliffPercent:     0,
 		LinearAfterCliff: true,
 	}
 
 	// Before cliff: only TGE portion available.
 	vested := keeper.VestedAmount(schedule, 1)
-	expectedTGE := int64(1_500_000_000 * 500 / 10000) // 5% = 75M
+	expectedTGE := int64(1_500_000_000 * 200 / 10000) // 2% = 30M
 	require.Equal(t, expectedTGE, vested, "only TGE unlock before cliff")
 
 	// Still before cliff (month 3).
@@ -535,37 +535,37 @@ func TestVestedAmount_AtCliff(t *testing.T) {
 }
 
 func TestVestedAmount_AtCliff_WithTGE(t *testing.T) {
-	// Core-contributor pattern with both TGE and cliff.
+	// Core-contributor pattern with 6-month cliff, no cliff unlock.
 	schedule := keeper.VestingSchedule{
 		Category:         "contributors",
 		TotalUAETHEL:       2_000_000_000,
 		TGEUnlockBps:     0,
-		CliffBlocks:      keeper.BlocksPerYear,
+		CliffBlocks:      keeper.BlocksPerYear / 2,
 		VestingBlocks:    keeper.BlocksPerYear * 4,
-		CliffPercent:     2500, // 25% at cliff
+		CliffPercent:     0, // no cliff unlock
 		LinearAfterCliff: true,
 	}
 
-	vested := keeper.VestedAmount(schedule, keeper.BlocksPerYear)
-	expectedCliff := int64(2_000_000_000 * 2500 / 10000) // 500M
-	require.Equal(t, expectedCliff, vested, "should release 25% at cliff")
+	vested := keeper.VestedAmount(schedule, keeper.BlocksPerYear/2)
+	// With 0% cliff unlock, vested at cliff equals linear portion only
+	require.Equal(t, int64(0), vested, "should release 0% at cliff with no cliff unlock")
 }
 
 func TestVestedAmount_TGEUnlockOnly(t *testing.T) {
-	// Public sale pattern: 22.5% TGE, no cliff, 2-year vest.
+	// Public sale pattern: 20% TGE, no cliff, 18-month vest.
 	schedule := keeper.VestingSchedule{
 		Category:         "public",
 		TotalUAETHEL:       1_000_000_000,
 		TGEUnlockBps:     2250, // 22.5% at TGE
 		CliffBlocks:      0,
-		VestingBlocks:    keeper.BlocksPerYear * 2,
+		VestingBlocks:    keeper.BlocksPerYear * 18 / 12,
 		CliffPercent:     0,
 		LinearAfterCliff: true,
 	}
 
 	// At block 1: TGE portion.
 	vested := keeper.VestedAmount(schedule, 1)
-	expectedTGE := int64(1_000_000_000 * 2250 / 10000) // 225M
+	expectedTGE := int64(1_000_000_000 * 2000 / 10000) // 200M
 	require.True(t, vested >= expectedTGE, "should include TGE at block 1")
 
 	// Fully vested.

@@ -83,12 +83,12 @@ security(abci): bind TEE user_data to block height and chain ID
 ## Pull Request Process
 
 1. **Fork** and create a branch: `git checkout -b feat/my-feature`
-2. **Write tests** — new code must have unit tests; consensus changes need integration tests
+2. **Write tests** - new code must have unit tests; consensus changes need integration tests
 3. **Run locally**: `make test && cargo test --workspace --manifest-path crates/Cargo.toml`
 4. **Update CHANGELOG.md** under `[Unreleased]`
 5. **Sign your commits** (DCO, see below)
-6. **Open PR** against `main` — fill in the PR template completely
-7. **Respond to review** — address all comments before requesting re-review
+6. **Open PR** against `main` - fill in the PR template completely
+7. **Respond to review** - address all comments before requesting re-review
 
 PRs require:
 - CI passing (all jobs)
@@ -101,10 +101,10 @@ PRs require:
 
 ### Go
 - Follow `gofmt` formatting (enforced by CI)
-- Use `sdkmath.Int` everywhere — **no `float64` in consensus-critical code**
-- All errors must be handled — no `_ = err` in production paths
+- Use `sdkmath.Int` everywhere - **no `float64` in consensus-critical code**
+- All errors must be handled - no `_ = err` in production paths
 - Write table-driven tests using `t.Run`
-- Use `ctx sdk.Context` — never mock consensus state
+- Use `ctx sdk.Context` - never mock consensus state
 
 ### Rust
 - Follow `rustfmt` (enforced by CI)

@@ -3,7 +3,7 @@
 Date: 2026-02-24
 Purpose: One-by-one disposition for the strict multi-repo snapshot findings, distinguishing code/doc fixes from governance/process actions.
 
-## AETHEL-MR-001 — Duplicate chain repos with same Go module path
+## AETHEL-MR-001 - Duplicate chain repos with same Go module path
 Status: Partially Remediated (Authority registry/manifests/docs pushed to both repos; workflow push/enablement + Foundation ratification still pending)
 Severity: Critical
 
@@ -46,7 +46,7 @@ Remaining required action:
 What can be automated later:
 - Cross-repo tag/version registry check that blocks duplicate semantic versions across both repos.
 
-## AETHEL-MR-002 — `aethelred-rust-node` conceptual/non-buildable repo
+## AETHEL-MR-002 - `aethelred-rust-node` conceptual/non-buildable repo
 Status: Remediated Locally (crate baseline created; build/test/CI enabled in local clone)
 Severity: Critical
 
@@ -75,7 +75,7 @@ Remaining action:
 2. Add `clippy` and coverage gates after baseline warning cleanup.
 3. Define runtime/networking scope if this repo is intended to evolve into a validator node implementation (vs protocol simulation crate).
 
-## AETHEL-MR-003 — Repo-level audit evidence fragmented outside public repos
+## AETHEL-MR-003 - Repo-level audit evidence fragmented outside public repos
 Status: Partially Remediated (baseline is now registry-backed, measurable, and committed across all 9 local repo clones; public pushes of workflow files remain blocked by PAT scope)
 Severity: Critical
 
@@ -118,7 +118,7 @@ Remaining action (per repo):
 Blocker noted:
 - PAT used for pushes lacked `workflow` scope for `.github/workflows/*` updates.
 
-## AETHEL-MR-004 — Absolute local workstation paths in public docs
+## AETHEL-MR-004 - Absolute local workstation paths in public docs
 Status: Remediated Locally (needs push to affected repos)
 Severity: High
 
@@ -142,7 +142,7 @@ Recommended follow-up:
 1. Add docs hygiene CI (`rg '/Users/'`) to all public repos.
 2. Extend to Windows/macOS local path patterns (`C:\\`, `/home/`, `/var/folders/`).
 
-## AETHEL-MR-005 — SDKs still source-first / pending public artifact publication
+## AETHEL-MR-005 - SDKs still source-first / pending public artifact publication
 Status: Partially Remediated (machine-checked repo-local provenance controls now in place), Operationally Open (public registry publication + signed releases pending)
 Severity: High (release/provenance)
 
@@ -173,7 +173,7 @@ Required action (one-by-one):
 3. Update docs from “pending” to exact install commands for registry artifacts.
 4. Maintain a public version matrix and release verification guide (guide now exists; keep it synchronized with actual registry release flow).
 
-## AETHEL-MR-006 — Central security workflow targets stale contract paths (`contracts/ethereum`)
+## AETHEL-MR-006 - Central security workflow targets stale contract paths (`contracts/ethereum`)
 Status: Remediated Locally (workspace root)
 Severity: High
 
@@ -193,7 +193,7 @@ Recommended follow-up:
 1. Add explicit path existence preflight checks in the workflow.
 2. Mirror/push the corrected workflow to the actual repo that owns this CI configuration.
 
-## AETHEL-MR-007 — Threat models / SBOMs / published security artifacts not visible per repo
+## AETHEL-MR-007 - Threat models / SBOMs / published security artifacts not visible per repo
 Status: Partially Remediated (repo-local security policy/threat-model + SBOM baseline CI added; published artifacts still open)
 Severity: High
 
@@ -211,7 +211,7 @@ Remaining action (per critical repo):
 3. Publish scan outputs or summaries (govulncheck, cargo-audit, Slither, npm audit) with commit/tag linkage.
 4. Replace placeholder/private disclosure text in `SECURITY.md` with an official contact/channel.
 
-## AETHEL-MR-008 — Dashboard lacks explicit CSP
+## AETHEL-MR-008 - Dashboard lacks explicit CSP
 Status: Partially Remediated Locally
 Severity: Medium
 
@@ -229,7 +229,7 @@ Required follow-up:
 2. Audit script/style injection requirements and third-party scripts.
 3. Consider `report-uri` / `report-to` for CSP telemetry.
 
-## AETHEL-MR-009 — Uneven test maturity across repos
+## AETHEL-MR-009 - Uneven test maturity across repos
 Status: Partially Remediated (repo-local test/security baseline CI added everywhere; implementation tests still weak in some repos)
 Severity: Medium
 
@@ -246,7 +246,7 @@ Remaining action (repo-specific):
 2. Add coverage gates where applicable (especially `developer-tools`, `integrations`, and future `rust-node` implementation).
 3. If `aethelred-rust-node` remains public, add a build/test crate or keep it explicitly research-only.
 
-## AETHEL-MR-010 — `nitro-sdk` `full-sdk` warnings not at zero
+## AETHEL-MR-010 - `nitro-sdk` `full-sdk` warnings not at zero
 Status: Remediated Locally (0 warnings)
 Severity: Medium (engineering quality confidence)
 

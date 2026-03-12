@@ -83,7 +83,7 @@ impl Precompile for IdentityPrecompile {
     }
 }
 
-/// ECDSA recover precompile — secp256k1 public key recovery from signature.
+/// ECDSA recover precompile - secp256k1 public key recovery from signature.
 ///
 /// Implements EIP-like ecrecover: given a message hash and (v, r, s) signature,
 /// recovers the signer's Ethereum-style address (Keccak256 of uncompressed pubkey).

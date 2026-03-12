@@ -66,7 +66,7 @@ impl EventProcessor {
             }
 
             EthereumEvent::NewBlock { number, hash: _, timestamp: _ } => {
-                // Audit fix [L-06]: Reduced verbosity — block hashes logged at trace
+                // Audit fix [L-06]: Reduced verbosity - block hashes logged at trace
                 // level to avoid flooding bridge logs on high-throughput chains.
                 debug!("New Ethereum block: {}", number);
                 Ok(())

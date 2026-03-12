@@ -11,7 +11,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// WEEK 37: Mainnet Parameter Set — Locked
+// WEEK 37: Mainnet Parameter Set - Locked
 // ---------------------------------------------------------------------------
 //
 // This file defines the canonical mainnet parameter set for the Aethelred
@@ -28,9 +28,9 @@ import (
 //
 // This file implements:
 //   1. Canonical mainnet parameters (locked)
-//   2. Parameter lock registry — tracks which params are frozen vs mutable
+//   2. Parameter lock registry - tracks which params are frozen vs mutable
 //   3. Parameter change proposal validation
-//   4. Mainnet genesis builder — produces a validated genesis state
+//   4. Mainnet genesis builder - produces a validated genesis state
 //   5. Parameter compatibility checks for upgrade safety
 //
 // ---------------------------------------------------------------------------
@@ -335,7 +335,7 @@ func ValidateParamChangeProposal(proposal ParamChangeProposal) ParamChangeValida
 		case ParamMutable:
 			result.Allowed = true
 			result.RequiredQuorum = entry.MinQuorum
-			result.Reason = "mutable parameter — standard governance"
+			result.Reason = "mutable parameter - standard governance"
 
 		case ParamDeprecated:
 			result.Allowed = false
@@ -349,7 +349,7 @@ func ValidateParamChangeProposal(proposal ParamChangeProposal) ParamChangeValida
 	return ParamChangeValidation{
 		Allowed: false,
 		Field:   proposal.Field,
-		Reason:  fmt.Sprintf("unknown parameter %q — not in lock registry", proposal.Field),
+		Reason:  fmt.Sprintf("unknown parameter %q - not in lock registry", proposal.Field),
 	}
 }
 
@@ -550,7 +550,7 @@ func RenderMainnetParamReport() string {
 	var sb strings.Builder
 
 	sb.WriteString("╔══════════════════════════════════════════════════════════════╗\n")
-	sb.WriteString("║          MAINNET PARAMETER SET — LOCKED                      ║\n")
+	sb.WriteString("║          MAINNET PARAMETER SET - LOCKED                      ║\n")
 	sb.WriteString("╚══════════════════════════════════════════════════════════════╝\n\n")
 
 	sb.WriteString(fmt.Sprintf("Chain ID: %s\n", MainnetChainID))

@@ -137,7 +137,7 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		// Enforce size limit (trim from end if needed).
 		// EV-08: Guard against nil privKey during re-sign; clear stale signature
 		// when trimming in permissive mode.
-		// EV-10: Guaranteed convergence — each iteration removes one verification,
+		// EV-10: Guaranteed convergence - each iteration removes one verification,
 		// and an empty verifications list produces a small fixed-size extension.
 		originalCount := len(voteExt.Verifications)
 		for len(extBytes) > MaxVoteExtensionSizeBytes && len(voteExt.Verifications) > 0 {
@@ -156,7 +156,7 @@ func (app *AethelredApp) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			var marshalErr error
 			extBytes, marshalErr = voteExt.Marshal()
 			if marshalErr != nil {
-				// EV-09: Marshal errors are handled explicitly — never ignored.
+				// EV-09: Marshal errors are handled explicitly - never ignored.
 				app.Logger().Error("Failed to marshal vote extension after trimming", "error", marshalErr)
 				return &abci.ResponseExtendVote{VoteExtension: nil}, nil
 			}
@@ -580,7 +580,7 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			// but still ACCEPT/REJECT based on deterministic on-chain validation
 			// (the AuditProposalConsensusEvidence check above already passed).
 			if found == 0 && len(req.ProposedLastCommit.Votes) > 0 && injectedTxCount > 0 {
-				app.Logger().Warn("Vote extension cache empty for finality check — "+
+				app.Logger().Warn("Vote extension cache empty for finality check - "+
 					"relying on on-chain consensus evidence audit only (PR-04/VC-01)",
 					"height", lastHeight,
 					"injected_tx_count", injectedTxCount,
@@ -774,7 +774,7 @@ func (app *AethelredApp) getConsensusThreshold(ctx sdk.Context) int {
 // In production builds, this always returns false regardless of on-chain params,
 // preventing governance attacks that attempt to toggle simulated mode.
 func (app *AethelredApp) allowSimulated(ctx sdk.Context) bool {
-	// ── VV-04/PR-10: Compile-time override — production builds NEVER allow simulated ──
+	// ── VV-04/PR-10: Compile-time override - production builds NEVER allow simulated ──
 	if IsProductionBuild() {
 		return false
 	}

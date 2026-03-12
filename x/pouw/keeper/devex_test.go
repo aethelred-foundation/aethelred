@@ -375,7 +375,7 @@ func TestUpgrade_MigrateV1ToV2_CleansOrphanPendingJobs(t *testing.T) {
 	require.NoError(t, err)
 	job.Status = types.JobStatusCompleted
 	require.NoError(t, k.Jobs.Set(ctx, "job-0", job))
-	// It's still in PendingJobs — orphan.
+	// It's still in PendingJobs - orphan.
 
 	err = keeper.RunMigrations(ctx, k, 1, 2)
 	require.NoError(t, err)
@@ -452,7 +452,7 @@ func TestUpgrade_PreUpgradeValidation_AllowSimulated(t *testing.T) {
 	warnings := keeper.PreUpgradeValidation(ctx, k)
 	found := false
 	for _, w := range warnings {
-		if w == "WARNING: AllowSimulated is true — this should be false on production chains before upgrade" {
+		if w == "WARNING: AllowSimulated is true - this should be false on production chains before upgrade" {
 			found = true
 		}
 	}

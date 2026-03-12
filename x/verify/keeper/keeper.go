@@ -35,7 +35,7 @@ func NewKeeper(
 	authority string,
 ) Keeper {
 	if storeService == nil {
-		// Testing mode — return keeper with circuit breakers only;
+		// Testing mode - return keeper with circuit breakers only;
 		// collections stay zero-valued (unused without a store).
 		return Keeper{
 			cdc:                        cdc,

@@ -110,7 +110,7 @@ type AuditScope struct {
 // ModuleComponents returns the complete inventory of auditable components.
 func ModuleComponents() []ModuleComponent {
 	return []ModuleComponent{
-		// x/pouw/keeper — core consensus and job management
+		// x/pouw/keeper - core consensus and job management
 		{
 			ID: "pouw/keeper/keeper", Module: "x/pouw", File: "keeper/keeper.go",
 			Description:    "Core keeper struct, state collections, initialization",
@@ -139,7 +139,7 @@ func ModuleComponents() []ModuleComponent {
 			HasTests:       true,
 			TestFile:       "keeper/production_mode_test.go",
 			ThreatModelRefs: []string{"AS-07", "AS-08"},
-			AuditNotes:     "Verify AllowSimulated one-way gate in UpdateParams handler. MergeParams is a pure merge — gate is at handler level",
+			AuditNotes:     "Verify AllowSimulated one-way gate in UpdateParams handler. MergeParams is a pure merge - gate is at handler level",
 		},
 		{
 			ID: "pouw/keeper/evidence", Module: "x/pouw", File: "keeper/evidence.go",
@@ -232,7 +232,7 @@ func ModuleComponents() []ModuleComponent {
 			AuditNotes:     "Verify migration determinism, orphan cleanup, job count reconciliation",
 		},
 
-		// x/seal — digital seal module
+		// x/seal - digital seal module
 		{
 			ID: "seal/keeper/keeper", Module: "x/seal", File: "keeper/keeper.go",
 			Description:    "Digital seal creation, storage, and retrieval",
@@ -264,7 +264,7 @@ func ModuleComponents() []ModuleComponent {
 			AuditNotes:     "Verify revocation authorization, evidence validation",
 		},
 
-		// x/validator — validator management
+		// x/validator - validator management
 		{
 			ID: "validator/keeper/slashing", Module: "x/validator", File: "keeper/slashing.go",
 			Description:    "Validator slashing conditions and penalty enforcement",
@@ -276,7 +276,7 @@ func ModuleComponents() []ModuleComponent {
 			AuditNotes:     "Verify escalation ladder, penalty calculations, jailing conditions",
 		},
 
-		// x/verify — verification engines
+		// x/verify - verification engines
 		{
 			ID: "verify/keeper/keeper", Module: "x/verify", File: "keeper/keeper.go",
 			Description:    "Verification orchestration (TEE + zkML)",
@@ -310,19 +310,19 @@ func EngagementPhases() []AuditPhase {
 			Deliverable: "Architecture risk assessment memo",
 		},
 		{
-			ID: "PHASE-03", Name: "Code Review — Consensus & Governance",
+			ID: "PHASE-03", Name: "Code Review - Consensus & Governance",
 			Description: "Deep review of consensus.go, governance.go, evidence.go, and msg_server.go. Focus on BFT safety, vote extension handling, parameter governance gates, and state transition correctness.",
 			Duration:    "3 days",
 			Deliverable: "Findings report for consensus/governance components",
 		},
 		{
-			ID: "PHASE-04", Name: "Code Review — Economics & State",
+			ID: "PHASE-04", Name: "Code Review - Economics & State",
 			Description: "Deep review of fee_distribution.go, staking.go, scheduler.go, invariants.go. Focus on fee conservation, rounding safety, reward distribution correctness, and invariant completeness.",
 			Duration:    "2 days",
 			Deliverable: "Findings report for economics/state components",
 		},
 		{
-			ID: "PHASE-05", Name: "Code Review — Seal & Verification",
+			ID: "PHASE-05", Name: "Code Review - Seal & Verification",
 			Description: "Review x/seal and x/verify modules. Focus on seal immutability, attestation verification, zkML proof validation, and cross-module trust boundaries.",
 			Duration:    "2 days",
 			Deliverable: "Findings report for seal/verification components",
@@ -526,13 +526,13 @@ func (s *AuditScope) RenderScopeDocument() string {
 	sb.WriteString("IN-SCOPE:\n")
 	for _, b := range s.Boundaries {
 		if b.InScope {
-			sb.WriteString(fmt.Sprintf("  ✓ %s — %s\n", b.Item, b.Rationale))
+			sb.WriteString(fmt.Sprintf("  ✓ %s - %s\n", b.Item, b.Rationale))
 		}
 	}
 	sb.WriteString("\nOUT-OF-SCOPE:\n")
 	for _, b := range s.Boundaries {
 		if !b.InScope {
-			sb.WriteString(fmt.Sprintf("  ✗ %s — %s\n", b.Item, b.Rationale))
+			sb.WriteString(fmt.Sprintf("  ✗ %s - %s\n", b.Item, b.Rationale))
 		}
 	}
 	sb.WriteString("\n")
@@ -545,7 +545,7 @@ func (s *AuditScope) RenderScopeDocument() string {
 		if len(components) == 0 {
 			status = "GAP"
 		}
-		sb.WriteString(fmt.Sprintf("  [%s] %s (%s) — %s\n", as.ID, as.Name, as.Impact, status))
+		sb.WriteString(fmt.Sprintf("  [%s] %s (%s) - %s\n", as.ID, as.Name, as.Impact, status))
 		if len(components) > 0 {
 			sb.WriteString(fmt.Sprintf("    Components: %s\n", strings.Join(components, ", ")))
 		}

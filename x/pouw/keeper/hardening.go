@@ -11,7 +11,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Week 31-32: Remediation Sprint 2 — Medium Findings & Defense-in-Depth
+// Week 31-32: Remediation Sprint 2 - Medium Findings & Defense-in-Depth
 // ---------------------------------------------------------------------------
 //
 // This file implements medium-severity remediations and defense-in-depth

@@ -4,7 +4,7 @@
 //!
 //! - **EVM (Ethereum)**: Processes transactions one by one (Sequential). Slow.
 //! - **Solana/Aptos**: Use parallel processing (Block-STM) which is fast,
-//!   but they are "dumb" pipes—they can't "read" AI models efficiently.
+//!   but they are "dumb" pipes; they can't "read" AI models efficiently.
 //!
 //! ## The Aethelred Advantage
 //!

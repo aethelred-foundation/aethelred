@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
     title: 'Aethelred SDK',
-    description: 'Enterprise AI Blockchain SDK — Documentation',
+    description: 'Enterprise AI Blockchain SDK - Documentation',
     base: '/docs/',
 
     head: [

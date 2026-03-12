@@ -728,7 +728,7 @@ fn make_consensus_with_validator() -> (PoUWConsensus, [u8; 32]) {
 /// non-genesis blocks.  Tests that target checks *before* VRF (parent hash,
 /// height, slot, timestamp) still reach their intended assertion.  Tests that
 /// target checks *after* VRF (proposer, finality) must accept VRF-level failure
-/// instead — see the individual tests for details.
+/// instead - see the individual tests for details.
 fn make_valid_child_header(
     consensus: &PoUWConsensus,
     parent: &crate::types::PoUWBlockHeader,
@@ -931,7 +931,7 @@ fn test_validate_header_increments_blocks_validated_metric() {
     let initial = consensus.metrics().blocks_validated.load(Ordering::Relaxed);
     assert_eq!(initial, 0);
 
-    // The metrics counter itself is functional — verify through a different code path.
+    // The metrics counter itself is functional - verify through a different code path.
     // We exercise validate_header and it fails at VRF, confirming the earlier
     // validation steps (1-5) execute.
     let parent = crate::types::PoUWBlockHeader::genesis(1000);

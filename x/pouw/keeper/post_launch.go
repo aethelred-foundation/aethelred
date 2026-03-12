@@ -623,7 +623,7 @@ func EvaluateGovernanceReadiness(ctx sdk.Context, k Keeper) *GovernanceReadiness
 		Description: "Minimum active validators",
 		Passed:      int64(valCount) >= minVal,
 		Details:     fmt.Sprintf("active=%d, required=%d", valCount, minVal),
-		Required:    false, // Advisory — governance can work with fewer
+		Required:    false, // Advisory - governance can work with fewer
 	})
 
 	// GR-05: No SEV-1 incidents
@@ -949,7 +949,7 @@ func RenderMaturityAssessment(a *MaturityAssessment) string {
 		if !c.Passed {
 			status = "FAIL"
 		}
-		sb.WriteString(fmt.Sprintf("  [%s] %s: %s — %s\n", status, c.ID, c.Description, c.Details))
+		sb.WriteString(fmt.Sprintf("  [%s] %s: %s - %s\n", status, c.ID, c.Description, c.Details))
 	}
 
 	sb.WriteString("\n─── GOVERNANCE ────────────────────────────────────────────────\n")
@@ -962,9 +962,9 @@ func RenderMaturityAssessment(a *MaturityAssessment) string {
 	// Sort graduation criteria to give final verdict
 	allPassed := a.AllGraduationCriteriaPassed()
 	if allPassed {
-		sb.WriteString("  *** CHAIN GRADUATED *** — Ready for mature operations\n")
+		sb.WriteString("  *** CHAIN GRADUATED *** - Ready for mature operations\n")
 	} else {
-		sb.WriteString("  Chain is in " + string(a.Level) + " phase — not yet graduated\n")
+		sb.WriteString("  Chain is in " + string(a.Level) + " phase - not yet graduated\n")
 	}
 	sb.WriteString("══════════════════════════════════════════════════════════════\n")
 

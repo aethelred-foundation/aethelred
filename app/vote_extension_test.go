@@ -131,7 +131,7 @@ func makeValidVoteExtension(t *testing.T) *app.VoteExtension {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// VoteExtension.Validate() — Permissive Mode
+// VoteExtension.Validate() - Permissive Mode
 // ────────────────────────────────────────────────────────────────────────────
 
 func TestVoteExtension_Validate_ValidExtension(t *testing.T) {
@@ -243,7 +243,7 @@ func TestVoteExtension_Validate_NoVerifications(t *testing.T) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// VoteExtension.ValidateStrict() — Production Mode
+// VoteExtension.ValidateStrict() - Production Mode
 // ────────────────────────────────────────────────────────────────────────────
 
 func TestVoteExtension_ValidateStrict_RejectsUnsigned(t *testing.T) {
@@ -273,7 +273,7 @@ func TestVoteExtension_ValidateStrict_RejectsMissingHash(t *testing.T) {
 
 func TestVoteExtension_ValidateStrict_RejectsInvalidSigLength(t *testing.T) {
 	ve := makeValidVoteExtension(t)
-	ve.Signature = make([]byte, 32) // wrong length — ed25519 needs 64
+	ve.Signature = make([]byte, 32) // wrong length - ed25519 needs 64
 	err := ve.ValidateStrict()
 	if err == nil {
 		t.Fatal("strict mode must reject wrong signature length")
@@ -1105,7 +1105,7 @@ func TestIsInjectedVoteExtensionTx_InvalidJSON(t *testing.T) {
 
 func TestVoteExtension_MaxVerifications(t *testing.T) {
 	ve := app.NewVoteExtension(100, []byte("val"))
-	// Add many verifications — should not panic
+	// Add many verifications - should not panic
 	for i := 0; i < app.MaxVerificationsPerExtension; i++ {
 		v := app.ComputeVerification{
 			JobID:           "job-bulk",

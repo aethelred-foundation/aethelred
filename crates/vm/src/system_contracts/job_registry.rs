@@ -768,7 +768,7 @@ impl JobRegistry {
             });
         }
 
-        // Verify attestation freshness — must be within the job's SLA window
+        // Verify attestation freshness - must be within the job's SLA window
         if job.submitted_at > attestation.timestamp || attestation.timestamp > job.sla.deadline {
             return Err(SystemContractError::TeeVerificationFailed {
                 reason: "Attestation timestamp outside SLA window".into(),

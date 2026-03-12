@@ -2,7 +2,7 @@
  <img src="https://raw.githubusercontent.com/aethelred/.github/main/profile/banner.png" alt="Aethelred" width="900" />
 </p>
 
-<h2 align="center">Aethelred — The Sovereign Layer 1 for Verifiable AI</h2>
+<h2 align="center">Aethelred - The Sovereign Layer 1 for Verifiable AI</h2>
 
 <p align="center">
  Proof-of-Useful-Work · Zero-Knowledge ML Proofs · TEE-backed Consensus · Post-Quantum Ready
@@ -19,7 +19,7 @@
 
 ### What We're Building
 
-Aethelred is the first blockchain where **validator work has real-world value**. Instead of burning energy on meaningless hashes, validators run AI inference inside hardware TEEs and generate on-chain zero-knowledge proofs — creating a permanent, tamper-proof record of every AI computation.
+Aethelred is the first blockchain where **validator work has real-world value**. Instead of burning energy on meaningless hashes, validators run AI inference inside hardware TEEs and generate on-chain zero-knowledge proofs - creating a permanent, tamper-proof record of every AI computation.
 
 ```
 AI job arrives → Validator TEE executes → zkML proof generated
@@ -33,7 +33,7 @@ AI job arrives → Validator TEE executes → zkML proof generated
 
 | Repo | Description |
 |---|---|
-| [aethelred](https://github.com/AethelredFoundation/aethelred) | Core monorepo — Go node + Rust crates + x/ modules |
+| [aethelred](https://github.com/AethelredFoundation/aethelred) | Core monorepo - Go node + Rust crates + x/ modules |
 | [contracts](https://github.com/AethelredFoundation/contracts) | Solidity bridge, oracle, and governance contracts |
 | [aethelred-sdk-ts](https://github.com/AethelredFoundation/aethelred-sdk-ts) | TypeScript / JavaScript SDK |
 | [aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | Python SDK |

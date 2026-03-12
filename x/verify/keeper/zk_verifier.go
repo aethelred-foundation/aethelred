@@ -246,7 +246,7 @@ func (v *ZKVerifier) VerifyProof(ctx sdk.Context, proof *ZKProof) *ZKVerificatio
 		return result
 	}
 
-	// ── ZK-06: Domain binding — require JobID, ChainID, Height for anti-replay ──
+	// ── ZK-06: Domain binding - require JobID, ChainID, Height for anti-replay ──
 	if !v.allowSimulated {
 		if proof.JobID == "" {
 			result.ErrorCode = ZKErrorInvalidPublicInput
@@ -598,7 +598,7 @@ func (v *ZKVerifier) cryptographicVerify(proof *ZKProof, circuit *RegisteredCirc
 	proofHash := sha256.Sum256(proof.Proof)
 	proofHash2 := sha256.Sum256(proof.Proof)
 	if proofHash != proofHash2 {
-		return false, errors.New("proof hash inconsistency — potential non-determinism")
+		return false, errors.New("proof hash inconsistency - potential non-determinism")
 	}
 
 	// Verify verifying key hash is non-zero.

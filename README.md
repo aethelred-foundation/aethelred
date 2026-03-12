@@ -23,7 +23,7 @@
 
 ## What is Aethelred?
 
-Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** — running AI inference jobs inside **Intel SGX / AWS Nitro TEEs** and generating **zero-knowledge ML proofs** (EZKL, RISC Zero, Groth16, Halo2, Plonky2) that are verified on-chain in every block.
+Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** - running AI inference jobs inside **Intel SGX / AWS Nitro TEEs** and generating **zero-knowledge ML proofs** (EZKL, RISC Zero, Groth16, Halo2, Plonky2) that are verified on-chain in every block.
 
 ```
 AI Job Submitted → VRF Scheduler → Validator TEE Execution
@@ -181,6 +181,6 @@ We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE)
+Apache-2.0 - see [LICENSE](LICENSE)
 
 <p align="center">Built by the Aethelred Team</p>

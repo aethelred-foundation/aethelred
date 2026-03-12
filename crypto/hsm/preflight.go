@@ -1,4 +1,4 @@
-// Package hsm — preflight.go provides HSM preflight validation for the G8 gate.
+// Package hsm - preflight.go provides HSM preflight validation for the G8 gate.
 // RunPreflight validates HSM readiness before the validator node starts,
 // checking connectivity, key availability, signing capability, and failover.
 package hsm

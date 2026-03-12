@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost3_test.go — Third wave of tests to further push coverage.
+// coverage_boost3_test.go - Third wave of tests to further push coverage.
 // Targets: partially-covered functions, edge cases, and additional branches.
 
 import (
@@ -32,7 +32,7 @@ func cb3SDKCtx() sdk.Context {
 }
 
 // =============================================================================
-// SCHEDULER.GO — Stop, Update, additional paths
+// SCHEDULER.GO - Stop, Update, additional paths
 // =============================================================================
 
 func TestCB3_Scheduler_Stop(t *testing.T) {
@@ -107,7 +107,7 @@ func TestCB3_Scheduler_MarkFailed_NonexistentJob(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — ValidateSealTransaction more branches
+// CONSENSUS.GO - ValidateSealTransaction more branches
 // =============================================================================
 
 func TestCB3_ValidateSealTransaction_ValidJSON_MissingFields(t *testing.T) {
@@ -133,7 +133,7 @@ func TestCB3_ValidateSealTransaction_ValidJSON_MissingFields(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — ProcessSealTransaction branches
+// CONSENSUS.GO - ProcessSealTransaction branches
 // =============================================================================
 
 func TestCB3_ProcessSealTransaction_InvalidJSON(t *testing.T) {
@@ -145,7 +145,7 @@ func TestCB3_ProcessSealTransaction_InvalidJSON(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — VerifyVoteExtension more branches
+// CONSENSUS.GO - VerifyVoteExtension more branches
 // =============================================================================
 
 func TestCB3_VerifyVoteExtension_InvalidJSON(t *testing.T) {
@@ -194,7 +194,7 @@ func TestCB3_VerifyVoteExtension_WithVerifications(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — PrepareVoteExtension
+// CONSENSUS.GO - PrepareVoteExtension
 // =============================================================================
 
 func TestCB3_PrepareVoteExtension_NilContext(t *testing.T) {
@@ -207,7 +207,7 @@ func TestCB3_PrepareVoteExtension_NilContext(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — CreateSealTransactions
+// CONSENSUS.GO - CreateSealTransactions
 // =============================================================================
 
 func TestCB3_CreateSealTransactions_WithResults(t *testing.T) {
@@ -227,7 +227,7 @@ func TestCB3_CreateSealTransactions_WithResults(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_DISTRIBUTION.GO — ValidateFeeDistribution more branches
+// FEE_DISTRIBUTION.GO - ValidateFeeDistribution more branches
 // =============================================================================
 
 func TestCB3_ValidateFeeDistribution_AllZero(t *testing.T) {
@@ -253,7 +253,7 @@ func TestCB3_ValidateFeeDistribution_OnlyValidators(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — SafeSub, SafeMul, SafeMulDiv additional edge cases
+// TOKENOMICS_SAFE.GO - SafeSub, SafeMul, SafeMulDiv additional edge cases
 // =============================================================================
 
 func TestCB3_SafeSub_NegativeResult(t *testing.T) {
@@ -294,7 +294,7 @@ func TestCB3_SafeMulDiv_AllCombinations(t *testing.T) {
 }
 
 // =============================================================================
-// HARDENING.GO — SanitizePurpose more branches
+// HARDENING.GO - SanitizePurpose more branches
 // =============================================================================
 
 func TestCB3_SanitizePurpose_DisallowedChars(t *testing.T) {
@@ -318,7 +318,7 @@ func TestCB3_ValidateHexHash_ZeroExpectedBytes(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE.GO — ValidateParams more branches
+// GOVERNANCE.GO - ValidateParams more branches
 // =============================================================================
 
 func TestCB3_ValidateParams_ZeroMinValidators(t *testing.T) {
@@ -351,7 +351,7 @@ func TestCB3_ValidateParams_NegativeJobTimeout(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE.GO — DiffParams
+// GOVERNANCE.GO - DiffParams
 // =============================================================================
 
 func TestCB3_DiffParams_AllFieldsChanged(t *testing.T) {
@@ -399,7 +399,7 @@ func TestCB3_DiffParams_NoChanges(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE.GO — SeverityMultiplier additional
+// EVIDENCE.GO - SeverityMultiplier additional
 // =============================================================================
 
 func TestCB3_SeverityMultiplier_AllCases(t *testing.T) {
@@ -411,7 +411,7 @@ func TestCB3_SeverityMultiplier_AllCases(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE.GO — EvidenceCollector additional paths
+// EVIDENCE.GO - EvidenceCollector additional paths
 // =============================================================================
 
 func TestCB3_EvidenceCollector_DetectInvalidOutputs_WithVotes(t *testing.T) {
@@ -465,7 +465,7 @@ func TestCB3_EvidenceCollector_DetectDoubleSigners_WithDuplicates(t *testing.T) 
 }
 
 // =============================================================================
-// PERFORMANCE.GO — severityForReputation
+// PERFORMANCE.GO - severityForReputation
 // =============================================================================
 
 func TestCB3_SeverityForReputation_AllBands(t *testing.T) {
@@ -488,7 +488,7 @@ func TestCB3_SeverityForReputation_AllBands(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT.GO — AuditLogger more paths
+// AUDIT.GO - AuditLogger more paths
 // =============================================================================
 
 func TestCB3_AuditLogger_AuditJobFailed(t *testing.T) {
@@ -524,7 +524,7 @@ func TestCB3_AuditLogger_CapacityWrapping(t *testing.T) {
 }
 
 // =============================================================================
-// SECURITY_AUDIT.GO — RunSecurityAudit and AuditReport
+// SECURITY_AUDIT.GO - RunSecurityAudit and AuditReport
 // =============================================================================
 
 func TestCB3_AuditReport_Summary_WithFailures(t *testing.T) {
@@ -548,7 +548,7 @@ func TestCB3_AuditReport_Summary_WithFailures(t *testing.T) {
 }
 
 // =============================================================================
-// REMEDIATION.GO — Additional coverage
+// REMEDIATION.GO - Additional coverage
 // =============================================================================
 
 func TestCB3_RemediationTracker_AllPaths(t *testing.T) {
@@ -592,7 +592,7 @@ func TestCB3_RemediationTracker_AllPaths(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — meetsBasicCriteria ZKML and Hybrid
+// STAKING.GO - meetsBasicCriteria ZKML and Hybrid
 // =============================================================================
 
 func TestCB3_MeetsBasicCriteria_ZKMLValidator(t *testing.T) {
@@ -631,7 +631,7 @@ func TestCB3_MeetsBasicCriteria_HybridValidator(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — calculateSelectionScore ZKML and Hybrid branches
+// STAKING.GO - calculateSelectionScore ZKML and Hybrid branches
 // =============================================================================
 
 func TestCB3_CalculateSelectionScore_ZKMLWithPreferred(t *testing.T) {
@@ -681,7 +681,7 @@ func TestCB3_CalculateSelectionScore_HighAvailability(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING.GO — selectionEntropySeed and deriveJobSelectionEntropy
+// STAKING.GO - selectionEntropySeed and deriveJobSelectionEntropy
 // =============================================================================
 
 func TestCB3_SelectionEntropySeed_WithEntropy(t *testing.T) {
@@ -751,7 +751,7 @@ func TestCB3_DeriveJobSelectionEntropy_NoMetadata(t *testing.T) {
 }
 
 // =============================================================================
-// ATTESTATION_REGISTRY.GO — additional branches
+// ATTESTATION_REGISTRY.GO - additional branches
 // =============================================================================
 
 func TestCB3_NormalizeCommitteeAddress_Variants(t *testing.T) {
@@ -794,7 +794,7 @@ func TestCB3_NormalizePCR0Hex_Variants(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — validateTEEAttestationWire more branches
+// CONSENSUS.GO - validateTEEAttestationWire more branches
 // =============================================================================
 
 func TestCB3_ValidateTEEAttestationWire_ShortQuote(t *testing.T) {
@@ -845,7 +845,7 @@ func TestCB3_ValidateTEEAttestationWire_StaleTimestamp(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — IsSealTransaction
+// CONSENSUS.GO - IsSealTransaction
 // =============================================================================
 
 func TestCB3_IsSealTransaction_ValidSeal(t *testing.T) {
@@ -860,7 +860,7 @@ func TestCB3_IsSealTransaction_ValidSeal(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — BondingCurve additional paths
+// TOKENOMICS_SAFE.GO - BondingCurve additional paths
 // =============================================================================
 
 func TestCB3_BondingCurve_GetCurrentPriceSafe(t *testing.T) {
@@ -893,7 +893,7 @@ func TestCB3_BondingCurve_GetState(t *testing.T) {
 }
 
 // =============================================================================
-// METRICS.GO — CircuitBreaker additional paths
+// METRICS.GO - CircuitBreaker additional paths
 // =============================================================================
 
 func TestCB3_CircuitBreaker_Trips(t *testing.T) {
@@ -915,7 +915,7 @@ func TestCB3_CircuitBreaker_Trips(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH.GO — GenesisValidatorSet
+// ECOSYSTEM_LAUNCH.GO - GenesisValidatorSet
 // =============================================================================
 
 func TestCB3_GenesisValidatorSet_ValidateSet(t *testing.T) {
@@ -963,7 +963,7 @@ func TestCB3_GenesisValidatorSet_InsufficientValidators(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_MODEL_SIMULATION.GO — additional coverage
+// TOKENOMICS_MODEL_SIMULATION.GO - additional coverage
 // =============================================================================
 
 func TestCB3_ComputeInflationForYear_BoundaryYears(t *testing.T) {
@@ -987,7 +987,7 @@ func TestCB3_ComputeInflationForYear_BoundaryYears(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — getConsensusThreshold additional branches
+// CONSENSUS.GO - getConsensusThreshold additional branches
 // =============================================================================
 
 func TestCB3_GetConsensusThreshold_Default(t *testing.T) {
@@ -999,7 +999,7 @@ func TestCB3_GetConsensusThreshold_Default(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — simulatedVerificationEnabled / productionVerificationMode
+// CONSENSUS.GO - simulatedVerificationEnabled / productionVerificationMode
 // =============================================================================
 
 func TestCB3_SimulatedVerificationEnabled(t *testing.T) {
@@ -1021,7 +1021,7 @@ func TestCB3_ProductionVerificationMode(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER.GO — loadSchedulingMetadata
+// SCHEDULER.GO - loadSchedulingMetadata
 // =============================================================================
 
 func TestCB3_LoadSchedulingMetadata_AllFields(t *testing.T) {
@@ -1068,7 +1068,7 @@ func TestCB3_LoadSchedulingMetadata_EmptyJob(t *testing.T) {
 }
 
 // =============================================================================
-// USEFUL_WORK.GO — isLocalDrandEndpoint
+// USEFUL_WORK.GO - isLocalDrandEndpoint
 // =============================================================================
 
 func TestCB3_IsLocalDrandEndpoint_AllCases(t *testing.T) {
@@ -1080,7 +1080,7 @@ func TestCB3_IsLocalDrandEndpoint_AllCases(t *testing.T) {
 }
 
 // =============================================================================
-// HARDENING.GO — ValidateHexHash more branches
+// HARDENING.GO - ValidateHexHash more branches
 // =============================================================================
 
 func TestCB3_ValidateHexHash_AllBranches(t *testing.T) {
@@ -1101,7 +1101,7 @@ func TestCB3_ValidateHexHash_AllBranches(t *testing.T) {
 }
 
 // =============================================================================
-// NORMALIZATION — NormalizeMeasurementHex and CanonicalizePlatform
+// NORMALIZATION - NormalizeMeasurementHex and CanonicalizePlatform
 // =============================================================================
 
 func TestCB3_NormalizeMeasurementHex_AllCases(t *testing.T) {
@@ -1150,7 +1150,7 @@ func TestCB3_CanonicalizePlatform_AllCases(t *testing.T) {
 }
 
 // =============================================================================
-// SLASHING_INTEGRATION.GO — DefaultSlashingConfig more paths
+// SLASHING_INTEGRATION.GO - DefaultSlashingConfig more paths
 // =============================================================================
 
 func TestCB3_DefaultSlashingConfig_AllFields(t *testing.T) {
@@ -1162,7 +1162,7 @@ func TestCB3_DefaultSlashingConfig_AllFields(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH.GO — PilotPartner Active/Testing
+// ECOSYSTEM_LAUNCH.GO - PilotPartner Active/Testing
 // =============================================================================
 
 func TestCB3_PilotCohort_ActivePartners_MultipleStatuses(t *testing.T) {
@@ -1182,7 +1182,7 @@ func TestCB3_PilotCohort_ActivePartners_MultipleStatuses(t *testing.T) {
 }
 
 // =============================================================================
-// POST_LAUNCH.GO — IncidentTracker full lifecycle
+// POST_LAUNCH.GO - IncidentTracker full lifecycle
 // =============================================================================
 
 func TestCB3_IncidentTracker_FullLifecycle(t *testing.T) {
@@ -1215,7 +1215,7 @@ func TestCB3_IncidentTracker_FullLifecycle(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE_SYSTEM.GO — DoubleVotingDetector additional paths
+// EVIDENCE_SYSTEM.GO - DoubleVotingDetector additional paths
 // =============================================================================
 
 func TestCB3_DoubleVotingDetector_MultipleValidators(t *testing.T) {
@@ -1233,7 +1233,7 @@ func TestCB3_DoubleVotingDetector_MultipleValidators(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE_SYSTEM.GO — BlockMissTracker thresholds
+// EVIDENCE_SYSTEM.GO - BlockMissTracker thresholds
 // =============================================================================
 
 func TestCB3_BlockMissTracker_ThresholdCheck(t *testing.T) {
@@ -1250,7 +1250,7 @@ func TestCB3_BlockMissTracker_ThresholdCheck(t *testing.T) {
 }
 
 // =============================================================================
-// METRICS.GO — ModuleMetrics comprehensive
+// METRICS.GO - ModuleMetrics comprehensive
 // =============================================================================
 
 func TestCB3_ModuleMetrics_AllMethods(t *testing.T) {
@@ -1266,7 +1266,7 @@ func TestCB3_ModuleMetrics_AllMethods(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS.GO — RatioToPercent additional
+// TOKENOMICS.GO - RatioToPercent additional
 // =============================================================================
 
 func TestCB3_RatioToPercent_EdgeCases(t *testing.T) {

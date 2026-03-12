@@ -15,14 +15,14 @@ import (
 // ---------------------------------------------------------------------------
 //
 // This file implements:
-//   1. Upgrade rehearsal simulation — dry-run of v1→v2 migration with
+//   1. Upgrade rehearsal simulation - dry-run of v1→v2 migration with
 //      pre/post validation and timing measurements.
-//   2. Rollback procedures — state snapshot capture and restore mechanism
+//   2. Rollback procedures - state snapshot capture and restore mechanism
 //      for safe upgrade rollback.
-//   3. Upgrade checklist — comprehensive pre-upgrade checklist with
+//   3. Upgrade checklist - comprehensive pre-upgrade checklist with
 //      automated verification of all preconditions.
-//   4. State snapshot — lightweight capture of critical state for comparison.
-//   5. Rollback drill runner — end-to-end rollback simulation.
+//   4. State snapshot - lightweight capture of critical state for comparison.
+//   5. Rollback drill runner - end-to-end rollback simulation.
 //
 // Design principles:
 //   - Rehearsals are non-destructive (read-only analysis of current state)
@@ -225,7 +225,7 @@ func CaptureStateSnapshot(ctx sdk.Context, k Keeper) StateSnapshot {
 		return false, nil
 	})
 
-	// Params hash (simplified — just use string representation)
+	// Params hash (simplified - just use string representation)
 	params, err := k.GetParams(ctx)
 	if err == nil && params != nil {
 		snap.ParamsHash = fmt.Sprintf("CT%d-MV%d-JTB%d-MJB%d",
@@ -518,9 +518,9 @@ func RunRollbackDrill(ctx sdk.Context, k Keeper) *RollbackDrillResult {
 		return result
 	}
 
-	// Step 2: Apply simulated corruption — set consensus threshold below BFT safety
+	// Step 2: Apply simulated corruption - set consensus threshold below BFT safety
 	corruptParams := *originalParams
-	corruptParams.ConsensusThreshold = 40 // Dangerously low — below ValidateParams minimum
+	corruptParams.ConsensusThreshold = 40 // Dangerously low - below ValidateParams minimum
 	_ = k.Params.Set(ctx, corruptParams)
 	result.CorruptionApplied = "consensus_threshold set to 40 (below BFT safety minimum of 51)"
 
@@ -535,7 +535,7 @@ func RunRollbackDrill(ctx sdk.Context, k Keeper) *RollbackDrillResult {
 			"corruption was not detected by validation")
 	}
 
-	// Step 4: Recovery — restore original params
+	// Step 4: Recovery - restore original params
 	recoveryStart := time.Now()
 	result.RecoveryAttempted = true
 
@@ -627,9 +627,9 @@ func RenderRehearsalReport(r *UpgradeRehearsalResult) string {
 
 	sb.WriteString("\n─── DETERMINATION ─────────────────────────────────────────────\n")
 	if r.RehearsalPass {
-		sb.WriteString("  *** REHEARSAL PASSED *** — Ready for upgrade\n")
+		sb.WriteString("  *** REHEARSAL PASSED *** - Ready for upgrade\n")
 	} else {
-		sb.WriteString("  *** REHEARSAL FAILED *** — NOT ready for upgrade\n")
+		sb.WriteString("  *** REHEARSAL FAILED *** - NOT ready for upgrade\n")
 		for _, reason := range r.FailureReasons {
 			sb.WriteString(fmt.Sprintf("  ✗ %s\n", reason))
 		}

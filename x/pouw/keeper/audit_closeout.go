@@ -144,7 +144,7 @@ func identifyOpenItems(retestReport *AuditReport, tracker *RemediationTracker) [
 					ID:          f.ID,
 					Severity:    f.Severity,
 					Description: fmt.Sprintf("[AUDIT] %s: %s", f.CheckName, f.Description),
-					Rationale:   "Critical finding still open — MUST be resolved before launch",
+					Rationale:   "Critical finding still open - MUST be resolved before launch",
 					Mitigation:  f.Remediation,
 				})
 			}
@@ -436,11 +436,11 @@ func (r *AuditCloseoutReport) RenderCloseoutReport() string {
 
 	// Go/No-Go determination
 	if blockingFailed {
-		sb.WriteString("DETERMINATION: *** NO-GO *** — Blocking readiness checks failed\n")
+		sb.WriteString("DETERMINATION: *** NO-GO *** - Blocking readiness checks failed\n")
 	} else if allPassed {
-		sb.WriteString("DETERMINATION: *** GO *** — All readiness checks passed\n")
+		sb.WriteString("DETERMINATION: *** GO *** - All readiness checks passed\n")
 	} else {
-		sb.WriteString("DETERMINATION: *** CONDITIONAL GO *** — Non-blocking items open\n")
+		sb.WriteString("DETERMINATION: *** CONDITIONAL GO *** - Non-blocking items open\n")
 	}
 
 	sb.WriteString("\n=== END OF CLOSEOUT REPORT ===\n")

@@ -975,7 +975,7 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 		assignedValidators, assignmentProofs := pool.assign(scheduledJob.Job, s.config.MinValidatorsRequired, entropy)
 		if len(assignedValidators) >= s.config.MinValidatorsRequired {
 			if err := scheduledJob.Job.MarkProcessing(); err != nil {
-				// State machine rejected the transition — skip this job
+				// State machine rejected the transition - skip this job
 				s.logger.Warn("Failed to transition job to Processing",
 					"job_id", scheduledJob.Job.Id,
 					"status", scheduledJob.Job.Status,

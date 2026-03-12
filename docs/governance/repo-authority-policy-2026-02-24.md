@@ -1,4 +1,4 @@
-# Repository Authority Policy (Enforced Interim) — 2026-02-24
+# Repository Authority Policy (Enforced Interim) - 2026-02-24
 
 Status: Enforced interim policy (registry + CI guardrails implemented locally); Foundation ratification package prepared; final org-level ratification pending approval.
 

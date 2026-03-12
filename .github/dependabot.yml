@@ -18,7 +18,7 @@ updates:
       prefix: "deps(go):"
     open-pull-requests-limit: 5
 
-  # Rust crates — core cryptography
+  # Rust crates - core cryptography
   - package-ecosystem: "cargo"
     directory: "/crates/core"
     schedule:
@@ -34,7 +34,7 @@ updates:
       prefix: "deps(rust-core):"
     open-pull-requests-limit: 5
 
-  # Rust crates — consensus
+  # Rust crates - consensus
   - package-ecosystem: "cargo"
     directory: "/crates/consensus"
     schedule:

@@ -1,4 +1,4 @@
-// hsm_preflight.go — HSM preflight validation for validator nodes.
+// hsm_preflight.go - HSM preflight validation for validator nodes.
 // This file defines the runHSMPreflight logic that is invoked from the
 // main command tree. It reads configuration from environment variables,
 // constructs an hsm.ValidatorHSMConfig, and delegates to hsm.RunPreflight.

@@ -22,7 +22,7 @@ sgx = []
 hsm = ["cryptoki"]
 # Enable benchmarking
 bench = ["dep:criterion"]
-# Production hardening — enables compile_error! guards in pillar stubs
+# Production hardening - enables compile_error! guards in pillar stubs
 # to prevent shipping dev tokenomics/mempool/bridge stubs to mainnet.
 production = []
 

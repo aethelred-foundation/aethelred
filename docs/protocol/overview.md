@@ -23,7 +23,7 @@
 
 ### 1.1 Vision
 
-Aethelred is a **Verifiable Compute Cloud** built on a Layer-1 blockchain. Unlike legacy chains (Ethereum, Solana) that sell "Blockspace," Aethelred sells **"Verified Intelligence"** — cryptographically proven AI computation results that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
+Aethelred is a **Verifiable Compute Cloud** built on a Layer-1 blockchain. Unlike legacy chains (Ethereum, Solana) that sell "Blockspace," Aethelred sells **"Verified Intelligence"** - cryptographically proven AI computation results that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
 
 ### 1.2 The Trust Trilemma
 

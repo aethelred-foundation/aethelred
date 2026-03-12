@@ -594,7 +594,7 @@ func TestSlashing_Collusion_MultipleWrongClustersOnlyFlagsLargest(t *testing.T) 
 		}
 	}
 
-	t.Logf("OK: multiple wrong clusters detected — %d total collusion records", len(evidence))
+	t.Logf("OK: multiple wrong clusters detected - %d total collusion records", len(evidence))
 }
 
 // =============================================================================
@@ -670,7 +670,7 @@ func TestSlashing_E2E_OneDissentingValidator(t *testing.T) {
 	if !foundInvalidOutput {
 		t.Fatal("expected invalid_output evidence for dissenter, found none")
 	}
-	t.Logf("OK: dissenting validator detected — %d total evidence records", len(evidence))
+	t.Logf("OK: dissenting validator detected - %d total evidence records", len(evidence))
 }
 
 func TestSlashing_E2E_DoubleSignerAndInvalidOutput(t *testing.T) {
@@ -725,7 +725,7 @@ func TestSlashing_E2E_DoubleSignerAndInvalidOutput(t *testing.T) {
 	if !foundInvalidOutput {
 		t.Error("expected invalid_output evidence for 'double-bad'")
 	}
-	t.Logf("OK: double signer with invalid output detected — %d total evidence records", len(evidence))
+	t.Logf("OK: double signer with invalid output detected - %d total evidence records", len(evidence))
 }
 
 func TestSlashing_E2E_CollusionRing(t *testing.T) {
@@ -780,7 +780,7 @@ func TestSlashing_E2E_CollusionRing(t *testing.T) {
 			t.Errorf("honest validator %q should not appear in evidence", rec.ValidatorAddress)
 		}
 	}
-	t.Logf("OK: collusion ring detected — %d total evidence records", len(evidence))
+	t.Logf("OK: collusion ring detected - %d total evidence records", len(evidence))
 }
 
 // =============================================================================
@@ -886,7 +886,7 @@ func TestSlashing_Deterministic_SameInputSameEvidence(t *testing.T) {
 			t.Errorf("record %d: actual output mismatch", i)
 		}
 	}
-	t.Logf("OK: identical inputs produce identical evidence — %d records", len(evidence1))
+	t.Logf("OK: identical inputs produce identical evidence - %d records", len(evidence1))
 }
 
 func TestSlashing_Deterministic_OrderIndependence(t *testing.T) {
@@ -941,7 +941,7 @@ func TestSlashing_Deterministic_OrderIndependence(t *testing.T) {
 				i, ev1[i].Condition, ev2[i].Condition)
 		}
 	}
-	t.Logf("OK: vote order does not affect evidence — %d records in both runs", len(ev1))
+	t.Logf("OK: vote order does not affect evidence - %d records in both runs", len(ev1))
 }
 
 func TestSlashing_Deterministic_NoTimeDependence(t *testing.T) {
@@ -987,5 +987,5 @@ func TestSlashing_Deterministic_NoTimeDependence(t *testing.T) {
 				i, evidence1[i].Timestamp, evidence2[i].Timestamp)
 		}
 	}
-	t.Logf("OK: evidence uses block time, not wall clock — %d records", len(evidence1))
+	t.Logf("OK: evidence uses block time, not wall clock - %d records", len(evidence1))
 }

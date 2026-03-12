@@ -2,7 +2,7 @@
 
 ## Overview
 
-Aethelred validator nodes can store signing keys inside PKCS#11-compliant Hardware Security Modules (HSMs). The private key **never leaves the HSM hardware boundary** — only signatures are returned to the application.
+Aethelred validator nodes can store signing keys inside PKCS#11-compliant Hardware Security Modules (HSMs). The private key **never leaves the HSM hardware boundary** - only signatures are returned to the application.
 
 ## Supported HSMs
 

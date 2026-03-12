@@ -122,7 +122,7 @@ pub struct AethelredBurn {
     /// Amount burned
     pub amount: TokenAmount,
 
-    /// Burn nonce — Audit fix [L-07]: Sequential nonce for Aethelred→ETH direction,
+    /// Burn nonce - Audit fix [L-07]: Sequential nonce for Aethelred→ETH direction,
     /// mirroring EthereumDeposit.nonce for the ETH→Aethelred direction.
     /// Enables off-chain monitoring to detect gaps (missed or censored burns).
     pub nonce: u64,

@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost2_test.go — Second wave of tests to push coverage toward 95%+.
+// coverage_boost2_test.go - Second wave of tests to push coverage toward 95%+.
 // Targets: staking.go, scheduler.go, attestation_registry.go, consensus.go,
 // fee_distribution.go, audit_closeout.go, evidence.go, evidence_system.go,
 // remediation.go, and other partially-covered functions.
@@ -61,7 +61,7 @@ func testCap(addr string, online bool, reputation int64, maxJobs, currentJobs in
 }
 
 // =============================================================================
-// STAKING.GO — ValidatorSelector methods
+// STAKING.GO - ValidatorSelector methods
 // =============================================================================
 
 func TestCB2_MeetsBasicCriteria_AllCases(t *testing.T) {
@@ -470,7 +470,7 @@ func TestCB2_GetValidatorRanking_Empty(t *testing.T) {
 }
 
 // =============================================================================
-// ATTESTATION_REGISTRY.GO — helper functions
+// ATTESTATION_REGISTRY.GO - helper functions
 // =============================================================================
 
 func TestCB2_NormalizeCommitteeAddress(t *testing.T) {
@@ -582,7 +582,7 @@ func TestCB2_ExtractTEETrustedMeasurements_Mixed(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER.GO — scheduler functions
+// SCHEDULER.GO - scheduler functions
 // =============================================================================
 
 func TestCB2_Scheduler_Stop(t *testing.T) {
@@ -731,7 +731,7 @@ func TestCB2_JobPriorityQueue(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — validateTEEAttestationWire and related
+// CONSENSUS.GO - validateTEEAttestationWire and related
 // =============================================================================
 
 func newTestConsensusHandler() *keeper.ConsensusHandler {
@@ -1181,7 +1181,7 @@ func TestCB2_RemediationTracker_Summary(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE_SYSTEM.GO — SlashingIntegration and related
+// EVIDENCE_SYSTEM.GO - SlashingIntegration and related
 // =============================================================================
 
 func TestCB2_BlockMissTracker_ComprehensiveCoverage(t *testing.T) {
@@ -1281,7 +1281,7 @@ func TestCB2_EquivocationEvidence_Verify(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE.GO — EvidenceCollector additional coverage
+// EVIDENCE.GO - EvidenceCollector additional coverage
 // =============================================================================
 
 func TestCB2_EvidenceCollector_ProcessEndBlockEvidence(t *testing.T) {
@@ -1333,7 +1333,7 @@ func TestCB2_SeverityMultiplier(t *testing.T) {
 }
 
 // =============================================================================
-// SECURITY_AUDIT.GO — AuditReport
+// SECURITY_AUDIT.GO - AuditReport
 // =============================================================================
 
 func TestCB2_AuditReport_Summary(t *testing.T) {
@@ -1387,7 +1387,7 @@ func TestCB2_AuditReport_AllPassed(t *testing.T) {
 }
 
 // =============================================================================
-// DRAND_PULSE.GO — additional coverage for LatestPulse paths
+// DRAND_PULSE.GO - additional coverage for LatestPulse paths
 // =============================================================================
 
 func TestCB2_IsLocalDrandEndpoint_AllCases(t *testing.T) {
@@ -1411,7 +1411,7 @@ func TestCB2_IsLocalDrandEndpoint_AllCases(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE.GO — partial coverage improvement
+// GOVERNANCE.GO - partial coverage improvement
 // =============================================================================
 
 func TestCB2_FormatParamChangeEvent_AdditionalCases(t *testing.T) {
@@ -1453,7 +1453,7 @@ func TestCB2_ValidateParams_ValidParams(t *testing.T) {
 }
 
 // =============================================================================
-// HARDENING.GO — additional coverage
+// HARDENING.GO - additional coverage
 // =============================================================================
 
 func TestCB2_SanitizePurpose_AdditionalCases(t *testing.T) {
@@ -1509,7 +1509,7 @@ func TestCB2_ValidateHexHash_AdditionalCases(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE.GO — SafeMath additional coverage
+// TOKENOMICS_SAFE.GO - SafeMath additional coverage
 // =============================================================================
 
 func TestCB2_SafeMath_MulDiv(t *testing.T) {
@@ -1547,7 +1547,7 @@ func TestCB2_SafeMath_LargeNumbers(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH.GO — additional coverage
+// ECOSYSTEM_LAUNCH.GO - additional coverage
 // =============================================================================
 
 func TestCB2_ValidateGenesisValidator_AdditionalCases(t *testing.T) {
@@ -1622,7 +1622,7 @@ func TestCB2_GenesisValidatorSet_AddAndValidate(t *testing.T) {
 }
 
 // =============================================================================
-// METRICS.GO — additional coverage
+// METRICS.GO - additional coverage
 // =============================================================================
 
 func TestCB2_CircuitBreaker_AdditionalCoverage(t *testing.T) {
@@ -1661,7 +1661,7 @@ func TestCB2_PercentileIndex_AdditionalCases(t *testing.T) {
 }
 
 // =============================================================================
-// USEFUL_WORK.GO — additional coverage
+// USEFUL_WORK.GO - additional coverage
 // =============================================================================
 
 func TestCB2_ParsePositiveUint_AdditionalCases(t *testing.T) {
@@ -1701,7 +1701,7 @@ func TestCB2_SaturatingMul_AdditionalCases(t *testing.T) {
 }
 
 // =============================================================================
-// POST_LAUNCH.GO — IncidentTracker additional coverage
+// POST_LAUNCH.GO - IncidentTracker additional coverage
 // =============================================================================
 
 func TestCB2_IncidentTracker_AdditionalCoverage(t *testing.T) {
@@ -1756,7 +1756,7 @@ func TestCB2_IncidentTracker_AdditionalCoverage(t *testing.T) {
 }
 
 // =============================================================================
-// MAINNET_PARAMS.GO — additional coverage
+// MAINNET_PARAMS.GO - additional coverage
 // =============================================================================
 
 func TestCB2_ParamChangeProposal_Validate(t *testing.T) {
@@ -1771,7 +1771,7 @@ func TestCB2_ParamChangeProposal_Validate(t *testing.T) {
 }
 
 // =============================================================================
-// VALIDATOR_ONBOARDING.GO — additional coverage
+// VALIDATOR_ONBOARDING.GO - additional coverage
 // =============================================================================
 
 func TestCB2_OnboardingApplication_Validate(t *testing.T) {
@@ -1788,7 +1788,7 @@ func TestCB2_OnboardingApplication_Validate(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT_SCOPE.GO — ValidateAuditorFinding coverage
+// AUDIT_SCOPE.GO - ValidateAuditorFinding coverage
 // =============================================================================
 
 func TestCB2_ValidateAuditorFinding_MoreCases(t *testing.T) {
@@ -1869,7 +1869,7 @@ func TestCB2_ChecklistComplete(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_MODEL_SIMULATION.GO — additional coverage
+// TOKENOMICS_MODEL_SIMULATION.GO - additional coverage
 // =============================================================================
 
 func TestCB2_FormatAETHEL_MoreCases(t *testing.T) {
@@ -1941,7 +1941,7 @@ func TestCB2_RatioToPercent_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// UPGRADE_REHEARSAL.GO — additional coverage
+// UPGRADE_REHEARSAL.GO - additional coverage
 // =============================================================================
 
 func TestCB2_UpgradeChecklist_Additional(t *testing.T) {
@@ -1964,7 +1964,7 @@ func TestCB2_UpgradeChecklist_Additional(t *testing.T) {
 }
 
 // =============================================================================
-// ROADMAP_TRACKER.GO — additional coverage
+// ROADMAP_TRACKER.GO - additional coverage
 // =============================================================================
 
 func TestCB2_StatusIcon_AllStatuses(t *testing.T) {
@@ -1996,7 +1996,7 @@ func TestCB2_DetermineCurrentWeek(t *testing.T) {
 }
 
 // =============================================================================
-// SECURITY_COMPLIANCE.GO — additional coverage
+// SECURITY_COMPLIANCE.GO - additional coverage
 // =============================================================================
 
 func TestCB2_DefaultVerificationPolicy(t *testing.T) {
@@ -2007,7 +2007,7 @@ func TestCB2_DefaultVerificationPolicy(t *testing.T) {
 }
 
 // =============================================================================
-// INVARIANTS — additional coverage
+// INVARIANTS - additional coverage
 // =============================================================================
 
 func TestCB2_AllInvariants(t *testing.T) {
@@ -2018,7 +2018,7 @@ func TestCB2_AllInvariants(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — VerifyVoteExtension and AggregateVoteExtensions coverage
+// CONSENSUS.GO - VerifyVoteExtension and AggregateVoteExtensions coverage
 // =============================================================================
 
 func TestCB2_VerifyVoteExtension_NilExtension(t *testing.T) {
@@ -2061,7 +2061,7 @@ func TestCB2_PrepareVoteExtension_NoJobs(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — ValidateSealTransaction and ProcessSealTransaction
+// CONSENSUS.GO - ValidateSealTransaction and ProcessSealTransaction
 // =============================================================================
 
 func TestCB2_ValidateSealTransaction_NilTx(t *testing.T) {
@@ -2096,7 +2096,7 @@ func TestCB2_ProcessSealTransaction_NilTx(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — IsSealTransaction
+// CONSENSUS.GO - IsSealTransaction
 // =============================================================================
 
 func TestCB2_IsSealTransaction_MoreCases(t *testing.T) {
@@ -2106,7 +2106,7 @@ func TestCB2_IsSealTransaction_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — CreateSealTransactions
+// CONSENSUS.GO - CreateSealTransactions
 // =============================================================================
 
 func TestCB2_CreateSealTransactions_NilResults(t *testing.T) {
@@ -2118,7 +2118,7 @@ func TestCB2_CreateSealTransactions_NilResults(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT.GO — VerifyChain additional coverage
+// AUDIT.GO - VerifyChain additional coverage
 // =============================================================================
 
 func TestCB2_AuditLogger_VerifyChain_CorruptedRecord(t *testing.T) {
@@ -2136,7 +2136,7 @@ func TestCB2_AuditLogger_VerifyChain_CorruptedRecord(t *testing.T) {
 }
 
 // =============================================================================
-// SECURITY_AUDIT.GO — RunSecurityAudit
+// SECURITY_AUDIT.GO - RunSecurityAudit
 // =============================================================================
 
 func TestCB2_RunSecurityAudit_Summary(t *testing.T) {
@@ -2154,7 +2154,7 @@ func TestCB2_RunSecurityAudit_Summary(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_DISTRIBUTION — NewFeeDistributor
+// FEE_DISTRIBUTION - NewFeeDistributor
 // =============================================================================
 
 func TestCB2_NewFeeDistributor(t *testing.T) {
@@ -2164,7 +2164,7 @@ func TestCB2_NewFeeDistributor(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER — DefaultSchedulerConfig
+// SCHEDULER - DefaultSchedulerConfig
 // =============================================================================
 
 func TestCB2_DefaultSchedulerConfig(t *testing.T) {
@@ -2178,7 +2178,7 @@ func TestCB2_DefaultSchedulerConfig(t *testing.T) {
 }
 
 // =============================================================================
-// TOKENOMICS_SAFE — BondingCurve additional coverage
+// TOKENOMICS_SAFE - BondingCurve additional coverage
 // =============================================================================
 
 func TestCB2_BondingCurve_AdditionalCases(t *testing.T) {
@@ -2188,7 +2188,7 @@ func TestCB2_BondingCurve_AdditionalCases(t *testing.T) {
 }
 
 // =============================================================================
-// THREAT_MODEL.GO — additional coverage
+// THREAT_MODEL.GO - additional coverage
 // =============================================================================
 
 func TestCB2_ThreatModelSummary(t *testing.T) {
@@ -2197,7 +2197,7 @@ func TestCB2_ThreatModelSummary(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH — PilotCohort additional coverage
+// ECOSYSTEM_LAUNCH - PilotCohort additional coverage
 // =============================================================================
 
 func TestCB2_PilotCohort_AllPaths(t *testing.T) {
@@ -2233,7 +2233,7 @@ func TestCB2_PilotCohort_AllPaths(t *testing.T) {
 }
 
 // =============================================================================
-// ECOSYSTEM_LAUNCH — ValidatePilotPartner
+// ECOSYSTEM_LAUNCH - ValidatePilotPartner
 // =============================================================================
 
 func TestCB2_ValidatePilotPartner_AllCases(t *testing.T) {
@@ -2260,7 +2260,7 @@ func TestCB2_ValidatePilotPartner_AllCases(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT_CLOSEOUT — BlockingFailures additional coverage
+// AUDIT_CLOSEOUT - BlockingFailures additional coverage
 // =============================================================================
 
 func TestCB2_BlockingFailures(t *testing.T) {
@@ -2311,7 +2311,7 @@ func TestCB2_RenderCloseoutReport(t *testing.T) {
 }
 
 // =============================================================================
-// PERFORMANCE.GO — additional coverage (if NewPerformanceTracker exists)
+// PERFORMANCE.GO - additional coverage (if NewPerformanceTracker exists)
 // =============================================================================
 
 func TestCB2_NewModuleMetrics_Additional(t *testing.T) {
@@ -2326,7 +2326,7 @@ func TestCB2_NewModuleMetrics_Additional(t *testing.T) {
 }
 
 // =============================================================================
-// SLASHING_INTEGRATION.GO — SlashingModuleAdapter
+// SLASHING_INTEGRATION.GO - SlashingModuleAdapter
 // =============================================================================
 
 func TestCB2_DefaultSlashingConfig(t *testing.T) {
@@ -2336,7 +2336,7 @@ func TestCB2_DefaultSlashingConfig(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS — GetEvidenceCollector, Scheduler, SetVerifier
+// CONSENSUS - GetEvidenceCollector, Scheduler, SetVerifier
 // =============================================================================
 
 func TestCB2_ConsensusHandler_Accessors(t *testing.T) {
@@ -2347,7 +2347,7 @@ func TestCB2_ConsensusHandler_Accessors(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_DISTRIBUTION — RewardScaleByReputation edge cases
+// FEE_DISTRIBUTION - RewardScaleByReputation edge cases
 // =============================================================================
 
 func TestCB2_RewardScaleByReputation_EdgeCases(t *testing.T) {
@@ -2362,7 +2362,7 @@ func TestCB2_RewardScaleByReputation_EdgeCases(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — requiredThresholdCount edge cases
+// CONSENSUS.GO - requiredThresholdCount edge cases
 // =============================================================================
 
 func TestCB2_RequiredThresholdCount_MoreCases(t *testing.T) {
@@ -2383,7 +2383,7 @@ func TestCB2_RequiredThresholdCount_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — getConsensusThreshold
+// CONSENSUS.GO - getConsensusThreshold
 // =============================================================================
 
 func TestCB2_GetConsensusThreshold_NilKeeper(t *testing.T) {
@@ -2395,7 +2395,7 @@ func TestCB2_GetConsensusThreshold_NilKeeper(t *testing.T) {
 }
 
 // =============================================================================
-// BYTES_LESS — additional coverage
+// BYTES_LESS - additional coverage
 // =============================================================================
 
 func TestCB2_BytesLess_MoreCases(t *testing.T) {
@@ -2407,7 +2407,7 @@ func TestCB2_BytesLess_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// EQUAL_BYTES — additional coverage
+// EQUAL_BYTES - additional coverage
 // =============================================================================
 
 func TestCB2_EqualBytes_MoreCases(t *testing.T) {
@@ -2419,7 +2419,7 @@ func TestCB2_EqualBytes_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// STRING_SLICE_EQUAL — additional coverage
+// STRING_SLICE_EQUAL - additional coverage
 // =============================================================================
 
 func TestCB2_StringSliceEqual_MoreCases(t *testing.T) {
@@ -2431,7 +2431,7 @@ func TestCB2_StringSliceEqual_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// EXTRACT_VALIDATOR_ADDRESS — additional coverage
+// EXTRACT_VALIDATOR_ADDRESS - additional coverage
 // =============================================================================
 
 func TestCB2_ExtractValidatorAddress_MoreCases(t *testing.T) {
@@ -2448,7 +2448,7 @@ func TestCB2_ExtractValidatorAddress_MoreCases(t *testing.T) {
 }
 
 // =============================================================================
-// GET_META functions — additional coverage
+// GET_META functions - additional coverage
 // =============================================================================
 
 func TestCB2_GetMetaInt_MoreCases(t *testing.T) {
@@ -2496,7 +2496,7 @@ func TestCB2_AllowSimulatedInThisBuild(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS.GO — validateVerificationWireWithCtx additional coverage
+// CONSENSUS.GO - validateVerificationWireWithCtx additional coverage
 // =============================================================================
 
 func TestCB2_ValidateVerificationWireWithCtx_TEEAttestation(t *testing.T) {
@@ -2552,7 +2552,7 @@ func TestCB2_ValidateVerificationWireWithCtx_ZKML(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER — MarkJobCompleteWithContext / MarkJobFailedWithContext
+// SCHEDULER - MarkJobCompleteWithContext / MarkJobFailedWithContext
 // =============================================================================
 
 func TestCB2_Scheduler_MarkJobCompleteWithContext(t *testing.T) {
@@ -2586,7 +2586,7 @@ func TestCB2_Scheduler_MarkJobFailedWithContext(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE — DetectInvalidOutputs, DetectDoubleSigners, DetectColludingValidators
+// EVIDENCE - DetectInvalidOutputs, DetectDoubleSigners, DetectColludingValidators
 // =============================================================================
 
 func TestCB2_EvidenceCollector_DetectInvalidOutputs_EmptyExtensions(t *testing.T) {
@@ -2606,7 +2606,7 @@ func TestCB2_EvidenceCollector_DetectDoubleSigners_Empty(t *testing.T) {
 }
 
 // =============================================================================
-// FEE_EARMARK_STORE — partial coverage
+// FEE_EARMARK_STORE - partial coverage
 // =============================================================================
 
 func TestCB2_FeeEarmarkStore_Accessors(t *testing.T) {
@@ -2616,7 +2616,7 @@ func TestCB2_FeeEarmarkStore_Accessors(t *testing.T) {
 }
 
 // =============================================================================
-// INVARIANTS — RegisteredInvariants
+// INVARIANTS - RegisteredInvariants
 // =============================================================================
 
 func TestCB2_RegisteredInvariantsExists(t *testing.T) {

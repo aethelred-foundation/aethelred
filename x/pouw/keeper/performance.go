@@ -18,15 +18,15 @@ import (
 // ---------------------------------------------------------------------------
 //
 // This file implements:
-//   1. Protocol freeze mechanism — governance-controlled freeze that gates
+//   1. Protocol freeze mechanism - governance-controlled freeze that gates
 //      state-mutating transactions while allowing queries and governance.
-//   2. Block processing budget — enforces wall-clock time limits on EndBlock
+//   2. Block processing budget - enforces wall-clock time limits on EndBlock
 //      operations to prevent block production stalls.
-//   3. Performance profile — tuned scheduler/consensus config optimized for
+//   3. Performance profile - tuned scheduler/consensus config optimized for
 //      mainnet throughput targets.
-//   4. Protocol version manifest — immutable snapshot of the frozen protocol
+//   4. Protocol version manifest - immutable snapshot of the frozen protocol
 //      specification for reproducibility and audit.
-//   5. SLA enforcement — validator performance SLAs with degradation alerts.
+//   5. SLA enforcement - validator performance SLAs with degradation alerts.
 //
 // Design principles:
 //   - All freeze state is on-chain (governance-mutable only)
@@ -438,7 +438,7 @@ func BuildProtocolManifest(ctx sdk.Context, k Keeper) *ProtocolManifest {
 		ChainID:       ctx.ChainID(),
 		ModuleName:    types.ModuleName,
 		ModuleVersion: ModuleConsensusVersion,
-		ProtocolName:  "Aethelred Sovereign L1 — Proof-of-Useful-Work",
+		ProtocolName:  "Aethelred Sovereign L1 - Proof-of-Useful-Work",
 
 		GeneratedAt: ctx.BlockTime().UTC().Format(time.RFC3339),
 		BlockHeight: ctx.BlockHeight(),
@@ -517,7 +517,7 @@ func (m *ProtocolManifest) RenderManifest() string {
 	if !m.InvariantsPass {
 		invStatus = "FAIL"
 	}
-	sb.WriteString(fmt.Sprintf("  Invariants:         %d checks — %s\n", m.InvariantCount, invStatus))
+	sb.WriteString(fmt.Sprintf("  Invariants:         %d checks - %s\n", m.InvariantCount, invStatus))
 
 	sb.WriteString("\n─── STATE STATISTICS ──────────────────────────────────────────\n")
 	sb.WriteString(fmt.Sprintf("  Total Jobs:          %d\n", m.TotalJobs))

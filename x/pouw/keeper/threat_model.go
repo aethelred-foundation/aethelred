@@ -1,7 +1,7 @@
 package keeper
 
 // ---------------------------------------------------------------------------
-// Threat Model — Aethelred L1 Blockchain for Verified AI Computations
+// Threat Model - Aethelred L1 Blockchain for Verified AI Computations
 // ---------------------------------------------------------------------------
 //
 // This file documents the formal threat model for the Aethelred protocol.
@@ -10,7 +10,7 @@ package keeper
 //
 // VERSION: 1.0 (pre-audit)
 // SCOPE:   pouw, seal, verify, validator modules
-// DATE:    Week 27 of 52 — Audit Prep Phase
+// DATE:    Week 27 of 52 - Audit Prep Phase
 // ---------------------------------------------------------------------------
 
 import "fmt"
@@ -304,9 +304,9 @@ var AttackSurfaces = []AttackSurface{
 		Module: "pouw/evidence", Attacker: "ATK-01", Boundary: "TB-01",
 		Vector:       "Validator goes offline indefinitely, never responds to assigned jobs. ProcessEndBlockEvidence is a stub.",
 		Impact:       "medium",
-		Mitigation:   "Downtime condition defined in validator/slashing.go (1% penalty). ProcessEndBlockEvidence exists as stub — integration with missed-block tracker is TODO.",
+		Mitigation:   "Downtime condition defined in validator/slashing.go (1% penalty). ProcessEndBlockEvidence exists as stub - integration with missed-block tracker is TODO.",
 		Status:       "open",
-		TestCoverage: "None — requires integration with validator module missed-block tracking",
+		TestCoverage: "None - requires integration with validator module missed-block tracking",
 	},
 	{
 		ID: "AS-17", Name: "Vote Extension Signing Not Implemented",

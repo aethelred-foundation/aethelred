@@ -76,7 +76,7 @@ func ValidateEndpointURL(endpoint string) error {
 				}
 			}
 		}
-		// If DNS lookup fails, allow the request through — the actual HTTP call
+		// If DNS lookup fails, allow the request through - the actual HTTP call
 		// will fail with a network error, which is a safer failure mode.
 	}
 

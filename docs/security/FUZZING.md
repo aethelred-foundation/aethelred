@@ -17,7 +17,7 @@ failures, and logic bugs that manual testing misses.
 
 ## 2. Fuzzing Targets
 
-### 2.1 Priority 1 — Security-Critical (Must Fuzz Before Testnet)
+### 2.1 Priority 1 - Security-Critical (Must Fuzz Before Testnet)
 
 | Target | Language | Tool | What to Fuzz |
 |--------|----------|------|--------------|
@@ -27,7 +27,7 @@ failures, and logic bugs that manual testing misses.
 | Vesting computation | Solidity | Foundry `forge fuzz` | Cliff/TGE boundaries, extreme durations, overflow inputs |
 | Bridge withdrawal | Solidity | Foundry `forge fuzz` | Replay, rate limits, signature validation |
 
-### 2.2 Priority 2 — Important (Must Fuzz Before Mainnet)
+### 2.2 Priority 2 - Important (Must Fuzz Before Mainnet)
 
 | Target | Language | Tool | What to Fuzz |
 |--------|----------|------|--------------|
@@ -36,7 +36,7 @@ failures, and logic bugs that manual testing misses.
 | WASM VM execution | Rust | `cargo-fuzz` | Arbitrary WASM bytecode, gas limits, memory bounds |
 | SDK input validation | TypeScript | `fast-check` | API inputs, transaction construction |
 
-### 2.3 Priority 3 — Defense-in-Depth
+### 2.3 Priority 3 - Defense-in-Depth
 
 | Target | Language | Tool | What to Fuzz |
 |--------|----------|------|--------------|

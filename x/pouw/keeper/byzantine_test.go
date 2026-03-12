@@ -100,7 +100,7 @@ func TestByzantine_LessThanOneThirdByzantineConsensusReached(t *testing.T) {
 	if result.AgreementCount != 5 {
 		t.Errorf("expected 5 honest agreements, got %d", result.AgreementCount)
 	}
-	t.Logf("OK: honest majority prevails — %d agreements", result.AgreementCount)
+	t.Logf("OK: honest majority prevails - %d agreements", result.AgreementCount)
 }
 
 func TestByzantine_ExactThresholdBoundary(t *testing.T) {
@@ -136,7 +136,7 @@ func TestByzantine_ExactThresholdBoundary(t *testing.T) {
 	if result.AgreementCount != 7 {
 		t.Errorf("expected exactly 7 agreements at boundary, got %d", result.AgreementCount)
 	}
-	t.Logf("OK: threshold boundary correct — %d agreements for 10 validators", result.AgreementCount)
+	t.Logf("OK: threshold boundary correct - %d agreements for 10 validators", result.AgreementCount)
 }
 
 // ---------------------------------------------------------------------------
@@ -654,11 +654,11 @@ func TestByzantine_DoubleProcessingPrevented(t *testing.T) {
 		t.Fatalf("expected Processing status, got %s", jobs[0].Status)
 	}
 
-	// Second selection: same block or next block — should NOT re-select
+	// Second selection: same block or next block - should NOT re-select
 	jobs2 := scheduler.GetNextJobs(ctx, 101)
 	for _, j := range jobs2 {
 		if j.Id == "double-proc-job" {
-			t.Fatal("SECURITY: Processing job was re-selected — double processing!")
+			t.Fatal("SECURITY: Processing job was re-selected - double processing!")
 		}
 	}
 	t.Log("OK: double processing prevented")
@@ -688,7 +688,7 @@ func TestByzantine_ExhaustedValidatorNotOverloaded(t *testing.T) {
 	if len(jobs) > 1 {
 		t.Fatalf("SECURITY: validator at capacity got %d jobs (max 1)", len(jobs))
 	}
-	t.Logf("OK: validator capacity enforced — %d job(s) selected", len(jobs))
+	t.Logf("OK: validator capacity enforced - %d job(s) selected", len(jobs))
 }
 
 // ---------------------------------------------------------------------------
@@ -922,7 +922,7 @@ func TestByzantine_RetryExhaustionLeadsToFailure(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestByzantine_DuplicateValidatorVotesNotDoubleCounted(t *testing.T) {
-	// Same validator submits multiple vote extensions — should still count
+	// Same validator submits multiple vote extensions - should still count
 	// as one vote per validator per job in the aggregation.
 	modelHash := randomHash()
 	inputHash := randomHash()

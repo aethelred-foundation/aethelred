@@ -15,9 +15,9 @@ Ensure that:
 
 Shared test vectors are stored in `vectors/` as JSON files:
 
-- `hybrid_signatures.json` — Pre-computed hybrid signatures with known keys
-- `kyber_kem.json` — KEM encapsulation/decapsulation pairs
-- `seal_roundtrip.json` — Serialized digital seals for cross-SDK parsing
+- `hybrid_signatures.json` - Pre-computed hybrid signatures with known keys
+- `kyber_kem.json` - KEM encapsulation/decapsulation pairs
+- `seal_roundtrip.json` - Serialized digital seals for cross-SDK parsing
 
 ## Running
 

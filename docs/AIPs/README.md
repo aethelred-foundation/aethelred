@@ -3,7 +3,7 @@
 [![AIP Lint](https://img.shields.io/github/actions/workflow/status/aethelred/AIPs/aip-lint.yml?style=flat-square&label=AIP+Lint)](https://github.com/AethelredFoundation/AIPs/actions)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 
-AIPs are the primary mechanism for proposing protocol changes, new features, and standards in the Aethelred ecosystem — analogous to [Ethereum EIPs](https://eips.ethereum.org/), [Cosmos ADRs](https://docs.cosmos.network/main/build/architecture), and [Aptos AIPs](https://github.com/aptos-foundation/AIPs).
+AIPs are the primary mechanism for proposing protocol changes, new features, and standards in the Aethelred ecosystem - analogous to [Ethereum EIPs](https://eips.ethereum.org/), [Cosmos ADRs](https://docs.cosmos.network/main/build/architecture), and [Aptos AIPs](https://github.com/aptos-foundation/AIPs).
 
 ---
 
@@ -41,7 +41,7 @@ Idea → Draft → Review → Final
 1. **Discuss first**: Open a GitHub Discussion or post in Discord `#aip-discussion`
 2. **Fork** this repo and copy `AIPs/AIP-TEMPLATE.md` to `AIPs/AIP-XXXX.md`
 3. Fill in all required frontmatter fields
-4. Open a PR — the AIP number will be assigned by a maintainer
+4. Open a PR - the AIP number will be assigned by a maintainer
 5. Engage with feedback and iterate
 
 ---

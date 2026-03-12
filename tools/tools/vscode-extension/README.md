@@ -6,7 +6,7 @@
 
 **Enterprise-grade compliance linting and sovereignty enforcement for AI development.**
 
-The Aethelred Sovereign Copilot moves compliance checks left, allowing developers to see regulatory violations as they type—not after deployment.
+The Aethelred Sovereign Copilot moves compliance checks left, allowing developers to see regulatory violations as they type, not after deployment.
 
 ## Features
 

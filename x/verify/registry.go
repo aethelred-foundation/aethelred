@@ -20,7 +20,7 @@ import (
 // in the verify Keeper's collections (VerifyingKeys, Circuits).
 //
 // On node restart, call SyncFromKeeper() to reload circuit/key state.
-// The in-memory model cache (parsed ONNX) is ephemeral — models must be
+// The in-memory model cache (parsed ONNX) is ephemeral - models must be
 // re-registered if needed. For production, an off-chain model storage
 // service (IPFS/S3) should be used alongside the on-chain hash registry.
 type ModelRegistry struct {
@@ -33,7 +33,7 @@ type ModelRegistry struct {
 	// Prover service for circuit compilation
 	proverService *ezkl.ProverService
 
-	// Storage (in-memory cache — ephemeral)
+	// Storage (in-memory cache - ephemeral)
 	models   map[string]*RegisteredModel
 	circuits map[string]*RegisteredCircuit
 

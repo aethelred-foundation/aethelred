@@ -378,7 +378,7 @@ func (fd *FeeDistributor) CollectJobFee(ctx sdk.Context, submitterAddr sdk.AccAd
 // per validator.
 //
 // SECURITY (FD-02/FD-03): All errors from bech32 parsing and bank sends are
-// propagated, ensuring the entire distribution is atomic — any failure reverts
+// propagated, ensuring the entire distribution is atomic - any failure reverts
 // the complete transaction via the Cosmos SDK cache-wrapped context.
 //
 // SECURITY (FD-05): Caller MUST bound len(validators) before calling.
@@ -391,13 +391,13 @@ func (k *Keeper) DistributeVerificationRewards(ctx sdk.Context, validators []str
 	rewardCoins := sdk.NewCoins(perValidatorReward)
 
 	for _, valAddrStr := range validators {
-		// FD-03: Parse error is NOT ignored — propagated to caller for atomic revert.
+		// FD-03: Parse error is NOT ignored - propagated to caller for atomic revert.
 		valAddr, err := sdk.AccAddressFromBech32(valAddrStr)
 		if err != nil {
 			return fmt.Errorf("invalid validator address %s: %w", valAddrStr, err)
 		}
 
-		// FD-02: Bank send error is NOT ignored — propagated to caller for atomic revert.
+		// FD-02: Bank send error is NOT ignored - propagated to caller for atomic revert.
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, valAddr, rewardCoins); err != nil {
 			return fmt.Errorf("failed to send reward to validator %s: %w", valAddrStr, err)
 		}

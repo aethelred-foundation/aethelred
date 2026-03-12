@@ -73,7 +73,7 @@ func ValidateProductionReadiness(
 		report.Checks = append(report.Checks, ReadinessCheck{
 			Name:    "allow_simulated",
 			Passed:  true,
-			Message: "AllowSimulated=true — simulated verification enabled (dev mode)",
+			Message: "AllowSimulated=true - simulated verification enabled (dev mode)",
 		})
 		// In dev mode, skip remaining production-only checks
 		return report
@@ -82,7 +82,7 @@ func ValidateProductionReadiness(
 	report.Checks = append(report.Checks, ReadinessCheck{
 		Name:    "allow_simulated",
 		Passed:  true,
-		Message: "AllowSimulated=false — production mode enforced",
+		Message: "AllowSimulated=false - production mode enforced",
 	})
 
 	// Check 2: ZK Verifier Endpoint
@@ -91,7 +91,7 @@ func ValidateProductionReadiness(
 		report.Checks = append(report.Checks, ReadinessCheck{
 			Name:    "zk_verifier_endpoint",
 			Passed:  false,
-			Message: "ZkVerifierEndpoint is empty — set to real EZKL verifier URL",
+			Message: "ZkVerifierEndpoint is empty - set to real EZKL verifier URL",
 		})
 	} else {
 		report.Checks = append(report.Checks, ReadinessCheck{

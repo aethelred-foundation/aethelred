@@ -481,7 +481,7 @@ func TestIsExpiredAt_NotExpired(t *testing.T) {
 		types.ProofTypeTEE, "test", fee, 1, bt,
 	)
 
-	// 12 hours later — not expired yet
+	// 12 hours later - not expired yet
 	checkTime := bt.Add(12 * time.Hour)
 	if job.IsExpiredAt(checkTime) {
 		t.Fatal("job should not be expired at 12h")
@@ -500,7 +500,7 @@ func TestIsExpiredAt_JustExpired(t *testing.T) {
 		types.ProofTypeTEE, "test", fee, 1, bt,
 	)
 
-	// 24h + 1s later — expired
+	// 24h + 1s later - expired
 	checkTime := bt.Add(24*time.Hour + time.Second)
 	if !job.IsExpiredAt(checkTime) {
 		t.Fatal("job should be expired after 24h + 1s")
@@ -673,7 +673,7 @@ func TestGetConsensusOutput_SkipsFailures(t *testing.T) {
 
 	_, ok := job.GetConsensusOutput(3)
 	if ok {
-		t.Fatal("should not reach consensus — only 2 successful votes, need 3")
+		t.Fatal("should not reach consensus - only 2 successful votes, need 3")
 	}
 }
 

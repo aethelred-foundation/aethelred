@@ -4,8 +4,8 @@
 //! NIST-published test vectors to ensure correctness and FIPS compliance.
 //!
 //! Reference:
-//! - ML-DSA (Dilithium): NIST FIPS 204 — https://csrc.nist.gov/pubs/fips/204/final
-//! - ML-KEM (Kyber): NIST FIPS 203 — https://csrc.nist.gov/pubs/fips/203/final
+//! - ML-DSA (Dilithium): NIST FIPS 204 - https://csrc.nist.gov/pubs/fips/204/final
+//! - ML-KEM (Kyber): NIST FIPS 203 - https://csrc.nist.gov/pubs/fips/203/final
 //!
 //! IMPORTANT: The KAT vectors below are abbreviated placeholders. Before
 //! mainnet launch, replace them with the actual NIST ACVP test vectors
@@ -175,7 +175,7 @@ mod kyber_kat_tests {
 
         // Different ciphertexts should (almost certainly) produce different shared secrets
         // when decapsulated against the wrong one
-        // Note: This is probabilistic — the chance of collision is negligible (2^-256)
+        // Note: This is probabilistic - the chance of collision is negligible (2^-256)
         assert_ne!(
             shared_secret_enc.as_bytes(),
             shared_secret_dec.as_bytes(),

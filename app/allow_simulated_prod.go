@@ -2,7 +2,7 @@
 
 package app
 
-// allow_simulated_prod.go — compile-time assertion for production builds.
+// allow_simulated_prod.go - compile-time assertion for production builds.
 //
 // This file is only included when building with -tags production.
 // It provides a runtime init() check to ensure AllowSimulated is never

@@ -967,7 +967,7 @@ mod tests {
     }
 
     // =========================================================================
-    // validate() — individual error branches
+    // validate() - individual error branches
     // =========================================================================
 
     #[test]
@@ -1177,7 +1177,7 @@ mod tests {
     }
 
     // =========================================================================
-    // ComplianceLevel — certifications and retention for every variant
+    // ComplianceLevel - certifications and retention for every variant
     // =========================================================================
 
     #[test]
@@ -1211,7 +1211,7 @@ mod tests {
     }
 
     // =========================================================================
-    // calculate_uwu — additional branches
+    // calculate_uwu - additional branches
     // =========================================================================
 
     #[test]

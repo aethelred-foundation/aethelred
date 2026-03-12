@@ -34,7 +34,7 @@
 - **OFAC screening**: `blockedAddresses` mapping with on-chain enforcement
 - **Audited by**: [Audit status pending]
 
-> IMPORTANT: Found a vulnerability? See [SECURITY.md](SECURITY.md) — do NOT open a public issue.
+> IMPORTANT: Found a vulnerability? See [SECURITY.md](SECURITY.md) - do NOT open a public issue.
 
 ---
 

@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost_test.go — Comprehensive tests to push coverage from 75.7% to 95%+.
+// coverage_boost_test.go - Comprehensive tests to push coverage from 75.7% to 95%+.
 // Targets every 0%-coverage function and low-coverage branch in the keeper package.
 
 import (
@@ -41,7 +41,7 @@ func wrappedContext() context.Context {
 }
 
 // =============================================================================
-// PROMETHEUS EXPORTER — 0% → 100%
+// PROMETHEUS EXPORTER - 0% → 100%
 // =============================================================================
 
 func TestCB_PrometheusExporter_NewAndRender(t *testing.T) {
@@ -159,8 +159,8 @@ func TestCB_PrometheusExporter_WithTimingHistograms(t *testing.T) {
 }
 
 // =============================================================================
-// MODULE METRICS — RecordJobSubmission, RecordJobCompletion, RecordVerification,
-// RecordConsensus, EmitMetricsEvent — all 0%
+// MODULE METRICS - RecordJobSubmission, RecordJobCompletion, RecordVerification,
+// RecordConsensus, EmitMetricsEvent - all 0%
 // =============================================================================
 
 func TestCB_RecordJobSubmission(t *testing.T) {
@@ -234,7 +234,7 @@ func TestCB_EmitMetricsEvent(t *testing.T) {
 }
 
 // =============================================================================
-// THREAT MODEL — 0% → 100%
+// THREAT MODEL - 0% → 100%
 // =============================================================================
 
 func TestCB_ThreatModelSummary(t *testing.T) {
@@ -271,7 +271,7 @@ func TestCB_SecurityProperties_NonEmpty(t *testing.T) {
 }
 
 // =============================================================================
-// ATTESTATION REGISTRY — 0% coverage functions
+// ATTESTATION REGISTRY - 0% coverage functions
 // =============================================================================
 
 func TestCB_ExtractNitroPCR0FromPlatforms(t *testing.T) {
@@ -297,7 +297,7 @@ func TestCB_ExtractNitroPCR0FromPlatforms(t *testing.T) {
 }
 
 // =============================================================================
-// AUDIT LOGGER — 0% coverage convenience methods
+// AUDIT LOGGER - 0% coverage convenience methods
 // =============================================================================
 
 func TestCB_AuditLogger_ConvenienceMethods(t *testing.T) {
@@ -363,7 +363,7 @@ func TestCB_SeverityOrdinal(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE — 0% coverage functions
+// GOVERNANCE - 0% coverage functions
 // =============================================================================
 
 func TestCB_FormatParamChangeEvent_Empty(t *testing.T) {
@@ -404,7 +404,7 @@ func TestCB_StringSliceEqual(t *testing.T) {
 }
 
 // =============================================================================
-// FEE DISTRIBUTION — RewardScaleByReputation
+// FEE DISTRIBUTION - RewardScaleByReputation
 // =============================================================================
 
 func TestCB_RewardScaleByReputation(t *testing.T) {
@@ -427,7 +427,7 @@ func TestCB_RewardScaleByReputation(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE — SeverityMultiplier and extractValidatorAddress
+// EVIDENCE - SeverityMultiplier and extractValidatorAddress
 // =============================================================================
 
 func TestCB_SeverityMultiplier_AllCases(t *testing.T) {
@@ -464,7 +464,7 @@ func TestCB_ExtractValidatorAddress(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER — 0% coverage functions
+// SCHEDULER - 0% coverage functions
 // =============================================================================
 
 func TestCB_Scheduler_Stop(t *testing.T) {
@@ -577,7 +577,7 @@ func TestCB_LoadSchedulingMetadata_Nil(t *testing.T) {
 }
 
 // =============================================================================
-// CONSENSUS — low coverage functions
+// CONSENSUS - low coverage functions
 // =============================================================================
 
 func TestCB_ConsensusHandler_Scheduler_Nil(t *testing.T) {
@@ -703,7 +703,7 @@ func TestCB_ValidateHexHash(t *testing.T) {
 }
 
 // =============================================================================
-// REMEDIATION — GetThreshold 0%
+// REMEDIATION - GetThreshold 0%
 // =============================================================================
 
 func TestCB_LivenessTracker_GetThreshold(t *testing.T) {
@@ -712,7 +712,7 @@ func TestCB_LivenessTracker_GetThreshold(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE — ProcessEndBlockEvidence, DetectInvalidOutputs, DetectDoubleSigners,
+// EVIDENCE - ProcessEndBlockEvidence, DetectInvalidOutputs, DetectDoubleSigners,
 // DetectColludingValidators
 // =============================================================================
 
@@ -745,7 +745,7 @@ func TestCB_DetectColludingValidators_Empty(t *testing.T) {
 }
 
 // =============================================================================
-// EVIDENCE SYSTEM — low coverage functions
+// EVIDENCE SYSTEM - low coverage functions
 // =============================================================================
 
 func TestCB_NewBlockMissTracker(t *testing.T) {
@@ -814,7 +814,7 @@ func TestCB_NewSlashingModuleAdapter(t *testing.T) {
 }
 
 // =============================================================================
-// STAKING — 0% coverage functions
+// STAKING - 0% coverage functions
 // =============================================================================
 
 func TestCB_DefaultSelectionCriteria(t *testing.T) {
@@ -1063,7 +1063,7 @@ func TestCB_ValidateVestingSchedules_Invalid(t *testing.T) {
 }
 
 // =============================================================================
-// GOVERNANCE — ValidateParams, MergeParamsWithMask, DiffParams
+// GOVERNANCE - ValidateParams, MergeParamsWithMask, DiffParams
 // =============================================================================
 
 func TestCB_ValidateParams(t *testing.T) {
@@ -1086,7 +1086,7 @@ func TestCB_DiffParams_Identical(t *testing.T) {
 }
 
 // =============================================================================
-// INVARIANTS — RegisterInvariants 0%
+// INVARIANTS - RegisterInvariants 0%
 // =============================================================================
 
 type testInvariantRegistry struct {
@@ -1108,7 +1108,7 @@ func TestCB_RegisterInvariants(t *testing.T) {
 }
 
 // =============================================================================
-// METRICS — CircuitBreaker, PercentileIndex
+// METRICS - CircuitBreaker, PercentileIndex
 // =============================================================================
 
 func TestCB_CircuitBreaker_State(t *testing.T) {
@@ -1145,7 +1145,7 @@ func TestCB_PercentileIndex(t *testing.T) {
 }
 
 // =============================================================================
-// PERFORMANCE — Remaining, PerformanceScore
+// PERFORMANCE - Remaining, PerformanceScore
 // =============================================================================
 
 func TestCB_BlockBudget_Remaining(t *testing.T) {
@@ -1277,7 +1277,7 @@ func TestCB_DetermineCurrentWeek(t *testing.T) {
 }
 
 // =============================================================================
-// SCHEDULER — RegisterValidator, GetValidatorCapabilities
+// SCHEDULER - RegisterValidator, GetValidatorCapabilities
 // =============================================================================
 
 func TestCB_Scheduler_RegisterValidator(t *testing.T) {
@@ -1317,7 +1317,7 @@ func TestCB_AllowSimulatedInThisBuild(t *testing.T) {
 }
 
 // =============================================================================
-// FEE DISTRIBUTION — ValidateFeeDistribution
+// FEE DISTRIBUTION - ValidateFeeDistribution
 // =============================================================================
 
 func TestCB_ValidateFeeDistribution(t *testing.T) {
@@ -1326,7 +1326,7 @@ func TestCB_ValidateFeeDistribution(t *testing.T) {
 }
 
 // =============================================================================
-// VALIDATOR ONBOARDING — ValidateApplication
+// VALIDATOR ONBOARDING - ValidateApplication
 // =============================================================================
 
 func TestCB_ValidateApplication_Missing(t *testing.T) {
@@ -1359,7 +1359,7 @@ func TestCB_RenderChecklist(t *testing.T) {
 }
 
 // =============================================================================
-// ATTESTATION REGISTRY — normalizeMeasurementHex, canonicalizePlatform
+// ATTESTATION REGISTRY - normalizeMeasurementHex, canonicalizePlatform
 // =============================================================================
 
 func TestCB_NormalizeMeasurementHex(t *testing.T) {

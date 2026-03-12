@@ -72,13 +72,13 @@ impl StakingConfig {
     /// Mainnet configuration
     ///
     /// As per Aethelred Economic Specification:
-    /// - Validator Node: 50,000 AETHEL minimum, 21-day unbonding
+    /// - Validator Node: 100,000 AETHEL minimum, 21-day unbonding
     /// - Compute Node: 5,000 AETHEL minimum, 7-day unbonding
     pub fn mainnet() -> Self {
         Self {
-            // Validator: 50,000 AETHEL (high security requirement)
+            // Validator: 100,000 AETHEL (high security requirement)
             // Rationale: Validators control consensus; they must have "skin in the game"
-            min_validator_stake: 50_000_000_000_000_000_000_000, // 50,000 AETHEL
+            min_validator_stake: 100_000_000_000_000_000_000_000, // 100,000 AETHEL
 
             // Compute Node: 5,000 AETHEL (lower barrier for workers)
             // Rationale: Lower barrier to encourage students/researchers to contribute GPU power
@@ -107,7 +107,7 @@ impl StakingConfig {
     /// Testnet configuration (reduced stakes for testing)
     pub fn testnet() -> Self {
         Self {
-            min_validator_stake: 5_000_000_000_000_000_000_000, // 5,000 AETHEL (1/10 mainnet)
+            min_validator_stake: 10_000_000_000_000_000_000_000, // 10,000 AETHEL (1/10 mainnet)
             min_compute_stake: 500_000_000_000_000_000_000,     // 500 AETHEL (1/10 mainnet)
             min_delegator_stake: 10_000_000_000_000_000_000,    // 10 AETHEL
             unbonding_period: 7 * 24 * 3600,                    // 7 days

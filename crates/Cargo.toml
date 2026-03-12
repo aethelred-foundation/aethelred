@@ -5,6 +5,7 @@ members = [
     "consensus",
     "mempool",
     "vm",
+    "vault",
     "benchmarks",
     "testing",
     "sandbox",

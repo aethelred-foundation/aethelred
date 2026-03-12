@@ -10,7 +10,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// AETHEL TOKENOMICS — Design Principles & Parameter Model
+// AETHEL TOKENOMICS - Design Principles & Parameter Model
 // ---------------------------------------------------------------------------
 //
 // This file implements the complete tokenomics model for the AETHEL token,
@@ -47,7 +47,7 @@ import (
 // 1 AETHEL = 1,000,000 uaethel (6 decimal places).
 // Genesis supply = 10,000,000,000 AETHEL = 10^16 uaethel.
 //
-// CANONICAL DENOMINATION REFERENCE — Audit fix [C-02]:
+// CANONICAL DENOMINATION REFERENCE - Audit fix [C-02]:
 //
 //	Layer         | Unit   | Decimals | 1 AETHEL equals           | 10B AETHEL equals
 //	Go (Cosmos)   | uaethel  | 6        | 1,000,000               | 10,000,000,000,000,000
@@ -259,7 +259,7 @@ func computeInflationForYear(config EmissionConfig, year int) int64 {
 		// Audit fix [M-05]: Replaced float64 math.Pow with deterministic integer
 		// arithmetic. Floating-point is non-deterministic across CPU architectures
 		// (different rounding modes) and MUST NOT be used in consensus-critical
-		// state calculations — different validators could compute different
+		// state calculations - different validators could compute different
 		// inflation rates, causing chain forks.
 		//
 		// Integer approximation: 0.5^(y/p) = 0.5^(q) * 0.5^(r/p)
@@ -619,7 +619,7 @@ func DefaultSlashingConfig() SlashingConfig {
 			},
 			{
 				Name:           "critical_byzantine",
-				SlashBps:       10000, // 100% — full slash
+				SlashBps:       10000, // 100% - full slash
 				JailBlocks:     0,     // permanent
 				EvidenceMaxAge: BlocksPerYear,
 				Description:    "Critical byzantine attack (double-signing, chain halt attempt)",

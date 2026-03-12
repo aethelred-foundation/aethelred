@@ -90,7 +90,7 @@ func TestNegative_Genesis_NilCapability(t *testing.T) {
 func TestPolicy_DefaultParamsAllowSimulatedFalse(t *testing.T) {
 	params := types.DefaultParams()
 	if params.AllowSimulated {
-		t.Fatal("POLICY VIOLATION: DefaultParams has AllowSimulated=true — must be false")
+		t.Fatal("POLICY VIOLATION: DefaultParams has AllowSimulated=true - must be false")
 	}
 
 	if params.ConsensusThreshold != 67 {

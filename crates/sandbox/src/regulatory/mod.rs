@@ -3,7 +3,7 @@
 //! **"The Lawyer in the Code"**
 //!
 //! This module simulates real-world legal constraints with citations.
-//! When data tries to cross a forbidden border, the sandbox doesn't just fail—
+//! When data tries to cross a forbidden border, the sandbox doesn't just fail;
 //! it explains WHY it fails with actual law references.
 //!
 //! ## Key Feature: The Jurisdiction Slider

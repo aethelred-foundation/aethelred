@@ -406,7 +406,7 @@ func TestNegative_Extension_EmptyBytes(t *testing.T) {
 
 func TestPositive_FailedVerification_Accepted(t *testing.T) {
 	// A verification with success=false should not be structurally validated
-	// for attestation contents — it's a legitimate failure report.
+	// for attestation contents - it's a legitimate failure report.
 	v := keeper.VerificationWire{
 		JobID:           "test-job-1",
 		Success:         false,
@@ -428,7 +428,7 @@ func TestPositive_FailedVerification_Accepted(t *testing.T) {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	// This should NOT error — failed verifications are informational
+	// This should NOT error - failed verifications are informational
 	resultErr := unmarshalAndValidateExtension(data)
 	if resultErr != nil {
 		t.Errorf("expected failed verification to be accepted, got error: %v", resultErr)
@@ -436,7 +436,7 @@ func TestPositive_FailedVerification_Accepted(t *testing.T) {
 }
 
 // =============================================================================
-// Test Infrastructure — builders and helpers
+// Test Infrastructure - builders and helpers
 // =============================================================================
 
 // teeAttestationBuilder provides defaults that pass all structural validation.

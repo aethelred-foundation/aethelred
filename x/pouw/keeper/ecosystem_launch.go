@@ -1135,7 +1135,7 @@ func RenderLaunchReviewReport(r *LaunchReviewResult) string {
 	if len(r.BlockingFailures) > 0 {
 		sb.WriteString("\n─── BLOCKING FAILURES ──────────────────────────────────────────\n")
 		for _, f := range r.BlockingFailures {
-			sb.WriteString(fmt.Sprintf("  ✗ %s: %s — %s\n", f.ID, f.Description, f.Details))
+			sb.WriteString(fmt.Sprintf("  ✗ %s: %s - %s\n", f.ID, f.Description, f.Details))
 		}
 	}
 
@@ -1151,11 +1151,11 @@ func RenderLaunchReviewReport(r *LaunchReviewResult) string {
 	sb.WriteString("\n═══════════════════════════════════════════════════════════════\n")
 	switch r.Decision {
 	case "GO":
-		sb.WriteString("  DETERMINATION: *** GO *** — All blocking criteria passed\n")
+		sb.WriteString("  DETERMINATION: *** GO *** - All blocking criteria passed\n")
 	case "NO-GO":
-		sb.WriteString("  DETERMINATION: *** NO-GO *** — Blocking criteria failed\n")
+		sb.WriteString("  DETERMINATION: *** NO-GO *** - Blocking criteria failed\n")
 	case "CONDITIONAL-GO":
-		sb.WriteString("  DETERMINATION: *** CONDITIONAL GO *** — Advisory items open\n")
+		sb.WriteString("  DETERMINATION: *** CONDITIONAL GO *** - Advisory items open\n")
 	}
 	sb.WriteString("═══════════════════════════════════════════════════════════════\n")
 
@@ -1200,9 +1200,9 @@ func RenderGenesisCeremonyReport(r *GenesisCeremonyResult) string {
 
 	sb.WriteString("═══════════════════════════════════════════════════════════════\n")
 	if r.CeremonyPass {
-		sb.WriteString("  *** GENESIS CEREMONY PASSED *** — Chain ready for launch\n")
+		sb.WriteString("  *** GENESIS CEREMONY PASSED *** - Chain ready for launch\n")
 	} else {
-		sb.WriteString("  *** GENESIS CEREMONY FAILED *** — Resolve issues before launch\n")
+		sb.WriteString("  *** GENESIS CEREMONY FAILED *** - Resolve issues before launch\n")
 	}
 	sb.WriteString("═══════════════════════════════════════════════════════════════\n")
 

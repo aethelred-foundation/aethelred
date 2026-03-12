@@ -10,7 +10,7 @@ import (
 )
 
 // =============================================================================
-// WEEK 31-32: Remediation Sprint 2 — Medium Findings Tests
+// WEEK 31-32: Remediation Sprint 2 - Medium Findings Tests
 //
 // These tests verify:
 //   1. Rate limiter (7 tests)
@@ -110,10 +110,10 @@ func TestRateLimiter_SubmissionsInWindow(t *testing.T) {
 	rl.RecordSubmission("addr1", 98)
 	rl.RecordSubmission("addr1", 100)
 
-	// At block 100, window starts at 90 — all 3 are in window
+	// At block 100, window starts at 90 - all 3 are in window
 	require.Equal(t, 3, rl.SubmissionsInWindow("addr1", 100))
 
-	// At block 106, window starts at 96 — only 2 are in window
+	// At block 106, window starts at 96 - only 2 are in window
 	require.Equal(t, 2, rl.SubmissionsInWindow("addr1", 106))
 }
 

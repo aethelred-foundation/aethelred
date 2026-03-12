@@ -89,7 +89,7 @@ func NewComputeJobWithBlockTime(
 		Metadata:            make(map[string]string),
 	}
 
-	// Generate unique ID — deterministic because CreatedAt is set from blockTime.
+	// Generate unique ID - deterministic because CreatedAt is set from blockTime.
 	job.Id = job.GenerateID()
 
 	return job
@@ -281,7 +281,7 @@ func (j *ComputeJob) IsExpiredAt(blockTime time.Time) bool {
 }
 
 // IsExpiredAtHeight checks if the job has expired based on block height.
-// This is the most deterministic expiry check — it compares block heights
+// This is the most deterministic expiry check - it compares block heights
 // rather than timestamps. Requires BlockHeight to be set at job creation.
 func (j *ComputeJob) IsExpiredAtHeight(currentHeight int64) bool {
 	return currentHeight-j.BlockHeight > DefaultJobExpiryBlocks

@@ -12,14 +12,14 @@ import (
 )
 
 // =============================================================================
-// WEEK 29-30: Remediation Sprint 1 — Critical Findings Tests
+// WEEK 29-30: Remediation Sprint 1 - Critical Findings Tests
 //
 // These tests verify:
-//   1. Vote extension signature verification (AS-17) — 10 tests
-//   2. Liveness tracker (AS-16) — 10 tests
-//   3. Remediation tracker — 6 tests
-//   4. Hardened ValidateParams — 5 tests
-//   5. Integration verification — 4 tests
+//   1. Vote extension signature verification (AS-17) - 10 tests
+//   2. Liveness tracker (AS-16) - 10 tests
+//   3. Remediation tracker - 6 tests
+//   4. Hardened ValidateParams - 5 tests
+//   5. Integration verification - 4 tests
 //
 // Total: 35 tests
 // =============================================================================
@@ -208,7 +208,7 @@ func TestLivenessTracker_RecordMiss(t *testing.T) {
 
 	lt.RecordActivity("val-1", 100)
 
-	// Miss 3 blocks — still responsive (threshold is 5)
+	// Miss 3 blocks - still responsive (threshold is 5)
 	for i := 0; i < 3; i++ {
 		lt.RecordMiss("val-1", int64(101+i))
 	}
@@ -225,7 +225,7 @@ func TestLivenessTracker_DowntimeThreshold(t *testing.T) {
 
 	lt.RecordActivity("val-1", 100)
 
-	// Miss 5 blocks — triggers downtime
+	// Miss 5 blocks - triggers downtime
 	for i := 0; i < 5; i++ {
 		lt.RecordMiss("val-1", int64(101+i))
 	}

@@ -13,7 +13,7 @@ Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with sig
 | INT-2026-001 | Internal Security Review | Full protocol (Go, Solidity, Rust) | N/A | 2026-02-22 | Completed | 27 findings, all remediated |
 | CON-2026-001 | External Consultant | VRF + protocol review | N/A | 2026-02-28 | Completed | RS-01 (Critical) + recommendations, all addressed |
 
-## Finding Summary (Internal Audit — INT-2026-001)
+## Finding Summary (Internal Audit - INT-2026-001)
 
 | Severity | Open | In Progress | Closed | Accepted Risk |
 |---|---:|---:|---:|---:|
@@ -23,7 +23,7 @@ Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with sig
 | Low | 0 | 0 | 7 | 0 |
 | Informational | 0 | 0 | 6 | 0 |
 
-## Finding Summary (Consultant Review — CON-2026-001)
+## Finding Summary (Consultant Review - CON-2026-001)
 
 | Severity | Open | In Progress | Closed | Accepted Risk |
 |---|---:|---:|---:|---:|

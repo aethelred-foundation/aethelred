@@ -1,6 +1,6 @@
 package keeper_test
 
-// coverage_boost7_test.go — Seventh wave of tests targeting coverage from 87.1% to 95%+.
+// coverage_boost7_test.go - Seventh wave of tests targeting coverage from 87.1% to 95%+.
 // All test names are prefixed with TestCB7_.
 
 import (

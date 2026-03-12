@@ -482,7 +482,7 @@ export abstract class Module {
   async cpu(): Promise<this> {
     const cpuDevice = Runtime.getInstance().defaultDevice;
     if (!cpuDevice) {
-      throw new Error('No default CPU device available — call Runtime.initialize() first');
+      throw new Error('No default CPU device available - call Runtime.initialize() first');
     }
     return this.to(cpuDevice);
   }

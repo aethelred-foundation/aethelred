@@ -197,7 +197,7 @@ func TestParamChangeProposal_PermanentlyLocked(t *testing.T) {
 	})
 
 	require.False(t, result.Allowed,
-		"AllowSimulated cannot be re-enabled — permanently locked")
+		"AllowSimulated cannot be re-enabled - permanently locked")
 	require.Contains(t, result.Reason, "permanently locked")
 }
 

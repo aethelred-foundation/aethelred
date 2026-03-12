@@ -75,7 +75,7 @@ aethelred query consensus vrf-stats --node tcp://localhost:26657
 ### Response
 1. **Single validator failing**: Contact validator operator, likely key/config issue.
 2. **Multiple validators failing**: Check for network-wide issue (clock drift, software bug).
-3. **All validators failing**: Emergency — possible consensus-breaking bug. Coordinate halt.
+3. **All validators failing**: Emergency - possible consensus-breaking bug. Coordinate halt.
 
 ### Resolution
 - Validator re-derives epoch keys: `aethelred keys derive-epoch --epoch <N>`
@@ -118,7 +118,7 @@ cast call $BRIDGE_ADDRESS "foundationGovernanceKey()(address)" --rpc-url $RPC
 ## 5. SR-04: Consensus Halt
 
 ### Detection
-- Alert: `block_production_stalled` — no new block in > 30 seconds (5x block time)
+- Alert: `block_production_stalled` - no new block in > 30 seconds (5x block time)
 - Metric: `cometbft_consensus_latest_block_height` not incrementing
 
 ### Diagnosis
@@ -140,7 +140,7 @@ journalctl -u aethelred-node --since "5 minutes ago" | grep -i "panic\|fatal\|CO
 1. **< 1/3 validators offline**: Wait for recovery, consensus should resume.
 2. **> 1/3 validators offline**: Coordinate restart, verify network partition.
 3. **Software bug**: Coordinate emergency patch across validators.
-4. **Never** force-push state or skip validation — follow BFT recovery procedures.
+4. **Never** force-push state or skip validation - follow BFT recovery procedures.
 
 ### Resolution
 - Restart affected validators: `systemctl restart aethelred-node`
@@ -151,7 +151,7 @@ journalctl -u aethelred-node --since "5 minutes ago" | grep -i "panic\|fatal\|CO
 ## 6. SR-08: Token Supply Anomaly
 
 ### Detection
-- Alert: `token_supply_anomaly` — `totalSupply()` differs from expected constant
+- Alert: `token_supply_anomaly` - `totalSupply()` differs from expected constant
 - Metric: `aethelred_token_total_supply != 10_000_000_000e18`
 
 ### Diagnosis
