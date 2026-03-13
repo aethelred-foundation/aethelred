@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "repo": "AethelredFoundation/aethelred",
+  "repo": "aethelred-foundation/aethelred",
   "role": "canonical-chain",
   "authority_group": "chain-go",
   "release_authority": true,

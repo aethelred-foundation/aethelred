@@ -160,6 +160,18 @@ prepare_worktree() {
   git -C "$worktree" remote add origin "https://github.com/${GITHUB_ORG}/${repo}.git"
 }
 
+checkout_rollout_branch() {
+  local worktree="$1"
+
+  if git -C "$worktree" ls-remote --exit-code --heads origin "$BRANCH_NAME" >/dev/null 2>&1; then
+    git -C "$worktree" fetch origin "$BRANCH_NAME" --depth 1 >/dev/null
+    git -C "$worktree" switch -C "$BRANCH_NAME" FETCH_HEAD >/dev/null 2>&1 || git -C "$worktree" checkout -B "$BRANCH_NAME" FETCH_HEAD >/dev/null
+    return
+  fi
+
+  git -C "$worktree" switch -C "$BRANCH_NAME" >/dev/null 2>&1 || git -C "$worktree" checkout -B "$BRANCH_NAME" >/dev/null
+}
+
 replace_worktree_contents() {
   local stage_dir="$1"
   local worktree="$2"
@@ -190,7 +202,7 @@ publish_repo() {
 
   prepare_worktree "$repo" "$worktree"
   if [[ "$repo_created" == "0" && "$ROLLOUT_MODE" == "branch" ]]; then
-    git -C "$worktree" switch -C "$BRANCH_NAME" >/dev/null 2>&1 || git -C "$worktree" checkout -B "$BRANCH_NAME" >/dev/null
+    checkout_rollout_branch "$worktree"
   fi
 
   replace_worktree_contents "$stage_dir" "$worktree"

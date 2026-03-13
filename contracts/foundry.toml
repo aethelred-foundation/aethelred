@@ -79,7 +79,7 @@ ignore = []
 out = 'docs'
 title = 'Aethelred Bridge Contracts'
 book = 'https://docs.aethelred.org/contracts'
-repository = 'https://github.com/AethelredFoundation/contracts'
+repository = 'https://github.com/aethelred-foundation/contracts'
 ignore = ['test/**', 'script/**']
 
 # RPC endpoints for fork testing

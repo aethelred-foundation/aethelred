@@ -21,4 +21,4 @@ assignees: ""
 ## Governance Note
 
 Protocol, standards, or compatibility changes should reference an AIP:
-[AethelredFoundation/AIPs](https://github.com/AethelredFoundation/AIPs)
+[aethelred-foundation/AIPs](https://github.com/aethelred-foundation/AIPs)

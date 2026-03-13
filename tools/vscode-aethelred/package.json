@@ -23,7 +23,7 @@
     "icon": "images/aethelred-icon.png",
     "repository": {
         "type": "git",
-        "url": "https://github.com/AethelredFoundation/vscode-aethelred"
+        "url": "https://github.com/aethelred-foundation/vscode-aethelred"
     },
     "activationEvents": [
         "onLanguage:aethelred-aip",

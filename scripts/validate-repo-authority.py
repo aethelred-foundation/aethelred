@@ -20,7 +20,7 @@ class RepoLocalPath:
 
 
 LOCAL_REPO_CANDIDATES: Dict[str, List[pathlib.Path]] = {
-    "AethelredFoundation/aethelred": [
+    "aethelred-foundation/aethelred": [
         ROOT,
     ],
 }

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This repository (`AethelredFoundation/aethelred`) is in scope for security
+This repository (`aethelred-foundation/aethelred`) is in scope for security
 review for the code and configuration it contains.
 
 It is the canonical public chain repository for the Aethelred protocol, pending

@@ -5,7 +5,7 @@ and artifacts from GitHub.
 
 ## Canonical Source
 
-- Canonical public source repo: `AethelredFoundation/aethelred`
+- Canonical public source repo: `aethelred-foundation/aethelred`
 - Canonical default branch: `main`
 - Canonical chain module path: `github.com/aethelred/aethelred`
 

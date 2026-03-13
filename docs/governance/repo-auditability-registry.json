@@ -16,7 +16,7 @@
   ],
   "repos": [
     {
-      "repo": "AethelredFoundation/aethelred",
+      "repo": "aethelred-foundation/aethelred",
       "role": "canonical-monorepo",
       "advanced_expected_workflows": [
         ".github/workflows/repo-authority-guard.yml",
@@ -30,65 +30,65 @@
       ]
     },
     {
-      "repo": "AethelredFoundation/contracts",
+      "repo": "aethelred-foundation/contracts",
       "role": "smart-contracts",
       "advanced_expected_workflows": [
         ".github/workflows/contracts-ci.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/aethelred-sdk-ts",
+      "repo": "aethelred-foundation/aethelred-sdk-ts",
       "role": "sdk-typescript",
       "advanced_expected_workflows": [
         ".github/workflows/sdk-typescript-tests.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/aethelred-sdk-py",
+      "repo": "aethelred-foundation/aethelred-sdk-py",
       "role": "sdk-python",
       "advanced_expected_workflows": [
         ".github/workflows/sdk-python-tests.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/aethelred-sdk-go",
+      "repo": "aethelred-foundation/aethelred-sdk-go",
       "role": "sdk-go",
       "advanced_expected_workflows": [
         ".github/workflows/sdk-go-tests.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/aethelred-sdk-rs",
+      "repo": "aethelred-foundation/aethelred-sdk-rs",
       "role": "sdk-rust",
       "advanced_expected_workflows": [
         ".github/workflows/sdk-rust-tests.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/aethelred-cli",
+      "repo": "aethelred-foundation/aethelred-cli",
       "role": "developer-cli"
     },
     {
-      "repo": "AethelredFoundation/vscode-aethelred",
+      "repo": "aethelred-foundation/vscode-aethelred",
       "role": "editor-extension"
     },
     {
-      "repo": "AethelredFoundation/aethelred-docs",
+      "repo": "aethelred-foundation/aethelred-docs",
       "role": "documentation-site",
       "advanced_expected_workflows": [
         ".github/workflows/docs-hygiene.yml"
       ]
     },
     {
-      "repo": "AethelredFoundation/AIPs",
+      "repo": "aethelred-foundation/AIPs",
       "role": "governance-specs"
     },
     {
-      "repo": "AethelredFoundation/cruzible",
+      "repo": "aethelred-foundation/cruzible",
       "role": "application-frontend"
     },
     {
-      "repo": "AethelredFoundation/.github",
+      "repo": "aethelred-foundation/.github",
       "role": "org-control-plane",
       "advanced_expected_workflows": [
         ".github/workflows/docs-hygiene.yml"

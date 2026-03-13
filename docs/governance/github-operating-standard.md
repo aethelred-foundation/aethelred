@@ -1,7 +1,7 @@
 # GitHub Operating Standard
 
 This document defines the minimum public GitHub standard for all
-`AethelredFoundation` repositories.
+`aethelred-foundation` repositories.
 
 ## Objectives
 
@@ -26,7 +26,7 @@ Every public repo must ship:
 
 ## Authority Rules
 
-- `AethelredFoundation/aethelred` is the canonical public monorepo.
+- `aethelred-foundation/aethelred` is the canonical public monorepo.
 - Standalone repos may optimize packaging and discoverability, but they must not
   conflict with the canonical authority model.
 - Any future mirror, archive, or split repo must clearly declare its role in

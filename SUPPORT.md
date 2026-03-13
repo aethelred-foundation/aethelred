@@ -3,8 +3,8 @@
 ## Where To Start
 
 - Documentation: [docs.aethelred.io](https://docs.aethelred.io)
-- Canonical chain repository: [AethelredFoundation/aethelred](https://github.com/AethelredFoundation/aethelred)
-- Governance proposals: [AethelredFoundation/AIPs](https://github.com/AethelredFoundation/AIPs)
+- Canonical chain repository: [aethelred-foundation/aethelred](https://github.com/aethelred-foundation/aethelred)
+- Governance proposals: [aethelred-foundation/AIPs](https://github.com/aethelred-foundation/AIPs)
 - Release provenance: [docs/security/release-provenance.md](docs/security/release-provenance.md)
 
 ## Questions And Usage Help

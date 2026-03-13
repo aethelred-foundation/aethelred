@@ -144,7 +144,7 @@ Email [security@aethelred.io](mailto:security@aethelred.io) with:
 
 ## Additional References
 
-- Canonical security policy: [AethelredFoundation/aethelred/SECURITY.md](https://github.com/AethelredFoundation/aethelred/blob/main/SECURITY.md)
+- Canonical security policy: [aethelred-foundation/aethelred/SECURITY.md](https://github.com/aethelred-foundation/aethelred/blob/main/SECURITY.md)
 - Release provenance: [docs/security/release-provenance.md](docs/security/release-provenance.md)
 "
 }
@@ -232,7 +232,7 @@ stage_org_profile_repo() {
 # Aethelred GitHub Defaults
 
 This repository provides the public GitHub profile and org-wide community
-default files for `AethelredFoundation`.
+default files for `aethelred-foundation`.
 
 - `profile/README.md`: public org homepage
 - `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`: default community health files

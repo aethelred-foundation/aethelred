@@ -36,4 +36,4 @@ assignees: ''
 
 ---
 
-> For major protocol changes, please open an [Aethelred Improvement Proposal](https://github.com/AethelredFoundation/AIPs) instead.
+> For major protocol changes, please open an [Aethelred Improvement Proposal](https://github.com/aethelred-foundation/AIPs) instead.

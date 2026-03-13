@@ -5,7 +5,7 @@ protocol.
 
 Summary:
 
-- Canonical public chain repo: `AethelredFoundation/aethelred`
+- Canonical public chain repo: `aethelred-foundation/aethelred`
 - Canonical Go module path: `github.com/aethelred/aethelred`
 - Standalone public repos are governed distribution surfaces, not competing
   canonical chain repos

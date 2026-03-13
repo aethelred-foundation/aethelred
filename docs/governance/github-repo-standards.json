@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updated_at": "2026-03-13",
-  "org": "AethelredFoundation",
+  "org": "aethelred-foundation",
   "default_branch": "main",
   "default_codeowners": [
     "@ramtamilselvan"

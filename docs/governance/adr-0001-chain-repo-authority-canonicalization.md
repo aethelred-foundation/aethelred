@@ -4,7 +4,7 @@ Status: Proposed for Foundation ratification
 
 Date: 2026-03-13
 
-`AethelredFoundation/aethelred` is the proposed canonical public repository for
+`aethelred-foundation/aethelred` is the proposed canonical public repository for
 chain releases, security patch provenance, and the Foundation GitHub source of
 truth.
 
@@ -21,8 +21,8 @@ Interim enforcement is active via:
 
 Until ratification is complete:
 
-- Treat `AethelredFoundation/aethelred` as canonical interim authority.
-- Publish chain releases only from `AethelredFoundation/aethelred`.
+- Treat `aethelred-foundation/aethelred` as canonical interim authority.
+- Publish chain releases only from `aethelred-foundation/aethelred`.
 - Treat standalone repos as scoped distribution surfaces, not competing chain
   authorities.
 

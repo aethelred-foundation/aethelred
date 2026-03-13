@@ -13,7 +13,7 @@ partners, and maintainers.
 
 Canonical public chain repository:
 
-- `AethelredFoundation/aethelred`
+- `aethelred-foundation/aethelred`
 
 Canonical Go module path:
 
@@ -22,10 +22,10 @@ Canonical Go module path:
 Controls:
 
 - Security fixes for the public chain implementation must land in
-  `AethelredFoundation/aethelred`.
+  `aethelred-foundation/aethelred`.
 - `repo-authority.json` and `repo-role.json` must remain consistent with the
   Foundation registries.
-- Public chain releases must be cut from `AethelredFoundation/aethelred`.
+- Public chain releases must be cut from `aethelred-foundation/aethelred`.
 - Any future mirror or split repo using the same module path must be explicitly
   declared in the authority registry before publication.
 
@@ -33,16 +33,16 @@ Controls:
 
 The following public repos are approved standalone surfaces:
 
-- `AethelredFoundation/contracts`
-- `AethelredFoundation/aethelred-sdk-ts`
-- `AethelredFoundation/aethelred-sdk-py`
-- `AethelredFoundation/aethelred-sdk-go`
-- `AethelredFoundation/aethelred-sdk-rs`
-- `AethelredFoundation/aethelred-cli`
-- `AethelredFoundation/vscode-aethelred`
-- `AethelredFoundation/aethelred-docs`
-- `AethelredFoundation/AIPs`
-- `AethelredFoundation/cruzible`
+- `aethelred-foundation/contracts`
+- `aethelred-foundation/aethelred-sdk-ts`
+- `aethelred-foundation/aethelred-sdk-py`
+- `aethelred-foundation/aethelred-sdk-go`
+- `aethelred-foundation/aethelred-sdk-rs`
+- `aethelred-foundation/aethelred-cli`
+- `aethelred-foundation/vscode-aethelred`
+- `aethelred-foundation/aethelred-docs`
+- `aethelred-foundation/AIPs`
+- `aethelred-foundation/cruzible`
 
 Controls:
 
@@ -54,7 +54,7 @@ Controls:
 
 ### 3. Foundation Control Plane
 
-`AethelredFoundation/.github` is the organization control plane for:
+`aethelred-foundation/.github` is the organization control plane for:
 
 - Community health defaults
 - Org profile assets
@@ -66,7 +66,7 @@ It is not a release-authoritative repo.
 
 When describing the protocol externally:
 
-- Name `AethelredFoundation/aethelred` as the canonical public repo.
+- Name `aethelred-foundation/aethelred` as the canonical public repo.
 - Link to the relevant standalone repo only when discussing that surface area.
 - Link to repo-local CI, security, and release provenance artifacts when making
   security or release claims.

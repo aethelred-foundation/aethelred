@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@aethelred/sdk"><img src="https://img.shields.io/npm/v/@aethelred/sdk?style=flat-square&logo=npm" alt="npm"></a>
-  <a href="https://github.com/AethelredFoundation/aethelred-sdk-ts/actions"><img src="https://img.shields.io/github/actions/workflow/status/AethelredFoundation/aethelred-sdk-ts/ts-ci.yml?style=flat-square&label=CI" alt="CI"></a>
+  <a href="https://github.com/aethelred-foundation/aethelred-sdk-ts/actions"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred-sdk-ts/ts-ci.yml?style=flat-square&label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/types-included-blue?style=flat-square&logo=typescript" alt="TypeScript">
 </p>
@@ -82,5 +82,5 @@ pnpm lint
 
 ## Related
 
-- [AethelredFoundation/aethelred](https://github.com/AethelredFoundation/aethelred) - Canonical core repo
-- [AethelredFoundation/aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) - CLI
+- [aethelred-foundation/aethelred](https://github.com/aethelred-foundation/aethelred) - Canonical core repo
+- [aethelred-foundation/aethelred-cli](https://github.com/aethelred-foundation/aethelred-cli) - CLI

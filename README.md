@@ -10,13 +10,13 @@
 </p>
 
 <p align="center">
- <a href="https://github.com/AethelredFoundation/aethelred/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/AethelredFoundation/aethelred/ci.yml?branch=main&style=flat-square&label=CI&logo=github" alt="CI"></a>
- <a href="https://github.com/AethelredFoundation/aethelred/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/AethelredFoundation/aethelred/security.yml?branch=main&style=flat-square&label=Security&logo=shield" alt="Security"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/ci.yml?branch=main&style=flat-square&label=CI&logo=github" alt="CI"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/security.yml?branch=main&style=flat-square&label=Security&logo=shield" alt="Security"></a>
  <a href="docs/security/release-provenance.md"><img src="https://img.shields.io/badge/release-provenance%20tracked-0e8a16?style=flat-square" alt="Release provenance"></a>
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" alt="Discord"></a>
  <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
- <a href="https://github.com/AethelredFoundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
+ <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
  <a href="docs/audits/STATUS.md"><img src="https://img.shields.io/badge/audit-program%20active-f59e0b?style=flat-square" alt="Audit program active"></a>
 </p>
 
@@ -104,7 +104,7 @@ aethelred/
 
 ```bash
 # 1. Clone
-git clone https://github.com/AethelredFoundation/aethelred.git && cd aethelred
+git clone https://github.com/aethelred-foundation/aethelred.git && cd aethelred
 
 # 2. Start local testnet (4 validators, Docker)
 make local-testnet-up
@@ -126,7 +126,7 @@ aethel tx pouw submit-job \
 
 ## Repository Authority
 
-`AethelredFoundation/aethelred` is the canonical public source of truth for the
+`aethelred-foundation/aethelred` is the canonical public source of truth for the
 Aethelred protocol.
 
 - Chain releases, security patch provenance, and governance-linked source should
@@ -143,16 +143,16 @@ Aethelred protocol.
 
 | Repo | Role | Monorepo Source |
 |---|---|---|
-| [contracts](https://github.com/AethelredFoundation/contracts) | Standalone Solidity distribution repo | `contracts/` |
-| [aethelred-sdk-ts](https://github.com/AethelredFoundation/aethelred-sdk-ts) | TypeScript / JavaScript SDK | `sdk/typescript/` |
-| [aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | Python SDK | `sdk/python/` |
-| [aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | Go SDK | `sdk/go/` |
-| [aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | Rust SDK | `sdk/rust/` |
-| [aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | Developer CLI | `tools/cli/aethel/` |
-| [vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | VS Code extension | `tools/vscode-aethelred/` |
-| [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | Documentation site | `docs/site/` |
-| [AIPs](https://github.com/AethelredFoundation/AIPs) | Governance specs and protocol proposals | `docs/AIPs/` |
-| [cruzible](https://github.com/AethelredFoundation/cruzible) | Explorer, staking, and governance app | `dApps/cruzible/` |
+| [contracts](https://github.com/aethelred-foundation/contracts) | Standalone Solidity distribution repo | `contracts/` |
+| [aethelred-sdk-ts](https://github.com/aethelred-foundation/aethelred-sdk-ts) | TypeScript / JavaScript SDK | `sdk/typescript/` |
+| [aethelred-sdk-py](https://github.com/aethelred-foundation/aethelred-sdk-py) | Python SDK | `sdk/python/` |
+| [aethelred-sdk-go](https://github.com/aethelred-foundation/aethelred-sdk-go) | Go SDK | `sdk/go/` |
+| [aethelred-sdk-rs](https://github.com/aethelred-foundation/aethelred-sdk-rs) | Rust SDK | `sdk/rust/` |
+| [aethelred-cli](https://github.com/aethelred-foundation/aethelred-cli) | Developer CLI | `tools/cli/aethel/` |
+| [vscode-aethelred](https://github.com/aethelred-foundation/vscode-aethelred) | VS Code extension | `tools/vscode-aethelred/` |
+| [aethelred-docs](https://github.com/aethelred-foundation/aethelred-docs) | Documentation site | `docs/site/` |
+| [AIPs](https://github.com/aethelred-foundation/AIPs) | Governance specs and protocol proposals | `docs/AIPs/` |
+| [cruzible](https://github.com/aethelred-foundation/cruzible) | Explorer, staking, and governance app | `dApps/cruzible/` |
 
 ---
 
@@ -190,9 +190,9 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md).
 
 We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
-- [Aethelred Improvement Proposals](https://github.com/AethelredFoundation/AIPs)
+- [Aethelred Improvement Proposals](https://github.com/aethelred-foundation/AIPs)
 - [Discord](https://discord.gg/aethelred)
-- [Bug Reports](https://github.com/AethelredFoundation/aethelred/issues/new?template=bug_report.md)
+- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.md)
 
 ---
 

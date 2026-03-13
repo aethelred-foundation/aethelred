@@ -7,7 +7,7 @@ Thanks for contributing to the Aethelred ecosystem.
 - Check the README for the repo role and source-of-truth notes.
 - Open an issue for bugs or feature requests unless you are fixing a trivial problem.
 - For protocol or standards changes, open or reference an AIP:
-  [AethelredFoundation/AIPs](https://github.com/AethelredFoundation/AIPs)
+  [aethelred-foundation/AIPs](https://github.com/aethelred-foundation/AIPs)
 
 ## Pull Request Expectations
 
