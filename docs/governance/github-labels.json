@@ -1,0 +1,52 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something is not working as expected."
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New feature or meaningful improvement."
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Docs or content changes."
+  },
+  {
+    "name": "security",
+    "color": "b60205",
+    "description": "Security-sensitive work or follow-up."
+  },
+  {
+    "name": "needs-triage",
+    "color": "fbca04",
+    "description": "Awaiting maintainer triage."
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Good entry point for a new contributor."
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Maintainers are looking for community help."
+  },
+  {
+    "name": "breaking-change",
+    "color": "5319e7",
+    "description": "Changes external behavior or compatibility."
+  },
+  {
+    "name": "release",
+    "color": "0e8a16",
+    "description": "Release planning, versioning, or provenance work."
+  },
+  {
+    "name": "aip",
+    "color": "c2e0c6",
+    "description": "Governance proposal or standards discussion."
+  }
+]
