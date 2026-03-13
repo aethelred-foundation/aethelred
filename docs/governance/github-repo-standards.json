@@ -1,0 +1,228 @@
+{
+  "version": 1,
+  "updated_at": "2026-03-13",
+  "org": "AethelredFoundation",
+  "default_branch": "main",
+  "default_codeowners": [
+    "@ramtamilselvan"
+  ],
+  "pinned_repos": [
+    "aethelred",
+    "contracts",
+    "AIPs",
+    "aethelred-sdk-ts",
+    "cruzible",
+    "aethelred-docs"
+  ],
+  "labels_file": "docs/governance/github-labels.json",
+  "repos": [
+    {
+      "name": "aethelred",
+      "source_path": ".",
+      "role": "canonical-monorepo",
+      "description": "Canonical monorepo for the Aethelred protocol, security baselines, and public release provenance.",
+      "homepage": "https://aethelred.io",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "layer1",
+        "cosmos-sdk",
+        "cometbft",
+        "verifiable-ai",
+        "zkml",
+        "tee",
+        "proof-of-useful-work"
+      ],
+      "has_discussions": true,
+      "inject_standards": false,
+      "release_authority": true
+    },
+    {
+      "name": "contracts",
+      "source_path": "contracts",
+      "role": "smart-contracts",
+      "description": "Production Solidity contracts for bridging, token, governance, and verification surfaces.",
+      "homepage": "https://docs.aethelred.io/contracts",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "ethereum",
+        "solidity",
+        "bridge",
+        "governance",
+        "erc20"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-sdk-ts",
+      "source_path": "sdk/typescript",
+      "role": "sdk-typescript",
+      "description": "Official TypeScript and JavaScript SDK for the Aethelred network.",
+      "homepage": "https://docs.aethelred.io/sdk/typescript",
+      "topics": [
+        "aethelred",
+        "sdk",
+        "typescript",
+        "javascript",
+        "blockchain",
+        "web3"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-sdk-py",
+      "source_path": "sdk/python",
+      "role": "sdk-python",
+      "description": "Official Python SDK for the Aethelred network.",
+      "homepage": "https://docs.aethelred.io/sdk/python",
+      "topics": [
+        "aethelred",
+        "sdk",
+        "python",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-sdk-go",
+      "source_path": "sdk/go",
+      "role": "sdk-go",
+      "description": "Official Go SDK for the Aethelred network.",
+      "homepage": "https://docs.aethelred.io/sdk/go",
+      "topics": [
+        "aethelred",
+        "sdk",
+        "go",
+        "golang",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-sdk-rs",
+      "source_path": "sdk/rust",
+      "role": "sdk-rust",
+      "description": "Official Rust SDK for the Aethelred network.",
+      "homepage": "https://docs.aethelred.io/sdk/rust",
+      "topics": [
+        "aethelred",
+        "sdk",
+        "rust",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-cli",
+      "source_path": "tools/cli/aethel",
+      "role": "developer-cli",
+      "description": "Developer CLI for node diagnostics, validator workflows, and local testnets.",
+      "homepage": "https://docs.aethelred.io/tools/cli",
+      "topics": [
+        "aethelred",
+        "cli",
+        "developer-tools",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "vscode-aethelred",
+      "source_path": "tools/vscode-aethelred",
+      "role": "editor-extension",
+      "description": "Official VS Code extension for Aethelred development workflows.",
+      "homepage": "https://docs.aethelred.io/tools/vscode",
+      "topics": [
+        "aethelred",
+        "vscode-extension",
+        "developer-tools",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "aethelred-docs",
+      "source_path": "docs/site",
+      "role": "documentation-site",
+      "description": "Official documentation site for the Aethelred ecosystem.",
+      "homepage": "https://docs.aethelred.io",
+      "topics": [
+        "aethelred",
+        "documentation",
+        "docs",
+        "blockchain"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "AIPs",
+      "source_path": "docs/AIPs",
+      "role": "governance-specs",
+      "description": "Aethelred Improvement Proposals for protocol governance and standards.",
+      "homepage": "https://docs.aethelred.io/governance/aips",
+      "topics": [
+        "aethelred",
+        "governance",
+        "aip",
+        "specification",
+        "standards"
+      ],
+      "has_discussions": true,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": "cruzible",
+      "source_path": "dApps/cruzible",
+      "role": "application-frontend",
+      "description": "Explorer, staking, and governance dashboard for the Aethelred network.",
+      "homepage": "https://cruzible.aethelred.io",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "defi",
+        "liquid-staking",
+        "nextjs",
+        "typescript",
+        "web3"
+      ],
+      "has_discussions": false,
+      "inject_standards": true,
+      "release_authority": true
+    },
+    {
+      "name": ".github",
+      "source_path": "docs/github-org-profile",
+      "role": "org-control-plane",
+      "description": "Org-level profile, community defaults, and GitHub governance assets.",
+      "homepage": "https://aethelred.io",
+      "topics": [
+        "aethelred",
+        "github",
+        "community",
+        "governance"
+      ],
+      "has_discussions": false,
+      "inject_standards": false,
+      "release_authority": false,
+      "special_export": "org-profile"
+    }
+  ]
+}

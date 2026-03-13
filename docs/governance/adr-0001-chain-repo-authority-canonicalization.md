@@ -1,28 +1,36 @@
-# ADR-0001: Canonical Chain Repository Authority (Go Implementation Track)
+# ADR-0001: Canonical Public Repository Authority
 
 Status: Proposed for Foundation ratification
 
-Date: 2026-02-24
+Date: 2026-03-13
 
-This repository (`AethelredFoundation/aethelred-cosmos-node`) is the proposed canonical Go chain implementation repository for release publication and security patch provenance.
+`AethelredFoundation/aethelred` is the proposed canonical public repository for
+chain releases, security patch provenance, and the Foundation GitHub source of
+truth.
 
-Interim enforcement is already active via:
+This decision aligns the governance documents with the current public
+organization structure and removes ambiguity introduced by earlier placeholder
+repo names.
+
+Interim enforcement is active via:
 
 - `repo-authority.json`
+- `repo-role.json`
 - `.github/workflows/repo-authority-guard.yml`
-- Foundation authority registry (umbrella governance docs)
+- Foundation authority and GitHub standards registries
 
-Until Foundation ratification is complete:
+Until ratification is complete:
 
-- Treat this repository as canonical **interim authority**
-- Do not publish duplicate chain releases from `aethelred-core`
-- Reference this repository in auditor re-test requests for Go chain code
+- Treat `AethelredFoundation/aethelred` as canonical interim authority.
+- Publish chain releases only from `AethelredFoundation/aethelred`.
+- Treat standalone repos as scoped distribution surfaces, not competing chain
+  authorities.
 
 Required ratifiers:
 
 - Foundation governance delegate
 - Protocol engineering lead
-- Security lead / auditor liaison
+- Security lead or auditor liaison
 
 Ratification record:
 

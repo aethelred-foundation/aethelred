@@ -20,16 +20,8 @@ class RepoLocalPath:
 
 
 LOCAL_REPO_CANDIDATES: Dict[str, List[pathlib.Path]] = {
-    "AethelredFoundation/aethelred-cosmos-node": [
+    "AethelredFoundation/aethelred": [
         ROOT,
-    ],
-    "AethelredFoundation/aethelred-core": [
-        pathlib.Path("/tmp/aethelred-core-audit"),
-        ROOT / "aethelred-core",
-    ],
-    "AethelredFoundation/aethelred-rust-node": [
-        pathlib.Path("/tmp/aethelred-rust-node-audit"),
-        ROOT / "aethelred-rust-node",
     ],
 }
 
@@ -142,10 +134,7 @@ def validate_registry_semantics(registry: dict) -> None:
 
 def validate_local_chain_repos(registry: dict) -> None:
     repos = {r["repo"]: r for r in registry["repos"]}
-    chain_repos = [
-        "AethelredFoundation/aethelred-cosmos-node",
-        "AethelredFoundation/aethelred-core",
-    ]
+    chain_repos = [r["repo"] for r in registry["repos"] if r.get("role") == "canonical-chain"]
     for repo_id in chain_repos:
         local = find_local_repo(repo_id)
         if not local:
@@ -176,9 +165,10 @@ def validate_local_chain_repos(registry: dict) -> None:
         readme = (local / "README.md").read_text(errors="ignore")
         if not re.search(r"authority", readme, re.IGNORECASE):
             fail(f"{repo_id} README.md missing authority notice language")
-        if not reg.get("release_authority", True):
-            if not re.search(r"non-canonical|transitional|mirror", readme, re.IGNORECASE):
-                fail(f"{repo_id} README.md should explicitly mark non-canonical/transitional status")
+        if not re.search(r"canonical", readme, re.IGNORECASE):
+            fail(f"{repo_id} README.md should state canonical status explicitly")
+        if not re.search(r"source of truth", readme, re.IGNORECASE):
+            fail(f"{repo_id} README.md should mention source-of-truth status")
     info("local chain repo manifests and go.mod authority claims validated")
 
 
@@ -191,4 +181,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

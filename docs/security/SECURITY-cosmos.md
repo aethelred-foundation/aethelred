@@ -2,9 +2,11 @@
 
 ## Scope
 
-This repository (`aethelred-cosmos-node`) is in scope for security review for the code and configuration it contains.
+This repository (`AethelredFoundation/aethelred`) is in scope for security
+review for the code and configuration it contains.
 
-Cosmos SDK chain implementation (candidate canonical chain repo; authority notice in README pending org ratification).
+It is the canonical public chain repository for the Aethelred protocol, pending
+final Foundation ratification of the published authority record.
 
 ## Supported Branches
 
@@ -12,7 +14,8 @@ Unless otherwise documented, `main` is the reference branch for security fixes a
 
 ## Reporting a Vulnerability
 
-Until a dedicated security contact is published, report suspected vulnerabilities privately to the Aethelred Foundation security team through the organization's designated private channel.
+Report suspected vulnerabilities privately to the Aethelred Foundation security
+team through [security@aethelred.io](mailto:security@aethelred.io).
 
 Include:
 - affected repository and commit/tag

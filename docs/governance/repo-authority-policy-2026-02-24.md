@@ -1,50 +1,81 @@
-# Repository Authority Policy (Enforced Interim) - 2026-02-24
+# Repository Authority Policy
 
-Status: Enforced interim policy (registry + CI guardrails implemented locally); Foundation ratification package prepared; final org-level ratification pending approval.
+Status: Active interim policy. Last updated: 2026-03-13.
 
 ## Purpose
 
-Resolve ambiguity where multiple public repositories appear to represent the same protocol surface or module path.
+Make the public GitHub organization unambiguous for developers, auditors,
+partners, and maintainers.
 
-## Canonical Source Rules (Interim)
+## Canonical Source Rules
 
-### 1. Chain Implementation (Cosmos SDK / Go)
+### 1. Chain Implementation
 
-Canonical implementation repo (interim): `AethelredFoundation/aethelred-cosmos-node`
+Canonical public chain repository:
 
-Transitional / mirror repo (interim): `AethelredFoundation/aethelred-core`
+- `AethelredFoundation/aethelred`
 
-Rationale:
-- `aethelred-cosmos-node` is the implementation-focused codebase currently carrying the active PoUW / validator / attestation hardening work in this workspace.
-- Duplicate Go module path (`github.com/aethelred/aethelred`) across both repos creates patch-drift and audit confusion.
+Canonical Go module path:
 
-Interim controls:
-- Security fixes MUST land in `aethelred-cosmos-node` first.
-- `aethelred-core` MUST carry a repository authority notice (README + SECURITY.md) until deprecation or mirror automation is finalized.
-- A machine-readable authority registry MUST define canonical and transitional roles.
-- Each chain repo MUST ship `repo-authority.json` matching its `go.mod` module path.
-- `aethelred-core` MUST block release publishing in CI while designated `transitional-mirror`.
-- No release tags should be cut from both repos for the same version identifier.
+- `github.com/aethelred/aethelred`
 
-### 2. Rust Implementation Track Repository
+Controls:
 
-`AethelredFoundation/aethelred-rust-node` is designated a **Rust implementation track repository** (buildable/testable crate baseline), but it is **not** the canonical chain implementation.
+- Security fixes for the public chain implementation must land in
+  `AethelredFoundation/aethelred`.
+- `repo-authority.json` and `repo-role.json` must remain consistent with the
+  Foundation registries.
+- Public chain releases must be cut from `AethelredFoundation/aethelred`.
+- Any future mirror or split repo using the same module path must be explicitly
+  declared in the authority registry before publication.
 
-Rust implementation track requirements:
-- MUST remain buildable/testable (`Cargo.toml`, CI, tests)
-- MUST include `SECURITY.md` and threat model scope
-- MUST NOT be used to support production deployment claims without a separate validator/runtime hardening review
+### 2. Standalone Repositories
+
+The following public repos are approved standalone surfaces:
+
+- `AethelredFoundation/contracts`
+- `AethelredFoundation/aethelred-sdk-ts`
+- `AethelredFoundation/aethelred-sdk-py`
+- `AethelredFoundation/aethelred-sdk-go`
+- `AethelredFoundation/aethelred-sdk-rs`
+- `AethelredFoundation/aethelred-cli`
+- `AethelredFoundation/vscode-aethelred`
+- `AethelredFoundation/aethelred-docs`
+- `AethelredFoundation/AIPs`
+- `AethelredFoundation/cruzible`
+
+Controls:
+
+- Each standalone repo must declare its role in `repo-role.json`.
+- Each standalone repo must state whether it is exported from a monorepo source
+  path or independently maintained.
+- Standalone repos may publish releases for their own surface area, but they do
+  not supersede the canonical chain authority model.
+
+### 3. Foundation Control Plane
+
+`AethelredFoundation/.github` is the organization control plane for:
+
+- Community health defaults
+- Org profile assets
+- Shared issue and support intake defaults
+
+It is not a release-authoritative repo.
 
 ## Public Communication Requirements
 
-When describing the protocol externally (auditors, partners, investors):
-- Name the canonical chain repo explicitly.
-- Distinguish canonical chain repos from alternative implementation tracks and research/spec repos.
-- Link to repo-local CI/security artifacts when making security claims.
+When describing the protocol externally:
 
-## Deprecation / Consolidation Next Steps
+- Name `AethelredFoundation/aethelred` as the canonical public repo.
+- Link to the relevant standalone repo only when discussing that surface area.
+- Link to repo-local CI, security, and release provenance artifacts when making
+  security or release claims.
 
-1. Decide whether `aethelred-core` will be archived, mirrored, or repurposed.
-2. If mirrored, implement automated sync and mark the repo read-only for direct feature work.
-3. Publish a signed decision record in the Foundation governance documentation (ratification template prepared in `adr-0001-chain-repo-authority-canonicalization.md`).
-4. Push and enable repo-local authority guard workflows in both `aethelred-cosmos-node` and `aethelred-core`.
+## Change Control
+
+Before creating, archiving, or repurposing a public repo:
+
+1. Update the authority registry and GitHub standards manifest.
+2. Update the public org profile and pinned repo strategy if needed.
+3. Update `repo-role.json` and README authority notes for the affected repo.
+4. Record the change in Foundation governance documentation.

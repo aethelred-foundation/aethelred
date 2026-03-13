@@ -1,14 +1,18 @@
-# Repo Authority (Enforced Interim)
+# Repo Authority
 
-This repository is subject to the interim authority policy for the Aethelred protocol multi-repo set.
-
-See the Foundation-level repo authority policy (interim, published in the Aethelred governance docs).
+This repository is the canonical public source of truth for the Aethelred
+protocol.
 
 Summary:
-- Canonical chain implementation (interim): `aethelred-cosmos-node`
-- Transitional mirror / duplicate module path repo: `aethelred-core`
-- Alternative implementation track (buildable/testable, non-canonical chain): `aethelred-rust-node`
+
+- Canonical public chain repo: `AethelredFoundation/aethelred`
+- Canonical Go module path: `github.com/aethelred/aethelred`
+- Standalone public repos are governed distribution surfaces, not competing
+  canonical chain repos
 
 Enforcement:
+
 - `repo-authority.json` declares this repo as `canonical-chain`.
-- Repo-local CI (`repo-authority-guard.yml`) validates manifest ↔ `go.mod` consistency and canonical release authority.
+- `repo-role.json` declares this repo as the canonical public monorepo.
+- Repo-local CI validates manifest and README authority claims.
+- Foundation governance docs define the approved public repo inventory.
