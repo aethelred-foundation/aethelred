@@ -1,0 +1,81 @@
+name: SDK Python Tests
+
+on:
+  pull_request:
+    paths:
+      - "sdk/python/**"
+      - ".github/workflows/sdk-python-tests.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "sdk/python/**"
+      - ".github/workflows/sdk-python-tests.yml"
+
+jobs:
+  sdk-python-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: sdk/python/pyproject.toml
+
+      - name: Install SDK + test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,integrations]"
+
+      - name: Run curated SDK tests with coverage thresholds
+        run: |
+          pytest -q \
+            tests/test_sdk_core_modules_modern.py \
+            tests/test_framework_integrations.py \
+            --cov=aethelred.core.client \
+            --cov=aethelred.jobs \
+            --cov=aethelred.seals \
+            --cov=aethelred.verification \
+            --cov=aethelred.integrations \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-report=json:coverage.json \
+            --cov-fail-under=58
+
+      - name: Print coverage summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("coverage.json")
+          if not p.exists():
+              raise SystemExit("coverage.json not found")
+          data = json.loads(p.read_text())
+          total = data.get("totals", {})
+          print("Python coverage totals:")
+          for key in ("percent_covered", "covered_lines", "num_statements", "missing_lines"):
+              if key in total:
+                  print(f"  {key}: {total[key]}")
+          PY
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-python-coverage-py${{ matrix.python-version }}
+          path: |
+            sdk/python/coverage.xml
+            sdk/python/coverage.json
+            sdk/python/.coverage
+          if-no-files-found: error

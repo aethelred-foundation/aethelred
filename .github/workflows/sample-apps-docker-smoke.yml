@@ -1,0 +1,130 @@
+name: Sample Apps Docker Smoke
+
+on:
+  pull_request:
+    paths:
+      - "apps/fastapi-verifier/**"
+      - "apps/nextjs-verifier/**"
+      - "deploy/docker/**"
+      - "sdk/python/**"
+      - "sdk/typescript/**"
+      - ".github/workflows/sample-apps-docker-smoke.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "apps/fastapi-verifier/**"
+      - "apps/nextjs-verifier/**"
+      - "deploy/docker/**"
+      - "sdk/python/**"
+      - "sdk/typescript/**"
+      - ".github/workflows/sample-apps-docker-smoke.yml"
+
+jobs:
+  docker-smoke-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build FastAPI verifier sample image
+        run: |
+          docker build \
+            -f deploy/docker/Dockerfile.fastapi-verifier \
+            --build-arg APP_DIR=apps/fastapi-verifier \
+            -t aethelred/fastapi-verifier-smoke:${{ github.sha }} \
+            .
+
+      - name: Run FastAPI verifier HTTP smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          CID=""
+          cleanup() {
+            if [[ -n "${CID}" ]]; then
+              docker rm -f "${CID}" >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          CID="$(docker run -d -p 18000:8000 aethelred/fastapi-verifier-smoke:${{ github.sha }})"
+
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18000/health >/tmp/fastapi-health.json; then
+              break
+            fi
+            sleep 2
+          done
+
+          if ! curl -fsS http://127.0.0.1:18000/health >/tmp/fastapi-health.json; then
+            echo "FastAPI health endpoint did not become ready"
+            docker logs "${CID}" || true
+            exit 1
+          fi
+
+          grep -q '"status":"ok"' /tmp/fastapi-health.json
+
+          curl -fsS \
+            -X POST http://127.0.0.1:18000/infer/fraud \
+            -H 'content-type: application/json' \
+            -d '{"features":[0.9,0.8,0.95],"threshold":0.7}' \
+            >/tmp/fastapi-fraud.json
+          grep -q '"score"' /tmp/fastapi-fraud.json
+          grep -q '"flagged":true' /tmp/fastapi-fraud.json
+
+          curl -fsS http://127.0.0.1:18000/verify/recent >/tmp/fastapi-recent.json
+          grep -q '"items"' /tmp/fastapi-recent.json
+
+      - name: Build Next.js verifier sample image
+        run: |
+          docker build \
+            -f deploy/docker/Dockerfile.nextjs-api \
+            --build-arg APP_DIR=apps/nextjs-verifier \
+            -t aethelred/nextjs-verifier-smoke:${{ github.sha }} \
+            .
+
+      - name: Run Next.js verifier HTTP smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          CID=""
+          cleanup() {
+            if [[ -n "${CID}" ]]; then
+              docker rm -f "${CID}" >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          CID="$(docker run -d -p 13000:3000 aethelred/nextjs-verifier-smoke:${{ github.sha }})"
+
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:13000/api/health >/tmp/next-health.json; then
+              break
+            fi
+            sleep 2
+          done
+
+          if ! curl -fsS http://127.0.0.1:13000/api/health >/tmp/next-health.json; then
+            echo "Next.js health endpoint did not become ready"
+            docker logs "${CID}" || true
+            exit 1
+          fi
+
+          grep -q '"status":"ok"' /tmp/next-health.json
+
+          curl -fsS \
+            -X POST http://127.0.0.1:13000/api/verify \
+            -H 'content-type: application/json' \
+            -d '{"prompt":"urgent wire transfer override"}' \
+            >/tmp/next-verify.json
+          grep -q '"label":"RISK"' /tmp/next-verify.json
+          grep -q '"score"' /tmp/next-verify.json
+
+          curl -fsS \
+            -X POST http://127.0.0.1:13000/api/legacy-verify \
+            -H 'content-type: application/json' \
+            -d '{"text":"  normalize   me  "}' \
+            >/tmp/next-legacy.json
+          grep -q '"normalized":"normalize me"' /tmp/next-legacy.json

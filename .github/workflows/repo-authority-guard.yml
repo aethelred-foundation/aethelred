@@ -1,0 +1,55 @@
+name: Repo Authority Guard
+
+on:
+  pull_request:
+    paths:
+      - 'repo-authority.json'
+      - 'repo-role.json'
+      - 'go.mod'
+      - 'README.md'
+      - 'scripts/validate-repo-authority.py'
+      - '.github/workflows/repo-authority-guard.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'repo-authority.json'
+      - 'repo-role.json'
+      - 'go.mod'
+      - 'README.md'
+      - 'scripts/validate-repo-authority.py'
+      - '.github/workflows/repo-authority-guard.yml'
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+
+jobs:
+  validate-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate repo authority registry and local manifest
+        run: |
+          set -euo pipefail
+          python3 scripts/validate-repo-authority.py
+
+  release-authority:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Enforce canonical release authority
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          m = json.loads(pathlib.Path('repo-authority.json').read_text())
+          if not m.get('release_authority', False):
+              raise SystemExit('release blocked: repo is not release-authoritative')
+          print('release authority ok')
+          PY

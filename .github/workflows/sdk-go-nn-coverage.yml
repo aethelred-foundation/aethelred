@@ -1,0 +1,93 @@
+name: SDK Go pkg/nn Coverage
+
+on:
+  pull_request:
+    paths:
+      - "sdk/go/pkg/nn/**"
+      - ".github/workflows/sdk-go-nn-coverage.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "sdk/go/pkg/nn/**"
+      - ".github/workflows/sdk-go-nn-coverage.yml"
+
+jobs:
+  nn-coverage-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - name: "containers-and-routing"
+            run_regex: "Test(ModuleContainers_BasicIndexing|SequentialConditionalAndParallelContainers|ModuleListAndParameterListEdgeCases)$"
+            min_cov: "8.0"
+          - name: "base-module-and-grads"
+            run_regex: "Test(BaseModule_.*|FreezeAndUnfreezeModuleHelpers|ClipGradValue_ClampsGradientValues|ClipGradNorm_ScalesGradientsWhenAboveThreshold)$"
+            min_cov: "10.0"
+          - name: "layers-losses-embedding"
+            run_regex: "Test(LinearParameters_RespectFreezeUnfreeze|MSELossForwardWithTarget|L1AndSmoothL1LossForwardWithTarget|EmbeddingForwardAndOutOfRange)$"
+            min_cov: "8.0"
+    defaults:
+      run:
+        working-directory: sdk/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sdk/go/go.mod
+          cache-dependency-path: sdk/go/go.sum
+
+      - name: Run pkg/nn shard with coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          regex='${{ matrix.shard.run_regex }}'
+          go test -covermode=atomic -coverprofile=nn-${{ matrix.shard.name }}.out ./pkg/nn -run "${regex}" | tee nn-${{ matrix.shard.name }}.log
+          cov="$(go tool cover -func=nn-${{ matrix.shard.name }}.out | awk '/^total:/{gsub("%","",$3); print $3}')"
+          echo "Shard coverage (${{ matrix.shard.name }}): ${cov}%"
+          awk -v got="${cov}" -v min='${{ matrix.shard.min_cov }}' 'BEGIN { if ((got+0) < (min+0)) { printf("pkg/nn shard coverage %.2f%% below threshold %.2f%%\n", got, min); exit 1 } }'
+
+      - name: Upload shard coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-go-nn-coverage-${{ matrix.shard.name }}
+          path: |
+            sdk/go/nn-${{ matrix.shard.name }}.out
+            sdk/go/nn-${{ matrix.shard.name }}.log
+          if-no-files-found: error
+
+  nn-coverage-aggregate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sdk/go/go.mod
+          cache-dependency-path: sdk/go/go.sum
+
+      - name: Run full pkg/nn coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test -covermode=atomic -coverprofile=nn-total.out ./pkg/nn | tee nn-total.log
+          cov="$(go tool cover -func=nn-total.out | awk '/^total:/{gsub("%","",$3); print $3}')"
+          echo "pkg/nn total coverage: ${cov}%"
+          awk -v got="${cov}" -v min="30.0" 'BEGIN { if ((got+0) < (min+0)) { printf("pkg/nn total coverage %.2f%% below threshold %.2f%%\n", got, min); exit 1 } }'
+
+      - name: Upload pkg/nn aggregate coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-go-nn-coverage-total
+          path: |
+            sdk/go/nn-total.out
+            sdk/go/nn-total.log
+          if-no-files-found: error

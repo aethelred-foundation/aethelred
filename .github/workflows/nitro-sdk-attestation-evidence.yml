@@ -1,0 +1,46 @@
+name: Nitro SDK Attestation Evidence Tests
+
+on:
+  pull_request:
+    paths:
+      - "services/tee-worker/nitro-sdk/**"
+      - ".github/workflows/nitro-sdk-attestation-evidence.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "services/tee-worker/nitro-sdk/**"
+      - ".github/workflows/nitro-sdk-attestation-evidence.yml"
+
+jobs:
+  attestation-evidence:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/tee-worker/nitro-sdk
+    strategy:
+      fail-fast: false
+      matrix:
+        test_name:
+          - "attestation::engine::tests::test_quote_type_detection_uses_intel_header_fields"
+          - "attestation::engine::tests::test_nitro_detection_requires_cose_and_nitro_markers"
+          - "attestation::engine::tests::test_epid_quotes_return_generic_unsupported_format_error"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.75.0
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run attestation evidence test
+        run: |
+          cargo test \
+            --features attestation-evidence \
+            --lib \
+            "${{ matrix.test_name }}" \
+            -- --exact
+

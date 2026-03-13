@@ -253,19 +253,26 @@ stage_standard_repo() {
   rm -rf "$OUT_DIR"
   mkdir -p "$OUT_DIR"
 
-  rsync -a --delete \
-    --exclude '.git' \
-    --exclude '.github' \
-    --exclude 'node_modules' \
-    --exclude 'dist' \
-    --exclude 'target' \
-    --exclude '.pytest_cache' \
-    --exclude '__pycache__' \
-    --exclude 'coverage' \
-    --exclude 'artifacts' \
-    --exclude 'cache' \
-    --exclude 'out' \
-    "$src"/ "$OUT_DIR"/
+  local rsync_args=(
+    -a
+    --delete
+    --exclude '.git'
+    --exclude 'node_modules'
+    --exclude 'dist'
+    --exclude 'target'
+    --exclude '.pytest_cache'
+    --exclude '__pycache__'
+    --exclude 'coverage'
+    --exclude 'artifacts'
+    --exclude 'cache'
+    --exclude 'out'
+  )
+
+  if [[ "$ROLE" != "canonical-monorepo" ]]; then
+    rsync_args+=(--exclude '.github')
+  fi
+
+  rsync "${rsync_args[@]}" "$src"/ "$OUT_DIR"/
 
   if [[ "$(printf '%s' "$REPO_JSON" | jq -r '.inject_standards')" == "true" ]]; then
     copy_if_missing "$ROOT_DIR/LICENSE" "$OUT_DIR/LICENSE"

@@ -1,0 +1,136 @@
+name: Security Scans
+
+on:
+  push:
+    branches: [main, develop, release/**]
+  pull_request:
+    branches: [main, develop, release/**]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.24.6"
+  RUST_VERSION: "1.75"
+  GOFLAGS: "-mod=mod"
+
+jobs:
+  solidity-static-analysis:
+    name: Solidity Static Analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install contract dependencies
+        run: npm install --no-fund --no-audit
+      - name: Slither scan
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts
+          slither-config: contracts/slither.config.json
+
+  dependency-vuln-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Go vulnerability scan
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Rust advisory audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          lockfiles=(
+            "crates/core/Cargo.lock"
+            "crates/consensus/Cargo.lock"
+            "crates/mempool/Cargo.lock"
+            "crates/bridge/Cargo.lock"
+            "crates/vm/Cargo.lock"
+            "sdk/rust/Cargo.lock"
+            "sdk/aethelred-sdk/Cargo.lock"
+            "sdk/aethelred-py/Cargo.lock"
+          )
+          for lockfile in "${lockfiles[@]}"; do
+            echo ">>> cargo audit --file ${lockfile}"
+            cargo audit --file "${lockfile}"
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: NPM dependency audit (contracts)
+        working-directory: contracts
+        run: |
+          npm install --no-fund
+          npm audit --audit-level=high
+
+  sast-and-secrets:
+    name: SAST + Secrets Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: ./...
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: "."
+          format: sarif
+          output: trivy-results.sarif
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-required-gate:
+    name: Security Required Gate
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs:
+      - solidity-static-analysis
+      - dependency-vuln-scan
+      - sast-and-secrets
+    steps:
+      - name: Enforce required gate status
+        run: |
+          echo "solidity-static-analysis=${{ needs.solidity-static-analysis.result }}"
+          echo "dependency-vuln-scan=${{ needs.dependency-vuln-scan.result }}"
+          echo "sast-and-secrets=${{ needs.sast-and-secrets.result }}"
+          test "${{ needs.solidity-static-analysis.result }}" = "success"
+          test "${{ needs.dependency-vuln-scan.result }}" = "success"
+          test "${{ needs.sast-and-secrets.result }}" = "success"

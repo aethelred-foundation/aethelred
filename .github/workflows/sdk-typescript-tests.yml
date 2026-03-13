@@ -1,0 +1,65 @@
+name: SDK TypeScript Tests
+
+on:
+  pull_request:
+    paths:
+      - "sdk/typescript/**"
+      - ".github/workflows/sdk-typescript-tests.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "sdk/typescript/**"
+      - ".github/workflows/sdk-typescript-tests.yml"
+
+jobs:
+  sdk-typescript-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/typescript
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vitest coverage provider
+        run: npm install --no-save @vitest/coverage-v8@^1.2.1
+
+      - name: Run SDK TypeScript tests with coverage thresholds
+        run: npx vitest run --coverage --config vitest.config.ts
+
+      - name: Print coverage summary (baseline for threshold tightening)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f coverage/coverage-summary.json ]]; then
+            echo "coverage/coverage-summary.json not found" >&2
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            const p = "coverage/coverage-summary.json";
+            const s = JSON.parse(fs.readFileSync(p, "utf8"));
+            const t = s.total || {};
+            console.log("Vitest coverage total:");
+            for (const k of ["lines","statements","functions","branches"]) {
+              const v = t[k];
+              if (v) console.log(`  ${k}: ${v.pct}% (${v.covered}/${v.total})`);
+            }
+          '
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-typescript-coverage
+          path: sdk/typescript/coverage/
+          if-no-files-found: error

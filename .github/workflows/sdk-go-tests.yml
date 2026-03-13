@@ -1,0 +1,62 @@
+name: SDK Go Tests
+
+on:
+  pull_request:
+    paths:
+      - "sdk/go/**"
+      - ".github/workflows/sdk-go-tests.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "sdk/go/**"
+      - ".github/workflows/sdk-go-tests.yml"
+
+jobs:
+  sdk-go-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/go
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sdk/go/go.mod
+          cache-dependency-path: sdk/go/go.sum
+
+      - name: Run audited SDK package tests with coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test -covermode=atomic -coverprofile=coverage.sdk.out ./client ./crypto ./jobs ./seals ./pkg/nn | tee coverage.log
+          go tool cover -func=coverage.sdk.out | tee coverage.func.txt
+
+          total_cov="$(awk '/^total:/{gsub("%","",$3); print $3}' coverage.func.txt)"
+          echo "Total coverage: ${total_cov}%"
+
+          awk -v got="${total_cov}" -v min="35.0" 'BEGIN { if ((got+0) < (min+0)) { printf("Total coverage %.2f%% below threshold %.2f%%\n", got, min); exit 1 } }'
+
+          check_pkg_cov() {
+            local pkg="$1"
+            local min="$2"
+            local got
+            got="$(awk -v pkg="$pkg" '$2 == pkg { gsub("%","",$5); print $5 }' coverage.log | tail -n 1)"
+            if [[ -z "${got}" ]]; then
+              echo "Missing coverage line for package ${pkg}" >&2
+              exit 1
+            fi
+            echo "${pkg}: ${got}% (min ${min}%)"
+            awk -v got="${got}" -v min="${min}" 'BEGIN { if ((got+0) < (min+0)) exit 1 }' || {
+              echo "Coverage for ${pkg} fell below threshold" >&2
+              exit 1
+            }
+          }
+
+          check_pkg_cov "github.com/aethelred/sdk-go/client" "90.0"
+          check_pkg_cov "github.com/aethelred/sdk-go/crypto" "95.0"
+          check_pkg_cov "github.com/aethelred/sdk-go/jobs" "90.0"
+          check_pkg_cov "github.com/aethelred/sdk-go/seals" "95.0"
+          check_pkg_cov "github.com/aethelred/sdk-go/pkg/nn" "30.0"
