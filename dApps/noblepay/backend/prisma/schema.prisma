@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  SCREENING
+  APPROVED
+  SETTLED
+  CANCELLED
+  REFUNDED
+  FLAGGED
+  REJECTED
+}
+
+enum ComplianceStatus {
+  PENDING
+  PASSED
+  FAILED
+  UNDER_REVIEW
+  ESCALATED
+}
+
+enum KYCStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+  SUSPENDED
+}
+
+enum BusinessTier {
+  STARTER
+  STANDARD
+  ENTERPRISE
+  INSTITUTIONAL
+}
+
+enum EventType {
+  PAYMENT_CREATED
+  PAYMENT_SCREENED
+  PAYMENT_APPROVED
+  PAYMENT_SETTLED
+  PAYMENT_CANCELLED
+  PAYMENT_REFUNDED
+  PAYMENT_FLAGGED
+  COMPLIANCE_SCREENING
+  COMPLIANCE_PASSED
+  COMPLIANCE_FAILED
+  COMPLIANCE_ESCALATED
+  BUSINESS_REGISTERED
+  BUSINESS_VERIFIED
+  BUSINESS_SUSPENDED
+  BUSINESS_UPGRADED
+  SANCTIONS_UPDATED
+  TEE_ATTESTATION
+  API_KEY_CREATED
+  API_KEY_REVOKED
+  SYSTEM_EVENT
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TEENodeStatus {
+  ACTIVE
+  INACTIVE
+  DEREGISTERED
+  MAINTENANCE
+}
+
+enum APIKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+model Business {
+  id                String       @id @default(uuid())
+  address           String       @unique
+  licenseNumber     String       @unique @map("license_number")
+  businessName      String       @map("business_name")
+  jurisdiction      String
+  businessType      String       @map("business_type")
+  kycStatus         KYCStatus    @default(UNVERIFIED) @map("kyc_status")
+  tier              BusinessTier @default(STARTER)
+  complianceOfficer String?      @map("compliance_officer")
+  contactEmail      String       @map("contact_email")
+  registeredAt      DateTime     @default(now()) @map("registered_at")
+  lastVerified      DateTime?    @map("last_verified")
+  dailyLimit        Decimal      @default(10000) @map("daily_limit") @db.Decimal(36, 18)
+  monthlyLimit      Decimal      @default(100000) @map("monthly_limit") @db.Decimal(36, 18)
+
+  apiKeys APIKey[]
+
+  @@map("businesses")
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  paymentId      String        @unique @map("payment_id") // bytes32 hash
+  sender         String
+  recipient      String
+  amount         Decimal       @db.Decimal(36, 18)
+  currency       String
+  purposeHash    String?       @map("purpose_hash")
+  status         PaymentStatus @default(PENDING)
+  riskScore      Int?          @map("risk_score")
+  teeAttestation String?       @map("tee_attestation")
+  initiatedAt    DateTime      @default(now()) @map("initiated_at")
+  screenedAt     DateTime?     @map("screened_at")
+  settledAt      DateTime?     @map("settled_at")
+  refundedAt     DateTime?     @map("refunded_at")
+  blockNumber    BigInt?       @map("block_number")
+  txHash         String?       @map("tx_hash")
+
+  screenings       ComplianceScreening[]
+  travelRuleRecord TravelRuleRecord?
+
+  @@index([sender])
+  @@index([recipient])
+  @@index([status])
+  @@index([initiatedAt])
+  @@map("payments")
+}
+
+model ComplianceScreening {
+  id                 String           @id @default(uuid())
+  paymentId          String           @map("payment_id")
+  sanctionsClear     Boolean          @map("sanctions_clear")
+  amlRiskScore       Int              @map("aml_risk_score")
+  travelRuleCompliant Boolean         @map("travel_rule_compliant")
+  status             ComplianceStatus @default(PENDING)
+  flagReason         String?          @map("flag_reason")
+  investigationHash  String?          @map("investigation_hash")
+  screenedBy         String           @map("screened_by") // TEE node address
+  screeningDuration  Int              @map("screening_duration") // milliseconds
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [paymentId])
+
+  @@index([paymentId])
+  @@index([status])
+  @@map("compliance_screenings")
+}
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  eventId      String    @unique @map("event_id") // deterministic hash
+  eventType    EventType @map("event_type")
+  actor        String
+  description  String
+  severity     Severity  @default(INFO)
+  blockNumber  BigInt?   @map("block_number")
+  txHash       String?   @map("tx_hash")
+  previousHash String?   @map("previous_hash")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([actor])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model TravelRuleRecord {
+  id              String   @id @default(uuid())
+  paymentId       String   @unique @map("payment_id")
+  originatorHash  String   @map("originator_hash")
+  beneficiaryHash String   @map("beneficiary_hash")
+  amount          Decimal  @db.Decimal(36, 18)
+  currency        String
+  shared          Boolean  @default(false)
+  sharedWith      String[] @map("shared_with")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [paymentId])
+
+  @@map("travel_rule_records")
+}
+
+model TEENode {
+  id               String        @id @default(uuid())
+  address          String        @unique
+  status           TEENodeStatus @default(ACTIVE)
+  lastHeartbeat    DateTime?     @map("last_heartbeat")
+  attestationValid Boolean       @default(false) @map("attestation_valid")
+  registeredAt     DateTime      @default(now()) @map("registered_at")
+
+  @@index([status])
+  @@map("tee_nodes")
+}
+
+model APIKey {
+  id         String       @id @default(uuid())
+  businessId String       @map("business_id")
+  keyHash    String       @unique @map("key_hash")
+  name       String
+  lastUsed   DateTime?    @map("last_used")
+  status     APIKeyStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  revokedAt  DateTime?    @map("revoked_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@map("api_keys")
+}
