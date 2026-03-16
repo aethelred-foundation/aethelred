@@ -2,7 +2,7 @@
 
 > **World-class, production-ready blockchain infrastructure for the Aethelred sovereign AI verification network.**
 
-## 🏛️ Architecture Overview
+## Architecture Overview
 
 The Aethelred backend is a sophisticated, multi-layer blockchain infrastructure designed for high-throughput, verifiable AI computation at scale.
 
@@ -67,7 +67,7 @@ The Aethelred backend is a sophisticated, multi-layer blockchain infrastructure 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 Components
+## Components
 
 ### 1. **Blockchain Node** (`/node`)
 
@@ -145,7 +145,7 @@ Production Docker Compose and Kubernetes configurations.
 - **grafana**: Visualization dashboards
 - **jaeger**: Distributed tracing
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Docker 24.0+
@@ -202,7 +202,7 @@ curl http://localhost:3000/v1/stats
 | Prometheus | http://localhost:9090 | - |
 | Jaeger | http://localhost:16686 | - |
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -251,7 +251,7 @@ size = 10000
 max_txs_bytes = 1073741824
 ```
 
-## 📊 Performance Benchmarks
+## Performance Benchmarks
 
 | Metric | Value |
 |--------|-------|
@@ -265,7 +265,7 @@ max_txs_bytes = 1073741824
 | API Response p99 | 150 ms |
 | Validator Set | 200 |
 
-## 🔒 Security
+## Security
 
 ### TEE Attestation
 - **Intel SGX**: EPID and DCAP attestation
@@ -283,7 +283,7 @@ max_txs_bytes = 1073741824
 - libp2p with Noise protocol encryption
 - Rate limiting and DDoS protection
 
-## 🔬 Testing
+## Testing
 
 ```bash
 # Unit tests
@@ -300,7 +300,7 @@ npm run benchmark
 cargo fuzz run block_deserialize
 ```
 
-## 📚 Documentation
+## Documentation
 
 - [API Reference](./api/docs/API.md)
 - [Node Operator Guide](./node/docs/OPERATOR.md)
@@ -308,15 +308,15 @@ cargo fuzz run block_deserialize
 - [Smart Contracts](./contracts/README.md)
 - [Architecture Decisions](./docs/ADR/)
 
-## 🤝 Contributing
+## Contributing
 
 Please read our [Contributing Guidelines](../CONTRIBUTING.md) before submitting PRs.
 
-## 📄 License
+## License
 
 Apache 2.0 - see [LICENSE](../LICENSE) for details.
 
-## 🌐 Resources
+## Resources
 
 - **Website**: https://aethelred.org
 - **Documentation**: https://docs.aethelred.org
@@ -327,5 +327,5 @@ Apache 2.0 - see [LICENSE](../LICENSE) for details.
 ---
 
 <p align="center">
-  <strong>Built with ❤️ by Aethelred Labs</strong>
+  <strong>Built by Aethelred Labs</strong>
 </p>

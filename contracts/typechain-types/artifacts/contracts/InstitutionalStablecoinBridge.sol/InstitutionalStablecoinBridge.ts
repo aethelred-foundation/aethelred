@@ -103,6 +103,8 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
       | "bridgeOutViaCCTP(bytes32,uint256,uint32,bytes32)"
       | "checkUpkeep"
       | "checkUpkeep(bytes)"
+      | "completeRelayerOffboard"
+      | "completeRelayerOffboard(address)"
       | "configureGovernanceTimelock"
       | "configureGovernanceTimelock(address,uint48)"
       | "configureRelayerBonding"
@@ -125,6 +127,8 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
       | "hasRole(bytes32,address)"
       | "initialize"
       | "initialize(address,address,address,address)"
+      | "initiateRelayerOffboard"
+      | "initiateRelayerOffboard(address)"
       | "irisAttester"
       | "irisAttester()"
       | "isEnclaveMeasurementApproved"
@@ -231,6 +235,10 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
       | "RelayerBondSlashed(address,address,uint256,bytes32)"
       | "RelayerBondWithdrawn"
       | "RelayerBondWithdrawn(address,address,uint256,uint256)"
+      | "RelayerOffboardCompleted"
+      | "RelayerOffboardCompleted(address,address,uint256)"
+      | "RelayerOffboardInitiated"
+      | "RelayerOffboardInitiated(address,uint256,uint256)"
       | "ReserveCheckPerformed"
       | "ReserveCheckPerformed(bytes32,uint256,uint256,uint256,bool)"
       | "RoleAdminChanged"
@@ -338,6 +346,14 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "completeRelayerOffboard",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "completeRelayerOffboard(address)",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "configureGovernanceTimelock",
     values: [AddressLike, BigNumberish]
   ): string;
@@ -430,6 +446,14 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
   encodeFunctionData(
     functionFragment: "initialize(address,address,address,address)",
     values: [AddressLike, AddressLike, AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "initiateRelayerOffboard",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "initiateRelayerOffboard(address)",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "irisAttester",
@@ -787,6 +811,14 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "completeRelayerOffboard",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "completeRelayerOffboard(address)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "configureGovernanceTimelock",
     data: BytesLike
   ): Result;
@@ -863,6 +895,14 @@ export interface InstitutionalStablecoinBridgeInterface extends Interface {
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "initialize(address,address,address,address)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "initiateRelayerOffboard",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "initiateRelayerOffboard(address)",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -1487,6 +1527,50 @@ export namespace RelayerBondWithdrawnEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace RelayerOffboardCompletedEvent {
+  export type InputTuple = [
+    relayer: AddressLike,
+    recipient: AddressLike,
+    amount: BigNumberish
+  ];
+  export type OutputTuple = [
+    relayer: string,
+    recipient: string,
+    amount: bigint
+  ];
+  export interface OutputObject {
+    relayer: string;
+    recipient: string;
+    amount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace RelayerOffboardInitiatedEvent {
+  export type InputTuple = [
+    relayer: AddressLike,
+    initiatedAt: BigNumberish,
+    completableAt: BigNumberish
+  ];
+  export type OutputTuple = [
+    relayer: string,
+    initiatedAt: bigint,
+    completableAt: bigint
+  ];
+  export interface OutputObject {
+    relayer: string;
+    initiatedAt: bigint;
+    completableAt: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace ReserveCheckPerformedEvent {
   export type InputTuple = [
     assetId: BytesLike,
@@ -1760,6 +1844,18 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
     "view"
   >;
 
+  completeRelayerOffboard: TypedContractMethod<
+    [recipient: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  "completeRelayerOffboard(address)": TypedContractMethod<
+    [recipient: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   configureGovernanceTimelock: TypedContractMethod<
     [timelock: AddressLike, delaySeconds: BigNumberish],
     [void],
@@ -1888,6 +1984,18 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
       foundationKey: AddressLike,
       auditorKey: AddressLike
     ],
+    [void],
+    "nonpayable"
+  >;
+
+  initiateRelayerOffboard: TypedContractMethod<
+    [relayer: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  "initiateRelayerOffboard(address)": TypedContractMethod<
+    [relayer: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -2427,6 +2535,12 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "completeRelayerOffboard"
+  ): TypedContractMethod<[recipient: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "completeRelayerOffboard(address)"
+  ): TypedContractMethod<[recipient: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "configureGovernanceTimelock"
   ): TypedContractMethod<
     [timelock: AddressLike, delaySeconds: BigNumberish],
@@ -2576,6 +2690,12 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "initiateRelayerOffboard"
+  ): TypedContractMethod<[relayer: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "initiateRelayerOffboard(address)"
+  ): TypedContractMethod<[relayer: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "irisAttester"
   ): TypedContractMethod<[], [string], "view">;
@@ -3294,6 +3414,34 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
     RelayerBondWithdrawn_address_address_uint256_uint256_Event.OutputObject
   >;
   getEvent(
+    key: "RelayerOffboardCompleted"
+  ): TypedContractEvent<
+    RelayerOffboardCompletedEvent.InputTuple,
+    RelayerOffboardCompletedEvent.OutputTuple,
+    RelayerOffboardCompletedEvent.OutputObject
+  >;
+  getEvent(
+    key: "RelayerOffboardCompleted(address,address,uint256)"
+  ): TypedContractEvent<
+    RelayerOffboardCompleted_address_address_uint256_Event.InputTuple,
+    RelayerOffboardCompleted_address_address_uint256_Event.OutputTuple,
+    RelayerOffboardCompleted_address_address_uint256_Event.OutputObject
+  >;
+  getEvent(
+    key: "RelayerOffboardInitiated"
+  ): TypedContractEvent<
+    RelayerOffboardInitiatedEvent.InputTuple,
+    RelayerOffboardInitiatedEvent.OutputTuple,
+    RelayerOffboardInitiatedEvent.OutputObject
+  >;
+  getEvent(
+    key: "RelayerOffboardInitiated(address,uint256,uint256)"
+  ): TypedContractEvent<
+    RelayerOffboardInitiated_address_uint256_uint256_Event.InputTuple,
+    RelayerOffboardInitiated_address_uint256_uint256_Event.OutputTuple,
+    RelayerOffboardInitiated_address_uint256_uint256_Event.OutputObject
+  >;
+  getEvent(
     key: "ReserveCheckPerformed"
   ): TypedContractEvent<
     ReserveCheckPerformedEvent.InputTuple,
@@ -3614,6 +3762,28 @@ export interface InstitutionalStablecoinBridge extends BaseContract {
       RelayerBondWithdrawnEvent.InputTuple,
       RelayerBondWithdrawnEvent.OutputTuple,
       RelayerBondWithdrawnEvent.OutputObject
+    >;
+
+    "RelayerOffboardCompleted(address,address,uint256)": TypedContractEvent<
+      RelayerOffboardCompletedEvent.InputTuple,
+      RelayerOffboardCompletedEvent.OutputTuple,
+      RelayerOffboardCompletedEvent.OutputObject
+    >;
+    RelayerOffboardCompleted: TypedContractEvent<
+      RelayerOffboardCompletedEvent.InputTuple,
+      RelayerOffboardCompletedEvent.OutputTuple,
+      RelayerOffboardCompletedEvent.OutputObject
+    >;
+
+    "RelayerOffboardInitiated(address,uint256,uint256)": TypedContractEvent<
+      RelayerOffboardInitiatedEvent.InputTuple,
+      RelayerOffboardInitiatedEvent.OutputTuple,
+      RelayerOffboardInitiatedEvent.OutputObject
+    >;
+    RelayerOffboardInitiated: TypedContractEvent<
+      RelayerOffboardInitiatedEvent.InputTuple,
+      RelayerOffboardInitiatedEvent.OutputTuple,
+      RelayerOffboardInitiatedEvent.OutputObject
     >;
 
     "ReserveCheckPerformed(bytes32,uint256,uint256,uint256,bool)": TypedContractEvent<

@@ -11,29 +11,33 @@ Branch mappings are codified in:
 Current mapping:
 
 1. `main`
-2. `Audit Signoff Required Gate`
-3. `Core Required Gate`
-4. `Contracts Required Gate`
-5. `Rust Required Gate`
-6. `Security Required Gate`
-7. `Sandbox Required Gate`
-8. `Load Test Required Gate`
+2. `Contracts Required Gate`
+3. `Rust Required Gate`
+4. `Security Required Gate`
+5. `Sandbox Required Gate`
+6. `Docker Required Gate`
+7. `Load Test Required Gate`
+8. `Fuzzing Required Gate`
+9. `E2E Required Gate`
 
 1. `develop`
-2. `Core Required Gate`
-3. `Contracts Required Gate`
-4. `Rust Required Gate`
-5. `Security Required Gate`
-6. `Sandbox Required Gate`
+2. `Contracts Required Gate`
+3. `Rust Required Gate`
+4. `Security Required Gate`
+5. `Sandbox Required Gate`
+6. `Docker Required Gate`
+7. `Load Test Required Gate`
+8. `Fuzzing Required Gate`
 
 1. `release/*`
-2. `Audit Signoff Required Gate`
-3. `Core Required Gate`
-4. `Contracts Required Gate`
-5. `Rust Required Gate`
-6. `Security Required Gate`
-7. `Sandbox Required Gate`
-8. `Load Test Required Gate`
+2. `Contracts Required Gate`
+3. `Rust Required Gate`
+4. `Security Required Gate`
+5. `Sandbox Required Gate`
+6. `Docker Required Gate`
+7. `Load Test Required Gate`
+8. `Fuzzing Required Gate`
+9. `E2E Required Gate`
 
 Apply branch protection:
 

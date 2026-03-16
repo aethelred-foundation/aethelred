@@ -38,7 +38,7 @@ jobs:
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-aethelred
+          name: sbom-${{ github.event.repository.name }}
           path: sbom.cdx.json
 
   quick-tests:

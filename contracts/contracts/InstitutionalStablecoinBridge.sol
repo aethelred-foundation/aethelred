@@ -46,6 +46,11 @@ interface IAggregatorV3 {
         );
 }
 
+/// @dev Minimal interface for querying TimelockController's min delay (SBP-001).
+interface ITimelockControllerMinDelay {
+    function getMinDelay() external view returns (uint256);
+}
+
 /**
  * @title InstitutionalStablecoinBridge
  * @author Aethelred Protocol Foundation
@@ -58,7 +63,7 @@ interface IAggregatorV3 {
  * - Joint-signature unpause governance (Issuer + Foundation + Auditor/Custodian)
  * - Chainlink Automation-compatible checkUpkeep/performUpkeep for autonomous PoR
  * @custom:security-contact security@aethelred.io
- * @custom:audit-status Remediated - all 27 findings addressed (2026-02-22)
+ * @custom:audit-status Remediated - all 27+4 findings addressed (2026-03-13)
  */
 contract InstitutionalStablecoinBridge is
     Initializable,
@@ -83,6 +88,7 @@ contract InstitutionalStablecoinBridge is
     uint256 internal constant DAILY_OUTFLOW_RING_SLOTS = 14;
     uint256 internal constant MIN_GOVERNANCE_ACTION_DELAY = 7 days;
     uint256 internal constant DEFAULT_RELAYER_BOND_REQUIREMENT = 500_000 ether;
+    uint256 internal constant RELAYER_OFFBOARD_COOLDOWN = 7 days;
     uint256 internal constant SECP256K1N_HALF =
         0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
@@ -177,6 +183,8 @@ contract InstitutionalStablecoinBridge is
     mapping(bytes32 => MerkleAuditRecord) internal latestMerkleAudit;
     mapping(bytes32 => address) internal circuitBreakerModule;
     mapping(address => uint256) internal relayerBonds;
+    /// @notice Timestamp at which a relayer initiated offboarding (0 = not offboarding).
+    mapping(address => uint256) internal relayerOffboardInitiated;
 
     address public issuerGovernanceKey;
     address public issuerRecoveryGovernanceKey;
@@ -284,6 +292,16 @@ contract InstitutionalStablecoinBridge is
         uint256 amount,
         bytes32 reasonCode
     );
+    event RelayerOffboardInitiated(
+        address indexed relayer,
+        uint256 initiatedAt,
+        uint256 completableAt
+    );
+    event RelayerOffboardCompleted(
+        address indexed relayer,
+        address indexed recipient,
+        uint256 amount
+    );
     event AutomatedReserveCheckPerformed(
         bytes32 indexed assetId,
         uint256 timestamp,
@@ -311,6 +329,12 @@ contract InstitutionalStablecoinBridge is
     error RelayerBondTokenNotConfigured();
     error RelayerBondInsufficient();
     error RelayerBondNotFound();
+    error TimelockDelayMismatch();
+    error TimelockDelayDrifted();
+    error OffboardNotInitiated();
+    error OffboardCooldownNotElapsed();
+    error OffboardAlreadyInitiated();
+    error OffboardNotRelayer();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -322,13 +346,68 @@ contract InstitutionalStablecoinBridge is
         if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
             revert TimelockRequired();
         }
+        _enforceTimelockDelayFloor();
         _;
+    }
+
+    /// @dev Requires the timelock as caller for role management once configured.
+    modifier onlyTimelockForRoleAdmin() {
+        if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
+            revert TimelockRequired();
+        }
+        _enforceTimelockDelayFloor();
+        _;
+    }
+
+    /**
+     * @dev Runtime invariant: the external timelock's live delay must still
+     *      be >= the configured governanceActionDelaySeconds (which itself is
+     *      >= MIN_GOVERNANCE_ACTION_DELAY). This catches drift where the
+     *      timelock delay was reduced after activation — even if it remains
+     *      above the hard 7-day floor, it must not drop below the value the
+     *      bridge recorded at configuration time (SBP-005).
+     */
+    function _enforceTimelockDelayFloor() internal view {
+        if (governanceTimelock != address(0)) {
+            uint256 liveDelay = ITimelockControllerMinDelay(governanceTimelock).getMinDelay();
+            if (liveDelay < governanceActionDelaySeconds) {
+                revert TimelockDelayDrifted();
+            }
+        }
     }
 
     modifier onlyBondedRelayer() {
         _requireBondedRelayer(msg.sender);
         _;
     }
+
+    /**
+     * @notice Override grantRole to route through the governance timelock.
+     * @dev Once a timelock is configured, only the timelock can grant roles.
+     *      This prevents the deploy-time DEFAULT_ADMIN_ROLE holder from
+     *      granting CONFIG_ROLE or UPGRADER_ROLE to bypass governance.
+     */
+    function grantRole(bytes32 role, address account)
+        public
+        override
+        onlyTimelockForRoleAdmin
+    {
+        super.grantRole(role, account);
+    }
+
+    /**
+     * @notice Override revokeRole to route through the governance timelock.
+     * @dev Once a timelock is configured, only the timelock can revoke roles.
+     */
+    function revokeRole(bytes32 role, address account)
+        public
+        override
+        onlyTimelockForRoleAdmin
+    {
+        super.revokeRole(role, account);
+    }
+
+    // renounceRole is NOT overridden — self-renouncing a role is always safe.
 
     function initialize(
         address admin,
@@ -425,14 +504,41 @@ contract InstitutionalStablecoinBridge is
         emit IrisAttesterUpdated(attester);
     }
 
+    /**
+     * @notice Configure or reconfigure the governance timelock.
+     * @dev Uses onlyGovernedConfigRole so that after a timelock is set,
+     *      only the current timelock can re-point to a new one — preventing
+     *      privilege escalation by standalone CONFIG_ROLE holders (SBP-002).
+     *      Verifies that the external timelock contract's actual minimum delay
+     *      is >= the requested delaySeconds (SBP-001).
+     * @param timelock The address of the TimelockController contract.
+     * @param delaySeconds The minimum governance action delay to record.
+     */
     function configureGovernanceTimelock(address timelock, uint48 delaySeconds)
         external
-        onlyRole(CONFIG_ROLE)
+        onlyGovernedConfigRole
     {
         if (timelock == address(0)) revert InvalidAddress();
         if (delaySeconds < MIN_GOVERNANCE_ACTION_DELAY) {
             revert TimelockDelayTooShort();
         }
+
+        // SBP-001: Verify the external timelock actually enforces >= delaySeconds.
+        uint256 actualDelay = ITimelockControllerMinDelay(timelock).getMinDelay();
+        if (actualDelay < delaySeconds) {
+            revert TimelockDelayMismatch();
+        }
+
+        // Deadlock prevention: once set, the timelock becomes the sole caller for
+        // grantRole, revokeRole, upgrades, and all governed config. Verify the
+        // timelock has been pre-granted the roles it needs to manage the bridge.
+        // Note: PAUSER_ROLE is NOT required here — pauseFromCircuitBreaker is
+        // an emergency halt that bypasses the timelock entirely (immediate halt
+        // per bridge spec). Any PAUSER_ROLE holder can pause without timelock.
+        if (!hasRole(DEFAULT_ADMIN_ROLE, timelock)) revert InvalidConfig();
+        if (!hasRole(UPGRADER_ROLE, timelock)) revert InvalidConfig();
+        if (!hasRole(CONFIG_ROLE, timelock)) revert InvalidConfig();
+
         governanceTimelock = timelock;
         governanceActionDelaySeconds = delaySeconds;
         emit GovernanceTimelockConfigured(timelock, delaySeconds);
@@ -504,6 +610,60 @@ contract InstitutionalStablecoinBridge is
         emit RelayerBondSlashed(relayer, recipient, bonded, reasonCode);
     }
 
+    /**
+     * @notice Begin the offboarding process for a relayer's bond (SBP-003).
+     * @dev Starts a cooldown period after which the relayer can withdraw their
+     *      entire bond. The relayer's RELAYER_ROLE should be revoked by admin
+     *      before or during this process. Anyone with PAUSER_ROLE can initiate
+     *      offboarding on behalf of a relayer (e.g., admin-initiated retirement).
+     * @param relayer The address of the relayer to offboard.
+     */
+    function initiateRelayerOffboard(address relayer)
+        external
+        onlyRole(PAUSER_ROLE)
+    {
+        if (relayer == address(0)) revert InvalidAddress();
+        if (relayerBonds[relayer] == 0) revert RelayerBondNotFound();
+        if (relayerOffboardInitiated[relayer] != 0) revert OffboardAlreadyInitiated();
+
+        relayerOffboardInitiated[relayer] = block.timestamp;
+        emit RelayerOffboardInitiated(
+            relayer,
+            block.timestamp,
+            block.timestamp + RELAYER_OFFBOARD_COOLDOWN
+        );
+    }
+
+    /**
+     * @notice Complete offboarding and withdraw the full relayer bond (SBP-003).
+     * @dev Can only be called after the offboarding cooldown has elapsed.
+     *      Only the relayer themselves can complete offboarding to prevent
+     *      front-running bond theft by arbitrary callers.
+     * @param recipient The address to receive the bonded tokens.
+     */
+    function completeRelayerOffboard(address recipient)
+        external
+        nonReentrant
+    {
+        if (recipient == address(0)) revert InvalidRecipient();
+        if (relayerBondToken == address(0)) revert RelayerBondTokenNotConfigured();
+
+        address relayer = msg.sender;
+        uint256 initiated = relayerOffboardInitiated[relayer];
+        if (initiated == 0) revert OffboardNotInitiated();
+        if (block.timestamp < initiated + RELAYER_OFFBOARD_COOLDOWN) {
+            revert OffboardCooldownNotElapsed();
+        }
+
+        uint256 bonded = relayerBonds[relayer];
+        if (bonded == 0) revert RelayerBondNotFound();
+
+        relayerBonds[relayer] = 0;
+        relayerOffboardInitiated[relayer] = 0;
+        IERC20(relayerBondToken).safeTransfer(recipient, bonded);
+        emit RelayerOffboardCompleted(relayer, recipient, bonded);
+    }
+
     function setCircuitBreakerModule(bytes32 assetId, address module)
         external
         onlyGovernedConfigRole
@@ -549,17 +709,23 @@ contract InstitutionalStablecoinBridge is
         emit StablecoinConfigured(core.assetId, core.token, core.routingType, core.enabled);
     }
 
+    /**
+     * @notice Rotate the issuer 3-of-5 signer set for a given asset.
+     * @dev    Issuer-sovereign: this function is ALWAYS gated on the issuer
+     *         governance key, even after a governance timelock is activated.
+     *         The TRD mandates that signer governance is issuer-exclusive and
+     *         must never be routed through the protocol governance timelock.
+     */
     function setIssuerSignerSet(
         bytes32 assetId,
         address[] calldata signers,
         uint8 threshold
     ) external {
         if (assetId == bytes32(0) || signers.length == 0) revert InvalidConfig();
-        if (governanceTimelock != address(0)) {
-            if (msg.sender != governanceTimelock) revert TimelockRequired();
-        } else {
-            if (msg.sender != issuerGovernanceKey) revert InvalidSignature();
-        }
+        // Issuer-exclusive: always require issuerGovernanceKey, regardless of
+        // whether a governance timelock is active. This is intentionally NOT
+        // routed through onlyGovernedConfigRole / governanceTimelock.
+        if (msg.sender != issuerGovernanceKey) revert InvalidSignature();
         if (signers.length != 5 || threshold != 3) revert InvalidConfig();
 
         address[] storage previous = issuerSignerList[assetId];
@@ -782,13 +948,19 @@ contract InstitutionalStablecoinBridge is
         return approvedEnclaveMeasurements[measurement];
     }
 
+    /**
+     * @notice Emergency halt — freezes transfers immediately.
+     * @dev    This is intentionally NOT routed through the governance timelock.
+     *         Emergency pauses must be immediate per the bridge spec; any holder
+     *         of PAUSER_ROLE can trigger this at any time, even after timelock
+     *         activation. Unpausing remains gated by the sovereign 3-of-5
+     *         multisig (unpauseWithJointSignatures), so a rogue pauser can
+     *         halt but cannot unilaterally resume.
+     */
     function pauseFromCircuitBreaker(bytes32 assetId, bytes32 reasonCode)
         external
         onlyRole(PAUSER_ROLE)
     {
-        if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
-            revert TimelockRequired();
-        }
         _triggerCircuitBreaker(assetId, reasonCode, 1, 1);
     }
 
@@ -1266,11 +1438,21 @@ contract InstitutionalStablecoinBridge is
         return computed == root;
     }
 
+    /**
+     * @dev Gate UUPS upgrades through the governance timelock when configured.
+     *      Prevents the deploy-time UPGRADER_ROLE holder from upgrading
+     *      the implementation to bypass governance controls.
+     */
     function _authorizeUpgrade(address)
         internal
         override
         onlyRole(UPGRADER_ROLE)
-    {}
+    {
+        if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
+            revert TimelockRequired();
+        }
+        _enforceTimelockDelayFloor();
+    }
 
     // =========================================================================
     // CHAINLINK AUTOMATION - AUTONOMOUS PoR MONITORING (H-09 hardening)

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aethelred — Investor Pitch Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#09090b;--bg2:#111115;--bg3:#18181b;
+  --fg:#fafafa;--fg2:#a1a1aa;--fg3:#71717a;
+  --accent:#818cf8;--accent2:#6366f1;--accent3:#4f46e5;
+  --cyan:#22d3ee;--emerald:#34d399;--amber:#fbbf24;--rose:#fb7185;
+  --grad1:linear-gradient(135deg,#6366f1,#22d3ee);
+  --grad2:linear-gradient(135deg,#6366f1,#a855f7);
+  --grad3:linear-gradient(135deg,#22d3ee,#34d399);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;overflow-x:hidden}
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:80px 120px;position:relative;border-bottom:1px solid rgba(255,255,255,0.05)}
+.slide::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 30% 20%,rgba(99,102,241,0.06) 0%,transparent 60%);pointer-events:none}
+.slide-number{position:absolute;top:40px;right:60px;font-size:13px;color:var(--fg3);font-family:'JetBrains Mono',monospace;letter-spacing:2px}
+.slide-label{font-size:11px;text-transform:uppercase;letter-spacing:4px;color:var(--accent);font-weight:600;margin-bottom:12px}
+h1{font-size:4.2rem;font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px}
+h2{font-size:2.8rem;font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:16px}
+h3{font-size:1.3rem;font-weight:600;color:var(--fg2);margin-bottom:24px}
+.subtitle{font-size:1.25rem;color:var(--fg2);max-width:700px;line-height:1.7}
+.gradient-text{background:var(--grad1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gradient-text-2{background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gradient-text-3{background:var(--grad3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:36px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:36px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;margin-top:36px}
+.card{background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;transition:transform 0.3s,border-color 0.3s}
+.card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,0.3)}
+.card-icon{font-size:2rem;margin-bottom:14px}
+.card h4{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.card p{font-size:0.88rem;color:var(--fg2);line-height:1.6}
+.stat{text-align:center}
+.stat-value{font-size:3rem;font-weight:900;letter-spacing:-1px}
+.stat-label{font-size:0.8rem;color:var(--fg3);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+.stat-sub{font-size:0.75rem;color:var(--fg3);margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-top:24px;font-size:0.88rem}
+th{text-align:left;padding:14px 16px;background:var(--bg2);color:var(--fg2);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.08)}
+td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--fg2)}
+tr:hover td{background:rgba(99,102,241,0.04)}
+.highlight{color:var(--accent);font-weight:600}
+.success{color:var(--emerald);font-weight:600}
+.warn{color:var(--amber);font-weight:600}
+.chip{display:inline-block;padding:4px 14px;border-radius:100px;font-size:0.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+.chip-accent{background:rgba(99,102,241,0.15);color:var(--accent)}
+.chip-cyan{background:rgba(34,211,238,0.12);color:var(--cyan)}
+.chip-emerald{background:rgba(52,211,153,0.12);color:var(--emerald)}
+.chip-amber{background:rgba(251,191,36,0.12);color:var(--amber)}
+.progress-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:3px;background:var(--grad1)}
+.arch-row{display:flex;gap:2px;margin-bottom:2px}
+.arch-block{padding:14px 20px;border-radius:8px;font-size:0.78rem;font-weight:600;text-align:center;flex:1;letter-spacing:0.5px}
+.arch-sdk{background:rgba(99,102,241,0.15);color:var(--accent);border:1px solid rgba(99,102,241,0.2)}
+.arch-exec{background:rgba(34,211,238,0.12);color:var(--cyan);border:1px solid rgba(34,211,238,0.15)}
+.arch-consensus{background:rgba(52,211,153,0.12);color:var(--emerald);border:1px solid rgba(52,211,153,0.15)}
+.arch-verify{background:rgba(251,191,36,0.12);color:var(--amber);border:1px solid rgba(251,191,36,0.15)}
+.arch-data{background:rgba(251,113,133,0.12);color:var(--rose);border:1px solid rgba(251,113,133,0.15)}
+.arch-hw{background:rgba(255,255,255,0.05);color:var(--fg3);border:1px solid rgba(255,255,255,0.08)}
+.timeline{position:relative;padding-left:30px;margin-top:24px}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--accent),var(--cyan),var(--emerald))}
+.tl-item{position:relative;margin-bottom:24px;padding-left:24px}
+.tl-item::before{content:'';position:absolute;left:-27px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tl-date{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--accent);margin-bottom:2px}
+.tl-title{font-weight:700;font-size:0.95rem}
+.tl-desc{font-size:0.82rem;color:var(--fg3)}
+.footer{position:absolute;bottom:40px;left:120px;right:60px;display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--fg3)}
+.footer-logo{font-weight:800;font-size:0.9rem;color:var(--fg2)}
+.moat{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:12px;margin-bottom:10px}
+.moat-label{font-size:0.85rem;color:var(--fg2);flex:1}
+.moat-us{font-size:0.78rem;font-weight:700;color:var(--emerald);width:80px;text-align:center}
+.moat-them{font-size:0.78rem;color:var(--fg3);width:80px;text-align:center}
+@media(max-width:900px){
+  .slide{padding:40px 24px}
+  h1{font-size:2.4rem}h2{font-size:1.8rem}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .stat-value{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SLIDE 1: TITLE ═══════════ -->
+<section class="slide" style="justify-content:center;align-items:center;text-align:center">
+  <div class="slide-number">01 / 16</div>
+  <div class="slide-label">Investor Presentation · March 2026</div>
+  <h1 style="font-size:5rem;margin-bottom:8px">
+    <span class="gradient-text">Aethelred</span>
+  </h1>
+  <h3 style="max-width:600px;margin:0 auto 12px">Verifiable Compute Layer for the AI Economy</h3>
+  <p style="font-size:0.95rem;color:var(--fg2);max-width:620px;margin:0 auto 36px">Dual architecture: deterministic Layer-1 settlement plus enterprise TEE inference with cryptographic verification.</p>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+    <span class="chip chip-accent">Proof-of-Useful-Work</span>
+    <span class="chip chip-cyan">Hybrid Proof Fabric</span>
+    <span class="chip chip-emerald">Post-Quantum</span>
+    <span class="chip chip-amber">Fixed Supply</span>
+  </div>
+  <p style="margin-top:40px;font-size:0.85rem;color:var(--fg3)">
+    ADGM DLT Foundation · Abu Dhabi, UAE<br/>
+    Incubated by Zhyra Deep Tech Venture Studio
+  </p>
+  <div class="footer">
+    <span class="footer-logo">AETHELRED</span>
+    <span>Confidential · Not for Distribution</span>
+  </div>
+</section>
+
+<!-- ═══════════ SLIDE 2: PROBLEM ═══════════ -->
+<section class="slide">
+  <div class="slide-number">02 / 16</div>
+  <div class="slide-label">The Problem</div>
+  <h2>High performance, low trust.<br/><span class="gradient-text">AI systems need cryptographic accountability.</span></h2>
+  <p class="subtitle" style="margin-bottom:28px">Today, most high-value inference happens inside opaque cloud boundaries. Enterprises cannot prove which model ran, how data was handled, or whether output was tampered with before delivery.</p>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <h4>Difficult to Audit</h4>
+      <p>Centralized AI APIs are impossible to audit at the protocol layer. No cryptographic proof binds a specific model to a specific output.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏛️</div>
+      <h4>Difficult to Govern</h4>
+      <p>Enterprises in regulated markets — healthcare, finance, defense — cannot satisfy compliance requirements when inference is a black box.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌍</div>
+      <h4>Difficult to Localise</h4>
+      <p>Strict jurisdictions (UAE, EU, KSA) require verifiable computation that respects data sovereignty. Current AI infrastructure cannot enforce this.</p>
+    </div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 3: SOLUTION ═══════════ -->
+<section class="slide">
+  <div class="slide-number">03 / 16</div>
+  <div class="slide-label">The Solution</div>
+  <h2>Sovereign, provable,<br/><span class="gradient-text-3">enforceable.</span></h2>
+  <p class="subtitle" style="margin-bottom:32px">Aethelred introduces a verifiable execution market where outputs are signed, provenance is tracked, and compliance controls are policy-native. Compute jobs execute in confidential hardware enclaves, results signed with post-quantum keys, settlement on-chain.</p>
+  <div style="background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:36px;font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--fg2);line-height:2.2">
+    <span style="color:var(--cyan)">Job Commitment</span>
+    &nbsp;→&nbsp; <span style="color:var(--amber)">TEE Scheduling</span>
+    &nbsp;→&nbsp; <span style="color:var(--emerald)">Attested Inference</span><br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br/>
+    <span style="color:var(--accent)">Proof Generation</span>
+    &nbsp;→&nbsp; <span style="color:var(--rose)">On-Chain Settlement</span>
+    &nbsp;→&nbsp; <span style="color:var(--fg)">Digital Seal ✓</span>
+  </div>
+  <p style="margin-top:20px;font-size:0.88rem;color:var(--fg3)">Proofs settle natively via custom EVM precompiles — <code style="color:var(--cyan)">0x0400</code> (TEE) and <code style="color:var(--cyan)">0x0300</code> (ZKP) — for sub-2-second on-chain verification.</p>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 4: ARCHITECTURE ═══════════ -->
+<section class="slide">
+  <div class="slide-number">04 / 16</div>
+  <div class="slide-label">Architecture</div>
+  <h2>Hybrid Compute Engine</h2>
+  <h3>Deterministic L1 settlement + enterprise TEE inference · CometBFT + EVM++ · Go + Rust + Solidity</h3>
+  <div style="margin-top:24px">
+    <div class="arch-row">
+      <div class="arch-block arch-sdk">Python SDK</div>
+      <div class="arch-block arch-sdk">TypeScript SDK</div>
+      <div class="arch-block arch-sdk">Rust SDK</div>
+      <div class="arch-block arch-sdk">Go SDK</div>
+      <div class="arch-block arch-sdk">VS Code Copilot</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-block arch-exec" style="flex:2">Aethelred VM (EVM++) · 0x0400 TEE + 0x0300 ZKP Precompiles</div>
+      <div class="arch-block arch-exec">WASM Runtime</div>
+      <div class="arch-block arch-exec">Helix DSL</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-block arch-consensus" style="flex:2">CometBFT · ABCI++ Vote Extensions · PoUW Router</div>
+      <div class="arch-block arch-consensus">VRF Election</div>
+      <div class="arch-block arch-consensus">Slashing</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-block arch-verify">TEE Attestation</div>
+      <div class="arch-block arch-verify">EZKL zkML</div>
+      <div class="arch-block arch-verify">RISC Zero</div>
+      <div class="arch-block arch-verify">Groth16</div>
+      <div class="arch-block arch-verify">Halo2</div>
+      <div class="arch-block arch-verify">Plonky2</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-block arch-data" style="flex:2">State Merkle · Vector Vault (10M vectors/ns)</div>
+      <div class="arch-block arch-data">Bridge Proofs</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-block arch-hw">Intel SGX DCAP</div>
+      <div class="arch-block arch-hw">AWS Nitro</div>
+      <div class="arch-block arch-hw">AMD SEV-SNP</div>
+      <div class="arch-block arch-hw">Azure Conf. VMs</div>
+      <div class="arch-block arch-hw">NVIDIA H100 CC</div>
+    </div>
+  </div>
+  <p style="margin-top:16px;font-size:0.85rem;color:var(--fg3)">Strategically aligned with Abu Dhabi's <strong style="color:var(--fg2)">Stargate UAE 200MW</strong> sovereign infrastructure corridor.</p>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 5: THE OCTAGON ═══════════ -->
+<section class="slide">
+  <div class="slide-number">05 / 16</div>
+  <div class="slide-label">The Octagon Protocol</div>
+  <h2>Eight Foundational Pillars</h2>
+  <div class="grid-4">
+    <div class="card"><div class="card-icon">⛏️</div><h4>Proof of Useful Work</h4><p>Validator incentives tied to real AI inference workloads instead of wasteful hash races.</p></div>
+    <div class="card"><div class="card-icon">🧬</div><h4>Hybrid Proof Fabric</h4><p>Primary execution in AWS Nitro/Intel SGX enclaves, with optional EZKL zkML co-processing for absolute trustlessness.</p></div>
+    <div class="card"><div class="card-icon">🔧</div><h4>EVM Verification Layer</h4><p>Sub-2s finality with custom <code>0x0400</code> (TEE) and <code>0x0300</code> (ZKP) precompiles for instant on-chain proof settlement.</p></div>
+    <div class="card"><div class="card-icon">🔐</div><h4>Post-Quantum Identity</h4><p>ML-DSA-65 lattice-based signatures and ML-KEM-1024 key exchange integrated from network genesis.</p></div>
+    <div class="card"><div class="card-icon">🔥</div><h4>Quadratic Fee Burn</h4><p>Congestion-squared fees create exponentially stronger deflationary pressure during high-demand windows.</p></div>
+    <div class="card"><div class="card-icon">🏛️</div><h4>Bi-Cameral Governance</h4><p>House of Tokens and House of Validators both require supermajority for protocol upgrades.</p></div>
+    <div class="card"><div class="card-icon">🛡️</div><h4>Sovereign Compliance Layer</h4><p>Policy-aware routing and attestations for regulated geographies and institutional requirements.</p></div>
+    <div class="card"><div class="card-icon">🌉</div><h4>Native Bridging</h4><p>Cross-chain settlement with cryptographic finality to Ethereum ecosystems. 7-day challenge period, guardian multi-sig.</p></div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 6: PERFORMANCE ═══════════ -->
+<section class="slide">
+  <div class="slide-number">06 / 16</div>
+  <div class="slide-label">Performance</div>
+  <h2>Production-Oriented <span class="gradient-text-3">Performance Envelope</span></h2>
+  <p style="color:var(--fg3);font-size:0.88rem;margin-bottom:12px">Measurements reflect sustained testnet workloads with 100+ validator participants and enterprise model mixes.</p>
+  <div class="grid-4" style="margin-top:36px">
+    <div class="stat">
+      <div class="stat-value gradient-text">&lt;2s</div>
+      <div class="stat-label">Finality</div>
+      <div class="stat-sub">Deterministic, no reorgs</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value gradient-text">400</div>
+      <div class="stat-label">PFLOPS Compute</div>
+      <div class="stat-sub">Aggregate network capacity</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value gradient-text-3">50K+</div>
+      <div class="stat-label">Inferences/sec</div>
+      <div class="stat-sub">32B-param enterprise models</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value gradient-text-2">PoUW</div>
+      <div class="stat-label">Consensus</div>
+      <div class="stat-sub">Useful AI work, not hash puzzles</div>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:48px">
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--cyan)">10B</div>
+      <div class="stat-label">AETHEL Supply</div>
+      <div class="stat-sub">Fixed — zero inflation</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--emerald)">5</div>
+      <div class="stat-label">TEE Platforms</div>
+      <div class="stat-sub">SGX · Nitro · SEV · Azure · H100</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--amber)">5</div>
+      <div class="stat-label">ZK Proof Systems</div>
+      <div class="stat-sub">EZKL · RISC0 · Groth16 · Halo2 · Plonky2</div>
+    </div>
+  </div>
+  <p style="margin-top:32px;font-size:0.85rem;color:var(--fg3);text-align:center">Optimised 32B-parameter enterprise models in enclave mode · Region-aware load transfer with worker redundancy</p>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 7: TOKENOMICS ═══════════ -->
+<section class="slide">
+  <div class="slide-number">07 / 16</div>
+  <div class="slide-label">Tokenomics</div>
+  <h2><span class="gradient-text">AETHEL</span> — Fixed Supply Launch Economics</h2>
+  <div class="grid-2">
+    <div>
+      <div class="grid-2" style="margin-top:0">
+        <div class="stat"><div class="stat-value" style="font-size:2.4rem">10B</div><div class="stat-label">Fixed Supply</div></div>
+        <div class="stat"><div class="stat-value" style="font-size:2.4rem;color:var(--emerald)">0%</div><div class="stat-label">Post-Genesis Inflation</div></div>
+      </div>
+      <table style="margin-top:24px">
+        <tr><th>Allocation</th><th>%</th><th>Vest</th></tr>
+        <tr><td>PoUW Rewards</td><td class="highlight">30%</td><td>120 mo → Dec 2036</td></tr>
+        <tr><td>Core Contributors</td><td>20%</td><td>6 mo cliff + 48 mo</td></tr>
+        <tr><td>Ecosystem & Grants</td><td>15%</td><td>6 mo cliff + 54 mo</td></tr>
+        <tr><td>Public Sales</td><td>7.5%</td><td>18 mo → Jun 2028</td></tr>
+        <tr><td>Airdrop (Seals)</td><td>7%</td><td>25% TGE + 12 mo</td></tr>
+        <tr><td>Treasury & MMs</td><td>6%</td><td>36 mo</td></tr>
+        <tr><td>Strategic / Seed</td><td>5.5%</td><td>12 mo cliff + 36 mo</td></tr>
+        <tr><td>Insurance Fund</td><td>5%</td><td>30 mo</td></tr>
+        <tr><td>Contingency</td><td>4%</td><td>12 mo cliff</td></tr>
+      </table>
+    </div>
+    <div>
+      <h4 style="margin-bottom:16px;color:var(--fg2)">Token Release Architecture</h4>
+      <div class="card" style="margin-bottom:12px;padding:20px">
+        <h4 style="color:var(--emerald)">📊 Controlled Launch Float</h4>
+        <p>6.3% TGE circulation with staged unlocks across team, ecosystem, and market buckets</p>
+      </div>
+      <div class="card" style="margin-bottom:12px;padding:20px">
+        <h4 style="color:var(--cyan)">⏳ Long Tail Rewards</h4>
+        <p>PoUW rewards extend to December 2036, ensuring 10-year validator incentive horizon</p>
+      </div>
+      <div class="card" style="margin-bottom:12px;padding:20px">
+        <h4 style="color:var(--amber)">🔥 Quadratic Burn</h4>
+        <p>Congestion² fees + base fee burn + adaptive quadratic burn. Supply can only decrease.</p>
+      </div>
+      <div class="card" style="padding:20px;border-color:rgba(99,102,241,0.3)">
+        <h4 style="color:var(--accent)">🛡️ Risk Buffers</h4>
+        <p>Insurance Fund (5%) + Contingency Reserve (4%) with multi-sig governance and timelocks</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 8: FUNDRAISING ═══════════ -->
+<section class="slide">
+  <div class="slide-number">08 / 16</div>
+  <div class="slide-label">Fundraising</div>
+  <h2>$16M Across Four Rounds</h2>
+  <table>
+    <tr><th>Round</th><th>Raise</th><th>Price/AETHEL</th><th>FDV</th><th>Timing</th></tr>
+    <tr><td><span class="chip chip-accent">Seed</span></td><td>$1,000,000</td><td>$0.010</td><td>$100M</td><td>Mar–Apr 2026</td></tr>
+    <tr><td><span class="chip chip-cyan">Community Echo</span></td><td>$6,000,000</td><td>$0.015</td><td>$150M</td><td>Jun–Jul 2026</td></tr>
+    <tr><td><span class="chip chip-emerald">Strategic</span></td><td>$3,750,000</td><td>$0.025</td><td>$250M</td><td>Sep–Oct 2026</td></tr>
+    <tr><td><span class="chip chip-amber">Exchange</span></td><td>$5,250,000</td><td>$0.030</td><td>$300M</td><td>Nov 2026</td></tr>
+    <tr style="background:rgba(99,102,241,0.06)"><td style="font-weight:700;color:var(--fg)">Total</td><td style="font-weight:700;color:var(--fg)">$16,000,000</td><td style="color:var(--fg2)">$0.0194 avg</td><td style="color:var(--fg2)">8.25% supply</td><td></td></tr>
+  </table>
+  <div class="grid-4" style="margin-top:40px">
+    <div class="stat"><div class="stat-value" style="font-size:2rem;color:var(--accent)">$0.10</div><div class="stat-label">TGE Price Target</div></div>
+    <div class="stat"><div class="stat-value" style="font-size:2rem;color:var(--cyan)">$1B</div><div class="stat-label">FDV at TGE</div></div>
+    <div class="stat"><div class="stat-value" style="font-size:2rem;color:var(--emerald)">6.3%</div><div class="stat-label">TGE Float</div></div>
+    <div class="stat"><div class="stat-value" style="font-size:2rem;color:var(--amber)">5.15×</div><div class="stat-label">Investor Upside</div></div>
+  </div>
+  <p style="margin-top:28px;font-size:0.85rem;color:var(--fg3);text-align:center">Modeled at $0.10 token price and 630M circulating tokens at TGE</p>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 9: USE OF PROCEEDS ═══════════ -->
+<section class="slide">
+  <div class="slide-number">09 / 16</div>
+  <div class="slide-label">Capital Allocation</div>
+  <h2>Use of Proceeds</h2>
+  <div class="grid-2" style="margin-top:40px">
+    <div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Engineering</span><span class="highlight">40% · $6.4M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Infrastructure</span><span class="highlight">15% · $2.4M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--grad3)"></div></div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Security & Audits</span><span class="highlight">15% · $2.4M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--grad2)"></div></div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Business Development</span><span>10% · $1.6M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:10%;background:linear-gradient(90deg,var(--amber),var(--rose))"></div></div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Legal & Compliance</span><span>10% · $1.6M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:10%;background:linear-gradient(90deg,var(--cyan),var(--accent))"></div></div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Operations</span><span>10% · $1.6M</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:10%;background:linear-gradient(90deg,var(--fg3),var(--fg2))"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h4>Liquidity Operations</h4>
+        <p style="font-size:0.85rem;color:var(--fg2);margin-bottom:12px">Loaned inventory with staged exchange liquidity and return conditions.</p>
+        <table style="margin:0;font-size:0.82rem">
+          <tr><td>Primary MM</td><td class="highlight">125M AETHEL</td><td>Wintermute</td></tr>
+          <tr><td>Secondary MM</td><td class="highlight">75M AETHEL</td><td>GSR</td></tr>
+          <tr><td>Exchange pool</td><td>175M AETHEL</td><td>Listing liquidity</td></tr>
+        </table>
+        <p style="margin-top:12px;font-size:0.8rem;color:var(--fg3)">Tokens <strong>loaned, not sold</strong>. Returnable per agreement.</p>
+      </div>
+      <div class="card">
+        <h4>Exchange Strategy</h4>
+        <p><strong style="color:var(--amber)">Primary:</strong> Binance (Nov 2026)</p>
+        <p><strong style="color:var(--fg2)">Contingency:</strong> Bybit / OKX</p>
+        <p><strong style="color:var(--cyan)">DEX:</strong> Uniswap V3</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 10: TARGET SECTORS ═══════════ -->
+<section class="slide">
+  <div class="slide-number">10 / 16</div>
+  <div class="slide-label">Market</div>
+  <h2>Verifiable AI for <span class="gradient-text-2">Regulated & Mission-Critical</span> Sectors</h2>
+  <p class="subtitle" style="margin-bottom:8px">Where performance matters, but auditability and jurisdictional control are non-negotiable.</p>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">🏥</div>
+      <h4>Healthcare Diagnostics</h4>
+      <p>Cryptographically verified model execution for triage and imaging workflows under clinical compliance.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💹</div>
+      <h4>Financial Audit Automation</h4>
+      <p>Attested AI inference for risk engines, anomaly detection, and supervisory reporting.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛡️</div>
+      <h4>Defense & Intelligence</h4>
+      <p>Jurisdiction-locked compute with signed outputs for sovereign security operations.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🚗</div>
+      <h4>Autonomous Fleets</h4>
+      <p>Provable decision trails for mobility systems and logistics autonomy environments.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📦</div>
+      <h4>Supply Chain Integrity</h4>
+      <p>AI-driven quality and routing decisions with immutable proof trails for compliance audits.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔬</div>
+      <h4>Research Compute Markets</h4>
+      <p>Shared, accountable inference capacity for universities, labs, and consortiums.</p>
+    </div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 11: SECURITY ═══════════ -->
+<section class="slide">
+  <div class="slide-number">11 / 16</div>
+  <div class="slide-label">Security</div>
+  <h2>Security Architecture <span class="gradient-text-2">Designed for Institutions</span></h2>
+  <div class="grid-2">
+    <div>
+      <h4 style="margin-bottom:16px;color:var(--fg2)">Audit Status</h4>
+      <table>
+        <tr><th>Auditor</th><th>Scope</th><th>Status</th></tr>
+        <tr><td>Trail of Bits</td><td>Contracts, consensus, crypto</td><td class="highlight">Engaged (2 cycles)</td></tr>
+        <tr><td>OtterSec</td><td>Contracts, bridge, tokenomics</td><td class="highlight">Engaged (2 cycles)</td></tr>
+        <tr><td>Internal Review</td><td>Full protocol (Go/Sol/Rust)</td><td class="success">27 findings — all fixed</td></tr>
+        <tr><td>VRF Consultant</td><td>VRF + protocol review</td><td class="success">RS-01 Critical fixed</td></tr>
+      </table>
+    </div>
+    <div>
+      <h4 style="margin-bottom:16px;color:var(--fg2)">Protocol Controls</h4>
+      <div class="card" style="margin-bottom:10px;padding:16px"><p><strong style="color:var(--accent)">27-day</strong> minimum upgrade timelock on bridge contracts</p></div>
+      <div class="card" style="margin-bottom:10px;padding:16px"><p><strong style="color:var(--cyan)">HSM-backed</strong> key custody for validator operations</p></div>
+      <div class="card" style="margin-bottom:10px;padding:16px"><p><strong style="color:var(--emerald)">Formal verification</strong> via Certora, Halmos, Kani, TLA+</p></div>
+      <div class="card" style="padding:16px"><p><strong style="color:var(--amber)">Compile-time</strong> production safety — simulated mode is a one-way gate</p></div>
+    </div>
+  </div>
+  <div class="grid-4" style="margin-top:28px">
+    <div class="card" style="padding:20px;text-align:center"><div style="font-size:1.8rem;font-weight:900;color:var(--emerald)">12</div><p style="font-size:0.78rem">Production Gates</p></div>
+    <div class="card" style="padding:20px;text-align:center"><div style="font-size:1.8rem;font-weight:900;color:var(--cyan)">27</div><p style="font-size:0.78rem">Findings Remediated</p></div>
+    <div class="card" style="padding:20px;text-align:center"><div style="font-size:1.8rem;font-weight:900;color:var(--accent)">5</div><p style="font-size:0.78rem">TEE Platforms</p></div>
+    <div class="card" style="padding:20px;text-align:center"><div style="font-size:1.8rem;font-weight:900;color:var(--amber)">9</div><p style="font-size:0.78rem">ZK Security Invariants</p></div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 12: COMPETITIVE MOAT ═══════════ -->
+<section class="slide">
+  <div class="slide-number">12 / 16</div>
+  <div class="slide-label">Competitive Moat</div>
+  <h2>What No Other L1 Has</h2>
+  <div style="margin-top:28px;display:grid;grid-template-columns:1fr 80px 80px;gap:0">
+    <div style="padding:12px 0;font-weight:700;color:var(--fg3);font-size:0.8rem">CAPABILITY</div>
+    <div style="padding:12px 0;font-weight:700;color:var(--emerald);font-size:0.8rem;text-align:center">AETHEL</div>
+    <div style="padding:12px 0;font-weight:700;color:var(--fg3);font-size:0.8rem;text-align:center">OTHERS</div>
+  </div>
+  <div class="moat"><span class="moat-label">Purpose-built EVM L1 for AI inference verification (PoUW consensus)</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Hybrid Proof Fabric — TEE primary + optional zkML co-processing</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">50,000+ IPS on 32B-parameter enterprise models in enclave mode</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Lattice-based post-quantum signatures (ML-DSA-65) from genesis</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Custom EVM precompiles — 0x0400 (TEE) + 0x0300 (ZKP)</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Sovereign compliance layer — jurisdiction-aware routing at consensus</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Zero inflation + quadratic fee burn (structurally deflationary)</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Bi-cameral governance — dual-chamber supermajority ratification</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="moat"><span class="moat-label">Stargate UAE sovereign infrastructure integration</span><span class="moat-us">✓</span><span class="moat-them">✗</span></div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 13: STRATEGIC HIGHLIGHTS ═══════════ -->
+<section class="slide">
+  <div class="slide-number">13 / 16</div>
+  <div class="slide-label">Strategic Position</div>
+  <h2>Investor <span class="gradient-text">Highlights</span></h2>
+  <div class="grid-2">
+    <div class="card"><h4 style="color:var(--accent)">First Mover in Verifiable AI Compute</h4><p>Purpose-built EVM Layer-1 engineered to process 50,000+ IPS for 32B-parameter enterprise models — not generic smart contract retrofits.</p></div>
+    <div class="card"><h4 style="color:var(--cyan)">Post-Quantum by Default</h4><p>NIST-aligned ML-DSA-65 signature and ML-KEM-1024 transport security integrated from network inception. No migration debt.</p></div>
+    <div class="card"><h4 style="color:var(--emerald)">Controlled Launch Float</h4><p>6.3% TGE circulation with staged unlocks across team, ecosystem, and market buckets. Conservative float minimises post-TGE sell pressure.</p></div>
+    <div class="card"><h4 style="color:var(--amber)">Institution-Ready Compliance</h4><p>Jurisdiction-aware routing, attested execution, and policy-capable governance controls for regulated sectors.</p></div>
+    <div class="card"><h4 style="color:var(--rose)">Sovereign Infrastructure Integration</h4><p>Native interoperability with AWS Nitro, Intel SGX, AMD SEV, Azure Confidential and Abu Dhabi's Stargate UAE 200MW hardware corridors.</p></div>
+    <div class="card"><h4 style="color:var(--fg2)">Governance Resilience</h4><p>Dual-chamber ratification reduces unilateral control risk across stakeholders. 27-day timelocked upgrades.</p></div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 14: DEVELOPER ECOSYSTEM ═══════════ -->
+<section class="slide">
+  <div class="slide-number">14 / 16</div>
+  <div class="slide-label">Developer Ecosystem</div>
+  <h2>Build Verifiable AI dApps <span class="gradient-text">in Minutes</span></h2>
+  <div class="grid-3">
+    <div class="card"><div class="card-icon">🔧</div><h4>EVM-Compatible Precompiles</h4><p>Use 0x0400 (TEE) and 0x0300 (zkML) precompiles directly from Solidity — no external oracles needed.</p></div>
+    <div class="card"><div class="card-icon">📚</div><h4>Multi-Language SDKs</h4><p>Python, TypeScript, Rust, Go — consistent API shape, async support, production-ready docs.</p></div>
+    <div class="card"><div class="card-icon">🔐</div><h4>Post-Quantum Security</h4><p>ML-DSA-65 + ECDSA hybrid signatures ship by default in all SDKs.</p></div>
+    <div class="card"><div class="card-icon">⚡</div><h4>Instant Finality</h4><p>Sub-2s CometBFT deterministic finality removes reorg uncertainty from critical AI workflows.</p></div>
+    <div class="card"><div class="card-icon">🤖</div><h4>Framework Integrations</h4><p>Native PyTorch, LangChain, Hugging Face support — onboard existing model workflows instantly.</p></div>
+    <div class="card" style="border-color:rgba(99,102,241,0.3)"><div class="card-icon">🧩</div><h4>Sovereign Copilot</h4><p><strong style="color:var(--accent)">VS Code extension</strong> — compliance linting, cost estimation, TEE sim, Helix DSL syntax.</p></div>
+  </div>
+  <div class="card" style="margin-top:20px;padding:24px">
+    <h4>Local Devnet</h4>
+    <p>Docker Compose environment: validators, zkML prover (GPU), PostgreSQL, Redis, API gateway, block explorer, faucet, Prometheus + Grafana. Full network in one command.</p>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 15: ROADMAP ═══════════ -->
+<section class="slide">
+  <div class="slide-number">15 / 16</div>
+  <div class="slide-label">Roadmap</div>
+  <h2>Path to <span class="gradient-text">Mainnet</span></h2>
+  <div class="grid-2" style="margin-top:32px">
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-date">MAR–APR 2026</div><div class="tl-title">Seed Round — $1M</div><div class="tl-desc">$100M FDV · Community channel launch · Seals points begin</div></div>
+      <div class="tl-item"><div class="tl-date">MAY 1, 2026</div><div class="tl-title">Public Testnet</div><div class="tl-desc">Validator onboarding · Bug bounty activation</div></div>
+      <div class="tl-item"><div class="tl-date">JUN–OCT 2026</div><div class="tl-title">Community + Strategic Rounds</div><div class="tl-desc">$6M + $3.75M at $150M–$250M FDV steps</div></div>
+      <div class="tl-item"><div class="tl-date">NOV 2026</div><div class="tl-title">Exchange Round + Snapshot</div><div class="tl-desc">$5.25M at $300M FDV · Final Seals airdrop snapshot</div></div>
+    </div>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-date">DEC 7–10, 2026</div><div class="tl-title" style="color:var(--emerald)">Token Generation Event 🚀</div><div class="tl-desc">Abu Dhabi Finance Week · Exchange listings · Airdrop distribution</div></div>
+      <div class="tl-item"><div class="tl-date">Q1 2027</div><div class="tl-title">Mainnet Launch</div><div class="tl-desc">Full network · dApp ecosystem rollout · Post-TGE execution</div></div>
+      <div class="tl-item"><div class="tl-date">2027–2028</div><div class="tl-title">Phase 2 — Scaling</div><div class="tl-desc">Jurisdiction-specific shards via IBC · 10K+ jobs/sec</div></div>
+      <div class="tl-item"><div class="tl-date">2028+</div><div class="tl-title">Phase 3 — DA Layer</div><div class="tl-desc">Dedicated data availability · Petabyte-scale model storage</div></div>
+    </div>
+  </div>
+  <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
+</section>
+
+<!-- ═══════════ SLIDE 16: CLOSING ═══════════ -->
+<section class="slide" style="justify-content:center;align-items:center;text-align:center">
+  <div class="slide-number">16 / 16</div>
+  <div class="slide-label">The Opportunity</div>
+  <h1 style="font-size:3.6rem;max-width:800px">
+    High performance, low trust.<br/>
+    <span class="gradient-text">Aethelred fixes this.</span>
+  </h1>
+  <p style="font-size:1.1rem;color:var(--fg2);max-width:600px;margin:24px auto 0">Sovereign, provable, enforceable AI compute — settled on a purpose-built Layer 1.</p>
+  <div class="grid-3" style="max-width:700px;margin:48px auto 0">
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--accent)">$16M</div>
+      <div class="stat-label">Raising</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--cyan)">$1B</div>
+      <div class="stat-label">TGE FDV</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="font-size:2.2rem;color:var(--emerald)">Dec 2026</div>
+      <div class="stat-label">Abu Dhabi Finance Week</div>
+    </div>
+  </div>
+  <div style="margin-top:56px">
+    <p style="font-size:1.2rem;color:var(--fg2);margin-bottom:8px">Let's talk.</p>
+    <p style="font-size:1rem;color:var(--fg3)">contact@aethelred.org · aethelred.org</p>
+    <p style="font-size:0.82rem;color:var(--fg3);margin-top:4px">Incubated by <strong style="color:var(--fg2)">Zhyra Deep Tech Venture Studio</strong></p>
+    <div style="display:flex;gap:24px;justify-content:center;margin-top:20px">
+      <a href="https://github.com/AethelredFoundation" style="color:var(--fg3);text-decoration:none;font-size:0.82rem">GitHub</a>
+      <a href="https://discord.gg/aethelred" style="color:var(--fg3);text-decoration:none;font-size:0.82rem">Discord</a>
+      <a href="https://t.me/AethelredHQ" style="color:var(--fg3);text-decoration:none;font-size:0.82rem">Telegram</a>
+      <a href="https://x.com/AethelredHQ" style="color:var(--fg3);text-decoration:none;font-size:0.82rem">@AethelredHQ</a>
+    </div>
+  </div>
+  <div class="footer">
+    <span class="footer-logo">AETHELRED</span>
+    <span style="font-style:italic">This document is provided for informational purposes only. Nothing herein constitutes financial advice or a solicitation of investment.</span>
+  </div>
+</section>
+
+</body>
+</html>

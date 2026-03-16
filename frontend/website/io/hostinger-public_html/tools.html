@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools &amp; Ecosystem | Aethelred</title>
+  <meta name="description" content="Aethelred developer tools: CLI, Sovereign Copilot VS Code extension, Seal Verifier, local devnet, SDKs, and open-source repos.">
+  <meta name="keywords" content="Aethelred tools, CLI, SDK, VS Code extension, Seal Verifier, local devnet">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/tools.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/tools.html">
+  <meta property="og:title" content="Tools &amp; Ecosystem | Aethelred">
+  <meta property="og:description" content="Everything you need to build, test, and deploy verifiable AI applications on Aethelred.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Tools &amp; Ecosystem social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Tools &amp; Ecosystem | Aethelred">
+  <meta name="twitter:description" content="CLI, SDKs, VS Code extension, attestation verifier, and local devnet tooling.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Tools &amp; Ecosystem social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.aethelred.io/tools.html#webpage",
+        "name": "Tools & Ecosystem",
+        "url": "https://www.aethelred.io/tools.html",
+        "description": "Aethelred developer tools: CLI, Sovereign Copilot VS Code extension, Seal Verifier, local devnet, SDKs, and open-source repos.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/tools.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Tools & Ecosystem social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/tools.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Tools",
+            "item": "https://www.aethelred.io/tools.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-tools">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link is-active">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="tools-resources">Resources</button>
+          <div class="dropdown-panel" id="tools-resources" role="menu">
+            <a href="/sandbox.html" role="menuitem">Infinite Sandbox</a>
+            <a href="/zk-proofs.html" role="menuitem">ZK Proofs</a>
+            <a href="/tee.html" role="menuitem">TEE Attestation</a>
+            <a href="/wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="#developer-tools" role="menuitem">Developer Tools</a>
+            <a href="#cli" role="menuitem">CLI</a>
+            <a href="#vscode" role="menuitem">Sovereign Copilot</a>
+            <a href="#sdks" role="menuitem">SDKs</a>
+            <a href="#frameworks" role="menuitem">Framework Integrations</a>
+            <a href="#github" role="menuitem">Open Source</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/developers.html" class="btn btn-small btn-primary">Documentation</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link is-active">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Tool Sections</summary>
+      <a href="/sandbox.html" class="mobile-link">Infinite Sandbox</a>
+      <a href="/zk-proofs.html" class="mobile-link">ZK Proofs</a>
+      <a href="/tee.html" class="mobile-link">TEE Attestation</a>
+      <a href="/wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="#developer-tools" class="mobile-link">Developer Tools</a>
+      <a href="#cli" class="mobile-link">CLI</a>
+      <a href="#vscode" class="mobile-link">VS Code</a>
+      <a href="#verifier" class="mobile-link">Seal Verifier</a>
+      <a href="#local-dev" class="mobile-link">Local Devnet</a>
+      <a href="#sdks" class="mobile-link">SDKs</a>
+      <a href="#frameworks" class="mobile-link">Framework Integrations</a>
+      <a href="#github" class="mobile-link">Open Source</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Developer Ecosystem</p>
+          <h1 class="hero-title" id="page-title">Tools <span class="gradient-word">&amp;</span> Ecosystem</h1>
+          <p class="hero-subtitle">Everything you need to develop, test, and deploy verifiable AI applications on the Aethelred network with repeatable workflows. Move from local simulation to audited deployment using tooling designed for production reliability and developer velocity, then hand off cleanly into the <a class="body-link" href="/developers.html">developer documentation</a>, the <a class="body-link" href="/testnet.html">testnet readiness guide</a>, and the <a class="body-link" href="/community.html">community contribution flow</a>.</p>
+          <div class="hero-tags" aria-label="Tooling capabilities">
+            <span class="hero-tag">Aethelred CLI</span>
+            <span class="hero-tag">Sovereign Copilot</span>
+            <span class="hero-tag">Seal Verifier</span>
+            <span class="hero-tag">Local Devnet</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#cli" class="btn btn-primary">Start with CLI</a>
+            <a href="#sdks" class="btn btn-secondary">View SDKs</a>
+          </div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>CLI + Local Devnet</h4>
+            <p>Ship faster with repeatable local network workflows and diagnostics.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Sovereign Copilot</h4>
+            <p>Integrated compliance signals, cost estimation, and attestation-aware linting.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Open Source by Default</h4>
+            <p>Core protocol, SDKs, extension, and AIPs available under Apache 2.0.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="developer-tools" aria-labelledby="developer-tools-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Developer Tools</p>
+          <h2 class="section-title" id="developer-tools-title">A complete workflow surface for builders</h2>
+          <p class="section-lead">The current Aethelred site already documents four core workflow surfaces: command-line automation, editor assistance, attestation verification, and a full local devnet. This section consolidates them into a clearer decision layer before the deeper product sections below.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">&gt;_</span>
+                <div>
+                  <p class="detail-kicker">Command Line</p>
+                  <h3>Aethelred CLI</h3>
+                </div>
+              </div>
+            </div>
+            <p>The <span class="mono">aeth</span> CLI handles network configuration, wallet management, job submission, seal verification, validator inspection, and diagnostics from a single interface.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Operators and application teams that need repeatable local and testnet workflows without building custom scripts first.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Core Actions</span>
+                <p><span class="mono">config</span>, <span class="mono">wallet</span>, <span class="mono">pouw submit-job</span>, <span class="mono">seal verify</span>, and <span class="mono">diagnostics doctor</span>.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Wallets</span>
+              <span class="tag">Jobs</span>
+              <span class="tag">Seals</span>
+              <span class="tag">Diagnostics</span>
+            </div>
+            <div class="detail-actions">
+              <a href="#cli" class="btn btn-small btn-primary">Open CLI Section</a>
+              <a href="https://github.com/aethelred-foundation/aethelred-cli" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">IDE</span>
+                <div>
+                  <p class="detail-kicker">Editor Workflow</p>
+                  <h3>Sovereign Copilot</h3>
+                </div>
+              </div>
+            </div>
+            <p>The VS Code extension adds compliance linting, cost estimation, code lens overlays, a live status bar, Helix DSL support, and TEE simulator controls directly in the editor.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Teams building Python, Rust, TypeScript, JavaScript, and Helix-based workflows that want immediate feedback during implementation.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Core Capabilities</span>
+                <p>Compliance review, inline metadata, governance-aware hints, and enclave simulation without leaving the coding surface.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Compliance</span>
+              <span class="tag">Code Lens</span>
+              <span class="tag">TEE Simulator</span>
+              <span class="tag">Helix DSL</span>
+            </div>
+            <div class="detail-actions">
+              <a href="#vscode" class="btn btn-small btn-primary">Open Extension Section</a>
+              <a href="https://github.com/aethelred-foundation/vscode-aethelred" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">TEE</span>
+                <div>
+                  <p class="detail-kicker">Attestation</p>
+                  <h3>Seal Verifier</h3>
+                </div>
+              </div>
+            </div>
+            <p>The verifier workflow checks enclave quotes, signature trust chains, measurement matching, and returned seal metadata so teams can validate that a job really executed inside the expected secure environment.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Security reviews, release validation, and support workflows that need a fast attestation check against trusted enclave roots.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Verification Path</span>
+                <p>Paste quote, verify signature chain, confirm measurement against model context, then inspect returned seal state and timestamps.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Quote Input</span>
+              <span class="tag">Root Trust</span>
+              <span class="tag">Measurement Match</span>
+              <span class="tag">Seal Metadata</span>
+            </div>
+            <div class="detail-actions">
+              <a href="#verifier" class="btn btn-small btn-primary">Open Verifier Section</a>
+              <a href="/developers.html#api" class="btn btn-small btn-outline">Verification APIs</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">DEV</span>
+                <div>
+                  <p class="detail-kicker">Network Simulation</p>
+                  <h3>Local Devnet</h3>
+                </div>
+              </div>
+            </div>
+            <p>The local environment provides a full PoUW development stack with validators, faucet flows, explorer access, and pre-funded accounts so application teams can run realistic integration tests before public network rollout.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Contract development, SDK integration testing, and end-to-end staging flows that need deterministic local feedback loops.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">What Ships Locally</span>
+                <p>Four validators, a faucet, explorer tooling, test accounts, and CLI-driven lifecycle commands for boot, status, and logs.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Docker Compose</span>
+              <span class="tag">4 Validators</span>
+              <span class="tag">Explorer</span>
+              <span class="tag">Faucet</span>
+            </div>
+            <div class="detail-actions">
+              <a href="#local-dev" class="btn btn-small btn-primary">Open Devnet Section</a>
+              <a href="https://github.com/aethelred-foundation/aethelred" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">Repository</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="cli" aria-labelledby="cli-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Command Line</p>
+          <h2 class="section-title" id="cli-title">Aethelred CLI</h2>
+          <p class="section-lead">The command-line interface for interacting with the Aethelred network and local development stack.</p>
+        </div>
+
+        <div class="terminal stack-bottom-16">
+          <div class="terminal-head">
+            <div class="terminal-dots"><span></span><span></span><span></span></div>
+            <span class="terminal-label">installation</span>
+          </div>
+<pre><code># macOS
+brew install aethelred-foundation/tap/aeth
+
+# from source
+cargo install aeth
+
+# verify installation
+aeth --version</code></pre>
+        </div>
+
+        <p class="section-lead stack-reset-top">Common commands for network interaction and local development.</p>
+        <div class="grid grid-2 stack-top-12">
+          <article class="card"><h3 class="mono">aeth config set --network testnet</h3><p>Configure network</p></article>
+          <article class="card"><h3 class="mono">aeth wallet create --name mykey</h3><p>Create wallet</p></article>
+          <article class="card"><h3 class="mono">aeth bank balance --address aeth1abc...</h3><p>Check balance</p></article>
+          <article class="card"><h3 class="mono">aeth pouw submit-job --model-hash abc123 --input ./prompt.json --verification-type hybrid</h3><p>Submit job</p></article>
+          <article class="card"><h3 class="mono">aeth seal verify --seal-id &lt;id&gt;</h3><p>Verify seal</p></article>
+          <article class="card"><h3 class="mono">aeth validator list</h3><p>List validators</p></article>
+          <article class="card"><h3 class="mono">aeth status</h3><p>Network status</p></article>
+          <article class="card"><h3 class="mono">aeth local up / down</h3><p>Start or stop local devnet</p></article>
+          <article class="card"><h3 class="mono">aeth diagnostics doctor</h3><p>Run diagnostics</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="vscode" aria-labelledby="vscode-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Editor Integration</p>
+          <h2 class="section-title" id="vscode-title">Aethelred Sovereign Copilot</h2>
+          <p class="section-lead">Real-time compliance linting and developer assistance in VS Code.</p>
+        </div>
+
+        <div class="grid grid-3 stack-bottom-16">
+          <article class="card"><h3>Compliance Linting</h3><p>Real-time sovereignty checks across GDPR, HIPAA, UAE-DPL, and PIPL patterns.</p></article>
+          <article class="card"><h3>Cost Estimation</h3><p>Hover over <span class="mono">@sovereign</span> decorators to inspect AETHEL cost and hardware requirements.</p></article>
+          <article class="card"><h3>Code Lens</h3><p>Inline status for compliance, jurisdiction mapping, and attestation state.</p></article>
+          <article class="card"><h3>Status Bar</h3><p>Current jurisdiction, violation count, and network context at all times.</p></article>
+          <article class="card"><h3>Helix Language Support</h3><p>Syntax highlighting for sovereign functions, ZK operations, and TEE directives.</p></article>
+          <article class="card"><h3>TEE Simulator</h3><p>Boot SGX, TDX, SEV, and Nitro simulation workflows from the editor.</p></article>
+        </div>
+
+        <div class="tag-list stack-bottom-14">
+          <span class="tag">Python</span>
+          <span class="tag">Rust</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">JavaScript</span>
+          <span class="tag">Helix DSL</span>
+        </div>
+
+        <a href="https://github.com/aethelred-foundation/vscode-aethelred" class="btn btn-outline" target="_blank" rel="noopener noreferrer">Install from VS Code Marketplace</a>
+
+        <div class="code-block stack-top-16">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">sovereign_model.py</span>
+          </div>
+<pre><code>from aethelred.integrations import VerificationRecorder, wrap_pytorch_model
+
+class RiskModel:
+    def __call__(self, features):
+        score = sum(features) / max(len(features), 1)
+        return {"score": score, "decision": "approve" if score &lt; 0.7 else "review"}
+
+def sink(envelope):
+    print(f"{envelope.framework}:{envelope.operation} {envelope.output_hash[:12]}...")
+
+recorder = VerificationRecorder(sink=sink, default_metadata={"service": "risk-api"})
+model = wrap_pytorch_model(RiskModel(), recorder=recorder, component_name="RiskScorerV1")
+print(model([0.12, 0.40, 0.20]))</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="verifier" aria-labelledby="verifier-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Attestation</p>
+          <h2 class="section-title" id="verifier-title">Seal Verifier</h2>
+          <p class="section-lead">Verify that an AI job was executed securely inside a trusted execution environment.</p>
+        </div>
+
+        <div class="verify-card stack-bottom-16">
+          <label for="quoteInput">Attestation Quote</label>
+          <textarea id="quoteInput" data-verify-input placeholder="Paste your base64 encoded SGX/Nitro quote..." spellcheck="false"></textarea>
+          <div class="inline-action-row">
+            <button class="btn btn-primary btn-small" data-verify-trigger>Verify Quote</button>
+            <span class="mono inline-note">Mock output for frontend preview. Production should call attestation APIs.</span>
+          </div>
+          <div class="verify-result" data-verify-result></div>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="card"><h3>1. Paste Quote</h3><p>Paste enclave attestation quote from job output.</p></article>
+          <article class="card"><h3>2. Verify Signature</h3><p>Validate SGX/Nitro signature chain against trusted roots.</p></article>
+          <article class="card"><h3>3. Match Measurement</h3><p>Ensure enclave measurement matches the model hash on-chain.</p></article>
+          <article class="card"><h3>4. Return Status</h3><p>Receive verification state, seal metadata, timestamp, and validator set.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="local-dev" aria-labelledby="local-dev-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Development</p>
+          <h2 class="section-title" id="local-dev-title">Local development environment</h2>
+          <p class="section-lead">Spin up a full Aethelred devnet locally with Docker Compose or CLI workflows.</p>
+        </div>
+
+        <div class="terminal stack-bottom-16">
+          <div class="terminal-head">
+            <div class="terminal-dots"><span></span><span></span><span></span></div>
+            <span class="terminal-label">local devnet setup</span>
+          </div>
+<pre><code># Clone repository
+git clone https://github.com/aethelred-foundation/aethelred.git
+cd aethelred
+
+# Start local devnet
+docker compose -f tools/devnet/docker-compose.yml up -d
+
+# Or use CLI
+aeth local up
+aeth local status
+aeth local logs</code></pre>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="card"><h3>4-Node Validator Set</h3><p>Full PoUW consensus simulation with local validators.</p></article>
+          <article class="card"><h3>Local Faucet</h3><p>On-demand test token issuance during development.</p></article>
+          <article class="card"><h3>Block Explorer</h3><p>Inspect blocks, transactions, and digital seals locally.</p></article>
+          <article class="card"><h3>Test Accounts</h3><p>Pre-funded accounts ready for integration and E2E testing.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sdks" aria-labelledby="sdks-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Libraries</p>
+          <h2 class="section-title" id="sdks-title">Official SDKs</h2>
+          <p class="section-lead">The current site documents four official SDKs with a common client surface for jobs, seals, models, validators, and verification utilities. This section expands those libraries into package-level guidance, install paths, and best-fit usage patterns.</p>
+        </div>
+
+        <div class="grid grid-2 sdk-grid">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark">
+                  <img class="brand-logo" src="/assets/logos/python.svg" alt="Python logo" width="22" height="22">
+                </span>
+                <div>
+                  <p class="detail-kicker">pip package</p>
+                  <h3>Python SDK</h3>
+                </div>
+              </div>
+            </div>
+            <div class="install-chip mono">pip install aethelred-sdk</div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Name</span>
+                <strong class="mono">aethelred-sdk</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Version</span>
+                <strong class="mono">1.0.0</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>License</span>
+                <strong class="mono">Apache-2.0</strong>
+              </div>
+            </div>
+            <p>Python 3.9+, async client flows, sovereign decorators, and optional integration extras for recorder-backed model-serving pipelines.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Inference APIs, notebook workflows, and orchestration layers that need proof capture without changing the application model.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Includes</span>
+                <p><span class="mono">jobs</span>, <span class="mono">seals</span>, <span class="mono">models</span>, <span class="mono">validators</span>, and framework wrappers via <span class="mono">aethelred.integrations</span>.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Async Workflows</span>
+              <span class="tag">PyTorch</span>
+              <span class="tag">LangChain</span>
+              <span class="tag">Hugging Face</span>
+            </div>
+            <div class="detail-actions">
+              <a href="/developers.html#quickstart" class="btn btn-small btn-primary">Quick Start</a>
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/sdk/python" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark">
+                  <img class="brand-logo" src="/assets/logos/typescript.svg" alt="TypeScript logo" width="22" height="22">
+                </span>
+                <div>
+                  <p class="detail-kicker">npm package</p>
+                  <h3>TypeScript SDK</h3>
+                </div>
+              </div>
+            </div>
+            <div class="install-chip mono">npm install @aethelred/sdk</div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Name</span>
+                <strong class="mono">@aethelred/sdk</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Version</span>
+                <strong class="mono">1.0.0</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>License</span>
+                <strong class="mono">Apache-2.0</strong>
+              </div>
+            </div>
+            <p>TypeScript-first APIs for Node.js 18+ and browser environments with typed client methods for jobs, seals, and network operations.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Web applications, dashboards, serverless functions, and browser-based tools that need strongly typed integration surfaces.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Includes</span>
+                <p><span class="mono">AethelredClient</span>, completion polling, seal verification, and consistent access to the shared SDK module surface.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Typed APIs</span>
+              <span class="tag">Browser</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">Completion Polling</span>
+            </div>
+            <div class="detail-actions">
+              <a href="/developers.html#quickstart" class="btn btn-small btn-primary">Quick Start</a>
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/sdk/typescript" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark">
+                  <img class="brand-logo brand-logo-mono" src="/assets/logos/rust.svg" alt="Rust logo" width="22" height="22">
+                </span>
+                <div>
+                  <p class="detail-kicker">cargo crate</p>
+                  <h3>Rust SDK</h3>
+                </div>
+              </div>
+            </div>
+            <div class="install-chip mono">cargo add aethelred-sdk</div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Name</span>
+                <strong class="mono">aethelred-sdk</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Version</span>
+                <strong class="mono">1.0.0</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>License</span>
+                <strong class="mono">Apache-2.0</strong>
+              </div>
+            </div>
+            <p>Rust 1.75+ interfaces for services and system components with async client flows, verification helpers, and wasm-oriented ambitions.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Performance-sensitive workers, validator-side services, and backend components that need predictable async verification flows.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Includes</span>
+                <p><span class="mono">SubmitJobRequest</span>, completion polling, seal listing, seal verification, and the same core module model used across other SDKs.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Async</span>
+              <span class="tag">Systems</span>
+              <span class="tag">Verification</span>
+              <span class="tag">WASM Goals</span>
+            </div>
+            <div class="detail-actions">
+              <a href="/developers.html#quickstart" class="btn btn-small btn-primary">Quick Start</a>
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/sdk/rust" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark">
+                  <img class="brand-logo" src="/assets/logos/go.svg" alt="Go logo" width="22" height="22">
+                </span>
+                <div>
+                  <p class="detail-kicker">go module</p>
+                  <h3>Go SDK</h3>
+                </div>
+              </div>
+            </div>
+            <div class="install-chip mono">go get github.com/aethelred/sdk-go</div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Name</span>
+                <strong class="mono">github.com/aethelred/sdk-go</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Version</span>
+                <strong class="mono">1.0.0</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>License</span>
+                <strong class="mono">Apache-2.0</strong>
+              </div>
+            </div>
+            <p>Idiomatic Go 1.21+ client interfaces for backend services, automation workers, and infrastructure integrations that rely on context-aware calls.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Operational tooling, microservices, and platform-side integrations that need clean concurrency and explicit context propagation.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Includes</span>
+                <p>Context-first interfaces across jobs, seals, and verification flows with the same cross-language client parity documented in the developer portal.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Context</span>
+              <span class="tag">Services</span>
+              <span class="tag">Tooling</span>
+              <span class="tag">Infrastructure</span>
+            </div>
+            <div class="detail-actions">
+              <a href="/developers.html#quickstart" class="btn btn-small btn-primary">Quick Start</a>
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/sdk/go" class="btn btn-small btn-outline" target="_blank" rel="noopener noreferrer">GitHub</a>
+            </div>
+          </article>
+        </div>
+
+        <div class="code-block stack-top-16">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">official sdk installation</span>
+          </div>
+<pre><code># Python
+pip install aethelred-sdk
+
+# TypeScript
+npm install @aethelred/sdk
+
+# Rust
+cargo add aethelred-sdk
+
+# Go
+go get github.com/aethelred/sdk-go</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="frameworks" aria-labelledby="frameworks-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Framework Integrations</p>
+          <h2 class="section-title" id="frameworks-title">Connect existing AI stacks without rebuilding them</h2>
+          <p class="section-lead">The current repo implements native verification surfaces for PyTorch, TensorFlow, Hugging Face, LangChain, FastAPI, Next.js, Docker delivery templates, and Kubernetes Helm deployment profiles. Each surface follows the same envelope contract so teams can attach proof capture without forking application logic.</p>
+        </div>
+
+        <div class="grid integration-grid">
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/pytorch.svg" alt="PyTorch logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Model Runtime</p>
+                  <h3>PyTorch</h3>
+                </div>
+              </div>
+            </div>
+            <p>Wrap <span class="mono">torch.nn.Module</span>-style callables and emit verification envelopes on forward calls without changing the caller contract.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>wrap_pytorch_model(model, recorder=..., component_name=...)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Batch inference services, scoring pipelines, and GPU-backed model endpoints that need deterministic output hashing and metadata capture.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">VerificationRecorder</span>
+              <span class="tag">Model Wrapper</span>
+              <span class="tag">Output Hashing</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/python/aethelred/integrations/pytorch.py" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/tensorflow.svg" alt="TensorFlow logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Keras Callback</p>
+                  <h3>TensorFlow</h3>
+                </div>
+              </div>
+            </div>
+            <p>Attach verification to Keras-compatible training and prediction flows through a callback factory that degrades safely when TensorFlow is unavailable.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>create_keras_callback(recorder=..., capture_batch_events=...)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Training pipelines, evaluation jobs, and epoch-level audit trails for TensorFlow or Keras workloads.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Keras</span>
+              <span class="tag">Callback Factory</span>
+              <span class="tag">Epoch Events</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/python/aethelred/integrations/tensorflow.py" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/huggingface.svg" alt="Hugging Face logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Pipeline Runtime</p>
+                  <h3>Hugging Face</h3>
+                </div>
+              </div>
+            </div>
+            <p>Use <span class="mono">wrap_transformers_pipeline</span> to preserve the standard transformers pipeline interface while attaching proof capture and component-level identity.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>wrap_transformers_pipeline(pipeline, recorder=..., component_name=...)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Classification, moderation, and generation services built on <span class="mono">transformers.pipeline</span> with verified metadata capture.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Pipeline Wrapper</span>
+              <span class="tag">Component Identity</span>
+              <span class="tag">Verified Inference</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/python/aethelred/integrations/huggingface.py" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/langchain.svg" alt="LangChain logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Orchestration</p>
+                  <h3>LangChain</h3>
+                </div>
+              </div>
+            </div>
+            <p>Wrap chains and runnables so <span class="mono">invoke</span>, <span class="mono">ainvoke</span>, <span class="mono">batch</span>, and <span class="mono">abatch</span> all emit proof-aware telemetry.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>wrap_langchain_runnable(runnable, recorder=..., component_name=...)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">RAG pipelines, chain orchestration, and agent backends that need trace metadata attached to verified execution flows.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Runnable Wrapper</span>
+              <span class="tag">Trace Metadata</span>
+              <span class="tag">Batch Support</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/python/aethelred/integrations/langchain.py" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/fastapi.svg" alt="FastAPI logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">ASGI Middleware</p>
+                  <h3>FastAPI</h3>
+                </div>
+              </div>
+            </div>
+            <p>Emit Aethelred verification headers from ASGI responses and record request and response envelopes in the middleware path.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>app.add_middleware(AethelredVerificationMiddleware, recorder=...)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Verification APIs, Python inference gateways, and service layers that need proof headers on every response.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">ASGI</span>
+              <span class="tag">Response Headers</span>
+              <span class="tag">Envelope Capture</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/python/aethelred/integrations/fastapi.py" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-mono" src="/assets/logos/nextjs.svg" alt="Next.js logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">API Handlers</p>
+                  <h3>Next.js</h3>
+                </div>
+              </div>
+            </div>
+            <p>Wrap Pages Router handlers and App Router route handlers so responses ship with verification metadata without custom response plumbing.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>withAethelredApiRoute(handler, options?)</span>
+                  <span>withAethelredRouteHandler(handler, options?)</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">TypeScript API routes, serverless handlers, and application endpoints that need verification headers and response hashing.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Pages Router</span>
+              <span class="tag">App Router</span>
+              <span class="tag">Verification Headers</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/blob/main/sdk/typescript/src/integrations/nextjs.ts" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/docker.svg" alt="Docker logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Delivery Templates</p>
+                  <h3>Docker</h3>
+                </div>
+              </div>
+            </div>
+            <p>Use the official image templates and compose stacks to package FastAPI and Next.js verification surfaces into reproducible runtime environments.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>docker build -f integrations/deploy/docker/Dockerfile.fastapi-verifier ...</span>
+                  <span>docker compose -f integrations/deploy/docker/docker-compose.verification-stack.yml up --build</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Local stacks, CI smoke environments, and reproducible integration testing for verification-aware services.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Image Templates</span>
+              <span class="tag">Compose Stack</span>
+              <span class="tag">Local Devnet</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/integrations/deploy/docker" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+
+          <article class="card detail-card integration-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="sdk-mark integration-mark">
+                  <img class="brand-logo brand-logo-wide" src="/assets/logos/kubernetes.svg" alt="Kubernetes logo" width="24" height="24">
+                </span>
+                <div>
+                  <p class="detail-kicker">Helm Deployment</p>
+                  <h3>Kubernetes</h3>
+                </div>
+              </div>
+            </div>
+            <p>Deploy verification gateways through the Helm chart that packages app containers, config, service objects, ingress, HPA, and an optional verifier sidecar.</p>
+            <div class="integration-stack">
+              <div class="integration-row">
+                <span class="detail-label">Entry Point</span>
+                <div class="integration-entry mono">
+                  <span>helm upgrade --install verifier-fastapi deploy/helm/aethelred-verification-gateway -f deploy/helm/aethelred-verification-gateway/values/fastapi.yaml</span>
+                  <span>helm upgrade --install verifier-nextjs deploy/helm/aethelred-verification-gateway -f deploy/helm/aethelred-verification-gateway/values/nextjs.yaml</span>
+                </div>
+              </div>
+              <div class="integration-row">
+                <span class="detail-label">Typical Use</span>
+                <p class="integration-copy">Clustered API deployments, autoscaled verification gateways, and platform-managed rollout environments.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Helm Chart</span>
+              <span class="tag">Ingress</span>
+              <span class="tag">Optional Sidecar</span>
+            </div>
+            <div class="detail-actions">
+              <a href="https://github.com/aethelred-foundation/AethelredMVP/tree/main/integrations/deploy/helm/aethelred-verification-gateway" class="btn btn-small btn-primary" target="_blank" rel="noopener noreferrer">View Source</a>
+            </div>
+          </article>
+        </div>
+
+        <div class="code-block stack-top-16">
+          <div class="code-head">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">framework wrappers</span>
+          </div>
+<pre><code>from aethelred.integrations import (
+    AethelredVerificationMiddleware,
+    VerificationRecorder,
+    create_keras_callback,
+    wrap_langchain_runnable,
+    wrap_pytorch_model,
+    wrap_transformers_pipeline,
+)
+
+recorder = VerificationRecorder()
+keras_callback = create_keras_callback(recorder=recorder)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="github" aria-labelledby="github-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Open Source</p>
+          <h2 class="section-title" id="github-title">Build on open infrastructure</h2>
+          <p class="section-lead">Core protocol code, SDKs, and tooling are open source under Apache 2.0.</p>
+        </div>
+
+        <div class="repo-grid">
+          <a href="https://github.com/aethelred-foundation/aethelred" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred</h4><p>Consensus, bridge, VM, and cryptography core.</p></a>
+          <a href="https://github.com/aethelred-foundation/aethelred-sdk-ts" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred-sdk-ts</h4><p>TypeScript SDK for Node.js and browser runtimes.</p></a>
+          <a href="https://github.com/aethelred-foundation/aethelred-sdk-py" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred-sdk-py</h4><p>Python SDK with sovereign decorators.</p></a>
+          <a href="https://github.com/aethelred-foundation/aethelred-sdk-go" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred-sdk-go</h4><p>Go SDK and infrastructure-oriented utilities.</p></a>
+          <a href="https://github.com/aethelred-foundation/aethelred-sdk-rs" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred-sdk-rs</h4><p>Rust SDK with no_std and wasm support goals.</p></a>
+          <a href="https://github.com/aethelred-foundation/aethelred-cli" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>aethelred-cli</h4><p>The <span class="mono">aeth</span> command-line interface.</p></a>
+          <a href="https://github.com/aethelred-foundation/vscode-aethelred" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>vscode-aethelred</h4><p>Sovereign Copilot extension for VS Code.</p></a>
+          <a href="https://github.com/aethelred-foundation/AIPs" class="card repo-card" target="_blank" rel="noopener noreferrer"><h4>AIPs</h4><p>Aethelred Improvement Proposals repository.</p></a>
+        </div>
+
+        <div class="stack-top-16">
+          <a href="https://github.com/aethelred-foundation" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Star on GitHub &rarr;</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

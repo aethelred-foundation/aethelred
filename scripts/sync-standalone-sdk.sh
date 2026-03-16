@@ -31,7 +31,7 @@ Options:
 
 Examples:
   ./scripts/sync-standalone-sdk.sh --sdk typescript --validate
-  ./scripts/sync-standalone-sdk.sh --sdk rust --validate --push-repo AethelredFoundation/aethelred-sdk-rust --create-pr
+  ./scripts/sync-standalone-sdk.sh --sdk rust --validate --push-repo aethelred-foundation/aethelred-sdk-rust --create-pr
 USAGE
 }
 

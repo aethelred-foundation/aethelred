@@ -1,13 +1,16 @@
 {
   "version": 1,
-  "repo": "AethelredFoundation/aethelred-cosmos-node",
+  "repo": "aethelred-foundation/aethelred",
   "role": "canonical-chain",
   "authority_group": "chain-go",
   "release_authority": true,
   "ratification_status": "pending-foundation-ratification",
   "ratification_record": "docs/governance/adr-0001-chain-repo-authority-canonicalization.md",
   "go_module": "github.com/aethelred/aethelred",
-  "canonical_for": ["chain-go"],
-  "supersedes": ["AethelredFoundation/aethelred-core"],
+  "canonical_for": [
+    "chain-go",
+    "public-source-of-truth"
+  ],
+  "supersedes": [],
   "authority_registry": "docs/governance/repo-authority-registry.json"
 }

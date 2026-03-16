@@ -1,35 +1,32 @@
 # Security Audit Evidence
 
-This directory is the source of truth for third-party audit evidence referenced by this repository.
+This directory is the public evidence index referenced by Aethelred GitHub
+repositories and release notes.
 
 ## Current Status
 
-- Status: `IN_PROGRESS`
-- Scope: Ethereum contracts (`/contracts/ethereum`) and consensus-critical vote-extension paths
-- Latest update: `2026-02-14`
-- Baseline report: `/audits/reports/2026-02-14-preaudit-baseline.md`
+- Internal full-protocol review: completed
+- External consultant VRF review: completed
+- External mainnet audits for contracts and consensus-critical paths: in progress
+- Status tracker: [STATUS.md](STATUS.md)
 
 ## Required Evidence Before Mainnet
 
-1. Signed Statement of Work (SoW) from the auditor
-2. Audit report PDF(s) with version + commit hash scope
-3. Machine-readable findings list (JSON/CSV/Markdown)
-4. Remediation report mapping findings to commits
-5. Auditor sign-off that critical/high findings are resolved or accepted with risk notes
+1. Signed statement of work or engagement record
+2. Audit report(s) with scoped commit or tag references
+3. Machine-readable findings list or remediation tracker
+4. Evidence linking findings to code or configuration fixes
+5. Auditor or reviewer sign-off for completed scopes
 
 ## Repository Convention
 
-- Put final audit reports under `/audits/reports/`
-- Start from `/audits/reports/SIGNED_REPORT_TEMPLATE.md` for completed reports
-- Put remediation mappings under `/audits/remediation/`
-- Keep `/audits/STATUS.md` updated as findings move from open to closed
-- For any report marked `Completed` in `/audits/STATUS.md`, include one of:
-  - `Signed-Off: yes` (or `true` / `approved`)
-  - `Auditor-Signature: <reference>`
+- Store reports under `docs/audits/reports/`
+- Store remediation mappings under `docs/audits/remediation/`
+- Keep [STATUS.md](STATUS.md) current when findings or sign-off status changes
+- Do not use badges or release notes that imply a completed external audit until
+  signed evidence is published here
 
-## Deployment Gate
+## Release Note Rule
 
-- `make audit-signoff-check` validates that both `/contracts/ethereum` and `Consensus + vote extensions` have at least one `Completed` row in `/audits/STATUS.md` with valid signed metadata and a real report path.
-- The staging/canary/production deployment workflow now runs this gate before any cluster rollout.
-
-If an audit is not complete, do not claim "passed" status in badges or release notes.
+If an audit is not complete, release notes may describe the audit as "in
+progress" or "active", but must not imply final sign-off.

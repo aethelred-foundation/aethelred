@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Sandbox | Aethelred</title>
+  <meta name="description" content="Infinite Sandbox is the controlled Aethelred environment for local devnet simulation, compliance validation, Digital Seal replay, and testnet readiness.">
+  <meta name="keywords" content="Aethelred sandbox, Infinite Sandbox, compliance sandbox, local devnet, Digital Seal verification, developer release readiness">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/sandbox.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/sandbox.html">
+  <meta property="og:title" content="Infinite Sandbox | Aethelred">
+  <meta property="og:description" content="A controlled environment for local devnet simulation, regulatory checks, seal replay, and release readiness on Aethelred.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Infinite Sandbox social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Infinite Sandbox | Aethelred">
+  <meta name="twitter:description" content="Rehearse verifiable AI workloads with local devnet, compliance checks, Digital Seal replay, and launch-readiness workflows.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Infinite Sandbox social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.aethelred.io/sandbox.html#webpage",
+        "name": "Infinite Sandbox",
+        "url": "https://www.aethelred.io/sandbox.html",
+        "description": "Infinite Sandbox is the controlled Aethelred environment for local devnet simulation, compliance validation, Digital Seal replay, and testnet readiness.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/sandbox.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Infinite Sandbox social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/sandbox.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Infinite Sandbox",
+            "item": "https://www.aethelred.io/sandbox.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-sandbox">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="sandbox-resources">Resources</button>
+          <div class="dropdown-panel" id="sandbox-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#modes" role="menuitem">Sandbox Modes</a>
+            <a href="#coverage" role="menuitem">Validation Matrix</a>
+            <a href="#workflow" role="menuitem">Workflow</a>
+            <a href="#toolchain" role="menuitem">Toolchain</a>
+            <a href="#incentives" role="menuitem">Incentives</a>
+            <a href="/wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="https://www.aethelred.org/" role="menuitem">Foundation</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/tools.html" class="btn btn-small btn-primary">Explore Tools</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Sandbox Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#modes" class="mobile-link">Sandbox Modes</a>
+      <a href="#coverage" class="mobile-link">Validation Matrix</a>
+      <a href="#workflow" class="mobile-link">Workflow</a>
+      <a href="#toolchain" class="mobile-link">Toolchain</a>
+      <a href="#incentives" class="mobile-link">Incentives</a>
+      <a href="/wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="https://www.aethelred.org/" class="mobile-link">Foundation</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Controlled Build Environment</p>
+          <h1 class="hero-title" id="page-title">Infinite <span class="gradient-word">Sandbox</span></h1>
+          <p class="hero-subtitle">Infinite Sandbox is the controlled environment for rehearsing verifiable AI workloads before public network exposure. Simulate the full local devnet, run compliance checks against citation-backed policy rules, inspect Digital Seals, and move cleanly into the <a class="body-link" href="/developers.html">developer documentation</a>, the <a class="body-link" href="/tools.html">toolchain stack</a>, and the <a class="body-link" href="/testnet.html">testnet rollout path</a> without changing your operational model.</p>
+          <div class="hero-tags" aria-label="Sandbox capabilities">
+            <span class="hero-tag">Local Devnet</span>
+            <span class="hero-tag">Regulatory Sandbox</span>
+            <span class="hero-tag">Seal Replay</span>
+            <span class="hero-tag">Release Readiness</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#modes" class="btn btn-primary">Explore Sandbox Modes</a>
+            <a href="#toolchain" class="btn btn-secondary">Open Toolchain</a>
+          </div>
+          <div class="scroll-cue">Scroll to inspect the sandbox surface</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Compliance-Aware from Day One</h4>
+            <p>Run citation-backed checks across GDPR, UAE data law, PDPA, HIPAA, and sanctions controls before a workload reaches public infrastructure.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Protocol-Realistic Local Surface</h4>
+            <p>Rehearse against the documented 10-service devnet with validators, prover, data services, explorer, faucet, and monitoring already in the workflow.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Promotion Path Built In</h4>
+            <p>Use the same surface to prepare for testnet validation, community review, grants, and Seals-based incentive programs described in the tokenomics.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>10 Services</strong>
+              <span>Docker Compose devnet topology</span>
+            </div>
+            <div class="metric-pill">
+              <strong>4 Regimes</strong>
+              <span>Citation-backed policy coverage</span>
+            </div>
+            <div class="metric-pill">
+              <strong>15% Allocation</strong>
+              <span>Ecosystem and grants support</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">A sandbox built around actual protocol surfaces</h2>
+          <p class="section-lead">Infinite Sandbox is not a detached demo environment. It is a controlled rehearsal layer for the same devnet, compliance, seal, and diagnostic surfaces described in the Aethelred protocol documentation.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">CORE</span>
+                <div>
+                  <p class="detail-kicker">What It Is</p>
+                  <h3>Protocol-aware validation before public rollout</h3>
+                </div>
+              </div>
+            </div>
+            <p>Use Infinite Sandbox to collapse prototype, compliance review, seal inspection, and launch-readiness into a single controlled workflow. Instead of validating only application code, teams validate the operational assumptions around proof, jurisdiction, transfer policy, and network behavior as well.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Primary Outcome</span>
+                <p>Reduce divergence between local iteration, testnet rehearsal, and production operating procedures.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Operational Scope</span>
+                <p>Devnet orchestration, compliance checks, attestation review, diagnostics, and promotion readiness.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Dev Surface</span>
+                <strong>Local devnet, SDK integration, explorer visibility, and faucet-backed rehearsal.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Control Surface</span>
+                <strong>Sanctions, consent, transfer, retention, and seal validation signals.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Promotion Surface</span>
+                <strong>Diagnostics, readiness gates, and handoff into testnet and community review.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Why teams use Infinite Sandbox</h3>
+            <p>It turns Aethelred integration into a controlled systems exercise instead of a last-minute launch drill.</p>
+            <ul class="list-clean stack-top-14">
+              <li>Rehearse local network behavior with validators, prover, explorer, faucet, and monitoring in the loop.</li>
+              <li>Run compliance checks against policy rules linked to actual legal citation domains instead of generic linting only.</li>
+              <li>Inspect Digital Seal outcomes before promoting workflows toward public testnet usage.</li>
+              <li>Exercise diagnostic and readiness paths already exposed through the documented Rust and TypeScript developer CLIs.</li>
+              <li>Connect engineering rehearsal to the ecosystem pathways described in the grants and Seals incentive programs.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="kpi-grid stack-top-16" aria-label="Sandbox metrics">
+          <article class="kpi">
+            <p class="kpi-label">Devnet Topology</p>
+            <p class="kpi-value">10 Services</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Validator Mesh</p>
+            <p class="kpi-value">3 Validators</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Rust CLI Surface</p>
+            <p class="kpi-value">15 Command Groups</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Citation Domains</p>
+            <p class="kpi-value">4 Policy Regimes</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Seals Program</p>
+            <p class="kpi-value">700M AETHEL</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="modes" aria-labelledby="modes-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Sandbox Modes</p>
+          <h2 class="section-title" id="modes-title">Four ways to validate before launch</h2>
+          <p class="section-lead">Infinite Sandbox covers the local runtime, the compliance plane, the proof plane, and the release gate that sits between engineering and public deployment.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">DEV</span>
+                <div>
+                  <p class="detail-kicker">Local Devnet</p>
+                  <h3>Rehearse against the full local network surface</h3>
+                </div>
+              </div>
+            </div>
+            <p>The documented local environment includes three validators, a zkML prover with GPU passthrough, PostgreSQL, Redis, an API gateway with WebSocket support, block explorer, faucet, and Prometheus plus Grafana monitoring.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Contract testing, SDK integration, explorer-driven debugging, and end-to-end staging of inference flows.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Output</span>
+                <p>A repeatable local rehearsal surface that exposes the same operational seams you will need on testnet.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">3 Validators</span>
+              <span class="tag">Explorer</span>
+              <span class="tag">Faucet</span>
+              <span class="tag">Monitoring</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">LAW</span>
+                <div>
+                  <p class="detail-kicker">Regulatory Sandbox</p>
+                  <h3>Check workloads against citation-backed policy controls</h3>
+                </div>
+              </div>
+            </div>
+            <p>The protocol documentation describes a regulatory sandbox module that checks workloads against GDPR, UAE Federal Decree-Law, PDPA, and HIPAA references while supporting OFAC SDN, EU, and UN sanctions screening.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Teams that need to inspect cross-border transfer logic, consent posture, data handling, and counterparty screening before launch.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Output</span>
+                <p>Structured signals for missing consent, transfer risk, sanctions conflicts, retention issues, and unencrypted PII exposure.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">GDPR</span>
+              <span class="tag">HIPAA</span>
+              <span class="tag">PDPA</span>
+              <span class="tag">Sanctions</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SEAL</span>
+                <div>
+                  <p class="detail-kicker">Seal Replay</p>
+                  <h3>Inspect proof-backed execution after each workload</h3>
+                </div>
+              </div>
+            </div>
+            <p>Digital Seals are minted when a supermajority of validators agrees on a result. Infinite Sandbox lets teams center their validation workflow around seal existence, provenance, and verification rather than only application-side success states.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Attestation review, post-run verification, support playbooks, and proof-aware application QA.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Output</span>
+                <p>Confidence that the workload completed with the expected proof and can be promoted into wider network testing.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Digital Seal</span>
+              <span class="tag">Verification</span>
+              <span class="tag">Attestation</span>
+              <span class="tag">Provenance</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SHIP</span>
+                <div>
+                  <p class="detail-kicker">Release Gate</p>
+                  <h3>Promote only after offline checks and diagnostics pass</h3>
+                </div>
+              </div>
+            </div>
+            <p>The broader infrastructure documentation describes sandbox offline tests and a required gate in CI. Combined with diagnostics, hardware detection, linting, profiling, and benchmarking, Infinite Sandbox becomes the release checkpoint before public exposure.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Best For</span>
+                <p>Teams that need a disciplined handoff from development into public testnet and later production pathways.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Output</span>
+                <p>A clearer go or no-go decision on network readiness, policy readiness, and operational readiness.</p>
+              </div>
+            </div>
+            <div class="tag-list detail-tags">
+              <span class="tag">Diagnostics</span>
+              <span class="tag">Hardware Detection</span>
+              <span class="tag">CI Gate</span>
+              <span class="tag">Benchmarking</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="coverage" aria-labelledby="coverage-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Validation Matrix</p>
+          <h2 class="section-title" id="coverage-title">What Infinite Sandbox can validate</h2>
+          <p class="section-lead">The sandbox is most useful when teams are explicit about the control surfaces they want to prove before launch. These are the documented checks that matter operationally.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Control Surface</th>
+                <th>Checks Performed</th>
+                <th>Operational Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sanctions Screening</td>
+                <td>OFAC SDN, EU, and UN list screening before workload promotion.</td>
+                <td>Reduces the chance that a workflow proceeds with prohibited counterparties or addresses.</td>
+              </tr>
+              <tr>
+                <td>Consent Governance</td>
+                <td>Purpose-specific consent tracking with support for withdrawal-aware review.</td>
+                <td>Creates a clearer audit trail for regulated data handling across AI workflows.</td>
+              </tr>
+              <tr>
+                <td>Data Transfer Controls</td>
+                <td>Source and destination tracking with cross-border transfer violation detection.</td>
+                <td>Flags jurisdiction mismatches before they become production incidents.</td>
+              </tr>
+              <tr>
+                <td>PII and Retention</td>
+                <td>Signals for unencrypted PII exposure, missing consent, and retention-policy violations.</td>
+                <td>Surfaces privacy and governance drift while remediation is still cheap.</td>
+              </tr>
+              <tr>
+                <td>Seal Integrity</td>
+                <td>Digital Seal existence, verification path, and proof-aware workload completion review.</td>
+                <td>Confirms that application success is backed by verifiable protocol evidence.</td>
+              </tr>
+              <tr>
+                <td>Network Readiness</td>
+                <td>Local orchestration, diagnostics, wallet flow, explorer checks, and promotion readiness.</td>
+                <td>Reduces last-mile integration risk when moving into the public testnet environment.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Protocol-native controls, not a substitute for release discipline</h3>
+            <p>Infinite Sandbox helps engineering teams validate policy and proof assumptions early. Final legal review, key management, and production sign-off still belong in your release process.</p>
+          </div>
+          <a href="/testnet.html" class="btn btn-primary">Review Testnet Path</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="workflow" aria-labelledby="workflow-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workflow</p>
+          <h2 class="section-title" id="workflow-title">A disciplined promotion path for builders</h2>
+          <p class="section-lead">Infinite Sandbox is most effective when it is treated as the rehearsal stage between implementation and public network exposure.</p>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="step-card">
+            <span class="step-index">01</span>
+            <h3>Provision the local surface</h3>
+            <p>Start from the documented local devnet topology so validators, prover, data services, explorer, faucet, and monitoring are in the same rehearsal loop.</p>
+            <a href="/tools.html#local-dev" class="card-link">Open local devnet details &rarr;</a>
+          </article>
+
+          <article class="step-card">
+            <span class="step-index">02</span>
+            <h3>Run workloads and inspect seals</h3>
+            <p>Submit test jobs, confirm completion, and center validation around Digital Seal output and verification rather than application logging alone.</p>
+            <a href="/developers.html#quickstart" class="card-link">Review developer quick starts &rarr;</a>
+          </article>
+
+          <article class="step-card">
+            <span class="step-index">03</span>
+            <h3>Review compliance and diagnostics</h3>
+            <p>Use the policy-aware sandbox and diagnostic surfaces to catch transfer, consent, sanctions, retention, and environment issues before promotion.</p>
+            <a href="/tools.html#vscode" class="card-link">See compliance tooling &rarr;</a>
+          </article>
+
+          <article class="step-card">
+            <span class="step-index">04</span>
+            <h3>Promote into testnet and community review</h3>
+            <p>Move validated flows into the public rollout path, then use community channels and governance feedback to tighten the production handoff.</p>
+            <a href="/community.html" class="card-link">Open community channels &rarr;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="toolchain" aria-labelledby="toolchain-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Toolchain</p>
+          <h2 class="section-title" id="toolchain-title">The surfaces that power Infinite Sandbox</h2>
+          <p class="section-lead">The sandbox experience is assembled from the same documented tools already exposed across the developer site. No parallel toolchain is required.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">RUST</span>
+                <div>
+                  <p class="detail-kicker">Primary CLI</p>
+                  <h3><span class="mono">aeth</span> for deep developer operations</h3>
+                </div>
+              </div>
+            </div>
+            <p>The Rust CLI exposes project scaffolding, model management, job submission, seal management, validator operations, profiling, benchmarking, configuration, compliance checking, and hardware detection from one surface.</p>
+            <div class="detail-actions">
+              <a href="/tools.html#cli" class="btn btn-small btn-primary">CLI Details</a>
+              <a href="/developers.html#modules" class="btn btn-small btn-outline">SDK Modules</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">TS</span>
+                <div>
+                  <p class="detail-kicker">Local Orchestration</p>
+                  <h3><span class="mono">aeth</span> for devnet and offline verification</h3>
+                </div>
+              </div>
+            </div>
+            <p>The TypeScript CLI is optimized for local development, Docker Compose orchestration, network diagnostics, offline seal verification, and wallet operations that sit directly inside sandbox rehearsal loops.</p>
+            <div class="detail-actions">
+              <a href="/tools.html#local-dev" class="btn btn-small btn-primary">Local Devnet</a>
+              <a href="/tools.html#verifier" class="btn btn-small btn-outline">Seal Verifier</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">IDE</span>
+                <div>
+                  <p class="detail-kicker">Editor Surface</p>
+                  <h3>Sovereign Copilot for compliance-aware iteration</h3>
+                </div>
+              </div>
+            </div>
+            <p>The VS Code extension brings real-time compliance linting, cost estimation, and in-editor TEE simulation into the development loop so teams can surface policy and runtime issues before execution leaves the workstation.</p>
+            <div class="detail-actions">
+              <a href="/tools.html#vscode" class="btn btn-small btn-primary">Open Extension</a>
+              <a href="/community.html#contributing" class="btn btn-small btn-outline">Contribute</a>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SDK</span>
+                <div>
+                  <p class="detail-kicker">Integration Surface</p>
+                  <h3>Multi-language SDKs and APIs for promotion-ready apps</h3>
+                </div>
+              </div>
+            </div>
+            <p>Python, TypeScript, Rust, and Go SDKs keep the same job, seal, and verification abstractions from local rehearsal into public network integration, supported by the API surfaces documented on the developers page.</p>
+            <div class="detail-actions">
+              <a href="/developers.html#quickstart" class="btn btn-small btn-primary">Quick Starts</a>
+              <a href="/developers.html#api" class="btn btn-small btn-outline">API Reference</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="incentives" aria-labelledby="incentives-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Incentives</p>
+          <h2 class="section-title" id="incentives-title">Sandbox activity sits inside the broader ecosystem path</h2>
+          <p class="section-lead">The tokenomics already reserves meaningful capacity for ecosystem growth, grants, and Seals-based incentives. Infinite Sandbox is where teams can prepare their work before participating in those broader programs.</p>
+        </div>
+
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Ecosystem &amp; Grants</h3>
+            <p>The tokenomics allocates <span class="mono">15%</span> of supply to ecosystem and grants programs designed to support developer adoption, partnerships, and tooling expansion.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">15% Allocation</span>
+              <span class="tag">Developer Grants</span>
+              <span class="tag">Partnerships</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Seals Program</h3>
+            <p>The Seals program allocates <span class="mono">700,000,000 AETHEL</span> to community incentives, and the supporting documentation explicitly counts developer activity and testnet validation as part of the broader points-based engagement path.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">700M AETHEL</span>
+              <span class="tag">Developer Activity</span>
+              <span class="tag">Testnet Validation</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Ongoing Incentives</h3>
+            <p>The whitepaper also reserves additional capacity for ongoing incentives, testnet bonuses, and early-registration programs. Sandbox readiness is the disciplined way to arrive prepared for those public phases.</p>
+            <div class="tag-list stack-top-12">
+              <span class="tag">Testnet Bonuses</span>
+              <span class="tag">Ongoing Incentives</span>
+              <span class="tag">Public Rollout</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Move from sandbox rehearsal into public readiness</h3>
+            <p>Use Infinite Sandbox to harden your workflow, then continue into the <a class="body-link" href="/testnet.html">testnet launch path</a>, the <a class="body-link" href="/community.html">builder community</a>, and the <a class="body-link" href="https://www.aethelred.org/governance">foundation governance and grants process</a>.</p>
+          </div>
+          <a href="/community.html" class="btn btn-primary">Open Community Hub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

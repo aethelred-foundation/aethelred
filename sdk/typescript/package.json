@@ -78,12 +78,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AethelredFoundation/AethelredMVP.git",
-    "directory": "sdk/typescript"
+    "url": "https://github.com/aethelred-foundation/aethelred-sdk-ts.git"
   },
-  "homepage": "https://github.com/AethelredFoundation/AethelredMVP/tree/main/sdk/typescript",
+  "homepage": "https://github.com/aethelred-foundation/aethelred-sdk-ts",
   "bugs": {
-    "url": "https://github.com/AethelredFoundation/AethelredMVP/issues"
+    "url": "https://github.com/aethelred-foundation/aethelred-sdk-ts/issues"
   },
   "engines": {
     "node": ">=18.0.0"

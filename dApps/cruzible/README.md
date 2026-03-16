@@ -1,99 +1,134 @@
-# Aethelred Cruzible
-
-[![CI/CD](https://github.com/aethelred/cruzible/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/aethelred/cruzible/actions)
-[![Coverage](https://codecov.io/gh/aethelred/cruzible/branch/main/graph/badge.svg)](https://codecov.io/gh/aethelred/cruzible)
-[![Security](https://img.shields.io/badge/security-internal_review-yellow)](backend/contracts/SECURITY_AUDIT.md)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
-> **Blockchain dashboard and liquid staking interface for the Aethelred sovereign AI verification network** — pre-mainnet; see [public readiness checklist](docs/architecture/12-public-readiness.md)
-
-[Demo](https://demo.aethelred.io) • [Documentation](https://docs.aethelred.io) • [API Reference](https://api.aethelred.io/docs)
-
----
-
-## 🌟 Features
-
-### Blockchain Explorer
-- **Real-time block tracking** - Monitor blocks as they're produced
-- **Transaction details** - Full transaction history with filtering
-- **Validator monitoring** - Track validator performance and uptime
-- **Network statistics** - Comprehensive network health metrics
-
-### AI Job Verification
-- **Job submission** - Submit AI inference jobs with TEE attestation
-- **Validator assignment** - Automatic validator selection for verification
-- **Proof verification** - ZK proofs, TEE attestations, MPC proofs
-- **Payment settlement** - Automated payment distribution
-
-### Liquid Staking (stAETHEL)
-- **Stake AETHEL** - Earn rewards while maintaining liquidity
-- **Instant liquidity** - Trade stAETHEL without unbonding
-- **Validator selection** - Choose validators or auto-delegate
-- **Reward claiming** - Compound or claim rewards
-
-### Governance *(under development — not yet deployed on-chain)*
-- **Proposal creation** - Submit protocol upgrade proposals
-- **Voting** - Participate in on-chain governance
-- **Delegation** - Delegate voting power
-- **Treasury** - Community fund management
-
-> **Note:** The governance contract is not yet deployed. The UI shows preview layouts but all on-chain actions (proposal submission, voting, delegation) are gated with development notices. See the [public readiness checklist](docs/architecture/12-public-readiness.md) for current launch status.
+<div align="center">
+  <img src="Cruzible Logo.png" alt="Cruzible" width="200" />
+  <h1>Cruzible</h1>
+  <p><strong>TEE-verified liquid staking vault for the Aethelred sovereign L1</strong></p>
+  <p>
+    <a href="https://github.com/aethelred-foundation/cruzible/actions/workflows/ci-cd.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/cruzible/ci-cd.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+    <a href="https://codecov.io/gh/aethelred-foundation/cruzible"><img src="https://img.shields.io/codecov/c/github/aethelred-foundation/cruzible?style=flat-square&label=coverage" alt="Coverage"></a>
+    <a href="backend/contracts/SECURITY_AUDIT.md"><img src="https://img.shields.io/badge/audit-120_attack_analysis-informational?style=flat-square" alt="Audit"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
+  </p>
+  <p>
+    <a href="https://docs.aethelred.io">Docs</a> &middot;
+    <a href="https://api.aethelred.io/docs">API Reference</a> &middot;
+    <a href="https://discord.gg/aethelred">Discord</a> &middot;
+    <a href="docs/architecture/12-public-readiness.md">Public Readiness</a>
+  </p>
+</div>
 
 ---
 
-## 🏗️ Architecture
+## Overview
 
+Cruzible is a full-stack liquid staking application built on **Aethelred** — a sovereign Layer 1 optimised for verifiable AI computation. Users can stake AETHEL, receive stAETHEL as a liquid receipt token, explore on-chain activity, monitor validators, and submit TEE-attested AI inference jobs — all from a single interface.
+
+> **Status** &mdash; Pre-mainnet. See the [public readiness checklist](docs/architecture/12-public-readiness.md) for launch progress.
+
+---
+
+## Features
+
+<table>
+<tr>
+<td width="50%">
+
+**Blockchain Explorer**
+- Real-time block tracking with WebSocket feeds
+- Full transaction history with advanced filtering
+- Validator performance and uptime monitoring
+- Network health metrics dashboard
+
+</td>
+<td width="50%">
+
+**AI Job Verification**
+- TEE-attested inference job submission
+- Automatic validator assignment
+- ZK proof, TEE attestation, and MPC proof verification
+- Automated payment settlement
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Liquid Staking (stAETHEL)**
+- Stake AETHEL and earn rewards with full liquidity
+- Trade stAETHEL without unbonding periods
+- Manual or auto-delegated validator selection
+- Compound or claim rewards on demand
+
+</td>
+<td width="50%">
+
+**Governance** *(preview — not yet deployed on-chain)*
+- Protocol upgrade proposals
+- On-chain voting and delegation
+- Treasury and community fund management
+
+</td>
+</tr>
+</table>
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Frontend
+        A[Next.js 14 / React 18<br/>Tailwind CSS / Wagmi]
+    end
+
+    subgraph API Gateway
+        B[Express / TypeScript<br/>WebSocket / JWT Auth]
+    end
+
+    subgraph Blockchain Node
+        C[Rust / Tendermint<br/>HotStuff BFT]
+    end
+
+    subgraph Storage
+        D[(PostgreSQL 16<br/>Prisma ORM)]
+        E[(Redis 7<br/>Cache & Pub/Sub)]
+    end
+
+    subgraph Smart Contracts
+        F[CosmWasm<br/>AI Job Manager / AethelVault<br/>Governance / Seal Manager<br/>Model Registry / CW20 Staking]
+    end
+
+    A <-->|REST + WS| B
+    B <-->|gRPC| C
+    B --- D
+    B --- E
+    C --- F
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CRUZIBLE ARCHITECTURE                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─────────────────┐      ┌─────────────────┐      ┌──────────┐ │
-│  │   Next.js       │      │   Express API   │      │   Rust   │ │
-│  │   (Frontend)    │◄────►│   (Gateway)     │◄────►│  (Node)  │ │
-│  │   React 18      │      │   TypeScript    │      │  Tendermint│ │
-│  │   Tailwind CSS  │      │   WebSocket     │      │  HotStuff  │ │
-│  └─────────────────┘      └────────┬────────┘      └──────────┘ │
-│                                     │                            │
-│                           ┌─────────┴─────────┐                  │
-│                           │                   │                  │
-│                      ┌────┴────┐        ┌────┴────┐             │
-│                      │PostgreSQL│        │  Redis  │             │
-│                      │  Prisma │        │  Cache  │             │
-│                      └─────────┘        └─────────┘             │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │              COSMWASM SMART CONTRACTS                      │  │
-│  │  • AI Job Manager  • AethelVault  • Governance            │  │
-│  │  • Seal Manager    • Model Registry  • CW20 Staking      │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js** >= 20.0.0
-- **Rust** >= 1.75.0
-- **Docker** & **Docker Compose**
-- **PostgreSQL** >= 16
-- **Redis** >= 7
+| Tool | Version |
+|------|---------|
+| Node.js | >= 20.0.0 |
+| Rust | >= 1.75.0 |
+| Docker + Compose | latest |
+| PostgreSQL | >= 16 |
+| Redis | >= 7 |
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/aethelred/cruzible.git
+# Clone
+git clone https://github.com/aethelred-foundation/cruzible.git
 cd cruzible
 
 # Install dependencies
 npm ci
 
-# Set up environment variables
+# Configure
 cp .env.example .env
 # Edit .env with your configuration
 
@@ -101,14 +136,15 @@ cp .env.example .env
 docker-compose -f backend/infra/docker-compose.yml up -d
 
 # Run database migrations
-cd backend/api && npx prisma migrate dev
+cd backend/api && npx prisma migrate dev && cd ../..
 
 # Start development servers
-npm run dev           # Frontend (http://localhost:3000)
-npm run dev:api       # API (http://localhost:3001)
+npm run dev           # Frontend  — http://localhost:3000
+npm run dev:api       # API       — http://localhost:3001
 ```
 
-### Environment Variables
+<details>
+<summary>Environment variables</summary>
 
 ```bash
 # Database
@@ -130,325 +166,169 @@ SENTRY_DSN=your-sentry-dsn
 ANALYTICS_ID=your-analytics-id
 ```
 
+</details>
+
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 cruzible/
-├── src/                          # Frontend (Next.js)
-│   ├── components/               # React components
-│   │   ├── PagePrimitives.tsx   # Base UI components
-│   │   ├── SharedComponents.tsx # Shared UI elements
-│   │   └── SEOHead.tsx          # SEO component
-│   ├── contexts/                # React contexts
-│   │   └── AppContext.tsx       # Global app state
-│   ├── hooks/                   # Custom React hooks
-│   ├── lib/                     # Utilities & constants
-│   │   ├── utils.ts             # Helper functions
-│   │   └── constants.ts         # App constants
-│   ├── pages/                   # Next.js pages
-│   │   ├── index.tsx            # Homepage
-│   │   ├── validators/          # Validator pages
-│   │   ├── jobs/                # AI job pages
-│   │   ├── vault/               # Staking pages
-│   │   └── governance/          # Governance pages
-│   ├── __tests__/               # Test suites
-│   └── mocks/                   # MSW mocks
+├── src/                            # Next.js frontend
+│   ├── components/                 # React components
+│   ├── contexts/                   # Global state (AppContext)
+│   ├── hooks/                      # Custom React hooks
+│   ├── lib/                        # Utilities and constants
+│   ├── pages/                      # Routes — blocks, validators, jobs, vault, governance
+│   ├── __tests__/                  # Jest + RTL test suites
+│   └── mocks/                      # MSW request handlers
 │
 ├── backend/
-│   ├── api/                     # API Gateway (Express)
-│   │   ├── src/
-│   │   │   ├── routes/          # API routes
-│   │   │   ├── services/        # Business logic
-│   │   │   ├── middleware/      # Express middleware
-│   │   │   ├── validation/      # Zod schemas
-│   │   │   ├── auth/            # Authentication
-│   │   │   └── index.ts         # Entry point
-│   │   ├── prisma/              # Database schema
-│   │   └── tests/               # API tests
-│   │
-│   ├── contracts/               # CosmWasm smart contracts
-│   │   ├── contracts/
-│   │   │   ├── ai_job_manager/  # AI job contract
-│   │   │   ├── vault/           # Liquid staking
-│   │   │   ├── governance/      # Governance
-│   │   │   ├── seal_manager/    # Digital seals
-│   │   │   ├── model_registry/  # AI models
-│   │   │   └── cw20_staking/    # Staking token
-│   │   └── src/
-│   │
-│   ├── node/                    # Blockchain node (Rust)
-│   │   └── src/
-│   │       ├── types/           # Data types
-│   │       ├── consensus/       # HotStuff BFT
-│   │       └── network/         # P2P networking
-│   │
-│   └── infra/                   # Infrastructure
-│       └── docker-compose.yml   # Service orchestration
+│   ├── api/                        # Express API gateway (TypeScript)
+│   │   ├── src/                    # Routes, services, middleware, auth
+│   │   ├── prisma/                 # Database schema and migrations
+│   │   └── tests/                  # API integration tests
+│   ├── contracts/                  # CosmWasm smart contracts (Rust)
+│   │   └── contracts/              # ai_job_manager, vault, governance, seal_manager, model_registry, cw20_staking
+│   ├── node/                       # Blockchain node (Rust / Tendermint / HotStuff BFT)
+│   └── infra/                      # Docker Compose and K8s configs
 │
-├── .github/
-│   └── workflows/               # CI/CD pipelines
-│       └── ci-cd.yml
-│
-├── docs/                        # Documentation
-│   ├── ARCHITECTURE.md
-│   ├── API.md
-│   └── DEPLOYMENT.md
-│
-└── scripts/                     # Utility scripts
-    ├── setup.sh
-    └── deploy.sh
+├── sdk/                            # Client SDKs (TypeScript, Python)
+├── docs/                           # Architecture docs and ops runbook
+├── specs/                          # Protocol specifications
+├── k8s/                            # Kubernetes manifests
+├── .github/workflows/ci-cd.yml    # CI/CD pipeline
+└── .env.example                    # Environment template
 ```
 
 ---
 
-## 🧪 Testing
-
-### Unit Tests
+## Testing
 
 ```bash
-# Run all tests
+# Frontend — unit and component tests
 npm test
-
-# Run with coverage
 npm run test:coverage
-
-# Run specific test file
-npm test -- GlassCard.test.tsx
-
-# Watch mode
 npm run test:watch
-```
 
-### Integration Tests
-
-```bash
-# Start test environment
+# Integration tests
 docker-compose -f docker-compose.test.yml up -d
-
-# Run integration tests
 npm run test:integration
-```
 
-### E2E Tests
-
-```bash
-# Install Playwright browsers
+# E2E tests (Playwright)
 npx playwright install
-
-# Run E2E tests
 npm run test:e2e
 
-# Run with UI
-npm run test:e2e:ui
-```
-
-### Smart Contract Tests
-
-```bash
+# Smart contracts
 cd backend/contracts
-
-# Run all contract tests
 cargo test --all
-
-# Run with coverage
-cargo tarpaulin --all
-
-# Run specific contract
-cargo test -p aethel-vault
+cargo tarpaulin --all          # coverage
 ```
 
 ---
 
-## 🔒 Security
+## Security
 
-### Audit Reports
+**Audit reports:**
+[120-Attack Analysis](backend/contracts/SECURITY_AUDIT.md) ·
+[Compliance Report](backend/contracts/SECURITY_COMPLIANCE_REPORT.md) ·
+[Code Review](CODE_REVIEW_REPORT.md)
 
-- [Security Audit](backend/contracts/SECURITY_AUDIT.md) - Comprehensive 120-attack analysis
-- [Compliance Report](SECURITY_COMPLIANCE_REPORT.md) - Remediation verification
-- [Smart Contract Review](CONTRACT_AUDIT.md) - Contract-specific findings
+**Application layer:**
+JWT + refresh-token auth, RBAC, Zod input validation, per-endpoint rate limiting, CORS, Helmet security headers, parameterised queries (Prisma), XSS sanitisation.
 
-### Security Features
-
-- ✅ **Authentication** - JWT-based with refresh tokens
-- ✅ **Authorization** - Role-based access control (RBAC)
-- ✅ **Input Validation** - Zod schemas for all inputs
-- ✅ **Rate Limiting** - Per-user and per-endpoint limits
-- ✅ **CORS** - Configured for production domains
-- ✅ **Helmet** - Security headers
-- ✅ **SQL Injection** - Parameterized queries (Prisma)
-- ✅ **XSS Protection** - Input sanitization
-
-### Smart Contract Security
-
-- ✅ **Reentrancy Guard** - Checks-effects-interactions pattern
-- ✅ **Overflow Protection** - Checked arithmetic operations
-- ✅ **Access Control** - Role-based permissions
-- ✅ **Pause Mechanism** - Emergency stop functionality
-- ✅ **Invariant Checking** - Solvency and share conservation
+**Smart contract layer:**
+Reentrancy guard (checks-effects-interactions), checked arithmetic, role-based access control, emergency pause mechanism, solvency and share-conservation invariants.
 
 ---
 
-## 📊 Performance
-
-### Metrics
+## Performance
 
 | Metric | Target | Current |
 |--------|--------|---------|
-| First Contentful Paint | < 1.5s | 0.9s |
-| Largest Contentful Paint | < 2.5s | 1.8s |
-| Time to Interactive | < 3.5s | 2.2s |
-| API Response Time (p95) | < 200ms | 120ms |
-| Contract Gas (stake) | < 100k | 80k |
+| First Contentful Paint | < 1.5 s | 0.9 s |
+| Largest Contentful Paint | < 2.5 s | 1.8 s |
+| Time to Interactive | < 3.5 s | 2.2 s |
+| API Response Time (p95) | < 200 ms | 120 ms |
+| Contract Gas — stake | < 100 k | 80 k |
 
-### Optimization Features
-
-- **Code Splitting** - Dynamic imports for routes
-- **Image Optimization** - Next.js Image component
-- **Caching** - Redis for API responses
-- **CDN** - Static assets served from edge
-- **Compression** - Gzip/Brotli for responses
-- **Database Indexing** - Optimized queries
+Optimisations: code splitting, Next.js image optimisation, Redis response caching, CDN edge delivery, Gzip/Brotli compression, database indexing.
 
 ---
 
-## 🛠️ Development
-
-### Code Quality
+## Development
 
 ```bash
-# Linting
-npm run lint
-npm run lint:fix
-
-# Formatting
-npm run format
-npm run format:check
-
-# Type checking
-npm run type-check
-
-# Run all checks
-npm run validate
+npm run lint && npm run lint:fix    # ESLint
+npm run format                      # Prettier
+npm run type-check                  # TypeScript strict mode
+npm run validate                    # All checks
 ```
 
-### Git Hooks
-
-Pre-commit hooks automatically run:
-- ESLint
-- Prettier
-- TypeScript check
-- Unit tests (changed files only)
+Pre-commit hooks (Husky) run ESLint, Prettier, TypeScript checks, and unit tests on changed files.
 
 ### CI/CD Pipeline
 
-Every PR triggers:
-1. Security audit (npm audit, cargo audit)
-2. Lint & format checks
-3. Unit tests (frontend, backend, contracts)
-4. Integration tests
-5. E2E tests
-6. Build verification
+**On every PR:** security audit, lint + format, unit tests (frontend, backend, contracts), integration tests, E2E tests, build verification.
 
-On merge to main:
-1. Build Docker images
-2. Push to registry
-3. Deploy to staging
-4. Run smoke tests
-5. Deploy to production
+**On merge to main:** Docker build, push to registry, deploy to staging, smoke tests, deploy to production.
 
 ---
 
-## 📖 API Documentation
+## API
 
-### REST API
+### REST
 
 ```bash
-# Get latest blocks
-curl https://api.aethelred.io/v1/blocks?limit=10
-
-# Get block by height
-curl https://api.aethelred.io/v1/blocks/1000000
-
-# Get transactions
-curl https://api.aethelred.io/v1/transactions?sender=aethelred1...
-
-# Get validator info
-curl https://api.aethelred.io/v1/validators/aethelred1...
+GET  /v1/blocks?limit=10
+GET  /v1/blocks/:height
+GET  /v1/transactions?sender=aethelred1...
+GET  /v1/validators/:address
 ```
 
-### WebSocket API
+### WebSocket
 
 ```javascript
 const ws = new WebSocket('wss://api.aethelred.io/ws');
 
-// Subscribe to new blocks
-ws.send(JSON.stringify({
-  method: 'subscribe',
-  channel: 'blocks'
-}));
-
-// Subscribe to transactions
-ws.send(JSON.stringify({
-  method: 'subscribe',
-  channel: 'transactions',
-  filter: { address: 'aethelred1...' }
-}));
+ws.send(JSON.stringify({ method: 'subscribe', channel: 'blocks' }));
+ws.send(JSON.stringify({ method: 'subscribe', channel: 'transactions', filter: { address: 'aethelred1...' } }));
 ```
 
-Full API documentation: https://api.aethelred.io/docs
+Full reference: [api.aethelred.io/docs](https://api.aethelred.io/docs)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Workflow
+We welcome contributions. Please see the [Contributing Guide](CONTRIBUTING.md) before opening a PR.
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests (`npm run validate`)
-5. Commit changes (`git commit -m 'Add amazing feature'`)
-6. Push to branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### Code Standards
-
-- **TypeScript** - Strict mode enabled
-- **ESLint** - Next.js + custom rules
-- **Prettier** - Consistent formatting
-- **Conventional Commits** - Structured commit messages
-- **Test Coverage** - 80% minimum
+2. Create a feature branch — `git checkout -b feature/my-feature`
+3. Run `npm run validate`
+4. Commit with [Conventional Commits](https://www.conventionalcommits.org/)
+5. Open a Pull Request
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- [CosmWasm](https://cosmwasm.com/) - Smart contract framework
-- [Tendermint](https://tendermint.com/) - Consensus engine
-- [Next.js](https://nextjs.org/) - React framework
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 📞 Support
+## Acknowledgments
 
-- **Documentation**: https://docs.aethelred.io
-- **Discord**: https://discord.gg/aethelred
-- **Twitter**: https://twitter.com/aethelred
-- **Email**: support@aethelred.io
+[CosmWasm](https://cosmwasm.com/) · [Tendermint](https://tendermint.com/) · [Next.js](https://nextjs.org/) · [Tailwind CSS](https://tailwindcss.com/)
 
 ---
 
 <p align="center">
-  Built with ❤️ by the Aethelred Labs team
+  <a href="https://docs.aethelred.io">Docs</a> &middot;
+  <a href="https://discord.gg/aethelred">Discord</a> &middot;
+  <a href="https://twitter.com/aethelred">Twitter</a> &middot;
+  <a href="mailto:support@aethelred.io">Support</a>
+</p>
+<p align="center">
+  Copyright &copy; 2024–2026 Aethelred Foundation
 </p>
