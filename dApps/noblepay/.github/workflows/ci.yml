@@ -75,6 +75,14 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate
 
+      - name: Check migration status
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://localhost:5432/noblepay' }}
+
+      - name: Check schema drift
+        run: npx prisma migrate diff --from-migrations-directory prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code
+
       - name: Lint
         run: npm run lint
 
