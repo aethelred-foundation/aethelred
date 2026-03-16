@@ -5,6 +5,29 @@ import { logger } from "../lib/logger";
 import { screeningDuration, compliancePassRate, flaggedPayments } from "../lib/metrics";
 import { AuditService } from "./audit";
 
+const COMPLIANCE_SERVICE_URL = process.env.COMPLIANCE_SERVICE_URL || null;
+
+/**
+ * Map Rust compliance engine status values (Passed/Flagged/Blocked) to
+ * Prisma ComplianceStatus enum values (PENDING/PASSED/FAILED/UNDER_REVIEW/ESCALATED).
+ * Also accepts already-mapped Prisma values for idempotency.
+ */
+function mapComplianceStatus(rustStatus: string): ComplianceStatus {
+  const mapping: Record<string, ComplianceStatus> = {
+    // Rust enum variants -> Prisma ComplianceStatus
+    'Passed': 'PASSED' as ComplianceStatus,
+    'Flagged': 'UNDER_REVIEW' as ComplianceStatus,
+    'Blocked': 'FAILED' as ComplianceStatus,
+    // Already-mapped Prisma values (idempotent passthrough)
+    'PENDING': 'PENDING' as ComplianceStatus,
+    'PASSED': 'PASSED' as ComplianceStatus,
+    'FAILED': 'FAILED' as ComplianceStatus,
+    'UNDER_REVIEW': 'UNDER_REVIEW' as ComplianceStatus,
+    'ESCALATED': 'ESCALATED' as ComplianceStatus,
+  };
+  return mapping[rustStatus] || ('FAILED' as ComplianceStatus);
+}
+
 export interface ScreeningRequest {
   paymentId: string;
   priority: "normal" | "high" | "urgent";
@@ -114,7 +137,9 @@ export class ComplianceService {
       data: {
         status: newStatus,
         riskScore: screeningResult.amlRiskScore,
-        teeAttestation: `0x${crypto.randomBytes(32).toString("hex")}`,
+        teeAttestation: COMPLIANCE_SERVICE_URL
+          ? screeningResult.investigationHash || `0x${crypto.createHash("sha256").update(`${payment.paymentId}:${teeNodeAddress}:${Date.now()}`).digest("hex")}`
+          : `0x${crypto.createHash("sha256").update(`${payment.paymentId}:${teeNodeAddress}:${Date.now()}`).digest("hex")}`,
         screenedAt: new Date(),
       },
     });
@@ -222,12 +247,14 @@ export class ComplianceService {
 
     sanctionsUpdating = true;
 
-    // Simulate async sanctions list update
-    setTimeout(() => {
+    // Simulate async sanctions list update.
+    // .unref() prevents this timer from keeping Node alive (avoids open-handle leaks in tests).
+    const timer = setTimeout(() => {
       sanctionsLastUpdated = new Date();
       sanctionsUpdating = false;
       logger.info("Sanctions list updated");
     }, 2000);
+    timer.unref();
 
     await this.auditService.createAuditEntry({
       eventType: "SANCTIONS_UPDATED",
@@ -381,7 +408,22 @@ export class ComplianceService {
       orderBy: { lastHeartbeat: "desc" },
     });
 
+    if (!node && !this.isTestMode()) {
+      if (COMPLIANCE_SERVICE_URL) {
+        return "compliance-service";
+      }
+      throw new ComplianceError(
+        "NO_TEE_NODE",
+        "No active TEE node available and no compliance service configured",
+        503,
+      );
+    }
+
     return node?.address || "0x0000000000000000000000000000000000000001";
+  }
+
+  private isTestMode(): boolean {
+    return process.env.NODE_ENV === "test";
   }
 
   private async performTEEScreening(
@@ -395,10 +437,124 @@ export class ComplianceService {
     flagReason: string | null;
     investigationHash: string | null;
   }> {
-    // Simulate TEE compliance engine processing
-    // In production, this would call the actual TEE enclave via remote attestation
+    // If COMPLIANCE_SERVICE_URL is configured, call the real compliance engine
+    if (COMPLIANCE_SERVICE_URL) {
+      return this.callComplianceService(payment);
+    }
+
+    // In test mode, use deterministic mock screening
+    if (this.isTestMode()) {
+      return this.mockTEEScreening(payment);
+    }
+
+    // In non-test mode without compliance service: fail closed (reject)
+    logger.error("Compliance service unavailable: COMPLIANCE_SERVICE_URL not configured. Rejecting payment (fail-closed).");
+    return {
+      sanctionsClear: false,
+      amlRiskScore: 100,
+      travelRuleCompliant: false,
+      status: "FAILED",
+      flagReason: "Compliance service unavailable — payment rejected (fail-closed)",
+      investigationHash: `0x${crypto.createHash("sha256").update(`fail-closed:${payment.sender}:${Date.now()}`).digest("hex")}`,
+    };
+  }
+
+  /**
+   * Call the real compliance engine for screening/attestation.
+   * On failure, REJECT the payment (fail closed) — never randomly approve.
+   */
+  private async callComplianceService(
+    payment: { sender: string; recipient: string; amount: Prisma.Decimal; currency: string },
+  ): Promise<{
+    sanctionsClear: boolean;
+    amlRiskScore: number;
+    travelRuleCompliant: boolean;
+    status: ComplianceStatus;
+    flagReason: string | null;
+    investigationHash: string | null;
+  }> {
+    try {
+      const response = await fetch(`${COMPLIANCE_SERVICE_URL}/v1/screen`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": process.env.COMPLIANCE_API_KEY || "",
+        },
+        body: JSON.stringify({
+          payment: {
+            id: uuidv4(),
+            sender: payment.sender,
+            recipient: payment.recipient,
+            amount: parseFloat(payment.amount.toString()),
+            currency: payment.currency,
+          },
+          travel_rule_data: null,
+          timeout_ms: 30000,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Compliance service returned ${response.status}`);
+      }
+
+      const envelope = await response.json() as any;
+
+      // The Rust API returns { success, result: ComplianceResult, error, request_id }
+      if (!envelope.success || !envelope.result) {
+        throw new Error(envelope.error || "Compliance service returned unsuccessful response");
+      }
+
+      const result = envelope.result;
+
+      return {
+        sanctionsClear: result.sanctions_clear ?? false,
+        amlRiskScore: result.aml_risk_score ?? 100,
+        travelRuleCompliant: result.travel_rule_compliant ?? false,
+        status: mapComplianceStatus(result.status || "FAILED"),
+        flagReason: result.risk_factors?.length > 0
+          ? result.risk_factors.map((f: any) => f.description || f.factor).join("; ")
+          : null,
+        investigationHash: result.attestation || null,
+      };
+    } catch (error) {
+      // Fail closed: if compliance service is unavailable, REJECT the payment
+      logger.error("Compliance service call failed — rejecting payment (fail-closed)", {
+        error: (error as Error).message,
+        sender: payment.sender,
+      });
+
+      return {
+        sanctionsClear: false,
+        amlRiskScore: 100,
+        travelRuleCompliant: false,
+        status: "FAILED",
+        flagReason: `Compliance service unavailable: ${(error as Error).message} — payment rejected (fail-closed)`,
+        investigationHash: `0x${crypto.createHash("sha256").update(`fail-closed:${payment.sender}:${Date.now()}`).digest("hex")}`,
+      };
+    }
+  }
+
+  /**
+   * Mock screening for test mode ONLY. Clearly marked as test-only mock.
+   * Uses deterministic logic based on payment data, NOT Math.random().
+   */
+  private mockTEEScreening(
+    payment: { sender: string; recipient: string; amount: Prisma.Decimal; currency: string },
+  ): {
+    sanctionsClear: boolean;
+    amlRiskScore: number;
+    travelRuleCompliant: boolean;
+    status: ComplianceStatus;
+    flagReason: string | null;
+    investigationHash: string | null;
+  } {
+    // Deterministic risk score based on a hash of payment data (not random)
+    const hash = crypto.createHash("sha256")
+      .update(`${payment.sender}:${payment.recipient}:${payment.amount.toString()}`)
+      .digest();
+    const riskScore = hash[0] % 100; // deterministic 0-99 based on payment data
     const amount = parseFloat(payment.amount.toString());
-    const riskScore = Math.floor(Math.random() * 100);
     const sanctionsClear = riskScore < 85;
     const travelRuleCompliant = amount < 1000 || riskScore < 70;
 

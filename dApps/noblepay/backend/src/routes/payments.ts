@@ -9,6 +9,7 @@ import {
 } from "../middleware/validation";
 import { PaymentService, PaymentError } from "../services/payment";
 import { AuditService } from "../services/audit";
+import { extractRole, requirePermission, requireRole } from "../middleware/rbac";
 import { logger } from "../lib/logger";
 
 const prisma = new PrismaClient();
@@ -22,6 +23,8 @@ const router = Router();
 router.post(
   "/",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:create"),
   tierRateLimit,
   validate(CreatePaymentSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -67,10 +70,13 @@ router.post(
 router.get(
   "/",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:read"),
   validate(ListPaymentsSchema, "query"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const result = await paymentService.listPayments(req.query as any);
+      // Scope payment listing to the authenticated business
+      const result = await paymentService.listPayments(req.query as any, req.businessId);
 
       res.json({
         success: true,
@@ -91,9 +97,11 @@ router.get(
 router.get(
   "/stats",
   authenticateAPIKey,
-  async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
+  extractRole,
+  requireRole("ADMIN", "ANALYST"),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const stats = await paymentService.getStats();
+      const stats = await paymentService.getStats(req.businessId);
       res.json({ success: true, data: stats });
     } catch (error) {
       handleError(error, res);
@@ -106,6 +114,8 @@ router.get(
 router.get(
   "/:id",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:read"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const payment = await paymentService.getPayment(req.params.id);
@@ -114,6 +124,15 @@ router.get(
         res.status(404).json({
           error: "PAYMENT_NOT_FOUND",
           message: "Payment not found",
+        });
+        return;
+      }
+
+      // Tenant isolation: verify payment belongs to the authenticated business
+      if (payment.businessId && payment.businessId !== req.businessId) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "You do not have access to this payment",
         });
         return;
       }
@@ -136,6 +155,8 @@ router.get(
 router.post(
   "/:id/cancel",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:cancel"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const payment = await paymentService.cancelPayment(
@@ -162,6 +183,8 @@ router.post(
 router.post(
   "/:id/refund",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:refund"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const payment = await paymentService.refundPayment(
@@ -188,6 +211,8 @@ router.post(
 router.post(
   "/batch",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("payments:create"),
   tierRateLimit,
   validate(BatchPaymentSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {

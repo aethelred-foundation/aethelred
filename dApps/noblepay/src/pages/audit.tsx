@@ -392,7 +392,7 @@ export default function AuditPage() {
       description: 'Export audit data for any custom period',
       lastGenerated: 'On demand',
       formats: ['PDF', 'CSV', 'JSON'],
-      status: 'Ready',
+      status: 'Scheduled',
       icon: <Calendar className="h-5 w-5 text-purple-400" />,
     },
   ];

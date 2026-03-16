@@ -18,6 +18,7 @@ export interface AuditExportOptions {
   to: string;
   eventTypes?: string[];
   includeMetadata?: boolean;
+  businessId?: string;
 }
 
 export interface AuditStats {
@@ -59,7 +60,7 @@ export class AuditService {
         blockNumber: input.blockNumber || null,
         txHash: input.txHash || null,
         previousHash,
-        metadata: input.metadata ? (input.metadata as Prisma.JsonObject) : null,
+        metadata: input.metadata ? (input.metadata as Prisma.JsonObject) : undefined,
       },
     });
 
@@ -94,14 +95,22 @@ export class AuditService {
     actor?: string;
     from?: string;
     to?: string;
+    businessId?: string;
   }) {
-    const { page, limit, sortOrder, eventType, severity, actor, from, to } = params;
+    const { page, limit, sortOrder, eventType, severity, actor, from, to, businessId } = params;
 
     const where: Prisma.AuditLogWhereInput = {};
 
     if (eventType) where.eventType = eventType as EventType;
     if (severity) where.severity = severity as Severity;
     if (actor) where.actor = { contains: actor, mode: "insensitive" };
+
+    // Scope audit entries to the requesting tenant's businessId
+    if (businessId) {
+      where.actor = where.actor
+        ? { AND: [where.actor as any, { contains: businessId, mode: "insensitive" }] } as any
+        : { contains: businessId, mode: "insensitive" };
+    }
 
     if (from || to) {
       where.createdAt = {};
@@ -198,6 +207,11 @@ export class AuditService {
 
     if (options.eventTypes && options.eventTypes.length > 0) {
       where.eventType = { in: options.eventTypes as EventType[] };
+    }
+
+    // Scope export to the requesting tenant's businessId
+    if (options.businessId) {
+      where.actor = { contains: options.businessId, mode: "insensitive" };
     }
 
     const entries = await this.prisma.auditLog.findMany({
