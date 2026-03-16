@@ -29,7 +29,7 @@ const RegisterAgentSchema = z.object({
   agentName: z.string().min(3).max(100),
   agentDescription: z.string().min(10).max(1000),
   agentProtocol: z.enum([
-    'openai_functions', 'standard_tool_use', 'google_genai',
+    'openai_functions', 'anthropic_tool_use', 'google_genai',
     'aethelred_native', 'custom',
   ]),
   capabilities: z.array(AgentCapabilitySchema).min(1).max(50),
@@ -69,7 +69,7 @@ const VerifyAgentSchema = z.object({
   context: z.object({
     callerAgentId: z.string().optional(),
     callerProtocol: z.enum([
-      'openai_functions', 'standard_tool_use', 'google_genai',
+      'openai_functions', 'anthropic_tool_use', 'google_genai',
       'aethelred_native', 'custom',
     ]).optional(),
     purpose: z.string().min(3).max(500),
