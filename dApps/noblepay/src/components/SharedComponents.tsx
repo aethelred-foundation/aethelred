@@ -370,6 +370,16 @@ const NAV_LINKS = [
   { href: '/businesses', label: 'Businesses' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/audit', label: 'Audit' },
+  { href: '/treasury', label: 'Treasury' },
+  { href: '/liquidity', label: 'Liquidity' },
+  { href: '/streaming', label: 'Streaming' },
+  { href: '/ai-compliance', label: 'AI Compliance' },
+  { href: '/risk-monitor', label: 'Risk Monitor' },
+  { href: '/invoice-financing', label: 'Invoice Financing' },
+  { href: '/fx-hedging', label: 'FX Hedging' },
+  { href: '/payment-channels', label: 'Payment Channels' },
+  { href: '/regulatory-reporting', label: 'Regulatory' },
+  { href: '/cross-chain', label: 'Cross-Chain' },
 ];
 
 export function TopNav({ activePage }: { activePage?: string }) {

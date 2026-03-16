@@ -244,7 +244,7 @@ function generateMockPayment(seed: number, idx: number): MockPayment {
 
 function generateAllPayments(): MockPayment[] {
   const payments: MockPayment[] = [];
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 150; i++) {
     payments.push(generateMockPayment(10000 + i * 47, i));
   }
   return payments;

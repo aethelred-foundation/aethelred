@@ -416,4 +416,205 @@ mod tests {
         assert!(freshness.contains_key(&SanctionsList::UnitedNations));
         assert!(freshness.contains_key(&SanctionsList::EuropeanUnion));
     }
+
+    // -----------------------------------------------------------------------
+    // Empty database
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn empty_database_has_zero_entries() {
+        let db = SanctionsDatabase::new();
+        assert_eq!(db.total_entries().await, 0);
+    }
+
+    #[tokio::test]
+    async fn empty_database_returns_no_match() {
+        let db = SanctionsDatabase::new();
+        let result = db.check_entity("anyone", &[], &[]).await.unwrap();
+        assert!(!result.is_match);
+        assert_eq!(result.match_score, 0.0);
+        assert!(result.matched_entries.is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // Alias matching
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn check_entity_alias_match() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db.check_entity("ALPHA PERSON", &[], &[]).await.unwrap();
+        assert!(result.is_match, "Should match on alias 'ALPHA PERSON'");
+    }
+
+    // -----------------------------------------------------------------------
+    // Case-insensitive matching
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn check_entity_case_insensitive() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db
+            .check_entity("blocked person alpha", &[], &[])
+            .await
+            .unwrap();
+        assert!(result.is_match, "Should match case-insensitively");
+    }
+
+    // -----------------------------------------------------------------------
+    // Address case-insensitive matching
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn check_entity_address_case_insensitive() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db
+            .check_entity("Unknown", &["0xDEAD0001".to_string()], &[])
+            .await
+            .unwrap();
+        assert!(result.is_match, "Address matching should be case-insensitive");
+    }
+
+    // -----------------------------------------------------------------------
+    // No match for unrelated strings
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn completely_different_name_no_match() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db
+            .check_entity("JOHN SMITH LEGITIMATE BUSINESS", &[], &[])
+            .await
+            .unwrap();
+        assert!(!result.is_match);
+    }
+
+    // -----------------------------------------------------------------------
+    // Upsert replaces list
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn upsert_replaces_existing_list() {
+        let db = SanctionsDatabase::new();
+        // Insert 2 entries
+        db.upsert_list(SanctionsList::Ofac, vec![
+            SanctionsEntry {
+                entity_name: "ENTRY ONE".into(),
+                entity_type: EntityType::Individual,
+                list_source: SanctionsList::Ofac,
+                aliases: vec![],
+                addresses: vec![],
+                id_numbers: vec![],
+            },
+            SanctionsEntry {
+                entity_name: "ENTRY TWO".into(),
+                entity_type: EntityType::Individual,
+                list_source: SanctionsList::Ofac,
+                aliases: vec![],
+                addresses: vec![],
+                id_numbers: vec![],
+            },
+        ]).await;
+        assert_eq!(db.total_entries().await, 2);
+
+        // Replace with 1 entry
+        db.upsert_list(SanctionsList::Ofac, vec![
+            SanctionsEntry {
+                entity_name: "ENTRY THREE".into(),
+                entity_type: EntityType::Organization,
+                list_source: SanctionsList::Ofac,
+                aliases: vec![],
+                addresses: vec![],
+                id_numbers: vec![],
+            },
+        ]).await;
+        assert_eq!(db.total_entries().await, 1);
+
+        // Old entries should not match
+        let result = db.check_entity("ENTRY ONE", &[], &[]).await.unwrap();
+        assert!(!result.is_match);
+
+        // New entry should match
+        let result = db.check_entity("ENTRY THREE", &[], &[]).await.unwrap();
+        assert!(result.is_match);
+    }
+
+    // -----------------------------------------------------------------------
+    // Levenshtein edge cases
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn normalized_levenshtein_both_empty() {
+        assert_eq!(normalized_levenshtein("", ""), 1.0);
+    }
+
+    #[test]
+    fn normalized_levenshtein_one_empty() {
+        assert_eq!(normalized_levenshtein("abc", ""), 0.0);
+        assert_eq!(normalized_levenshtein("", "abc"), 0.0);
+    }
+
+    // -----------------------------------------------------------------------
+    // Multiple lists match
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn check_entity_across_multiple_lists() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        // BLOCKED PERSON ALPHA is on OFAC, check it matches
+        let result = db.check_entity("BLOCKED PERSON ALPHA", &[], &[]).await.unwrap();
+        assert!(result.is_match);
+        // Verify it's from OFAC
+        assert!(result.matched_entries.iter().any(|m| m.entry.list_source == SanctionsList::Ofac));
+    }
+
+    #[tokio::test]
+    async fn check_entity_un_list() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db.check_entity("UN SANCTIONED ENTITY", &[], &[]).await.unwrap();
+        assert!(result.is_match);
+    }
+
+    #[tokio::test]
+    async fn check_entity_eu_list() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db.check_entity("EU BLOCKED PERSON", &[], &[]).await.unwrap();
+        assert!(result.is_match);
+    }
+
+    #[tokio::test]
+    async fn check_entity_uae_list() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db.check_entity("UAE BLOCKED ENTITY", &[], &[]).await.unwrap();
+        assert!(result.is_match);
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover lines 197, 199: warn log for matches (exercised via match path)
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn check_entity_match_produces_correct_match_count() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        let result = db
+            .check_entity("BLOCKED PERSON ALPHA", &[], &[])
+            .await
+            .unwrap();
+        assert!(result.is_match);
+        assert!(result.matched_entries.len() >= 1);
+        assert!(result.match_score > 0.0);
+    }
+
+    #[tokio::test]
+    async fn check_entity_multiple_match_fields() {
+        let db = SanctionsDatabase::with_default_lists().await;
+        // Match by both name and address
+        let result = db
+            .check_entity("BLOCKED PERSON ALPHA", &["0xdead0001".to_string()], &["PASS-001".to_string()])
+            .await
+            .unwrap();
+        assert!(result.is_match);
+        // Name match should be found; address/ID won't be checked since name matched first (continue)
+        assert!(result.match_score >= 1.0);
+    }
 }

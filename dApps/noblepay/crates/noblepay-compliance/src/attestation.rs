@@ -5,8 +5,8 @@
 //!
 //! Three backends are supported via feature flags:
 //!
-//! - **`mock-tee`** *(default)* — deterministic SHA-3 based attestation for
-//!   local development and CI.
+//! - **`mock-tee`** — deterministic SHA-3 based attestation for
+//!   local development and CI.  Must be explicitly enabled.
 //! - **`nitro`** — AWS Nitro Enclave attestation via the NSM (Nitro Security
 //!   Module) device.
 //! - **`sgx`** — Intel SGX remote attestation *(experimental)*.
@@ -14,7 +14,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
-use tracing::debug;
+use tracing::{debug, warn};
 use uuid::Uuid;
 
 use crate::ComplianceError;
@@ -57,6 +57,8 @@ pub enum TeePlatform {
     Nitro,
     /// Intel SGX.
     Sgx,
+    /// No TEE platform detected. Attestation generation will fail closed.
+    None,
 }
 
 impl std::fmt::Display for TeePlatform {
@@ -65,6 +67,7 @@ impl std::fmt::Display for TeePlatform {
             Self::Mock => write!(f, "mock"),
             Self::Nitro => write!(f, "nitro"),
             Self::Sgx => write!(f, "sgx"),
+            Self::None => write!(f, "none"),
         }
     }
 }
@@ -97,6 +100,11 @@ impl AttestationGenerator {
         }
     }
 
+    /// Returns the active TEE platform.
+    pub fn platform(&self) -> TeePlatform {
+        self.platform
+    }
+
     /// Generate an attestation binding the given `user_data` into the report.
     ///
     /// `user_data` is typically the serialized [`ComplianceResult`] so that the
@@ -113,6 +121,13 @@ impl AttestationGenerator {
             TeePlatform::Mock => self.generate_mock_attestation(user_data, nonce, &timestamp),
             TeePlatform::Nitro => self.generate_nitro_attestation(user_data, nonce, &timestamp)?,
             TeePlatform::Sgx => self.generate_sgx_attestation(user_data, nonce, &timestamp)?,
+            TeePlatform::None => {
+                return Err(ComplianceError::AttestationError(
+                    "No TEE platform available — cannot generate attestation. \
+                     Set REQUIRE_TEE=false or enable a TEE feature flag (mock-tee, nitro, sgx)."
+                        .into(),
+                ));
+            }
         };
 
         let report = AttestationReport {
@@ -137,8 +152,10 @@ impl AttestationGenerator {
 
     /// Verify that an attestation report is valid.
     ///
-    /// For mock mode this recomputes the hash chain.  For Nitro/SGX this would
-    /// verify the certificate chain and platform-specific signatures.
+    /// - **Mock mode** (`mock-tee` feature): recomputes the hash chain.
+    /// - **Nitro/SGX without `mock-tee`**: fails closed with an error indicating
+    ///   that real verification is not yet implemented.
+    /// - **Nitro/SGX with `mock-tee`**: allows through with a warning (test only).
     pub fn verify_attestation(
         &self,
         report: &AttestationReport,
@@ -152,6 +169,10 @@ impl AttestationGenerator {
 
         match report.platform {
             TeePlatform::Mock => {
+                #[cfg(feature = "mock-tee")]
+                {
+                    warn!("TEE attestation verification is MOCKED - do not use in production");
+                }
                 let expected_doc = self.generate_mock_attestation(
                     expected_user_data,
                     &report.nonce,
@@ -160,14 +181,35 @@ impl AttestationGenerator {
                 Ok(report.attestation_doc == expected_doc)
             }
             TeePlatform::Nitro => {
-                // In production: verify CBOR attestation doc, PCR values,
-                // and AWS Nitro root certificate chain.
-                Ok(true)
+                #[cfg(feature = "mock-tee")]
+                {
+                    warn!("TEE attestation verification is MOCKED - do not use in production");
+                    return Ok(true);
+                }
+                #[cfg(not(feature = "mock-tee"))]
+                {
+                    Err(ComplianceError::AttestationError(
+                        "Nitro attestation verification not yet implemented - enable mock-tee for testing".into(),
+                    ))
+                }
             }
             TeePlatform::Sgx => {
-                // In production: verify SGX quote, MRENCLAVE, and Intel
-                // Attestation Service response.
-                Ok(true)
+                #[cfg(feature = "mock-tee")]
+                {
+                    warn!("TEE attestation verification is MOCKED - do not use in production");
+                    return Ok(true);
+                }
+                #[cfg(not(feature = "mock-tee"))]
+                {
+                    Err(ComplianceError::AttestationError(
+                        "SGX attestation verification not yet implemented - enable mock-tee for testing".into(),
+                    ))
+                }
+            }
+            TeePlatform::None => {
+                Err(ComplianceError::AttestationError(
+                    "No TEE platform available — cannot verify attestation".into(),
+                ))
             }
         }
     }
@@ -194,10 +236,30 @@ impl AttestationGenerator {
         }
         #[cfg(feature = "mock-tee")]
         {
+            warn!("TEE attestation is MOCKED — do not use in production");
             return TeePlatform::Mock;
         }
+
+        // No TEE feature enabled.
+        // In test mode, fall back to Mock so unit tests work without features.
+        // In production (or when REQUIRE_TEE=true), return None so callers
+        // fail closed — no silent fallback to mock attestation.
         #[allow(unreachable_code)]
-        TeePlatform::Mock
+        {
+            if cfg!(test) {
+                warn!("No TEE feature enabled — defaulting to Mock for test mode");
+                TeePlatform::Mock
+            } else if std::env::var("REQUIRE_TEE").unwrap_or_default() == "true" {
+                warn!("REQUIRE_TEE=true but no TEE feature enabled — platform set to None (fail closed)");
+                TeePlatform::None
+            } else {
+                warn!(
+                    "No TEE feature enabled and REQUIRE_TEE is not set — defaulting to Mock. \
+                     Set REQUIRE_TEE=true in production to enforce real TEE attestation."
+                );
+                TeePlatform::Mock
+            }
+        }
     }
 
     /// Compute a stable measurement representing the enclave code identity.
@@ -228,8 +290,20 @@ impl AttestationGenerator {
         hex::encode(hasher.finalize())
     }
 
-    /// Nitro attestation stub — in production this calls the NSM device via
-    /// `/dev/nsm` to obtain a signed attestation document.
+    /// Nitro attestation stub — awaiting real AWS Nitro NSM SDK integration.
+    ///
+    /// # Production integration TODO
+    ///
+    /// The real implementation must:
+    ///   1. Open `/dev/nsm` (the Nitro Security Module device)
+    ///   2. Build an NSM `Attestation` request with `user_data` and `nonce`
+    ///   3. Call `ioctl()` to obtain the signed CBOR attestation document
+    ///   4. Return the hex-encoded CBOR document
+    ///
+    /// Until the NSM SDK is integrated, this stub falls back to mock attestation
+    /// generation when the `nitro` feature is enabled. **This is NOT a real
+    /// Nitro attestation** — it will not pass on-chain verification against the
+    /// AWS Nitro root certificate.
     fn generate_nitro_attestation(
         &self,
         user_data: &[u8],
@@ -238,12 +312,13 @@ impl AttestationGenerator {
     ) -> Result<String, ComplianceError> {
         #[cfg(feature = "nitro")]
         {
-            // Real implementation would:
-            //   1. Open /dev/nsm
-            //   2. Build NSM request with user_data and nonce
-            //   3. Call ioctl to get attestation document
-            //   4. Return CBOR-encoded document
-            // For now, fall back to mock.
+            // STUB: Real NSM SDK integration pending.
+            // This generates a mock hash-chain attestation, NOT a genuine Nitro
+            // attestation document. It will NOT verify against AWS Nitro root CA.
+            warn!(
+                "Nitro attestation is a STUB using mock generation — \
+                 real NSM /dev/nsm integration is not yet implemented"
+            );
             Ok(self.generate_mock_attestation(user_data, nonce, timestamp))
         }
         #[cfg(not(feature = "nitro"))]
@@ -254,7 +329,19 @@ impl AttestationGenerator {
         }
     }
 
-    /// SGX attestation stub.
+    /// SGX attestation stub — awaiting real Intel SGX SDK integration.
+    ///
+    /// # Production integration TODO
+    ///
+    /// The real implementation must:
+    ///   1. Call `sgx_create_report()` to generate an SGX report
+    ///   2. Use the quoting enclave to convert the report to a quote
+    ///   3. Submit the quote to Intel Attestation Service (IAS) or DCAP
+    ///   4. Return the hex-encoded quote with IAS response
+    ///
+    /// Until the SGX SDK is integrated, this stub falls back to mock attestation
+    /// generation when the `sgx` feature is enabled. **This is NOT a real
+    /// SGX attestation** — it will not pass remote attestation verification.
     fn generate_sgx_attestation(
         &self,
         user_data: &[u8],
@@ -263,6 +350,13 @@ impl AttestationGenerator {
     ) -> Result<String, ComplianceError> {
         #[cfg(feature = "sgx")]
         {
+            // STUB: Real SGX SDK integration pending.
+            // This generates a mock hash-chain attestation, NOT a genuine SGX
+            // quote. It will NOT verify against Intel Attestation Service.
+            warn!(
+                "SGX attestation is a STUB using mock generation — \
+                 real SGX SDK integration is not yet implemented"
+            );
             Ok(self.generate_mock_attestation(user_data, nonce, timestamp))
         }
         #[cfg(not(feature = "sgx"))]
@@ -351,6 +445,7 @@ mod tests {
         assert_eq!(TeePlatform::Mock.to_string(), "mock");
         assert_eq!(TeePlatform::Nitro.to_string(), "nitro");
         assert_eq!(TeePlatform::Sgx.to_string(), "sgx");
+        assert_eq!(TeePlatform::None.to_string(), "none");
     }
 
     #[test]
@@ -361,5 +456,421 @@ mod tests {
             hash,
             "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // SHA-3 hex determinism
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn sha3_hex_deterministic() {
+        let h1 = sha3_hex(b"test data");
+        let h2 = sha3_hex(b"test data");
+        assert_eq!(h1, h2);
+    }
+
+    #[test]
+    fn sha3_hex_different_inputs_different_hashes() {
+        let h1 = sha3_hex(b"input A");
+        let h2 = sha3_hex(b"input B");
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn sha3_hex_output_is_64_chars() {
+        let hash = sha3_hex(b"anything");
+        assert_eq!(hash.len(), 64);
+    }
+
+    // -----------------------------------------------------------------------
+    // Attestation report fields
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn attestation_report_has_correct_platform() {
+        let gen = AttestationGenerator::new();
+        let report = gen.generate_attestation(b"data", "nonce").unwrap();
+        // Without any TEE feature, falls back to Mock platform identity
+        assert_eq!(report.platform, TeePlatform::Mock);
+    }
+
+    #[test]
+    fn attestation_report_user_data_hash_matches() {
+        let gen = AttestationGenerator::new();
+        let data = b"my compliance result";
+        let report = gen.generate_attestation(data, "n1").unwrap();
+        let expected_hash = sha3_hex(data);
+        assert_eq!(report.user_data_hash, expected_hash);
+    }
+
+    #[test]
+    fn attestation_report_nonce_stored() {
+        let gen = AttestationGenerator::new();
+        let report = gen.generate_attestation(b"data", "my-unique-nonce").unwrap();
+        assert_eq!(report.nonce, "my-unique-nonce");
+    }
+
+    #[test]
+    fn attestation_certificate_chain_empty_in_mock() {
+        let gen = AttestationGenerator::new();
+        let report = gen.generate_attestation(b"data", "nonce").unwrap();
+        assert!(report.certificate_chain.is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // Verify with same data succeeds, different data fails
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn verify_attestation_with_same_data_succeeds() {
+        let gen = AttestationGenerator::new();
+        let data = b"test-result";
+        let report = gen.generate_attestation(data, "n").unwrap();
+        assert!(gen.verify_attestation(&report, data).unwrap());
+    }
+
+    #[test]
+    fn verify_attestation_with_different_data_fails() {
+        let gen = AttestationGenerator::new();
+        let report = gen.generate_attestation(b"original", "n").unwrap();
+        assert!(!gen.verify_attestation(&report, b"different").unwrap());
+    }
+
+    // -----------------------------------------------------------------------
+    // Same data and nonce produce same attestation doc
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn same_inputs_same_timestamp_produce_same_doc() {
+        let gen = AttestationGenerator::new();
+        let ts = Utc::now();
+        let doc1 = gen.generate_mock_attestation(b"data", "nonce", &ts);
+        let doc2 = gen.generate_mock_attestation(b"data", "nonce", &ts);
+        assert_eq!(doc1, doc2);
+    }
+
+    // -----------------------------------------------------------------------
+    // attestation_to_bytes with empty doc
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn attestation_to_bytes_invalid_hex_returns_empty() {
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Mock,
+            measurement: String::new(),
+            user_data_hash: String::new(),
+            timestamp: Utc::now(),
+            nonce: String::new(),
+            attestation_doc: "not-valid-hex!".to_string(),
+            certificate_chain: vec![],
+        };
+        let bytes = AttestationGenerator::attestation_to_bytes(&report);
+        assert!(bytes.is_empty(), "Invalid hex should return empty vec");
+    }
+
+    // -----------------------------------------------------------------------
+    // TeePlatform Display all variants
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn tee_platform_display_all() {
+        assert_eq!(format!("{}", TeePlatform::Mock), "mock");
+        assert_eq!(format!("{}", TeePlatform::Nitro), "nitro");
+        assert_eq!(format!("{}", TeePlatform::Sgx), "sgx");
+        assert_eq!(format!("{}", TeePlatform::None), "none");
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover Nitro/SGX attestation error paths (lines 251-252, 270-271)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn generate_nitro_attestation_errors_without_feature() {
+        let gen = AttestationGenerator::new();
+        let result = gen.generate_nitro_attestation(b"data", "nonce", &Utc::now());
+        // Without the nitro feature, this should error
+        #[cfg(not(feature = "nitro"))]
+        assert!(result.is_err(), "Nitro attestation should fail without nitro feature");
+        #[cfg(feature = "nitro")]
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn generate_sgx_attestation_errors_without_feature() {
+        let gen = AttestationGenerator::new();
+        let result = gen.generate_sgx_attestation(b"data", "nonce", &Utc::now());
+        #[cfg(not(feature = "sgx"))]
+        assert!(result.is_err(), "SGX attestation should fail without sgx feature");
+        #[cfg(feature = "sgx")]
+        assert!(result.is_ok());
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover Nitro/SGX verify stubs (lines 165, 170)
+    // and debug log line 132
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn verify_attestation_with_nitro_platform_report() {
+        let gen = AttestationGenerator::new();
+        let data = b"some-data";
+        // Create a report manually with Nitro platform
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Nitro,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "test-nonce".to_string(),
+            attestation_doc: "aabbccdd".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data);
+        // Without mock-tee: Nitro verify returns Err (fail closed)
+        // With mock-tee: Nitro verify returns Ok(true) (mocked)
+        #[cfg(not(feature = "mock-tee"))]
+        assert!(result.is_err(), "Nitro verification should fail closed without mock-tee");
+        #[cfg(feature = "mock-tee")]
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn verify_attestation_with_sgx_platform_report() {
+        let gen = AttestationGenerator::new();
+        let data = b"some-data";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Sgx,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "test-nonce".to_string(),
+            attestation_doc: "aabbccdd".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data);
+        // Without mock-tee: SGX verify returns Err (fail closed)
+        // With mock-tee: SGX verify returns Ok(true) (mocked)
+        #[cfg(not(feature = "mock-tee"))]
+        assert!(result.is_err(), "SGX verification should fail closed without mock-tee");
+        #[cfg(feature = "mock-tee")]
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn verify_attestation_nitro_wrong_data_fails() {
+        let gen = AttestationGenerator::new();
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Nitro,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(b"original-data"),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aa".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        // Wrong data should fail the user_data_hash check before reaching platform match
+        let result = gen.verify_attestation(&report, b"wrong-data").unwrap();
+        assert!(!result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover generate_attestation debug log (line 132)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn generate_attestation_produces_valid_report() {
+        let gen = AttestationGenerator::new();
+        let report = gen.generate_attestation(b"compliance-data", "nonce-xyz").unwrap();
+        assert_eq!(report.platform, TeePlatform::Mock);
+        assert!(!report.attestation_doc.is_empty());
+        assert!(!report.measurement.is_empty());
+        assert_eq!(report.nonce, "nonce-xyz");
+        // The debug log on line 132 is executed during this call
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover detect_platform (exercised via new())
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn detect_platform_returns_mock_by_default() {
+        let gen = AttestationGenerator::new();
+        assert_eq!(gen.platform, TeePlatform::Mock);
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover Nitro/SGX arms in generate_attestation (lines 114-115)
+    // by creating generators with forced platform
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn generate_attestation_with_nitro_platform_errors() {
+        let gen = AttestationGenerator {
+            enclave_measurement: AttestationGenerator::compute_enclave_measurement(),
+            platform: TeePlatform::Nitro,
+        };
+        let result = gen.generate_attestation(b"test-data", "nonce");
+        // Without nitro feature: generate_nitro_attestation returns Err
+        // With nitro feature: it would succeed (falls back to mock)
+        #[cfg(not(feature = "nitro"))]
+        assert!(result.is_err());
+        #[cfg(feature = "nitro")]
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn generate_attestation_with_sgx_platform_errors() {
+        let gen = AttestationGenerator {
+            enclave_measurement: AttestationGenerator::compute_enclave_measurement(),
+            platform: TeePlatform::Sgx,
+        };
+        let result = gen.generate_attestation(b"test-data", "nonce");
+        #[cfg(not(feature = "sgx"))]
+        assert!(result.is_err());
+        #[cfg(feature = "sgx")]
+        assert!(result.is_ok());
+    }
+
+    // -----------------------------------------------------------------------
+    // NP-09: Fail-closed verification tests (without mock-tee feature)
+    // -----------------------------------------------------------------------
+
+    #[cfg(not(feature = "mock-tee"))]
+    #[test]
+    fn nitro_verification_fails_closed_without_mock_tee() {
+        let gen = AttestationGenerator::new();
+        let data = b"compliance-result";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Nitro,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aabb".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("Nitro attestation verification not yet implemented"),
+            "Error should indicate Nitro verification is not implemented, got: {}",
+            err_msg
+        );
+    }
+
+    #[cfg(not(feature = "mock-tee"))]
+    #[test]
+    fn sgx_verification_fails_closed_without_mock_tee() {
+        let gen = AttestationGenerator::new();
+        let data = b"compliance-result";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Sgx,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aabb".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("SGX attestation verification not yet implemented"),
+            "Error should indicate SGX verification is not implemented, got: {}",
+            err_msg
+        );
+    }
+
+    #[cfg(feature = "mock-tee")]
+    #[test]
+    fn nitro_verification_passes_with_mock_tee() {
+        let gen = AttestationGenerator::new();
+        let data = b"compliance-result";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Nitro,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aabb".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data).unwrap();
+        assert!(result, "With mock-tee, Nitro verification should pass");
+    }
+
+    #[cfg(feature = "mock-tee")]
+    #[test]
+    fn sgx_verification_passes_with_mock_tee() {
+        let gen = AttestationGenerator::new();
+        let data = b"compliance-result";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::Sgx,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aabb".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data).unwrap();
+        assert!(result, "With mock-tee, SGX verification should pass");
+    }
+
+    // -----------------------------------------------------------------------
+    // TeePlatform::None — fail-closed attestation tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn none_platform_generate_attestation_fails() {
+        let gen = AttestationGenerator {
+            enclave_measurement: AttestationGenerator::compute_enclave_measurement(),
+            platform: TeePlatform::None,
+        };
+        let result = gen.generate_attestation(b"data", "nonce");
+        assert!(result.is_err(), "None platform must refuse to generate attestation");
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("No TEE platform available"),
+            "Error should mention no TEE platform, got: {}",
+            err_msg
+        );
+    }
+
+    #[test]
+    fn none_platform_verify_attestation_fails() {
+        let gen = AttestationGenerator {
+            enclave_measurement: AttestationGenerator::compute_enclave_measurement(),
+            platform: TeePlatform::Mock, // use Mock to generate
+        };
+        let data = b"some-data";
+        let report = AttestationReport {
+            id: uuid::Uuid::new_v4(),
+            platform: TeePlatform::None,
+            measurement: gen.enclave_measurement.clone(),
+            user_data_hash: sha3_hex(data),
+            timestamp: Utc::now(),
+            nonce: "nonce".to_string(),
+            attestation_doc: "aabb".to_string(),
+            certificate_chain: Vec::new(),
+        };
+        let result = gen.verify_attestation(&report, data);
+        assert!(result.is_err(), "None platform must refuse to verify attestation");
+    }
+
+    #[test]
+    fn platform_accessor_returns_correct_value() {
+        let gen = AttestationGenerator::new();
+        // In test mode without features, should be Mock
+        assert_eq!(gen.platform(), TeePlatform::Mock);
     }
 }
