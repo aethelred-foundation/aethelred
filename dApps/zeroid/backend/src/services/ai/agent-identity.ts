@@ -7,7 +7,7 @@ import { prisma, logger, redis } from '../../index';
 // ---------------------------------------------------------------------------
 
 export type AgentStatus = 'pending' | 'active' | 'suspended' | 'revoked';
-export type AgentProtocol = 'openai_functions' | 'standard_tool_use' | 'google_genai' | 'aethelred_native' | 'custom';
+export type AgentProtocol = 'openai_functions' | 'anthropic_tool_use' | 'google_genai' | 'aethelred_native' | 'custom';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export type DelegationConstraint = 'time_bounded' | 'action_scoped' | 'resource_scoped' | 'rate_limited' | 'approval_required';
 
