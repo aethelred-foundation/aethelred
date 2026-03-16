@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "observed_at": "2026-03-13",
+  "source": "GitHub vulnerability banners observed during rollout pushes; revalidate after auth restoration.",
+  "repos": [
+    {
+      "repo": "aethelred-foundation/aethelred",
+      "critical": 7,
+      "high": 38,
+      "moderate": 35,
+      "low": 33,
+      "total": 113,
+      "priority": "P0"
+    },
+    {
+      "repo": "aethelred-foundation/contracts",
+      "critical": 0,
+      "high": 6,
+      "moderate": 2,
+      "low": 4,
+      "total": 12,
+      "priority": "P1"
+    },
+    {
+      "repo": "aethelred-foundation/cruzible",
+      "critical": 0,
+      "high": 13,
+      "moderate": 11,
+      "low": 11,
+      "total": 35,
+      "priority": "P1"
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-sdk-ts",
+      "critical": 0,
+      "high": 3,
+      "moderate": 1,
+      "low": 0,
+      "total": 4,
+      "priority": "P1"
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-sdk-py",
+      "critical": 0,
+      "high": 1,
+      "moderate": 0,
+      "low": 0,
+      "total": 1,
+      "priority": "P2"
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-sdk-go",
+      "critical": 1,
+      "high": 1,
+      "moderate": 2,
+      "low": 0,
+      "total": 4,
+      "priority": "P0"
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-cli",
+      "critical": 0,
+      "high": 0,
+      "moderate": 1,
+      "low": 0,
+      "total": 1,
+      "priority": "P2"
+    }
+  ]
+}

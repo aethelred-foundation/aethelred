@@ -10,7 +10,7 @@ updates:
       interval: "weekly"
       day: "monday"
     reviewers:
-      - "aethelred/core-team"
+      - "aethelred-foundation/core-team"
     labels:
       - "dependencies"
       - "go"
@@ -61,12 +61,12 @@ updates:
 
   # Solidity contracts (npm)
   - package-ecosystem: "npm"
-    directory: "/contracts/ethereum"
+    directory: "/contracts"
     schedule:
       interval: "weekly"
       day: "tuesday"
     reviewers:
-      - "aethelred/contracts-team"
+      - "aethelred-foundation/contracts-team"
     labels:
       - "dependencies"
       - "solidity"
@@ -77,7 +77,7 @@ updates:
 
   # VSCode extension
   - package-ecosystem: "npm"
-    directory: "/vscode-extension"
+    directory: "/tools/vscode-aethelred"
     schedule:
       interval: "weekly"
       day: "tuesday"

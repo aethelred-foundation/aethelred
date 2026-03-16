@@ -15,5 +15,7 @@ import type * as interfaces from "./interfaces";
 export type { interfaces };
 import type * as mocks from "./mocks";
 export type { mocks };
+import type * as vault from "./vault";
+export type { vault };
 export type { AethelredToken } from "./AethelredToken";
 export type { AethelredVesting } from "./AethelredVesting";

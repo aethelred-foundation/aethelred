@@ -4,5 +4,6 @@
 export type { IAggregatorV3 } from "./IAggregatorV3";
 export type { IMessageTransmitterV2 } from "./IMessageTransmitterV2";
 export type { IMintBurnERC20 } from "./IMintBurnERC20";
+export type { ITimelockControllerMinDelay } from "./ITimelockControllerMinDelay";
 export type { ITokenMessengerV2 } from "./ITokenMessengerV2";
 export type { InstitutionalStablecoinBridge } from "./InstitutionalStablecoinBridge";

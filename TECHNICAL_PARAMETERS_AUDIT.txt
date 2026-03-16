@@ -1,0 +1,386 @@
+================================================================================
+TECHNICAL PARAMETERS AUDIT
+AETHELRED Whitepaper v1.1 (Markdown) vs v2.0 (PDF)
+================================================================================
+
+CONSENSUS AND PERFORMANCE METRICS
+================================================================================
+
+Parameter                 Markdown              PDF                Status
+──────────────────────────────────────────────────────────────────────────────
+Block Time                2.8 seconds           2.8 seconds        CONSISTENT
+Block Finality            Instant/2.8s          Post-Ethereum      CONSISTENT
+                                                finality
+
+Transfers per Second      12,500 TPS            12,500 (abstract)   CONSISTENT
+(TPS)                                           but varies in 
+                                                implementation
+
+Compute Jobs/Second       650 jobs/sec          Not explicitly      POTENTIAL
+                                                stated in PDF       OMISSION
+
+Network Throughput        12,500 tx/s           Mentioned but       NEEDS
+                          650 compute/s         inconsistent        VERIFICATION
+
+Transaction Finality      2.8-second blocks     Cross-chain         INCONSISTENT
+                          with instant          finality atomic;    LANGUAGE
+                          finality              on-chain            
+                                                commitment 
+                                                irreversible after 
+                                                Ethereum finality
+
+Latency (Inference)       < 100ms target        45ms (Llama-3 8B,   BETTER IN
+                          based on spec         batch 1) observed   PDF
+
+Validators (Phase 1)      100 validators        Phase 1 → Phase 2   CONSISTENT
+                                                scaling mentioned
+
+Shard Scaling (Phase 2)   1,000 compute         Phase 2 → Phase 3   CONSISTENT
+                          jobs/sec              mentioned
+
+Long-term Scaling         Phase 3 mentioned     Not detailed        INCOMPLETE
+(Phase 3)                                       in PDF
+
+================================================================================
+CRYPTOGRAPHIC PARAMETERS
+================================================================================
+
+Element                   Markdown                      PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+Primary Signature         ECDSA secp256k1               ECDSA            CONSISTENT
+Scheme                    + Dilithium3/ML-DSA-65        secp256k1 +
+                                                        Dilithium3/
+                                                        ML-DSA-65
+
+Post-Quantum Hash         Dilithium3 (NIST             Dilithium3       CONSISTENT
+Algorithm                 FIPS 204)                     (NIST FIPS 204)
+
+Key Encapsulation         Kyber768/1024                Kyber768/1024     CONSISTENT
+(PQ)                      (NIST FIPS 203)              (NIST FIPS 203)
+
+Hybrid Signature          Version 1B +                 ~3.4KB total      CONSISTENT
+Format                    Marker 0x03 +
+                          ECDSA 64B +
+                          Sep 0xFF +
+                          Dilithium 3.3KB
+
+Threat Model              Pre-Quantum (both),          Pre-Quantum       CONSISTENT
+                          Quantum Threat               (optional ECDSA),
+                          (ECDSA optional),            Post-Quantum
+                          Post-Quantum                 (Panic Mode)
+                          (Panic Mode)
+
+Verification Order        Dilithium-first              Dilithium-first   CONSISTENT
+(Quantum-First)           (always verify               (always verify
+                          Dilithium)                   Dilithium)
+
+Panic Mode                Governance-activated        Described         CONSISTENT
+                          ECDSA drop                   (Panic Mode
+                                                       optional)
+
+================================================================================
+AI VERIFICATION AND COMPUTATION PARAMETERS
+================================================================================
+
+Parameter                   Markdown                    PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+ZK Proof Systems            EZKL (256B)                 EZKL (256B)      CONSISTENT
+Supported                   RISC Zero (512B)            RISC Zero        CONSISTENT
+                            Plonky2 (256B)              Plonky2 (256B)
+                            Halo2 (384B)                Halo2 (384B)
+                            Groth16 (192B)              Groth16 (192B)
+
+Max Proof Size              1 MB (global)               1 MB (global)     CONSISTENT
+
+ZK Gas Calculation          base + (size *              base + (size *    CONSISTENT
+Formula                     gas_per_byte) *            gas_per_byte) *
+                            system_mult *              system_mult *
+                            circuit_mult               circuit_mult
+
+System Multipliers          EZKL 2x                     EZKL 2x           CONSISTENT
+(ZK Proof Systems)          RISC Zero 4x                RISC Zero 4x
+                            Plonky2 3x                  Plonky2 3x
+                            Halo2 2x                    Halo2 2x
+                            Groth16 1x                  Groth16 1x
+
+TEE Attestation             Intel SGX                   Intel SGX         CONSISTENT
+Platforms                   AWS Nitro                   AWS Nitro
+                            AMD SEV-SNP                 AMD SEV-SNP
+                            NVIDIA H100 CC              NVIDIA H100 CC
+
+Tensor Precompiles          50+ precompiles             Not detailed      OMISSION
+                            at 0x1000-0x10FF            in PDF
+                            (Matrix, Element-wise,
+                            Activations, Reductions,
+                            Convolution, Transformer,
+                            Quantization, etc.)
+
+Data Types Supported        Float32, Float16,           Not listed        OMISSION
+                            BFloat16, Int8, UInt8,
+                            Int32, Int64, Bool
+
+Model Registry Status       pending → compiling         Not detailed      OMISSION
+Transitions                 → active → inactive
+                            (or failed)
+
+Vector Vault Capacity       10,000,000 vectors          Not detailed      OMISSION
+                            per namespace
+
+Vector Index Types          Flat, IVF, HNSW             Not detailed      OMISSION
+                            (default), PQ, SQ
+
+Job Lifecycle               SUBMITTED → ASSIGNED        Not detailed      OMISSION
+States                      → PROVING → VERIFYING
+                            → VERIFIED → SETTLED
+
+Min Job Bid                 0.1 AETHEL                     Not detailed      OMISSION
+
+Max Job Bid                 100,000 AETHEL                 Not detailed      OMISSION
+
+Default SLA Timeout         1 hour (adjustable)         Not detailed      OMISSION
+
+Max Concurrent Jobs         100,000 active              Not detailed      OMISSION
+
+Cancellation Fee            5%                          Not detailed      OMISSION
+
+Late Penalty                10%                         Not detailed      OMISSION
+
+================================================================================
+CROSS-CHAIN BRIDGE PARAMETERS
+================================================================================
+
+Parameter                   Markdown                    PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+Bridge Type                 Lock-and-mint with          Lock-and-mint     CONSISTENT
+                            multi-signature relayers
+
+Ethereum Confirmations      64 blocks (~12.8 min        Mentioned         CONSISTENT
+Required                    post-merge)
+
+Challenge Period            7 days                      7 days            CONSISTENT
+
+Dispute Resolution          Not explicitly stated       Mentioned         INCOMPLETE
+Window
+
+Rate Limiting               1,000 ETH/hour              Not detailed      OMISSION
+(Deposits/Withdrawals)      (both directions)
+
+Per-Transaction             Min: 0.01 ETH               Not detailed      OMISSION
+Bounds                      Max: 100 ETH
+
+Per-Block Mint Ceiling      10 ETH                      Not detailed      OMISSION
+
+Guardian Multi-Sig          2-of-N                      2-of-N            CONSISTENT
+(Emergency Ops)
+
+Emergency Withdrawal Cap    50 ETH with 48-hour         Not detailed      OMISSION
+                            timelock
+
+Upgrade Timelock            27 days minimum             Not detailed      OMISSION
+
+CCTP V2 Support             Circle burn-and-mint        Mentioned         CONSISTENT
+                            for USDC
+
+TEE Issuer Mint             Non-CCTP stablecoin         Mentioned         CONSISTENT
+                            authorised channels
+
+Governance Keys             5 keys                      5 keys            CONSISTENT
+(Stablecoin)                (Issuer, Issuer             (Issuer, Issuer
+                            Recovery, Foundation,       Recovery,
+                            Auditor, Guardian)          Foundation,
+                                                        Auditor, Guardian)
+
+Governance Threshold        3-of-5                      3-of-5            CONSISTENT
+(Stablecoin)
+
+Relayer Bonding             500,000 AETHEL                 Not detailed      OMISSION
+Requirement
+
+Circuit Breakers            Reserve anomaly             Reserve anomaly   CONSISTENT
+(Stablecoin)                Oracle staleness            Oracle staleness
+                            Velocity breach             Velocity breach
+                            Transaction limit           Transaction limit
+
+Chainlink PoR Integration   checkUpkeep() /             Not detailed      OMISSION
+                            performUpkeep()
+
+IBC Interoperability        Port: aethelred.seal        Port: aethelred   CONSISTENT
+                                                        .seal
+
+================================================================================
+GOVERNANCE AND SLASHING PARAMETERS
+================================================================================
+
+Parameter                   Markdown                    PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+Multi-Sig Guardians         3-of-5 for Insurance        Not detailed      OMISSION
+(Insurance Fund)            Fund
+                            2 Team + 2 Advisors +
+                            1 Auditor
+
+Timelock Duration           7 days (>10M AETHEL)           Not detailed      OMISSION
+(Insurance Fund)
+
+Contingency Reserves        Not detailed                Not detailed      UNDEFINED
+
+Slashing Framework          4-tier (mentioned)          Not detailed      INCOMPLETE
+                            but specifics not listed
+
+Validator Reputation        Mentioned (reward           Not detailed      OMISSION
+Scaling                     multiplier) but no
+                            exact formula given
+
+Useful Work Multiplier      Formula referenced but      Not detailed      OMISSION
+(PoUW)                      values not fully specified
+
+Max VRF Used in Calcs       Mentioned                   Not detailed      OMISSION
+
+Total Weighted Stake        Mentioned in formulas       Not detailed      OMISSION
+
+================================================================================
+REGULATORY COMPLIANCE PARAMETERS
+================================================================================
+
+Parameter                   Markdown                    PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+Supported Jurisdictions     UAE (ADGM/DIFC)             Not detailed      OMISSION
+                            Saudi Arabia (PDPL)
+                            EU (GDPR)
+                            UK (UK-GDPR)
+                            US (CCPA, HIPAA, SOX)
+                            Singapore (PDPA, MAS TRM)
+                            China (PIPL)
+                            Global (Minimal)
+
+Data Classification         Public, Internal,           Not detailed      OMISSION
+Levels                      Confidential, Sensitive,
+                            Restricted, Top Secret
+
+Encryption per Level        Optional to E2E+PQ+MPC      Not detailed      OMISSION
+
+OFAC SDN Screening          Mentioned                   Not detailed      OMISSION
+
+EU Sanctions Screening      Mentioned                   Not detailed      OMISSION
+
+UN Sanctions Screening      Mentioned                   Not detailed      OMISSION
+
+Consent Management          Purpose-specific tracking   Not detailed      OMISSION
+                            & withdrawal support
+
+Data Transfer Audit Trails  Source/destination          Not detailed      OMISSION
+                            location tracking
+
+Violation Detection         Cross-border transfer,      Not detailed      OMISSION
+Types                       unencrypted PII, missing
+                            consent, retention
+                            violations, sanctions
+
+================================================================================
+TOKEN MECHANICS PARAMETERS
+================================================================================
+
+Parameter                   Markdown                    PDF              Status
+──────────────────────────────────────────────────────────────────────────────
+Total Supply                10,000,000,000 AETHEL          10,000,000,000    CONSISTENT
+                            (hard cap, fixed)           AETHEL
+
+Supply Model                Fixed—No inflation          Fixed—No          CONSISTENT
+                                                        inflation
+
+Inflation Rate              Zero                        Zero              CONSISTENT
+
+Token Standard              ERC-20 (upgradeable,        Not detailed      POTENTIAL
+                            Votes, Permit, Burnable,                      OMISSION
+                            Pausable)
+
+Cosmos Denomination         uaeth (6 decimals)          Not detailed      OMISSION
+
+EVM Denomination            wei (18 decimals)           Not detailed      OMISSION
+
+Cross-Layer Scale           1 uaeth = 10^12 wei         Not detailed      OMISSION
+
+Burn Mechanism              Multi-layered               Congestion-       DIFFERENT
+                            (base fee, congestion-      Squared burn      LANGUAGE
+                            squared, compression,
+                            deflationary)
+
+Burn Mechanism Detail       "Congestion-Squared"        "Congestion-      CONSISTENT
+Name                        (mentioned in abstract)     Squared"
+
+Monthly PoUW Distribution   25,000,000 AETHEL/month        5,000,000 AETHEL/    5x
+                            (over 120 months)           month (over 600    DIFFERENCE
+                                                        months)
+
+PoUW Linear Distribution    YES (linear over 10 yrs)    YES (linear over  CONSISTENT
+                                                        50 yrs)           (different
+                                                                          timescale)
+
+================================================================================
+SUMMARY: Technical Parameter Consistency
+================================================================================
+
+FULLY CONSISTENT (No Issues):
+- Block time (2.8 seconds)
+- Cryptographic parameters (ECDSA + Dilithium hybrid)
+- Post-quantum threat model
+- TEE attestation platforms
+- ZK proof systems and gas multipliers
+- Cross-chain bridge (7-day challenge, 2-of-N guardian, 64 ETH blocks)
+- IBC port specification
+- Token supply (10 billion fixed)
+- Zero inflation model
+
+PARTIALLY CONSISTENT (Minor Language Differences):
+- TPS mentioned consistently but implementation details vary
+- Finality terminology differs slightly but same functionality
+- Burn mechanism named "Congestion-Squared" in both but described differently
+- PoUW vesting changed from 10 to 50 years (critical difference in timeframe)
+
+INCOMPLETE IN PDF (Omissions):
+- Tensor precompiles (50+ ops at 0x1000-0x10FF)
+- Data type support (Float32, Float16, etc.)
+- Model registry lifecycle
+- Vector vault specifications
+- Job lifecycle states and parameters
+- Execution environment details
+- Governance slashing framework specifics
+- Regulatory compliance parameters
+- Jurisdiction-aware computation details
+- Data classification levels
+- ERC-20 token implementation details
+
+CRITICAL INCONSISTENCIES:
+- PoUW Rewards vesting: 120 months vs 50 years (5x difference)
+- All allocation vesting schedules (see DISCREPANCIES_SUMMARY.txt)
+- TGE unlock percentages vs absolute amounts
+
+================================================================================
+RECOMMENDATIONS FOR TECHNICAL AUDIT
+================================================================================
+
+1. IMMEDIATE:
+   - Resolve PoUW vesting discrepancy (120 months vs 50 years)
+   - Clarify all TGE unlock percentages vs absolute amounts
+   - Resolve vesting duration discrepancies across all allocations
+
+2. URGENT:
+   - Add missing technical specifications to PDF
+   - Verify tensor precompiles, data types, and execution environment details
+   - Document governance and slashing parameters
+   - Specify all bridge and stablecoin parameters
+
+3. IMPORTANT:
+   - Add regulatory compliance parameters to PDF
+   - Detail jurisdiction-aware computation model
+   - Specify data classification and encryption requirements
+   - Document token mechanics and burn algorithm specifics
+
+4. BEFORE SUBMISSION:
+   - Create unified technical specification document
+   - Perform line-by-line comparison of final PDF vs Markdown
+   - Implement automated consistency checks
+   - Obtain technical review sign-off from CTO/Chief Architect
+
+================================================================================
+END OF TECHNICAL AUDIT
+================================================================================
