@@ -12,13 +12,13 @@
         "plugin:testing-library/react"
       ],
       "rules": {
-        "testing-library/no-node-access": "warn",
-        "testing-library/no-container": "warn",
-        "testing-library/no-unnecessary-act": "warn",
-        "jest-dom/prefer-empty": "warn",
-        "jest-dom/prefer-to-have-style": "warn",
-        "jest-dom/prefer-to-have-class": "warn",
-        "jest-dom/prefer-in-document": "warn"
+        "testing-library/no-node-access": "off",
+        "testing-library/no-container": "off",
+        "testing-library/no-unnecessary-act": "off",
+        "jest-dom/prefer-empty": "off",
+        "jest-dom/prefer-to-have-style": "off",
+        "jest-dom/prefer-to-have-class": "off",
+        "jest-dom/prefer-in-document": "off"
       }
     }
   ]
