@@ -24,7 +24,7 @@
     "postbuild": "next-sitemap",
     "validate": "npm run type-check && next lint && npm run test",
     "validate:frontend": "npm run type-check && next lint && npm run build && npm run test:ci",
-    "validate:backend": "cd backend && npx prisma generate && DATABASE_URL=${DATABASE_URL:-postgresql://localhost:5432/noblepay} npx prisma validate && npx tsc --noEmit && npx jest --runInBand --forceExit --detectOpenHandles",
+    "validate:backend": "cd backend && npx prisma generate && DATABASE_URL=${DATABASE_URL:-postgresql://localhost:5432/noblepay} npx prisma validate && DATABASE_URL=${DATABASE_URL:-postgresql://localhost:5432/noblepay} npx prisma migrate status && npx prisma migrate diff --from-migrations-directory prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code && npx tsc --noEmit && npx jest --runInBand --forceExit --detectOpenHandles",
     "validate:contracts": "cd contracts && npx hardhat compile && npx hardhat test",
     "validate:gateway": "cd services/gateway && go vet ./... && go test ./...",
     "validate:compliance": "cd crates/noblepay-compliance && cargo check && cargo test && cargo test --features mock-tee",
