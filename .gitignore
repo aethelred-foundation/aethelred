@@ -124,8 +124,12 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI Tooling (local only) ──────────────────────────────────────────
+# ── AI & Dev Tooling (local only) ────────────────────────────────────
+.ai-tools/
 .claude/
+.cursor/
+.codex/
+.aider*
 
 # ── Archives & Generated Reports ────────────────────────────────────
 *.zip

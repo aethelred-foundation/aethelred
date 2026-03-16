@@ -5,4 +5,5 @@ export type { MockAggregatorV3 } from "./MockAggregatorV3";
 export type { MockInstitutionalBridgeMonitor } from "./MockInstitutionalBridgeMonitor";
 export type { MockMessageTransmitterV2 } from "./MockMessageTransmitterV2";
 export type { MockMintableBurnableERC20 } from "./MockMintableBurnableERC20";
+export type { MockTimelockController } from "./MockTimelockController";
 export type { MockTokenMessengerV2 } from "./MockTokenMessengerV2";

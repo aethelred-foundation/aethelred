@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous and Robotic Systems | Aethelred</title>
+  <meta name="description" content="Reference architecture for autonomous and robotic workloads on Aethelred: hybrid verification, sealed decision records, route-event auditing, and low-latency finality.">
+  <meta name="keywords" content="Aethelred autonomous use case, robotics, hybrid verification, Digital Seals, route audit trails, verifiable AI autonomy">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/usecase-autonomous.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/usecase-autonomous.html">
+  <meta property="og:title" content="Autonomous and Robotic Systems | Aethelred">
+  <meta property="og:description" content="Reference architecture for autonomous and robotic workloads on Aethelred: hybrid verification, sealed decision records, route-event auditing, and low-latency finality.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Autonomous and Robotic Systems social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Autonomous and Robotic Systems | Aethelred">
+  <meta name="twitter:description" content="Reference architecture for autonomous and robotic workloads on Aethelred: hybrid verification, sealed decision records, route-event auditing, and low-latency finality.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Autonomous and Robotic Systems social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/usecase-autonomous.html#webpage",
+        "name": "Autonomous and Robotic Systems",
+        "headline": "Autonomous and Robotic Systems",
+        "url": "https://www.aethelred.io/usecase-autonomous.html",
+        "description": "Reference architecture for autonomous and robotic workloads on Aethelred: hybrid verification, sealed decision records, route-event auditing, and low-latency finality.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/usecase-autonomous.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Autonomous and Robotic Systems social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/usecase-autonomous.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Autonomous and Robotic Systems",
+            "item": "https://www.aethelred.io/usecase-autonomous.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-usecase usecase-autonomous">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link is-active">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="usecase-autonomous-resources">Resources</button>
+          <div class="dropdown-panel" id="usecase-autonomous-resources" role="menu">
+            <a href="#pressure" role="menuitem">Workload Pressure</a>
+            <a href="#fit" role="menuitem">Why Aethelred Fits</a>
+            <a href="#workflow" role="menuitem">Reference Workflow</a>
+            <a href="#controls" role="menuitem">Protocol Mapping</a>
+            <a href="/use-cases.html" role="menuitem">All Use Cases</a>
+            <a href="/developers.html" role="menuitem">Developer Docs</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="/sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/use-cases.html" class="btn btn-small btn-primary">Use Cases</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link is-active">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Autonomy Sections</summary>
+      <a href="#pressure" class="mobile-link">Workload Pressure</a>
+      <a href="#fit" class="mobile-link">Why Aethelred Fits</a>
+      <a href="#workflow" class="mobile-link">Reference Workflow</a>
+      <a href="#controls" class="mobile-link">Protocol Mapping</a>
+      <a href="/use-cases.html" class="mobile-link">All Use Cases</a>
+      <a href="/developers.html" class="mobile-link">Developer Docs</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="/sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Verified Decision Trails</p>
+          <h1 class="hero-title" id="page-title">Autonomous <span class="gradient-word">&amp;</span> Robotic Systems</h1>
+          <p class="hero-subtitle">Autonomous systems need more than fast inference. They need tamper-evident decision records, a way to prove what model produced an action, and a route from confidential telemetry to independently verifiable evidence. Aethelred supports that operating model through low-latency finality, TEE and zkML verification, Digital Seals, and data-transfer audit trails with source and destination location tracking.</p>
+          <div class="hero-tags" aria-label="Autonomy workload traits">
+            <span class="hero-tag">Low-Latency Finality</span><span class="hero-tag">Hybrid Verification</span><span class="hero-tag">Decision Logs</span><span class="hero-tag">Route Audit Trails</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#fit" class="btn btn-primary">See Protocol Fit</a>
+            <a href="/use-cases.html" class="btn btn-secondary">All Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT REFERENCE ARCHITECTURE</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Every critical result can become evidence</h4><p>Digital Seals preserve the computation binding, consensus evidence, and timestamp associated with an autonomous decision.</p></div>
+          <div class="hero-card"><h4>Confidential sensor workloads have a blind-compute path</h4><p>TEE-backed execution is available when telemetry or model internals should not leave the trusted compute boundary.</p></div>
+          <div class="hero-card"><h4>Movement and transfer events can be audited</h4><p>The current sandbox references source and destination location tracking for transfer audit trails, which is relevant for route-aware operations.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>Sub-2s</strong><span>Current finality target on site</span></div>
+            <div class="metric-pill"><strong>Hybrid</strong><span>TEE plus zkML cross-check</span></div>
+            <div class="metric-pill"><strong>Digital Seals</strong><span>Portable decision evidence</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="pressure" aria-labelledby="pressure-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Workload Pressure</p>
+          <h2 class="section-title" id="pressure-title">Why this workload is hard</h2>
+          <p class="section-lead">Autonomous systems are hard because incident review, operator trust, and safety evidence all depend on the decision trail.</p>
+        </div>
+        <div class="grid grid-3 usecase-pressure-grid">
+          <article class="card"><h3>Decision provenance disappears quickly</h3><p>Without a stable evidence object, post-event review falls back to logs and screenshots from the originating system.</p></article>
+          <article class="card"><h3>Telemetry may be sensitive</h3><p>Sensor feeds, model internals, and safety-state inputs are often not appropriate for broad infrastructure exposure.</p></article>
+          <article class="card"><h3>Route and transfer events need context</h3><p>Safety and operational review often depends on time, location, and movement context rather than the final action alone.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="fit" aria-labelledby="fit-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Why Aethelred Fits</p>
+          <h2 class="section-title" id="fit-title">Map the workload to the current protocol surface</h2>
+          <p class="section-lead">Aethelred fits autonomy and robotics when the goal is to seal the decision trail, not just return a classification score.</p>
+        </div>
+        <div class="grid grid-3 usecase-fit-grid">
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Hybrid verification for high-assurance actions</h3></div></div></div><p>When both confidentiality and mathematical proof matter, TEE and zkML can be cross-validated before the result is accepted.</p><div class="tag-list stack-top-12"><span class="tag">TEE</span><span class="tag">zkML</span><span class="tag">Hybrid</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Portable decision evidence</h3></div></div></div><p>Digital Seals give downstream systems a durable object for verification rather than depending on unstructured logs.</p><div class="tag-list stack-top-12"><span class="tag">Seal Evidence</span><span class="tag">0x0500</span></div></article>
+          <article class="card detail-card"><div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">FIT</span><div><p class="detail-kicker">Current Protocol Fit</p><h3>Local rehearsal before public rollout</h3></div></div></div><p>The 10-service devnet and tooling stack give teams a place to test telemetry handling, verification, and result inspection before broader exposure.</p><div class="tag-list stack-top-12"><span class="tag">Devnet</span><span class="tag">Sandbox</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Reference Workflow</p>
+          <h2 class="section-title" id="workflow-title">A current-state flow for autonomy workloads</h2>
+          <p class="section-lead">A good autonomy flow preserves the evidence chain from telemetry to downstream action.</p>
+        </div>
+        <div class="grid grid-4 usecase-workflow-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Prepare the decision context</h3><p>Bind the model, telemetry reference, and execution assumptions before submission.</p><div class="tag-list"><span class="tag">Input Hash</span><span class="tag">Model Hash</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>Run the inference with the required trust mode</h3><p>Choose TEE, zkML, or hybrid verification depending on confidentiality and proof requirements.</p><div class="tag-list"><span class="tag">TEE</span><span class="tag">zkML</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Mint a seal for the agreed result</h3><p>Turn the model output into a verifiable object with timestamp, chain binding, and validator evidence.</p><div class="tag-list"><span class="tag">Digital Seal</span><span class="tag">Consensus</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Verify before automated follow-on action</h3><p>Use SDKs, contracts, or downstream systems to verify the seal before triggering further automation.</p><div class="tag-list"><span class="tag">SDKs</span><span class="tag">Contracts</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="controls" aria-labelledby="controls-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Protocol Mapping</p>
+          <h2 class="section-title" id="controls-title">Which Aethelred surfaces matter most</h2>
+          <p class="section-lead">These are the protocol surfaces that matter most for autonomy-oriented workloads.</p>
+        </div>
+        <div class="table-wrap usecase-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Requirement</th><th>Protocol Surface</th><th>Why It Matters</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Decision-event evidence</td><td>Digital Seals</td><td>Seals bind the model, input, output, and consensus evidence into one verifiable result object.</td></tr>
+              <tr><td>Confidential telemetry handling</td><td>TEE attestation</td><td>Sensitive inputs can stay inside the enclave boundary while still producing attested output.</td></tr>
+              <tr><td>High-assurance action verification</td><td>Hybrid verification</td><td>TEE output and zkML output commitments must agree before the result is accepted.</td></tr>
+              <tr><td>Route and transfer context</td><td>Audit trails with location tracking</td><td>The compliance and sandbox surface already describes source and destination location tracking for audited transfers.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Build autonomy around sealed decision evidence.</h3>
+            <p>The current protocol is strongest as a sealed decision-evidence system with audit trails and hybrid verification. Build to that surface first.</p>
+          </div>
+          <a href="/developers.html" class="btn btn-primary">Open Developer Docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -4,5 +4,6 @@
 export { IAggregatorV3__factory } from "./IAggregatorV3__factory";
 export { IMessageTransmitterV2__factory } from "./IMessageTransmitterV2__factory";
 export { IMintBurnERC20__factory } from "./IMintBurnERC20__factory";
+export { ITimelockControllerMinDelay__factory } from "./ITimelockControllerMinDelay__factory";
 export { ITokenMessengerV2__factory } from "./ITokenMessengerV2__factory";
 export { InstitutionalStablecoinBridge__factory } from "./InstitutionalStablecoinBridge__factory";

@@ -2,7 +2,7 @@
 
 > Production-grade CosmWasm smart contracts for the Aethelred sovereign AI verification network.
 
-## 📋 Contract Overview
+##  Contract Overview
 
 | Contract | Purpose | Key Features |
 |----------|---------|--------------|
@@ -13,7 +13,7 @@
 | **AethelVault** | Liquid staking | Stake AETHEL, mint stAETHEL |
 | **CW20 Staking** | Staking token | CW20-compliant stAETHEL token |
 
-## 🏗️ Contract Architecture
+## Contract Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -54,7 +54,7 @@
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 Contract Details
+## Contract Details
 
 ### 1. AI Job Manager (`ai_job_manager`)
 
@@ -263,7 +263,7 @@ Example:
 }
 ```
 
-## 🔧 Building and Deploying
+## Building and Deploying
 
 ### Prerequisites
 ```bash
@@ -308,7 +308,7 @@ wasmd tx wasm instantiate 1 '{"payment_denom":"aeth","min_timeout":100,...}' \
   --chain-id aethelred-1
 ```
 
-## 📊 Contract Addresses (Mainnet)
+## Contract Addresses (Mainnet)
 
 | Contract | Address | Code ID |
 |----------|---------|---------|
@@ -319,7 +319,7 @@ wasmd tx wasm instantiate 1 '{"payment_denom":"aeth","min_timeout":100,...}' \
 | AethelVault | `aeth1...` | 5 |
 | stAETHEL (CW20) | `aeth1...` | 6 |
 
-## 🔒 Security Considerations
+## Security Considerations
 
 ### Access Control
 - Admin functions restricted to contract admin
@@ -336,7 +336,7 @@ wasmd tx wasm instantiate 1 '{"payment_denom":"aeth","min_timeout":100,...}' \
 - Slashing for invalid attestations
 - Fee mechanism to prevent spam
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Unit tests
@@ -349,7 +349,7 @@ cargo test --features integration
 cargo bench
 ```
 
-## 📚 Dependencies
+## Dependencies
 
 ```toml
 [dependencies]
@@ -364,13 +364,13 @@ sha2 = "0.10"
 thiserror = "1.0"
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Follow CosmWasm best practices
 2. Add comprehensive tests
 3. Update documentation
 4. Run clippy: `cargo clippy --all-targets --all-features -- -D warnings`
 
-## 📄 License
+## License
 
 Apache 2.0 - See [LICENSE](../../LICENSE)

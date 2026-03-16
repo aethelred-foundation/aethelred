@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparison | Aethelred</title>
+  <meta name="description" content="Compare Aethelred's current architecture against the main alternative ways teams try to verify AI workloads: general-purpose L1s, centralized AI APIs, and attestation middleware.">
+  <meta name="keywords" content="Aethelred comparison, verifiable AI comparison, Proof of Useful Work, Digital Seals, TEE, zkML">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/comparison.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/comparison.html">
+  <meta property="og:title" content="Comparison | Aethelred">
+  <meta property="og:description" content="See how the current Aethelred architecture differs from general-purpose L1s, centralized AI APIs, and attestation middleware.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Comparison social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Comparison | Aethelred">
+  <meta name="twitter:description" content="Current-state architecture comparison for verifiable AI infrastructure.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Comparison social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/comparison.html#webpage",
+        "name": "Comparison",
+        "headline": "Comparison",
+        "url": "https://www.aethelred.io/comparison.html",
+        "description": "Compare Aethelred's current architecture against the main alternative ways teams try to verify AI workloads: general-purpose L1s, centralized AI APIs, and attestation middleware.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/comparison.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Comparison social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/comparison.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Comparison",
+            "item": "https://www.aethelred.io/comparison.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-comparison">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link is-active">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="comparison-resources">Resources</button>
+          <div class="dropdown-panel" id="comparison-resources" role="menu">
+            <a href="#matrix" role="menuitem">Comparison Matrix</a>
+            <a href="#differentiators" role="menuitem">Differentiators</a>
+            <a href="#fit" role="menuitem">Best Fit</a>
+            <a href="/enterprise-corridors.html" role="menuitem">Enterprise Corridors</a>
+            <a href="/documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="/digital-seal.html" role="menuitem">Digital Seals</a>
+            <a href="/use-cases.html" role="menuitem">Use Cases</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/documentation.html" class="btn btn-small btn-primary">Documentation Hub</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link is-active">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Comparison Sections</summary>
+      <a href="#matrix" class="mobile-link">Comparison Matrix</a>
+      <a href="#differentiators" class="mobile-link">Differentiators</a>
+      <a href="#fit" class="mobile-link">Best Fit</a>
+      <a href="/enterprise-corridors.html" class="mobile-link">Enterprise Corridors</a>
+      <a href="/documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="/digital-seal.html" class="mobile-link">Digital Seals</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Architecture Comparison</p>
+          <h1 class="hero-title" id="page-title">Where <span class="gradient-word">Aethelred</span> fits</h1>
+          <p class="hero-subtitle">This comparison page is not a brand leaderboard. It compares the current Aethelred architecture to the main alternative patterns teams use when they try to verify AI workloads: general-purpose chains, centralized AI APIs, and add-on attestation middleware. The result is a cleaner answer to one question: when does the Aethelred model make more sense than the alternatives?</p>
+          <div class="hero-tags" aria-label="Comparison frame">
+            <span class="hero-tag">PoUW Consensus</span>
+            <span class="hero-tag">Digital Seals</span>
+            <span class="hero-tag">TEE + zkML</span>
+            <span class="hero-tag">Compliance-Ready</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#matrix" class="btn btn-primary">See the Matrix</a>
+            <a href="/use-cases.html" class="btn btn-secondary">Open Use Cases</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CATEGORY-LEVEL COMPARISON USING CURRENT PROTOCOL CAPABILITY</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Aethelred is not just a settlement layer</h4><p>The protocol embeds verified AI execution into consensus and produces a portable trust object when the network agrees on a result.</p></div>
+          <div class="hero-card"><h4>The comparison hinges on trust boundaries</h4><p>Most alternatives either centralize trust in an operator or bolt verification on after the fact. Aethelred changes where trust is established.</p></div>
+          <div class="hero-card"><h4>The right answer depends on workload pressure</h4><p>If the job does not need confidentiality, portable provenance, or policy-aware execution, lighter alternatives may be enough.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>3 Modes</strong><span>TEE, zkML, hybrid</span></div>
+            <div class="metric-pill"><strong>1.5x</strong><span>TEE validator bonus</span></div>
+            <div class="metric-pill"><strong>IBC</strong><span>Seal relay path</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="matrix" aria-labelledby="matrix-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Comparison Matrix</p>
+          <h2 class="section-title" id="matrix-title">Aethelred versus the main alternative patterns</h2>
+          <p class="section-lead">The rows below compare architectural properties, not marketing claims.</p>
+        </div>
+        <div class="comparison-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>Aethelred</th>
+                <th>General-Purpose L1</th>
+                <th>Centralized AI API</th>
+                <th>Attestation Middleware</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>AI verification inside consensus</td><td>Native via PoUW vote extensions</td><td>Usually external or off-chain</td><td>No chain consensus</td><td>External to consensus</td></tr>
+              <tr><td>Portable result object</td><td>Digital Seal minted on-chain</td><td>Application-defined receipt</td><td>Provider-defined response</td><td>Middleware-defined attestation bundle</td></tr>
+              <tr><td>Verification modes</td><td>TEE, zkML, hybrid</td><td>Usually custom or oracle-based</td><td>Provider assertions</td><td>Usually one mode at a time</td></tr>
+              <tr><td>Contract-level consumption</td><td>EVM precompiles at <span class="mono">0x0300</span> and <span class="mono">0x0400</span></td><td>Custom integration required</td><td>Not native</td><td>Usually oracle relay required</td></tr>
+              <tr><td>Confidential compute posture</td><td>Multi-TEE framework</td><td>Not protocol-native</td><td>Provider-controlled</td><td>Depends on external runtime</td></tr>
+              <tr><td>Cross-chain portability</td><td>IBC relay on <span class="mono">aethelred.seal</span></td><td>Custom bridge or app relay</td><td>No chain-native relay</td><td>Application-specific relay</td></tr>
+              <tr><td>Compliance-aware surfaces</td><td>Sovereign data model, regulatory sandbox, sanctions-aware routing</td><td>Typically app-managed</td><td>Provider policy only</td><td>Application-managed</td></tr>
+              <tr><td>Validator / operator incentives</td><td>Useful compute earns rewards; TEE bonus available</td><td>Gas / staking focus</td><td>Usage billing only</td><td>Service fee model</td></tr>
+              <tr><td>Local rehearsal path</td><td>10-service devnet, seal verifier, VS Code simulation, Infinite Sandbox</td><td>Varies by stack</td><td>Usually SaaS sandbox only</td><td>Tooling varies widely</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-24">
+          <div>
+            <h3>Use Aethelred when verification is part of the product, not just a logging concern.</h3>
+            <p>If the workload only needs a fast API response, centralized infrastructure can be simpler. If the workload needs portable trust, policy-aware execution, and a chain-native evidence object, the Aethelred model is materially different.</p>
+          </div>
+          <a href="/digital-seal.html" class="btn btn-primary">Open Digital Seals</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="differentiators" aria-labelledby="differentiators-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Differentiators</p>
+          <h2 class="section-title" id="differentiators-title">The current protocol properties that are hardest to replicate elsewhere</h2>
+          <p class="section-lead">These are the parts of the architecture that make Aethelred distinct in practice.</p>
+        </div>
+        <div class="grid grid-3 comparison-card-grid">
+          <article class="card comparison-card"><h3>Proof-of-Useful-Work</h3><p>Useful AI inference verification is embedded inside the block cycle instead of being outsourced to a post-consensus service.</p></article>
+          <article class="card comparison-card"><h3>Digital Seals</h3><p>The network emits a portable result object that applications, contracts, and other chains can verify and consume.</p></article>
+          <article class="card comparison-card"><h3>Multi-modal verification</h3><p>TEE, zkML, and hybrid flows all exist in the documented model, which lets teams match assurance level to workload pressure.</p></article>
+          <article class="card comparison-card"><h3>Sovereign data model</h3><p>Jurisdiction-aware execution and data-handling posture are part of the story, not an afterthought left entirely to applications.</p></article>
+          <article class="card comparison-card"><h3>Compliance-first value transfer</h3><p>Stablecoin routing, timelocks, multisig controls, and sanctions-aware surfaces extend the model beyond computation alone.</p></article>
+          <article class="card comparison-card"><h3>Operational rehearsal path</h3><p>Tooling, devnet, sandbox, verifier, and testnet pages already define how teams should move from local validation into public rollout.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="fit" aria-labelledby="fit-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Best Fit</p>
+          <h2 class="section-title" id="fit-title">Choose Aethelred when the workload has these pressures</h2>
+          <p class="section-lead">The protocol is strongest when the trust problem is real and cross-organizational.</p>
+        </div>
+        <div class="grid grid-2 comparison-fit-grid">
+          <article class="card comparison-fit-card"><h3>Need confidential execution and portable evidence</h3><p>Regulated and sensitive workloads often need both a protected compute boundary and a trust object another system can inspect.</p></article>
+          <article class="card comparison-fit-card"><h3>Need contract-level verification</h3><p>If proof or attestation outcomes must directly control contract logic, native precompiles simplify architecture materially.</p></article>
+          <article class="card comparison-fit-card"><h3>Need cross-institution trust transfer</h3><p>Seals, APIs, and IBC relay matter when different institutions or chains need to consume one verified result.</p></article>
+          <article class="card comparison-fit-card"><h3>Need compliance-aware AI infrastructure</h3><p>The combination of sovereign data controls, compliance tooling, and policy-aware transfer surfaces is unusual and materially relevant.</p></article>
+          <article class="card comparison-fit-card"><h3>Need policy-gated enterprise workflow design</h3><p>If your problem includes internal policy registries, signer separation, return-of-evidence paths, and sovereign data constraints, the enterprise corridor reference is the right next page.</p></article>
+        </div>
+        <div class="callout stack-top-24">
+          <div>
+            <h3>Use the comparison page as a routing aid, then validate the answer in workload-specific references.</h3>
+            <p>The next step after this page is usually one of the <a class="body-link" href="/use-cases.html">use-case pages</a>, the <a class="body-link" href="/enterprise-corridors.html">Enterprise Corridors</a> reference, the <a class="body-link" href="/digital-seal.html">Digital Seal reference</a>, or the <a class="body-link" href="/documentation.html">documentation hub</a>.</p>
+          </div>
+          <a href="/enterprise-corridors.html" class="btn btn-primary">Open Enterprise Corridors</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

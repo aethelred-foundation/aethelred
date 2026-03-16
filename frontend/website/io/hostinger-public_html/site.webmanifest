@@ -1,0 +1,23 @@
+{
+  "name": "Aethelred",
+  "short_name": "Aethelred",
+  "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f8",
+  "theme_color": "#9f0a24",
+  "icons": [
+    {
+      "src": "/aethelred-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/aethelred-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

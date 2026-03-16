@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stablecoin Infrastructure | Aethelred</title>
+  <meta name="description" content="Current Aethelred stablecoin infrastructure reference for zero-liquidity routing, CCTP V2, TEE issuer-mint flows, proof-of-reserve controls, relayer bonds, and governance boundaries.">
+  <meta name="keywords" content="Aethelred stablecoin infrastructure, stablecoin routing, CCTP V2, TEE issuer mint, proof of reserve, relayer bond, institutional stablecoin bridge">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/stablecoin-infrastructure.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/stablecoin-infrastructure.html">
+  <meta property="og:title" content="Stablecoin Infrastructure | Aethelred">
+  <meta property="og:description" content="Current Aethelred stablecoin infrastructure reference for zero-liquidity routing, issuer-authorized settlement channels, reserve controls, and governance boundaries.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Stablecoin Infrastructure social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Stablecoin Infrastructure | Aethelred">
+  <meta name="twitter:description" content="Source-backed reference for Aethelred stablecoin routing, proof-of-reserve controls, relayer bonds, and governance.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Stablecoin Infrastructure social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/stablecoin-infrastructure.html#article",
+        "headline": "Stablecoin Infrastructure",
+        "name": "Stablecoin Infrastructure",
+        "url": "https://www.aethelred.io/stablecoin-infrastructure.html",
+        "description": "Current Aethelred stablecoin infrastructure reference for zero-liquidity routing, CCTP V2, TEE issuer-mint flows, proof-of-reserve controls, relayer bonds, and governance boundaries.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "author": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "articleSection": [
+          "Overview",
+          "Routing Modes",
+          "Risk Controls",
+          "Governance",
+          "Contract Surface",
+          "Current Boundary"
+        ],
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/stablecoin-infrastructure.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Stablecoin Infrastructure social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/stablecoin-infrastructure.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Stablecoin Infrastructure",
+            "item": "https://www.aethelred.io/stablecoin-infrastructure.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-docs-hub page-stablecoin">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link is-active">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="stablecoin-resources">Resources</button>
+          <div class="dropdown-panel" id="stablecoin-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#routing" role="menuitem">Routing Modes</a>
+            <a href="#controls" role="menuitem">Risk Controls</a>
+            <a href="#governance" role="menuitem">Governance</a>
+            <a href="#contracts" role="menuitem">Contract Surface</a>
+            <a href="#boundary" role="menuitem">Current Boundary</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="/usecase-finance.html" role="menuitem">Finance Use Case</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/developers.html" class="btn btn-small btn-primary">Quick Start</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link is-active">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Stablecoin Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#routing" class="mobile-link">Routing Modes</a>
+      <a href="#controls" class="mobile-link">Risk Controls</a>
+      <a href="#governance" class="mobile-link">Governance</a>
+      <a href="#contracts" class="mobile-link">Contract Surface</a>
+      <a href="#boundary" class="mobile-link">Current Boundary</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="/usecase-finance.html" class="mobile-link">Finance Use Case</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Institutional Settlement Surfaces</p>
+          <h1 class="hero-title" id="page-title">Stablecoin <span class="gradient-word">Infrastructure</span></h1>
+          <p class="hero-subtitle">Aethelred documents stablecoin routing as zero-liquidity-pool infrastructure for institutional flows, not as an AMM bridge or generic payments product. The current source surface combines <span class="mono">CCTP V2</span> for Circle burn-and-mint routing, <span class="mono">TEE issuer mint</span> flows for non-CCTP assets, proof-of-reserve monitoring, Merkle audit roots, relayer bonding, and governance controls around the live <span class="mono">InstitutionalStablecoinBridge.sol</span> contract.</p>
+          <div class="hero-tags" aria-label="Stablecoin scope">
+            <span class="hero-tag">Zero-Liquidity Routing</span>
+            <span class="hero-tag">CCTP V2</span>
+            <span class="hero-tag">TEE Issuer Mint</span>
+            <span class="hero-tag">500,000 AETHEL Bond</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#routing" class="btn btn-primary">Open Routing Modes</a>
+            <a href="#contracts" class="btn btn-secondary">View Contract Surface</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> SOURCE-BACKED AGAINST THE CURRENT CONTRACT, WHITEPAPER, AND TOKENOMICS</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>No open liquidity-pool claim</h4>
+            <p>The docs explicitly frame this as issuer-authorized routing rather than pooled bridge liquidity.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Operational guardrails are first-class</h4>
+            <p>Reserve anomalies, oracle staleness, velocity breaches, and tx-limit breaches are designed to trigger circuit-breaker behavior.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Governance is narrower than general token governance</h4>
+            <p>Stablecoin infrastructure uses a dedicated five-key institutional control model with a 3-of-5 threshold for critical operations.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>2 modes</strong><span>CCTP V2 and TEE issuer mint</span></div>
+            <div class="metric-pill"><strong>7 days</strong><span>Minimum governance action delay</span></div>
+            <div class="metric-pill"><strong>3-of-5</strong><span>Institutional governance threshold</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">What the current stablecoin layer actually is</h2>
+          <p class="section-lead">The stablecoin layer is currently documented as a routing and control surface for institutional settlement. It is not published here as a consumer wallet product, a public stablecoin issuance program, or a live partner roster.</p>
+        </div>
+        <div class="grid grid-4 docs-quick-grid">
+          <article class="card docs-quick-card">
+            <span class="icon-chip">01</span>
+            <h3>Zero-liquidity routing</h3>
+            <p>Transfers are designed to move through issuer-authorized channels instead of liquidity pools.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">02</span>
+            <h3>Two routing modes</h3>
+            <p>USDC-style flows use Circle <span class="mono">CCTP V2</span>; non-CCTP flows use issuer-gated TEE attestations.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">03</span>
+            <h3>Reserve evidence is built in</h3>
+            <p>Proof-of-reserve feeds, deviation checks, heartbeat windows, and Merkle audit roots all exist in the current contract design.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">04</span>
+            <h3>Current state is contract-backed</h3>
+            <p>The implementation exists in the repository and is described as a testnet routing contract, so this page documents surface area and controls rather than a live asset registry.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="routing" aria-labelledby="routing-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Routing Modes</p>
+          <h2 class="section-title" id="routing-title">How value moves through the current design</h2>
+          <p class="section-lead">Aethelred separates routing by asset type and trust model, which is why the stablecoin surface reads more like settlement infrastructure than like a universal bridge.</p>
+        </div>
+        <div class="grid grid-2 docs-rollout-grid">
+          <article class="card docs-rollout-card">
+            <h3>CCTP V2</h3>
+            <p>Used for Circle burn-and-mint routing. The contract exposes <span class="mono">bridgeOutViaCCTP</span>, <span class="mono">relayCCTPMessage</span>, and <span class="mono">relayCCTPFastMessage</span> for stablecoins that already support Circle's issuer-native transport path.</p>
+            <div class="tag-list stack-top-12"><span class="tag">USDC</span><span class="tag">Burn and Mint</span><span class="tag">Relayer Bonding</span></div>
+          </article>
+          <article class="card docs-rollout-card">
+            <h3>TEE Issuer Mint</h3>
+            <p>Used for non-CCTP assets. The contract exposes <span class="mono">mintFromAttestedRelayer</span> and <span class="mono">redeemTeeStablecoin</span> for issuer-approved mint and redemption flows anchored to enclave measurements and issuer signer sets.</p>
+            <div class="tag-list stack-top-12"><span class="tag">Issuer-Gated</span><span class="tag">TEE</span><span class="tag">Quorum Signatures</span></div>
+          </article>
+        </div>
+        <div class="table-wrap stack-top-16">
+          <table aria-label="Stablecoin routing modes">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Asset Class</th>
+                <th>Primary Entry Points</th>
+                <th>Trust Surface</th>
+                <th>Why It Exists</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>CCTP V2</td>
+                <td>Circle-supported assets such as USDC</td>
+                <td><span class="mono">bridgeOutViaCCTP</span>, <span class="mono">relayCCTPMessage</span>, <span class="mono">relayCCTPFastMessage</span></td>
+                <td>Circle burn-and-mint messaging plus bonded relayers</td>
+                <td>Maintains issuer-native settlement instead of synthetic pooled liquidity.</td>
+              </tr>
+              <tr>
+                <td>TEE Issuer Mint</td>
+                <td>Non-CCTP stablecoins</td>
+                <td><span class="mono">mintFromAttestedRelayer</span>, <span class="mono">redeemTeeStablecoin</span></td>
+                <td>Issuer signer quorum plus approved enclave measurements</td>
+                <td>Allows issuer-controlled issuance and redemption when a direct CCTP-style channel does not exist.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="controls" aria-labelledby="controls-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Risk Controls</p>
+          <h2 class="section-title" id="controls-title">The contract is heavy on limits by design</h2>
+          <p class="section-lead">The current stablecoin configuration surface is not just routing metadata. It includes explicit ceilings, thresholds, and monitoring hooks intended to constrain issuer and relayer behavior.</p>
+        </div>
+        <div class="grid grid-4 docs-quick-grid">
+          <article class="card docs-quick-card">
+            <span class="icon-chip">LIM</span>
+            <h3>Mint and volume quotas</h3>
+            <p><span class="mono">mintCeilingPerEpoch</span> and <span class="mono">dailyTxLimit</span> cap stablecoin expansion and transfer volume at the configuration level.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">VEL</span>
+            <h3>Outflow throttles</h3>
+            <p><span class="mono">hourlyOutflowBps</span> and <span class="mono">dailyOutflowBps</span> create velocity controls around exits and redemptions.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">POR</span>
+            <h3>Proof-of-reserve checks</h3>
+            <p><span class="mono">monitorReserve</span> uses reserve feeds, deviation thresholds, and heartbeat windows to trigger pause behavior on anomalies.</p>
+          </article>
+          <article class="card docs-quick-card">
+            <span class="icon-chip">AUD</span>
+            <h3>Merkle audit evidence</h3>
+            <p><span class="mono">recordMerkleAuditRoot</span> and <span class="mono">verifyReserveMerkleProof</span> bind off-chain reserve reporting back into verifiable on-chain evidence.</p>
+          </article>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Automatic pause is part of the operating model.</h3>
+            <p>The whitepaper and tokenomics both describe circuit breakers for reserve anomaly, oracle staleness, velocity breach, and transaction-limit breach. The contract adds Chainlink Automation entry points via <span class="mono">checkUpkeep</span> and <span class="mono">performUpkeep</span> so the monitoring loop is operational rather than aspirational.</p>
+          </div>
+          <a href="/smart-contracts.html" class="btn btn-primary">Open Smart Contracts</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="governance" aria-labelledby="governance-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Governance and Economics</p>
+          <h2 class="section-title" id="governance-title">The settlement path is governed separately and more tightly</h2>
+          <p class="section-lead">Stablecoin infrastructure is controlled through a narrower key set and stronger operational constraints than generic application flows, which is appropriate for issuer-routed value transfer.</p>
+        </div>
+        <div class="split">
+          <article class="card docs-anchor-section">
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Control Model</p>
+              <h3>Five keys, 3-of-5 threshold</h3>
+              <p class="section-lead">The published model uses five institutional governance keys: issuer, issuer recovery, foundation, auditor, and guardian.</p>
+            </div>
+            <div class="table-wrap">
+              <table aria-label="Stablecoin governance controls">
+                <thead>
+                  <tr>
+                    <th>Control</th>
+                    <th>Current Source</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Governance threshold</td>
+                    <td>3-of-5</td>
+                    <td>Critical operations require agreement across the institutional signer set.</td>
+                  </tr>
+                  <tr>
+                    <td>Minimum action delay</td>
+                    <td><span class="mono">7 days</span></td>
+                    <td>The contract hard-codes a floor through <span class="mono">MIN_GOVERNANCE_ACTION_DELAY</span>.</td>
+                  </tr>
+                  <tr>
+                    <td>Joint unpause</td>
+                    <td>3 to 5 signatures with issuer anchor</td>
+                    <td><span class="mono">unpauseWithJointSignatures</span> requires valid unique signers and an issuer-side anchor.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="card docs-anchor-section">
+            <div class="section-head docs-section-head">
+              <p class="eyebrow">Economic Alignment</p>
+              <h3>Relayer participation is bonded</h3>
+              <p class="section-lead">The current design adds economic consequences to message relay instead of assuming good behavior from routing operators.</p>
+            </div>
+            <div class="grid grid-1 docs-rollout-grid">
+              <article class="card docs-rollout-card">
+                <h3>500,000 AETHEL bond floor</h3>
+                <p><span class="mono">DEFAULT_RELAYER_BOND_REQUIREMENT</span> is set to <span class="mono">500,000</span>, and tokenomics explicitly describes a 500,000 AETHEL relayer bond requirement.</p>
+              </article>
+              <article class="card docs-rollout-card">
+                <h3>Bond lifecycle is explicit</h3>
+                <p><span class="mono">postRelayerBond</span>, <span class="mono">withdrawRelayerBond</span>, and <span class="mono">slashRelayerBond</span> make participation, exit, and penalty flows part of the contract surface.</p>
+              </article>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contracts" aria-labelledby="contracts-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Contract Surface</p>
+          <h2 class="section-title" id="contracts-title">The functions that matter most in the current implementation</h2>
+          <p class="section-lead">This page is not an ABI dump. It focuses on the functions that define routing, governance, reserve monitoring, and relayer operations in the live repository.</p>
+        </div>
+        <div class="table-wrap">
+          <table aria-label="Stablecoin contract functions">
+            <thead>
+              <tr>
+                <th>Function</th>
+                <th>Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="mono">configureStablecoin</span></td>
+                <td>Defines the asset, routing type, reserve feed, quotas, and heartbeat/deviation thresholds.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">setIssuerSignerSet</span></td>
+                <td>Publishes the issuer signer quorum used for issuer-gated mint paths.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">setEnclaveMeasurement</span></td>
+                <td>Approves or revokes enclave measurements used by TEE issuer-mint flows.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">mintFromAttestedRelayer</span></td>
+                <td>Executes issuer-approved minting for TEE issuer-mint assets.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">bridgeOutViaCCTP</span></td>
+                <td>Initiates Circle burn-and-mint routing for supported assets.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">relayCCTPMessage</span> / <span class="mono">relayCCTPFastMessage</span></td>
+                <td>Handles standard and fast relayed CCTP settlement paths for bonded relayers.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">redeemTeeStablecoin</span></td>
+                <td>Burns balances for issuer-controlled redemption on non-CCTP assets.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">monitorReserve</span></td>
+                <td>Checks proof-of-reserve state and can pause minting when thresholds are breached.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">recordMerkleAuditRoot</span> / <span class="mono">verifyReserveMerkleProof</span></td>
+                <td>Anchors reserve audit evidence and lets downstream systems verify it later.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">checkUpkeep</span> / <span class="mono">performUpkeep</span></td>
+                <td>Supports automated reserve checks and circuit-breaker execution.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Need the workload view, not just the contract view?</h3>
+            <p>Pair this page with the <a class="body-link" href="/usecase-finance.html">Financial Services reference</a> for workflow context, and with the <a class="body-link" href="/smart-contracts.html">Smart Contracts page</a> for the wider contract surface around bridges, governance, and verification.</p>
+          </div>
+          <a href="/usecase-finance.html" class="btn btn-primary">Open Finance Reference</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="boundary" aria-labelledby="boundary-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Current Boundary</p>
+          <h2 class="section-title" id="boundary-title">What this page does not claim as of March 12, 2026</h2>
+          <p class="section-lead">The stablecoin layer is meaningful enough to document, but not so mature that we should blur the difference between repository-backed design and publicly launched settlement corridors.</p>
+        </div>
+        <div class="grid grid-2 docs-rollout-grid">
+          <article class="card docs-rollout-card"><h3>No public issuer roster</h3><p>The current docs describe routing modes and governance controls, but they do not publish a live list of issuers, custodians, or active settlement partners.</p></article>
+          <article class="card docs-rollout-card"><h3>No public mainnet asset table</h3><p>This site does not publish a mainnet-ready supported-asset registry with contract addresses and production domains.</p></article>
+          <article class="card docs-rollout-card"><h3>No consumer-wallet or retail payments claim</h3><p>The published material frames stablecoins as institutional routing infrastructure, not as a retail wallet or consumer payments product.</p></article>
+          <article class="card docs-rollout-card"><h3>No implied live issuance program</h3><p>The contract itself is described as a testnet routing contract, so this page documents current architecture and controls rather than claiming an already-live issuance network.</p></article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
