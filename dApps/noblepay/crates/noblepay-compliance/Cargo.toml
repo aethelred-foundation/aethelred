@@ -21,8 +21,13 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 reqwest = { version = "0.11", features = ["json"] }
 dashmap = "5.5"
 
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tokio = { version = "1.35", features = ["test-util"] }
+
 [features]
-default = ["mock-tee"]
+default = []
 mock-tee = []
 nitro = []
 sgx = []

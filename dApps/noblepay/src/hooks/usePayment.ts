@@ -133,8 +133,7 @@ export function useInitiatePayment() {
         address: CONTRACT_ADDRESSES.noblepay as `0x${string}`,
         abi: NOBLEPAY_ABI,
         functionName: 'initiatePayment',
-        args: [params.recipient as `0x${string}`, amount, purposeHash, '0x'],
-        value: params.currency === 'AET' ? amount : 0n,
+        args: [params.recipient as `0x${string}`, amount, purposeHash, '0x4145' as `0x${string}`, '0x' as `0x${string}`],
       });
     },
     [writeContract],

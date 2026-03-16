@@ -364,4 +364,196 @@ mod tests {
         let payment = Payment::test_payment("alice", "bob", 60_000, "USD");
         assert!(engine.is_above_threshold(&payment));
     }
+
+    // -----------------------------------------------------------------------
+    // USD rate approximations
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn approximate_usd_rate_stablecoins() {
+        assert_eq!(approximate_usd_rate("USD"), 1.0);
+        assert_eq!(approximate_usd_rate("USDC"), 1.0);
+        assert_eq!(approximate_usd_rate("USDT"), 1.0);
+        assert_eq!(approximate_usd_rate("DAI"), 1.0);
+        assert_eq!(approximate_usd_rate("BUSD"), 1.0);
+    }
+
+    #[test]
+    fn approximate_usd_rate_fiat() {
+        assert!((approximate_usd_rate("AED") - 0.2723).abs() < f64::EPSILON);
+        assert!((approximate_usd_rate("EUR") - 1.08).abs() < f64::EPSILON);
+        assert!((approximate_usd_rate("GBP") - 1.27).abs() < f64::EPSILON);
+        assert!((approximate_usd_rate("JPY") - 0.0067).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn approximate_usd_rate_crypto() {
+        assert_eq!(approximate_usd_rate("BTC"), 65_000.0);
+        assert_eq!(approximate_usd_rate("ETH"), 3_400.0);
+    }
+
+    #[test]
+    fn approximate_usd_rate_unknown_defaults_to_one() {
+        assert_eq!(approximate_usd_rate("XYZ"), 1.0);
+    }
+
+    #[test]
+    fn approximate_usd_rate_case_insensitive() {
+        assert_eq!(approximate_usd_rate("usd"), 1.0);
+        assert_eq!(approximate_usd_rate("Eur"), 1.08);
+    }
+
+    // -----------------------------------------------------------------------
+    // Threshold edge cases
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn exactly_at_threshold_is_above() {
+        let engine = TravelRuleEngine::new();
+        // Threshold is 100_000 USD cents = $1000
+        let payment = Payment::test_payment("alice", "bob", 100_000, "USD");
+        assert!(engine.is_above_threshold(&payment));
+    }
+
+    #[test]
+    fn just_below_threshold_is_not_above() {
+        let engine = TravelRuleEngine::new();
+        let payment = Payment::test_payment("alice", "bob", 99_999, "USD");
+        assert!(!engine.is_above_threshold(&payment));
+    }
+
+    #[test]
+    fn zero_amount_below_threshold() {
+        let engine = TravelRuleEngine::new();
+        let payment = Payment::test_payment("alice", "bob", 0, "USD");
+        assert!(!engine.is_above_threshold(&payment));
+    }
+
+    // -----------------------------------------------------------------------
+    // Missing specific fields
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn missing_only_originator_name() {
+        let engine = TravelRuleEngine::new();
+        let data = TravelRuleData {
+            originator_name: None,
+            originator_account: Some("0xabc".into()),
+            originator_address: Some("Dubai".into()),
+            originator_id: None,
+            beneficiary_name: Some("Bob".into()),
+            beneficiary_account: Some("0xdef".into()),
+            beneficiary_institution: None,
+        };
+        let result = engine.verify_travel_rule(&large_payment(), Some(&data)).unwrap();
+        assert!(!result.compliant);
+        assert!(result.missing_fields.contains(&"originator_name".to_string()));
+        assert_eq!(result.missing_fields.len(), 1);
+    }
+
+    #[test]
+    fn missing_only_beneficiary_name() {
+        let engine = TravelRuleEngine::new();
+        let data = TravelRuleData {
+            originator_name: Some("Alice".into()),
+            originator_account: Some("0xabc".into()),
+            originator_address: Some("Dubai".into()),
+            originator_id: None,
+            beneficiary_name: None,
+            beneficiary_account: Some("0xdef".into()),
+            beneficiary_institution: None,
+        };
+        let result = engine.verify_travel_rule(&large_payment(), Some(&data)).unwrap();
+        assert!(!result.compliant);
+        assert!(result.missing_fields.contains(&"beneficiary_name".to_string()));
+    }
+
+    // -----------------------------------------------------------------------
+    // IVMS101 package structure
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn ivms101_package_contains_correct_amount() {
+        let engine = TravelRuleEngine::new();
+        let payment = large_payment();
+        let data = complete_travel_data();
+        let result = engine.verify_travel_rule(&payment, Some(&data)).unwrap();
+        let pkg = result.ivms101_package.unwrap();
+        assert_eq!(pkg.payload.transaction_amount, payment.amount);
+        assert_eq!(pkg.payload.transaction_currency, payment.currency);
+        assert_eq!(pkg.payload.originator.name, "Alice Corp");
+        assert_eq!(pkg.payload.beneficiary.name, "Bob Ltd");
+        // encrypted_blob should be None in mock mode
+        assert!(pkg.encrypted_blob.is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // Custom threshold below default
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn custom_lower_threshold_catches_more() {
+        let engine = TravelRuleEngine::with_threshold(1_000); // $10
+        let payment = Payment::test_payment("alice", "bob", 1_500, "USD");
+        assert!(engine.is_above_threshold(&payment));
+        // Without data, should not be compliant
+        let result = engine.verify_travel_rule(&payment, None).unwrap();
+        assert!(!result.compliant);
+        assert!(result.above_threshold);
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover line 87: debug log for below-threshold payment
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn below_threshold_with_data_still_compliant() {
+        let engine = TravelRuleEngine::new();
+        let data = complete_travel_data();
+        let result = engine.verify_travel_rule(&small_payment(), Some(&data)).unwrap();
+        assert!(result.compliant);
+        assert!(!result.above_threshold);
+        assert!(result.ivms101_package.is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover line 104: warn log for above threshold without data
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn above_threshold_no_data_lists_all_missing_fields() {
+        let engine = TravelRuleEngine::new();
+        let result = engine.verify_travel_rule(&large_payment(), None).unwrap();
+        assert!(!result.compliant);
+        assert!(result.above_threshold);
+        assert_eq!(result.missing_fields.len(), 5);
+        assert!(result.missing_fields.contains(&"originator_name".to_string()));
+        assert!(result.missing_fields.contains(&"originator_account".to_string()));
+        assert!(result.missing_fields.contains(&"originator_address".to_string()));
+        assert!(result.missing_fields.contains(&"beneficiary_name".to_string()));
+        assert!(result.missing_fields.contains(&"beneficiary_account".to_string()));
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover line 151: warn log for incomplete travel rule data
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn incomplete_data_triggers_warn_and_no_package() {
+        let engine = TravelRuleEngine::new();
+        let data = TravelRuleData {
+            originator_name: Some("Alice".into()),
+            originator_account: Some("0xabc".into()),
+            originator_address: None, // missing
+            originator_id: None,
+            beneficiary_name: Some("Bob".into()),
+            beneficiary_account: Some("0xdef".into()),
+            beneficiary_institution: None,
+        };
+        let result = engine.verify_travel_rule(&large_payment(), Some(&data)).unwrap();
+        assert!(!result.compliant);
+        assert!(result.above_threshold);
+        assert!(result.ivms101_package.is_none());
+        assert!(result.missing_fields.contains(&"originator_address".to_string()));
+    }
 }

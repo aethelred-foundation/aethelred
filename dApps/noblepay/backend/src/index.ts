@@ -13,15 +13,69 @@ import paymentRoutes from "./routes/payments";
 import complianceRoutes from "./routes/compliance";
 import businessRoutes from "./routes/businesses";
 import auditRoutes from "./routes/audit";
+import treasuryRoutes from "./routes/treasury";
+import liquidityRoutes from "./routes/liquidity";
+import streamingRoutes from "./routes/streaming";
+import fxRoutes from "./routes/fx";
+import invoiceRoutes from "./routes/invoices";
+import crosschainRoutes from "./routes/crosschain";
+import reportingRoutes from "./routes/reporting";
+
+// WebSocket
+import { wsService } from "./services/websocket";
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
 const PORT = parseInt(process.env.PORT || "3003", 10);
 const NODE_ENV = process.env.NODE_ENV || "development";
+const isProduction = NODE_ENV === "production";
+
+// ─── Strict Environment Validation ─────────────────────────────────────────
+
+export function validateProductionEnv(): void {
+  const errors: string[] = [];
+
+  if (!process.env.JWT_SECRET) {
+    errors.push("JWT_SECRET is required in production");
+  }
+
+  if (!process.env.DATABASE_URL) {
+    errors.push("DATABASE_URL is required in production");
+  }
+
+  if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === "*") {
+    errors.push("CORS_ORIGIN must be set to a specific origin in production (wildcard '*' is not allowed)");
+  }
+
+  if (errors.length > 0) {
+    for (const err of errors) {
+      logger.error(`FATAL: ${err}`);
+    }
+    logger.error("Refusing to start — fix the environment variables above and restart.");
+    process.exit(1);
+  }
+}
+
+if (isProduction) {
+  validateProductionEnv();
+}
+
+// Resolve CORS origin: in production it is guaranteed to be a real origin
+// thanks to the validation above. In development default to localhost.
+const CORS_ORIGIN: string = process.env.CORS_ORIGIN || "http://localhost:3000";
+
+// Log validated configuration (no secrets)
+logger.info("NoblePay boot configuration", {
+  NODE_ENV,
+  PORT,
+  CORS_ORIGIN,
+  DATABASE_URL: process.env.DATABASE_URL ? "(set)" : "(unset)",
+  JWT_SECRET: process.env.JWT_SECRET ? "(set)" : "(unset)",
+});
 
 // ─── Prisma Client ──────────────────────────────────────────────────────────
 
-const prisma = new PrismaClient({
+export const prisma = new PrismaClient({
   log:
     NODE_ENV === "development"
       ? [
@@ -45,7 +99,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: CORS_ORIGIN,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Correlation-ID"],
     exposedHeaders: ["X-Correlation-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
@@ -65,7 +119,7 @@ app.use((req, res, next) => {
   const correlationId =
     (req.headers["x-correlation-id"] as string) || generateCorrelationId();
   res.setHeader("X-Correlation-ID", correlationId);
-  (req as Record<string, unknown>).correlationId = correlationId;
+  (req as unknown as Record<string, unknown>).correlationId = correlationId;
   next();
 });
 
@@ -76,14 +130,14 @@ app.use(
     stream: {
       write: (message: string) => logger.info(message.trim(), { component: "http" }),
     },
-    skip: (req) => req.url === "/health" || req.url === "/metrics",
+    skip: (req) => req.url === "/health" || req.url === "/healthz" || req.url === "/readyz" || req.url === "/metrics",
   }),
 );
 
 // ─── Prometheus Metrics Middleware ──────────────────────────────────────────
 
 app.use((req, res, next) => {
-  if (req.url === "/health" || req.url === "/metrics") {
+  if (req.url === "/health" || req.url === "/healthz" || req.url === "/readyz" || req.url === "/metrics") {
     next();
     return;
   }
@@ -118,7 +172,7 @@ const generalLimiter = rateLimit({
     error: "RATE_LIMITED",
     message: "Too many requests. Please try again later.",
   },
-  skip: (req) => req.url === "/health" || req.url === "/metrics",
+  skip: (req) => req.url === "/health" || req.url === "/healthz" || req.url === "/readyz" || req.url === "/metrics",
 });
 
 // Strict rate limit for payment creation: 10 req/min
@@ -135,8 +189,45 @@ const paymentCreationLimiter = rateLimit({
 
 app.use(generalLimiter);
 
-// ─── Health Check ───────────────────────────────────────────────────────────
+// ─── Health / Readiness Checks ──────────────────────────────────────────────
 
+// Liveness probe — always returns 200 if the process is running.
+app.get("/healthz", (_req, res) => {
+  res.json({
+    status: "alive",
+    service: "noblepay-api",
+    version: "1.0.0",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+// Readiness probe — returns 200 only when the DB connection is healthy.
+app.get("/readyz", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.json({
+      status: "ready",
+      service: "noblepay-api",
+      version: "1.0.0",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: "connected",
+    });
+  } catch {
+    res.status(503).json({
+      status: "not_ready",
+      service: "noblepay-api",
+      version: "1.0.0",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: "disconnected",
+    });
+  }
+});
+
+// Legacy /health endpoint — kept for backward compatibility, delegates to readyz.
 app.get("/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -187,6 +278,13 @@ app.use("/v1/payments", paymentRoutes);
 app.use("/v1/compliance", complianceRoutes);
 app.use("/v1/businesses", businessRoutes);
 app.use("/v1/audit", auditRoutes);
+app.use("/v1/treasury", treasuryRoutes);
+app.use("/v1/liquidity", liquidityRoutes);
+app.use("/v1/streams", streamingRoutes);
+app.use("/v1/fx", fxRoutes);
+app.use("/v1/invoices", invoiceRoutes);
+app.use("/v1/crosschain", crosschainRoutes);
+app.use("/v1/reports", reportingRoutes);
 
 // ─── 404 Handler ────────────────────────────────────────────────────────────
 
@@ -223,18 +321,33 @@ app.use(
 
 // ─── Server Startup ─────────────────────────────────────────────────────────
 
-const server = app.listen(PORT, () => {
-  logger.info(`NoblePay API server started`, {
-    port: PORT,
-    environment: NODE_ENV,
-    pid: process.pid,
+// Guard: only bind the listening socket when running as the main entry point
+// (not when imported by test harnesses via require/import).
+let server: ReturnType<typeof app.listen> | undefined;
+
+if (NODE_ENV !== "test") {
+  server = app.listen(PORT, () => {
+    logger.info(`NoblePay API server started`, {
+      port: PORT,
+      environment: NODE_ENV,
+      pid: process.pid,
+    });
+
+    // Attach WebSocket server
+    wsService.attach(server!);
+    logger.info("WebSocket server attached on /ws");
   });
-});
+}
 
 // ─── Graceful Shutdown ──────────────────────────────────────────────────────
 
 async function gracefulShutdown(signal: string) {
   logger.info(`Received ${signal}. Starting graceful shutdown...`);
+
+  if (!server) {
+    process.exit(0);
+    return;
+  }
 
   // Stop accepting new connections
   server.close(async () => {
@@ -253,11 +366,13 @@ async function gracefulShutdown(signal: string) {
     process.exit(0);
   });
 
-  // Force shutdown after 30 seconds
-  setTimeout(() => {
+  // Force shutdown after 30 seconds.
+  // .unref() so this timer doesn't itself prevent a clean exit.
+  const forceTimer = setTimeout(() => {
     logger.error("Forced shutdown after timeout");
     process.exit(1);
   }, 30_000);
+  forceTimer.unref();
 }
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
@@ -277,4 +392,5 @@ process.on("unhandledRejection", (reason) => {
   });
 });
 
+export { server };
 export default app;

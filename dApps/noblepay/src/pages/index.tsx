@@ -144,8 +144,8 @@ function generateMockPayment(seed: number, idx: number): MockPayment {
   else if (statusRoll < 0.25) status = 'Screening';
   else if (statusRoll < 0.55) status = 'Passed';
   else if (statusRoll < 0.65) status = 'Flagged';
-  else if (statusRoll < 0.95) status = 'Settled';
-  else if (statusRoll < 0.98) status = 'Blocked';
+  else if (statusRoll < 0.90) status = 'Settled';
+  else if (statusRoll < 0.95) status = 'Blocked';
   else status = 'Refunded';
 
   const currIdx = Math.floor(seededRandom(seed + 2) * CURRENCIES.length);
@@ -164,7 +164,7 @@ function generateMockPayment(seed: number, idx: number): MockPayment {
     currency: CURRENCIES[currIdx],
     status,
     riskScore,
-    timestamp: Date.now() - idx * 45000 - Math.floor(seededRandom(seed + 10) * 30000),
+    timestamp: Date.now() - idx * 45000 - Math.floor(seededRandom(seed + 10) * 30000) - (idx >= 8 ? 86400000 * (idx - 7) : idx >= 5 ? 3600000 * (idx - 4) : 0),
     settlementTime: status === 'Settled' ? Math.round(60 + seededRandom(seed + 11) * 240) : null,
     teeAttestation: `0x${seededHex(seed + 12, 64)}`,
   };
@@ -343,13 +343,6 @@ function riskColor(score: number): string {
   return 'text-red-400';
 }
 
-function riskBarColor(score: number): string {
-  if (score < 30) return 'bg-emerald-500';
-  if (score < 60) return 'bg-amber-500';
-  if (score < 80) return 'bg-orange-500';
-  return 'bg-red-500';
-}
-
 function generateSparklineData(seed: number, count: number): number[] {
   const data: number[] = [];
   for (let i = 0; i < count; i++) {
@@ -472,7 +465,7 @@ export default function DashboardPage() {
   useEffect(() => setMounted(true), []);
 
   // Generate all mock data deterministically
-  const payments = useMemo(() => generateInitialPayments(10), []);
+  const payments = useMemo(() => generateInitialPayments(30), []);
   const businesses = useMemo(() => generateInitialBusinesses(), []);
   const teeNodes = useMemo(() => generateInitialTEENodes(), []);
   const flags = useMemo(() => generateInitialFlags(), []);

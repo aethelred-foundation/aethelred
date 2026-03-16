@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { AuthenticatedRequest, authenticateAPIKey } from "../middleware/auth";
 import { validate, ListAuditSchema, AuditExportSchema } from "../middleware/validation";
 import { AuditService } from "../services/audit";
+import { extractRole, requirePermission } from "../middleware/rbac";
 import { logger } from "../lib/logger";
 
 const prisma = new PrismaClient();
@@ -15,10 +16,15 @@ const router = Router();
 router.get(
   "/",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("audit:read"),
   validate(ListAuditSchema, "query"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const result = await auditService.listAuditEntries(req.query as any);
+      const result = await auditService.listAuditEntries({
+        ...(req.query as any),
+        businessId: req.businessId,
+      });
 
       res.json({
         success: true,
@@ -39,6 +45,8 @@ router.get(
 router.get(
   "/verify",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("audit:read"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const result = await auditService.verifyChainIntegrity();
@@ -58,6 +66,8 @@ router.get(
 router.get(
   "/stats",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("audit:read"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const stats = await auditService.getAuditStats();
@@ -77,6 +87,8 @@ router.get(
 router.get(
   "/:id",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("audit:read"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const entry = await auditService.getAuditEntry(req.params.id);
@@ -107,10 +119,15 @@ router.get(
 router.post(
   "/export",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("audit:export"),
   validate(AuditExportSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const result = await auditService.generateExport(req.body);
+      const result = await auditService.generateExport({
+        ...req.body,
+        businessId: req.businessId,
+      });
 
       // Set appropriate content type
       if (req.body.format === "csv") {

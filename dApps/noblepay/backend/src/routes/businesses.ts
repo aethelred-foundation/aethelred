@@ -7,6 +7,7 @@ import {
   UpdateBusinessSchema,
   ListBusinessesSchema,
 } from "../middleware/validation";
+import { extractRole, requireOwnership, requirePermission, requireRole, RBACRequest } from "../middleware/rbac";
 import { AuditService } from "../services/audit";
 import { activeBusinesses } from "../lib/metrics";
 import { logger } from "../lib/logger";
@@ -113,6 +114,8 @@ router.post(
 router.get(
   "/",
   authenticateAPIKey,
+  extractRole,
+  requireRole("ADMIN"),
   validate(ListBusinessesSchema, "query"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -158,8 +161,18 @@ router.get(
 router.get(
   "/:id",
   authenticateAPIKey,
+  extractRole,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      // Tenant isolation: verify caller owns the resource or is admin
+      if (!requireOwnership(req as RBACRequest, req.params.id)) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "You do not have access to this business record",
+        });
+        return;
+      }
+
       const business = await prisma.business.findUnique({
         where: { id: req.params.id },
         include: {
@@ -202,9 +215,20 @@ router.get(
 router.patch(
   "/:id",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("businesses:manage"),
   validate(UpdateBusinessSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      // Tenant isolation: only the owning business can update its own record
+      if (req.businessId !== req.params.id) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "You can only update your own business record",
+        });
+        return;
+      }
+
       const business = await prisma.business.findUnique({
         where: { id: req.params.id },
       });
@@ -241,6 +265,8 @@ router.patch(
 router.post(
   "/:id/verify",
   authenticateAPIKey,
+  extractRole,
+  requireRole("ADMIN", "COMPLIANCE_OFFICER"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const business = await prisma.business.findUnique({
@@ -305,6 +331,8 @@ router.post(
 router.post(
   "/:id/suspend",
   authenticateAPIKey,
+  extractRole,
+  requireRole("ADMIN"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const business = await prisma.business.findUnique({
@@ -374,6 +402,8 @@ router.post(
 router.post(
   "/:id/upgrade",
   authenticateAPIKey,
+  extractRole,
+  requireRole("ADMIN"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const business = await prisma.business.findUnique({
@@ -453,8 +483,18 @@ router.post(
 router.get(
   "/:id/limits",
   authenticateAPIKey,
+  extractRole,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      // Ownership check: caller must own the resource or be admin
+      if (!requireOwnership(req as RBACRequest, req.params.id)) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "You do not have access to this business's limits",
+        });
+        return;
+      }
+
       const business = await prisma.business.findUnique({
         where: { id: req.params.id },
       });

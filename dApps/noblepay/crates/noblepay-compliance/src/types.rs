@@ -415,4 +415,185 @@ mod tests {
         assert_eq!(SanctionsList::Ofac.to_string(), "OFAC");
         assert_eq!(SanctionsList::UaeCentralBank.to_string(), "UAE Central Bank");
     }
+
+    #[test]
+    fn sanctions_list_display_all_variants() {
+        assert_eq!(SanctionsList::UnitedNations.to_string(), "UN");
+        assert_eq!(SanctionsList::EuropeanUnion.to_string(), "EU");
+    }
+
+    #[test]
+    fn aml_risk_level_from_score_max_value() {
+        assert_eq!(AMLRiskLevel::from_score(255), AMLRiskLevel::Critical);
+    }
+
+    #[test]
+    fn compliance_status_serialization_all_variants() {
+        for status in [ComplianceStatus::Passed, ComplianceStatus::Flagged, ComplianceStatus::Blocked] {
+            let json = serde_json::to_string(&status).unwrap();
+            let back: ComplianceStatus = serde_json::from_str(&json).unwrap();
+            assert_eq!(status, back);
+        }
+    }
+
+    #[test]
+    fn entity_type_serialization_roundtrip() {
+        for et in [EntityType::Individual, EntityType::Organization, EntityType::Vessel, EntityType::Aircraft, EntityType::Unknown] {
+            let json = serde_json::to_string(&et).unwrap();
+            let back: EntityType = serde_json::from_str(&json).unwrap();
+            assert_eq!(et, back);
+        }
+    }
+
+    #[test]
+    fn risk_factor_label_uniqueness() {
+        let factors = vec![
+            RiskFactor::HighValueTransaction,
+            RiskFactor::FrequentTransactions,
+            RiskFactor::HighRiskJurisdiction,
+            RiskFactor::NewCounterparty,
+            RiskFactor::UnusualPattern,
+            RiskFactor::StructuredTransactions,
+            RiskFactor::RapidMovement,
+        ];
+        let labels: Vec<&str> = factors.iter().map(|f| f.label()).collect();
+        let unique: std::collections::HashSet<&str> = labels.iter().cloned().collect();
+        assert_eq!(labels.len(), unique.len(), "All risk factor labels should be unique");
+    }
+
+    #[test]
+    fn test_payment_creates_valid_payment() {
+        let p = Payment::test_payment("alice", "bob", 5000, "USD");
+        assert_eq!(p.sender, "alice");
+        assert_eq!(p.recipient, "bob");
+        assert_eq!(p.amount, 5000);
+        assert_eq!(p.currency, "USD");
+        assert!(p.purpose_hash.is_none());
+        assert!(p.metadata.is_empty());
+    }
+
+    #[test]
+    fn travel_rule_originator_complete_requires_all_three() {
+        // Missing account
+        let data = TravelRuleData {
+            originator_name: Some("Alice".into()),
+            originator_account: None,
+            originator_address: Some("Dubai".into()),
+            originator_id: None,
+            beneficiary_name: None,
+            beneficiary_account: None,
+            beneficiary_institution: None,
+        };
+        assert!(!data.originator_complete());
+
+        // Missing address
+        let data2 = TravelRuleData {
+            originator_name: Some("Alice".into()),
+            originator_account: Some("0xabc".into()),
+            originator_address: None,
+            originator_id: None,
+            beneficiary_name: None,
+            beneficiary_account: None,
+            beneficiary_institution: None,
+        };
+        assert!(!data2.originator_complete());
+    }
+
+    #[test]
+    fn travel_rule_beneficiary_complete_requires_both() {
+        let data = TravelRuleData {
+            originator_name: None,
+            originator_account: None,
+            originator_address: None,
+            originator_id: None,
+            beneficiary_name: Some("Bob".into()),
+            beneficiary_account: None,
+            beneficiary_institution: None,
+        };
+        assert!(!data.beneficiary_complete());
+    }
+
+    #[test]
+    fn aml_risk_level_ordering() {
+        assert!(AMLRiskLevel::Low < AMLRiskLevel::Medium);
+        assert!(AMLRiskLevel::Medium < AMLRiskLevel::High);
+        assert!(AMLRiskLevel::High < AMLRiskLevel::Critical);
+    }
+
+    #[test]
+    fn payment_serialization_roundtrip() {
+        let p = Payment::test_payment("alice", "bob", 5000, "USD");
+        let json = serde_json::to_string(&p).unwrap();
+        let back: Payment = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.sender, "alice");
+        assert_eq!(back.recipient, "bob");
+        assert_eq!(back.amount, 5000);
+        assert_eq!(back.currency, "USD");
+    }
+
+    #[test]
+    fn screening_request_serialization() {
+        let req = ScreeningRequest {
+            payment: Payment::test_payment("alice", "bob", 1000, "USD"),
+            travel_rule_data: None,
+            timeout_ms: Some(3000),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        let back: ScreeningRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.timeout_ms, Some(3000));
+    }
+
+    #[test]
+    fn sanctions_list_all_variants_serialization() {
+        for list in [SanctionsList::Ofac, SanctionsList::UaeCentralBank, SanctionsList::UnitedNations, SanctionsList::EuropeanUnion] {
+            let json = serde_json::to_string(&list).unwrap();
+            let back: SanctionsList = serde_json::from_str(&json).unwrap();
+            assert_eq!(list, back);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Cover lines 333, 337-338: hex_bytes serialize/deserialize roundtrip
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn compliance_result_serialization_roundtrip() {
+        let result = ComplianceResult {
+            payment_id: Uuid::new_v4(),
+            sanctions_clear: true,
+            aml_risk_score: 42,
+            travel_rule_compliant: true,
+            status: ComplianceStatus::Passed,
+            attestation: vec![0xde, 0xad, 0xbe, 0xef],
+            screening_duration_ms: 123,
+            risk_factors: vec![RiskFactor::HighValueTransaction],
+            screened_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&result).unwrap();
+        // Verify attestation is hex-encoded
+        assert!(json.contains("deadbeef"));
+
+        let back: ComplianceResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.attestation, vec![0xde, 0xad, 0xbe, 0xef]);
+        assert_eq!(back.aml_risk_score, 42);
+        assert_eq!(back.status, ComplianceStatus::Passed);
+    }
+
+    #[test]
+    fn compliance_result_hex_bytes_empty_attestation() {
+        let result = ComplianceResult {
+            payment_id: Uuid::new_v4(),
+            sanctions_clear: true,
+            aml_risk_score: 0,
+            travel_rule_compliant: true,
+            status: ComplianceStatus::Passed,
+            attestation: vec![],
+            screening_duration_ms: 0,
+            risk_factors: vec![],
+            screened_at: Utc::now(),
+        };
+        let json = serde_json::to_string(&result).unwrap();
+        let back: ComplianceResult = serde_json::from_str(&json).unwrap();
+        assert!(back.attestation.is_empty());
+    }
 }

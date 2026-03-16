@@ -75,6 +75,7 @@ export class PaymentService {
         currency: input.currency,
         purposeHash: input.purposeHash || null,
         status: "PENDING",
+        businessId,
       },
     });
 
@@ -127,13 +128,20 @@ export class PaymentService {
 
   /**
    * List payments with filtering and pagination.
+   * When businessId is provided, results are scoped to that business.
    */
   async listPayments(
     params: ListPaymentsInput,
+    businessId?: string,
   ): Promise<PaginatedResult<Payment>> {
     const { page, limit, sortBy, sortOrder, status, sender, recipient, currency, minAmount, maxAmount, from, to } = params;
 
     const where: Prisma.PaymentWhereInput = {};
+
+    // Scope to the authenticated business when provided
+    if (businessId) {
+      where.businessId = businessId;
+    }
 
     if (status) where.status = status as PaymentStatus;
     if (sender) where.sender = sender;
@@ -182,12 +190,18 @@ export class PaymentService {
 
   /**
    * Cancel a pending payment.
+   * The actor parameter is the businessId of the requesting business.
    */
   async cancelPayment(id: string, actor: string): Promise<Payment> {
     const payment = await this.getPayment(id);
 
     if (!payment) {
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found", 404);
+    }
+
+    // Verify the payment belongs to the requesting business
+    if (payment.businessId && payment.businessId !== actor) {
+      throw new PaymentError("FORBIDDEN", "You do not have permission to cancel this payment", 403);
     }
 
     if (payment.status !== "PENDING" && payment.status !== "SCREENING") {
@@ -220,12 +234,18 @@ export class PaymentService {
 
   /**
    * Refund a settled payment.
+   * The actor parameter is the businessId of the requesting business.
    */
   async refundPayment(id: string, actor: string): Promise<Payment> {
     const payment = await this.getPayment(id);
 
     if (!payment) {
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found", 404);
+    }
+
+    // Verify the payment belongs to the requesting business
+    if (payment.businessId && payment.businessId !== actor) {
+      throw new PaymentError("FORBIDDEN", "You do not have permission to refund this payment", 403);
     }
 
     if (payment.status !== "SETTLED") {
@@ -376,36 +396,42 @@ export class PaymentService {
   /**
    * Get dashboard statistics.
    */
-  async getStats(): Promise<PaymentStats> {
+  async getStats(businessId?: string): Promise<PaymentStats> {
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // Scope all queries to the tenant's data when businessId is provided
+    const scopeFilter: Prisma.PaymentWhereInput = businessId ? { businessId } : {};
+
     const [totalPayments, totalAgg, statusCounts, currencyAgg, last24hAgg, last7dAgg] =
       await Promise.all([
-        this.prisma.payment.count(),
+        this.prisma.payment.count({ where: scopeFilter }),
         this.prisma.payment.aggregate({
           _sum: { amount: true },
           _avg: { amount: true },
+          where: scopeFilter,
         }),
         this.prisma.payment.groupBy({
           by: ["status"],
           _count: { id: true },
+          where: scopeFilter,
         }),
         this.prisma.payment.groupBy({
           by: ["currency"],
           _count: { id: true },
           _sum: { amount: true },
+          where: scopeFilter,
         }),
         this.prisma.payment.aggregate({
           _count: { id: true },
           _sum: { amount: true },
-          where: { initiatedAt: { gte: last24h } },
+          where: { ...scopeFilter, initiatedAt: { gte: last24h } },
         }),
         this.prisma.payment.aggregate({
           _count: { id: true },
           _sum: { amount: true },
-          where: { initiatedAt: { gte: last7d } },
+          where: { ...scopeFilter, initiatedAt: { gte: last7d } },
         }),
       ]);
 

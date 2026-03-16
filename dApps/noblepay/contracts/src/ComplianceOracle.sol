@@ -160,6 +160,14 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
     /// @notice Per-address approval tracking for threshold changes.
     mapping(bytes32 => mapping(address => bool)) public thresholdChangeVotes;
 
+    /// @notice Proposed threshold values keyed by proposal ID.
+    struct ProposedThresholds {
+        uint8 lowMax;
+        uint8 mediumMax;
+        bool exists;
+    }
+    mapping(bytes32 => ProposedThresholds) public proposedThresholds;
+
     // ──────────────────────────────────────────────────────────────
     // Events
     // ──────────────────────────────────────────────────────────────
@@ -189,6 +197,7 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
     error AlreadyVoted();
     error ZeroAddress();
     error InvalidAttestation();
+    error ThresholdValuesMismatch();
 
     // ──────────────────────────────────────────────────────────────
     // Constructor
@@ -400,11 +409,18 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
         thresholdChangeApprovals[proposalId] = 1;
         thresholdChangeVotes[proposalId][msg.sender] = true;
 
+        // Store proposed values so approvers must match them exactly
+        proposedThresholds[proposalId] = ProposedThresholds({
+            lowMax: _lowMax,
+            mediumMax: _mediumMax,
+            exists: true
+        });
+
         emit ThresholdChangeProposed(proposalId, _lowMax, _mediumMax);
 
         // If single approval is enough (edge case where THRESHOLD_CHANGE_APPROVALS == 1)
         if (THRESHOLD_CHANGE_APPROVALS <= 1) {
-            _applyThresholds(_lowMax, _mediumMax);
+            _applyThresholds(proposalId);
         }
     }
 
@@ -421,12 +437,16 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
     ) external onlyRole(THRESHOLD_MANAGER_ROLE) {
         if (thresholdChangeVotes[_proposalId][msg.sender]) revert AlreadyVoted();
 
-        // Verify the proposal matches expected values
-        bytes32 expectedId = keccak256(abi.encodePacked(_lowMax, _mediumMax, block.timestamp));
         require(
             thresholdChangeApprovals[_proposalId] > 0,
             "ComplianceOracle: proposal not found"
         );
+
+        // Verify caller-supplied values match the originally proposed values
+        ProposedThresholds storage proposed = proposedThresholds[_proposalId];
+        if (_lowMax != proposed.lowMax || _mediumMax != proposed.mediumMax) {
+            revert ThresholdValuesMismatch();
+        }
 
         thresholdChangeVotes[_proposalId][msg.sender] = true;
         thresholdChangeApprovals[_proposalId]++;
@@ -434,7 +454,7 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
         emit ThresholdChangeApproved(_proposalId, msg.sender);
 
         if (thresholdChangeApprovals[_proposalId] >= THRESHOLD_CHANGE_APPROVALS) {
-            _applyThresholds(_lowMax, _mediumMax);
+            _applyThresholds(_proposalId);
         }
     }
 
@@ -531,16 +551,20 @@ contract ComplianceOracle is AccessControl, Pausable, ReentrancyGuard {
     // Internal
     // ──────────────────────────────────────────────────────────────
 
-    /// @dev Applies new risk thresholds after multi-sig approval.
-    function _applyThresholds(uint8 _lowMax, uint8 _mediumMax) internal {
+    /// @dev Applies new risk thresholds after multi-sig approval using stored proposal values.
+    function _applyThresholds(bytes32 _proposalId) internal {
+        ProposedThresholds storage proposed = proposedThresholds[_proposalId];
+        uint8 lowMax = proposed.lowMax;
+        uint8 mediumMax = proposed.mediumMax;
+
         riskThresholds = RiskThresholds({
-            lowMax: _lowMax,
-            mediumMax: _mediumMax,
+            lowMax: lowMax,
+            mediumMax: mediumMax,
             lastUpdated: block.timestamp,
             updatedBy: msg.sender
         });
 
-        emit RiskThresholdUpdated(_lowMax, _mediumMax, msg.sender);
+        emit RiskThresholdUpdated(lowMax, mediumMax, msg.sender);
     }
 
     /// @dev Removes a TEE node from the active list using swap-and-pop.

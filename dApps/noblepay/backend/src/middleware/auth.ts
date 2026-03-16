@@ -6,7 +6,12 @@ import { logger } from "../lib/logger";
 
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || "noblepay-dev-secret-change-in-production";
+const JWT_SECRET: string = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-secret';
+  }
+  throw new Error('FATAL: JWT_SECRET environment variable is required in non-test environments');
+})();
 
 // Rate limits per business tier (requests per minute)
 const TIER_RATE_LIMITS: Record<BusinessTier, number> = {
@@ -24,12 +29,15 @@ export interface AuthenticatedRequest extends Request {
   businessTier?: BusinessTier;
   apiKeyId?: string;
   jwtPayload?: JWTPayload;
+  /** Unique signer identity for treasury approvals — derived from JWT sub or API key ID */
+  signerId?: string;
 }
 
 interface JWTPayload {
   sub: string;
   businessId: string;
   tier: BusinessTier;
+  role?: string;
   iat: number;
   exp: number;
 }
@@ -56,16 +64,27 @@ export async function authenticateAPIKey(
 
     const token = authHeader.slice(7);
 
-    // First try JWT validation
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-      req.businessId = decoded.businessId;
-      req.businessTier = decoded.tier;
-      req.jwtPayload = decoded;
-      next();
-      return;
-    } catch {
-      // Not a JWT token, try API key
+    // First try JWT validation — if the token structurally looks like a JWT
+    // (three dot-separated segments), treat it as a JWT exclusively.
+    // NP-02 fix: a failed JWT verify MUST return 401, never fall through to
+    // API-key lookup (which could surface a 500 if the DB is unreachable).
+    const looksLikeJWT = token.split(".").length === 3;
+    if (looksLikeJWT) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+        req.businessId = decoded.businessId;
+        req.businessTier = decoded.tier;
+        req.jwtPayload = decoded;
+        req.signerId = decoded.sub;
+        next();
+        return;
+      } catch {
+        res.status(401).json({
+          error: "UNAUTHORIZED",
+          message: "Invalid or expired JWT token",
+        });
+        return;
+      }
     }
 
     // Hash the provided key and look it up
@@ -111,6 +130,7 @@ export async function authenticateAPIKey(
     req.businessId = apiKey.businessId;
     req.businessTier = apiKey.business.tier;
     req.apiKeyId = apiKey.id;
+    req.signerId = `apikey:${apiKey.id}`;
 
     next();
   } catch (error) {
@@ -171,11 +191,12 @@ export function tierRateLimit(
 /**
  * Generate a JWT token for a business.
  */
-export function generateJWT(businessId: string, tier: BusinessTier): string {
+export function generateJWT(businessId: string, tier: BusinessTier, role?: string, userId?: string): string {
   const payload: Omit<JWTPayload, "iat" | "exp"> = {
-    sub: businessId,
+    sub: userId || `user:${businessId}:${crypto.randomUUID()}`,
     businessId,
     tier,
+    role: role || "VIEWER",
   };
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
@@ -190,12 +211,29 @@ export function generateAPIKey(): { rawKey: string; keyHash: string } {
   return { rawKey, keyHash };
 }
 
-// Periodic cleanup of expired rate limit windows
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, window] of rateLimitWindows) {
-    if (now > window.resetAt + 60_000) {
-      rateLimitWindows.delete(key);
+// Periodic cleanup of expired rate limit windows.
+// Uses .unref() so the timer does not prevent Node from exiting (avoids open-handle leaks in tests).
+let _rateLimitJanitor: ReturnType<typeof setInterval> | null = null;
+
+function _startRateLimitJanitor(): void {
+  if (_rateLimitJanitor) return;
+  _rateLimitJanitor = setInterval(() => {
+    const now = Date.now();
+    for (const [key, window] of rateLimitWindows) {
+      if (now > window.resetAt + 60_000) {
+        rateLimitWindows.delete(key);
+      }
     }
+  }, 300_000); // every 5 minutes
+  _rateLimitJanitor.unref();
+}
+
+export function stopRateLimitJanitor(): void {
+  if (_rateLimitJanitor) {
+    clearInterval(_rateLimitJanitor);
+    _rateLimitJanitor = null;
   }
-}, 300_000); // every 5 minutes
+}
+
+// Auto-start — the .unref() ensures this won't keep the process alive.
+_startRateLimitJanitor();

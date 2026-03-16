@@ -156,7 +156,7 @@ export function validate<T extends z.ZodType>(
     }
 
     // Replace the source data with parsed/coerced values
-    (req as Record<string, unknown>)[source] = result.data;
+    (req as unknown as Record<string, unknown>)[source] = result.data;
     next();
   };
 }

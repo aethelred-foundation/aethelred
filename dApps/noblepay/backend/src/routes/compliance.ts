@@ -8,6 +8,7 @@ import {
 } from "../middleware/validation";
 import { ComplianceService, ComplianceError } from "../services/compliance";
 import { AuditService } from "../services/audit";
+import { extractRole, requirePermission, requireRole } from "../middleware/rbac";
 import { logger } from "../lib/logger";
 
 const prisma = new PrismaClient();
@@ -21,6 +22,8 @@ const router = Router();
 router.post(
   "/screen",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:manage"),
   validate(ComplianceScreeningSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -41,6 +44,8 @@ router.post(
 router.get(
   "/status",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:read"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const sanctions = complianceService.getSanctionsStatus();
@@ -72,6 +77,8 @@ router.get(
 router.get(
   "/metrics",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:read"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const metrics = await complianceService.getComplianceMetrics();
@@ -91,6 +98,8 @@ router.get(
 router.get(
   "/screenings/:paymentId",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:read"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const screenings = await complianceService.getScreeningResult(
@@ -112,6 +121,8 @@ router.get(
 router.post(
   "/sanctions/update",
   authenticateAPIKey,
+  extractRole,
+  requireRole("ADMIN"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const result = await complianceService.updateSanctionsList();
@@ -131,6 +142,8 @@ router.post(
 router.get(
   "/sanctions/status",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:read"),
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const status = complianceService.getSanctionsStatus();
@@ -150,6 +163,8 @@ router.get(
 router.get(
   "/flagged",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:read"),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -176,6 +191,8 @@ router.get(
 router.post(
   "/flagged/:id/review",
   authenticateAPIKey,
+  extractRole,
+  requirePermission("compliance:override"),
   validate(ReviewDecisionSchema),
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {

@@ -116,7 +116,7 @@ export function useBusinessRegistration() {
       address: CONTRACT_ADDRESSES.businessRegistry as `0x${string}`,
       abi: BUSINESS_REGISTRY_ABI,
       functionName: 'registerBusiness',
-      args: [params.licenseNumber, '0x'],
+      args: [params.licenseNumber, '0x4145' as `0x${string}`, '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`],
     });
 
     // Also register via API for off-chain data
