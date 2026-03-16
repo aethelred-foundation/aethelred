@@ -70,6 +70,12 @@ const nextConfig = {
         os: false,
       };
 
+      // Suppress MetaMask SDK React Native import warning
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@react-native-async-storage/async-storage': false,
+      };
+
       const webpack = require('webpack');
       config.plugins.push(
         new webpack.NormalModuleReplacementPlugin(
