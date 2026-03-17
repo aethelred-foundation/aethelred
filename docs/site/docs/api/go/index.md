@@ -96,5 +96,4 @@ type SDKComputeCapabilities struct {
 - [runtime](/api/go/runtime) - Device management, memory pools, profiling
 - [tensor](/api/go/tensor) - Tensor operations with lazy evaluation
 - [nn](/api/go/nn) - Neural network modules (PyTorch-compatible)
-- [optim](/api/go/crypto) - Optimizers and learning rate schedulers
-- [distributed](/api/go/distributed) - DDP, ZeRO, model parallelism
+- [crypto](/api/go/crypto) - Cryptographic utilities and hashing
