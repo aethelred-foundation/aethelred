@@ -2,6 +2,7 @@
     "name": "aethelred-docs",
     "version": "1.0.0",
     "private": true,
+    "type": "module",
     "description": "Aethelred SDK Documentation Site",
     "scripts": {
         "dev": "vitepress dev docs",
