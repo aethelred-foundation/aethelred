@@ -1,9 +1,5 @@
 <p align="center">
- <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/github-org-profile/banner-dark.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="docs/github-org-profile/banner-light.svg" />
-  <img src="docs/github-org-profile/banner-light.svg" alt="Aethelred" width="800" />
- </picture>
+ <img src="https://raw.githubusercontent.com/aethelred-foundation/aethelred/main/AE%20Final%20Logo.png" alt="Aethelred" width="320" />
 </p>
 
 <h1 align="center">Aethelred</h1>
