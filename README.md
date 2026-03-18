@@ -15,7 +15,7 @@
  <a href="docs/security/release-provenance.md"><img src="https://img.shields.io/badge/release-provenance%20tracked-0e8a16?style=flat-square" alt="Release provenance"></a>
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" alt="Discord"></a>
- <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
+ <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
  <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
  <a href="docs/audits/STATUS.md"><img src="https://img.shields.io/badge/audit-program%20active-f59e0b?style=flat-square" alt="Audit program active"></a>
 </p>
