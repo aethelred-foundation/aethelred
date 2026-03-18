@@ -39,9 +39,6 @@ jobs:
         run: npm run build
         working-directory: docs/site
 
-      - name: Create CNAME for custom domain
-        run: echo 'docs.aethelred.io' > docs/site/docs/.vitepress/dist/CNAME
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/site/docs/.vitepress/dist
