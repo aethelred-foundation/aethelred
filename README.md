@@ -1,5 +1,9 @@
 <p align="center">
- <img src="docs/assets/aethelred-banner.png" alt="Aethelred" width="800" />
+ <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/github-org-profile/banner-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="docs/github-org-profile/banner-light.svg" />
+  <img src="docs/github-org-profile/banner-light.svg" alt="Aethelred" width="800" />
+ </picture>
 </p>
 
 <h1 align="center">Aethelred</h1>
