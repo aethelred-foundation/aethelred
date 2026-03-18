@@ -1,5 +1,5 @@
 <p align="center">
- <img src="https://raw.githubusercontent.com/aethelred-foundation/aethelred/main/AE%20Final%20Logo.png" alt="Aethelred" width="320" />
+ <img src="README-logo.png" alt="Aethelred" width="320" />
 </p>
 
 <h1 align="center">Aethelred</h1>
