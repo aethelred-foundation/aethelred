@@ -3,18 +3,18 @@ name: Sample Apps Docker Smoke
 on:
   pull_request:
     paths:
-      - "apps/fastapi-verifier/**"
-      - "apps/nextjs-verifier/**"
-      - "deploy/docker/**"
+      - "integrations/apps/fastapi-verifier/**"
+      - "integrations/apps/nextjs-verifier/**"
+      - "integrations/deploy/docker/**"
       - "sdk/python/**"
       - "sdk/typescript/**"
       - ".github/workflows/sample-apps-docker-smoke.yml"
   push:
     branches: ["main", "master"]
     paths:
-      - "apps/fastapi-verifier/**"
-      - "apps/nextjs-verifier/**"
-      - "deploy/docker/**"
+      - "integrations/apps/fastapi-verifier/**"
+      - "integrations/apps/nextjs-verifier/**"
+      - "integrations/deploy/docker/**"
       - "sdk/python/**"
       - "sdk/typescript/**"
       - ".github/workflows/sample-apps-docker-smoke.yml"
@@ -32,8 +32,8 @@ jobs:
       - name: Build FastAPI verifier sample image
         run: |
           docker build \
-            -f deploy/docker/Dockerfile.fastapi-verifier \
-            --build-arg APP_DIR=apps/fastapi-verifier \
+            -f integrations/deploy/docker/Dockerfile.fastapi-verifier \
+            --build-arg APP_DIR=integrations/apps/fastapi-verifier \
             -t aethelred/fastapi-verifier-smoke:${{ github.sha }} \
             .
 
@@ -80,8 +80,8 @@ jobs:
       - name: Build Next.js verifier sample image
         run: |
           docker build \
-            -f deploy/docker/Dockerfile.nextjs-api \
-            --build-arg APP_DIR=apps/nextjs-verifier \
+            -f integrations/deploy/docker/Dockerfile.nextjs-api \
+            --build-arg APP_DIR=integrations/apps/nextjs-verifier \
             -t aethelred/nextjs-verifier-smoke:${{ github.sha }} \
             .
 

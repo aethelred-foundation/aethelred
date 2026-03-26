@@ -1,226 +1,152 @@
-# Client Module
+# Rust Client API
 
-## `aethelred_sdk::core`
+The `aethelred-client` crate provides the async blockchain client for interacting with Aethelred nodes via RPC and gRPC.
 
-The Client module provides `AethelredClient`, the primary entry point for interacting with the Aethelred blockchain. It manages HTTP connections, module routing, and the async Tokio runtime.
-
-See also: [Rust SDK Overview](/api/rust/) | [Crypto Module](/api/rust/crypto) | [Attestation Module](/api/rust/attestation)
-
----
-
-### `AethelredClient`
-
-Main client for all blockchain operations. Holds sub-modules for jobs, seals, models, validators, and verification.
+## Import
 
 ```rust
-use aethelred_sdk::{AethelredClient, Network};
-
-let client = AethelredClient::new(Network::Testnet).await?;
+use aethelred_client::{Client, ClientConfig, TxBuilder, BroadcastMode};
 ```
 
-#### Constructors
+## Client
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `new` | `async fn new(network: Network) -> Result<Self>` | Connect with default config for the given network |
-| `with_config` | `async fn with_config(config: Config) -> Result<Self>` | Connect with custom configuration |
-| `mainnet` | `async fn mainnet() -> Result<Self>` | Shorthand for `new(Network::Mainnet)` |
-| `testnet` | `async fn testnet() -> Result<Self>` | Shorthand for `new(Network::Testnet)` |
-| `local` | `async fn local() -> Result<Self>` | Shorthand for `new(Network::Local)` |
-
-#### Module Accessors
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `jobs()` | `&JobsModule` | Compute job submission, polling, cancellation |
-| `seals()` | `&SealsModule` | Digital seal CRUD and verification |
-| `models()` | `&ModelsModule` | On-chain model registry |
-| `validators()` | `&ValidatorsModule` | Validator stats and capabilities |
-| `verification()` | `&VerificationModule` | TEE and zkML proof verification |
-
-#### Node Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `get_node_info` | `async fn get_node_info(&self) -> Result<NodeInfo>` | Query Tendermint node info |
-| `health_check` | `async fn health_check(&self) -> bool` | Returns `true` if the node is reachable |
-| `rpc_url` | `fn rpc_url(&self) -> &str` | Effective RPC endpoint URL |
-| `chain_id` | `fn chain_id(&self) -> &str` | Effective chain ID string |
-
----
-
-### Network
+### Client::new
 
 ```rust
-pub enum Network {
-    Mainnet,
-    Testnet,
-    Devnet,
-    Local,
+pub async fn new(config: ClientConfig) -> Result<Client>
+```
+
+### ClientConfig
+
+```rust
+pub struct ClientConfig {
+    pub rpc_endpoint: String,
+    pub grpc_endpoint: Option<String>,
+    pub chain_id: String,
+    pub timeout: Duration,
+    pub retry_policy: RetryPolicy,
+    pub keyring: Option<Keyring>,
 }
 ```
 
-| Variant | RPC URL | Chain ID |
-|---------|---------|----------|
-| `Mainnet` | `https://rpc.mainnet.aethelred.org` | `aethelred-1` |
-| `Testnet` | `https://rpc.testnet.aethelred.org` | `aethelred-testnet-1` |
-| `Devnet` | `https://rpc.devnet.aethelred.org` | `aethelred-devnet-1` |
-| `Local` | `http://127.0.0.1:26657` | `aethelred-local` |
-
----
-
-### Config
-
-Builder-pattern configuration for custom client setups.
+### Multi-Endpoint Failover
 
 ```rust
-use aethelred_sdk::Config;
-use std::time::Duration;
-
-let config = Config::testnet()
-    .with_api_key("aeth_key_abc123")
-    .with_timeout(Duration::from_secs(60));
-
-let client = AethelredClient::with_config(config).await?;
+let client = Client::with_failover(vec![
+    "https://rpc1.mainnet.aethelred.io".into(),
+    "https://rpc2.mainnet.aethelred.io".into(),
+], ClientConfig {
+    chain_id: "aethelred-1".into(),
+    ..Default::default()
+}).await?;
 ```
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `network` | `Network` | `Mainnet` | Target network |
-| `rpc_url` | `Option<String>` | `None` | Override the network's default RPC URL |
-| `chain_id` | `Option<String>` | `None` | Override the network's default chain ID |
-| `api_key` | `Option<String>` | `None` | API key sent as `X-API-Key` header |
-| `timeout` | `Duration` | 30s | HTTP request timeout |
-| `max_retries` | `u32` | 3 | Maximum retry attempts |
-| `log_requests` | `bool` | `false` | Log outgoing HTTP requests |
-
----
-
-### Jobs Module
-
-#### `SubmitJobRequest`
+## Queries
 
 ```rust
-pub struct SubmitJobRequest {
-    pub model_hash: String,
-    pub input_hash: String,
-    pub proof_type: Option<ProofType>,
-    pub priority: Option<u32>,
-    pub max_gas: Option<String>,
-    pub timeout_blocks: Option<u32>,
+pub async fn status(&self) -> Result<StatusResponse>;
+pub async fn query_account(&self, address: &str) -> Result<Account>;
+pub async fn query_block(&self, height: u64) -> Result<Block>;
+pub async fn query_tx(&self, hash: &[u8; 32]) -> Result<TxResponse>;
+```
+
+## Transactions
+
+### TxBuilder
+
+```rust
+let tx = client.tx_builder()
+    .add_message(MsgSend {
+        from_address: sender.clone(),
+        to_address: recipient.clone(),
+        amount: vec![Coin::new(1_000_000, "uaeth")],
+    })
+    .set_gas_limit(200_000)
+    .set_fee(vec![Coin::new(5_000, "uaeth")])
+    .set_memo("payment")
+    .sign(&signer_name)
+    .await?;
+
+let resp = client.broadcast_tx(&tx, BroadcastMode::Sync).await?;
+```
+
+### BroadcastMode
+
+```rust
+pub enum BroadcastMode {
+    Sync,   // wait for mempool acceptance
+    Async,  // return immediately
 }
 ```
 
-#### Key Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `submit` | `async fn submit(&self, req: SubmitJobRequest) -> Result<SubmitJobResponse>` | Submit a compute job |
-| `get` | `async fn get(&self, job_id: &str) -> Result<ComputeJob>` | Fetch job by ID |
-| `list` | `async fn list(&self, pagination: Option<PageRequest>) -> Result<Vec<ComputeJob>>` | List jobs |
-| `cancel` | `async fn cancel(&self, job_id: &str) -> Result<()>` | Cancel a pending job |
-| `wait_for_completion` | `async fn wait_for_completion(&self, job_id: &str, poll_interval: Duration, timeout: Duration) -> Result<ComputeJob>` | Poll until terminal status |
-
----
-
-### Seals Module
-
-#### Key Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `create` | `async fn create(&self, req: CreateSealRequest) -> Result<CreateSealResponse>` | Create a digital seal for a completed job |
-| `get` | `async fn get(&self, seal_id: &str) -> Result<DigitalSeal>` | Fetch seal by ID |
-| `list` | `async fn list(&self, pagination: Option<PageRequest>) -> Result<Vec<DigitalSeal>>` | List seals |
-| `verify` | `async fn verify(&self, seal_id: &str) -> Result<VerifySealResponse>` | Verify seal integrity on-chain |
-| `revoke` | `async fn revoke(&self, seal_id: &str, reason: &str) -> Result<()>` | Revoke an active seal |
-
-#### `DigitalSeal`
+### wait_for_tx
 
 ```rust
-pub struct DigitalSeal {
-    pub id: String,
-    pub job_id: String,
-    pub model_hash: Hash,
-    pub input_commitment: Hash,
-    pub output_commitment: Hash,
-    pub status: SealStatus,
-    pub requester: Address,
-    pub validators: Vec<ValidatorAttestation>,
-    pub tee_attestation: Option<TEEAttestation>,
-    pub zkml_proof: Option<ZKMLProof>,
-    pub regulatory_info: Option<RegulatoryInfo>,
-    pub created_at: DateTime<Utc>,
-    pub expires_at: Option<DateTime<Utc>>,
+pub async fn wait_for_tx(&self, hash: &[u8; 32], timeout: Duration) -> Result<TxResponse>
+```
+
+## Digital Seals
+
+```rust
+pub async fn create_seal(&self, req: SealRequest) -> Result<Seal>;
+pub async fn verify_seal(&self, seal_id: &[u8; 32]) -> Result<SealVerifyResult>;
+pub async fn query_seals(&self, query: SealQuery) -> Result<Vec<Seal>>;
+```
+
+## Compute Jobs
+
+```rust
+pub async fn submit_job(&self, req: JobRequest) -> Result<Job>;
+pub async fn job_status(&self, job_id: &[u8; 32]) -> Result<JobStatus>;
+pub async fn job_result(&self, job_id: &[u8; 32]) -> Result<JobResult>;
+pub async fn cancel_job(&self, job_id: &[u8; 32]) -> Result<()>;
+```
+
+## Model Registry
+
+```rust
+pub async fn publish_model(&self, req: ModelPublishRequest) -> Result<ModelVersion>;
+pub async fn search_models(&self, query: ModelQuery) -> Result<Vec<ModelInfo>>;
+pub async fn download_model(&self, name: &str, version: &str, dest: &Path) -> Result<PathBuf>;
+```
+
+## Subscriptions
+
+```rust
+pub async fn subscribe(&self, query: &str) -> Result<Subscription>
+```
+
+```rust
+let mut sub = client.subscribe("tm.event='NewBlock'").await?;
+while let Some(event) = sub.next().await {
+    println!("Block: {}", event.height);
 }
 ```
 
----
-
-### Async Runtime
-
-The SDK requires a Tokio async runtime. All network-bound methods are `async` and return `Result<T, AethelredError>`.
+## Response Types
 
 ```rust
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let client = AethelredClient::new(Network::Testnet).await?;
+pub struct TxResponse {
+    pub tx_hash: [u8; 32],
+    pub height: u64,
+    pub code: u32,
+    pub gas_used: u64,
+    pub gas_wanted: u64,
+    pub log: String,
+    pub events: Vec<Event>,
+}
 
-    let info = client.get_node_info().await?;
-    println!("Connected to {} ({})", info.moniker, info.network);
-
-    Ok(())
+pub struct Account {
+    pub address: String,
+    pub balance: u128,
+    pub sequence: u64,
+    pub account_number: u64,
 }
 ```
 
-For non-async contexts, use `tokio::runtime::Runtime::block_on`:
+## Related Pages
 
-```rust
-let rt = tokio::runtime::Runtime::new()?;
-let client = rt.block_on(AethelredClient::new(Network::Testnet))?;
-let healthy = rt.block_on(async { client.health_check().await });
-```
-
----
-
-### Example: End-to-End Job Workflow
-
-```rust
-use aethelred_sdk::{AethelredClient, Network};
-use aethelred_sdk::jobs::SubmitJobRequest;
-use aethelred_sdk::seals::CreateSealRequest;
-use std::time::Duration;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let client = AethelredClient::new(Network::Testnet).await?;
-
-    // Submit job
-    let job = client.jobs().submit(SubmitJobRequest {
-        model_hash: "sha256:abc123".into(),
-        input_hash: "sha256:def456".into(),
-        proof_type: None,
-        priority: Some(5),
-        max_gas: None,
-        timeout_blocks: None,
-    }).await?;
-
-    // Wait for completion
-    let completed = client.jobs()
-        .wait_for_completion(&job.job_id, Duration::from_secs(2), Duration::from_secs(120))
-        .await?;
-
-    // Create seal
-    let seal = client.seals().create(CreateSealRequest {
-        job_id: completed.id.clone(),
-        regulatory_info: None,
-        expires_in_blocks: Some(100_000),
-    }).await?;
-
-    // Verify seal
-    let result = client.seals().verify(&seal.seal_id).await?;
-    println!("Seal {} valid: {}", seal.seal_id, result.valid);
-
-    Ok(())
-}
-```
+- [Connecting to Network](/guide/network) -- network configuration
+- [Rust SDK Overview](/api/rust/) -- crate overview
+- [Rust Cryptography API](/api/rust/crypto) -- key management for signing
+- [Submitting Jobs](/guide/jobs) -- job lifecycle guide

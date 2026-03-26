@@ -12,4 +12,10 @@ members = [
     "demo/falcon-lion",
     "demo/helix-guard",
 ]
+exclude = [
+    "bridge/fuzz",
+    "consensus/fuzz",
+    "core/fuzz",
+    "vm/fuzz",
+]
 resolver = "2"

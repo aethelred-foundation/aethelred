@@ -34,7 +34,7 @@ DOCKER_TAG = $(VERSION)
 CHAIN_ID = aethelred-testnet-1
 MONIKER = aethelred-node
 
-.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical
+.PHONY: all build install clean test lint fmt proto openapi openapi-validate docs docker help sdk-version-check sdk-release-check sdk-publish-dry-run audit-signoff-check loadtest loadtest-scenarios coverage-critical release-preflight fuzz-check
 
 ## help: Show this help message
 help:
@@ -123,6 +123,23 @@ loadtest-scenarios:
 	@echo "Running all load test scenarios..."
 	$(GO) run ./cmd/aethelred-loadtest --all-scenarios
 
+FUZZ_CRATES = bridge/fuzz consensus/fuzz core/fuzz vm/fuzz
+
+## fuzz-check: Type-check all fuzz crates (requires network; bypasses vendor source replacement)
+fuzz-check:
+	@echo "Checking fuzz crates (bypassing vendor source replacement)..."
+	@for crate in $(FUZZ_CRATES); do \
+		echo "  Checking crates/$$crate ..."; \
+		mv .cargo/config.toml .cargo/config.toml.fuzz-bak 2>/dev/null; \
+		mv crates/.cargo/config.toml crates/.cargo/config.toml.fuzz-bak 2>/dev/null; \
+		cargo check --manifest-path crates/$$crate/Cargo.toml; \
+		status=$$?; \
+		mv .cargo/config.toml.fuzz-bak .cargo/config.toml 2>/dev/null; \
+		mv crates/.cargo/config.toml.fuzz-bak crates/.cargo/config.toml 2>/dev/null; \
+		if [ $$status -ne 0 ]; then exit $$status; fi; \
+	done
+	@echo "All fuzz crates compile cleanly."
+
 ## lint: Run linters
 lint:
 	@echo "Running linters..."
@@ -184,6 +201,10 @@ audit-signoff-check:
 		--required-scope /contracts/ethereum \
 		--required-scope "Consensus + vote extensions" \
 		--require-signed-report
+
+## release-preflight: Run all pre-release validation checks
+release-preflight: audit-signoff-check coverage-critical sdk-version-check openapi-validate
+	@echo "All release preflight checks passed"
 
 ## docker-build: Build Docker image
 docker-build:

@@ -34,7 +34,7 @@ h3{font-size:1.3rem;font-weight:600;color:var(--fg2);margin-bottom:24px}
 .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;margin-top:36px}
 .card{background:var(--bg2);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;transition:transform 0.3s,border-color 0.3s}
 .card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,0.3)}
-.card-icon{font-size:2rem;margin-bottom:14px}
+.card-icon{margin-bottom:14px;width:32px;height:32px;color:var(--accent)}.card-icon svg{width:32px;height:32px}
 .card h4{font-size:1.05rem;font-weight:700;margin-bottom:8px}
 .card p{font-size:0.88rem;color:var(--fg2);line-height:1.6}
 .stat{text-align:center}
@@ -119,17 +119,17 @@ tr:hover td{background:rgba(99,102,241,0.04)}
   <p class="subtitle" style="margin-bottom:28px">Today, most high-value inference happens inside opaque cloud boundaries. Enterprises cannot prove which model ran, how data was handled, or whether output was tampered with before delivery.</p>
   <div class="grid-3">
     <div class="card">
-      <div class="card-icon">🔍</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
       <h4>Difficult to Audit</h4>
       <p>Centralized AI APIs are impossible to audit at the protocol layer. No cryptographic proof binds a specific model to a specific output.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🏛️</div>
+      <div class="card-icon" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></div>
       <h4>Difficult to Govern</h4>
       <p>Enterprises in regulated markets — healthcare, finance, defense — cannot satisfy compliance requirements when inference is a black box.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🌍</div>
+      <div class="card-icon" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
       <h4>Difficult to Localise</h4>
       <p>Strict jurisdictions (UAE, EU, KSA) require verifiable computation that respects data sovereignty. Current AI infrastructure cannot enforce this.</p>
     </div>
@@ -210,14 +210,14 @@ tr:hover td{background:rgba(99,102,241,0.04)}
   <div class="slide-label">The Octagon Protocol</div>
   <h2>Eight Foundational Pillars</h2>
   <div class="grid-4">
-    <div class="card"><div class="card-icon">⛏️</div><h4>Proof of Useful Work</h4><p>Validator incentives tied to real AI inference workloads instead of wasteful hash races.</p></div>
-    <div class="card"><div class="card-icon">🧬</div><h4>Hybrid Proof Fabric</h4><p>Primary execution in AWS Nitro/Intel SGX enclaves, with optional EZKL zkML co-processing for absolute trustlessness.</p></div>
-    <div class="card"><div class="card-icon">🔧</div><h4>EVM Verification Layer</h4><p>Sub-2s finality with custom <code>0x0400</code> (TEE) and <code>0x0300</code> (ZKP) precompiles for instant on-chain proof settlement.</p></div>
-    <div class="card"><div class="card-icon">🔐</div><h4>Post-Quantum Identity</h4><p>ML-DSA-65 lattice-based signatures and ML-KEM-1024 key exchange integrated from network genesis.</p></div>
-    <div class="card"><div class="card-icon">🔥</div><h4>Quadratic Fee Burn</h4><p>Congestion-squared fees create exponentially stronger deflationary pressure during high-demand windows.</p></div>
-    <div class="card"><div class="card-icon">🏛️</div><h4>Bi-Cameral Governance</h4><p>House of Tokens and House of Validators both require supermajority for protocol upgrades.</p></div>
-    <div class="card"><div class="card-icon">🛡️</div><h4>Sovereign Compliance Layer</h4><p>Policy-aware routing and attestations for regulated geographies and institutional requirements.</p></div>
-    <div class="card"><div class="card-icon">🌉</div><h4>Native Bridging</h4><p>Cross-chain settlement with cryptographic finality to Ethereum ecosystems. 7-day challenge period, guardian multi-sig.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><h4>Proof of Useful Work</h4><p>Validator incentives tied to real AI inference workloads instead of wasteful hash races.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h4>Hybrid Proof Fabric</h4><p>Primary execution in AWS Nitro/Intel SGX enclaves, with optional EZKL zkML co-processing for absolute trustlessness.</p></div>
+    <div class="card"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m7 15 3-3-3-3m5 6h4"/></svg></div><h4>EVM Verification Layer</h4><p>Sub-2s finality with custom <code>0x0400</code> (TEE) and <code>0x0300</code> (ZKP) precompiles for instant on-chain proof settlement.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--rose)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></div><h4>Post-Quantum Identity</h4><p>ML-DSA-65 lattice-based signatures and ML-KEM-1024 key exchange integrated from network genesis.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2c.5 3.5 3 6 3 9a6 6 0 1 1-12 0c0-3 2.5-5.5 3-9l3 2.5L12 2z"/></svg></div><h4>Quadratic Fee Burn</h4><p>Congestion-squared fees create exponentially stronger deflationary pressure during high-demand windows.</p></div>
+    <div class="card"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></div><h4>Bi-Cameral Governance</h4><p>House of Tokens and House of Validators both require supermajority for protocol upgrades.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h4>Sovereign Compliance Layer</h4><p>Policy-aware routing and attestations for regulated geographies and institutional requirements.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg></div><h4>Native Bridging</h4><p>Cross-chain settlement with cryptographic finality to Ethereum ecosystems. 7-day challenge period, guardian multi-sig.</p></div>
   </div>
   <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
 </section>
@@ -403,34 +403,34 @@ tr:hover td{background:rgba(99,102,241,0.04)}
   <p class="subtitle" style="margin-bottom:8px">Where performance matters, but auditability and jurisdictional control are non-negotiable.</p>
   <div class="grid-3">
     <div class="card">
-      <div class="card-icon">🏥</div>
+      <div class="card-icon" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
       <h4>Healthcare Diagnostics</h4>
       <p>Cryptographically verified model execution for triage and imaging workflows under clinical compliance.</p>
     </div>
     <div class="card">
-      <div class="card-icon">💹</div>
+      <div class="card-icon" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-2l-3.5-7L12 15l-3-6L6 12H2"/><path d="M2 20h20"/></svg></div>
       <h4>Financial Audit Automation</h4>
       <p>Attested AI inference for risk engines, anomaly detection, and supervisory reporting.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🛡️</div>
+      <div class="card-icon" style="color:var(--rose)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
       <h4>Defense & Intelligence</h4>
       <p>Jurisdiction-locked compute with signed outputs for sovereign security operations.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🚗</div>
+      <div class="card-icon" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
       <h4>Autonomous Fleets</h4>
       <p>Provable decision trails for mobility systems and logistics autonomy environments.</p>
     </div>
     <div class="card">
-      <div class="card-icon">📦</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg></div>
       <h4>Supply Chain Integrity</h4>
       <p>AI-driven quality and routing decisions with immutable proof trails for compliance audits.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🔬</div>
-      <h4>Research Compute Markets</h4>
-      <p>Shared, accountable inference capacity for universities, labs, and consortiums.</p>
+      <div class="card-icon" style="color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+      <h4>AI Agent-to-Agent</h4>
+      <p>Digital Seals act as cryptographic passports for autonomous agent trust and settlement in the machine-to-machine economy.</p>
     </div>
   </div>
   <div class="footer"><span class="footer-logo">AETHELRED</span><span>Confidential</span></div>
@@ -513,12 +513,12 @@ tr:hover td{background:rgba(99,102,241,0.04)}
   <div class="slide-label">Developer Ecosystem</div>
   <h2>Build Verifiable AI dApps <span class="gradient-text">in Minutes</span></h2>
   <div class="grid-3">
-    <div class="card"><div class="card-icon">🔧</div><h4>EVM-Compatible Precompiles</h4><p>Use 0x0400 (TEE) and 0x0300 (zkML) precompiles directly from Solidity — no external oracles needed.</p></div>
-    <div class="card"><div class="card-icon">📚</div><h4>Multi-Language SDKs</h4><p>Python, TypeScript, Rust, Go — consistent API shape, async support, production-ready docs.</p></div>
-    <div class="card"><div class="card-icon">🔐</div><h4>Post-Quantum Security</h4><p>ML-DSA-65 + ECDSA hybrid signatures ship by default in all SDKs.</p></div>
-    <div class="card"><div class="card-icon">⚡</div><h4>Instant Finality</h4><p>Sub-2s CometBFT deterministic finality removes reorg uncertainty from critical AI workflows.</p></div>
-    <div class="card"><div class="card-icon">🤖</div><h4>Framework Integrations</h4><p>Native PyTorch, LangChain, Hugging Face support — onboard existing model workflows instantly.</p></div>
-    <div class="card" style="border-color:rgba(99,102,241,0.3)"><div class="card-icon">🧩</div><h4>Sovereign Copilot</h4><p><strong style="color:var(--accent)">VS Code extension</strong> — compliance linting, cost estimation, TEE sim, Helix DSL syntax.</p></div>
+    <div class="card"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m7 15 3-3-3-3m5 6h4"/></svg></div><h4>EVM-Compatible Precompiles</h4><p>Use 0x0400 (TEE) and 0x0300 (zkML) precompiles directly from Solidity — no external oracles needed.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><h4>Multi-Language SDKs</h4><p>Python, TypeScript, Rust, Go — consistent API shape, async support, production-ready docs.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--rose)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></div><h4>Post-Quantum Security</h4><p>ML-DSA-65 + ECDSA hybrid signatures ship by default in all SDKs.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><h4>Instant Finality</h4><p>Sub-2s CometBFT deterministic finality removes reorg uncertainty from critical AI workflows.</p></div>
+    <div class="card"><div class="card-icon" style="color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><h4>Framework Integrations</h4><p>Native PyTorch, LangChain, Hugging Face support — onboard existing model workflows instantly.</p></div>
+    <div class="card" style="border-color:rgba(99,102,241,0.3)"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8M12 17v4"/></svg></div><h4>Sovereign Copilot</h4><p><strong style="color:var(--accent)">VS Code extension</strong> — compliance linting, cost estimation, TEE sim, Helix DSL syntax.</p></div>
   </div>
   <div class="card" style="margin-top:20px;padding:24px">
     <h4>Local Devnet</h4>

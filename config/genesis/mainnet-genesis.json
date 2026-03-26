@@ -752,6 +752,11 @@
         "slash_fraction_downtime": "0.01"
       }
     },
+    "verify": {
+      "params": {
+        "allow_simulated": false
+      }
+    },
     "governance": {
       "starting_proposal_id": 1,
       "deposits": [],

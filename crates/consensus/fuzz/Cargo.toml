@@ -1,0 +1,24 @@
+[package]
+name = "consensus-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[[bin]]
+name = "fuzz_vrf_prove_verify"
+path = "fuzz_targets/fuzz_vrf_prove_verify.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_reputation_score"
+path = "fuzz_targets/fuzz_reputation_score.rs"
+doc = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+aethelred-consensus = { path = ".." }

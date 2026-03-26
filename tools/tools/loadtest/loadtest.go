@@ -1198,22 +1198,124 @@ func RunScenario(name string) error {
 	return fmt.Errorf("unknown scenario: %s", name)
 }
 
-// RunAllScenarios runs all stress test scenarios sequentially
+// ScenarioResult holds pass/fail outcome for a single scenario run.
+type ScenarioResult struct {
+	Name    string
+	Passed  bool
+	Error   error
+	Elapsed time.Duration
+}
+
+// RunAllScenarios runs all stress test scenarios sequentially with baked-in
+// configs. CLI overrides are NOT applied. Prefer RunAllScenariosWithBase.
 func RunAllScenarios() error {
+	return RunAllScenariosWithBase(nil)
+}
+
+// RunAllScenariosWithBase runs every predefined scenario, applying CLI
+// overrides from base onto each scenario's config before execution.
+// If base is nil, scenarios run with their baked-in defaults.
+//
+// Returns a non-nil error if ANY scenario fails its acceptance criteria:
+//   - zero finalized blocks
+//   - zero completed jobs
+//   - repeated vote-extension failures (>25% of blocks)
+func RunAllScenariosWithBase(base *Config) error {
 	scenarios := GetStressScenarios()
+	results := make([]ScenarioResult, 0, len(scenarios))
+
 	for _, s := range scenarios {
 		fmt.Printf("\n\n========================================\n")
 		fmt.Printf("Running scenario: %s\n", s.Name)
 		fmt.Printf("Description: %s\n", s.Description)
 		fmt.Printf("========================================\n\n")
 
-		if err := RunLoadTest(s.Config); err != nil {
-			fmt.Printf("Scenario %s failed: %v\n", s.Name, err)
-			// Continue with other scenarios
+		cfg := s.Config
+		if base != nil {
+			cfg = applyBaseOverrides(cfg, base)
 		}
 
+		start := time.Now()
+		err := RunLoadTest(cfg)
+		elapsed := time.Since(start)
+
+		res := ScenarioResult{Name: s.Name, Elapsed: elapsed}
+		if err != nil {
+			res.Error = err
+			res.Passed = false
+			fmt.Printf("Scenario %s FAILED (%s): %v\n", s.Name, elapsed, err)
+		} else {
+			res.Passed = true
+			fmt.Printf("Scenario %s PASSED (%s)\n", s.Name, elapsed)
+		}
+		results = append(results, res)
+
 		// Brief pause between scenarios
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
+	}
+
+	// Summary
+	fmt.Printf("\n\n========================================\n")
+	fmt.Printf("  ALL-SCENARIOS SUMMARY\n")
+	fmt.Printf("========================================\n")
+	var failures int
+	for _, r := range results {
+		status := "PASS"
+		if !r.Passed {
+			status = "FAIL"
+			failures++
+		}
+		fmt.Printf("  [%s] %-25s  %s\n", status, r.Name, r.Elapsed)
+	}
+	fmt.Printf("========================================\n")
+	fmt.Printf("  %d/%d passed\n", len(results)-failures, len(results))
+	fmt.Printf("========================================\n")
+
+	if failures > 0 {
+		return fmt.Errorf("%d of %d scenarios failed", failures, len(results))
 	}
 	return nil
+}
+
+// applyBaseOverrides merges CLI-provided base config values onto a scenario
+// config. Only non-default values from base are applied; zero-values are
+// treated as "not set" and left as the scenario default.
+func applyBaseOverrides(scenario *Config, base *Config) *Config {
+	// Deep copy so we don't mutate the predefined scenario
+	merged := *scenario
+
+	defaults := DefaultConfig()
+
+	if base.NumValidators != defaults.NumValidators {
+		merged.NumValidators = base.NumValidators
+	}
+	if base.NumBlocks != defaults.NumBlocks {
+		merged.NumBlocks = base.NumBlocks
+	}
+	if base.Duration != defaults.Duration {
+		merged.Duration = base.Duration
+	}
+	if base.JobsPerBlock != defaults.JobsPerBlock {
+		merged.JobsPerBlock = base.JobsPerBlock
+	}
+	if base.BlockTime != defaults.BlockTime {
+		merged.BlockTime = base.BlockTime
+	}
+	if base.Mode != defaults.Mode {
+		merged.Mode = base.Mode
+	}
+	if base.VerificationType != defaults.VerificationType {
+		merged.VerificationType = base.VerificationType
+	}
+	if base.RPCEndpoint != defaults.RPCEndpoint {
+		merged.RPCEndpoint = base.RPCEndpoint
+	}
+	if base.APIEndpoint != defaults.APIEndpoint {
+		merged.APIEndpoint = base.APIEndpoint
+	}
+	if base.NodeConcurrency != defaults.NodeConcurrency {
+		merged.NodeConcurrency = base.NodeConcurrency
+	}
+
+	return &merged
 }
