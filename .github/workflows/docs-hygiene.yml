@@ -18,3 +18,11 @@ jobs:
             echo 'Found local workstation path references in docs.' >&2
             exit 1
           fi
+      - name: Check docs for internal hostnames
+        run: |
+          set -euo pipefail
+          internal_hosts='\.internal[:/\s"'\'']'
+          if rg -n "$internal_hosts" -g '*.md' .; then
+            echo 'Found internal hostname references in docs. Use <placeholder-host> instead.' >&2
+            exit 1
+          fi

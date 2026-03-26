@@ -116,6 +116,7 @@ temp/
 
 # ── Build Binaries ───────────────────────────────────────────────────
 aethelred-loadtest
+aethelredd
 
 # ── Coverage Output ──────────────────────────────────────────────────
 coverage*.out
@@ -130,6 +131,13 @@ coverage*.html
 .cursor/
 .codex/
 .aider*
+CLAUDE.md
+
+# ── Local Test Outputs ───────────────────────────────────────────────
+loadtest-results/
+
+# ── Separate Repositories ────────────────────────────────────────────
+dApps/terraqura/
 
 # ── Archives & Generated Reports ────────────────────────────────────
 *.zip

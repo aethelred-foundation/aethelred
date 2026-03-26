@@ -81,7 +81,7 @@
           "url": "https://www.aethelred.io/og-image.jpg",
           "caption": "Aethelred Developer Portal social preview"
         },
-        "dateModified": "2026-03-12"
+        "dateModified": "2026-03-17"
       },
       {
         "@type": "BreadcrumbList",
@@ -101,6 +101,1184 @@
 
   <link rel="stylesheet" href="styles.css">
   <script src="site.js" defer></script>
+
+<style>
+/* ============================================================
+   AETHELRED HOMEPAGE — World-Class Redesign
+   Cinematic hero, bento grid, perspective grid, marquee
+   ============================================================ */
+
+/* --- Keyframes --- */
+@keyframes ph-fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes ph-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ph-scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes ph-grid-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: -80px -80px; }
+}
+@keyframes ph-grid-fade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+@keyframes ph-glow-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+@keyframes ph-glow-breathe-2 {
+  0%, 100% { opacity: 0.3; transform: scale(1) translate(0,0); }
+  33% { opacity: 0.6; transform: scale(1.1) translate(20px, -10px); }
+  66% { opacity: 0.4; transform: scale(0.95) translate(-15px, 15px); }
+}
+@keyframes ph-text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes ph-gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes ph-border-rotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+@keyframes ph-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ph-pulse-dot {
+  0%, 100% { box-shadow: 0 0 8px rgba(200,16,46,0.6), 0 0 20px rgba(200,16,46,0.2); }
+  50% { box-shadow: 0 0 14px rgba(200,16,46,0.8), 0 0 30px rgba(200,16,46,0.3); }
+}
+@keyframes ph-beam-sweep {
+  0% { transform: translateX(-100%) rotate(-45deg); }
+  100% { transform: translateX(200%) rotate(-45deg); }
+}
+@keyframes ph-count-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes ph-typing-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* --- CSS Variables --- */
+.page-home {
+  --bg-main: #06060a;
+  --bg-soft: #0a0a10;
+  --bg-deep: #06060a;
+  --surface: rgba(255,255,255,0.03);
+  --surface-hover: rgba(255,255,255,0.06);
+  --surface-code: #0c0c12;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --text-strong: #f0f0f3;
+  --text-main: #b0b0b8;
+  --text-muted: #5a5a68;
+  --brand: #c8102e;
+  --brand-2: #e8334d;
+  --brand-3: #ff6b7a;
+  --shadow-soft: 0 20px 60px rgba(0,0,0,0.5);
+  --shadow-card: 0 8px 40px rgba(0,0,0,0.3);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+}
+
+/* --- Body --- */
+body.page-home {
+  background: var(--bg-main) !important;
+  background-image: none !important;
+  color: var(--text-strong) !important;
+  overflow-x: hidden;
+}
+
+body.page-home::before,
+body.page-home::after { display: none !important; }
+
+.page-home .scroll-progress {
+  background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--brand));
+  box-shadow: 0 0 16px rgba(200,16,46,0.6);
+  height: 2px;
+}
+
+.page-home .skip-link { background: #111118; color: var(--text-strong); }
+
+/* --- Header --- */
+.page-home .site-header { z-index: 1100; }
+.page-home .header-shell {
+  border: 1px solid var(--border);
+  background: rgba(6,6,10,0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.page-home .site-header.is-scrolled .header-shell {
+  background: rgba(6,6,10,0.92);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border-color: rgba(255,255,255,0.08);
+}
+.page-home .brand { color: var(--text-strong); }
+.page-home .brand img { box-shadow: 0 4px 16px rgba(200,16,46,0.25); }
+.page-home .nav-link, .page-home .nav-button { color: #7a7a88; }
+.page-home .nav-link:hover, .page-home .nav-button:hover,
+.page-home .nav-link:focus-visible, .page-home .nav-button:focus-visible { color: var(--text-strong); background: rgba(200,16,46,0.06); }
+.page-home .nav-link.is-active { color: var(--text-strong); }
+.page-home .nav-link::after, .page-home .nav-button::after { background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
+.page-home .dropdown-panel { background: rgba(12,12,18,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.page-home .dropdown-panel a { color: #7a7a88; }
+.page-home .dropdown-panel a:hover { color: var(--text-strong); background: rgba(200,16,46,0.06); }
+.page-home .header-actions .btn-outline { border-color: rgba(255,255,255,0.10); color: #7a7a88; background: transparent; }
+.page-home .header-actions .btn-outline:hover { border-color: rgba(200,16,46,0.3); color: var(--text-strong); background: rgba(200,16,46,0.06); }
+.page-home .header-actions .btn-primary { background: linear-gradient(135deg, var(--brand), #9f0a24); color: #fff; border: none; box-shadow: 0 4px 20px rgba(200,16,46,0.3); }
+.page-home .header-actions .btn-primary:hover { box-shadow: 0 4px 28px rgba(200,16,46,0.5); }
+.page-home .menu-toggle { color: #7a7a88; }
+.page-home .menu-toggle:hover { color: var(--text-strong); }
+.page-home .mobile-panel { background: rgba(6,6,10,0.97); border-color: var(--border); }
+.page-home .mobile-link { color: #7a7a88; }
+.page-home .mobile-link:hover, .page-home .mobile-link.is-active { color: var(--text-strong); }
+.page-home .mobile-details summary { color: #7a7a88; }
+.page-home .mobile-details summary:hover { color: var(--text-strong); }
+
+/* ============================================================
+   HERO — Cinematic, center-aligned, full viewport
+   ============================================================ */
+.page-home .hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  padding: 120px 24px 60px;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 3D Perspective Grid Background */
+.page-home .hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.page-home .hero-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  background-image:
+    repeating-linear-gradient(to bottom, rgba(200,16,46,0.06) 0px, rgba(200,16,46,0.06) 1px, transparent 1px, transparent 80px),
+    repeating-linear-gradient(to right, rgba(200,16,46,0.06) 0px, rgba(200,16,46,0.06) 1px, transparent 1px, transparent 80px);
+  transform-origin: center bottom;
+  transform: perspective(600px) rotateX(55deg);
+  mask-image: linear-gradient(to top, black 0%, black 40%, transparent 80%);
+  -webkit-mask-image: linear-gradient(to top, black 0%, black 40%, transparent 80%);
+  animation: ph-grid-scroll 12s linear infinite, ph-grid-fade 8s ease-in-out infinite;
+}
+.page-home .hero-grid-bg::after { display: none; }
+
+/* Ambient glow orbs */
+.page-home .ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+.page-home .ambient-orb--1 {
+  width: clamp(400px, 40vw, 700px);
+  height: clamp(400px, 40vw, 700px);
+  top: -15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(200,16,46,0.20) 0%, rgba(200,16,46,0.05) 40%, transparent 70%);
+  filter: blur(80px);
+  animation: ph-glow-breathe 8s ease-in-out infinite;
+}
+.page-home .ambient-orb--2 {
+  width: clamp(300px, 30vw, 500px);
+  height: clamp(300px, 30vw, 500px);
+  top: 10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(120,10,30,0.15) 0%, transparent 60%);
+  filter: blur(60px);
+  animation: ph-glow-breathe-2 12s ease-in-out infinite;
+}
+.page-home .ambient-orb--3 {
+  width: clamp(250px, 25vw, 400px);
+  height: clamp(250px, 25vw, 400px);
+  bottom: 5%;
+  left: -5%;
+  background: radial-gradient(circle, rgba(200,16,46,0.10) 0%, transparent 60%);
+  filter: blur(50px);
+  animation: ph-glow-breathe-2 15s ease-in-out infinite 3s;
+}
+
+/* Aurora mesh */
+.page-home .aurora-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.page-home .aurora-mesh::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(ellipse 50% 40% at 50% 0%, rgba(200,16,46,0.10), transparent 60%);
+  filter: blur(60px);
+  animation: ph-glow-breathe 10s ease-in-out infinite;
+}
+
+/* Lightning / glow sphere — disabled */
+.page-home .lightning-beam { display: none; }
+.page-home .hero-glow-sphere { display: none; }
+.page-home .particle-canvas { display: none; }
+
+/* Hero content layout */
+.page-home .hero-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.page-home .hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Eyebrow */
+.page-home .eyebrow {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--brand-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  padding: 8px 18px 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(200,16,46,0.15);
+  background: rgba(200,16,46,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.page-home .eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  display: inline-block;
+  animation: ph-pulse-dot 2s ease-in-out infinite;
+}
+
+/* Hero Title — Large, light weight, cinematic */
+.page-home .hero-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: clamp(3.2rem, 7.5vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--text-strong);
+  margin-bottom: 24px;
+  max-width: 900px;
+}
+
+.page-home .gradient-word {
+  background: linear-gradient(
+    135deg,
+    #ff6b7a 0%,
+    #e8334d 25%,
+    #c8102e 50%,
+    #ff6b7a 75%,
+    #e8334d 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ph-gradient-x 5s ease-in-out infinite;
+}
+
+/* Subtitle */
+.page-home .hero-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: clamp(1rem, 1.3vw, 1.15rem);
+  line-height: 1.65;
+  color: var(--text-main);
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+.page-home .hero-subtitle .body-link { color: var(--brand-2); text-decoration-color: rgba(200,16,46,0.3); }
+.page-home .hero-subtitle .body-link:hover { color: var(--brand-3); }
+
+/* Tags */
+.page-home .hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.page-home .hero-tag {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+.page-home .hero-tag:hover {
+  border-color: rgba(200,16,46,0.2);
+  color: var(--text-strong);
+  background: rgba(200,16,46,0.05);
+  transform: translateY(-1px);
+}
+
+/* Hero Actions */
+.page-home .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 48px;
+}
+.page-home .hero-actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 36px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), #9f0a24);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(200,16,46,0.35), 0 0 0 1px rgba(200,16,46,0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.page-home .hero-actions .btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(200,16,46,0.5), 0 0 0 1px rgba(200,16,46,0.4);
+  transform: translateY(-2px);
+}
+/* Sweep beam on hover */
+.page-home .hero-actions .btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 60px;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform: rotate(-45deg);
+  transition: none;
+}
+.page-home .hero-actions .btn-primary:hover::after {
+  animation: ph-beam-sweep 0.6s ease-out;
+}
+.page-home .hero-actions .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 36px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-main);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+.page-home .hero-actions .btn-secondary:hover {
+  border-color: rgba(200,16,46,0.25);
+  color: var(--text-strong);
+  background: var(--surface-hover);
+}
+
+/* Hero Stats Row — Large counters */
+.page-home .hero-stats-row {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.page-home .hero-stat {
+  text-align: center;
+}
+.page-home .hero-stat-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, var(--brand-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+.page-home .hero-stat-label {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* Scroll cue hidden — replaced by stats */
+.page-home .scroll-cue { display: none; }
+
+/* Code shell hidden from hero — moved to separate section */
+.page-home .hero-code-stack { display: none; }
+
+/* ============================================================
+   MARQUEE — Infinite scrolling tech strip
+   ============================================================ */
+.page-home .marquee-section {
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+}
+.page-home .marquee-track {
+  display: flex;
+  width: max-content;
+  animation: ph-marquee 30s linear infinite;
+}
+.page-home .marquee-track:hover {
+  animation-play-state: paused;
+}
+.page-home .marquee-item {
+  flex-shrink: 0;
+  padding: 20px 40px;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: color 0.3s ease;
+}
+.page-home .marquee-item:hover { color: var(--text-main); }
+.page-home .marquee-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(200,16,46,0.4);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   CODE SHOWCASE — Standalone section after marquee
+   ============================================================ */
+.page-home .code-showcase {
+  padding: clamp(48px, 6vh, 80px) 0;
+  position: relative;
+  z-index: 1;
+}
+.page-home .code-showcase .container {
+  max-width: 900px;
+}
+.page-home .code-showcase-head {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.page-home .code-showcase-head h2 {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600;
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.page-home .code-showcase-head p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Code shell styles */
+.page-home .code-shell {
+  background: #0c0c12;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: all 0.4s ease;
+}
+.page-home .code-shell:hover {
+  box-shadow: 0 32px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 120px -20px rgba(200,16,46,0.08);
+  transform: translateY(-3px);
+}
+.page-home .code-top { display: flex; align-items: center; gap: 12px; padding: 14px 20px 0; }
+.page-home .code-dots { display: flex; gap: 6px; }
+.page-home .code-dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+.page-home .code-dots span:first-child { background: #ff5f57; }
+.page-home .code-dots span:nth-child(2) { background: #febc2e; }
+.page-home .code-dots span:nth-child(3) { background: #28c840; }
+.page-home .code-label { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.04em; }
+.page-home .code-tabs { display: flex; gap: 0; padding: 12px 20px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.page-home .code-tab { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.72rem; font-weight: 500; color: var(--text-muted); background: transparent; border: none; padding: 8px 16px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.24s ease; position: relative; bottom: -1px; }
+.page-home .code-tab:hover { color: var(--text-main); }
+.page-home .code-tab.is-active { color: var(--text-strong); border-bottom-color: var(--brand); }
+.page-home .code-panel { display: none; padding: 20px; max-height: 420px; overflow-y: auto; }
+.page-home .code-panel.is-active { display: block; }
+.page-home .code-panel pre { margin: 0; background: transparent; }
+.page-home .code-panel code { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.78rem; line-height: 1.7; color: #b0b0ba; }
+.page-home .code-panel::-webkit-scrollbar { width: 4px; }
+.page-home .code-panel::-webkit-scrollbar-track { background: transparent; }
+.page-home .code-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* Syntax tokens */
+.page-home .tk-kw { color: var(--brand); font-weight: 600; }
+.page-home .tk-str { color: #6ee7b7; }
+.page-home .tk-cm { color: #4a4a55; font-style: italic; }
+.page-home .tk-fn { color: #93c5fd; }
+.page-home .tk-ty { color: #fbbf24; }
+.page-home .tk-num { color: #a78bfa; }
+.page-home .tk-op { color: #6b6b78; }
+.page-home .typing-cursor { color: var(--brand); animation: ph-pulse-dot 1.2s ease-in-out infinite; }
+.page-home .code-cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--brand); margin-left: 2px; vertical-align: text-bottom; animation: ph-typing-blink 1s ease-in-out infinite; box-shadow: 0 0 6px rgba(200,16,46,0.5); }
+
+/* Code metrics below shell */
+.page-home .code-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: center;
+}
+.page-home .metric-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+.page-home .metric-pill:hover {
+  border-color: rgba(200,16,46,0.2);
+  transform: translateY(-2px);
+}
+.page-home .metric-pill strong {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.page-home .metric-pill span {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   SECTIONS — Shared
+   ============================================================ */
+.page-home #main-content { position: relative; z-index: 1; }
+.page-home #main-content::before, .page-home #main-content::after { display: none !important; }
+
+.page-home .section {
+  padding: clamp(48px, 6vh, 80px) 0;
+  position: relative;
+  z-index: 1;
+}
+.page-home .section-tone {
+  background: transparent !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+.page-home .section + .section::before,
+.page-home .section-tone + .section::before { display: none !important; }
+
+.page-home .section-head {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto clamp(32px, 4vh, 48px);
+}
+.page-home .section-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-strong);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+.page-home .section-lead {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ============================================================
+   BENTO GRID — Asymmetric feature cards
+   ============================================================ */
+.page-home .bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: minmax(200px, auto);
+  gap: 16px;
+}
+
+/* First card spans 2 rows for visual hierarchy */
+.page-home .bento-grid .card:nth-child(1) {
+  grid-row: span 2;
+}
+
+.page-home .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Hover glow gradient */
+.page-home .card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at 50% 0%, rgba(200,16,46,0.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.page-home .card:hover::before { opacity: 1; }
+
+/* Rotating border glow */
+.page-home .card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: conic-gradient(from var(--border-angle, 0deg), transparent 40%, rgba(200,16,46,0.35) 50%, transparent 60%);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  animation: ph-border-rotate 4s linear infinite;
+}
+.page-home .card:hover::after { opacity: 1; }
+
+.page-home .card:hover {
+  border-color: rgba(200,16,46,0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.4), 0 0 80px -20px rgba(200,16,46,0.08);
+  background: var(--surface-hover);
+}
+
+.page-home .card h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.page-home .card p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.page-home .icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(200,16,46,0.12), rgba(200,16,46,0.04));
+  color: var(--brand-2);
+  border: 1px solid rgba(200,16,46,0.15);
+  margin-bottom: 14px;
+  align-self: flex-start;
+  transition: all 0.3s ease;
+}
+.page-home .card:hover .icon-chip {
+  box-shadow: 0 2px 16px rgba(200,16,46,0.15);
+  transform: scale(1.05);
+}
+
+.page-home .mono { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.82rem; }
+
+.page-home .card-link {
+  display: inline-block;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  margin-top: auto;
+  padding-top: 14px;
+  letter-spacing: 0.03em;
+  transition: color 0.24s ease;
+}
+.page-home .card:hover .card-link { color: var(--brand-2); }
+
+/* Normal 3-col grid fallback */
+.page-home .grid { display: grid; gap: 16px; }
+.page-home .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ============================================================
+   USE CASES GRID
+   ============================================================ */
+.page-home .usecase-home-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.page-home .usecase-home-card { text-decoration: none; }
+.page-home .usecase-home-card .card-link { margin-top: auto; padding-top: 14px; }
+.page-home .usecase-home-grid .usecase-home-card:nth-child(7) { grid-column: 1 / 2; }
+.page-home .usecase-home-grid .usecase-home-card:nth-child(8) { grid-column: 2 / 3; }
+
+/* ============================================================
+   SECTION SHELL — Glass container
+   ============================================================ */
+.page-home .section-shell {
+  position: relative;
+  background: rgba(255,255,255,0.015) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 28px;
+  padding: 48px;
+  box-shadow: none !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  overflow: hidden;
+}
+.page-home .section-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,16,46,0.2), transparent);
+  pointer-events: none;
+}
+.page-home .section-shell::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,16,46,0.08), transparent);
+  pointer-events: none;
+}
+
+/* ============================================================
+   CALLOUT
+   ============================================================ */
+.page-home .callout {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  display: flex;
+  align-items: center !important;
+  justify-content: space-between;
+  box-shadow: none !important;
+  gap: 24px;
+}
+.page-home .callout h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 8px;
+}
+.page-home .callout p { font-size: 0.95rem; color: var(--text-main); line-height: 1.6; }
+.page-home .callout .body-link { color: var(--brand-2); text-decoration-color: rgba(200,16,46,0.3); }
+.page-home .callout .body-link:hover { color: var(--brand-3); }
+.page-home .callout .btn-primary {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 28px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), #9f0a24);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(200,16,46,0.3);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.page-home .callout .btn-primary:hover { box-shadow: 0 6px 28px rgba(200,16,46,0.5); transform: translateY(-1px); }
+
+.page-home .stack-top-16 { margin-top: 40px; }
+
+/* ============================================================
+   QUICK START STEPS
+   ============================================================ */
+.page-home .steps-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+  align-items: stretch;
+}
+.page-home .steps-grid::before { display: none !important; }
+.page-home .step-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 28px 24px !important;
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: none !important;
+  transition: all 0.35s ease;
+}
+.page-home .step-card:hover {
+  border-color: rgba(200,16,46,0.2) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.3) !important;
+}
+.page-home .step-index {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--brand);
+  text-transform: uppercase;
+  display: inline-block;
+  margin-bottom: 12px;
+  background: rgba(200,16,46,0.06);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.page-home .step-index::before { display: none !important; }
+.page-home .step-card h3 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-strong); margin-bottom: 8px; }
+.page-home .step-card > p { font-size: 0.92rem; color: var(--text-main); line-height: 1.6; margin-bottom: 14px; flex: 1; }
+
+/* Terminal blocks */
+.page-home .terminal { background: #0a0a10; border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius-sm); overflow: hidden; }
+.page-home .terminal-head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.page-home .terminal-dots { display: flex; gap: 5px; }
+.page-home .terminal-dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+.page-home .terminal-dots span:first-child { background: #ff5f57; }
+.page-home .terminal-dots span:nth-child(2) { background: #febc2e; }
+.page-home .terminal-dots span:nth-child(3) { background: #28c840; }
+.page-home .terminal-label { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.65rem; color: var(--text-muted); }
+.page-home .terminal pre { margin: 0; padding: 14px 16px; background: transparent; }
+.page-home .terminal code { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.78rem; line-height: 1.7; color: #d4d4dc; }
+
+/* ============================================================
+   DEVELOPER TOOLS
+   ============================================================ */
+.page-home .tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.page-home .tool-card { text-decoration: none; display: flex; flex-direction: column; }
+.page-home .tool-card p { flex: 1; }
+
+/* ============================================================
+   KPI GRID — Large dramatic display
+   ============================================================ */
+.page-home .kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 16px !important;
+}
+.page-home .kpi {
+  text-align: center;
+  padding: 32px 20px !important;
+  position: relative;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.35s ease;
+  box-shadow: none !important;
+}
+.page-home .kpi:hover {
+  border-color: rgba(200,16,46,0.2) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 60px -10px rgba(200,16,46,0.06) !important;
+}
+.page-home .kpi + .kpi::before { display: none; }
+.page-home .kpi::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: conic-gradient(from var(--border-angle, 0deg), transparent 30%, rgba(200,16,46,0.3) 50%, transparent 70%);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  animation: ph-border-rotate 5s linear infinite;
+}
+.page-home .kpi:hover::after { opacity: 1; }
+
+.page-home .kpi-label {
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+.page-home .kpi-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #fff 0%, var(--brand-2) 60%, var(--brand) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ph-gradient-x 4s ease-in-out infinite;
+}
+.page-home .kpi-value.is-counted { animation: ph-gradient-x 4s ease-in-out infinite, ph-count-pulse 0.6s ease-out 1; }
+
+/* ============================================================
+   COMMUNITY GRID
+   ============================================================ */
+.page-home .community-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 16px !important;
+}
+.page-home .community-grid .card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   FINAL CTA
+   ============================================================ */
+.page-home #start-building { padding-bottom: clamp(48px, 6vh, 80px); }
+.page-home #start-building .callout {
+  background: linear-gradient(135deg, rgba(200,16,46,0.05), rgba(200,16,46,0.02), rgba(200,16,46,0.05)) !important;
+  border: 1px solid rgba(200,16,46,0.12) !important;
+  box-shadow: 0 0 80px -20px rgba(200,16,46,0.08) !important;
+  position: relative;
+  overflow: hidden;
+}
+.page-home #start-building .callout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,16,46,0.25), transparent);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.page-home .site-footer {
+  background: var(--bg-main);
+  border-top: 1px solid var(--border);
+  padding: clamp(56px, 7vh, 80px) 0 40px;
+  position: relative;
+  z-index: 1;
+}
+.page-home .site-footer::before { display: none; }
+.page-home .footer-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 48px 36px; margin-bottom: 48px; }
+.page-home .footer-brand-block p { font-size: 0.92rem; line-height: 1.6; color: var(--text-muted); margin-top: 16px; max-width: 320px; }
+.page-home .footer-brand { color: var(--text-strong); }
+.page-home .footer-brand img { box-shadow: 0 4px 16px rgba(200,16,46,0.25); transition: all 0.3s ease; }
+.page-home .footer-brand:hover img { box-shadow: 0 4px 24px rgba(200,16,46,0.35); filter: brightness(1.1); }
+.page-home .footer-title { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-main); margin-bottom: 18px; position: relative; padding-bottom: 10px; }
+.page-home .footer-title::after { content: ''; position: absolute; bottom: 0; left: 0; width: 24px; height: 2px; background: rgba(200,16,46,0.35); border-radius: 1px; }
+.page-home .footer-links { display: flex; flex-direction: column; gap: 10px; }
+.page-home .footer-links a { font-size: 0.88rem; color: var(--text-muted); text-decoration: none; transition: all 0.24s ease; display: inline-block; }
+.page-home .footer-links a:hover { color: var(--text-strong); transform: translateX(3px); }
+.page-home .footer-bottom { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.page-home .footer-bottom p { font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace; font-size: 0.65rem; letter-spacing: 0.03em; color: var(--text-muted); white-space: nowrap; max-width: none; }
+.page-home .footer-bottom a { color: var(--text-muted); text-decoration: none; transition: color 0.24s ease; }
+.page-home .footer-bottom a:hover { color: var(--brand); }
+
+/* ============================================================
+   REVEAL ANIMATIONS
+   ============================================================ */
+.page-home [data-reveal] { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.page-home [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+/* Hero entrance */
+.page-home .hero-copy .eyebrow { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+.page-home .hero-copy .hero-title { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both; }
+.page-home .hero-copy .hero-subtitle { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }
+.page-home .hero-copy .hero-tags { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both; }
+.page-home .hero-copy .hero-actions { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both; }
+.page-home .hero-stats-row { animation: ph-fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both; }
+
+/* Staggered card reveals */
+.page-home [data-reveal].is-visible .card:nth-child(1),
+.page-home [data-reveal].is-visible .step-card:nth-child(1),
+.page-home [data-reveal].is-visible .kpi:nth-child(1) { transition-delay: 0.05s; }
+.page-home [data-reveal].is-visible .card:nth-child(2),
+.page-home [data-reveal].is-visible .step-card:nth-child(2),
+.page-home [data-reveal].is-visible .kpi:nth-child(2) { transition-delay: 0.1s; }
+.page-home [data-reveal].is-visible .card:nth-child(3),
+.page-home [data-reveal].is-visible .step-card:nth-child(3),
+.page-home [data-reveal].is-visible .kpi:nth-child(3) { transition-delay: 0.15s; }
+.page-home [data-reveal].is-visible .card:nth-child(4),
+.page-home [data-reveal].is-visible .kpi:nth-child(4) { transition-delay: 0.2s; }
+.page-home [data-reveal].is-visible .card:nth-child(5),
+.page-home [data-reveal].is-visible .kpi:nth-child(5) { transition-delay: 0.25s; }
+.page-home [data-reveal].is-visible .card:nth-child(6) { transition-delay: 0.3s; }
+.page-home [data-reveal].is-visible .card:nth-child(7) { transition-delay: 0.35s; }
+.page-home [data-reveal].is-visible .card:nth-child(8) { transition-delay: 0.4s; }
+
+.page-home .card, .page-home .step-card, .page-home .kpi, .page-home .tool-card {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+.page-home [data-reveal].is-visible .card,
+.page-home [data-reveal].is-visible .step-card,
+.page-home [data-reveal].is-visible .kpi,
+.page-home [data-reveal].is-visible .tool-card { opacity: 1; transform: translateY(0); }
+
+/* ============================================================
+   CURSOR SPOTLIGHT
+   ============================================================ */
+.page-home .global-spotlight { display: none; }
+.page-home .cursor-glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,16,46,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  transform: translate(-50%, -50%);
+  filter: blur(30px);
+}
+.page-home .section-shell:hover .cursor-glow { opacity: 1; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+  .page-home .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .page-home .bento-grid .card:nth-child(1) { grid-row: span 1; }
+  .page-home .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .page-home .steps-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .page-home .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .page-home .hero-stats-row { gap: 32px; }
+}
+
+@media (max-width: 768px) {
+  .page-home .bento-grid,
+  .page-home .grid-3,
+  .page-home .usecase-home-grid,
+  .page-home .tool-grid,
+  .page-home .steps-grid { grid-template-columns: 1fr !important; }
+  .page-home .usecase-home-grid .usecase-home-card:nth-child(7),
+  .page-home .usecase-home-grid .usecase-home-card:nth-child(8) { grid-column: auto; }
+  .page-home .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .page-home .community-grid { grid-template-columns: 1fr !important; }
+  .page-home .footer-grid { grid-template-columns: 1fr; }
+  .page-home .callout { flex-direction: column; text-align: center; }
+  .page-home .footer-bottom { flex-direction: column; text-align: center; }
+  .page-home .hero-title { font-size: clamp(2.4rem, 8vw, 3.5rem); }
+  .page-home .hero { min-height: auto; padding: 140px 20px 60px; }
+  .page-home .hero-stats-row { gap: 24px; }
+  .page-home .hero-stat-value { font-size: 2rem; }
+  .page-home .section-shell { padding: 28px 20px; border-radius: 20px; }
+}
+
+@media (max-width: 480px) {
+  .page-home .hero-actions { flex-direction: column; width: 100%; }
+  .page-home .hero-actions .btn-primary,
+  .page-home .hero-actions .btn-secondary { width: 100%; justify-content: center; }
+  .page-home .hero-stats-row { flex-direction: column; gap: 20px; }
+}
+</style>
 </head>
 <body class="page-home">
   <a href="#main-content" class="skip-link">Skip to content</a>
@@ -136,6 +1314,7 @@
             <a href="tools.html#github" role="menuitem">Open Source</a>
             <a href="community.html#developer-community" role="menuitem">Community Programs</a>
             <a href="use-cases.html" role="menuitem">Use Cases</a>
+            <a href="#ecosystem" role="menuitem">Ecosystem dApps</a>
             <a href="grants-program.html" role="menuitem">Grants Program</a>
             <a href="../org/index.html" role="menuitem">Aethelred Foundation</a>
           </div>
@@ -178,17 +1357,25 @@
       <a href="tools.html#github" class="mobile-link">Open Source</a>
       <a href="community.html#developer-community" class="mobile-link">Community Programs</a>
       <a href="use-cases.html" class="mobile-link">Use Cases</a>
+      <a href="#ecosystem" class="mobile-link">Ecosystem dApps</a>
       <a href="grants-program.html" class="mobile-link">Grants Program</a>
       <a href="../org/index.html" class="mobile-link">Foundation</a>
     </details>
   </div>
 
   <main id="main-content">
-    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+    <!-- ========== HERO — Cinematic center-aligned ========== -->
+    <section class="hero" aria-labelledby="page-title">
+      <div class="aurora-mesh" aria-hidden="true"></div>
+      <div class="hero-grid-bg" aria-hidden="true"></div>
+      <div class="ambient-orb ambient-orb--1" aria-hidden="true"></div>
+      <div class="ambient-orb ambient-orb--2" aria-hidden="true"></div>
+      <div class="ambient-orb ambient-orb--3" aria-hidden="true"></div>
+
       <div class="container hero-grid">
-        <div class="hero-copy" data-reveal>
-          <p class="eyebrow"><span class="eyebrow-dot"></span> Developer Preview - Testnet Coming Soon</p>
-          <h1 class="hero-title" id="page-title">Build <span class="gradient-word">Verifiable AI</span> dApps in Minutes.</h1>
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Developer Preview &mdash; Testnet Coming Soon</p>
+          <h1 class="hero-title" id="page-title">Build <span class="gradient-word">Verifiable AI</span><br>dApps in Minutes.</h1>
           <p class="hero-subtitle">Submit AI inference jobs, verify execution with cryptographic and hardware-backed proofs, and settle results on-chain with deterministic finality. Move from the <a class="body-link" href="developers.html">developer docs</a> to the <a class="body-link" href="tools.html">tooling stack</a> and into the <a class="body-link" href="testnet.html">testnet rollout path</a> without changing your integration model.</p>
 
           <div class="hero-tags" aria-label="Platform capabilities">
@@ -202,250 +1389,198 @@
             <a href="developers.html" class="btn btn-primary">Start Building &rarr;</a>
             <a href="testnet.html" class="btn btn-secondary">Access Testnet Details</a>
           </div>
-
-          <div class="scroll-cue">Scroll to explore platform capabilities</div>
         </div>
 
-        <div class="hero-code-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
-          <div class="code-shell" data-tab-group data-code-typing-group>
-            <div class="code-top">
-              <div class="code-dots"><span></span><span></span><span></span></div>
-              <span class="code-label">submit_inference</span>
-            </div>
-            <div class="code-tabs">
-              <button class="code-tab is-active" data-tab-target="python" aria-selected="true">Python</button>
-              <button class="code-tab" data-tab-target="typescript" aria-selected="false">TypeScript</button>
-              <button class="code-tab" data-tab-target="rust" aria-selected="false">Rust</button>
-              <button class="code-tab" data-tab-target="go" aria-selected="false">Go</button>
-            </div>
-
-            <div class="code-panel is-active" data-tab-panel="python">
-<pre><code># pip install aethelred-sdk
-import hashlib
-
-from aethelred import AethelredClient, ProofType
-
-client = AethelredClient("https://rpc.testnet.aethelred.org")
-prompt = b'{"prompt":"Hello AI"}'
-
-submit = client.jobs.submit(
-    model_hash=bytes.fromhex("09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3"),
-    input_hash=hashlib.sha256(prompt).digest(),
-    proof_type=ProofType.HYBRID,
-    priority=5,
-    max_gas=1_000_000,
-    timeout_blocks=120,
-    metadata={"source": "website-home-hero"},
-)
-
-job = client.jobs.wait_for_completion(submit.job_id, poll_interval=2.0, timeout=120.0)
-if job.status.value != "JOB_STATUS_COMPLETED":
-    raise RuntimeError(f"job failed with status={job.status.value}")
-
-seals = client.seals.list(model_hash="09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3")
-seal = next((item for item in seals if item.job_id == job.id), None)
-if seal is None:
-    raise RuntimeError(f"no seal found for job {job.id}")
-
-verification = client.seals.verify(seal.id)
-print(f"seal valid: {verification.valid}")</code></pre>
-            </div>
-
-            <div class="code-panel" data-tab-panel="typescript">
-<pre><code>// npm install @aethelred/sdk
-import { AethelredClient, JobStatus, Network, ProofType } from '@aethelred/sdk';
-
-async function sha256Hex(value) {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function main() {
-  const modelHash = '09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3';
-  const client = new AethelredClient({ network: Network.TESTNET });
-
-  const submit = await client.jobs.submit({
-    modelHash,
-    inputHash: await sha256Hex(JSON.stringify({ prompt: 'Hello AI' })),
-    proofType: ProofType.HYBRID,
-    priority: 5,
-    maxGas: '1000000',
-    timeoutBlocks: 120,
-    metadata: { source: 'website-home-hero' },
-  });
-
-  const job = await client.jobs.waitForCompletion(submit.jobId, {
-    pollInterval: 2000,
-    timeout: 120000,
-  });
-  if (job.status !== JobStatus.COMPLETED) {
-    throw new Error(`job failed with status=${job.status}`);
-  }
-
-  const seals = await client.seals.list();
-  const seal = seals.find((item) => item.jobId === job.id);
-  if (!seal) {
-    throw new Error(`no seal found for job ${job.id}`);
-  }
-
-  const verification = await client.seals.verify(seal.id);
-  console.log(`seal valid: ${verification.valid}`);
-}
-
-main().catch((error) => {
-  console.error(error);
-});</code></pre>
-            </div>
-
-            <div class="code-panel" data-tab-panel="rust">
-<pre><code>// Cargo.toml: aethelred-sdk = "1"
-use aethelred_sdk::{
-    jobs::SubmitJobRequest, AethelredClient, JobStatus, Network, ProofType,
-};
-use std::time::Duration;
-
-#[tokio::main]
-async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
-    let client = AethelredClient::new(Network::Testnet).await?;
-
-    let submit = client
-        .jobs()
-        .submit(SubmitJobRequest {
-            model_hash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3".into(),
-            input_hash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09".into(),
-            proof_type: Some(ProofType::ProofTypeHybrid),
-            priority: Some(5),
-            max_gas: Some("1000000".into()),
-            timeout_blocks: Some(120),
-        })
-        .await?;
-
-    let job = client
-        .jobs()
-        .wait_for_completion(
-            &amp;submit.job_id,
-            Duration::from_secs(2),
-            Duration::from_secs(120),
-        )
-        .await?;
-    if job.status != JobStatus::JobStatusCompleted {
-        return Err(format!("job failed with status {:?}", job.status).into());
-    }
-
-    let seals = client.seals().list(None).await?;
-    let seal = seals
-        .into_iter()
-        .find(|item| item.job_id == job.id)
-        .ok_or_else(|| format!("no seal found for job {}", job.id))?;
-
-    let verification = client.seals().verify(&amp;seal.id).await?;
-    println!("seal valid: {}", verification.valid);
-    Ok(())
-}</code></pre>
-            </div>
-
-            <div class="code-panel" data-tab-panel="go">
-<pre><code>package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-
-    "github.com/aethelred/sdk-go/client"
-    "github.com/aethelred/sdk-go/jobs"
-    "github.com/aethelred/sdk-go/types"
-)
-
-func main() {
-    ctx := context.Background()
-
-    c, err := client.NewClient(client.Testnet)
-    if err != nil {
-        panic(err)
-    }
-
-    submit, err := c.Jobs.Submit(ctx, jobs.SubmitRequest{
-        ModelHash: "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3",
-        InputHash: "f4d3a381d89f9f7a35bfa48d9b5f9d7c6c18d2a8b431c1d6a2d2d413c3e7ed09",
-        ProofType: types.ProofTypeHybrid,
-        Priority:  5,
-        MaxGas:    "1000000",
-        TimeoutBlocks: 120,
-        Metadata:  map[string]string{"source": "website-home-hero"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("job id: %s\n", submit.JobID)
-
-    job, err := c.Jobs.WaitForCompletion(ctx, submit.JobID, 2*time.Second, 120*time.Second)
-    if err != nil {
-        panic(err)
-    }
-    if job.Status != types.JobStatusCompleted {
-        panic(fmt.Sprintf("job failed with status %s", job.Status))
-    }
-
-    seals, err := c.Seals.List(ctx, nil)
-    if err != nil {
-        panic(err)
-    }
-
-    var sealID string
-    for _, seal := range seals {
-        if seal.JobID == job.ID {
-            sealID = seal.ID
-            break
-        }
-    }
-    if sealID == "" {
-        panic(fmt.Sprintf("no seal found for job %s", job.ID))
-    }
-
-    verification, err := c.Seals.Verify(ctx, sealID)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("seal valid: %t\n", verification.Valid)
-}</code></pre>
-            </div>
+        <div class="hero-stats-row">
+          <div class="hero-stat">
+            <div class="hero-stat-value" data-count>Sub-2s</div>
+            <div class="hero-stat-label">Deterministic Finality</div>
           </div>
-
-          <div class="hero-metrics">
-            <div class="metric-pill">
-              <strong>Sub-2s</strong>
-              <span>Deterministic finality</span>
-            </div>
-            <div class="metric-pill">
-              <strong>400 PFLOPS</strong>
-              <span>TEE compute target</span>
-            </div>
-            <div class="metric-pill">
-              <strong>50K+ IPS</strong>
-              <span>Inference throughput</span>
-            </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value" data-count>400 PFLOPS</div>
+            <div class="hero-stat-label">TEE Compute Target</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value" data-count>50K+ IPS</div>
+            <div class="hero-stat-label">Inference Throughput</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-value" data-count>10B</div>
+            <div class="hero-stat-label">AETHEL Supply</div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- ========== MARQUEE — Scrolling tech strip ========== -->
+    <section class="marquee-section" aria-label="Technology stack">
+      <div class="marquee-track">
+        <span class="marquee-item">EVM Compatible <span class="marquee-dot"></span></span>
+        <span class="marquee-item">TEE Attestation <span class="marquee-dot"></span></span>
+        <span class="marquee-item">zkML Proofs <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Proof of Useful Work <span class="marquee-dot"></span></span>
+        <span class="marquee-item">CometBFT Consensus <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Post-Quantum Crypto <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Digital Seals <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Multi-Language SDKs <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Python &bull; TypeScript &bull; Rust &bull; Go <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Hybrid Verification <span class="marquee-dot"></span></span>
+        <!-- Duplicate for seamless loop -->
+        <span class="marquee-item">EVM Compatible <span class="marquee-dot"></span></span>
+        <span class="marquee-item">TEE Attestation <span class="marquee-dot"></span></span>
+        <span class="marquee-item">zkML Proofs <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Proof of Useful Work <span class="marquee-dot"></span></span>
+        <span class="marquee-item">CometBFT Consensus <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Post-Quantum Crypto <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Digital Seals <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Multi-Language SDKs <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Python &bull; TypeScript &bull; Rust &bull; Go <span class="marquee-dot"></span></span>
+        <span class="marquee-item">Hybrid Verification <span class="marquee-dot"></span></span>
+      </div>
+    </section>
+
+    <!-- ========== CODE SHOWCASE ========== -->
+    <section class="section code-showcase" id="code-showcase">
+      <div class="container" data-reveal>
+        <div class="code-showcase-head">
+          <h2>Ship your first inference in 5 minutes</h2>
+          <p>Multi-language SDKs with consistent API shape, async support, and production-ready docs.</p>
+        </div>
+
+        <div class="code-shell" data-tab-group data-code-typing-group>
+          <div class="code-top">
+            <div class="code-dots"><span></span><span></span><span></span></div>
+            <span class="code-label">submit_inference</span>
+          </div>
+          <div class="code-tabs">
+            <button class="code-tab is-active" data-tab-target="python" aria-selected="true">Python</button>
+            <button class="code-tab" data-tab-target="typescript" aria-selected="false">TypeScript</button>
+            <button class="code-tab" data-tab-target="rust" aria-selected="false">Rust</button>
+            <button class="code-tab" data-tab-target="go" aria-selected="false">Go</button>
+          </div>
+
+          <div class="code-panel is-active" data-tab-panel="python">
+<pre><code><span class="tk-cm"># pip install aethelred-sdk</span>
+<span class="tk-kw">import</span> hashlib
+
+<span class="tk-kw">from</span> aethelred <span class="tk-kw">import</span> AethelredClient, ProofType
+
+client = <span class="tk-fn">AethelredClient</span>(<span class="tk-str">"https://rpc.testnet.aethelred.org"</span>)
+prompt = <span class="tk-str">b'{"prompt":"Hello AI"}'</span>
+
+submit = client.jobs.<span class="tk-fn">submit</span>(
+    model_hash=<span class="tk-fn">bytes.fromhex</span>(<span class="tk-str">"09f7e2b3c5d6a1f9..."</span>),
+    input_hash=hashlib.<span class="tk-fn">sha256</span>(prompt).<span class="tk-fn">digest</span>(),
+    proof_type=ProofType.<span class="tk-ty">HYBRID</span>,
+    priority=<span class="tk-num">5</span>,
+    max_gas=<span class="tk-num">1_000_000</span>,
+    timeout_blocks=<span class="tk-num">120</span>,
+)
+
+job = client.jobs.<span class="tk-fn">wait_for_completion</span>(submit.job_id)
+seal = client.seals.<span class="tk-fn">verify</span>(job.seal_id)
+<span class="tk-fn">print</span>(<span class="tk-str">f"seal valid: <span class="tk-op">{</span>seal.valid<span class="tk-op">}</span>"</span>)<span class="code-cursor"></span></code></pre>
+          </div>
+
+          <div class="code-panel" data-tab-panel="typescript">
+<pre><code><span class="tk-cm">// npm install @aethelred/sdk</span>
+<span class="tk-kw">import</span> { AethelredClient, Network, ProofType } <span class="tk-kw">from</span> <span class="tk-str">'@aethelred/sdk'</span>;
+
+<span class="tk-kw">const</span> client = <span class="tk-kw">new</span> <span class="tk-fn">AethelredClient</span>({ network: Network.<span class="tk-ty">TESTNET</span> });
+
+<span class="tk-kw">const</span> submit = <span class="tk-kw">await</span> client.jobs.<span class="tk-fn">submit</span>({
+  modelHash: <span class="tk-str">'09f7e2b3c5d6a1f9...'</span>,
+  inputHash: <span class="tk-kw">await</span> <span class="tk-fn">sha256Hex</span>(<span class="tk-str">'{"prompt":"Hello AI"}'</span>),
+  proofType: ProofType.<span class="tk-ty">HYBRID</span>,
+  priority: <span class="tk-num">5</span>,
+  maxGas: <span class="tk-str">'1000000'</span>,
+});
+
+<span class="tk-kw">const</span> job = <span class="tk-kw">await</span> client.jobs.<span class="tk-fn">waitForCompletion</span>(submit.jobId);
+<span class="tk-kw">const</span> seal = <span class="tk-kw">await</span> client.seals.<span class="tk-fn">verify</span>(job.sealId);
+console.<span class="tk-fn">log</span>(<span class="tk-str">`seal valid: <span class="tk-op">${</span>seal.valid<span class="tk-op">}</span>`</span>);</code></pre>
+          </div>
+
+          <div class="code-panel" data-tab-panel="rust">
+<pre><code><span class="tk-cm">// Cargo.toml: aethelred-sdk = "1"</span>
+<span class="tk-kw">use</span> aethelred_sdk::{AethelredClient, Network, ProofType};
+
+<span class="tk-kw">#[tokio::main]</span>
+<span class="tk-kw">async fn</span> <span class="tk-fn">main</span>() -&gt; <span class="tk-ty">Result</span>&lt;(), Box&lt;<span class="tk-kw">dyn</span> std::error::Error&gt;&gt; {
+    <span class="tk-kw">let</span> client = <span class="tk-fn">AethelredClient::new</span>(Network::Testnet).<span class="tk-kw">await</span>?;
+
+    <span class="tk-kw">let</span> submit = client.jobs().<span class="tk-fn">submit</span>(SubmitJobRequest {
+        model_hash: <span class="tk-str">"09f7e2b3c5d6a1f9..."</span>.into(),
+        proof_type: Some(ProofType::<span class="tk-ty">Hybrid</span>),
+        priority: Some(<span class="tk-num">5</span>),
+        max_gas: Some(<span class="tk-str">"1000000"</span>.into()),
+        ..Default::default()
+    }).<span class="tk-kw">await</span>?;
+
+    <span class="tk-kw">let</span> job = client.jobs().<span class="tk-fn">wait_for_completion</span>(&amp;submit.job_id).<span class="tk-kw">await</span>?;
+    <span class="tk-kw">let</span> seal = client.seals().<span class="tk-fn">verify</span>(&amp;job.seal_id).<span class="tk-kw">await</span>?;
+    <span class="tk-fn">println!</span>(<span class="tk-str">"seal valid: {}"</span>, seal.valid);
+    Ok(())
+}</code></pre>
+          </div>
+
+          <div class="code-panel" data-tab-panel="go">
+<pre><code><span class="tk-cm">// go get github.com/aethelred/sdk-go</span>
+<span class="tk-kw">package</span> main
+
+<span class="tk-kw">import</span> (
+    <span class="tk-str">"context"</span>
+    <span class="tk-str">"fmt"</span>
+    <span class="tk-str">"github.com/aethelred/sdk-go/client"</span>
+)
+
+<span class="tk-kw">func</span> <span class="tk-fn">main</span>() {
+    c, _ := client.<span class="tk-fn">NewClient</span>(client.Testnet)
+    submit, _ := c.Jobs.<span class="tk-fn">Submit</span>(context.<span class="tk-fn">Background</span>(), jobs.SubmitRequest{
+        ModelHash: <span class="tk-str">"09f7e2b3c5d6a1f9..."</span>,
+        ProofType: types.<span class="tk-ty">ProofTypeHybrid</span>,
+        Priority:  <span class="tk-num">5</span>,
+        MaxGas:    <span class="tk-str">"1000000"</span>,
+    })
+
+    job, _ := c.Jobs.<span class="tk-fn">WaitForCompletion</span>(ctx, submit.JobID)
+    seal, _ := c.Seals.<span class="tk-fn">Verify</span>(ctx, job.SealID)
+    fmt.<span class="tk-fn">Printf</span>(<span class="tk-str">"seal valid: %t\n"</span>, seal.Valid)
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="code-metrics">
+          <div class="metric-pill">
+            <strong>Sub-2s</strong>
+            <span>Deterministic finality</span>
+          </div>
+          <div class="metric-pill">
+            <strong>400 PFLOPS</strong>
+            <span>TEE compute target</span>
+          </div>
+          <div class="metric-pill">
+            <strong>50K+ IPS</strong>
+            <span>Inference throughput</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PLATFORM CAPABILITIES — Bento Grid ========== -->
     <section class="section" id="platform-capabilities" aria-labelledby="platform-capabilities-title">
       <div class="container section-shell" data-reveal>
         <div class="section-head">
           <p class="eyebrow">Why Aethelred</p>
-          <h2 class="section-title" id="platform-capabilities-title">Purpose-built infrastructure for verifiable AI inference</h2>
-          <p class="section-lead">Aethelred gives developers predictable performance, proof-backed execution, and a practical toolchain from prototype to production.</p>
+          <h2 class="section-title" id="platform-capabilities-title">Purpose-built infrastructure for <span class="gradient-word">verifiable AI</span> inference</h2>
+          <p class="section-lead">Predictable performance, proof-backed execution, and a practical toolchain from prototype to production.</p>
         </div>
 
-        <div class="grid grid-3">
+        <div class="bento-grid">
           <article class="card">
             <span class="icon-chip">0x0400</span>
             <h3>EVM-Compatible Precompiles</h3>
-            <p>Use <span class="mono">0x0400</span> (TEE) and <span class="mono">0x0300</span> (zkML) precompiles directly from Solidity without external oracles.</p>
+            <p>Use <span class="mono">0x0400</span> (TEE) and <span class="mono">0x0300</span> (zkML) precompiles directly from Solidity without external oracles. Native access to confidential compute and zero-knowledge inference verification at the protocol level.</p>
           </article>
           <article class="card">
             <span class="icon-chip">SDKs</span>
@@ -455,7 +1590,7 @@ func main() {
           <article class="card">
             <span class="icon-chip">PQ</span>
             <h3>Post-Quantum Security</h3>
-            <p>ML-DSA-65 + ECDSA hybrid signatures ship by default so applications can plan for long-term cryptographic resilience.</p>
+            <p>ML-DSA-65 + ECDSA hybrid signatures ship by default for long-term cryptographic resilience.</p>
           </article>
           <article class="card">
             <span class="icon-chip">&lt;2s</span>
@@ -470,18 +1605,19 @@ func main() {
           <article class="card">
             <span class="icon-chip">&gt;_</span>
             <h3>Developer Tooling</h3>
-            <p>Use CLI automation, VS Code Sovereign Copilot, local Docker devnet tooling, and integrated diagnostics.</p>
+            <p>CLI automation, VS Code Sovereign Copilot, local Docker devnet, and integrated diagnostics.</p>
           </article>
         </div>
       </div>
     </section>
 
+    <!-- ========== USE CASES ========== -->
     <section class="section section-tone" id="reference-usecases" aria-labelledby="reference-usecases-title">
       <div class="container" data-reveal>
         <div class="section-head">
           <p class="eyebrow">Reference Architectures</p>
           <h2 class="section-title" id="reference-usecases-title">Where the current protocol fits best</h2>
-          <p class="section-lead">These use-case pages translate the current Aethelred protocol surface into workload-specific architectures without inventing production stats, customer names, or unsupported capabilities.</p>
+          <p class="section-lead">Workload-specific architectures grounded in the current protocol surface — no invented stats or unsupported capabilities.</p>
         </div>
 
         <div class="grid grid-3 usecase-home-grid">
@@ -493,7 +1629,7 @@ func main() {
           </a>
           <a class="card usecase-home-card" href="usecase-healthcare.html">
             <span class="icon-chip">HLTH</span>
-            <h3>Healthcare and Life Sciences</h3>
+            <h3>Healthcare &amp; Life Sciences</h3>
             <p>Blind compute, sovereign data controls, and audit-ready result provenance for regulated clinical workflows.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
@@ -505,32 +1641,32 @@ func main() {
           </a>
           <a class="card usecase-home-card" href="usecase-defense.html">
             <span class="icon-chip">DEF</span>
-            <h3>Defense and Mission Systems</h3>
+            <h3>Defense &amp; Mission Systems</h3>
             <p>Post-quantum crypto, hybrid verification, and fail-closed evidence handling for high-assurance workloads.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
           <a class="card usecase-home-card" href="usecase-autonomous.html">
             <span class="icon-chip">AUTO</span>
-            <h3>Autonomous and Robotic Systems</h3>
+            <h3>Autonomous &amp; Robotic Systems</h3>
             <p>Sealed decision trails, low-latency verification, and route-event auditing for autonomous workflows.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
           <a class="card usecase-home-card" href="usecase-supplychain.html">
             <span class="icon-chip">SCM</span>
-            <h3>Supply Chain and Trade</h3>
+            <h3>Supply Chain &amp; Trade</h3>
             <p>Origin evidence, transfer audit trails, and verifiable partner-side provenance across global logistics.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
           <a class="card usecase-home-card" href="usecase-agent-to-agent.html">
             <span class="icon-chip">A2A</span>
             <h3>AI Agent to AI Agent</h3>
-            <p>Seal-verified handoffs and proof-aware telemetry so one agent can verify another agent's result before acting.</p>
+            <p>Seal-verified handoffs and proof-aware telemetry so one agent can verify another's result before acting.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
           <a class="card usecase-home-card" href="enterprise-corridors.html">
             <span class="icon-chip">ENT</span>
             <h3>Enterprise Corridors</h3>
-            <p>Policy-gated enterprise workflows with sovereign data boundaries, Digital Seals, and signer-aware control paths.</p>
+            <p>Policy-gated workflows with sovereign data boundaries, Digital Seals, and signer-aware control paths.</p>
             <span class="card-link">Open reference &rarr;</span>
           </a>
         </div>
@@ -538,13 +1674,92 @@ func main() {
         <div class="callout stack-top-16">
           <div>
             <h3>Need the full workload library?</h3>
-            <p>Use the central <a class="body-link" href="use-cases.html">Use Cases</a> page to compare all eight reference architectures, then continue into the dedicated <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a> page when the workflow includes issuer-authorized settlement or reserve-controlled routing.</p>
+            <p>Use the central <a class="body-link" href="use-cases.html">Use Cases</a> page to compare all eight reference architectures, then continue into the dedicated <a class="body-link" href="stablecoin-infrastructure.html">Stablecoin Infrastructure</a> page for issuer-authorized settlement workflows.</p>
           </div>
           <a href="use-cases.html" class="btn btn-primary">Open Use Cases</a>
         </div>
       </div>
     </section>
 
+    <!-- ========== ECOSYSTEM dAPPS ========== -->
+    <section class="section" id="ecosystem" aria-labelledby="ecosystem-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Ecosystem</p>
+          <h2 class="section-title" id="ecosystem-title">Production dApps built on the protocol</h2>
+          <p class="section-lead">Five flagship applications spanning liquid staking, identity, payments, carbon markets, and sovereign health &mdash; each leveraging TEE attestation, zero-knowledge proofs, and on-chain settlement.</p>
+        </div>
+
+        <div class="grid grid-3 ecosystem-grid">
+          <div class="card ecosystem-card">
+            <span class="icon-chip">LSV</span>
+            <h3>Cruzible</h3>
+            <p class="ecosystem-tagline">TEE-verified liquid staking vault</p>
+            <p>Stake AETHEL, receive stAETHEL liquid receipt tokens, and submit TEE-attested AI inference jobs. Full block explorer, validator monitoring, and governance preview with zero unbonding lockup.</p>
+            <ul class="list-clean">
+              <li>Liquid staking with stAETHEL receipt tokens</li>
+              <li>TEE-attested inference job submission</li>
+              <li>Real-time block tracking via WebSocket</li>
+              <li>CosmWasm contracts on Tendermint HotStuff BFT</li>
+            </ul>
+          </div>
+
+          <div class="card ecosystem-card">
+            <span class="icon-chip">SSI</span>
+            <h3>ZeroID</h3>
+            <p class="ecosystem-tagline">Self-sovereign identity with ZK credentials</p>
+            <p>W3C-compliant decentralized identities, zero-knowledge credential verification, and cross-chain identity bridging. Prove age, residency, or credit tier without revealing source data.</p>
+            <ul class="list-clean">
+              <li>12 smart contracts, 9 Circom ZK circuits</li>
+              <li>BBS+ selective disclosure signatures</li>
+              <li>Cross-chain bridge for EVM and Cosmos</li>
+              <li>AI-powered compliance with behavioral biometrics</li>
+            </ul>
+          </div>
+
+          <div class="card ecosystem-card">
+            <span class="icon-chip">PAY</span>
+            <h3>NoblePay</h3>
+            <p class="ecosystem-tagline">Enterprise cross-border payments</p>
+            <p>TEE-attested on-chain settlement for global payments with real-time FX, streaming payments, invoice financing, and Travel Rule enforcement. Go + Rust microservices with gRPC gateway.</p>
+            <ul class="list-clean">
+              <li>Multi-currency settlement with FX hedging vaults</li>
+              <li>ML-powered AML/sanctions screening</li>
+              <li>Streaming payments and invoice collateralization</li>
+              <li>12 Solidity contracts, Go gateway, Rust compliance</li>
+            </ul>
+          </div>
+
+          <div class="card ecosystem-card">
+            <span class="icon-chip">MRV</span>
+            <h3>TerraQura</h3>
+            <p class="ecosystem-tagline">Carbon credits with Proof-of-Physics</p>
+            <p>Institutional-grade carbon credit lifecycle from IoT-verified direct air capture through ERC-1155 tokenization, P2P trading with AMM liquidity, and on-chain retirement with ITMO registry integration.</p>
+            <ul class="list-clean">
+              <li>Proof-of-Physics 3-phase verification pipeline</li>
+              <li>Native IoT oracle for DAC telemetry</li>
+              <li>ADGM / ITMO / Article 6 compliance</li>
+              <li>25 smart contracts, 881+ tests</li>
+            </ul>
+          </div>
+
+          <div class="card ecosystem-card">
+            <span class="icon-chip">HLTH</span>
+            <h3>Shiora</h3>
+            <p class="ecosystem-tagline">Sovereign health data with verifiable AI</p>
+            <p>Decentralized women's health platform with encrypted FHIR-compatible records, reproductive health vault, AI diagnostics with explainability, and DAO governance &mdash; all under zero-knowledge privacy.</p>
+            <ul class="list-clean">
+              <li>ZK attestations for selective health disclosure</li>
+              <li>IPFS-backed encrypted health records</li>
+              <li>Clinical decision support with predictive alerts</li>
+              <li>13 smart contracts, 393 tests, 57 API routes</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== QUICK START ========== -->
     <section class="section section-tone" id="get-started" aria-labelledby="get-started-title">
       <div class="container" data-reveal>
         <div class="section-head">
@@ -603,6 +1818,7 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </section>
 
+    <!-- ========== DEVELOPER TOOLS ========== -->
     <section class="section" id="developer-tools-home" aria-labelledby="developer-tools-home-title">
       <div class="container section-shell" data-reveal>
         <div class="section-head">
@@ -652,6 +1868,7 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </section>
 
+    <!-- ========== NETWORK SPECIFICATIONS ========== -->
     <section class="section section-tone" id="network-specifications" aria-labelledby="network-specifications-title">
       <div class="container" data-reveal>
         <div class="section-head">
@@ -685,6 +1902,7 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </section>
 
+    <!-- ========== COMMUNITY ========== -->
     <section class="section" id="builder-community" aria-labelledby="builder-community-title">
       <div class="container section-shell" data-reveal>
         <div class="section-head">
@@ -718,6 +1936,7 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </section>
 
+    <!-- ========== FINAL CTA ========== -->
     <section class="section" id="start-building" aria-labelledby="start-building-title">
       <div class="container" data-reveal>
         <div class="callout">
@@ -731,6 +1950,7 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </section>
   </main>
+
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -801,5 +2021,125 @@ aeth wallet create --name mykey</code></pre>
       </div>
     </div>
   </footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* --- Register CSS custom property for border rotation --- */
+    if (typeof CSS !== 'undefined' && CSS.registerProperty) {
+      try {
+        CSS.registerProperty({ name: '--border-angle', syntax: '<angle>', inherits: false, initialValue: '0deg' });
+      } catch (e) {}
+    }
+
+    /* --- Animated KPI Counting --- */
+    function animateCounter(el) {
+      var text = el.textContent.trim();
+      var match = text.match(/^([^\d]*?)([\d,.]+)(.*?)$/);
+      if (!match) return;
+      var prefix = match[1], suffix = match[3];
+      var raw = match[2].replace(/,/g, '');
+      var target = parseFloat(raw);
+      var hasDecimal = raw.includes('.');
+      var decimals = hasDecimal ? (raw.split('.')[1] || '').length : 0;
+      var duration = 1800;
+      var startTime = performance.now();
+      function easeOutExpo(t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+      function tick(now) {
+        var elapsed = now - startTime;
+        var progress = Math.min(elapsed / duration, 1);
+        var current = easeOutExpo(progress) * target;
+        el.textContent = prefix + (hasDecimal ? current.toFixed(decimals) : Math.round(current).toLocaleString()) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+        else { el.textContent = text; el.classList.add('is-counted'); }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    var kpiObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { animateCounter(entry.target); kpiObserver.unobserve(entry.target); }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.page-home .kpi-value').forEach(function (el) { kpiObserver.observe(el); });
+
+    /* Animate hero stat values */
+    var heroStatObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { animateCounter(entry.target); heroStatObserver.unobserve(entry.target); }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.page-home .hero-stat-value').forEach(function (el) { heroStatObserver.observe(el); });
+
+    /* Animate metric pills */
+    var metricObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var strong = entry.target.querySelector('strong');
+          if (strong) animateCounter(strong);
+          metricObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.page-home .metric-pill').forEach(function (el) { metricObserver.observe(el); });
+
+    /* --- Cursor-reactive glow on section shells --- */
+    document.querySelectorAll('.page-home .section-shell').forEach(function (shell) {
+      var glow = document.createElement('div');
+      glow.className = 'cursor-glow';
+      glow.setAttribute('aria-hidden', 'true');
+      shell.appendChild(glow);
+      shell.addEventListener('mousemove', function (e) {
+        var rect = shell.getBoundingClientRect();
+        glow.style.left = (e.clientX - rect.left) + 'px';
+        glow.style.top = (e.clientY - rect.top) + 'px';
+        glow.style.opacity = '1';
+      });
+      shell.addEventListener('mouseleave', function () { glow.style.opacity = '0'; });
+    });
+
+    /* --- Card tilt on hover --- */
+    document.querySelectorAll('.page-home .card').forEach(function (card) {
+      card.addEventListener('mousemove', function (e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width;
+        var y = (e.clientY - rect.top) / rect.height;
+        card.style.transform = 'translateY(-4px) perspective(800px) rotateX(' + ((y - 0.5) * 4) + 'deg) rotateY(' + ((x - 0.5) * -4) + 'deg)';
+      });
+      card.addEventListener('mouseleave', function () { card.style.transform = ''; });
+    });
+
+    /* --- Magnetic hero buttons --- */
+    document.querySelectorAll('.page-home .hero-actions .btn-primary, .page-home .hero-actions .btn-secondary').forEach(function (btn) {
+      btn.addEventListener('mousemove', function (e) {
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = 'translateY(-2px) translate(' + (x * 0.06) + 'px, ' + (y * 0.06) + 'px)';
+      });
+      btn.addEventListener('mouseleave', function () { btn.style.transform = ''; });
+    });
+
+    /* --- Parallax orbs on mouse --- */
+    var orbs = document.querySelectorAll('.page-home .ambient-orb');
+    if (orbs.length) {
+      var ticking = false;
+      window.addEventListener('mousemove', function (e) {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          var cx = (e.clientX / window.innerWidth - 0.5) * 2;
+          var cy = (e.clientY / window.innerHeight - 0.5) * 2;
+          orbs.forEach(function (orb, i) {
+            var factor = (i + 1) * 10;
+            orb.style.transform = 'translate(' + (cx * factor) + 'px, ' + (cy * factor) + 'px)';
+          });
+          ticking = false;
+        });
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
