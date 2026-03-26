@@ -1315,12 +1315,15 @@ func TestEndToEnd_MalformedVoteExtension(t *testing.T) {
 		t.Fatal("expected result for malformed-job despite bad votes")
 	}
 
-	// Only the 2 valid votes should count
+	// Only the 2 valid votes should count, but total includes all 6 extensions.
+	// With fallback power: totalPower=6, requiredPower=ceil(6*67/100)=5, agreementPower=2.
+	// 2 < 5, so consensus is NOT reached — the pipeline correctly skipped malformed votes
+	// but the valid vote count is insufficient for the 67% threshold across all votes.
 	if result.TotalVotes < 2 {
-		t.Errorf("expected at least 2 valid votes, got %d", result.TotalVotes)
+		t.Errorf("expected at least 2 total votes counted, got %d", result.TotalVotes)
 	}
-	if !result.HasConsensus {
-		t.Error("expected consensus from 2 valid voters despite malformed extensions")
+	if result.HasConsensus {
+		t.Error("expected NO consensus: 2 valid votes out of 6 total does not meet 67% threshold")
 	}
 
 	t.Log("Malformed vote extension test passed - pipeline did not crash")
@@ -1643,38 +1646,38 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 	}
 	t.Logf("Scheduled %d jobs across %d validators", len(scheduled), len(validators))
 
-	// Each validator independently produces vote extensions
+	// Each validator produces ONE vote extension containing ALL job verifications.
+	// This matches real CometBFT behavior: one ExtendVote per validator per height.
 	allVoteExtensions := make([]*keeper.VoteExtensionWire, 0, len(validators))
 	for v, addr := range validators {
+		verifications := make([]keeper.VerificationWire, 0, len(scheduled))
 		for _, job := range scheduled {
-			hash := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", job.Id, addr, v)))
-
-			verifications := []keeper.VerificationWire{
-				{
-					JobID:           job.Id,
-					ModelHash:       []byte(job.ModelHash),
-					InputHash:       []byte(job.InputHash),
-					OutputHash:      hash[:],
-					ExecutionTimeMs: int64(100 + v*50),
-					AttestationType: "tee",
-					TEEAttestation:  json.RawMessage(fmt.Sprintf("%q", fmt.Sprintf("%x", hash[:16]))),
-					Success:         true,
-				},
-			}
-
-			ext := &keeper.VoteExtensionWire{
-				Version:          1,
-				Height:           200,
-				ValidatorAddress: json.RawMessage(fmt.Sprintf("%q", addr)),
-				Verifications:    verifications,
-				Timestamp:        time.Now().UTC(),
-			}
-			allVoteExtensions = append(allVoteExtensions, ext)
+			// All validators must agree on the same output for consensus to be reached.
+			hash := sha256.Sum256([]byte(fmt.Sprintf("canonical-output-%s", job.Id)))
+			verifications = append(verifications, keeper.VerificationWire{
+				JobID:           job.Id,
+				ModelHash:       []byte(job.ModelHash),
+				InputHash:       []byte(job.InputHash),
+				OutputHash:      hash[:],
+				ExecutionTimeMs: int64(100 + v*50),
+				AttestationType: "tee",
+				TEEAttestation:  json.RawMessage(fmt.Sprintf("%q", fmt.Sprintf("%x", hash[:16]))),
+				Success:         true,
+			})
 		}
+
+		ext := &keeper.VoteExtensionWire{
+			Version:          1,
+			Height:           200,
+			ValidatorAddress: json.RawMessage(fmt.Sprintf("%q", addr)),
+			Verifications:    verifications,
+			Timestamp:        time.Now().UTC(),
+		}
+		allVoteExtensions = append(allVoteExtensions, ext)
 	}
 
-	if len(allVoteExtensions) < 4 {
-		t.Fatalf("expected at least 4 vote extensions (one per validator), got %d", len(allVoteExtensions))
+	if len(allVoteExtensions) != len(validators) {
+		t.Fatalf("expected %d vote extensions (one per validator), got %d", len(validators), len(allVoteExtensions))
 	}
 
 	// Aggregate all vote extensions with 67% threshold

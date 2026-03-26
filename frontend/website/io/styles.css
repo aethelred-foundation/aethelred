@@ -35,6 +35,22 @@
 }
 
 @font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('../assets/fonts/space-grotesk-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../assets/fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 400;
@@ -62,26 +78,26 @@
 }
 
 :root {
-  --bg-main: #f7f7f8;
-  --bg-soft: #efeff1;
-  --bg-deep: #0c0c0d;
-  --surface: #ffffff;
-  --surface-muted: rgba(255, 255, 255, 0.9);
-  --surface-deep: #111214;
+  --bg-main: #06060a;
+  --bg-soft: #0c0c12;
+  --bg-deep: #06060a;
+  --surface: rgba(255,255,255,0.04);
+  --surface-muted: rgba(255, 255, 255, 0.06);
+  --surface-deep: #0c0c12;
   --surface-code: #0f1012;
-  --border: rgba(9, 9, 12, 0.16);
-  --border-strong: rgba(9, 9, 12, 0.3);
-  --text-strong: #101114;
-  --text-main: #232428;
-  --text-muted: #5c5e65;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-strong: #f0f0f3;
+  --text-main: #b0b0b8;
+  --text-muted: #6a6a78;
   --text-on-deep: #f5f5f7;
   --brand: #c8102e;
-  --brand-2: #8e0c22;
-  --brand-3: #6a0a18;
+  --brand-2: #e8334d;
+  --brand-3: #ff6b7a;
   --danger: #d85166;
   --warning: #d68621;
-  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.12);
-  --shadow-hard: 0 26px 70px rgba(0, 0, 0, 0.2);
+  --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.4);
+  --shadow-hard: 0 26px 70px rgba(0, 0, 0, 0.6);
   --radius-xl: 28px;
   --radius-lg: 20px;
   --radius-md: 14px;
@@ -105,7 +121,7 @@ body {
   background:
     radial-gradient(circle at 8% -12%, rgba(200, 16, 46, 0.18), transparent 42%),
     radial-gradient(circle at 96% 2%, rgba(0, 0, 0, 0.13), transparent 34%),
-    linear-gradient(180deg, #ffffff 0%, #f3f3f5 44%, #ececef 100%);
+    linear-gradient(180deg, #06060a 0%, #08080e 44%, #06060a 100%);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -118,8 +134,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 96px 96px;
   mask-image: radial-gradient(circle at 25% 0%, black 30%, transparent 70%);
 }
@@ -168,7 +184,7 @@ a {
   left: -9999px;
   top: 0;
   z-index: 1100;
-  background: #ffffff;
+  background: #0c0c12;
   color: var(--text-strong);
   padding: 10px 14px;
   border-radius: 0 0 12px 12px;
@@ -201,10 +217,10 @@ a {
   padding: 10px 12px 10px 16px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(12, 12, 18, 0.75);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -215,8 +231,8 @@ a {
 .site-header.is-scrolled .header-shell {
   margin-top: 8px;
   border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
-  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  background: rgba(12, 12, 18, 0.92);
 }
 
 .brand {
@@ -236,7 +252,7 @@ a {
 
 .brand span,
 .brand-word {
-  font-family: 'Syne', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -252,7 +268,7 @@ a {
 
 .nav-link,
 .nav-button {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.13em;
@@ -316,7 +332,7 @@ a {
   min-width: 270px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(12, 12, 18, 0.95);
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow-soft);
   padding: 10px;
@@ -390,41 +406,41 @@ a {
 }
 
 .btn-secondary {
-  background: linear-gradient(180deg, rgba(200, 16, 46, 0.1), rgba(255, 255, 255, 0.82));
-  border-color: rgba(200, 16, 46, 0.24);
+  background: linear-gradient(180deg, rgba(200, 16, 46, 0.15), rgba(200, 16, 46, 0.05));
+  border-color: rgba(200, 16, 46, 0.3);
   color: var(--text-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .btn-secondary:hover,
 .btn-secondary:focus-visible {
-  border-color: rgba(200, 16, 46, 0.34);
-  box-shadow: 0 14px 30px rgba(200, 16, 46, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-color: rgba(200, 16, 46, 0.5);
+  box-shadow: 0 14px 30px rgba(200, 16, 46, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .btn-outline {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 239, 239, 0.92));
-  border-color: rgba(0, 0, 0, 0.26);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
   color: var(--text-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .btn-outline:hover,
 .btn-outline:focus-visible {
-  border-color: rgba(0, 0, 0, 0.34);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.56);
-  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-main);
 }
 
 .btn-ghost:hover,
 .btn-ghost:focus-visible {
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(0, 0, 0, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .btn-small {
@@ -440,7 +456,7 @@ a {
   height: 44px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
 }
 
@@ -457,7 +473,7 @@ a {
   right: 14px;
   max-height: calc(100vh - 98px);
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 16px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-hard);
@@ -508,7 +524,7 @@ body.menu-open {
 .mobile-details summary {
   cursor: pointer;
   list-style: none;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 0.66rem;
@@ -530,9 +546,9 @@ main {
 }
 
 .section-tone {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 245, 247, 0.9) 100%);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .section-shell {
@@ -555,7 +571,7 @@ main {
   gap: 9px;
   padding: 7px 12px;
   border-radius: 999px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   font-size: 0.62rem;
@@ -588,7 +604,7 @@ main {
 
 .section-title,
 .hero-title {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   letter-spacing: -0.02em;
   color: var(--text-strong);
   line-height: 1.1;
@@ -707,9 +723,9 @@ main {
   border: 1px solid rgba(200, 16, 46, 0.26);
   background:
     radial-gradient(circle at 22% 0%, rgba(200, 16, 46, 0.12), transparent 60%),
-    rgba(255, 255, 255, 0.9);
+    rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.71rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -734,7 +750,7 @@ main {
   gap: 10px;
   margin-top: 22px;
   color: var(--text-muted);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.73rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -761,7 +777,7 @@ main {
 }
 
 .metric-pill {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 13px;
   padding: 12px 14px;
@@ -770,7 +786,7 @@ main {
 
 .metric-pill strong {
   display: block;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
   font-size: 1.02rem;
 }
@@ -839,7 +855,7 @@ main {
 
 .code-label,
 .terminal-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.7rem;
   color: #d3a8b2;
   text-transform: uppercase;
@@ -859,7 +875,7 @@ main {
   border: 1px solid rgba(200, 16, 46, 0.28);
   background: transparent;
   color: #e9b4be;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.73rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -910,7 +926,7 @@ main {
   overflow-x: auto;
   font-size: 0.83rem;
   line-height: 1.72;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
 }
 
 .code-shell code,
@@ -1023,11 +1039,11 @@ pre .num {
 
 .tab-button {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-main);
   border-radius: 999px;
   padding: 9px 13px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.74rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -1058,7 +1074,7 @@ pre .num {
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px;
@@ -1068,7 +1084,7 @@ pre .num {
 
 .card h3,
 .card h4 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
   line-height: 1.25;
 }
@@ -1094,7 +1110,7 @@ pre .num {
   min-width: 46px;
   height: 34px;
   border-radius: 999px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.76rem;
   color: var(--brand);
   background: rgba(200, 16, 46, 0.11);
@@ -1127,7 +1143,7 @@ pre .num {
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 table {
@@ -1140,11 +1156,11 @@ th,
 td {
   padding: 13px 16px;
   text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 th {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -1157,7 +1173,7 @@ tbody tr:hover {
 }
 
 .mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
 }
 
 .tag-list {
@@ -1168,9 +1184,9 @@ tbody tr:hover {
 }
 
 .tag {
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-main);
   font-size: 0.74rem;
   font-weight: 700;
@@ -1199,7 +1215,7 @@ tbody tr:hover {
 }
 
 .kpi {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: 15px;
   padding: 14px;
@@ -1211,13 +1227,13 @@ tbody tr:hover {
   font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
 }
 
 .kpi-value {
   margin-top: 8px;
   color: var(--text-strong);
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 1.16rem;
 }
 
@@ -1229,7 +1245,7 @@ tbody tr:hover {
 
 .step-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -1240,7 +1256,7 @@ tbody tr:hover {
   display: inline-flex;
   padding: 5px 9px;
   border-radius: 999px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   color: var(--brand);
@@ -1300,7 +1316,7 @@ tbody tr:hover {
 
 .detail-kicker {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.69rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1326,13 +1342,13 @@ tbody tr:hover {
   padding: 12px 13px;
   border-radius: 14px;
   border: 1px solid rgba(200, 16, 46, 0.16);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.03);
   min-width: 0;
 }
 
 .detail-meta-item span {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1358,13 +1374,13 @@ tbody tr:hover {
 .detail-block {
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.03);
   padding: 14px;
 }
 
 .detail-label {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1419,9 +1435,9 @@ tbody tr:hover {
   height: 52px;
   border-radius: 16px;
   flex: 0 0 auto;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(247, 242, 242, 0.88));
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(200, 16, 46, 0.16);
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .sdk-mark img,
@@ -1468,7 +1484,7 @@ tbody tr:hover {
   width: 54px;
   height: 54px;
   border-radius: 18px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(247, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .integration-mark img {
@@ -1488,7 +1504,7 @@ tbody tr:hover {
   padding: 14px;
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .integration-entry {
@@ -1530,7 +1546,7 @@ tbody tr:hover {
 }
 
 .callout h3 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
   margin-bottom: 8px;
 }
@@ -1547,7 +1563,7 @@ tbody tr:hover {
   padding: 13px 14px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .copy-row + .copy-row {
@@ -1559,20 +1575,20 @@ tbody tr:hover {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
 }
 
 .copy-value {
   margin-top: 5px;
   color: var(--text-strong);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.82rem;
   word-break: break-all;
 }
 
 .copy-btn {
-  border: 1px solid rgba(0, 0, 0, 0.24);
-  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-main);
   border-radius: 999px;
   padding: 8px 12px;
@@ -1602,7 +1618,7 @@ tbody tr:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #d79aa6;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   margin-bottom: 10px;
 }
 
@@ -1614,7 +1630,7 @@ tbody tr:hover {
   background: rgba(2, 14, 30, 0.76);
   color: #e1ecff;
   padding: 12px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.82rem;
   resize: vertical;
 }
@@ -1711,7 +1727,7 @@ tbody tr:hover {
 }
 
 .footer-title {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.67rem;
   text-transform: uppercase;
   letter-spacing: 0.13em;
@@ -1823,7 +1839,7 @@ tbody tr:hover {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.04);
   padding: 14px 48px 14px 44px;
   color: var(--text-strong);
   font-size: 0.95rem;
@@ -1849,11 +1865,11 @@ tbody tr:hover {
   transform: translateY(-50%);
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.67rem;
   color: var(--text-muted);
   padding: 4px 7px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .status-pill {
@@ -1865,7 +1881,7 @@ tbody tr:hover {
   border: 1px solid rgba(200, 16, 46, 0.24);
   background: rgba(200, 16, 46, 0.12);
   color: var(--brand);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1903,13 +1919,13 @@ tbody tr:hover {
   border: 1px solid rgba(200, 16, 46, 0.2);
   background:
     radial-gradient(circle at 0% 0%, rgba(200, 16, 46, 0.12), transparent 42%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(247, 242, 242, 0.8));
+    rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
 }
 
 .testnet-band-copy h3 {
   margin-top: 8px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
   font-size: clamp(1.35rem, 2vw, 1.85rem);
 }
@@ -1928,12 +1944,12 @@ tbody tr:hover {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid rgba(200, 16, 46, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .testnet-band-stat span {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1957,7 +1973,7 @@ tbody tr:hover {
   padding: 24px;
   border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 243, 243, 0.84));
+    rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(200, 16, 46, 0.16);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -1986,7 +2002,7 @@ tbody tr:hover {
 
 .testnet-card-kicker {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2023,14 +2039,14 @@ tbody tr:hover {
   border: 1px solid rgba(200, 16, 46, 0.2);
   background:
     radial-gradient(circle at 100% 0%, rgba(200, 16, 46, 0.12), transparent 44%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(246, 241, 241, 0.82));
+    rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
 }
 
 .testnet-operational-intro h3,
 .testnet-network-intro h3 {
   margin-top: 8px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
   font-size: clamp(1.3rem, 1.8vw, 1.72rem);
 }
@@ -2052,13 +2068,13 @@ tbody tr:hover {
   padding: 14px;
   border-radius: 16px;
   border: 1px solid rgba(200, 16, 46, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .testnet-operational-pill span,
 .testnet-network-pill span {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2084,7 +2100,7 @@ tbody tr:hover {
   padding: 24px;
   border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 243, 243, 0.84));
+    rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(200, 16, 46, 0.16);
 }
 
@@ -2106,12 +2122,12 @@ tbody tr:hover {
 }
 
 .network-config-card .copy-row {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.14);
 }
 
 .network-config-card .copy-btn {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(244, 240, 240, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.24);
 }
 
@@ -2124,12 +2140,12 @@ tbody tr:hover {
   padding: 20px 22px;
   border-radius: 18px;
   border: 1px solid rgba(200, 16, 46, 0.2);
-  background: linear-gradient(105deg, rgba(200, 16, 46, 0.09), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(105deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
 }
 
 .testnet-operational-callout h3,
 .testnet-network-note h3 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: var(--text-strong);
 }
 
@@ -2145,13 +2161,13 @@ tbody tr:hover {
 
 .hero-card {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-md);
   padding: 14px;
 }
 
 .hero-card h4 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 0.96rem;
   color: var(--text-strong);
 }
@@ -2264,7 +2280,7 @@ tbody tr:hover {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
@@ -2289,12 +2305,12 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-home .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -2386,7 +2402,7 @@ tbody tr:hover {
 
 .page-tools .btn-outline,
 .page-community .btn-outline {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 239, 239, 0.92));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.2);
 }
 
@@ -2394,7 +2410,7 @@ tbody tr:hover {
 .page-developers .callout,
 .page-community .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -2407,7 +2423,7 @@ tbody tr:hover {
 .page-tools .detail-card,
 .page-tools .integration-card,
 .page-tools .repo-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.16);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
   transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
@@ -2437,7 +2453,7 @@ tbody tr:hover {
 .page-tools .detail-meta-item,
 .page-tools .detail-block,
 .page-tools .integration-row {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-tools #developer-tools .grid-2,
@@ -2456,7 +2472,7 @@ tbody tr:hover {
 .page-tools #verifier .grid-4 .card,
 .page-tools #local-dev .grid-4 .card {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-tools #cli .grid-2 .card h3 {
@@ -2489,7 +2505,7 @@ tbody tr:hover {
   padding: 18px;
   border-radius: 26px;
   border: 1px solid rgba(200, 16, 46, 0.16);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(244, 240, 240, 0.82));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
@@ -2501,7 +2517,7 @@ tbody tr:hover {
 .page-developers .tab-button {
   padding: 10px 15px;
   border-color: rgba(200, 16, 46, 0.22);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-developers .tab-button.is-active {
@@ -2513,7 +2529,7 @@ tbody tr:hover {
 .page-developers #frameworks .card,
 .page-developers #api .grid-3 .card {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-developers #contracts .card h3,
@@ -2536,7 +2552,7 @@ tbody tr:hover {
 .page-developers #modules .table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -2601,7 +2617,7 @@ tbody tr:hover {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
@@ -2633,7 +2649,7 @@ tbody tr:hover {
 .page-community #aips .table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -2716,7 +2732,7 @@ tbody tr:hover {
 .page-sandbox .step-card,
 .page-sandbox .kpi {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.16);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
@@ -2737,7 +2753,7 @@ tbody tr:hover {
 .page-sandbox #coverage .table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -2769,7 +2785,7 @@ tbody tr:hover {
 
 .page-sandbox .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -2830,7 +2846,7 @@ tbody tr:hover {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
@@ -2860,7 +2876,7 @@ tbody tr:hover {
 
 .page-quiz .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -2896,7 +2912,7 @@ tbody tr:hover {
 .page-quiz .quiz-empty h3,
 .page-quiz .quiz-question-title,
 .page-quiz .quiz-results h3 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: #ffffff;
 }
 
@@ -2930,7 +2946,7 @@ tbody tr:hover {
 }
 
 .page-quiz .quiz-progress-text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3002,7 +3018,7 @@ tbody tr:hover {
   height: 34px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
   font-size: 0.82rem;
   font-weight: 700;
   color: #ffffff;
@@ -3045,7 +3061,7 @@ tbody tr:hover {
 }
 
 .page-quiz .quiz-feedback h4 {
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   color: #ffffff;
   margin-bottom: 8px;
 }
@@ -3068,7 +3084,7 @@ tbody tr:hover {
 
 .page-quiz .quiz-results-score {
   margin-top: 12px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: clamp(2.4rem, 4vw, 3.4rem);
   color: #ffffff;
 }
@@ -3094,7 +3110,7 @@ tbody tr:hover {
 .page-quiz .quiz-results-card strong {
   display: block;
   margin-top: 8px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 1.5rem;
   color: #ffffff;
 }
@@ -3164,7 +3180,7 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .page-testnet #specifications .kpi-label {
@@ -3230,7 +3246,7 @@ tbody tr:hover {
 .page-testnet #architecture .table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -3277,24 +3293,24 @@ tbody tr:hover {
 .page-testnet .copy-btn {
   min-width: 88px;
   padding: 10px 14px;
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 241, 241, 0.92));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.22);
   color: var(--text-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .page-testnet .testnet-operational-callout .btn[disabled] {
   min-width: 172px;
   padding: 12px 16px;
   border-radius: 999px;
-  border-color: rgba(0, 0, 0, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(243, 238, 238, 0.88));
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
-  font-family: 'Sora', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -3522,7 +3538,7 @@ tbody tr:hover {
     display: inline-flex;
     flex: 0 0 auto;
     border-color: rgba(200, 16, 46, 0.24);
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.04);
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
   }
 
@@ -3969,7 +3985,7 @@ tbody tr:hover {
 .page-grants .grants-status-card,
 .page-grants .faq-card {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.16);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
@@ -4007,7 +4023,7 @@ tbody tr:hover {
 .page-wallets .table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -4054,7 +4070,7 @@ tbody tr:hover {
 .page-wallets .callout,
 .page-grants .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -4096,7 +4112,7 @@ tbody tr:hover {
   padding: clamp(24px, 3vw, 34px);
   border: 1px solid rgba(200, 16, 46, 0.18);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(244, 238, 239, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.08);
 }
 
@@ -4241,7 +4257,7 @@ tbody tr:hover {
 .page-usecase .detail-card,
 .page-usecase .step-card {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.86));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.16);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
@@ -4256,7 +4272,7 @@ tbody tr:hover {
 .page-usecase-hub .callout,
 .page-usecase .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -4287,7 +4303,7 @@ tbody tr:hover {
 .page-usecase .usecase-table-wrap {
   border-radius: 22px;
   border-color: rgba(200, 16, 46, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -4327,7 +4343,7 @@ tbody tr:hover {
   padding: clamp(18px, 2.4vw, 28px);
   border: 1px solid rgba(200, 16, 46, 0.15);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -4370,7 +4386,7 @@ tbody tr:hover {
   padding: clamp(18px, 2.6vw, 24px);
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 20px;
-  background: linear-gradient(120deg, rgba(200, 16, 46, 0.09), rgba(255, 255, 255, 0.94));
+  background: linear-gradient(120deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
 }
 
@@ -4386,6 +4402,36 @@ tbody tr:hover {
 
 .page-home .usecase-home-card {
   min-height: 100%;
+}
+
+/* ── Ecosystem dApps ── */
+.ecosystem-grid {
+  gap: 20px;
+}
+
+.ecosystem-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ecosystem-card .ecosystem-tagline {
+  margin-top: 0;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  color: var(--brand-2);
+  font-weight: 600;
+}
+
+.ecosystem-card .list-clean {
+  margin-top: 6px;
+  gap: 7px;
+}
+
+.ecosystem-card .list-clean li {
+  font-size: 0.88rem;
+  color: var(--text-muted);
 }
 
 .page-docs-hub .hero,
@@ -4459,7 +4505,7 @@ tbody tr:hover {
 .page-digital-seal .detail-card,
 .page-digital-seal .step-card {
   min-height: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 242, 242, 0.88));
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(200, 16, 46, 0.16);
 }
 
@@ -4468,7 +4514,7 @@ tbody tr:hover {
 .page-comparison .callout,
 .page-digital-seal .callout {
   align-items: end;
-  background: linear-gradient(115deg, rgba(200, 16, 46, 0.11), rgba(255, 255, 255, 0.78));
+  background: linear-gradient(115deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.08);
 }
 
@@ -4497,7 +4543,7 @@ tbody tr:hover {
   padding: 18px;
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.06);
 }
 
@@ -4622,7 +4668,7 @@ tbody tr:hover {
   padding: 12px 14px;
   border: 1px solid rgba(200, 16, 46, 0.12);
   border-radius: 15px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .docs-meta-list li strong {
@@ -4646,7 +4692,7 @@ tbody tr:hover {
   padding: 18px 20px;
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 18px;
-  background: linear-gradient(120deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.92));
+  background: linear-gradient(120deg, rgba(200, 16, 46, 0.08), rgba(255, 255, 255, 0.03));
 }
 
 .docs-note strong {
@@ -4661,7 +4707,7 @@ tbody tr:hover {
   overflow-x: auto;
   border: 1px solid rgba(200, 16, 46, 0.14);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -4743,7 +4789,7 @@ tbody tr:hover {
   padding: 14px 16px;
   border: 1px solid rgba(200, 16, 46, 0.12);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .seal-field-list li strong {
@@ -4765,7 +4811,7 @@ tbody tr:hover {
   overflow-x: auto;
   border: 1px solid rgba(200, 16, 46, 0.14);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.9));
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.06);
 }
 
@@ -4815,7 +4861,7 @@ tbody tr:hover {
   padding: 16px 18px;
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 242, 242, 0.92));
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
   font-size: 1rem;
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.05);
@@ -4843,7 +4889,7 @@ tbody tr:hover {
   padding: 0 12px;
   border-radius: 14px;
   border: 1px solid rgba(200, 16, 46, 0.14);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
   font-weight: 700;
   text-decoration: none;
@@ -4901,7 +4947,7 @@ tbody tr:hover {
   padding: 16px 18px;
   border: 1px solid rgba(200, 16, 46, 0.16);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
 }
 

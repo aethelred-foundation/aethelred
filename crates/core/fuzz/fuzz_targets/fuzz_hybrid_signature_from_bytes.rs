@@ -9,5 +9,5 @@ use libfuzzer_sys::fuzz_target;
 fuzz_target!(|data: &[u8]| {
     // The deserialization must never panic regardless of input.
     // It is acceptable to return Err for malformed data.
-    let _ = aethelred_core::crypto::HybridSignature::from_bytes(data);
+    let _ = aethelred_core::crypto::hybrid::HybridSignature::from_bytes(data);
 });

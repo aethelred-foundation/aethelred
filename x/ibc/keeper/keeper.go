@@ -32,8 +32,8 @@ type Keeper struct {
 	logger       log.Logger
 	authority    string
 
-	// Channel state
-	Channels collections.Map[string, ChannelState]
+	// Channel state (JSON-encoded ChannelState)
+	Channels collections.Map[string, string]
 
 	// Packet commitments (channelID/sequence -> commitment hash)
 	PacketCommitments collections.Map[string, []byte]
@@ -41,11 +41,11 @@ type Keeper struct {
 	// Packet receipts (for dedup)
 	PacketReceipts collections.Map[string, bool]
 
-	// Relayed proof records
-	RelayedProofs collections.Map[string, types.RelayedProofRecord]
+	// Relayed proof records (JSON-encoded types.RelayedProofRecord)
+	RelayedProofs collections.Map[string, string]
 
-	// Subscriptions
-	Subscriptions collections.Map[string, SubscriptionState]
+	// Subscriptions (JSON-encoded SubscriptionState)
+	Subscriptions collections.Map[string, string]
 
 	// Next send sequence per channel
 	NextSequenceSend collections.Map[string, uint64]
@@ -53,8 +53,8 @@ type Keeper struct {
 	// Next recv sequence per channel
 	NextSequenceRecv collections.Map[string, uint64]
 
-	// Module parameters
-	Params collections.Item[types.Params]
+	// Module parameters (JSON-encoded types.Params)
+	Params collections.Item[string]
 }
 
 // ChannelState tracks an IBC channel's current state
@@ -86,6 +86,10 @@ func NewKeeper(
 	logger log.Logger,
 	authority string,
 ) Keeper {
+	if logger == nil {
+		logger = log.NewNopLogger()
+	}
+
 	sb := collections.NewSchemaBuilder(storeService)
 
 	k := Keeper{
@@ -122,6 +126,23 @@ func NewKeeper(
 			"next_sequence_recv",
 			collections.StringKey,
 			collections.Uint64Value,
+		),
+		RelayedProofs: collections.NewMap(
+			sb, collections.NewPrefix(types.RelayedProofPrefix),
+			"relayed_proofs",
+			collections.StringKey,
+			collections.StringValue,
+		),
+		Subscriptions: collections.NewMap(
+			sb, collections.NewPrefix(types.SubscriptionPrefix),
+			"subscriptions",
+			collections.StringKey,
+			collections.StringValue,
+		),
+		Params: collections.NewItem(
+			sb, collections.NewPrefix(types.ParamsKey),
+			"params",
+			collections.StringValue,
 		),
 	}
 
@@ -298,13 +319,13 @@ func (k Keeper) OnChanCloseConfirm(
 	k.logger.Info("IBC channel closed by counterparty", "channel_id", channelID)
 
 	// Mark channel as closed
-	stateJSON, err := k.Channels.Get(ctx, channelID)
+	stateStr, err := k.Channels.Get(ctx, channelID)
 	if err != nil {
 		return nil // Channel may not exist locally
 	}
 
 	var state ChannelState
-	if err := json.Unmarshal([]byte(stateJSON), &state); err != nil {
+	if err := json.Unmarshal([]byte(stateStr), &state); err != nil {
 		return nil
 	}
 
@@ -385,6 +406,9 @@ func (k Keeper) handleProofRelayPacket(
 	}
 
 	recordJSON, _ := json.Marshal(record)
+	if err := k.RelayedProofs.Set(ctx, proofID, string(recordJSON)); err != nil {
+		return nil, err
+	}
 	if err := k.PacketReceipts.Set(ctx, receiptKey, true); err != nil {
 		return nil, err
 	}
@@ -413,9 +437,6 @@ func (k Keeper) handleProofRelayPacket(
 		ProofID: proofID,
 	}
 	ackBytes, _ := json.Marshal(ack)
-
-	// Store ack alongside receipt for the record
-	_ = json.Unmarshal(recordJSON, &record) // re-read to ensure consistent state
 
 	return ackBytes, nil
 }
@@ -581,13 +602,13 @@ func (k Keeper) RelayProof(
 	proofData *types.ProofRelayPacketData,
 ) (uint64, error) {
 	// Validate channel is open
-	stateJSON, err := k.Channels.Get(ctx, channelID)
+	stateStr, err := k.Channels.Get(ctx, channelID)
 	if err != nil {
 		return 0, types.ErrChannelNotFound
 	}
 
 	var state ChannelState
-	if err := json.Unmarshal([]byte(stateJSON), &state); err != nil {
+	if err := json.Unmarshal([]byte(stateStr), &state); err != nil {
 		return 0, fmt.Errorf("corrupted channel state: %w", err)
 	}
 
@@ -663,13 +684,13 @@ func (k Keeper) NotifySubscribers(
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		stateJSON, err := iter.Value()
+		stateStr, err := iter.Value()
 		if err != nil {
 			continue
 		}
 
 		var sub SubscriptionState
-		if err := json.Unmarshal([]byte(stateJSON), &sub); err != nil {
+		if err := json.Unmarshal([]byte(stateStr), &sub); err != nil {
 			continue
 		}
 
@@ -712,7 +733,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, gs *types.GenesisState) {
 	for _, proof := range gs.RelayedProofs {
 		proofJSON, _ := json.Marshal(proof)
 		_ = k.PacketReceipts.Set(ctx, proof.ProofID, true)
-		_ = proofJSON // Store if needed
+		_ = k.RelayedProofs.Set(ctx, proof.ProofID, string(proofJSON))
 	}
 }
 
@@ -783,7 +804,6 @@ func matchesModelHash(target []byte, filters [][]byte) bool {
 	return false
 }
 
-// Compile-time assertions - ensure Subscriptions uses string values
-// (collections.Map needs a consistent value type)
+// Compile-time assertions
 var _ = SubscriptionState{}
 var _ = time.Time{}

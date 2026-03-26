@@ -1,0 +1,24 @@
+[package]
+name = "vm-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "fuzz_vm_bytecode_execution"
+path = "fuzz_targets/fuzz_vm_bytecode_execution.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_precompile_inputs"
+path = "fuzz_targets/fuzz_precompile_inputs.rs"
+doc = false
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+aethelred-vm = { path = "..", default-features = false, features = ["wasmer-runtime"] }
