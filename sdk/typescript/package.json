@@ -78,12 +78,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AethelredFoundation/AethelredMVP.git",
-    "directory": "sdk/typescript"
+    "url": "https://github.com/aethelred-foundation/aethelred-sdk-ts.git"
   },
-  "homepage": "https://github.com/AethelredFoundation/AethelredMVP/tree/main/sdk/typescript",
+  "homepage": "https://github.com/aethelred-foundation/aethelred-sdk-ts",
   "bugs": {
-    "url": "https://github.com/AethelredFoundation/AethelredMVP/issues"
+    "url": "https://github.com/aethelred-foundation/aethelred-sdk-ts/issues"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -98,21 +97,23 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.11.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.7",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
-    "@vitest/coverage-v8": "^1.6.1",
-    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "prettier": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tsup": "^8.0.1",
-    "typedoc": "^0.25.7",
+    "typedoc": "^0.28.18",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.1"
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -132,6 +133,14 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "overrides": {
+    "typedoc": {
+      "minimatch": "9.0.7"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "9.0.7"
+    }
   },
   "sideEffects": false
 }

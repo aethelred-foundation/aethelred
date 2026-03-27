@@ -11,8 +11,8 @@ Two package managers have practical GitHub-install limitations with the current 
 
 ## Recommended dedicated repos
 
-1. `AethelredFoundation/aethelred-sdk-js` (from `sdk/typescript`)
-2. `AethelredFoundation/aethelred-sdk-rust` (from `sdk/rust`)
+1. `aethelred-foundation/aethelred-sdk-js` (from `sdk/typescript`)
+2. `aethelred-foundation/aethelred-sdk-rust` (from `sdk/rust`)
 
 ## Export scripts (standalone repo materialization)
 
@@ -41,7 +41,7 @@ git init
 git add .
 git commit -m "Initial split from AethelredMVP sdk/typescript"
 git branch -M main
-git remote add origin git@github.com:AethelredFoundation/aethelred-sdk-js.git
+git remote add origin git@github.com:aethelred-foundation/aethelred-sdk-js.git
 git push -u origin main
 ```
 
@@ -51,7 +51,7 @@ git init
 git add .
 git commit -m "Initial split from AethelredMVP sdk/rust"
 git branch -M main
-git remote add origin git@github.com:AethelredFoundation/aethelred-sdk-rust.git
+git remote add origin git@github.com:aethelred-foundation/aethelred-sdk-rust.git
 git push -u origin main
 ```
 
@@ -60,14 +60,14 @@ git push -u origin main
 ### TypeScript / JavaScript
 
 ```bash
-npm install github:AethelredFoundation/aethelred-sdk-js
+npm install github:aethelred-foundation/aethelred-sdk-js
 ```
 
 ### Rust (Cargo)
 
 ```toml
 [dependencies]
-aethelred-sdk = { git = "https://github.com/AethelredFoundation/aethelred-sdk-rust.git" }
+aethelred-sdk = { git = "https://github.com/aethelred-foundation/aethelred-sdk-rust.git" }
 ```
 
 ## Operational note
@@ -88,8 +88,8 @@ Helper script used by the workflow:
 
 Repository variables:
 
-- `SDK_TYPESCRIPT_STANDALONE_REPO` = `AethelredFoundation/aethelred-sdk-js`
-- `SDK_RUST_STANDALONE_REPO` = `AethelredFoundation/aethelred-sdk-rust`
+- `SDK_TYPESCRIPT_STANDALONE_REPO` = `aethelred-foundation/aethelred-sdk-js`
+- `SDK_RUST_STANDALONE_REPO` = `aethelred-foundation/aethelred-sdk-rust`
 - `SDK_STANDALONE_AUTO_PUSH` = `false` (recommended initially)
 - `SDK_STANDALONE_AUTO_PR` = `true`
 

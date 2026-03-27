@@ -205,13 +205,6 @@ interface IndexerConfig {
   startBlock: number;
 }
 
-interface IndexedBlockMeta {
-  number: number;
-  hash: string;
-  parentHash: string;
-  timestamp: number;
-}
-
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -995,7 +988,7 @@ export class IndexerService {
       for (let i = 0; i < block.prefetchedTransactions.length; i++) {
         const tx = block.prefetchedTransactions[i];
         const receipt = receipts[i];
-        await this.indexTransaction(tx, receipt, blockNumber, blockTime);
+        await this.indexTransaction(tx, receipt, blockNumber);
       }
     }
 
@@ -1022,7 +1015,6 @@ export class IndexerService {
     tx: TransactionResponse,
     receipt: TransactionReceipt | null,
     blockNumber: number,
-    blockTime: Date,
   ): Promise<void> {
     const txHash = tx.hash;
     const status = receipt ? (receipt.status === 1 ? 'SUCCESS' : 'FAILED') : 'PENDING';
@@ -1145,7 +1137,7 @@ export class IndexerService {
         } else if (topic0 === TOPIC_WITHDRAWN) {
           await this.handleWithdrawnEvent(log, blockTime);
         } else if (topic0 === TOPIC_REWARDS_DISTRIBUTED) {
-          await this.handleRewardsDistributedEvent(log, blockTime);
+          await this.handleRewardsDistributedEvent(log);
         }
       }
 
@@ -1165,7 +1157,7 @@ export class IndexerService {
         contractAddress === this.cfg.stablecoinBridgeAddress.toLowerCase()
       ) {
         if (topic0 === TOPIC_STABLECOIN_CONFIGURED) {
-          await this.handleStablecoinConfiguredEvent(log, blockTime);
+          await this.handleStablecoinConfiguredEvent(log);
         } else if (topic0 === TOPIC_CCTP_BURN_INITIATED) {
           await this.handleCCTPBurnInitiatedEvent(log, blockTime);
         } else if (topic0 === TOPIC_MINT_EXECUTED) {
@@ -1350,10 +1342,7 @@ export class IndexerService {
    * the generic event persistence in `persistEventLog` stores the full log
    * for downstream consumers.
    */
-  private async handleRewardsDistributedEvent(
-    log: Log,
-    blockTime: Date,
-  ): Promise<void> {
+  private async handleRewardsDistributedEvent(log: Log): Promise<void> {
     const parsed = cruzibleIface.parseLog({
       topics: [...log.topics],
       data: log.data,
@@ -1465,10 +1454,7 @@ export class IndexerService {
    * Upserts the StablecoinConfig record whenever the admin (re-)configures
    * a stablecoin asset.  The `assetId` is the primary lookup key.
    */
-  private async handleStablecoinConfiguredEvent(
-    log: Log,
-    blockTime: Date,
-  ): Promise<void> {
+  private async handleStablecoinConfiguredEvent(log: Log): Promise<void> {
     const parsed = bridgeIface.parseLog({
       topics: [...log.topics],
       data: log.data,

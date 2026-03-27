@@ -2,9 +2,12 @@
 
 **Classification: CONFIDENTIAL - For FAB & DBS Infrastructure Teams Only**
 
-**Document Version:** 1.0
-**Last Updated:** 2024
+**Document Version:** 1.1
+**Last Updated:** 2026-03-26
 **Contact:** security@aethelred.org | ops@aethelred.org
+
+> **Testnet validators:** This document is for **mainnet** operations.
+> For testnet, see [TESTNET_VALIDATOR_RUNBOOK.md](./TESTNET_VALIDATOR_RUNBOOK.md).
 
 ---
 
@@ -198,7 +201,7 @@ mkdir -p /data/aethelred/{config,data,keys}
 chmod 700 /data/aethelred/keys
 
 # 3. Pull the Aethelred node image
-docker pull aethelred/node:mainnet-v1.0.0
+docker pull aethelred/node:mainnet-v1.0.0  # Update to actual release tag before mainnet launch
 
 # 4. Create config
 cat > /data/aethelred/config/config.toml << 'EOF'
@@ -214,7 +217,7 @@ timeout_precommit = "1s"
 
 [p2p]
 seeds = []
-persistent_peers = "sentry-1-id@sentry-1.internal:26656,sentry-2-id@sentry-2.internal:26656"
+persistent_peers = "sentry-1-id@<sentry-host-1>:26656,sentry-2-id@<sentry-host-2>:26656"
 pex = false
 addr_book_strict = true
 
@@ -240,7 +243,7 @@ docker run -d \
  -v /data/aethelred:/data \
  -v /opt/cloudhsm:/opt/cloudhsm:ro \
  --device /dev/cloudhsm \
- aethelred/node:mainnet-v1.0.0 \
+ aethelred/node:mainnet-v1.0.0  # Update to actual release tag before mainnet launch \
  start --config /data/config/config.toml
 ```
 
@@ -285,7 +288,7 @@ set -e
 # 1. Verify primary is truly unreachable (wait 5 minutes)
 echo "Checking primary node status..."
 for i in {1..10}; do
- if ping -c 1 primary-validator.internal; then
+ if ping -c 1 <validator-host>; then
  echo "PRIMARY IS STILL ALIVE! Aborting failover."
  exit 1
  fi
@@ -378,9 +381,9 @@ groups:
 
 ### Dashboard URLs
 
-- **Grafana**: https://monitoring.aethelred.internal:3000
-- **Prometheus**: https://monitoring.aethelred.internal:9090
-- **Alertmanager**: https://monitoring.aethelred.internal:9093
+- **Grafana**: https://<monitoring-host>:3000
+- **Prometheus**: https://<monitoring-host>:9090
+- **Alertmanager**: https://<monitoring-host>:9093
 
 ---
 
@@ -511,6 +514,7 @@ aethelredd tx slashing unjail --from validator --gas auto
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2024-XX-XX | Aethelred Team | Initial release |
+| 1.1 | 2026-03-26 | Aethelred Team | Updated date, added testnet runbook pointer, tagged mainnet image refs |
 
 ---
 

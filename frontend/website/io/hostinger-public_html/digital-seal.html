@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Seals | Aethelred</title>
+  <meta name="description" content="Understand the current Digital Seal model on Aethelred: definition, structure, minting conditions, verification interfaces, relay path, and workload uses.">
+  <meta name="keywords" content="Aethelred Digital Seals, seal verification, verifiable AI, IBC seal relay, Proof of Useful Work">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/digital-seal.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/digital-seal.html">
+  <meta property="og:title" content="Digital Seals | Aethelred">
+  <meta property="og:description" content="Current Digital Seal surface on Aethelred: definition, structure, minting rules, verification, and relay.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Digital Seals social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Digital Seals | Aethelred">
+  <meta name="twitter:description" content="What a Digital Seal is, how it is minted, and how it becomes the portable trust object of a verified AI job.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Digital Seals social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "TechArticle",
+        "@id": "https://www.aethelred.io/digital-seal.html#webpage",
+        "name": "Digital Seals",
+        "headline": "Digital Seals",
+        "url": "https://www.aethelred.io/digital-seal.html",
+        "description": "Understand the current Digital Seal model on Aethelred: definition, structure, minting conditions, verification interfaces, relay path, and workload uses.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/digital-seal.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Digital Seals social preview"
+        },
+        "dateModified": "2026-03-12"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/digital-seal.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Digital Seals",
+            "item": "https://www.aethelred.io/digital-seal.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-digital-seal">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link is-active">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="seal-resources">Resources</button>
+          <div class="dropdown-panel" id="seal-resources" role="menu">
+            <a href="#definition" role="menuitem">Definition</a>
+            <a href="#anatomy" role="menuitem">Anatomy</a>
+            <a href="#lifecycle" role="menuitem">Lifecycle</a>
+            <a href="#verification" role="menuitem">Verification</a>
+            <a href="#applications" role="menuitem">Applications</a>
+            <a href="/zk-proofs.html" role="menuitem">ZK Proofs</a>
+            <a href="/tee.html" role="menuitem">TEE Attestation</a>
+            <a href="/documentation.html" role="menuitem">Documentation Hub</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/documentation.html" class="btn btn-small btn-primary">Documentation Hub</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link is-active">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link">Community</a>
+    <details class="mobile-details">
+      <summary>Digital Seal Sections</summary>
+      <a href="#definition" class="mobile-link">Definition</a>
+      <a href="#anatomy" class="mobile-link">Anatomy</a>
+      <a href="#lifecycle" class="mobile-link">Lifecycle</a>
+      <a href="#verification" class="mobile-link">Verification</a>
+      <a href="#relay" class="mobile-link">Relay Path</a>
+      <a href="#applications" class="mobile-link">Applications</a>
+      <a href="/documentation.html" class="mobile-link">Documentation Hub</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Portable Trust Object</p>
+          <h1 class="hero-title" id="page-title">Digital <span class="gradient-word">Seals</span></h1>
+          <p class="hero-subtitle">A Digital Seal is the on-chain attestation record minted when a supermajority of Aethelred validators agrees on an AI computation result. It is the object that turns verified execution into something another application, institution, contract, or chain can inspect without inheriting opaque trust. The current model is defined in the whitepaper, exposed through the SDK and API surfaces, and relayable over IBC on port <span class="mono">aethelred.seal</span>.</p>
+          <div class="hero-tags" aria-label="Digital Seal coverage">
+            <span class="hero-tag">2/3 + 1 Threshold</span>
+            <span class="hero-tag">IBC Relay</span>
+            <span class="hero-tag">SDK Verification</span>
+            <span class="hero-tag">Portable Provenance</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#definition" class="btn btn-primary">Understand the Model</a>
+            <a href="/developers.html#api" class="btn btn-secondary">Open Seal APIs</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> CURRENT DIGITAL SEAL SPEC FROM THE LIVE DOC SET</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card"><h4>Seals are minted by consensus, not by application convention</h4><p>The seal exists because consensus accepted the computation evidence, not because an application saved a convenient receipt.</p></div>
+          <div class="hero-card"><h4>Verification is transportable</h4><p>SDKs, APIs, contracts, and other chains can consume a Digital Seal without replaying the full workload.</p></div>
+          <div class="hero-card"><h4>Seals unify TEE, zkML, and hybrid evidence</h4><p>Different verification types can converge into one portable output object once the network agrees on the result.</p></div>
+          <div class="hero-metrics">
+            <div class="metric-pill"><strong>50</strong><span>Maximum seal creations injected per block</span></div>
+            <div class="metric-pill"><strong>5 MB</strong><span>Proof budget cap per block</span></div>
+            <div class="metric-pill"><strong>IBC</strong><span>Relay on <span class="mono">aethelred.seal</span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="definition" aria-labelledby="definition-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Definition</p>
+          <h2 class="section-title" id="definition-title">A Digital Seal is the portable result of verified AI consensus</h2>
+          <p class="section-lead">The seal is the network-native evidence object that sits between verified execution and downstream consumption.</p>
+        </div>
+        <div class="grid grid-3 seal-overview-grid">
+          <article class="card detail-card">
+            <div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">WHY</span><div><p class="detail-kicker">Purpose</p><h3>Portable trust</h3></div></div></div>
+            <p>A seal gives downstream systems one verifiable object instead of a set of informal logs, screenshots, or application-side signatures.</p>
+          </article>
+          <article class="card detail-card">
+            <div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">WHEN</span><div><p class="detail-kicker">Minting Context</p><h3>Consensus agreement</h3></div></div></div>
+            <p>The network mints a seal only after the validators agree on the computation result and the seal-creation transaction passes the current rules.</p>
+          </article>
+          <article class="card detail-card">
+            <div class="detail-card-head"><div class="detail-brand"><span class="icon-chip">WHERE</span><div><p class="detail-kicker">Consumption</p><h3>Apps, contracts, and chains</h3></div></div></div>
+            <p>Seals can be consumed by SDKs, exposed through APIs, checked by contracts, and relayed over IBC to other compatible chains.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="anatomy" aria-labelledby="anatomy-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Anatomy</p>
+          <h2 class="section-title" id="anatomy-title">What the current seal model binds together</h2>
+          <p class="section-lead">The whitepaper structure is precise: seals tie identity, commitments, evidence, and chain context into a single object.</p>
+        </div>
+        <div class="grid grid-2 seal-field-grid">
+          <article class="card seal-field-card">
+            <h3>Identity and commitments</h3>
+            <ul class="seal-field-list">
+              <li><strong>Job ID</strong><span>Unique workload identity for the computation.</span></li>
+              <li><strong>Model hash</strong><span>The committed model fingerprint used for execution.</span></li>
+              <li><strong>Input hash</strong><span>The committed input hash that anchors the request.</span></li>
+              <li><strong>Output commitment</strong><span>The committed output hash or result commitment accepted by validators.</span></li>
+            </ul>
+          </article>
+          <article class="card seal-field-card">
+            <h3>Verification and chain evidence</h3>
+            <ul class="seal-field-list">
+              <li><strong>Verification type</strong><span>TEE, zkML, or hybrid path used for the computation.</span></li>
+              <li><strong>Consensus evidence</strong><span>Validator attestations, agreement power, and total power context.</span></li>
+              <li><strong>Block height and chain ID</strong><span>Chain-local binding that prevents cross-chain or cross-height replay.</span></li>
+              <li><strong>Timestamp</strong><span>The seal becomes an inspectable point-in-time trust record.</span></li>
+            </ul>
+          </article>
+        </div>
+        <div class="callout stack-top-24">
+          <div>
+            <h3>Seals do not replace raw evidence. They package it into a verifiable access point.</h3>
+            <p>The API and SDK surface still let developers inspect associated attestations and commitments when a workflow needs deeper review.</p>
+          </div>
+          <a href="#verification" class="btn btn-primary">Open Verification Paths</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="lifecycle" aria-labelledby="lifecycle-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Lifecycle</p>
+          <h2 class="section-title" id="lifecycle-title">How a computation becomes a seal in the current protocol</h2>
+          <p class="section-lead">The seal lifecycle is a consensus flow, not a post-processing attachment.</p>
+        </div>
+        <div class="grid grid-2 seal-step-grid">
+          <article class="step-card"><span class="step-index">STEP 01</span><h3>Execute the job under the selected verification mode</h3><p>The workload runs under TEE, zkML, or hybrid verification based on the sensitivity and assurance requirements.</p><div class="tag-list"><span class="tag">TEE</span><span class="tag">zkML</span><span class="tag">Hybrid</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 02</span><h3>Attach computation evidence to vote extensions</h3><p>Validators package job identity, commitments, and attestation evidence into the `ComputeVerification` data that consensus evaluates.</p><div class="tag-list"><span class="tag">Vote Extensions</span><span class="tag">Consensus Evidence</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 03</span><h3>Inject seal creation during proposal preparation</h3><p>If conditions pass, `PrepareProposal` injects seal creation transactions at the front of the block, subject to the documented per-block caps.</p><div class="tag-list"><span class="tag">PrepareProposal</span><span class="tag">50 Seals Max</span></div></article>
+          <article class="step-card"><span class="step-index">STEP 04</span><h3>Finalize and store the seal in the chain state</h3><p>Once the block commits, the seal is part of the on-chain state and can be queried, verified, or relayed.</p><div class="tag-list"><span class="tag">x/seal</span><span class="tag">Relayable</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="verification" aria-labelledby="verification-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Verification</p>
+          <h2 class="section-title" id="verification-title">How the current stack verifies a seal</h2>
+          <p class="section-lead">There is more than one consumption path, but the trust object stays the same.</p>
+        </div>
+        <div class="seal-verify-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Current Interface</th>
+                <th>What it gives you</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>SDKs</td><td><span class="mono">client.seals.verify(...)</span></td><td>Programmatic seal validity checks inside application code.</td></tr>
+              <tr><td>REST / gRPC</td><td><span class="mono">/aethelred/seal/v1</span></td><td>Direct network query surface for seal retrieval and inspection.</td></tr>
+              <tr><td>Oracle / contracts</td><td><span class="mono">verifySeal</span> and <span class="mono">verifySealWithOutput</span></td><td>Contract-level validity and output-commitment matching.</td></tr>
+              <tr><td>Attestation retrieval</td><td><span class="mono">getAttestations</span></td><td>Deeper review of the TEE evidence bound to the sealed result.</td></tr>
+              <tr><td>Tooling</td><td>Seal verifier and CLI</td><td>Local inspection before promoting a workflow into broader operations.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="grid grid-2 seal-side-grid stack-top-24">
+          <article class="card seal-side-card">
+            <h3>Minting conditions that must pass</h3>
+            <ul class="seal-field-list compact">
+              <li><strong>Supermajority agreement</strong><span>At least `2/3 + 1` of validator power agrees on the result.</span></li>
+              <li><strong>No verifier failures</strong><span>Any hard verification failure blocks seal promotion.</span></li>
+              <li><strong>Valid seal transaction</strong><span>The injected creation transaction must pass validation.</span></li>
+              <li><strong>No duplicate seal</strong><span>The same job ID cannot mint multiple seals.</span></li>
+            </ul>
+          </article>
+          <article class="card seal-side-card" id="relay">
+            <h3>Relay and portability</h3>
+            <p>Digital Seals are designed to move. The current whitepaper specifies IBC relay over port <span class="mono">aethelred.seal</span>, which lets other compatible chains consume verified AI results without recreating the full execution environment.</p>
+            <div class="tag-list stack-top-12"><span class="tag">IBC</span><span class="tag">Cross-Chain</span><span class="tag">Portable Provenance</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="applications" aria-labelledby="applications-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Applications</p>
+          <h2 class="section-title" id="applications-title">Where seals matter most in the current site architecture</h2>
+          <p class="section-lead">Seals are the evidence layer behind several workload categories already documented on the site.</p>
+        </div>
+        <div class="grid grid-2 seal-application-grid">
+          <article class="card seal-application-card"><h3>Research reproducibility</h3><p>Seals provide a transportable provenance object for experiment outputs, enabling cross-institution review without informal trust transfer.</p><a href="/usecase-research.html" class="card-link">Open research use case &rarr;</a></article>
+          <article class="card seal-application-card"><h3>Healthcare audit trails</h3><p>Clinical-support and life-sciences workflows can bind model, input, and output commitments into a reviewable artifact for downstream systems.</p><a href="/usecase-healthcare.html" class="card-link">Open healthcare use case &rarr;</a></article>
+          <article class="card seal-application-card"><h3>Supply-chain provenance</h3><p>Origin, transfer, compliance, and anomaly outputs become shareable trust objects instead of opaque records inside one participant's system.</p><a href="/usecase-supplychain.html" class="card-link">Open supply-chain use case &rarr;</a></article>
+          <article class="card seal-application-card"><h3>Agent-to-agent handoffs</h3><p>One agent can pass a sealed result to another agent, giving the downstream system something verifiable to inspect before acting.</p><a href="/usecase-agent-to-agent.html" class="card-link">Open agent-to-agent use case &rarr;</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="implementation" aria-labelledby="implementation-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Implementation References</p>
+          <h2 class="section-title" id="implementation-title">Move from seal concepts into contract-facing integration</h2>
+          <p class="section-lead">If this page is where the trust model clicks, the next practical step is the contract and tooling surface that consumes seals in real workflows.</p>
+        </div>
+        <div class="grid grid-2">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SOL</span>
+                <div>
+                  <p class="detail-kicker">Contract Reference</p>
+                  <h3>Smart Contracts</h3>
+                </div>
+              </div>
+            </div>
+            <p>The Smart Contracts page shows the current Solidity-facing seal surface, including <span class="mono">verifySeal</span>, <span class="mono">verifySealWithOutput</span>, oracle reads, callbacks, and conservative copyable patterns built from the live contracts package.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Best For</span>
+                <strong>Escrow release, policy gates, settlement rules, and any downstream contract that needs to trust a sealed result.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Current Entry Points</span>
+                <strong><span class="mono">IAethelredOracle</span>, <span class="mono">IAethelredTEE</span>, and the documented EVM precompile lanes.</strong>
+              </div>
+            </div>
+            <a href="/smart-contracts.html" class="card-link">Open Smart Contracts &rarr;</a>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">OPS</span>
+                <div>
+                  <p class="detail-kicker">Tooling Surface</p>
+                  <h3>Seal Verifier and developer docs</h3>
+                </div>
+              </div>
+            </div>
+            <p>Use the Seal Verifier, API surface, and documentation hub when the next step is operational inspection rather than contract consumption. That path is better for teams validating evidence flows before writing on-chain policy.</p>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Best For</span>
+                <strong>Inspecting attestation records, testing result retrieval, and rehearsing seal workflows before production integration.</strong>
+              </div>
+              <div class="detail-meta-item">
+                <span>Next Pages</span>
+                <strong><a class="body-link" href="/tools.html#verifier">Seal Verifier</a>, <a class="body-link" href="/developers.html#api">API Reference</a>, and <a class="body-link" href="/documentation.html">Documentation Hub</a>.</strong>
+              </div>
+            </div>
+            <a href="/tools.html#verifier" class="card-link">Open Seal Verifier &rarr;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="seal-cta" aria-labelledby="seal-cta-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="seal-cta-title">Move from Digital Seal concepts into implementation</h2>
+            <h3>Use the seal model as the bridge between protocol trust and application logic.</h3>
+            <p>Move from this page into the <a class="body-link" href="/developers.html#api">API surface</a>, the <a class="body-link" href="/tools.html#verifier">seal verifier</a>, and the workload-specific <a class="body-link" href="/use-cases.html">use-case pages</a> when you need to turn the concept into a real integration pattern.</p>
+          </div>
+          <a href="/documentation.html" class="btn btn-primary">Open Documentation Hub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

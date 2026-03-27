@@ -1,0 +1,25 @@
+[package]
+name = "bridge-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+name = "fuzz_bridge_event_parsing"
+path = "fuzz_targets/fuzz_bridge_event_parsing.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_bridge_state_transition"
+path = "fuzz_targets/fuzz_bridge_state_transition.rs"
+doc = false
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+aethelred-bridge = { path = ".." }
+serde_json = "1"

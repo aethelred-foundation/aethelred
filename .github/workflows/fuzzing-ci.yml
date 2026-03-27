@@ -53,9 +53,9 @@ jobs:
           retention-days: 30
 
   rust-fuzz:
-    name: Rust Cargo-Fuzz (PQC Crypto)
+    name: Rust Cargo-Fuzz
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -64,25 +64,86 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz --locked
 
-      - name: Fuzz hybrid_signature_from_bytes
-        working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time=$(echo ${{ env.FUZZ_DURATION }} | sed 's/s//' | sed 's/m/*60/' | bc)
-        continue-on-error: false
+      # Vendor fuzz-only deps (libfuzzer-sys) into vendor/ so builds work
+      # with the repo's vendored source replacement policy intact.
+      # Local bootstrap: ./scripts/vendor-fuzz-deps.sh
+      - name: Vendor fuzz dependencies (supply-chain compliant)
+        run: |
+          chmod +x scripts/vendor-fuzz-deps.sh
+          ./scripts/vendor-fuzz-deps.sh
 
-      - name: Fuzz hybrid_pubkey_from_bytes
-        working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time=$(echo ${{ env.FUZZ_DURATION }} | sed 's/s//' | sed 's/m/*60/' | bc)
-        continue-on-error: false
+      # Compile-check gate: verify all fuzz crates build before long fuzz runs
+      - name: "gate: compile-check all fuzz crates"
+        run: |
+          for crate in crates/core/fuzz crates/bridge/fuzz crates/consensus/fuzz crates/vm/fuzz; do
+            echo "::group::cargo check ${crate}"
+            cargo +nightly check --manifest-path "${crate}/Cargo.toml"
+            echo "::endgroup::"
+          done
 
-      - name: Fuzz kyber_pubkey_from_bytes
+      # --- core/fuzz targets ---
+      - name: "core: fuzz_hybrid_signature_from_bytes"
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time=$(echo ${{ env.FUZZ_DURATION }} | sed 's/s//' | sed 's/m/*60/' | bc)
-        continue-on-error: false
+        run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
-      - name: Fuzz signature_roundtrip
+      - name: "core: fuzz_hybrid_pubkey_from_bytes"
         working-directory: crates/core
-        run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time=$(echo ${{ env.FUZZ_DURATION }} | sed 's/s//' | sed 's/m/*60/' | bc)
-        continue-on-error: false
+        run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      - name: "core: fuzz_kyber_pubkey_from_bytes"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      - name: "core: fuzz_signature_roundtrip"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      # --- bridge/fuzz targets ---
+      - name: "bridge: fuzz_bridge_event_parsing"
+        working-directory: crates/bridge
+        run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      - name: "bridge: fuzz_bridge_state_transition"
+        working-directory: crates/bridge
+        run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      # --- consensus/fuzz targets ---
+      - name: "consensus: fuzz_vrf_prove_verify"
+        working-directory: crates/consensus
+        run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      - name: "consensus: fuzz_reputation_score"
+        working-directory: crates/consensus
+        run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      # --- vm/fuzz targets ---
+      - name: "vm: fuzz_vm_bytecode_execution"
+        working-directory: crates/vm
+        run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
+
+      - name: "vm: fuzz_precompile_inputs"
+        working-directory: crates/vm
+        run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time="${FUZZ_SECONDS}"
+        env:
+          FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: Upload fuzz corpus
         if: always()
@@ -91,6 +152,9 @@ jobs:
           name: rust-fuzz-corpus
           path: |
             crates/core/fuzz/corpus/
+            crates/bridge/fuzz/corpus/
+            crates/consensus/fuzz/corpus/
+            crates/vm/fuzz/corpus/
           retention-days: 30
 
   fuzzing-required-gate:

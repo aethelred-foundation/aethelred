@@ -1,0 +1,406 @@
+# ============================================================================
+# SQ20 - Observability: Prometheus Alerting Rules for Aethelred Protocol
+# ============================================================================
+# Deploy to Prometheus server configuration:
+#   rule_files:
+#     - /etc/prometheus/rules/aethelred/*.yml
+#
+# SLO Thresholds (from docs/security/MONITORING.md):
+#   - Block production uptime < 99.9%  -> P1
+#   - VRF verification failures > 5 in 10 min -> P1
+#   - Bridge rate limit utilization > 80% -> P2
+#   - RPC error rate > 1% -> P2
+# ============================================================================
+
+groups:
+  # ==========================================================================
+  # Consensus Alerts
+  # ==========================================================================
+  - name: aethelred_consensus
+    interval: 15s
+    rules:
+      # P0: Consensus has halted - no new blocks
+      - alert: ConsensusHalted
+        expr: increase(cometbft_consensus_height[1m]) == 0
+        for: 30s
+        labels:
+          severity: critical
+          priority: P0
+          team: consensus
+          runbook: docs/operations/OPS_RUNBOOK.md#consensus-halt
+        annotations:
+          summary: "Consensus halted - no new blocks produced in 30s"
+          description: >
+            CometBFT consensus height has not increased for 30 seconds.
+            This indicates a complete chain halt. Immediate investigation required.
+          impact: "Block production stopped. All transactions pending."
+          action: "Execute consensus halt recovery drill (scripts/drills/consensus-halt-drill.sh)"
+
+      # P0: Validator set below safety threshold
+      - alert: ValidatorSetCritical
+        expr: cometbft_consensus_validators < (cometbft_consensus_validators offset 5m) * 0.67
+        for: 1m
+        labels:
+          severity: critical
+          priority: P0
+          team: consensus
+        annotations:
+          summary: "Active validator set dropped below 2/3 threshold"
+          description: >
+            Fewer than 2/3 of expected validators are active.
+            Consensus will halt if this continues.
+
+      # P0: Missing validators above Byzantine threshold
+      - alert: MissingValidatorsByzantine
+        expr: cometbft_consensus_missing_validators > (cometbft_consensus_validators * 0.33)
+        for: 30s
+        labels:
+          severity: critical
+          priority: P0
+          team: consensus
+        annotations:
+          summary: "More than 1/3 of validators are missing"
+          description: "{{ $value }} validators are missing, exceeding the Byzantine fault tolerance threshold."
+
+      # P1: Block production uptime SLO breach (< 99.9%)
+      - alert: BlockProductionUptimeSLOBreach
+        expr: >
+          (1 - (
+            increase(cometbft_consensus_height[1h])
+            / (3600 / 6)
+          )) > 0.001
+        for: 5m
+        labels:
+          severity: high
+          priority: P1
+          team: consensus
+          slo: block_production_uptime
+        annotations:
+          summary: "Block production uptime below 99.9% SLO"
+          description: >
+            Block production rate has dropped below the 99.9% SLO target
+            over the last hour (assuming 6s target block time).
+
+      # P1: Excessive consensus rounds
+      - alert: ConsensusExcessiveRounds
+        expr: cometbft_consensus_rounds > 3
+        for: 1m
+        labels:
+          severity: high
+          priority: P1
+          team: consensus
+        annotations:
+          summary: "Consensus requires > 3 rounds for a single height"
+          description: "Height {{ $value }} is taking more than 3 rounds, indicating proposer or network issues."
+
+      # P1: Block time exceeding 2.5x target
+      - alert: BlockTimeSlow
+        expr: histogram_quantile(0.99, rate(cometbft_consensus_block_time_seconds_bucket[5m])) > 15
+        for: 5m
+        labels:
+          severity: high
+          priority: P1
+          team: consensus
+        annotations:
+          summary: "Block time p99 exceeds 15s (2.5x target)"
+
+  # ==========================================================================
+  # VRF / Leader Election Alerts
+  # ==========================================================================
+  - name: aethelred_vrf
+    interval: 30s
+    rules:
+      # P1: VRF verification failures SLO breach (> 5 in 10 min)
+      - alert: VRFVerificationFailureSpike
+        expr: increase(aethelred_vrf_verification_failures[10m]) > 5
+        for: 1m
+        labels:
+          severity: high
+          priority: P1
+          team: consensus
+          slo: vrf_verification_failures
+        annotations:
+          summary: "VRF verification failures exceed SLO threshold (> 5 in 10 min)"
+          description: >
+            {{ $value }} VRF verification failures detected in the last 10 minutes.
+            This may indicate leader election manipulation or a cryptographic issue.
+          action: "Check validator logs for VRF prove/verify errors. Review recent validator set changes."
+
+      # P2: VRF prove latency high
+      - alert: VRFProveLatencyHigh
+        expr: histogram_quantile(0.99, rate(aethelred_vrf_prove_duration_ms_bucket[5m])) > 100
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: consensus
+        annotations:
+          summary: "VRF prove latency p99 > 100ms"
+
+      # P2: VRF verify latency high
+      - alert: VRFVerifyLatencyHigh
+        expr: histogram_quantile(0.99, rate(aethelred_vrf_verify_duration_ms_bucket[5m])) > 50
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: consensus
+        annotations:
+          summary: "VRF verify latency p99 > 50ms"
+
+  # ==========================================================================
+  # Verification / AI Compute Alerts
+  # ==========================================================================
+  - name: aethelred_verification
+    interval: 30s
+    rules:
+      # P1: Verification success rate drop
+      - alert: VerificationSuccessRateDrop
+        expr: >
+          rate(aethelred_verification_success_total[5m])
+          / (rate(aethelred_verification_success_total[5m]) + rate(aethelred_verification_failure_total[5m]))
+          < 0.5
+        for: 5m
+        labels:
+          severity: high
+          priority: P1
+          team: verification
+        annotations:
+          summary: "Verification success rate dropped below 50%"
+
+      # P1: Any verification failure on production
+      - alert: VerificationFailure
+        expr: increase(aethelred_verification_failure_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          priority: P1
+          team: verification
+        annotations:
+          summary: "Verification failures detected on production"
+          description: "{{ $value }} verification failures in the last 5 minutes."
+
+      # P0: Simulated verification on non-dev chain
+      - alert: SimulatedVerificationOnProd
+        expr: increase(aethelred_simulated_verification_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          priority: P0
+          team: security
+        annotations:
+          summary: "CRITICAL: Simulated verification detected on non-dev chain"
+          description: >
+            Simulated (non-real) verifications are being accepted.
+            This bypasses the entire verification pipeline and must be
+            investigated immediately as a potential security incident.
+
+      # P2: Attestation age stale
+      - alert: AttestationAgeStale
+        expr: aethelred_attestation_age_seconds > 600
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: verification
+        annotations:
+          summary: "TEE attestation age exceeds 10 minutes"
+
+  # ==========================================================================
+  # Bridge Alerts
+  # ==========================================================================
+  - name: aethelred_bridge
+    interval: 30s
+    rules:
+      # P0: Bridge confirmation depth too low
+      - alert: BridgeConfirmationDepthLow
+        expr: aethelred_bridge_confirmation_depth < 64
+        for: 1m
+        labels:
+          severity: critical
+          priority: P0
+          team: bridge
+        annotations:
+          summary: "Bridge confirmation depth below 64 blocks"
+          description: >
+            Ethereum confirmation depth has dropped below the required 64 blocks.
+            Bridge deposits may be vulnerable to reorg attacks.
+
+      # P1: Bridge reorg detected
+      - alert: BridgeReorgDetected
+        expr: increase(aethelred_bridge_reorg_events[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          priority: P1
+          team: bridge
+        annotations:
+          summary: "Ethereum reorg detected affecting bridge deposits"
+          action: "Check bridge relayer logs. Verify no double-spend occurred."
+
+      # P1: Bridge rate limit exceeded
+      - alert: BridgeRateLimitExceeded
+        expr: increase(aethelred_bridge_rate_limit_exceeded[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          priority: P1
+          team: bridge
+        annotations:
+          summary: "Bridge rate limit has been exceeded"
+          action: "Execute bridge pause drill if sustained (scripts/drills/bridge-pause-drill.sh)"
+
+      # P2: Bridge rate limit utilization SLO (> 80%)
+      - alert: BridgeRateLimitUtilizationHigh
+        expr: aethelred_bridge_rate_limit_utilization > 0.80
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: bridge
+          slo: bridge_rate_limit_utilization
+        annotations:
+          summary: "Bridge rate limit utilization exceeds 80% SLO threshold"
+          description: >
+            Current utilization: {{ $value | humanizePercentage }}.
+            If this continues, deposits/withdrawals may be throttled.
+
+      # P2: Pending deposits backlog
+      - alert: BridgePendingDepositsHigh
+        expr: aethelred_bridge_pending_deposits > 100
+        for: 10m
+        labels:
+          severity: medium
+          priority: P2
+          team: bridge
+        annotations:
+          summary: "More than 100 pending bridge deposits"
+
+      # P2: Pending withdrawals backlog
+      - alert: BridgePendingWithdrawalsHigh
+        expr: aethelred_bridge_pending_withdrawals > 50
+        for: 10m
+        labels:
+          severity: medium
+          priority: P2
+          team: bridge
+        annotations:
+          summary: "More than 50 pending bridge withdrawals"
+
+  # ==========================================================================
+  # Smart Contract State Alerts
+  # ==========================================================================
+  - name: aethelred_contracts
+    interval: 60s
+    rules:
+      # P0: Token supply deviation
+      - alert: TokenSupplyDeviation
+        expr: aethelred_token_total_supply != 1e28
+        for: 0s
+        labels:
+          severity: critical
+          priority: P0
+          team: security
+        annotations:
+          summary: "CRITICAL: Token totalSupply deviates from expected 10B * 1e18"
+          action: "Immediate security incident. Invoke emergency pause."
+
+      # P0: Contract paused on mainnet
+      - alert: ContractPausedOnMainnet
+        expr: aethelred_contract_paused == 1
+        for: 0s
+        labels:
+          severity: critical
+          priority: P0
+          team: security
+        annotations:
+          summary: "Contract is paused on mainnet"
+          description: "The main contract has been paused. Verify this was intentional."
+
+      # P0: Governance timelock min delay reduced
+      - alert: GovernanceTimelockDelayLow
+        expr: aethelred_governance_min_delay_seconds < 604800
+        for: 0s
+        labels:
+          severity: critical
+          priority: P0
+          team: security
+        annotations:
+          summary: "Governance timelock minimum delay is below 7 days"
+
+  # ==========================================================================
+  # Infrastructure Alerts
+  # ==========================================================================
+  - name: aethelred_infrastructure
+    interval: 30s
+    rules:
+      # P2: RPC error rate SLO breach (> 1%)
+      - alert: RPCErrorRateHigh
+        expr: >
+          rate(aethelred_rpc_errors_total[5m])
+          / rate(aethelred_rpc_requests_total[5m])
+          > 0.01
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: sre
+          slo: rpc_error_rate
+        annotations:
+          summary: "RPC error rate exceeds 1% SLO threshold"
+          description: "Current error rate: {{ $value | humanizePercentage }}"
+
+      # P2: High disk usage
+      - alert: NodeDiskUsageHigh
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.20
+        for: 10m
+        labels:
+          severity: medium
+          priority: P2
+          team: sre
+        annotations:
+          summary: "Node disk usage exceeds 80%"
+
+      # P1: High memory usage
+      - alert: NodeMemoryUsageHigh
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels:
+          severity: high
+          priority: P1
+          team: sre
+        annotations:
+          summary: "Node memory usage exceeds 90%"
+
+      # P1: Low peer count
+      - alert: NodePeerCountLow
+        expr: cometbft_p2p_peers < 3
+        for: 5m
+        labels:
+          severity: high
+          priority: P1
+          team: sre
+        annotations:
+          summary: "Node has fewer than 3 P2P peers"
+
+      # P2: RPC latency high
+      - alert: RPCLatencyHigh
+        expr: histogram_quantile(0.99, rate(aethelred_rpc_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: medium
+          priority: P2
+          team: sre
+        annotations:
+          summary: "RPC latency p99 exceeds 500ms"
+
+      # P2: TLS certificate expiry
+      - alert: TLSCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: medium
+          priority: P2
+          team: sre
+        annotations:
+          summary: "TLS certificate expires in less than 30 days"

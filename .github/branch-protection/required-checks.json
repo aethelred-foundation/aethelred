@@ -1,40 +1,44 @@
 {
   "default": [
-    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
     "Sandbox Required Gate",
-    "Docker Required Gate"
+    "Docker Required Gate",
+    "Load Test Required Gate",
+    "Fuzzing Required Gate",
+    "dApps Required Gate"
   ],
   "main": [
-    "Audit Signoff Required Gate",
-    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
     "Sandbox Required Gate",
-    "Load Test Required Gate",
     "Docker Required Gate",
-    "E2E Required Gate"
+    "Load Test Required Gate",
+    "Fuzzing Required Gate",
+    "E2E Required Gate",
+    "dApps Required Gate"
   ],
   "develop": [
-    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
     "Sandbox Required Gate",
-    "Docker Required Gate"
+    "Docker Required Gate",
+    "Load Test Required Gate",
+    "Fuzzing Required Gate",
+    "dApps Required Gate"
   ],
   "release/*": [
-    "Audit Signoff Required Gate",
-    "Core Required Gate",
     "Contracts Required Gate",
     "Rust Required Gate",
     "Security Required Gate",
     "Sandbox Required Gate",
-    "Load Test Required Gate",
     "Docker Required Gate",
-    "E2E Required Gate"
+    "Load Test Required Gate",
+    "Fuzzing Required Gate",
+    "E2E Required Gate",
+    "dApps Required Gate"
   ]
 }

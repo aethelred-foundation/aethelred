@@ -5,4 +5,5 @@ export { MockAggregatorV3__factory } from "./MockAggregatorV3__factory";
 export { MockInstitutionalBridgeMonitor__factory } from "./MockInstitutionalBridgeMonitor__factory";
 export { MockMessageTransmitterV2__factory } from "./MockMessageTransmitterV2__factory";
 export { MockMintableBurnableERC20__factory } from "./MockMintableBurnableERC20__factory";
+export { MockTimelockController__factory } from "./MockTimelockController__factory";
 export { MockTokenMessengerV2__factory } from "./MockTokenMessengerV2__factory";

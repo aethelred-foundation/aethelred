@@ -18,6 +18,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    flags:
+      - -tags=production
     ldflags:
       - -s -w
       - -X github.com/aethelred/aethelred/version.Version={{.Version}}
@@ -61,6 +63,10 @@ changelog:
       - "^chore:"
       - Merge pull request
       - Merge branch
+
+sboms:
+  - artifacts: archive
+    cmd: syft
 
 release:
   github:
