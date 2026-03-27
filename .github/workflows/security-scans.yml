@@ -56,11 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           lockfiles=(
-            "crates/core/Cargo.lock"
-            "crates/consensus/Cargo.lock"
-            "crates/mempool/Cargo.lock"
-            "crates/bridge/Cargo.lock"
-            "crates/vm/Cargo.lock"
+            "crates/Cargo.lock"
             "sdk/rust/Cargo.lock"
             "sdk/aethelred-sdk/Cargo.lock"
             "sdk/aethelred-py/Cargo.lock"
@@ -98,7 +94,7 @@ jobs:
           args: ./...
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: "."

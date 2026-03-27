@@ -21,4 +21,4 @@ npm run dev
 
 The app depends on the local SDK package via:
 
-- `@aethelred/sdk: file:../../sdk/typescript`
+- `@aethelred/sdk: file:../../../sdk/typescript`

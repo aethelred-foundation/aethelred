@@ -1,0 +1,275 @@
+{
+  "$schema": "https://aethelred.org/schemas/genesis-v1.json",
+  "version": "1.0.0",
+  "chain_id": "aethelred-testnet-1",
+  "chain_name": "Aethelred Incentivized Testnet",
+  "genesis_time": "2026-04-01T14:00:00.000000Z",
+
+  "_comment": "=============================================================================",
+  "_comment_2": "AETHELRED INCENTIVIZED TESTNET GENESIS",
+  "_comment_3": "Network: aethelred-testnet-1 | Launch: April 1, 2026 14:00 UTC",
+  "_comment_4": "Branch: release/testnet-v1.0 | Image: aethelred/node:testnet-v1.0.0",
+  "_comment_5": "=============================================================================",
+
+  "metadata": {
+    "protocol_version": "1.0.0",
+    "chain_type": "sovereign_l1",
+    "network_type": "testnet",
+    "documentation": "https://docs.aethelred.io/testnet",
+    "release_branch": "release/testnet-v1.0",
+    "image_tag": "aethelred/node:testnet-v1.0.0"
+  },
+
+  "consensus": {
+    "type": "proof_of_compute",
+    "description": "Hybrid consensus combining stake-weighted voting with verified AI computation proofs",
+    "params": {
+      "block_time_ms": 6000,
+      "epoch_length_blocks": 43200,
+      "epoch_duration_seconds": 259200,
+      "min_validators": 4,
+      "max_validators": 200,
+      "active_validator_set_size": 50,
+
+      "weight_distribution": {
+        "stake_weight_bps": 7000,
+        "compute_weight_bps": 3000,
+        "_comment": "70% stake, 30% compute contribution"
+      },
+
+      "vrf_params": {
+        "threshold": "0.5",
+        "leader_selection": "weighted_vrf",
+        "randomness_beacon_interval_blocks": 100
+      },
+
+      "finality": {
+        "type": "single_slot",
+        "confirmation_blocks": 1,
+        "max_reorg_depth": 6
+      },
+
+      "vote_extensions": {
+        "enabled": true,
+        "max_size_bytes": 1048576,
+        "required_for_compute_proofs": true
+      }
+    }
+  },
+
+  "token": {
+    "name": "Aethelred Testnet",
+    "symbol": "tAETHEL",
+    "decimals": 18,
+    "total_supply": "10000000000000000000000000000",
+    "total_supply_human": "10,000,000,000 tAETHEL",
+    "_comment": "Testnet tokens have no monetary value"
+  },
+
+  "staking": {
+    "validator_requirements": {
+      "min_stake": "1000000000000000000000",
+      "min_stake_human": "1,000 tAETHEL",
+      "max_stake": "500000000000000000000000",
+      "max_stake_human": "500,000 tAETHEL",
+      "unbonding_period_seconds": 86400,
+      "unbonding_period_human": "1 day (accelerated for testnet)",
+      "commission_rate_min_bps": 0,
+      "commission_rate_max_bps": 5000,
+      "commission_rate_change_max_bps_per_day": 500,
+      "_comment": "Lower minimums and faster unbonding vs mainnet for testing"
+    },
+
+    "delegator_requirements": {
+      "min_stake": "10000000000000000000",
+      "min_stake_human": "10 tAETHEL",
+      "unbonding_period_seconds": 86400,
+      "unbonding_period_human": "1 day",
+      "max_validators_per_delegator": 10,
+      "redelegation_cooldown_seconds": 3600
+    },
+
+    "rewards": {
+      "base_apr_bps": 1500,
+      "max_apr_bps": 3000,
+      "compute_bonus_multiplier": 1.5,
+      "loyalty_bonus_enabled": false,
+      "_comment": "Higher APR to attract testnet validators; loyalty disabled for testnet"
+    },
+
+    "validator_set": {
+      "max_validators": 200,
+      "active_set_size": 50,
+      "rotation_interval_epochs": 1,
+      "min_uptime_pct": 80,
+      "performance_score_weight_bps": 3000,
+      "_comment": "Relaxed uptime requirement (80% vs 95% mainnet) for testnet participants"
+    }
+  },
+
+  "slashing": {
+    "enabled": true,
+    "_comment": "Slashing enabled on testnet to test the mechanism, but with testnet tokens only",
+
+    "tier1_critical": {
+      "offenses": ["invalid_zk_proof", "forged_tee_signature", "hardware_spoofing", "fabricated_result"],
+      "slash_pct": 100,
+      "consequence": "permanent_tombstone"
+    },
+
+    "tier2_malicious": {
+      "offenses": ["double_sign", "equivocation", "vote_tampering"],
+      "slash_pct": 50,
+      "consequence": "temporary_ban",
+      "ban_duration_seconds": 86400,
+      "ban_duration_human": "1 day (accelerated for testnet)"
+    },
+
+    "tier3_performance": {
+      "offenses": ["sla_timeout", "late_delivery", "job_abandonment"],
+      "slash_pct": 5,
+      "consequence": "suspension",
+      "suspension_duration_seconds": 3600,
+      "suspension_duration_human": "1 hour"
+    }
+  },
+
+  "governance": {
+    "enabled": true,
+    "governance_token": "tAETHEL",
+    "proposal_params": {
+      "min_deposit": "10000000000000000000000",
+      "min_deposit_human": "10,000 tAETHEL",
+      "max_deposit_period_seconds": 172800,
+      "max_deposit_period_human": "2 days (accelerated)",
+      "voting_period_seconds": 172800,
+      "voting_period_human": "2 days (accelerated)"
+    },
+    "voting_params": {
+      "quorum_pct": 25,
+      "threshold_pct": 50,
+      "veto_threshold_pct": 33
+    }
+  },
+
+  "bridge": {
+    "ethereum": {
+      "enabled": true,
+      "chain_id": 11155111,
+      "chain_name": "Ethereum Sepolia",
+      "contract_address": "0x0000000000000000000000000000000000000000",
+      "_comment": "Bridge contract will be deployed to Sepolia for testnet",
+
+      "relayer_config": {
+        "min_relayers": 3,
+        "max_relayers": 10,
+        "consensus_threshold_bps": 6700,
+        "selection_method": "top_validators_by_stake"
+      },
+
+      "security": {
+        "challenge_period_seconds": 3600,
+        "challenge_period_human": "1 hour (accelerated for testnet)",
+        "min_confirmations": 3,
+        "rate_limit_enabled": true,
+        "max_deposit_per_period": "100000000000000000000",
+        "max_withdrawal_per_period": "100000000000000000000",
+        "rate_limit_period_seconds": 3600
+      }
+    }
+  },
+
+  "job_registry": {
+    "params": {
+      "min_bid": "100000000000000000",
+      "min_bid_human": "0.1 tAETHEL",
+      "max_jobs_per_block": 1000,
+      "max_concurrent_jobs_per_prover": 10,
+      "default_sla_timeout_seconds": 3600,
+      "max_sla_timeout_seconds": 86400
+    },
+
+    "verification_methods": {
+      "tee_attestation": { "enabled": true, "priority": 1 },
+      "zkml_proof": { "enabled": true, "priority": 2, "systems": ["ezkl", "plonky2", "halo2"] },
+      "simulated": { "enabled": true, "priority": 3, "_comment": "Simulated verification allowed on testnet" }
+    }
+  },
+
+  "compliance": {
+    "enabled": false,
+    "_comment": "Compliance modules disabled for testnet"
+  },
+
+  "faucet": {
+    "enabled": true,
+    "endpoint": "https://faucet.testnet.aethelred.io",
+    "drip_amount": "10000000000000000000000",
+    "drip_amount_human": "10,000 tAETHEL per request",
+    "cooldown_seconds": 86400,
+    "_comment": "One drip per address per day"
+  },
+
+  "initial_validators": [],
+  "initial_compute_nodes": [],
+  "_comment_note": "Validators register after genesis via staking transactions. Faucet provides testnet tokens.",
+
+  "network_endpoints": {
+    "rpc": "https://rpc.testnet.aethelred.io",
+    "api": "https://api.testnet.aethelred.io",
+    "grpc": "grpc.testnet.aethelred.io:9090",
+    "explorer": "https://explorer.testnet.aethelred.io",
+    "faucet": "https://faucet.testnet.aethelred.io"
+  },
+
+  "seed_nodes": [
+    "seed-1@seed1.testnet.aethelred.io:26656",
+    "seed-2@seed2.testnet.aethelred.io:26656"
+  ],
+
+  "persistent_peers": [
+    "peer-1@peer1.testnet.aethelred.io:26656",
+    "peer-2@peer2.testnet.aethelred.io:26656",
+    "peer-3@peer3.testnet.aethelred.io:26656"
+  ],
+
+  "app_state": {
+    "bank": {
+      "supply": [
+        {
+          "denom": "utaethelel",
+          "amount": "1000000000000000000000000000"
+        }
+      ]
+    },
+    "staking": {
+      "params": {
+        "unbonding_time": "86400s",
+        "max_validators": 200,
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "bond_denom": "utaethelel"
+      }
+    },
+    "slashing": {
+      "params": {
+        "signed_blocks_window": 5000,
+        "min_signed_per_window": "0.80",
+        "downtime_jail_duration": "300s",
+        "slash_fraction_double_sign": "0.50",
+        "slash_fraction_downtime": "0.005"
+      }
+    },
+    "verify": {
+      "params": {
+        "allow_simulated": true
+      }
+    },
+    "governance": {
+      "starting_proposal_id": 1,
+      "deposits": [],
+      "votes": [],
+      "proposals": []
+    }
+  }
+}

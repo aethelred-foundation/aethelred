@@ -27,6 +27,7 @@ ARG VERSION=dev
 ARG COMMIT=unknown
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build \
+      -tags production \
       -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
       -trimpath \
       -o /build/bin/aethelredd \
