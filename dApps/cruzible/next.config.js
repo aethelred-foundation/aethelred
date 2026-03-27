@@ -29,6 +29,11 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
 
+  // Linting runs as a dedicated CI step, so builds don't need to invoke it again.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Headers for security and caching
   async headers() {
     return [
@@ -59,6 +64,11 @@ const nextConfig = {
   // Webpack optimization
   webpack: (config, { isServer, dev }) => {
     if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@react-native-async-storage/async-storage': false,
+      };
+
       config.resolve.fallback = {
         ...config.resolve.fallback,
         crypto: false,
