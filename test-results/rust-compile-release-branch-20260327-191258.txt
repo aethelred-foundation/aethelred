@@ -1,0 +1,687 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/rameshtamilselvan/Downloads/aethelred/crates/benchmarks/Cargo.toml
+workspace: /Users/rameshtamilselvan/Downloads/aethelred/crates/Cargo.toml
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/rameshtamilselvan/Downloads/aethelred/crates/testing/Cargo.toml
+workspace: /Users/rameshtamilselvan/Downloads/aethelred/crates/Cargo.toml
+   Compiling aethelred-core v0.1.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/core)
+   Compiling aethelred-sandbox v0.1.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/sandbox)
+   Compiling aethelred-bridge v0.1.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/bridge)
+   Compiling helix-guard v1.0.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/demo/helix-guard)
+   Compiling aethelred-benchmarks v2.0.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/benchmarks)
+   Compiling falcon-lion v1.0.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/demo/falcon-lion)
+   Compiling aethelred-testing v2.0.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/testing)
+   Compiling aethelred-mempool v0.1.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/mempool)
+   Compiling aethelred-vault v0.1.0 (/Users/rameshtamilselvan/Downloads/aethelred/crates/vault)
+warning: unused import: `std::collections::HashMap`
+ --> testing/src/assertions.rs:8:5
+  |
+8 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::fs`
+ --> testing/src/fixtures.rs:9:5
+  |
+9 | use std::fs;
+  |     ^^^^^^^
+
+warning: unused doc comment
+  --> testing/src/mocking.rs:13:1
+   |
+13 | /// Thread-local mock registry
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ rustdoc does not generate documentation for macro invocations
+   |
+   = help: to document an item produced by a macro, the macro must produce the documentation as part of its expansion
+   = note: `#[warn(unused_doc_comments)]` on by default
+
+warning: unused import: `std::any::Any`
+   --> testing/src/mocking.rs:712:9
+    |
+712 |     use std::any::Any;
+    |         ^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> testing/src/property.rs:7:5
+  |
+7 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::hash::Hash`
+ --> testing/src/property.rs:8:5
+  |
+8 | use std::hash::Hash;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `Mutex`
+ --> testing/src/snapshot.rs:9:22
+  |
+9 | use std::sync::{Arc, Mutex, RwLock};
+  |                      ^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> testing/src/runner.rs:6:5
+  |
+6 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `AtomicUsize`
+ --> testing/src/runner.rs:7:50
+  |
+7 | use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
+  |                                                  ^^^^^^^^^^^
+
+warning: unused import: `Sender`
+ --> testing/src/runner.rs:8:29
+  |
+8 | use std::sync::mpsc::{self, Sender, Receiver, RecvTimeoutError};
+  |                             ^^^^^^
+
+warning: unused import: `OutputFormat`
+  --> testing/src/runner.rs:13:71
+   |
+13 | use crate::{TestCase, TestResult, TestSuite, SuiteResult, TestConfig, OutputFormat};
+   |                                                                       ^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> testing/src/reporter.rs:6:5
+  |
+6 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs`
+ --> testing/src/coverage.rs:7:5
+  |
+7 | use std::fs;
+  |     ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> testing/src/lib.rs:28:5
+   |
+28 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+  --> testing/src/lib.rs:31:17
+   |
+31 | use std::sync::{Arc, Mutex};
+   |                 ^^^  ^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> benchmarks/src/inference.rs:7:5
+  |
+7 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `BenchmarkConfig` and `Benchmark`
+ --> benchmarks/src/inference.rs:9:30
+  |
+9 | use crate::{BenchmarkResult, Benchmark, BenchmarkConfig, black_box};
+  |                              ^^^^^^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> benchmarks/src/training.rs:8:5
+  |
+8 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> benchmarks/src/memory.rs:10:5
+   |
+10 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::BenchmarkResult`
+  --> benchmarks/src/memory.rs:12:5
+   |
+12 | use crate::BenchmarkResult;
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> benchmarks/src/network.rs:8:17
+  |
+8 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `black_box`
+  --> benchmarks/src/network.rs:10:30
+   |
+10 | use crate::{BenchmarkResult, black_box};
+   |                              ^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> benchmarks/src/hardware.rs:7:5
+  |
+7 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BenchmarkResult`
+ --> benchmarks/src/hardware.rs:9:13
+  |
+9 | use crate::{BenchmarkResult, black_box};
+  |             ^^^^^^^^^^^^^^^
+
+warning: unused import: `SuiteResult`
+  --> benchmarks/src/regression.rs:11:44
+   |
+11 | use crate::{BenchmarkResult, RunnerResult, SuiteResult};
+   |                                            ^^^^^^^^^^^
+
+warning: unused import: `std::time::Duration`
+ --> benchmarks/src/reporter.rs:9:5
+  |
+9 | use std::time::Duration;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BenchmarkResult`
+  --> benchmarks/src/reporter.rs:11:13
+   |
+11 | use crate::{BenchmarkResult, RunnerResult, SuiteResult};
+   |             ^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+  --> benchmarks/src/lib.rs:29:17
+   |
+29 | use std::sync::{Arc, Mutex};
+   |                 ^^^  ^^^^^
+
+warning: unused variable: `step`
+   --> benchmarks/src/training.rs:199:13
+    |
+199 |         for step in 0..self.config.steps {
+    |             ^^^^ help: if this is intentional, prefix it with an underscore: `_step`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `accum_step`
+   --> benchmarks/src/training.rs:203:17
+    |
+203 |             for accum_step in 0..self.config.gradient_accumulation {
+    |                 ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_accum_step`
+
+warning: unused variable: `i`
+   --> benchmarks/src/memory.rs:350:13
+    |
+350 |         for i in 0..self.config.iterations {
+    |             ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: variable does not need to be mutable
+  --> benchmarks/src/hardware.rs:87:13
+   |
+87 |         let mut features = Vec::new();
+   |             ----^^^^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> benchmarks/src/hardware.rs:204:13
+    |
+204 |         let mut results = CpuResults {
+    |             ----^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: unused variable: `q`
+   --> benchmarks/src/hardware.rs:394:13
+    |
+394 |         let q: Vec<f32> = vec![0.1; batch_size * seq_len * hidden_size];
+    |             ^ help: if this is intentional, prefix it with an underscore: `_q`
+
+warning: unused variable: `k`
+   --> benchmarks/src/hardware.rs:395:13
+    |
+395 |         let k: Vec<f32> = vec![0.1; batch_size * seq_len * hidden_size];
+    |             ^ help: if this is intentional, prefix it with an underscore: `_k`
+
+warning: unused variable: `v`
+   --> benchmarks/src/hardware.rs:396:13
+    |
+396 |         let v: Vec<f32> = vec![0.1; batch_size * seq_len * hidden_size];
+    |             ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: unused variable: `std`
+   --> testing/src/assertions.rs:430:9
+    |
+430 |     let std = m2.sqrt();
+    |         ^^^ help: if this is intentional, prefix it with an underscore: `_std`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `significance`
+   --> testing/src/assertions.rs:421:52
+    |
+421 | pub fn assert_normally_distributed(values: &[f64], significance: f64) {
+    |                                                    ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_significance`
+
+warning: variable does not need to be mutable
+   --> testing/src/mocking.rs:102:24
+    |
+102 |     pub fn when_called(mut self, method: &str) -> ExpectationBuilder<T> {
+    |                        ----^^^^
+    |                        |
+    |                        help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: field `config` is never read
+   --> benchmarks/src/inference.rs:423:5
+    |
+422 | pub struct TokenGenerationBenchmark {
+    |            ------------------------ field in this struct
+423 |     config: InferenceConfig,
+    |     ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field `config` is never read
+   --> benchmarks/src/hardware.rs:473:5
+    |
+472 | pub struct GpuBenchmark {
+    |            ------------ field in this struct
+473 |     config: HardwareBenchmarkConfig,
+    |     ^^^^^^
+
+warning: value assigned to `results` is never read
+   --> testing/src/runner.rs:371:17
+    |
+371 |         let mut results = Vec::new();
+    |                 ^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` on by default
+
+warning: unused variable: `start`
+   --> testing/src/runner.rs:465:13
+    |
+465 |         let start = Instant::now();
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_start`
+
+warning: unused variable: `test_name`
+   --> testing/src/runner.rs:479:13
+    |
+479 |         let test_name = test.name.clone();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_test_name`
+
+warning: unused variable: `handle`
+   --> testing/src/runner.rs:482:13
+    |
+482 |         let handle = thread::spawn(move || {
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_handle`
+
+warning: field `name` is never read
+  --> testing/src/mocking.rs:85:5
+   |
+84 | pub struct MockBuilder<T> {
+   |            ----------- field in this struct
+85 |     name: String,
+   |     ^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: field `name` is never read
+   --> testing/src/mocking.rs:582:5
+    |
+581 | pub struct MockModel {
+    |            --------- field in this struct
+582 |     name: String,
+    |     ^^^^
+
+warning: field `suites` is never read
+  --> testing/src/runner.rs:64:5
+   |
+63 | pub struct MemoryTestSource {
+   |            ---------------- field in this struct
+64 |     suites: Vec<TestSuite>,
+   |     ^^^^^^
+
+warning: field `stats` is never read
+   --> testing/src/runner.rs:352:5
+    |
+349 | pub struct TestExecutor {
+    |            ------------ field in this struct
+...
+352 |     stats: Arc<Mutex<TestStats>>,
+    |     ^^^^^
+
+warning: unexpected `cfg` condition name: `kani`
+  --> core/src/lib.rs:10:7
+   |
+10 | #[cfg(kani)]
+   |       ^^^^
+   |
+   = help: expected names are: `docsrs`, `feature`, and `test` and 31 more
+   = help: consider using a Cargo feature instead
+   = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+            [lints.rust]
+            unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+   = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(kani)");` to the top of the `build.rs`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+   = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: variant `ECIES_AES256GCM` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:142:5
+    |
+142 |     ECIES_AES256GCM,
+    |     ^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `EciesAes256gcm`
+    |
+    = note: `#[warn(non_camel_case_types)]` on by default
+
+warning: variant `ECIES_ChaCha20Poly1305` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:144:5
+    |
+144 |     ECIES_ChaCha20Poly1305,
+    |     ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `EciesChaCha20poly1305`
+
+warning: variant `RSA_OAEP_AES256GCM` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:146:5
+    |
+146 |     RSA_OAEP_AES256GCM,
+    |     ^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `RsaOaepAes256gcm`
+
+warning: variant `Kyber768_AES256GCM` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:148:5
+    |
+148 |     Kyber768_AES256GCM,
+    |     ^^^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `Kyber768Aes256gcm`
+
+warning: variant `PCI_DSS` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:458:5
+    |
+458 |     PCI_DSS,
+    |     ^^^^^^^ help: convert the identifier to upper camel case: `PciDss`
+
+warning: variant `GDPR_Certified` should have an upper camel case name
+   --> core/src/pillars/secret_mempool.rs:459:5
+    |
+459 |     GDPR_Certified,
+    |     ^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `GdprCertified`
+
+warning: unused import: `HashSet`
+  --> core/src/pillars/bicameral_governance.rs:31:33
+   |
+31 | use std::collections::{HashMap, HashSet};
+   |                                 ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Duration`
+  --> core/src/pillars/vector_vault.rs:40:17
+   |
+40 | use std::time::{Duration, SystemTime};
+   |                 ^^^^^^^^
+
+warning: ambiguous glob re-exports
+  --> core/src/pillars/mod.rs:48:9
+   |
+48 | pub use useful_work::*;
+   |         ^^^^^^^^^^^^^^ the name `TEERequirement` in the type namespace is first re-exported here
+...
+54 | pub use zero_copy_bridge::*;
+   |         ------------------- but the name `TEERequirement` in the type namespace is also re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `aethelred_infinity_sandbox`
+ --> sandbox/examples/q_day_simulation.rs:6:5
+  |
+6 | use aethelred_infinity_sandbox::quantum::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `aethelred_infinity_sandbox`
+  |
+  = help: if you wanted to use a crate named `aethelred_infinity_sandbox`, use `cargo add aethelred_infinity_sandbox` to add it to your `Cargo.toml`
+
+error[E0433]: failed to resolve: use of undeclared type `QuantumThreatTimeline`
+ --> sandbox/examples/q_day_simulation.rs:9:22
+  |
+9 |     println!("\n{}", QuantumThreatTimeline::display());
+  |                      ^^^^^^^^^^^^^^^^^^^^^ use of undeclared type `QuantumThreatTimeline`
+  |
+help: consider importing this struct
+  |
+6 + use aethelred_sandbox::QuantumThreatTimeline;
+  |
+
+error[E0433]: failed to resolve: use of undeclared type `QuantumTimeMachine`
+  --> sandbox/examples/q_day_simulation.rs:12:23
+   |
+12 |     let mut machine = QuantumTimeMachine::new();
+   |                       ^^^^^^^^^^^^^^^^^^ use of undeclared type `QuantumTimeMachine`
+   |
+help: consider importing this struct
+   |
+ 6 + use aethelred_sandbox::QuantumTimeMachine;
+   |
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `aethelred-sandbox` (example "q_day_simulation") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+warning: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x
+    --> vault/src/server.rs:2750:47
+     |
+2750 |         assert_eq!(&payload[0..32], canonical.as_slice());
+     |                                               ^^^^^^^^
+     |
+     = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x
+    --> vault/src/server.rs:2751:45
+     |
+2751 |         assert_eq!(&payload[32..64], policy.as_slice());
+     |                                             ^^^^^^^^
+
+warning: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x
+    --> vault/src/server.rs:2752:47
+     |
+2752 |         assert_eq!(&payload[64..96], universe.as_slice());
+     |                                               ^^^^^^^^
+
+warning: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x
+    --> vault/src/server.rs:2762:21
+     |
+2762 |             hash_96.as_slice(),
+     |                     ^^^^^^^^
+
+warning: use of deprecated method `sha2::digest::generic_array::GenericArray::<T, N>::as_slice`: please upgrade to generic-array 1.x
+    --> vault/src/server.rs:2763:21
+     |
+2763 |             hash_64.as_slice(),
+     |                     ^^^^^^^^
+
+warning: `aethelred-benchmarks` (lib) generated 23 warnings (run `cargo fix --lib -p aethelred-benchmarks` to apply 15 suggestions)
+warning: `aethelred-testing` (lib) generated 26 warnings (run `cargo fix --lib -p aethelred-testing` to apply 15 suggestions)
+warning: `aethelred-vault` (lib test) generated 5 warnings
+warning: unused variable: `partners`
+    --> demo/helix-guard/src/discovery.rs:1197:13
+     |
+1197 |         let partners = protocol.get_partners();
+     |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_partners`
+     |
+     = note: `#[warn(unused_variables)]` on by default
+
+warning: `helix-guard` (lib test) generated 1 warning
+warning: field `active_jobs` is never read
+   --> core/src/pillars/useful_work.rs:300:5
+    |
+290 | pub struct UsefulWorkRouter {
+    |            ---------------- field in this struct
+...
+300 |     active_jobs: HashMap<[u8; 32], ActiveJob>,
+    |     ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: field `received_at` is never read
+   --> core/src/pillars/useful_work.rs:343:5
+    |
+340 | struct PrioritizedComputeJob {
+    |        --------------------- field in this struct
+...
+343 |     received_at: SystemTime,
+    |     ^^^^^^^^^^^
+    |
+    = note: `PrioritizedComputeJob` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `verified_cache` is never read
+   --> core/src/pillars/quantum_immunity.rs:303:5
+    |
+297 | pub struct HybridVerifier {
+    |            -------------- field in this struct
+...
+303 |     verified_cache: HashMap<[u8; 32], bool>,
+    |     ^^^^^^^^^^^^^^
+
+warning: fields `tx`, `assigned_validator`, and `attestation` are never read
+   --> core/src/pillars/secret_mempool.rs:242:5
+    |
+241 | struct ProcessingTransaction {
+    |        --------------------- fields in this struct
+242 |     tx: SecretTransaction,
+    |     ^^
+243 |     assigned_validator: [u8; 32],
+    |     ^^^^^^^^^^^^^^^^^^
+244 |     started_at: SystemTime,
+245 |     attestation: Option<TEEAttestation>,
+    |     ^^^^^^^^^^^
+    |
+    = note: `ProcessingTransaction` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `models` is never read
+   --> core/src/pillars/secret_mempool.rs:603:5
+    |
+597 | pub struct EnclaveExecutor {
+    |            --------------- field in this struct
+...
+603 |     models: HashMap<[u8; 32], RegisteredModel>,
+    |     ^^^^^^
+
+warning: fields `model_hash`, `model_type`, `input_schema`, and `output_schema` are never read
+   --> core/src/pillars/secret_mempool.rs:615:5
+    |
+614 | struct RegisteredModel {
+    |        --------------- fields in this struct
+615 |     model_hash: [u8; 32],
+    |     ^^^^^^^^^^
+616 |     model_type: ModelType,
+    |     ^^^^^^^^^^
+617 |     input_schema: Vec<u8>,
+    |     ^^^^^^^^^^^^
+618 |     output_schema: Vec<u8>,
+    |     ^^^^^^^^^^^^^
+    |
+    = note: `RegisteredModel` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `ONNX`, `TensorFlowLite`, and `Custom` are never constructed
+   --> core/src/pillars/secret_mempool.rs:623:5
+    |
+622 | enum ModelType {
+    |      --------- variants in this enum
+623 |     ONNX,
+    |     ^^^^
+624 |     TensorFlowLite,
+    |     ^^^^^^^^^^^^^^
+625 |     Custom,
+    |     ^^^^^^
+    |
+    = note: `ModelType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Computation` and `KeyDerivation` are never constructed
+   --> core/src/pillars/secret_mempool.rs:844:5
+    |
+839 | enum EnclaveOperation {
+    |      ---------------- variants in this enum
+...
+844 |     Computation {
+    |     ^^^^^^^^^^^
+...
+848 |     KeyDerivation {
+    |     ^^^^^^^^^^^^^
+    |
+    = note: `EnclaveOperation` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `model_cache` is never read
+   --> core/src/pillars/tensor_precompiles.rs:303:5
+    |
+299 | pub struct TensorExecutor {
+    |            -------------- field in this struct
+...
+303 |     model_cache: HashMap<[u8; 32], CachedModel>,
+    |     ^^^^^^^^^^^
+
+warning: fields `allocated` and `next_id` are never read
+   --> core/src/pillars/tensor_precompiles.rs:309:5
+    |
+308 | struct TensorMemoryPool {
+    |        ---------------- fields in this struct
+309 |     allocated: HashMap<u64, Tensor>,
+    |     ^^^^^^^^^
+310 |     next_id: u64,
+    |     ^^^^^^^
+
+warning: fields `total_staked` and `circulating_supply` are never read
+   --> core/src/pillars/quadratic_burn.rs:720:5
+    |
+716 | pub struct StakingRewardCalculator {
+    |            ----------------------- fields in this struct
+...
+720 |     total_staked: u128,
+    |     ^^^^^^^^^^^^
+721 |     /// Circulating supply
+722 |     circulating_supply: u128,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: fields `delegations` and `voting_history` are never read
+   --> core/src/pillars/bicameral_governance.rs:151:5
+    |
+147 | pub struct HouseOfTokens {
+    |            ------------- fields in this struct
+...
+151 |     delegations: HashMap<[u8; 32], [u8; 32]>, // delegator -> delegate
+    |     ^^^^^^^^^^^
+...
+157 |     voting_history: Vec<VotingRecord>,
+    |     ^^^^^^^^^^^^^^
+
+warning: fields `min_members` and `max_members` are never read
+   --> core/src/pillars/bicameral_governance.rs:482:5
+    |
+478 | pub struct HouseOfSovereigns {
+    |            ----------------- fields in this struct
+...
+482 |     min_members: usize,
+    |     ^^^^^^^^^^^
+483 |     /// Maximum members allowed
+484 |     max_members: usize,
+    |     ^^^^^^^^^^^
+
+warning: field `next_proposal_id` is never read
+   --> core/src/pillars/bicameral_governance.rs:812:5
+    |
+804 | pub struct BicameralGovernance {
+    |            ------------------- field in this struct
+...
+812 |     next_proposal_id: u64,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: fields `index_type`, `dimensions`, and `is_built` are never read
+   --> core/src/pillars/vector_vault.rs:307:5
+    |
+305 | pub struct VectorIndex {
+    |            ----------- fields in this struct
+306 |     /// Index type
+307 |     index_type: IndexType,
+    |     ^^^^^^^^^^
+308 |     /// Dimensions
+309 |     dimensions: usize,
+    |     ^^^^^^^^^^
+...
+313 |     is_built: bool,
+    |     ^^^^^^^^
+    |
+    = note: `VectorIndex` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: `aethelred-core` (lib) generated 25 warnings (run `cargo fix --lib -p aethelred-core` to apply 2 suggestions)
+warning: `aethelred-core` (lib test) generated 25 warnings (25 duplicates)
