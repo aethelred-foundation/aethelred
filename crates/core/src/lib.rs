@@ -7,6 +7,9 @@ pub mod pillars;
 pub mod transport;
 pub mod types;
 
+#[cfg(kani)]
+mod kani_proofs;
+
 /// Serde helpers for serializing/deserializing byte arrays larger than 32 elements.
 /// Needed because the vendored serde only supports arrays up to 32 elements.
 pub mod serde_byte_array_48 {

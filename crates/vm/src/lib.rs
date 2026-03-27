@@ -50,6 +50,9 @@ pub mod precompiles;
 pub mod runtime;
 pub mod system_contracts;
 
+#[cfg(kani)]
+mod kani_proofs;
+
 pub use error::{VmError, VmResult};
 pub use gas::{GasConfig, GasMeter};
 pub use memory::{MemoryConfig, MemoryLimits};
