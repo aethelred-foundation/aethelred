@@ -10,11 +10,12 @@
 </p>
 
 <p align="center">
- <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/ci.yml?branch=main&style=flat-square&label=CI&logo=github" alt="CI"></a>
- <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred/security.yml?branch=main&style=flat-square&label=Security&logo=shield" alt="Security"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml/badge.svg?branch=release%2Ftestnet-v1.0" alt="CI"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml/badge.svg?branch=release%2Ftestnet-v1.0" alt="Security"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/rust-coverage-bench.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/rust-coverage-bench.yml/badge.svg?branch=release%2Ftestnet-v1.0" alt="Coverage"></a>
  <a href="docs/security/release-provenance.md"><img src="https://img.shields.io/badge/release-provenance%20tracked-0e8a16?style=flat-square" alt="Release provenance"></a>
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
- <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" alt="Discord"></a>
+ <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-Join%20community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
  <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
  <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
  <a href="docs/audits/STATUS.md"><img src="https://img.shields.io/badge/audit-program%20active-f59e0b?style=flat-square" alt="Audit program active"></a>
