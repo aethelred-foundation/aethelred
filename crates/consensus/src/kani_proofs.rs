@@ -109,14 +109,7 @@ fn verify_validator_eligibility_jail_logic() {
     let active: bool = kani::any();
     let stake: u128 = kani::any();
 
-    let mut validator = types::ValidatorInfo::new(
-        [1u8; 32],
-        stake,
-        vec![],
-        vec![],
-        1000,
-        0,
-    );
+    let mut validator = types::ValidatorInfo::new([1u8; 32], stake, vec![], vec![], 1000, 0);
     validator.active = active;
     validator.jailed_until = jailed_until;
 
@@ -124,11 +117,20 @@ fn verify_validator_eligibility_jail_logic() {
 
     // If jailed and jail hasn't expired, must not be eligible
     if jailed_until > 0 && current_slot < jailed_until {
-        assert!(!eligible, "Jailed validator must not be eligible before jail expiry");
+        assert!(
+            !eligible,
+            "Jailed validator must not be eligible before jail expiry"
+        );
     }
 
     // If active, unjailed, and sufficient stake, must be eligible
-    if active && (jailed_until == 0 || current_slot >= jailed_until) && stake >= MIN_STAKE_FOR_ELECTION {
-        assert!(eligible, "Active unjailed validator with sufficient stake must be eligible");
+    if active
+        && (jailed_until == 0 || current_slot >= jailed_until)
+        && stake >= MIN_STAKE_FOR_ELECTION
+    {
+        assert!(
+            eligible,
+            "Active unjailed validator with sufficient stake must be eligible"
+        );
     }
 }

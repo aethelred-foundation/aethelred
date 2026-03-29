@@ -128,11 +128,11 @@
 // MODULE DECLARATIONS
 // =============================================================================
 
-pub mod types;
-pub mod error;
 pub mod compliance;
-pub mod settlement;
 pub mod demo;
+pub mod error;
+pub mod settlement;
+pub mod types;
 
 // =============================================================================
 // PUBLIC RE-EXPORTS
@@ -140,121 +140,89 @@ pub mod demo;
 
 // Core types
 pub use types::{
-    // Jurisdictions and compliance
-    Jurisdiction,
-    ComplianceStandard,
-
-    // Financial primitives
-    Currency,
-    MonetaryAmount,
-    CurrencyAmount,
-
-    // Bank identifiers
-    BankIdentifier,
-
-    // Trade participants
-    TradeParticipant,
     Address,
-    ContactInfo,
-    RiskRating,
-    SanctionsStatus,
-    SanctionsResult,
-    SanctionsList,
-
-    // Letter of Credit
-    LetterOfCredit,
-    LetterOfCreditType,
-    LcStatus,
-    LcAvailability,
-    RequiredDocument,
-    DocumentType,
-    LcAmendment,
-
-    // Trade deals
-    TradeDeal,
-    DealStatus,
-    BlockchainStatus,
-    BankGuarantee,
-    GuaranteeType,
-    GuaranteeStatus,
-    Incoterms,
-
-    // Verification
-    VerificationProof,
-    ProofType,
-    VerificationMethod,
-    ProofResultSummary,
-    RiskLevel,
+    AuditAction,
 
     // Audit
     AuditEntry,
-    AuditAction,
+    BankGuarantee,
+    // Bank identifiers
+    BankIdentifier,
 
-    // AI Jobs
-    TradeVerificationJob,
-    TradeJobType,
-    JobStatus,
-    JobSla,
-    PrivacyLevel,
+    BlockchainStatus,
+    ComplianceStandard,
 
+    ContactInfo,
+    // Financial primitives
+    Currency,
+    CurrencyAmount,
+
+    DealStatus,
+    DocumentType,
+    GuaranteeStatus,
+    GuaranteeType,
     // Type aliases
     Hash,
+    Incoterms,
+
+    JobSla,
+    JobStatus,
+    // Jurisdictions and compliance
+    Jurisdiction,
+    LcAmendment,
+
+    LcAvailability,
+    LcStatus,
+    // Letter of Credit
+    LetterOfCredit,
+    LetterOfCreditType,
+    MonetaryAmount,
+    PrivacyLevel,
+
     ProofBytes,
+    ProofResultSummary,
+    ProofType,
+    RequiredDocument,
+    RiskLevel,
+
+    RiskRating,
+    SanctionsList,
+
+    SanctionsResult,
+    SanctionsStatus,
+    // Trade deals
+    TradeDeal,
+    TradeJobType,
+    // Trade participants
+    TradeParticipant,
+    // AI Jobs
+    TradeVerificationJob,
+    VerificationMethod,
+    // Verification
+    VerificationProof,
 };
 
 // Error types
-pub use error::{
-    FalconLionError,
-    FalconLionResult,
-};
+pub use error::{FalconLionError, FalconLionResult};
 
 // Compliance engine
 pub use compliance::{
-    ComplianceEngine,
-    CompliancePolicy,
-    VerificationSession,
-    VerificationResult,
-    ComplianceCheck,
-    ComplianceCheckType,
-    CheckStatus,
-    SessionStatus,
-    Finding,
-    FindingSeverity,
-    ConsentRequirements,
-    AuditRequirements,
-    ComplianceMetrics,
+    AuditRequirements, CheckStatus, ComplianceCheck, ComplianceCheckType, ComplianceEngine,
+    ComplianceMetrics, CompliancePolicy, ConsentRequirements, Finding, FindingSeverity,
+    SessionStatus, VerificationResult, VerificationSession,
 };
 
 // Settlement engine
 pub use settlement::{
-    SettlementEngine,
-    NetworkConfig,
-    VerifiableLetterOfCredit,
-    OnChainLcStatus,
-    SettlementTransaction,
-    SettlementTxType,
-    TxStatus,
-    SettlementEvent,
-    SettlementEventType,
-    SettlementMetrics,
-    ContractAddress,
-    TxHash,
-    BlockNumber,
+    BlockNumber, ContractAddress, NetworkConfig, OnChainLcStatus, SettlementEngine,
+    SettlementEvent, SettlementEventType, SettlementMetrics, SettlementTransaction,
+    SettlementTxType, TxHash, TxStatus, VerifiableLetterOfCredit,
 };
 
 // Demo orchestration
 pub use demo::{
-    FalconLionDemo,
-    DemoConfig,
-    DemoMode,
-    DemoState,
-    DemoOutput,
-    DemoStep,
-    DemoStatus,
-    DemoEvent,
-    DemoEventType,
-    DemoMetrics,
-    StepTiming,
+    DemoConfig, DemoEvent, DemoEventType, DemoMetrics, DemoMode, DemoOutput, DemoState, DemoStatus,
+    DemoStep, FalconLionDemo, StepTiming,
 };
 
 // =============================================================================
@@ -271,16 +239,16 @@ pub const PROJECT_NAME: &str = "Falcon-Lion";
 pub const DEMO_SCENARIO: &str = "Zero-Knowledge Letter of Credit";
 
 /// Primary banks in demo
-pub const DEMO_BANKS: [&str; 2] = ["FAB (First Abu Dhabi Bank)", "DBS (Development Bank of Singapore)"];
+pub const DEMO_BANKS: [&str; 2] = [
+    "FAB (First Abu Dhabi Bank)",
+    "DBS (Development Bank of Singapore)",
+];
 
 /// Trade value in demo (USD)
 pub const DEMO_TRADE_VALUE: u64 = 5_000_000;
 
 /// Supported jurisdictions in this demo
-pub const SUPPORTED_JURISDICTIONS: [Jurisdiction; 2] = [
-    Jurisdiction::Uae,
-    Jurisdiction::Singapore,
-];
+pub const SUPPORTED_JURISDICTIONS: [Jurisdiction; 2] = [Jurisdiction::Uae, Jurisdiction::Singapore];
 
 // =============================================================================
 // CONVENIENCE FUNCTIONS
@@ -335,7 +303,8 @@ pub fn version_info() -> String {
 ///
 /// Displays ASCII art banner with project information
 pub fn print_banner() {
-    println!(r#"
+    println!(
+        r#"
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
 ║   ███████╗ █████╗ ██╗      ██████╗ ██████╗ ███╗   ██╗                       ║
@@ -358,7 +327,8 @@ pub fn print_banner() {
 ║   Powered by Aethelred: Where Data Stays, Truth Travels                      ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
-"#);
+"#
+    );
 }
 
 // =============================================================================
@@ -377,32 +347,31 @@ pub fn print_banner() {
 /// ```
 pub mod prelude {
     pub use super::{
-        // Demo
-        FalconLionDemo,
-        DemoConfig,
-        DemoOutput,
-
-        // Types
-        Jurisdiction,
-        Currency,
-        MonetaryAmount,
-        BankIdentifier,
-        TradeParticipant,
-        LetterOfCredit,
-        TradeDeal,
-        VerificationProof,
-
-        // Engines
-        ComplianceEngine,
-        SettlementEngine,
-
-        // Results
-        FalconLionResult,
-        FalconLionError,
-
         // Convenience
         new_demo,
         print_banner,
+        BankIdentifier,
+        // Engines
+        ComplianceEngine,
+        Currency,
+        DemoConfig,
+        DemoOutput,
+
+        // Demo
+        FalconLionDemo,
+        FalconLionError,
+
+        // Results
+        FalconLionResult,
+        // Types
+        Jurisdiction,
+        LetterOfCredit,
+        MonetaryAmount,
+        SettlementEngine,
+
+        TradeDeal,
+        TradeParticipant,
+        VerificationProof,
     };
 }
 

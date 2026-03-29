@@ -9,9 +9,7 @@
 //! - Fee calculation
 //! - Priority fee handling
 
-use super::{
-    Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult,
-};
+use super::{Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult};
 
 /// Fee validation middleware
 pub struct FeeMiddleware {
@@ -27,16 +25,16 @@ impl FeeMiddleware {
     /// Create new fee middleware
     pub fn new() -> Self {
         let mut base_gas = std::collections::HashMap::new();
-        base_gas.insert(0x01, 21_000);    // Transfer
-        base_gas.insert(0x02, 100_000);   // ComputeJob
-        base_gas.insert(0x03, 50_000);    // Seal
-        base_gas.insert(0x04, 30_000);    // Stake
-        base_gas.insert(0x05, 30_000);    // Unstake
-        base_gas.insert(0x06, 200_000);   // Propose
-        base_gas.insert(0x07, 25_000);    // Vote
-        base_gas.insert(0x08, 50_000);    // OracleUpdate
-        base_gas.insert(0x09, 500_000);   // Deploy
-        base_gas.insert(0x0A, 21_000);    // Call
+        base_gas.insert(0x01, 21_000); // Transfer
+        base_gas.insert(0x02, 100_000); // ComputeJob
+        base_gas.insert(0x03, 50_000); // Seal
+        base_gas.insert(0x04, 30_000); // Stake
+        base_gas.insert(0x05, 30_000); // Unstake
+        base_gas.insert(0x06, 200_000); // Propose
+        base_gas.insert(0x07, 25_000); // Vote
+        base_gas.insert(0x08, 50_000); // OracleUpdate
+        base_gas.insert(0x09, 500_000); // Deploy
+        base_gas.insert(0x0A, 21_000); // Call
 
         Self {
             min_gas_price: 1,
@@ -96,8 +94,7 @@ impl Middleware for FeeMiddleware {
         if gas_price < min_gas_price {
             return Ok(MiddlewareAction::Reject(format!(
                 "Gas price {} below minimum {}",
-                gas_price,
-                min_gas_price
+                gas_price, min_gas_price
             )));
         }
 
@@ -106,17 +103,14 @@ impl Middleware for FeeMiddleware {
         if gas_limit < base_gas {
             return Ok(MiddlewareAction::Reject(format!(
                 "Gas limit {} below minimum {} for transaction type {}",
-                gas_limit,
-                base_gas,
-                tx_type
+                gas_limit, base_gas, tx_type
             )));
         }
 
         if gas_limit > self.max_gas_limit {
             return Ok(MiddlewareAction::Reject(format!(
                 "Gas limit {} exceeds maximum {}",
-                gas_limit,
-                self.max_gas_limit
+                gas_limit, self.max_gas_limit
             )));
         }
 
@@ -127,8 +121,7 @@ impl Middleware for FeeMiddleware {
         if provided_gas < estimated_gas {
             ctx.metadata.warnings.push(format!(
                 "Gas limit {} may be insufficient (estimated: {})",
-                provided_gas,
-                estimated_gas
+                provided_gas, estimated_gas
             ));
         }
 
@@ -138,8 +131,7 @@ impl Middleware for FeeMiddleware {
         if total_fee < min_required_fee {
             return Ok(MiddlewareAction::Reject(format!(
                 "Total fee {} below minimum required {}",
-                total_fee,
-                min_required_fee
+                total_fee, min_required_fee
             )));
         }
 
@@ -238,12 +230,7 @@ impl FeeEstimator {
     }
 
     /// Estimate total fee for transaction
-    pub fn estimate_fee(
-        &self,
-        tx_type: u8,
-        data_size: usize,
-        speed: FeeSpeed,
-    ) -> FeeEstimate {
+    pub fn estimate_fee(&self, tx_type: u8, data_size: usize, speed: FeeSpeed) -> FeeEstimate {
         let tiers = self.get_gas_price_tiers();
         let gas_price = match speed {
             FeeSpeed::Slow => tiers.slow,
@@ -317,9 +304,9 @@ pub struct Eip1559Config {
 impl Eip1559Config {
     /// Calculate effective gas price
     pub fn effective_gas_price(&self) -> u64 {
-        let priority_fee = self.max_priority_fee.min(
-            self.max_fee_per_gas.saturating_sub(self.base_fee)
-        );
+        let priority_fee = self
+            .max_priority_fee
+            .min(self.max_fee_per_gas.saturating_sub(self.base_fee));
         self.base_fee.saturating_add(priority_fee)
     }
 

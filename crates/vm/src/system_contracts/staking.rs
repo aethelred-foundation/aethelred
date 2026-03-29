@@ -108,9 +108,9 @@ impl StakingConfig {
     pub fn testnet() -> Self {
         Self {
             min_validator_stake: 10_000_000_000_000_000_000_000, // 10,000 AETHEL (1/10 mainnet)
-            min_compute_stake: 500_000_000_000_000_000_000,     // 500 AETHEL (1/10 mainnet)
-            min_delegator_stake: 10_000_000_000_000_000_000,    // 10 AETHEL
-            unbonding_period: 7 * 24 * 3600,                    // 7 days
+            min_compute_stake: 500_000_000_000_000_000_000,      // 500 AETHEL (1/10 mainnet)
+            min_delegator_stake: 10_000_000_000_000_000_000,     // 10 AETHEL
+            unbonding_period: 7 * 24 * 3600,                     // 7 days
             base_burn_rate_bps: 300,
             max_burn_rate_bps: 1000,
             congestion_threshold: 40,

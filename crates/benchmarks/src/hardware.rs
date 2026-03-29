@@ -3,10 +3,10 @@
 //! Comprehensive hardware performance benchmarks including
 //! CPU, GPU, memory, and storage performance testing.
 
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
-use crate::{BenchmarkResult, black_box};
+use crate::{black_box, BenchmarkResult};
 
 // ============ Hardware Detection ============
 
@@ -223,38 +223,44 @@ impl CpuBenchmark {
     /// Benchmark single-threaded performance
     pub fn benchmark_single_thread(&self) -> SingleThreadResult {
         // Integer operations
-        let int_samples: Vec<Duration> = (0..100).map(|_| {
-            let start = Instant::now();
-            let mut sum: i64 = 0;
-            for i in 0..self.config.cpu_iterations {
-                sum = sum.wrapping_add(i as i64);
-                sum = sum.wrapping_mul(3);
-                sum = sum.wrapping_sub(1);
-            }
-            black_box(sum);
-            start.elapsed()
-        }).collect();
+        let int_samples: Vec<Duration> = (0..100)
+            .map(|_| {
+                let start = Instant::now();
+                let mut sum: i64 = 0;
+                for i in 0..self.config.cpu_iterations {
+                    sum = sum.wrapping_add(i as i64);
+                    sum = sum.wrapping_mul(3);
+                    sum = sum.wrapping_sub(1);
+                }
+                black_box(sum);
+                start.elapsed()
+            })
+            .collect();
 
         // Floating point operations
-        let float_samples: Vec<Duration> = (0..100).map(|_| {
-            let start = Instant::now();
-            let mut sum: f64 = 0.0;
-            for i in 0..self.config.cpu_iterations {
-                sum += (i as f64).sin() * (i as f64).cos();
-            }
-            black_box(sum);
-            start.elapsed()
-        }).collect();
+        let float_samples: Vec<Duration> = (0..100)
+            .map(|_| {
+                let start = Instant::now();
+                let mut sum: f64 = 0.0;
+                for i in 0..self.config.cpu_iterations {
+                    sum += (i as f64).sin() * (i as f64).cos();
+                }
+                black_box(sum);
+                start.elapsed()
+            })
+            .collect();
 
         let int_avg = Duration::from_nanos(
-            (int_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / 100) as u64
+            (int_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / 100) as u64,
         );
         let float_avg = Duration::from_nanos(
-            (float_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / 100) as u64
+            (float_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / 100) as u64,
         );
 
-        let int_ops_per_sec = self.config.cpu_iterations as f64 * 3.0 / int_avg.as_secs_f64() / 1_000_000_000.0;
-        let float_ops_per_sec = self.config.cpu_iterations as f64 * 2.0 / float_avg.as_secs_f64() / 1_000_000_000.0;
+        let int_ops_per_sec =
+            self.config.cpu_iterations as f64 * 3.0 / int_avg.as_secs_f64() / 1_000_000_000.0;
+        let float_ops_per_sec =
+            self.config.cpu_iterations as f64 * 2.0 / float_avg.as_secs_f64() / 1_000_000_000.0;
 
         SingleThreadResult {
             int_ops_gops: int_ops_per_sec,
@@ -356,8 +362,8 @@ impl CpuBenchmark {
 
         for &size in &sizes {
             // Matrix multiplication
-            let a: Vec<f32> = (0..size*size).map(|i| (i as f32) * 0.001).collect();
-            let b: Vec<f32> = (0..size*size).map(|i| (i as f32) * 0.001).collect();
+            let a: Vec<f32> = (0..size * size).map(|i| (i as f32) * 0.001).collect();
+            let b: Vec<f32> = (0..size * size).map(|i| (i as f32) * 0.001).collect();
             let mut c: Vec<f32> = vec![0.0; size * size];
 
             let start = Instant::now();

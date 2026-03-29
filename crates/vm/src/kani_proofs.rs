@@ -57,7 +57,10 @@ fn verify_gas_meter_reject_preserves_state() {
 
     let result = meter.consume(second);
 
-    assert!(result.is_err(), "Consume must fail when it would exceed limit");
+    assert!(
+        result.is_err(),
+        "Consume must fail when it would exceed limit"
+    );
     assert!(
         meter.used() == used_after_first,
         "Failed consume must not change used gas"

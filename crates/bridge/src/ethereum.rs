@@ -4,12 +4,12 @@
 
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::config::EthereumConfig;
 use crate::error::Result;
-use crate::storage::BridgeStorage;
 use crate::metrics::BridgeMetrics;
+use crate::storage::BridgeStorage;
 use crate::types::*;
 
 /// Ethereum event listener
@@ -260,16 +260,16 @@ impl EthProvider {
             )));
         }
 
-        json.get("result")
-            .cloned()
-            .ok_or_else(|| {
-                crate::error::BridgeError::Ethereum("Missing 'result' in response".into())
-            })
+        json.get("result").cloned().ok_or_else(|| {
+            crate::error::BridgeError::Ethereum("Missing 'result' in response".into())
+        })
     }
 
     /// Get the latest block number via eth_blockNumber
     pub async fn get_block_number(&self) -> Result<u64> {
-        let result = self.rpc_call("eth_blockNumber", serde_json::json!([])).await?;
+        let result = self
+            .rpc_call("eth_blockNumber", serde_json::json!([]))
+            .await?;
         let hex_str = result.as_str().ok_or_else(|| {
             crate::error::BridgeError::Ethereum("Invalid block number format".into())
         })?;
@@ -291,9 +291,7 @@ impl EthProvider {
         let hash_str = result
             .get("hash")
             .and_then(|h| h.as_str())
-            .ok_or_else(|| {
-                crate::error::BridgeError::Ethereum("Missing block hash".into())
-            })?;
+            .ok_or_else(|| crate::error::BridgeError::Ethereum("Missing block hash".into()))?;
 
         let hash_bytes = hex::decode(hash_str.trim_start_matches("0x")).map_err(|e| {
             crate::error::BridgeError::Ethereum(format!("Invalid block hash hex: {}", e))
@@ -332,9 +330,9 @@ impl EthProvider {
             )
             .await?;
 
-        let logs = result.as_array().ok_or_else(|| {
-            crate::error::BridgeError::Ethereum("Expected array of logs".into())
-        })?;
+        let logs = result
+            .as_array()
+            .ok_or_else(|| crate::error::BridgeError::Ethereum("Expected array of logs".into()))?;
 
         let mut deposits = Vec::new();
 
@@ -361,8 +359,7 @@ impl EthProvider {
         let recipient = self.parse_hash(topics[3].as_str()?)?;
 
         // Parse depositor as EthAddress (last 20 bytes of 32-byte topic)
-        let depositor_bytes =
-            hex::decode(topics[2].as_str()?.trim_start_matches("0x")).ok()?;
+        let depositor_bytes = hex::decode(topics[2].as_str()?.trim_start_matches("0x")).ok()?;
         let mut depositor = [0u8; 20];
         if depositor_bytes.len() >= 20 {
             depositor.copy_from_slice(&depositor_bytes[depositor_bytes.len() - 20..]);
@@ -392,8 +389,7 @@ impl EthProvider {
 
         // Parse block number from the log
         let block_hex = log.get("blockNumber")?.as_str()?;
-        let block_number =
-            u64::from_str_radix(block_hex.trim_start_matches("0x"), 16).ok()?;
+        let block_number = u64::from_str_radix(block_hex.trim_start_matches("0x"), 16).ok()?;
 
         // Parse block hash
         let block_hash = log
@@ -443,7 +439,6 @@ impl EthProvider {
     }
 }
 
-
 // ============================================================================
 // Tests
 // ============================================================================
@@ -458,7 +453,9 @@ mod tests {
         let storage = Arc::new(BridgeStorage::open_temp().unwrap());
         let metrics = Arc::new(BridgeMetrics::new());
 
-        let listener = EthereumListener::new(&config, storage, metrics).await.unwrap();
+        let listener = EthereumListener::new(&config, storage, metrics)
+            .await
+            .unwrap();
 
         assert_eq!(listener.last_processed_block().await, 0);
     }

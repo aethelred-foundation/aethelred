@@ -6,11 +6,11 @@ use std::collections::HashMap;
 
 use crate::pouw::config::{PoUWConfig, UtilityCategory, VerificationMethod};
 use crate::pouw::consensus::{
-    AiProof, CategoryStats, PendingUsefulWork, PoUWConsensus, PoUWState,
-    UsefulWorkResult, VerificationEngine,
+    AiProof, CategoryStats, PendingUsefulWork, PoUWConsensus, PoUWState, UsefulWorkResult,
+    VerificationEngine,
 };
-use crate::traits::{BlockValidator, Consensus, ConsensusState, ComputeResult};
-use crate::types::{PoUWBlockHeader, ValidatorInfo, SlotTiming};
+use crate::traits::{BlockValidator, ComputeResult, Consensus, ConsensusState};
+use crate::types::{PoUWBlockHeader, SlotTiming, ValidatorInfo};
 use crate::vrf::VrfKeys;
 
 // =============================================================================
@@ -338,14 +338,21 @@ fn test_consensus_should_propose_no_keys() {
 #[test]
 fn test_consensus_should_propose_with_keys() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
     let mut address = [0u8; 32];
     address.copy_from_slice(&hash);
 
-    let validator_info = ValidatorInfo::new(address, BIG_STAKE, keys.public_key_bytes(), vec![0xAA; 33], 500, 0);
+    let validator_info = ValidatorInfo::new(
+        address,
+        BIG_STAKE,
+        keys.public_key_bytes(),
+        vec![0xAA; 33],
+        500,
+        0,
+    );
     let consensus = PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys);
     consensus.register_validator(validator_info).unwrap();
 
@@ -362,14 +369,21 @@ fn test_consensus_generate_credentials_no_keys() {
 #[test]
 fn test_consensus_generate_credentials_with_keys() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
     let mut address = [0u8; 32];
     address.copy_from_slice(&hash);
 
-    let validator_info = ValidatorInfo::new(address, BIG_STAKE, keys.public_key_bytes(), vec![0xAA; 33], 500, 0);
+    let validator_info = ValidatorInfo::new(
+        address,
+        BIG_STAKE,
+        keys.public_key_bytes(),
+        vec![0xAA; 33],
+        500,
+        0,
+    );
     let consensus = PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys);
     consensus.register_validator(validator_info).unwrap();
 
@@ -386,14 +400,21 @@ fn test_consensus_generate_credentials_with_keys() {
 #[test]
 fn test_consensus_verify_credentials() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
     let mut address = [0u8; 32];
     address.copy_from_slice(&hash);
 
-    let validator_info = ValidatorInfo::new(address, BIG_STAKE, keys.public_key_bytes(), vec![0xAA; 33], 500, 0);
+    let validator_info = ValidatorInfo::new(
+        address,
+        BIG_STAKE,
+        keys.public_key_bytes(),
+        vec![0xAA; 33],
+        500,
+        0,
+    );
     let consensus = PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys);
     consensus.register_validator(validator_info).unwrap();
 
@@ -417,7 +438,10 @@ fn test_consensus_state_snapshot() {
 fn test_consensus_metrics() {
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     use std::sync::atomic::Ordering;
-    assert_eq!(consensus.metrics().blocks_proposed.load(Ordering::Relaxed), 0);
+    assert_eq!(
+        consensus.metrics().blocks_proposed.load(Ordering::Relaxed),
+        0
+    );
 }
 
 #[test]
@@ -552,7 +576,9 @@ fn test_process_useful_work_results() {
         make_useful_work_result(addr, VerificationMethod::ZkProof, 300),
     ];
 
-    let processing = consensus.process_useful_work_results(&header, &results).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &results)
+        .unwrap();
     assert!(processing.verified_count > 0);
     assert!(processing.total_useful_work_units > 0);
 }
@@ -569,7 +595,9 @@ fn test_process_useful_work_sla_missed() {
     result.completed_at = 500;
     result.sla_deadline = 100;
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert!(processing.verified_count > 0);
 }
 
@@ -584,7 +612,9 @@ fn test_validate_compute_results_job_count_mismatch() {
     header.compute_job_count = 5;
 
     let results: Vec<ComputeResult> = Vec::new();
-    assert!(consensus.validate_compute_results(&header, &results).is_err());
+    assert!(consensus
+        .validate_compute_results(&header, &results)
+        .is_err());
 }
 
 #[test]
@@ -593,7 +623,9 @@ fn test_validate_compute_results_empty() {
     let header = make_block_header([1u8; 32], 1);
 
     let results: Vec<ComputeResult> = Vec::new();
-    assert!(consensus.validate_compute_results(&header, &results).is_ok());
+    assert!(consensus
+        .validate_compute_results(&header, &results)
+        .is_ok());
 }
 
 // =============================================================================
@@ -654,7 +686,7 @@ fn test_consensus_get_epoch_seed() {
 #[test]
 fn test_verify_leader_credentials_trait() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -662,7 +694,14 @@ fn test_verify_leader_credentials_trait() {
     address.copy_from_slice(&hash);
 
     let vrf_pubkey = keys.public_key_bytes();
-    let validator_info = ValidatorInfo::new(address, BIG_STAKE, vrf_pubkey.clone(), vec![0xAA; 33], 500, 0);
+    let validator_info = ValidatorInfo::new(
+        address,
+        BIG_STAKE,
+        vrf_pubkey.clone(),
+        vec![0xAA; 33],
+        500,
+        0,
+    );
     let consensus = PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys);
     consensus.register_validator(validator_info).unwrap();
 
@@ -676,7 +715,7 @@ fn test_verify_leader_credentials_trait() {
 #[test]
 fn test_verify_leader_credentials_pubkey_mismatch() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -684,13 +723,22 @@ fn test_verify_leader_credentials_pubkey_mismatch() {
     address.copy_from_slice(&hash);
 
     let vrf_pubkey = keys.public_key_bytes();
-    let validator_info = ValidatorInfo::new(address, BIG_STAKE, vrf_pubkey.clone(), vec![0xAA; 33], 500, 0);
+    let validator_info = ValidatorInfo::new(
+        address,
+        BIG_STAKE,
+        vrf_pubkey.clone(),
+        vec![0xAA; 33],
+        500,
+        0,
+    );
     let consensus = PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys);
     consensus.register_validator(validator_info).unwrap();
 
     let (proof_bytes, _) = consensus.produce_vrf_proof(1, &[0u8; 32]).unwrap();
     let wrong_pubkey = vec![0xAA; 33];
-    assert!(consensus.verify_leader_credentials(1, &address, &proof_bytes, &wrong_pubkey).is_err());
+    assert!(consensus
+        .verify_leader_credentials(1, &address, &proof_bytes, &wrong_pubkey)
+        .is_err());
 }
 
 // =============================================================================
@@ -698,7 +746,7 @@ fn test_verify_leader_credentials_pubkey_mismatch() {
 // =============================================================================
 
 fn make_consensus_with_validator() -> (PoUWConsensus, [u8; 32]) {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let keys = VrfKeys::generate().unwrap();
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
@@ -827,7 +875,11 @@ fn test_validate_header_wrong_height() {
     let result = consensus.validate_header(&child, &parent);
     assert!(result.is_err());
     let err_str = format!("{:?}", result.unwrap_err());
-    assert!(err_str.contains("BlockValidation") || err_str.contains("height") || err_str.contains("Invalid"));
+    assert!(
+        err_str.contains("BlockValidation")
+            || err_str.contains("height")
+            || err_str.contains("Invalid")
+    );
 }
 
 #[test]
@@ -845,7 +897,9 @@ fn test_validate_header_slot_not_after_parent() {
     let result = consensus.validate_header(&child, &parent);
     assert!(result.is_err());
     let err_str = format!("{:?}", result.unwrap_err());
-    assert!(err_str.contains("SlotValidation") || err_str.contains("slot") || err_str.contains("Slot"));
+    assert!(
+        err_str.contains("SlotValidation") || err_str.contains("slot") || err_str.contains("Slot")
+    );
 }
 
 #[test]
@@ -864,7 +918,11 @@ fn test_validate_header_timestamp_drift_too_large() {
     let result = consensus.validate_header(&child, &parent);
     assert!(result.is_err());
     let err_str = format!("{:?}", result.unwrap_err());
-    assert!(err_str.contains("TimestampValidation") || err_str.contains("Timestamp") || err_str.contains("drift"));
+    assert!(
+        err_str.contains("TimestampValidation")
+            || err_str.contains("Timestamp")
+            || err_str.contains("drift")
+    );
 }
 
 #[test]
@@ -939,7 +997,7 @@ fn test_validate_header_increments_blocks_validated_metric() {
     use crate::traits::BlockValidator;
     let result = consensus.validate_header(&child, &parent);
     assert!(result.is_err()); // VRF fails
-    // Metric NOT incremented because validation failed before reaching the metric update
+                              // Metric NOT incremented because validation failed before reaching the metric update
     let after = consensus.metrics().blocks_validated.load(Ordering::Relaxed);
     assert_eq!(after, 0);
 }
@@ -1104,7 +1162,7 @@ fn test_validate_proposer_ineligible_jailed() {
     // VRF validation (step 6) happens before proposer validation (step 7),
     // so we expect VRF failure, but the test exercises the full code path.
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -1169,7 +1227,11 @@ fn test_validate_single_result_zero_job_id() {
     let err = consensus.validate_compute_results(&header, &[result]);
     assert!(err.is_err());
     let err_str = format!("{:?}", err.unwrap_err());
-    assert!(err_str.contains("ComputeValidation") || err_str.contains("job") || err_str.contains("root"));
+    assert!(
+        err_str.contains("ComputeValidation")
+            || err_str.contains("job")
+            || err_str.contains("root")
+    );
 }
 
 #[test]
@@ -1296,7 +1358,9 @@ fn test_compute_results_merkle_root_empty_returns_zero() {
 
     use crate::traits::BlockValidator;
     // compute_job_count=0, complexity=0, and root=[0;32] should all match
-    assert!(consensus.validate_compute_results(&header, &results).is_ok());
+    assert!(consensus
+        .validate_compute_results(&header, &results)
+        .is_ok());
 }
 
 #[test]
@@ -1399,7 +1463,11 @@ fn test_compute_results_complexity_mismatch() {
     let err = consensus.validate_compute_results(&header, &[result]);
     assert!(err.is_err());
     let err_str = format!("{:?}", err.unwrap_err());
-    assert!(err_str.contains("ComputeValidation") || err_str.contains("Complexity") || err_str.contains("mismatch"));
+    assert!(
+        err_str.contains("ComputeValidation")
+            || err_str.contains("Complexity")
+            || err_str.contains("mismatch")
+    );
 }
 
 // =============================================================================
@@ -1411,12 +1479,16 @@ fn test_score_contribution_tee_attestation() {
     // TEE attestation uses method_mult = 1.0
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let result = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert_eq!(processing.verified_count, 1);
     // Score should be > 0
     assert!(processing.score_updates.values().any(|&s| s > 0));
@@ -1427,19 +1499,32 @@ fn test_score_contribution_zkproof_higher_than_tee() {
     // ZkProof uses method_mult = 1.5, so score should be higher than TEE for same UWU
     let consensus_tee = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus_tee.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_tee
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let header = make_block_header(addr, 1);
     let result_tee = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
-    let processing_tee = consensus_tee.process_useful_work_results(&header, &[result_tee]).unwrap();
+    let processing_tee = consensus_tee
+        .process_useful_work_results(&header, &[result_tee])
+        .unwrap();
     let tee_score: i64 = processing_tee.score_updates.values().copied().sum();
 
     let consensus_zk = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_zk.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_zk
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let result_zk = make_useful_work_result(addr, VerificationMethod::ZkProof, 1000);
-    let processing_zk = consensus_zk.process_useful_work_results(&header, &[result_zk]).unwrap();
+    let processing_zk = consensus_zk
+        .process_useful_work_results(&header, &[result_zk])
+        .unwrap();
     let zk_score: i64 = processing_zk.score_updates.values().copied().sum();
 
-    assert!(zk_score > tee_score, "ZkProof score {} should be > TeeAttestation score {}", zk_score, tee_score);
+    assert!(
+        zk_score > tee_score,
+        "ZkProof score {} should be > TeeAttestation score {}",
+        zk_score,
+        tee_score
+    );
 }
 
 #[test]
@@ -1447,18 +1532,26 @@ fn test_score_contribution_hybrid_highest() {
     // Hybrid uses method_mult = 2.0 (highest among methods)
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let result = make_useful_work_result(addr, VerificationMethod::Hybrid, 1000);
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     let hybrid_score: i64 = processing.score_updates.values().copied().sum();
 
     // Compare with TeeAttestation
     let consensus_tee = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_tee.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_tee
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let result_tee = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
-    let proc_tee = consensus_tee.process_useful_work_results(&header, &[result_tee]).unwrap();
+    let proc_tee = consensus_tee
+        .process_useful_work_results(&header, &[result_tee])
+        .unwrap();
     let tee_score: i64 = proc_tee.score_updates.values().copied().sum();
 
     assert!(hybrid_score > tee_score);
@@ -1469,13 +1562,17 @@ fn test_score_contribution_reexecution_method() {
     // ReExecution uses method_mult = 0.8 (lowest)
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let mut result = make_useful_work_result(addr, VerificationMethod::ReExecution, 1000);
     result.confirmations = 5; // enough confirmations for devnet (min=1)
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert!(processing.verified_count > 0);
     let score: i64 = processing.score_updates.values().copied().sum();
     assert!(score > 0);
@@ -1489,23 +1586,36 @@ fn test_score_contribution_sla_missed_lower_score() {
 
     // SLA met case
     let consensus_met = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_met.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_met
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let result_met = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     assert!(result_met.sla_met());
-    let proc_met = consensus_met.process_useful_work_results(&header, &[result_met]).unwrap();
+    let proc_met = consensus_met
+        .process_useful_work_results(&header, &[result_met])
+        .unwrap();
     let score_met: i64 = proc_met.score_updates.values().copied().sum();
 
     // SLA missed case
     let consensus_miss = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_miss.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_miss
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let mut result_miss = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     result_miss.completed_at = 500;
     result_miss.sla_deadline = 100;
     assert!(!result_miss.sla_met());
-    let proc_miss = consensus_miss.process_useful_work_results(&header, &[result_miss]).unwrap();
+    let proc_miss = consensus_miss
+        .process_useful_work_results(&header, &[result_miss])
+        .unwrap();
     let score_miss: i64 = proc_miss.score_updates.values().copied().sum();
 
-    assert!(score_met > score_miss, "SLA-met score {} should exceed SLA-missed score {}", score_met, score_miss);
+    assert!(
+        score_met > score_miss,
+        "SLA-met score {} should exceed SLA-missed score {}",
+        score_met,
+        score_miss
+    );
 }
 
 #[test]
@@ -1516,20 +1626,33 @@ fn test_score_contribution_medical_category_higher() {
 
     // General category
     let consensus_gen = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_gen.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_gen
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let result_gen = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
-    let proc_gen = consensus_gen.process_useful_work_results(&header, &[result_gen]).unwrap();
+    let proc_gen = consensus_gen
+        .process_useful_work_results(&header, &[result_gen])
+        .unwrap();
     let gen_score: i64 = proc_gen.score_updates.values().copied().sum();
 
     // Medical category
     let consensus_med = PoUWConsensus::new(devnet_config(), 1000);
-    consensus_med.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus_med
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
     let mut result_med = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     result_med.category = crate::pouw::config::UtilityCategory::Medical;
-    let proc_med = consensus_med.process_useful_work_results(&header, &[result_med]).unwrap();
+    let proc_med = consensus_med
+        .process_useful_work_results(&header, &[result_med])
+        .unwrap();
     let med_score: i64 = proc_med.score_updates.values().copied().sum();
 
-    assert!(med_score > gen_score, "Medical score {} should exceed General score {}", med_score, gen_score);
+    assert!(
+        med_score > gen_score,
+        "Medical score {} should exceed General score {}",
+        med_score,
+        gen_score
+    );
 }
 
 #[test]
@@ -1537,12 +1660,16 @@ fn test_score_contribution_ai_proof_method() {
     // AiProof uses method_mult = 1.75
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let result = make_useful_work_result(addr, VerificationMethod::AiProof, 1000);
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert!(processing.verified_count > 0);
     let score: i64 = processing.score_updates.values().copied().sum();
     assert!(score > 0);
@@ -1557,15 +1684,15 @@ fn test_verify_credentials_validator_not_found() {
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     // Register a validator with keys so we can generate credentials
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
     let mut address = [0u8; 32];
     address.copy_from_slice(&hash);
 
-    let consensus_with_keys = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_with_keys =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
 
     // Register in consensus_with_keys but NOT in consensus (the one we verify against)
     let validator_info = ValidatorInfo::new(
@@ -1576,7 +1703,9 @@ fn test_verify_credentials_validator_not_found() {
         500,
         0,
     );
-    consensus_with_keys.register_validator(validator_info).unwrap();
+    consensus_with_keys
+        .register_validator(validator_info)
+        .unwrap();
 
     let creds = consensus_with_keys.generate_credentials(1).unwrap();
 
@@ -1590,7 +1719,7 @@ fn test_verify_credentials_validator_not_found() {
 #[test]
 fn test_verify_credentials_ineligible_jailed_validator() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -1612,8 +1741,8 @@ fn test_verify_credentials_ineligible_jailed_validator() {
 
     // We need to generate credentials BEFORE registering the jailed validator,
     // or generate via a separate instance
-    let consensus_for_gen = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_for_gen =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
     let valid_info = ValidatorInfo::new(
         address,
         BIG_STAKE,
@@ -1637,7 +1766,7 @@ fn test_verify_credentials_ineligible_jailed_validator() {
 #[test]
 fn test_verify_credentials_stake_mismatch() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -1645,8 +1774,8 @@ fn test_verify_credentials_stake_mismatch() {
     address.copy_from_slice(&hash);
 
     // Generate credentials where stake is BIG_STAKE
-    let consensus_for_gen = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_for_gen =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
     let gen_info = ValidatorInfo::new(
         address,
         BIG_STAKE,
@@ -1660,8 +1789,8 @@ fn test_verify_credentials_stake_mismatch() {
     // creds.stake = BIG_STAKE
 
     // Register validator with DIFFERENT stake in the verifying consensus
-    let consensus_verifier = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_verifier =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
     let diff_stake_info = ValidatorInfo::new(
         address,
         BIG_STAKE + 1, // different stake
@@ -1670,18 +1799,24 @@ fn test_verify_credentials_stake_mismatch() {
         500,
         0,
     );
-    consensus_verifier.register_validator(diff_stake_info).unwrap();
+    consensus_verifier
+        .register_validator(diff_stake_info)
+        .unwrap();
 
     let result = consensus_verifier.verify_credentials(&creds);
     assert!(result.is_err());
     let err_str = format!("{:?}", result.unwrap_err());
-    assert!(err_str.contains("InvalidLeaderCredentials") || err_str.contains("stake") || err_str.contains("Stake"));
+    assert!(
+        err_str.contains("InvalidLeaderCredentials")
+            || err_str.contains("stake")
+            || err_str.contains("Stake")
+    );
 }
 
 #[test]
 fn test_verify_credentials_score_mismatch() {
     let keys = VrfKeys::generate().unwrap();
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&keys.public_key_bytes());
     let hash = hasher.finalize();
@@ -1689,8 +1824,8 @@ fn test_verify_credentials_score_mismatch() {
     address.copy_from_slice(&hash);
 
     // Generate credentials where useful_work_score is 0 (default)
-    let consensus_for_gen = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_for_gen =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
     let gen_info = ValidatorInfo::new(
         address,
         BIG_STAKE,
@@ -1704,8 +1839,8 @@ fn test_verify_credentials_score_mismatch() {
     // creds.useful_work_score = 0
 
     // In verifying consensus, set the score to something very different
-    let consensus_verifier = PoUWConsensus::new(devnet_config(), 1000)
-        .with_validator_keys(keys.clone());
+    let consensus_verifier =
+        PoUWConsensus::new(devnet_config(), 1000).with_validator_keys(keys.clone());
     let verifier_info = ValidatorInfo::new(
         address,
         BIG_STAKE,
@@ -1714,15 +1849,23 @@ fn test_verify_credentials_score_mismatch() {
         500,
         0,
     );
-    consensus_verifier.register_validator(verifier_info).unwrap();
+    consensus_verifier
+        .register_validator(verifier_info)
+        .unwrap();
     // Set score to 10000 in the verifier (creds has score 0, tolerance for 10000 is 100)
     // so difference of 10000 > tolerance of 100 -> mismatch
-    consensus_verifier.update_useful_work_score(&address, 10000).unwrap();
+    consensus_verifier
+        .update_useful_work_score(&address, 10000)
+        .unwrap();
 
     let result = consensus_verifier.verify_credentials(&creds);
     assert!(result.is_err());
     let err_str = format!("{:?}", result.unwrap_err());
-    assert!(err_str.contains("InvalidLeaderCredentials") || err_str.contains("score") || err_str.contains("mismatch"));
+    assert!(
+        err_str.contains("InvalidLeaderCredentials")
+            || err_str.contains("score")
+            || err_str.contains("mismatch")
+    );
 }
 
 // =============================================================================
@@ -1733,12 +1876,16 @@ fn test_verify_credentials_score_mismatch() {
 fn test_process_useful_work_results_updates_validator_score() {
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let result = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 500);
 
-    consensus.process_useful_work_results(&header, &[result]).unwrap();
+    consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
 
     // Validator's score should have increased
     let state_score = {
@@ -1757,13 +1904,19 @@ fn test_process_useful_work_results_updates_proposer_blocks_proposed() {
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let proposer = [1u8; 32];
     let worker = [2u8; 32];
-    consensus.register_validator(make_validator(proposer, BIG_STAKE)).unwrap();
-    consensus.register_validator(make_validator(worker, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(proposer, BIG_STAKE))
+        .unwrap();
+    consensus
+        .register_validator(make_validator(worker, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(proposer, 1);
     let result = make_useful_work_result(worker, VerificationMethod::TeeAttestation, 100);
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     // verified_count should be 1 (one valid result)
     assert_eq!(processing.verified_count, 1);
     assert!(processing.total_useful_work_units > 0);
@@ -1778,9 +1931,15 @@ fn test_process_useful_work_results_multiple_validators() {
     let worker1 = [2u8; 32];
     let worker2 = [3u8; 32];
 
-    consensus.register_validator(make_validator(proposer, BIG_STAKE)).unwrap();
-    consensus.register_validator(make_validator(worker1, BIG_STAKE)).unwrap();
-    consensus.register_validator(make_validator(worker2, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(proposer, BIG_STAKE))
+        .unwrap();
+    consensus
+        .register_validator(make_validator(worker1, BIG_STAKE))
+        .unwrap();
+    consensus
+        .register_validator(make_validator(worker2, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(proposer, 1);
     let results = vec![
@@ -1789,7 +1948,9 @@ fn test_process_useful_work_results_multiple_validators() {
         make_useful_work_result(worker1, VerificationMethod::AiProof, 100),
     ];
 
-    let processing = consensus.process_useful_work_results(&header, &results).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &results)
+        .unwrap();
     assert_eq!(processing.verified_count, 3);
     // Both workers should have score updates
     assert!(processing.score_updates.contains_key(&worker1));
@@ -1804,14 +1965,18 @@ fn test_process_useful_work_results_unverified_not_counted() {
     // A result with invalid attestation should not increase verified_count or score
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let mut result = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     // Empty the TEE attestation so it fails has_valid_attestation()
     result.tee_attestation = Vec::new();
 
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert_eq!(processing.verified_count, 0);
     assert_eq!(processing.total_useful_work_units, 0);
     assert!(processing.score_updates.is_empty());
@@ -1822,7 +1987,9 @@ fn test_process_useful_work_results_accumulates_total_uwu() {
     // Multiple valid results should accumulate total_useful_work_units
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
     let header = make_block_header(addr, 1);
     let results = vec![
@@ -1831,7 +1998,9 @@ fn test_process_useful_work_results_accumulates_total_uwu() {
         make_useful_work_result(addr, VerificationMethod::TeeAttestation, 300),
     ];
 
-    let processing = consensus.process_useful_work_results(&header, &results).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &results)
+        .unwrap();
     assert_eq!(processing.verified_count, 3);
     // Total UWU should be 100 + 200 + 300 = 600
     assert_eq!(processing.total_useful_work_units, 600);
@@ -1842,17 +2011,33 @@ fn test_process_useful_work_results_updates_metrics() {
     use std::sync::atomic::Ordering;
     let consensus = PoUWConsensus::new(devnet_config(), 1000);
     let addr = [1u8; 32];
-    consensus.register_validator(make_validator(addr, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(addr, BIG_STAKE))
+        .unwrap();
 
-    let before_verified = consensus.metrics().useful_work_verified.load(Ordering::Relaxed);
-    let before_uwu = consensus.metrics().total_uwu_awarded.load(Ordering::Relaxed);
+    let before_verified = consensus
+        .metrics()
+        .useful_work_verified
+        .load(Ordering::Relaxed);
+    let before_uwu = consensus
+        .metrics()
+        .total_uwu_awarded
+        .load(Ordering::Relaxed);
 
     let header = make_block_header(addr, 1);
     let result = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 500);
-    consensus.process_useful_work_results(&header, &[result]).unwrap();
+    consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
 
-    let after_verified = consensus.metrics().useful_work_verified.load(Ordering::Relaxed);
-    let after_uwu = consensus.metrics().total_uwu_awarded.load(Ordering::Relaxed);
+    let after_verified = consensus
+        .metrics()
+        .useful_work_verified
+        .load(Ordering::Relaxed);
+    let after_uwu = consensus
+        .metrics()
+        .total_uwu_awarded
+        .load(Ordering::Relaxed);
 
     assert!(after_verified > before_verified);
     assert!(after_uwu > before_uwu);
@@ -1866,14 +2051,18 @@ fn test_process_useful_work_results_no_proposer_registered() {
     let worker = [2u8; 32];
     let unregistered_proposer = [99u8; 32];
 
-    consensus.register_validator(make_validator(worker, BIG_STAKE)).unwrap();
+    consensus
+        .register_validator(make_validator(worker, BIG_STAKE))
+        .unwrap();
 
     // Header has unregistered_proposer as the block proposer
     let header = make_block_header(unregistered_proposer, 1);
     let result = make_useful_work_result(worker, VerificationMethod::TeeAttestation, 200);
 
     // Should not panic - proposer not found is handled gracefully
-    let processing = consensus.process_useful_work_results(&header, &[result]).unwrap();
+    let processing = consensus
+        .process_useful_work_results(&header, &[result])
+        .unwrap();
     assert_eq!(processing.verified_count, 1);
 }
 
@@ -1886,5 +2075,7 @@ fn test_validate_compute_results_count_and_complexity_both_zero() {
 
     use crate::traits::BlockValidator;
     let results: Vec<crate::traits::ComputeResult> = Vec::new();
-    assert!(consensus.validate_compute_results(&header, &results).is_ok());
+    assert!(consensus
+        .validate_compute_results(&header, &results)
+        .is_ok());
 }

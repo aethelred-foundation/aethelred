@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 NODE_BIN="${NODE_BIN:-node}"
-AETH_CLI="${AETH_CLI:-${ROOT_DIR}/tools/cli/aeth/dist/index.js}"
+AETH_CLI="${AETH_CLI:-${ROOT_DIR}/tools/cli/aethel/dist/index.js}"
 SEAL_VERIFIER_CLI="${SEAL_VERIFIER_CLI:-${ROOT_DIR}/tools/cli/seal-verifier/dist/index.js}"
 
 RPC_URL="${AETHELRED_SMOKE_RPC_URL:-http://127.0.0.1:26657}"

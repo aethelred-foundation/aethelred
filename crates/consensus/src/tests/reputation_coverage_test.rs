@@ -3,11 +3,9 @@
 //! Targets uncovered lines in reputation.rs
 
 use crate::reputation::{
-    ReputationEngine, ReputationConfig, ValidatorReputation,
-    ComputeJobRecord, JobMetadata, ScoreUpdate, ReputationSnapshot,
-    ReputationMetrics, SLOTS_PER_DAY, MAX_SCORE,
-    MULTIPLIER_TEE, MULTIPLIER_ZK, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC,
-    DEFAULT_DECAY_RATE, DEFAULT_WINDOW_DAYS,
+    ComputeJobRecord, JobMetadata, ReputationConfig, ReputationEngine, ReputationMetrics,
+    ReputationSnapshot, ScoreUpdate, ValidatorReputation, DEFAULT_DECAY_RATE, DEFAULT_WINDOW_DAYS,
+    MAX_SCORE, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC, MULTIPLIER_TEE, MULTIPLIER_ZK, SLOTS_PER_DAY,
 };
 use crate::traits::VerificationMethod;
 
@@ -34,8 +32,7 @@ fn make_job(complexity: u64, success: bool, slot: u64) -> ComputeJobRecord {
 
 fn make_job_method(complexity: u64, method: VerificationMethod, slot: u64) -> ComputeJobRecord {
     ComputeJobRecord::new(
-        [1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32],
-        complexity, method, slot, true,
+        [1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32], complexity, method, slot, true,
     )
 }
 
@@ -255,7 +252,9 @@ fn test_engine_get_score() {
     assert_eq!(engine.get_score(&[1u8; 32]), 0);
 
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(100, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 100))
+        .unwrap();
     assert!(engine.get_score(&[1u8; 32]) > 0);
 }
 
@@ -264,7 +263,9 @@ fn test_engine_get_smoothed_score() {
     // Devnet has smoothing disabled, so test with production
     let engine = ReputationEngine::new(ReputationConfig::production());
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(500, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(500, true, 100))
+        .unwrap();
 
     let smoothed = engine.get_smoothed_score(&[1u8; 32]);
     assert!(smoothed >= 0.0);
@@ -279,7 +280,9 @@ fn test_engine_get_reputation() {
     assert!(engine.get_reputation(&[1u8; 32]).is_none());
 
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(100, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 100))
+        .unwrap();
     let rep = engine.get_reputation(&[1u8; 32]).unwrap();
     assert_eq!(rep.total_jobs, 1);
     assert_eq!(rep.successful_jobs, 1);
@@ -289,8 +292,12 @@ fn test_engine_get_reputation() {
 fn test_engine_get_all_scores() {
     let engine = test_engine();
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(100, true, 100)).unwrap();
-    engine.record_job([2u8; 32], make_job(200, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 100))
+        .unwrap();
+    engine
+        .record_job([2u8; 32], make_job(200, true, 100))
+        .unwrap();
 
     let scores = engine.get_all_scores();
     assert_eq!(scores.len(), 2);
@@ -300,9 +307,15 @@ fn test_engine_get_all_scores() {
 fn test_engine_get_top_validators() {
     let engine = test_engine();
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(100, true, 100)).unwrap();
-    engine.record_job([2u8; 32], make_job(500, true, 100)).unwrap();
-    engine.record_job([3u8; 32], make_job(300, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 100))
+        .unwrap();
+    engine
+        .record_job([2u8; 32], make_job(500, true, 100))
+        .unwrap();
+    engine
+        .record_job([3u8; 32], make_job(300, true, 100))
+        .unwrap();
 
     let top = engine.get_top_validators(2);
     assert_eq!(top.len(), 2);
@@ -326,7 +339,9 @@ fn test_engine_process_block_results() {
 fn test_engine_apply_daily_decay() {
     let engine = test_engine();
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(1000, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(1000, true, 100))
+        .unwrap();
 
     let score_before = engine.get_score(&[1u8; 32]);
     assert!(score_before > 0);
@@ -345,7 +360,9 @@ fn test_engine_apply_daily_decay() {
 fn test_engine_snapshot_restore() {
     let engine = test_engine();
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(1000, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(1000, true, 100))
+        .unwrap();
 
     let snapshot = engine.snapshot();
     assert_eq!(snapshot.slot, 100);
@@ -362,7 +379,9 @@ fn test_engine_snapshot_restore() {
 fn test_engine_metrics() {
     let engine = test_engine();
     engine.update_slot(100);
-    engine.record_job([1u8; 32], make_job(100, true, 100)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 100))
+        .unwrap();
 
     let metrics = engine.metrics();
     use std::sync::atomic::Ordering;
@@ -375,8 +394,18 @@ fn test_engine_multiple_methods_scoring() {
     engine.update_slot(100);
 
     // ZkProof jobs should score higher due to 1.5x multiplier
-    engine.record_job([1u8; 32], make_job_method(1000, VerificationMethod::TeeAttestation, 100)).unwrap();
-    engine.record_job([2u8; 32], make_job_method(1000, VerificationMethod::ZkProof, 100)).unwrap();
+    engine
+        .record_job(
+            [1u8; 32],
+            make_job_method(1000, VerificationMethod::TeeAttestation, 100),
+        )
+        .unwrap();
+    engine
+        .record_job(
+            [2u8; 32],
+            make_job_method(1000, VerificationMethod::ZkProof, 100),
+        )
+        .unwrap();
 
     let tee_score = engine.get_score(&[1u8; 32]);
     let zk_score = engine.get_score(&[2u8; 32]);
@@ -391,7 +420,9 @@ fn test_engine_active_streak() {
     for day in 0..5u64 {
         let slot = day * SLOTS_PER_DAY + 100;
         engine.update_slot(slot);
-        engine.record_job([1u8; 32], make_job(100, true, slot)).unwrap();
+        engine
+            .record_job([1u8; 32], make_job(100, true, slot))
+            .unwrap();
     }
 
     let rep = engine.get_reputation(&[1u8; 32]).unwrap();
@@ -404,15 +435,21 @@ fn test_engine_active_streak_broken() {
 
     // Day 1
     engine.update_slot(SLOTS_PER_DAY);
-    engine.record_job([1u8; 32], make_job(100, true, SLOTS_PER_DAY)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, SLOTS_PER_DAY))
+        .unwrap();
 
     // Day 2
     engine.update_slot(2 * SLOTS_PER_DAY);
-    engine.record_job([1u8; 32], make_job(100, true, 2 * SLOTS_PER_DAY)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 2 * SLOTS_PER_DAY))
+        .unwrap();
 
     // Skip day 3, go to day 4 (streak breaks)
     engine.update_slot(4 * SLOTS_PER_DAY);
-    engine.record_job([1u8; 32], make_job(100, true, 4 * SLOTS_PER_DAY)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 4 * SLOTS_PER_DAY))
+        .unwrap();
 
     let rep = engine.get_reputation(&[1u8; 32]).unwrap();
     assert_eq!(rep.active_streak, 1); // Reset after gap
@@ -424,7 +461,9 @@ fn test_engine_window_pruning() {
 
     // Record a job at slot 0
     engine.update_slot(0);
-    engine.record_job([1u8; 32], make_job(100, true, 0)).unwrap();
+    engine
+        .record_job([1u8; 32], make_job(100, true, 0))
+        .unwrap();
 
     // Advance far past the window
     let far_future = 10 * SLOTS_PER_DAY;

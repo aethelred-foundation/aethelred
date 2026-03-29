@@ -4,13 +4,16 @@
 //! test discovery, and detailed reporting.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
-use std::sync::mpsc::{self, Sender, Receiver, RecvTimeoutError};
-use std::time::{Duration, Instant};
-use std::thread;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::{
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+    Arc, Mutex,
+};
+use std::thread;
+use std::time::{Duration, Instant};
 
-use crate::{TestCase, TestResult, TestSuite, SuiteResult, TestConfig, OutputFormat};
+use crate::{OutputFormat, SuiteResult, TestCase, TestConfig, TestResult, TestSuite};
 
 // ============ Test Discovery ============
 
@@ -21,7 +24,9 @@ pub struct TestDiscovery {
 
 impl TestDiscovery {
     pub fn new() -> Self {
-        TestDiscovery { sources: Vec::new() }
+        TestDiscovery {
+            sources: Vec::new(),
+        }
     }
 
     pub fn add_source<S: TestSource + 'static>(&mut self, source: S) -> &mut Self {
@@ -37,7 +42,8 @@ impl TestDiscovery {
         self.discover()
             .into_iter()
             .map(|mut suite| {
-                suite.tests = suite.tests
+                suite.tests = suite
+                    .tests
                     .into_iter()
                     .filter(|t| filter.matches(t))
                     .collect();
@@ -280,7 +286,9 @@ impl ParallelRunner {
 
         // Submit all tests
         for test in tests {
-            let _ = self.sender.send(WorkerMessage::RunTest(test, result_sender.clone()));
+            let _ = self
+                .sender
+                .send(WorkerMessage::RunTest(test, result_sender.clone()));
         }
 
         // Collect results
@@ -484,7 +492,9 @@ impl TestExecutor {
             let result = panic::catch_unwind(AssertUnwindSafe(|| {
                 // Simulated test execution
                 thread::sleep(Duration::from_millis(10));
-                TestResult::Passed { duration: start.elapsed() }
+                TestResult::Passed {
+                    duration: start.elapsed(),
+                }
             }));
 
             match result {
@@ -535,7 +545,8 @@ impl ConsoleReporter {
 
 impl TestReporter for ConsoleReporter {
     fn report_start(&mut self, total_tests: usize) {
-        self.output.push(format!("\nRunning {} tests\n", total_tests));
+        self.output
+            .push(format!("\nRunning {} tests\n", total_tests));
     }
 
     fn report_test_result(&mut self, name: &str, result: &TestResult) {
@@ -543,7 +554,9 @@ impl TestReporter for ConsoleReporter {
             TestResult::Passed { duration } => {
                 format!("✓ {} ({:.2?})", name, duration)
             }
-            TestResult::Failed { message, duration, .. } => {
+            TestResult::Failed {
+                message, duration, ..
+            } => {
                 if self.verbose {
                     format!("✗ {} ({:.2?})\n  Error: {}", name, duration, message)
                 } else {
@@ -574,11 +587,7 @@ impl TestReporter for ConsoleReporter {
     fn report_end(&mut self, stats: &TestStats) {
         self.output.push(format!(
             "\n{} tests: {} passed, {} failed, {} skipped ({:.2?})",
-            stats.total,
-            stats.passed,
-            stats.failed,
-            stats.skipped,
-            stats.duration
+            stats.total, stats.passed, stats.failed, stats.skipped, stats.duration
         ));
 
         if stats.failed > 0 {
@@ -623,7 +632,11 @@ impl RetryStrategy {
         match self {
             RetryStrategy::None => Duration::ZERO,
             RetryStrategy::Fixed(_) => Duration::from_millis(100),
-            RetryStrategy::ExponentialBackoff { initial_delay, max_delay, .. } => {
+            RetryStrategy::ExponentialBackoff {
+                initial_delay,
+                max_delay,
+                ..
+            } => {
                 let delay = initial_delay.as_millis() as u64 * 2u64.pow(attempt as u32);
                 Duration::from_millis(delay.min(max_delay.as_millis() as u64))
             }
@@ -648,9 +661,7 @@ mod tests {
 
     #[test]
     fn test_filter_tags() {
-        let filter = TestFilter::new()
-            .with_tag("unit")
-            .exclude_tag("slow");
+        let filter = TestFilter::new().with_tag("unit").exclude_tag("slow");
 
         let test = TestCase::new("test", || Ok(())).tag("unit");
         assert!(filter.matches(&test));

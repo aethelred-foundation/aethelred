@@ -19,8 +19,8 @@
 //! 5. Data Minimization - Check for unnecessary data exposure
 
 use super::{
-    ComplianceCheckResult, ComplianceMetadata, Middleware, MiddlewareAction,
-    MiddlewareContext, MiddlewareResult,
+    ComplianceCheckResult, ComplianceMetadata, Middleware, MiddlewareAction, MiddlewareContext,
+    MiddlewareResult,
 };
 use std::collections::HashSet;
 
@@ -56,10 +56,7 @@ impl ComplianceMiddleware {
     }
 
     /// Extract compliance metadata from transaction payload
-    fn extract_compliance_metadata(
-        &self,
-        ctx: &MiddlewareContext,
-    ) -> Option<ComplianceMetadata> {
+    fn extract_compliance_metadata(&self, ctx: &MiddlewareContext) -> Option<ComplianceMetadata> {
         let parsed = ctx.parsed_tx.as_ref()?;
 
         // Only extract for compute jobs and seals
@@ -165,7 +162,10 @@ impl ComplianceMiddleware {
 
         for framework in &metadata.required_frameworks {
             // Find validator for this framework
-            let validator = self.framework_validators.iter().find(|v| v.framework_name() == framework);
+            let validator = self
+                .framework_validators
+                .iter()
+                .find(|v| v.framework_name() == framework);
 
             let result = if let Some(validator) = validator {
                 validator.validate(ctx, metadata)
@@ -184,7 +184,11 @@ impl ComplianceMiddleware {
         // Also validate against globally enabled frameworks
         for enabled in &ctx.config.enabled_frameworks {
             if !metadata.required_frameworks.contains(enabled) {
-                if let Some(validator) = self.framework_validators.iter().find(|v| v.framework_name() == enabled) {
+                if let Some(validator) = self
+                    .framework_validators
+                    .iter()
+                    .find(|v| v.framework_name() == enabled)
+                {
                     let result = validator.validate(ctx, metadata);
                     results.push(result);
                 }
@@ -244,13 +248,12 @@ impl Middleware for ComplianceMiddleware {
         let framework_results = self.validate_frameworks(ctx, &metadata);
 
         // Store results in metadata
-        ctx.metadata.compliance_results.extend(framework_results.clone());
+        ctx.metadata
+            .compliance_results
+            .extend(framework_results.clone());
 
         // 5. Check for failures
-        let failures: Vec<_> = framework_results
-            .iter()
-            .filter(|r| !r.passed)
-            .collect();
+        let failures: Vec<_> = framework_results.iter().filter(|r| !r.passed).collect();
 
         if !failures.is_empty() {
             let failure_details: Vec<String> = failures
@@ -417,9 +420,8 @@ impl FrameworkValidator for GdprValidator {
         // Check 1: Data residency must be EU/EEA or have adequacy decision
         if let Some(residency) = &metadata.data_residency {
             let eu_countries = &[
-                "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-                "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
-                "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+                "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
+                "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
             ];
             let adequacy_countries = &["GB", "CH", "JP", "KR", "CA", "NZ"];
 
@@ -440,9 +442,7 @@ impl FrameworkValidator for GdprValidator {
 
         // Check 3: Warn about PII without explicit consent mechanism
         if ctx.has_tag("pii_detected") && !ctx.has_tag("consent_verified") {
-            issues.push(
-                "PII processing requires documented consent (Article 6)".into(),
-            );
+            issues.push("PII processing requires documented consent (Article 6)".into());
         }
 
         if issues.is_empty() {
@@ -564,9 +564,7 @@ impl FrameworkValidator for PciDssValidator {
         if ctx.has_tag("pii_types") {
             let pii_types = ctx.get_tag("pii_types").unwrap_or("");
             if pii_types.contains("CREDIT_CARD") {
-                issues.push(
-                    "PCI-DSS prohibits storing plaintext cardholder data (Req 3)".into(),
-                );
+                issues.push("PCI-DSS prohibits storing plaintext cardholder data (Req 3)".into());
             }
         }
 
@@ -632,9 +630,7 @@ impl FrameworkValidator for CcpaValidator {
 
         // Check 1: Audit trail for data access tracking
         if ctx.has_tag("pii_detected") && !metadata.audit_required {
-            issues.push(
-                "CCPA requires tracking personal information access".into(),
-            );
+            issues.push("CCPA requires tracking personal information access".into());
         }
 
         if issues.is_empty() {
@@ -693,11 +689,7 @@ impl ComplianceReport {
             .filter_map(|r| r.framework.clone())
             .collect();
 
-        let compliant = ctx
-            .metadata
-            .compliance_results
-            .iter()
-            .all(|r| r.passed);
+        let compliant = ctx.metadata.compliance_results.iter().all(|r| r.passed);
 
         let mut recommendations = Vec::new();
         for result in &ctx.metadata.compliance_results {
@@ -878,9 +870,7 @@ mod tests {
     #[test]
     fn test_pci_dss_credit_card_rejection() {
         let middleware = ComplianceMiddleware::new();
-        let mut ctx = create_test_context(
-            b"Card: 4111-1111-1111-1111".to_vec()
-        );
+        let mut ctx = create_test_context(b"Card: 4111-1111-1111-1111".to_vec());
 
         // Add compliance marker requesting PCI-DSS
         ctx.add_tag("pii_types", "CREDIT_CARD");

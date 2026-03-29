@@ -59,18 +59,17 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::types::{
-    Jurisdiction, ComplianceStandard, VerificationProof, ProofType, VerificationMethod,
-    ProofResultSummary, RiskLevel, SanctionsList, TradeParticipant,
-    Hash, ProofBytes,
-};
 use crate::error::{FalconLionError, FalconLionResult};
+use crate::types::{
+    ComplianceStandard, Hash, Jurisdiction, ProofBytes, ProofResultSummary, ProofType, RiskLevel,
+    SanctionsList, TradeParticipant, VerificationMethod, VerificationProof,
+};
 
 // =============================================================================
 // CONSTANTS
@@ -136,9 +135,7 @@ impl CompliancePolicy {
             kyc_refresh_days: 365,        // Annual refresh
             edd_threshold: 50,
             auto_block_threshold: 80,
-            required_verification: vec![
-                VerificationMethod::TeeEnclave,
-            ],
+            required_verification: vec![VerificationMethod::TeeEnclave],
             cross_border_allowed: false, // Data must stay in UAE
             consent_requirements: ConsentRequirements {
                 explicit_consent_required: true,
@@ -175,9 +172,7 @@ impl CompliancePolicy {
             kyc_refresh_days: 365,        // Annual refresh
             edd_threshold: 50,
             auto_block_threshold: 80,
-            required_verification: vec![
-                VerificationMethod::TeeEnclave,
-            ],
+            required_verification: vec![VerificationMethod::TeeEnclave],
             cross_border_allowed: false, // Data must stay in Singapore
             consent_requirements: ConsentRequirements {
                 explicit_consent_required: true,
@@ -201,9 +196,9 @@ impl CompliancePolicy {
         // ZK is acceptable if TEE is not required
         match method {
             VerificationMethod::TeeEnclave | VerificationMethod::Hybrid => true,
-            VerificationMethod::ZeroKnowledge => {
-                !self.required_verification.contains(&VerificationMethod::TeeEnclave)
-            }
+            VerificationMethod::ZeroKnowledge => !self
+                .required_verification
+                .contains(&VerificationMethod::TeeEnclave),
             VerificationMethod::AiProof | VerificationMethod::Mpc => {
                 self.required_verification.contains(&method)
             }
@@ -489,7 +484,8 @@ impl ComplianceEngine {
         participant_id: Uuid,
         jurisdiction: Jurisdiction,
     ) -> FalconLionResult<Uuid> {
-        let _policy = self.get_policy(jurisdiction)
+        let _policy = self
+            .get_policy(jurisdiction)
             .ok_or_else(|| FalconLionError::UnsupportedJurisdiction(jurisdiction.to_string()))?;
 
         let session_id = Uuid::new_v4();
@@ -522,7 +518,8 @@ impl ComplianceEngine {
     /// Record data processing consent
     pub fn record_consent(&self, session_id: Uuid) -> FalconLionResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?;
 
         session.consent_given = true;
@@ -547,7 +544,8 @@ impl ComplianceEngine {
         // Verify session exists and consent given
         {
             let sessions = self.sessions.read();
-            let session = sessions.get(&session_id)
+            let session = sessions
+                .get(&session_id)
                 .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?;
 
             if !session.consent_given {
@@ -630,7 +628,8 @@ impl ComplianceEngine {
         // Verify session
         {
             let sessions = self.sessions.read();
-            let session = sessions.get(&session_id)
+            let session = sessions
+                .get(&session_id)
                 .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?;
 
             if !session.consent_given {
@@ -662,7 +661,11 @@ impl ComplianceEngine {
         let findings = if credit_score < 60 {
             vec![Finding {
                 id: Uuid::new_v4(),
-                severity: if credit_score < 40 { FindingSeverity::High } else { FindingSeverity::Medium },
+                severity: if credit_score < 40 {
+                    FindingSeverity::High
+                } else {
+                    FindingSeverity::Medium
+                },
                 category: "CREDIT".to_string(),
                 description: format!("Credit score {} below threshold", credit_score),
                 recommended_action: "Manual review required for credit assessment".to_string(),
@@ -712,7 +715,8 @@ impl ComplianceEngine {
         // Verify session
         {
             let sessions = self.sessions.read();
-            let session = sessions.get(&session_id)
+            let session = sessions
+                .get(&session_id)
                 .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?;
 
             if !session.consent_given {
@@ -730,7 +734,8 @@ impl ComplianceEngine {
 
         // Check KYC status
         let kyc_valid = participant.kyc_verified_at.is_some();
-        let kyc_recent = participant.kyc_verified_at
+        let kyc_recent = participant
+            .kyc_verified_at
             .map(|dt| Utc::now().signed_duration_since(dt).num_days() < 365)
             .unwrap_or(false);
 
@@ -795,7 +800,8 @@ impl ComplianceEngine {
 
         let session = {
             let sessions = self.sessions.read();
-            sessions.get(&session_id)
+            sessions
+                .get(&session_id)
                 .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?
                 .clone()
         };
@@ -805,16 +811,22 @@ impl ComplianceEngine {
         }
 
         // Calculate overall result
-        let total_risk: u32 = session.checks_performed.iter()
+        let total_risk: u32 = session
+            .checks_performed
+            .iter()
             .filter_map(|c| c.risk_score)
             .map(|s| s as u32)
             .sum();
         let avg_risk = (total_risk / session.checks_performed.len() as u32) as u8;
 
-        let all_passed = session.checks_performed.iter()
+        let all_passed = session
+            .checks_performed
+            .iter()
             .all(|c| c.status == CheckStatus::Passed || c.status == CheckStatus::NeedsReview);
 
-        let needs_review = session.checks_performed.iter()
+        let needs_review = session
+            .checks_performed
+            .iter()
             .any(|c| c.status == CheckStatus::NeedsReview);
 
         let risk_level = match avg_risk {
@@ -879,7 +891,8 @@ impl ComplianceEngine {
             // Update running average
             let total_sessions = metrics.sessions_completed + metrics.sessions_failed;
             metrics.avg_processing_time_ms =
-                (metrics.avg_processing_time_ms * (total_sessions - 1) + processing_time) / total_sessions;
+                (metrics.avg_processing_time_ms * (total_sessions - 1) + processing_time)
+                    / total_sessions;
         }
 
         tracing::info!(
@@ -931,11 +944,14 @@ impl ComplianceEngine {
         };
 
         // Cache the proof
-        self.proof_cache.write().insert(proof_hash, CachedProof {
-            proof: proof.clone(),
-            cached_at: now,
-            access_count: 0,
-        });
+        self.proof_cache.write().insert(
+            proof_hash,
+            CachedProof {
+                proof: proof.clone(),
+                cached_at: now,
+                access_count: 0,
+            },
+        );
 
         Ok(proof)
     }
@@ -1003,7 +1019,8 @@ impl ComplianceEngine {
     /// Get processing node for jurisdiction
     fn get_processing_node(&self, session_id: Uuid) -> FalconLionResult<String> {
         let sessions = self.sessions.read();
-        let session = sessions.get(&session_id)
+        let session = sessions
+            .get(&session_id)
             .ok_or_else(|| FalconLionError::SessionNotFound(session_id.to_string()))?;
 
         Ok(format!("{}-tee-node-1", session.jurisdiction.node_region()))
@@ -1011,7 +1028,8 @@ impl ComplianceEngine {
 
     /// Get compliance standards met
     fn get_standards_met(&self, session: &VerificationSession) -> Vec<ComplianceStandard> {
-        self.policies.get(&session.jurisdiction)
+        self.policies
+            .get(&session.jurisdiction)
             .map(|p| p.required_standards.clone())
             .unwrap_or_default()
     }
@@ -1121,7 +1139,9 @@ mod tests {
     fn test_compliance_policy_uae() {
         let policy = CompliancePolicy::uae();
         assert_eq!(policy.jurisdiction, Jurisdiction::Uae);
-        assert!(policy.required_standards.contains(&ComplianceStandard::UaeCentralBank));
+        assert!(policy
+            .required_standards
+            .contains(&ComplianceStandard::UaeCentralBank));
         assert!(!policy.cross_border_allowed);
     }
 
@@ -1129,7 +1149,9 @@ mod tests {
     fn test_compliance_policy_singapore() {
         let policy = CompliancePolicy::singapore();
         assert_eq!(policy.jurisdiction, Jurisdiction::Singapore);
-        assert!(policy.required_standards.contains(&ComplianceStandard::MasSingapore));
+        assert!(policy
+            .required_standards
+            .contains(&ComplianceStandard::MasSingapore));
         assert!(!policy.cross_border_allowed);
     }
 
@@ -1139,13 +1161,18 @@ mod tests {
 
         // Start session
         let participant = create_test_participant(Jurisdiction::Uae);
-        let session_id = engine.start_session(participant.id, Jurisdiction::Uae).unwrap();
+        let session_id = engine
+            .start_session(participant.id, Jurisdiction::Uae)
+            .unwrap();
 
         // Record consent
         engine.record_consent(session_id).unwrap();
 
         // Run sanctions check
-        let check = engine.perform_sanctions_check(session_id, &participant).await.unwrap();
+        let check = engine
+            .perform_sanctions_check(session_id, &participant)
+            .await
+            .unwrap();
         assert_eq!(check.status, CheckStatus::Passed);
 
         // Complete verification

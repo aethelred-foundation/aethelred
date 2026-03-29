@@ -40,9 +40,9 @@
 //! ```
 
 pub mod compliance;
-pub mod signature;
-pub mod rate_limit;
 pub mod fee;
+pub mod rate_limit;
+pub mod signature;
 
 use std::sync::Arc;
 use thiserror::Error;
@@ -232,14 +232,10 @@ pub struct MiddlewareConfig {
 impl Default for MiddlewareConfig {
     fn default() -> Self {
         Self {
-            enabled_frameworks: vec![
-                "GDPR".into(),
-                "HIPAA".into(),
-                "PCI-DSS".into(),
-            ],
+            enabled_frameworks: vec!["GDPR".into(), "HIPAA".into(), "PCI-DSS".into()],
             quantum_threat_level: 0,
             min_gas_price: 1,
-            max_tx_size: 1_048_576, // 1 MB
+            max_tx_size: 1_048_576,     // 1 MB
             rate_limit_per_address: 60, // 1 per second
             global_rate_limit: 10_000,
             blocked_addresses: Vec::new(),
@@ -281,7 +277,9 @@ impl MiddlewareChain {
             let action = middleware.process(&mut ctx)?;
             let elapsed = start.elapsed().as_micros() as u64;
 
-            ctx.metadata.timestamps.push((middleware.name().into(), elapsed));
+            ctx.metadata
+                .timestamps
+                .push((middleware.name().into(), elapsed));
 
             results.push(MiddlewareStepResult {
                 middleware_name: middleware.name().into(),

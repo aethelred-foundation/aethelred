@@ -205,9 +205,8 @@ fn weighted_composite(
     decent_weight: f64,
     rep_weight: f64,
 ) -> u32 {
-    let composite = perf as f64 * perf_weight
-        + decent as f64 * decent_weight
-        + rep as f64 * rep_weight;
+    let composite =
+        perf as f64 * perf_weight + decent as f64 * decent_weight + rep as f64 * rep_weight;
     (composite as u32).min(MAX_SCORE)
 }
 
@@ -224,10 +223,8 @@ fn apply_diversity_constraints(
     candidates: &[ValidatorInput],
 ) -> Vec<ScoredValidator> {
     // Build address-to-candidate lookup
-    let candidate_map: HashMap<String, &ValidatorInput> = candidates
-        .iter()
-        .map(|v| (v.address.clone(), v))
-        .collect();
+    let candidate_map: HashMap<String, &ValidatorInput> =
+        candidates.iter().map(|v| (v.address.clone(), v)).collect();
 
     let mut region_count: HashMap<String, usize> = HashMap::new();
     let mut operator_count: HashMap<String, usize> = HashMap::new();
@@ -294,7 +291,13 @@ fn count_by_field<T, F: Fn(&T) -> String>(items: &[&T], key_fn: F) -> HashMap<St
 mod tests {
     use super::*;
 
-    fn test_validator(addr: &str, region: &str, uptime: f64, latency: f64, slashes: u32) -> ValidatorInput {
+    fn test_validator(
+        addr: &str,
+        region: &str,
+        uptime: f64,
+        latency: f64,
+        slashes: u32,
+    ) -> ValidatorInput {
         ValidatorInput {
             address: addr.to_string(),
             stake: 100_000_000_000_000_000_000, // 100 AETHEL
@@ -447,11 +450,18 @@ mod tests {
 
         // v1 should appear at most once
         let v1_count = selected.iter().filter(|v| v.address == "v1").count();
-        assert_eq!(v1_count, 1, "duplicate address 'v1' must appear at most once");
+        assert_eq!(
+            v1_count, 1,
+            "duplicate address 'v1' must appear at most once"
+        );
 
         // All selected addresses must be unique
         let addrs: HashSet<&str> = selected.iter().map(|v| v.address.as_str()).collect();
-        assert_eq!(addrs.len(), selected.len(), "all selected addresses must be unique");
+        assert_eq!(
+            addrs.len(),
+            selected.len(),
+            "all selected addresses must be unique"
+        );
     }
 
     #[test]

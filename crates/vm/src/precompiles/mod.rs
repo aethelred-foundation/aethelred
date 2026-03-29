@@ -343,9 +343,7 @@ impl PrecompileRegistry {
             config.clone(),
             registry.clone(),
         )));
-        self.register(Arc::new(tee::SevSnpVerifyPrecompile::new(
-            config, registry,
-        )));
+        self.register(Arc::new(tee::SevSnpVerifyPrecompile::new(config, registry)));
     }
 }
 

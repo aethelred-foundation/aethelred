@@ -3,8 +3,8 @@
 //! These benchmarks measure the performance of model training operations
 //! including forward/backward pass and optimizer steps.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use aethelred_benchmarks::training::{TrainingBenchmark, TrainingConfig};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn training_forward_bench(c: &mut Criterion) {
     let config = TrainingConfig {

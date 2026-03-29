@@ -99,8 +99,8 @@
 //! ```
 
 pub mod config;
-pub mod election;
 pub mod consensus;
+pub mod election;
 
 // =============================================================================
 // PUBLIC RE-EXPORTS
@@ -108,37 +108,17 @@ pub mod consensus;
 
 // Configuration types
 pub use config::{
-    PoUWConfig,
-    UtilityCategory,
-    ComplianceLevel,
-    VerificationMethod,
-    UsefulWorkConfig,
-    VerificationMultipliers,
-    DecayConfig,
-    AntiGamingConfig,
+    AntiGamingConfig, ComplianceLevel, DecayConfig, PoUWConfig, UsefulWorkConfig, UtilityCategory,
+    VerificationMethod, VerificationMultipliers,
 };
 
 // Election types
-pub use election::{
-    PoUWElection,
-    UsefulWorkScore,
-    ElectionStats,
-    ElectionStatistics,
-};
+pub use election::{ElectionStatistics, ElectionStats, PoUWElection, UsefulWorkScore};
 
 // Consensus types
 pub use consensus::{
-    PoUWConsensus,
-    PoUWState,
-    UsefulWorkResult,
-    AiProof,
-    PendingUsefulWork,
-    CategoryStats,
-    LeaderCredentials,
-    UsefulWorkProcessingResult,
-    StateSnapshot,
-    ConsensusMetrics,
-    VerificationEngine,
+    AiProof, CategoryStats, ConsensusMetrics, LeaderCredentials, PendingUsefulWork, PoUWConsensus,
+    PoUWState, StateSnapshot, UsefulWorkProcessingResult, UsefulWorkResult, VerificationEngine,
 };
 
 // =============================================================================
@@ -173,25 +153,25 @@ pub const DEFAULT_ROLLING_WINDOW_EPOCHS: u64 = 30;
 /// Common imports for PoUW implementations
 pub mod prelude {
     pub use super::{
+        ComplianceLevel,
+        LeaderCredentials,
         // Config
         PoUWConfig,
-        UtilityCategory,
-        ComplianceLevel,
-        VerificationMethod,
-
-        // Election
-        PoUWElection,
-        UsefulWorkScore,
-
         // Consensus
         PoUWConsensus,
-        UsefulWorkResult,
-        LeaderCredentials,
+        // Election
+        PoUWElection,
         StateSnapshot,
 
+        UsefulWorkResult,
+        UsefulWorkScore,
+
+        UtilityCategory,
+        VerificationMethod,
+
+        DEFAULT_MIN_STAKE,
         // Constants
         MAX_USEFUL_WORK_MULTIPLIER,
-        DEFAULT_MIN_STAKE,
     };
 }
 
@@ -322,8 +302,10 @@ mod tests {
     #[test]
     fn test_utility_category_multipliers() {
         // Medical should have highest multiplier
-        assert!(UtilityCategory::Medical.default_multiplier_bps() >
-                UtilityCategory::Financial.default_multiplier_bps());
+        assert!(
+            UtilityCategory::Medical.default_multiplier_bps()
+                > UtilityCategory::Financial.default_multiplier_bps()
+        );
 
         // Entertainment and General should have baseline
         assert_eq!(

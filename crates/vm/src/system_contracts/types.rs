@@ -704,9 +704,13 @@ mod tests {
             enabled: false,
             ..Default::default()
         };
-        assert!(config.validate_method(VerificationMethod::TeeAttestation).is_ok());
+        assert!(config
+            .validate_method(VerificationMethod::TeeAttestation)
+            .is_ok());
         assert!(config.validate_method(VerificationMethod::ZkProof).is_ok());
         assert!(config.validate_method(VerificationMethod::Hybrid).is_ok());
-        assert!(config.validate_method(VerificationMethod::ReExecution).is_ok());
+        assert!(config
+            .validate_method(VerificationMethod::ReExecution)
+            .is_ok());
     }
 }

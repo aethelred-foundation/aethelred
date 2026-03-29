@@ -5,9 +5,9 @@
 //! and fragmentation analysis.
 
 use std::alloc::{GlobalAlloc, Layout, System};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
-use std::collections::HashMap;
 
 use crate::BenchmarkResult;
 
@@ -152,10 +152,10 @@ impl Default for MemoryBenchmarkConfig {
     fn default() -> Self {
         MemoryBenchmarkConfig {
             allocation_sizes: vec![
-                1024,           // 1 KB
-                1024 * 1024,    // 1 MB
-                10 * 1024 * 1024,   // 10 MB
-                100 * 1024 * 1024,  // 100 MB
+                1024,              // 1 KB
+                1024 * 1024,       // 1 MB
+                10 * 1024 * 1024,  // 10 MB
+                100 * 1024 * 1024, // 100 MB
             ],
             iterations: 100,
             test_fragmentation: true,
@@ -185,13 +185,17 @@ impl MemoryBenchmark {
 
         // Allocation benchmarks
         for &size in &self.config.allocation_sizes {
-            results.allocation_results.push(self.benchmark_allocation(size));
+            results
+                .allocation_results
+                .push(self.benchmark_allocation(size));
         }
 
         // Bandwidth benchmarks
         if self.config.test_bandwidth {
             for &size in &self.config.allocation_sizes {
-                results.bandwidth_results.push(self.benchmark_bandwidth(size));
+                results
+                    .bandwidth_results
+                    .push(self.benchmark_bandwidth(size));
             }
         }
 
@@ -202,7 +206,9 @@ impl MemoryBenchmark {
 
         // Memory pool benchmarks
         results.pool_results.push(self.benchmark_memory_pool(1024));
-        results.pool_results.push(self.benchmark_memory_pool(1024 * 1024));
+        results
+            .pool_results
+            .push(self.benchmark_memory_pool(1024 * 1024));
 
         results
     }
@@ -228,10 +234,12 @@ impl MemoryBenchmark {
         }
 
         let alloc_avg = Duration::from_nanos(
-            (alloc_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (alloc_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / self.config.iterations as u128) as u64,
         );
         let dealloc_avg = Duration::from_nanos(
-            (dealloc_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (dealloc_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / self.config.iterations as u128) as u64,
         );
 
         AllocationResult {
@@ -272,13 +280,16 @@ impl MemoryBenchmark {
         }
 
         let read_avg = Duration::from_nanos(
-            (read_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (read_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128)
+                as u64,
         );
         let write_avg = Duration::from_nanos(
-            (write_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (write_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / self.config.iterations as u128) as u64,
         );
         let copy_avg = Duration::from_nanos(
-            (copy_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (copy_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128)
+                as u64,
         );
 
         let bytes_to_gbps = |bytes: usize, duration: Duration| -> f64 {
@@ -322,7 +333,8 @@ impl MemoryBenchmark {
         // Calculate fragmentation impact
         let avg_initial = initial_alloc_time / num_allocations as u32;
         let avg_fragmented = fragmented_alloc_time / indices_to_free.len() as u32;
-        let fragmentation_overhead = avg_fragmented.as_nanos() as f64 / avg_initial.as_nanos() as f64;
+        let fragmentation_overhead =
+            avg_fragmented.as_nanos() as f64 / avg_initial.as_nanos() as f64;
 
         FragmentationResult {
             initial_alloc_time: avg_initial,
@@ -364,10 +376,12 @@ impl MemoryBenchmark {
         }
 
         let pool_avg = Duration::from_nanos(
-            (pool_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (pool_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128)
+                as u64,
         );
         let regular_avg = Duration::from_nanos(
-            (regular_times.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.iterations as u128) as u64
+            (regular_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / self.config.iterations as u128) as u64,
         );
 
         let speedup = regular_avg.as_nanos() as f64 / pool_avg.as_nanos() as f64;
@@ -403,10 +417,7 @@ impl MemoryResults {
         for result in &self.allocation_results {
             s.push_str(&format!(
                 "  {} bytes: alloc={:.2?}, dealloc={:.2?}, throughput={:.2} MB/s\n",
-                result.size,
-                result.alloc_mean,
-                result.dealloc_mean,
-                result.alloc_throughput
+                result.size, result.alloc_mean, result.dealloc_mean, result.alloc_throughput
             ));
         }
 
@@ -434,8 +445,7 @@ impl MemoryResults {
         for result in &self.pool_results {
             s.push_str(&format!(
                 "  {} bytes: {:.2}x speedup with pooling\n",
-                result.block_size,
-                result.speedup
+                result.block_size, result.speedup
             ));
         }
 
@@ -534,9 +544,18 @@ impl TensorMemoryProfiler {
         let mut s = String::new();
         s.push_str("Tensor Memory Profile\n");
         s.push_str(&format!("{}\n\n", "=".repeat(50)));
-        s.push_str(&format!("Peak memory: {} MB\n", self.peak_memory / 1024 / 1024));
-        s.push_str(&format!("Current memory: {} MB\n", self.current_memory / 1024 / 1024));
-        s.push_str(&format!("Total allocations: {}\n\n", self.allocations.len()));
+        s.push_str(&format!(
+            "Peak memory: {} MB\n",
+            self.peak_memory / 1024 / 1024
+        ));
+        s.push_str(&format!(
+            "Current memory: {} MB\n",
+            self.current_memory / 1024 / 1024
+        ));
+        s.push_str(&format!(
+            "Total allocations: {}\n\n",
+            self.allocations.len()
+        ));
 
         s.push_str("Top allocations by size:\n");
         let mut sorted: Vec<_> = self.allocations.iter().collect();

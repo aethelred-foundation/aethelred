@@ -194,7 +194,8 @@ impl GenomeCohort {
             did: "did:m42:genome:emirati_program_v2".to_string(),
             name: "Emirati Genome Program".to_string(),
             description: "Comprehensive genomic sequencing of UAE national population, \
-                         including rare disease markers and pharmacogenomic variants".to_string(),
+                         including rare disease markers and pharmacogenomic variants"
+                .to_string(),
             population_size: 100_000,
             custodian: DataCustodian::m42(),
             sovereignty: SovereigntyConstraints::uae_genome_program(),
@@ -251,7 +252,7 @@ impl GenomeCohort {
 
     /// Compute reference hash (for integrity verification)
     fn compute_reference_hash(&self) -> Hash {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(self.did.as_bytes());
         hasher.update(&self.population_size.to_le_bytes());
@@ -368,11 +369,7 @@ impl DataCustodian {
             lei: Some("549300M42HEALTH0001".to_string()),
             jurisdiction: Jurisdiction::Uae,
             node_id: "m42-sovereign-node-1".to_string(),
-            tee_capabilities: vec![
-                TeeType::IntelSgx,
-                TeeType::AwsNitro,
-                TeeType::ArmTrustZone,
-            ],
+            tee_capabilities: vec![TeeType::IntelSgx, TeeType::AwsNitro, TeeType::ArmTrustZone],
             certifications: vec![
                 Certification::Iso27001,
                 Certification::HipaaCompliant,
@@ -571,10 +568,10 @@ impl PartnerTier {
     pub fn fee_multiplier(&self) -> Decimal {
         match self {
             Self::Strategic => Decimal::new(80, 2),    // 0.80x
-            Self::Commercial => Decimal::new(100, 2),   // 1.00x
-            Self::Academic => Decimal::new(50, 2),      // 0.50x
-            Self::PublicHealth => Decimal::new(25, 2),  // 0.25x
-            Self::Trial => Decimal::new(0, 0),          // Free
+            Self::Commercial => Decimal::new(100, 2),  // 1.00x
+            Self::Academic => Decimal::new(50, 2),     // 0.50x
+            Self::PublicHealth => Decimal::new(25, 2), // 0.25x
+            Self::Trial => Decimal::new(0, 0),         // Free
         }
     }
 }
@@ -855,7 +852,7 @@ impl ModelConfig {
     /// Med42 clinical LLM (M42's flagship model)
     pub fn med42_clinical() -> Self {
         let model_hash = {
-            use sha2::{Sha256, Digest};
+            use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
             hasher.update(b"med42-70b-clinical-v2.0");
             let result = hasher.finalize();
@@ -1422,7 +1419,10 @@ mod tests {
     fn test_genome_reference() {
         let cohort = GenomeCohort::emirati_genome_program();
         let reference = cohort.create_reference();
-        assert_eq!(reference.sovereignty_tag, ComplianceStandard::UaeGenomeProgram);
+        assert_eq!(
+            reference.sovereignty_tag,
+            ComplianceStandard::UaeGenomeProgram
+        );
         assert!(!reference.reference_hash.0.iter().all(|&b| b == 0));
     }
 

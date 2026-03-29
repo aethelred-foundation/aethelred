@@ -3,10 +3,10 @@
 //! Comprehensive benchmarks for AI/ML inference operations including
 //! latency profiling, batch performance, and model-specific tests.
 
-use std::time::{Duration, Instant};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
-use crate::{BenchmarkResult, Benchmark, BenchmarkConfig, black_box};
+use crate::{black_box, Benchmark, BenchmarkConfig, BenchmarkResult};
 
 // ============ Inference Benchmark ============
 
@@ -320,10 +320,7 @@ impl TransformerBenchmark {
             samples.push(start.elapsed());
         }
 
-        BenchmarkResult::new(
-            format!("attention_b{}_s{}", batch_size, seq_len),
-            samples,
-        )
+        BenchmarkResult::new(format!("attention_b{}_s{}", batch_size, seq_len), samples)
     }
 
     /// Benchmark KV cache performance
@@ -360,7 +357,8 @@ impl TransformerBenchmark {
         let output_size = batch_size * seq_len * self.model_config.vocab_size;
 
         // Simulate computation time based on model size
-        let ops = batch_size * seq_len * self.model_config.hidden_size * self.model_config.num_layers;
+        let ops =
+            batch_size * seq_len * self.model_config.hidden_size * self.model_config.num_layers;
         let _dummy: f32 = (0..ops.min(10000)).map(|i| (i as f32).sin()).sum();
 
         vec![0.0; output_size.min(1024)] // Cap for memory efficiency
@@ -409,10 +407,7 @@ impl TTFTBenchmark {
             samples.push(start.elapsed());
         }
 
-        BenchmarkResult::new(
-            format!("ttft_prompt_{}", prompt_length),
-            samples,
-        )
+        BenchmarkResult::new(format!("ttft_prompt_{}", prompt_length), samples)
     }
 }
 

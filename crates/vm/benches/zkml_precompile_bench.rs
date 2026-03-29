@@ -13,9 +13,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 // We reference the precompiles module through the crate's public API.
-use aethelred_vm::precompiles::{
-    addresses, gas_costs, Precompile, PrecompileRegistry,
-};
+use aethelred_vm::precompiles::{addresses, gas_costs, Precompile, PrecompileRegistry};
 
 // ---------------------------------------------------------------------------
 // Input builders
@@ -315,16 +313,12 @@ fn bench_gas_computation(c: &mut Criterion) {
     ];
 
     for (name, addr, input) in &systems {
-        group.bench_with_input(
-            BenchmarkId::new(*name, input.len()),
-            input,
-            |b, input| {
-                let precompile = registry.get(*addr).unwrap();
-                b.iter(|| {
-                    black_box(precompile.gas_cost(black_box(input)));
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new(*name, input.len()), input, |b, input| {
+            let precompile = registry.get(*addr).unwrap();
+            b.iter(|| {
+                black_box(precompile.gas_cost(black_box(input)));
+            });
+        });
     }
 
     group.finish();

@@ -17,13 +17,13 @@
 //! - Test reporting (JUnit, TAP, JSON)
 
 pub mod assertions;
+pub mod coverage;
 pub mod fixtures;
 pub mod mocking;
 pub mod property;
-pub mod snapshot;
-pub mod runner;
 pub mod reporter;
-pub mod coverage;
+pub mod runner;
+pub mod snapshot;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -130,9 +130,7 @@ impl TestCase {
     pub fn run(&self) -> TestResult {
         let start = Instant::now();
 
-        let result = panic::catch_unwind(AssertUnwindSafe(|| {
-            (self.func)()
-        }));
+        let result = panic::catch_unwind(AssertUnwindSafe(|| (self.func)()));
 
         let duration = start.elapsed();
 
@@ -466,7 +464,11 @@ impl RunResult {
 
     /// Get exit code
     pub fn exit_code(&self) -> i32 {
-        if self.success() { 0 } else { 1 }
+        if self.success() {
+            0
+        } else {
+            1
+        }
     }
 }
 
@@ -533,7 +535,9 @@ pub struct SkipError {
 
 impl SkipError {
     pub fn new(reason: impl Into<String>) -> Self {
-        SkipError { reason: reason.into() }
+        SkipError {
+            reason: reason.into(),
+        }
     }
 }
 

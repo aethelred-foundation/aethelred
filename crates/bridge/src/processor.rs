@@ -7,8 +7,8 @@ use tracing::{debug, info, warn};
 
 use crate::config::BridgeConfig;
 use crate::error::{BridgeError, Result};
-use crate::storage::BridgeStorage;
 use crate::metrics::BridgeMetrics;
+use crate::storage::BridgeStorage;
 use crate::types::*;
 
 /// Event processor
@@ -40,12 +40,14 @@ impl EventProcessor {
     /// Process an Ethereum event
     pub async fn process_ethereum_event(&self, event: EthereumEvent) -> Result<()> {
         match event {
-            EthereumEvent::Deposit(deposit) => {
-                self.handle_eth_deposit(deposit).await
-            }
+            EthereumEvent::Deposit(deposit) => self.handle_eth_deposit(deposit).await,
 
-            EthereumEvent::DepositFinalized { deposit_id, block_number } => {
-                self.handle_eth_deposit_finalized(deposit_id, block_number).await
+            EthereumEvent::DepositFinalized {
+                deposit_id,
+                block_number,
+            } => {
+                self.handle_eth_deposit_finalized(deposit_id, block_number)
+                    .await
             }
 
             EthereumEvent::WithdrawalProcessed {
@@ -54,7 +56,8 @@ impl EventProcessor {
                 amount,
                 tx_hash,
             } => {
-                self.handle_eth_withdrawal_processed(proposal_id, recipient, amount, tx_hash).await
+                self.handle_eth_withdrawal_processed(proposal_id, recipient, amount, tx_hash)
+                    .await
             }
 
             EthereumEvent::Reorg {
@@ -62,10 +65,15 @@ impl EventProcessor {
                 to_block,
                 affected_deposits,
             } => {
-                self.handle_eth_reorg(from_block, to_block, affected_deposits).await
+                self.handle_eth_reorg(from_block, to_block, affected_deposits)
+                    .await
             }
 
-            EthereumEvent::NewBlock { number, hash: _, timestamp: _ } => {
+            EthereumEvent::NewBlock {
+                number,
+                hash: _,
+                timestamp: _,
+            } => {
                 // Audit fix [L-06]: Reduced verbosity - block hashes logged at trace
                 // level to avoid flooding bridge logs on high-throughput chains.
                 debug!("New Ethereum block: {}", number);
@@ -77,12 +85,14 @@ impl EventProcessor {
     /// Process an Aethelred event
     pub async fn process_aethelred_event(&self, event: AethelredEvent) -> Result<()> {
         match event {
-            AethelredEvent::Burn(burn) => {
-                self.handle_aethelred_burn(burn).await
-            }
+            AethelredEvent::Burn(burn) => self.handle_aethelred_burn(burn).await,
 
-            AethelredEvent::BurnFinalized { burn_id, block_height } => {
-                self.handle_aethelred_burn_finalized(burn_id, block_height).await
+            AethelredEvent::BurnFinalized {
+                burn_id,
+                block_height,
+            } => {
+                self.handle_aethelred_burn_finalized(burn_id, block_height)
+                    .await
             }
 
             AethelredEvent::MintCompleted {
@@ -91,10 +101,15 @@ impl EventProcessor {
                 amount,
                 tx_hash,
             } => {
-                self.handle_aethelred_mint_completed(proposal_id, recipient, amount, tx_hash).await
+                self.handle_aethelred_mint_completed(proposal_id, recipient, amount, tx_hash)
+                    .await
             }
 
-            AethelredEvent::NewBlock { height, hash: _, timestamp: _ } => {
+            AethelredEvent::NewBlock {
+                height,
+                hash: _,
+                timestamp: _,
+            } => {
                 // Audit fix [L-06]: Reduced verbosity.
                 debug!("New Aethelred block: {}", height);
                 Ok(())
@@ -137,11 +152,14 @@ impl EventProcessor {
         );
 
         // Get the deposit
-        let deposit = self.storage.get_deposit(&deposit_id)?
+        let deposit = self
+            .storage
+            .get_deposit(&deposit_id)?
             .ok_or_else(|| BridgeError::InvalidInput("Deposit not found".to_string()))?;
 
         // Update status
-        self.storage.update_deposit_status(&deposit_id, DepositStatus::Confirmed)?;
+        self.storage
+            .update_deposit_status(&deposit_id, DepositStatus::Confirmed)?;
 
         // Create mint proposal for Aethelred consensus
         // Audit fix [H-04]: Replace .unwrap() with .unwrap_or_default() to prevent
@@ -182,7 +200,8 @@ impl EventProcessor {
         );
 
         // Update withdrawal status
-        self.storage.update_withdrawal_status(&proposal_id, WithdrawalStatus::Completed)?;
+        self.storage
+            .update_withdrawal_status(&proposal_id, WithdrawalStatus::Completed)?;
 
         self.metrics.increment_eth_withdrawals();
 
@@ -204,7 +223,8 @@ impl EventProcessor {
 
         // Mark affected deposits as pending re-confirmation
         for deposit_id in affected_deposits {
-            self.storage.update_deposit_status(&deposit_id, DepositStatus::Pending)?;
+            self.storage
+                .update_deposit_status(&deposit_id, DepositStatus::Pending)?;
         }
 
         Ok(())
@@ -243,11 +263,14 @@ impl EventProcessor {
         );
 
         // Get the burn
-        let burn = self.storage.get_burn(&burn_id)?
+        let burn = self
+            .storage
+            .get_burn(&burn_id)?
             .ok_or_else(|| BridgeError::InvalidInput("Burn not found".to_string()))?;
 
         // Update status
-        self.storage.update_burn_status(&burn_id, WithdrawalStatus::Confirmed)?;
+        self.storage
+            .update_burn_status(&burn_id, WithdrawalStatus::Confirmed)?;
 
         // Create withdrawal proposal for Ethereum
         // Audit fix [H-04]: Replace .unwrap() with .unwrap_or_default() to prevent panics.
@@ -287,11 +310,13 @@ impl EventProcessor {
         );
 
         // Update mint proposal status
-        self.storage.update_mint_proposal_status(&proposal_id, MintProposalStatus::Completed)?;
+        self.storage
+            .update_mint_proposal_status(&proposal_id, MintProposalStatus::Completed)?;
 
         // Update deposit status
         if let Some(proposal) = self.storage.get_mint_proposal(&proposal_id)? {
-            self.storage.update_deposit_status(&proposal.deposit.deposit_id, DepositStatus::Completed)?;
+            self.storage
+                .update_deposit_status(&proposal.deposit.deposit_id, DepositStatus::Completed)?;
         }
 
         self.metrics.increment_aethelred_mints();
@@ -330,7 +355,9 @@ impl EventProcessor {
 
         // Check recipient is valid
         if burn.eth_recipient == [0u8; 20] {
-            return Err(BridgeError::InvalidInput("Invalid ETH recipient".to_string()));
+            return Err(BridgeError::InvalidInput(
+                "Invalid ETH recipient".to_string(),
+            ));
         }
 
         // Check not duplicate

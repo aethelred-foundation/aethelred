@@ -392,7 +392,10 @@ impl BlindDiscoveryProtocol {
             DiscoveryAuditAction::GenomeDataReferenced,
             &cohort.custodian.name,
             cohort.custodian.jurisdiction,
-            format!("Registered genome cohort: {} ({} individuals)", cohort.name, cohort.population_size),
+            format!(
+                "Registered genome cohort: {} ({} individuals)",
+                cohort.name, cohort.population_size
+            ),
         );
 
         tracing::info!(
@@ -422,24 +425,29 @@ impl BlindDiscoveryProtocol {
     }
 
     /// Submit a drug candidate for analysis
-    pub fn submit_drug_candidate(
-        &self,
-        candidate: DrugCandidate,
-    ) -> HelixGuardResult<Uuid> {
+    pub fn submit_drug_candidate(&self, candidate: DrugCandidate) -> HelixGuardResult<Uuid> {
         let candidate_id = candidate.id;
 
         // Validate partner exists
-        if !self.partners.read().contains_key(&candidate.submitting_partner) {
+        if !self
+            .partners
+            .read()
+            .contains_key(&candidate.submitting_partner)
+        {
             return Err(HelixGuardError::PartnerNotFound(
-                candidate.submitting_partner.to_string()
+                candidate.submitting_partner.to_string(),
             ));
         }
 
-        self.drug_candidates.write().insert(candidate_id, candidate.clone());
+        self.drug_candidates
+            .write()
+            .insert(candidate_id, candidate.clone());
         self.metrics.write().drug_candidates_evaluated += 1;
 
         // Get partner for audit
-        let partner_name = self.partners.read()
+        let partner_name = self
+            .partners
+            .read()
             .get(&candidate.submitting_partner)
             .map(|p| p.name.clone())
             .unwrap_or_else(|| "Unknown".to_string());
@@ -449,7 +457,10 @@ impl BlindDiscoveryProtocol {
             DiscoveryAuditAction::DrugCandidateSubmitted,
             &partner_name,
             Jurisdiction::UnitedKingdom, // Placeholder
-            format!("Drug candidate submitted: {} ({})", candidate.code_name, candidate.therapeutic_area as u8),
+            format!(
+                "Drug candidate submitted: {} ({})",
+                candidate.code_name, candidate.therapeutic_area as u8
+            ),
         );
 
         tracing::info!(
@@ -471,25 +482,32 @@ impl BlindDiscoveryProtocol {
         drug_candidate_ids: Vec<Uuid>,
     ) -> HelixGuardResult<Uuid> {
         // Check max concurrent sessions
-        let active_count = self.sessions.read()
+        let active_count = self
+            .sessions
+            .read()
             .values()
             .filter(|s| s.status == SessionStatus::Active)
             .count();
 
         if active_count >= self.config.max_concurrent_sessions {
-            return Err(HelixGuardError::SlaViolation(
-                format!("Maximum concurrent sessions ({}) reached", self.config.max_concurrent_sessions)
-            ));
+            return Err(HelixGuardError::SlaViolation(format!(
+                "Maximum concurrent sessions ({}) reached",
+                self.config.max_concurrent_sessions
+            )));
         }
 
         // Validate cohort exists
-        let cohort = self.cohorts.read()
+        let cohort = self
+            .cohorts
+            .read()
             .get(&cohort_id)
             .cloned()
             .ok_or_else(|| HelixGuardError::CohortNotFound(cohort_id.to_string()))?;
 
         // Validate partner exists
-        let partner = self.partners.read()
+        let partner = self
+            .partners
+            .read()
             .get(&partner_id)
             .cloned()
             .ok_or_else(|| HelixGuardError::PartnerNotFound(partner_id.to_string()))?;
@@ -497,7 +515,9 @@ impl BlindDiscoveryProtocol {
         // Validate drug candidates exist
         for candidate_id in &drug_candidate_ids {
             if !self.drug_candidates.read().contains_key(candidate_id) {
-                return Err(HelixGuardError::DrugCandidateNotFound(candidate_id.to_string()));
+                return Err(HelixGuardError::DrugCandidateNotFound(
+                    candidate_id.to_string(),
+                ));
             }
         }
 
@@ -561,7 +581,8 @@ impl BlindDiscoveryProtocol {
         approver: String,
     ) -> HelixGuardResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
         session.approvals.ethics_approved = true;
@@ -590,13 +611,10 @@ impl BlindDiscoveryProtocol {
     }
 
     /// Grant DoH approval for a session
-    pub fn grant_doh_approval(
-        &self,
-        session_id: Uuid,
-        approver: String,
-    ) -> HelixGuardResult<()> {
+    pub fn grant_doh_approval(&self, session_id: Uuid, approver: String) -> HelixGuardResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
         session.approvals.doh_approved = true;
@@ -626,7 +644,8 @@ impl BlindDiscoveryProtocol {
     /// Grant data custodian approval
     pub fn grant_custodian_approval(&self, session_id: Uuid) -> HelixGuardResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
         session.approvals.custodian_approved = true;
@@ -657,7 +676,8 @@ impl BlindDiscoveryProtocol {
     /// Sign partner agreement
     pub fn sign_partner_agreement(&self, session_id: Uuid) -> HelixGuardResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
         session.approvals.partner_agreement_signed = true;
@@ -689,7 +709,8 @@ impl BlindDiscoveryProtocol {
     /// Check if session can be approved and update status
     fn check_session_approval(&self, session_id: Uuid) -> HelixGuardResult<()> {
         let mut sessions = self.sessions.write();
-        let session = sessions.get_mut(&session_id)
+        let session = sessions
+            .get_mut(&session_id)
             .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
         // Check all required approvals
@@ -718,14 +739,16 @@ impl BlindDiscoveryProtocol {
         // Get and validate session
         let session = {
             let mut sessions = self.sessions.write();
-            let session = sessions.get_mut(&session_id)
+            let session = sessions
+                .get_mut(&session_id)
                 .ok_or_else(|| HelixGuardError::JobNotFound(session_id.to_string()))?;
 
             // Validate session status
             if session.status != SessionStatus::Approved {
-                return Err(HelixGuardError::ComplianceCheckFailed(
-                    format!("Session not approved. Current status: {:?}", session.status)
-                ));
+                return Err(HelixGuardError::ComplianceCheckFailed(format!(
+                    "Session not approved. Current status: {:?}",
+                    session.status
+                )));
             }
 
             // Update status
@@ -752,7 +775,9 @@ impl BlindDiscoveryProtocol {
         );
 
         // Get cohort for reference
-        let cohort = self.cohorts.read()
+        let cohort = self
+            .cohorts
+            .read()
             .get(&session.genome_cohort_id)
             .cloned()
             .ok_or_else(|| HelixGuardError::CohortNotFound(session.genome_cohort_id.to_string()))?;
@@ -761,7 +786,9 @@ impl BlindDiscoveryProtocol {
         let mut results = Vec::new();
 
         for candidate_id in &session.drug_candidate_ids {
-            let candidate = self.drug_candidates.read()
+            let candidate = self
+                .drug_candidates
+                .read()
                 .get(candidate_id)
                 .cloned()
                 .ok_or_else(|| HelixGuardError::DrugCandidateNotFound(candidate_id.to_string()))?;
@@ -794,8 +821,7 @@ impl BlindDiscoveryProtocol {
                 session.pharma_partner.jurisdiction,
                 format!(
                     "Blind analysis completed for {}: efficacy {}%",
-                    candidate.code_name,
-                    result.efficacy_score
+                    candidate.code_name, result.efficacy_score
                 ),
             );
 
@@ -892,14 +918,18 @@ impl BlindDiscoveryProtocol {
         // Check data residency
         if cohort.sovereignty.data_residency.cross_border_allowed {
             return Err(HelixGuardError::SovereigntyViolation(
-                "Cross-border data transfer must be disabled for strict sovereignty".to_string()
+                "Cross-border data transfer must be disabled for strict sovereignty".to_string(),
             ));
         }
 
         // Check TEE-only processing
-        if !cohort.sovereignty.processing_restrictions.contains(&ProcessingRestriction::TeeOnly) {
+        if !cohort
+            .sovereignty
+            .processing_restrictions
+            .contains(&ProcessingRestriction::TeeOnly)
+        {
             return Err(HelixGuardError::SovereigntyViolation(
-                "TEE-only processing must be enforced".to_string()
+                "TEE-only processing must be enforced".to_string(),
             ));
         }
 
@@ -947,7 +977,9 @@ impl BlindDiscoveryProtocol {
             None => return Vec::new(),
         };
 
-        session.results.iter()
+        session
+            .results
+            .iter()
             .filter_map(|id| self.enclave_engine.get_result(*id))
             .collect()
     }
@@ -981,7 +1013,8 @@ impl BlindDiscoveryProtocol {
 
     /// Get audit log for session
     pub fn get_session_audit_log(&self, session_id: Uuid) -> Vec<DiscoveryAuditEntry> {
-        self.audit_log.read()
+        self.audit_log
+            .read()
             .iter()
             .filter(|e| e.session_id == Some(session_id))
             .cloned()
@@ -1067,30 +1100,27 @@ impl<'a> DiscoverySessionBuilder<'a> {
 
     /// Build and create the session
     pub async fn build(self) -> HelixGuardResult<Uuid> {
-        let name = self.name.ok_or_else(|| {
-            HelixGuardError::ConfigError("Session name is required".to_string())
-        })?;
+        let name = self
+            .name
+            .ok_or_else(|| HelixGuardError::ConfigError("Session name is required".to_string()))?;
 
-        let cohort_id = self.cohort_id.ok_or_else(|| {
-            HelixGuardError::ConfigError("Cohort ID is required".to_string())
-        })?;
+        let cohort_id = self
+            .cohort_id
+            .ok_or_else(|| HelixGuardError::ConfigError("Cohort ID is required".to_string()))?;
 
-        let partner_id = self.partner_id.ok_or_else(|| {
-            HelixGuardError::ConfigError("Partner ID is required".to_string())
-        })?;
+        let partner_id = self
+            .partner_id
+            .ok_or_else(|| HelixGuardError::ConfigError("Partner ID is required".to_string()))?;
 
         if self.drug_candidate_ids.is_empty() {
             return Err(HelixGuardError::ConfigError(
-                "At least one drug candidate is required".to_string()
+                "At least one drug candidate is required".to_string(),
             ));
         }
 
-        self.protocol.create_session(
-            name,
-            cohort_id,
-            partner_id,
-            self.drug_candidate_ids,
-        ).await
+        self.protocol
+            .create_session(name, cohort_id, partner_id, self.drug_candidate_ids)
+            .await
     }
 }
 
@@ -1177,12 +1207,15 @@ mod tests {
         let candidate_id = protocol.submit_drug_candidate(candidate).unwrap();
 
         // Create session
-        let session_id = protocol.create_session(
-            "Test Discovery Session".to_string(),
-            cohort_id,
-            partner_id,
-            vec![candidate_id],
-        ).await.unwrap();
+        let session_id = protocol
+            .create_session(
+                "Test Discovery Session".to_string(),
+                cohort_id,
+                partner_id,
+                vec![candidate_id],
+            )
+            .await
+            .unwrap();
 
         let session = protocol.get_session(session_id).unwrap();
         assert_eq!(session.status, SessionStatus::PendingApproval);
@@ -1221,8 +1254,12 @@ mod tests {
         protocol.sessions.write().insert(session_id, session);
 
         // Grant all approvals
-        protocol.grant_ethics_approval(session_id, "Dr. Ethics".to_string()).unwrap();
-        protocol.grant_doh_approval(session_id, "DoH Official".to_string()).unwrap();
+        protocol
+            .grant_ethics_approval(session_id, "Dr. Ethics".to_string())
+            .unwrap();
+        protocol
+            .grant_doh_approval(session_id, "DoH Official".to_string())
+            .unwrap();
         protocol.grant_custodian_approval(session_id).unwrap();
         protocol.sign_partner_agreement(session_id).unwrap();
 

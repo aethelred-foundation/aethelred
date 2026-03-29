@@ -200,12 +200,9 @@ impl ComplianceStandard {
                 Self::BaselIii,
                 Self::SwiftCsp,
             ],
-            Jurisdiction::EuropeanUnion => vec![
-                Self::EuGdpr,
-                Self::BaselIii,
-                Self::SwiftCsp,
-                Self::PciDss,
-            ],
+            Jurisdiction::EuropeanUnion => {
+                vec![Self::EuGdpr, Self::BaselIii, Self::SwiftCsp, Self::PciDss]
+            }
             Jurisdiction::UnitedStates => vec![
                 Self::UsBsaAml,
                 Self::BaselIii,
@@ -284,9 +281,9 @@ impl Currency {
     /// Get decimal places for this currency
     pub fn decimal_places(&self) -> u8 {
         match self {
-            Self::Jpy => 0, // Yen has no decimal places
+            Self::Jpy => 0,     // Yen has no decimal places
             Self::Aethel => 18, // 18 decimals like ETH
-            _ => 2, // Most currencies have 2 decimal places
+            _ => 2,             // Most currencies have 2 decimal places
         }
     }
 

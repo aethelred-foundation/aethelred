@@ -917,7 +917,10 @@ impl JobRegistry {
 
         // Enterprise mode: reject if the raw attestation bytes start with the
         // Simulated platform marker (0xFF) which could bypass real verification.
-        if self.enterprise_mode && !attestation.attestation.is_empty() && attestation.attestation[0] == 0xFF {
+        if self.enterprise_mode
+            && !attestation.attestation.is_empty()
+            && attestation.attestation[0] == 0xFF
+        {
             return Err(SystemContractError::TeeVerificationFailed {
                 reason: "Enterprise mode rejects simulated TEE attestations".into(),
             });
@@ -990,7 +993,8 @@ impl JobRegistry {
                 #[cfg(not(feature = "sgx"))]
                 if self.enterprise_mode {
                     return Err(SystemContractError::TeeVerificationFailed {
-                        reason: "Enterprise mode: TEE precompile panicked during verification".into(),
+                        reason: "Enterprise mode: TEE precompile panicked during verification"
+                            .into(),
                     });
                 }
             }
@@ -1140,7 +1144,8 @@ impl JobRegistry {
         // are tolerated when the `zkp` feature is not compiled in.
         if self.enterprise_zkml_config.enabled && !precompile_valid {
             return Err(SystemContractError::ZkVerificationFailed {
-                reason: "Enterprise mode: 0x0300 precompile reported an invalid proof (hard-fail)".into(),
+                reason: "Enterprise mode: 0x0300 precompile reported an invalid proof (hard-fail)"
+                    .into(),
             });
         }
 
@@ -1214,16 +1219,16 @@ impl JobRegistry {
             }
             ZkSystem::Groth16 => {
                 input.push(0x01); // Groth16 tag
-                // The Groth16 precompile expects fixed-layout BN254 input after
-                // the unified precompile strips the tag byte:
-                //   [verifying_key: 544 bytes][proof: 192 bytes][public_inputs: N * 32 bytes]
-                //
-                // We embed the 32-byte VK hash at the start of a zero-padded
-                // 544-byte VK slot so the precompile can identify the circuit.
-                // The proof bytes are similarly right-padded to 192 bytes.
-                // Without the `zkp` feature the actual arkworks verification is
-                // skipped, but the structural envelope must still satisfy
-                // min_input_length validation.
+                                  // The Groth16 precompile expects fixed-layout BN254 input after
+                                  // the unified precompile strips the tag byte:
+                                  //   [verifying_key: 544 bytes][proof: 192 bytes][public_inputs: N * 32 bytes]
+                                  //
+                                  // We embed the 32-byte VK hash at the start of a zero-padded
+                                  // 544-byte VK slot so the precompile can identify the circuit.
+                                  // The proof bytes are similarly right-padded to 192 bytes.
+                                  // Without the `zkp` feature the actual arkworks verification is
+                                  // skipped, but the structural envelope must still satisfy
+                                  // min_input_length validation.
                 const BN254_VK_SIZE: usize = 544;
                 const BN254_PROOF_SIZE: usize = 192;
 
@@ -1236,8 +1241,7 @@ impl JobRegistry {
                 // Proof slot: copy proof bytes then zero-pad to 192 bytes
                 let mut proof_slot = vec![0u8; BN254_PROOF_SIZE];
                 let proof_copy = zk_proof.proof.len().min(BN254_PROOF_SIZE);
-                proof_slot[..proof_copy]
-                    .copy_from_slice(&zk_proof.proof[..proof_copy]);
+                proof_slot[..proof_copy].copy_from_slice(&zk_proof.proof[..proof_copy]);
                 input.extend_from_slice(&proof_slot);
 
                 // Public inputs: each 32 bytes, appended as-is
@@ -1989,7 +1993,10 @@ mod tests {
             )
             .unwrap();
 
-        assert!(result.verified, "Groth16 proof must verify via structural path");
+        assert!(
+            result.verified,
+            "Groth16 proof must verify via structural path"
+        );
         assert!(
             result.prover_reward > 0,
             "Groth16 settlement must yield prover_reward"
@@ -2171,7 +2178,10 @@ mod tests {
             &mut bank,
         );
 
-        assert!(result.is_err(), "TEE-only must be rejected in enterprise mode");
+        assert!(
+            result.is_err(),
+            "TEE-only must be rejected in enterprise mode"
+        );
         match result.unwrap_err() {
             SystemContractError::SettlementFailed { reason } => {
                 assert!(
@@ -2226,7 +2236,10 @@ mod tests {
             &mut bank,
         );
 
-        assert!(result.is_err(), "ZkProof-only must be rejected in enterprise mode");
+        assert!(
+            result.is_err(),
+            "ZkProof-only must be rejected in enterprise mode"
+        );
         match result.unwrap_err() {
             SystemContractError::SettlementFailed { reason } => {
                 assert!(
@@ -2341,7 +2354,14 @@ mod tests {
         let mut registry = JobRegistry::new_enterprise(JobConfig::devnet());
         let mut bank = Bank::new(BankConfig::default());
         bank.mint([1u8; 32], 1_000_000_000).expect("mint");
-        let ctx = BlockContext { height: 100, timestamp: 1000, slot: 100, proposer: [10u8; 32], gas_limit: 30_000_000, gas_used: 0 };
+        let ctx = BlockContext {
+            height: 100,
+            timestamp: 1000,
+            slot: 100,
+            proposer: [10u8; 32],
+            gas_limit: 30_000_000,
+            gas_used: 0,
+        };
         let params = submit_params();
         let sr = registry.submit_job(params, &ctx, &mut bank).unwrap();
         let p = [20u8; 32];
@@ -2355,39 +2375,77 @@ mod tests {
         let (mut reg, _, _, jid) = setup_enterprise_job();
         assert!(reg.is_enterprise_mode());
         let job = reg.get_job(&jid).unwrap().clone();
-        let att = TeeAttestation { tee_type: TeeType::IntelSgx, attestation: vec![0x02; 128], measurement: job.model_hash, timestamp: job.submitted_at + 1 };
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![0x02; 128],
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
         let r = reg.verify_tee_attestation(&att, &job);
-        assert!(r.is_err(), "Enterprise mode must hard-fail TEE without sgx feature");
+        assert!(
+            r.is_err(),
+            "Enterprise mode must hard-fail TEE without sgx feature"
+        );
     }
 
     #[test]
     fn test_enterprise_tee_rejects_simulated_platform() {
         let (mut reg, _, _, jid) = setup_enterprise_job();
         let job = reg.get_job(&jid).unwrap().clone();
-        let mut ab = vec![0xFF]; ab.extend_from_slice(&vec![0xAA; 127]);
-        let att = TeeAttestation { tee_type: TeeType::IntelSgx, attestation: ab, measurement: job.model_hash, timestamp: job.submitted_at + 1 };
+        let mut ab = vec![0xFF];
+        ab.extend_from_slice(&vec![0xAA; 127]);
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: ab,
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
         let r = reg.verify_tee_attestation(&att, &job);
         assert!(r.is_err(), "Enterprise mode must reject simulated TEE");
         let em = format!("{:?}", r.unwrap_err());
-        assert!(em.contains("simulated") || em.contains("Simulated"), "got: {em}");
+        assert!(
+            em.contains("simulated") || em.contains("Simulated"),
+            "got: {em}"
+        );
     }
 
     #[test]
     fn test_enterprise_tee_rejects_malformed_attestation() {
         let (mut reg, _, _, jid) = setup_enterprise_job();
         let job = reg.get_job(&jid).unwrap().clone();
-        let att = TeeAttestation { tee_type: TeeType::IntelSgx, attestation: vec![0x02, 0xDE, 0xAD, 0xBE, 0xEF, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], measurement: job.model_hash, timestamp: job.submitted_at + 1 };
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![
+                0x02, 0xDE, 0xAD, 0xBE, 0xEF, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
         let r = reg.verify_tee_attestation(&att, &job);
-        assert!(r.is_err(), "Enterprise mode must reject malformed attestation");
+        assert!(
+            r.is_err(),
+            "Enterprise mode must reject malformed attestation"
+        );
     }
 
     #[test]
     fn test_enterprise_tee_hardfail_on_precompile_error() {
         let (mut reg, _, _, jid) = setup_enterprise_job();
         let job = reg.get_job(&jid).unwrap().clone();
-        let att = TeeAttestation { tee_type: TeeType::IntelSgx, attestation: vec![0xAA; 128], measurement: job.model_hash, timestamp: job.submitted_at + 1 };
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![0xAA; 128],
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
         let r = reg.verify_tee_attestation(&att, &job);
-        assert!(r.is_err(), "Enterprise mode must hard-fail on precompile error");
+        assert!(
+            r.is_err(),
+            "Enterprise mode must hard-fail on precompile error"
+        );
     }
 
     #[test]
@@ -2400,9 +2458,17 @@ mod tests {
         reg.assign_job(sr.job_id, p, &ctx).unwrap();
         // Job is now Assigned - ready for proof verification
         let job = reg.get_job(&sr.job_id).unwrap().clone();
-        let att = TeeAttestation { tee_type: TeeType::IntelSgx, attestation: vec![0xAA; 128], measurement: job.model_hash, timestamp: job.submitted_at + 1 };
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![0xAA; 128],
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
         let r = reg.verify_tee_attestation(&att, &job);
-        assert!(r.is_ok(), "Devnet mode should tolerate mock TEE verification");
+        assert!(
+            r.is_ok(),
+            "Devnet mode should tolerate mock TEE verification"
+        );
     }
 
     // =========================================================================
@@ -2541,7 +2607,10 @@ mod tests {
 
         // Job has NO output_hash — domain binding must fail
         let job = registry.get_job(&submit_result.job_id).unwrap().clone();
-        assert!(job.output_hash.is_none(), "precondition: output_hash must be None");
+        assert!(
+            job.output_hash.is_none(),
+            "precondition: output_hash must be None"
+        );
 
         let zk_proof = ZkProof {
             system: ZkSystem::Ezkl,

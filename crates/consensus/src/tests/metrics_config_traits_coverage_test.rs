@@ -1,9 +1,8 @@
 //! Comprehensive coverage tests for Metrics, Config, and Traits modules
 
 use crate::metrics::{
-    ConsensusMetricsCollector, BlockMetrics, VrfMetrics, ComputeMetrics,
-    ReputationMetrics as MetricsReputationMetrics, TimingMetrics, ValidatorMetrics,
-    MetricsSnapshot,
+    BlockMetrics, ComputeMetrics, ConsensusMetricsCollector, MetricsSnapshot,
+    ReputationMetrics as MetricsReputationMetrics, TimingMetrics, ValidatorMetrics, VrfMetrics,
 };
 use crate::pouw::config::{PoUWConfig, UtilityCategory, VerificationMethod};
 use crate::traits;
@@ -400,9 +399,15 @@ fn test_compute_result_new() {
 #[test]
 fn test_compute_result_with_attestation() {
     let result = traits::ComputeResult::new(
-        [1u8; 32], [2u8; 32], [3u8; 32], [5u8; 32],
-        100, traits::VerificationMethod::TeeAttestation, [4u8; 32],
-    ).with_attestation(vec![0xAA; 200]);
+        [1u8; 32],
+        [2u8; 32],
+        [3u8; 32],
+        [5u8; 32],
+        100,
+        traits::VerificationMethod::TeeAttestation,
+        [4u8; 32],
+    )
+    .with_attestation(vec![0xAA; 200]);
 
     assert_eq!(result.attestation.len(), 200);
 }
@@ -410,9 +415,15 @@ fn test_compute_result_with_attestation() {
 #[test]
 fn test_compute_result_with_zk_proof() {
     let result = traits::ComputeResult::new(
-        [1u8; 32], [2u8; 32], [3u8; 32], [5u8; 32],
-        100, traits::VerificationMethod::ZkProof, [4u8; 32],
-    ).with_zk_proof(vec![0xBB; 300]);
+        [1u8; 32],
+        [2u8; 32],
+        [3u8; 32],
+        [5u8; 32],
+        100,
+        traits::VerificationMethod::ZkProof,
+        [4u8; 32],
+    )
+    .with_zk_proof(vec![0xBB; 300]);
 
     assert!(result.zk_proof.is_some());
     assert_eq!(result.zk_proof.unwrap().len(), 300);
@@ -421,7 +432,10 @@ fn test_compute_result_with_zk_proof() {
 #[test]
 fn test_verification_method_assurance_level() {
     assert_eq!(traits::VerificationMethod::ReExecution.assurance_level(), 1);
-    assert_eq!(traits::VerificationMethod::TeeAttestation.assurance_level(), 2);
+    assert_eq!(
+        traits::VerificationMethod::TeeAttestation.assurance_level(),
+        2
+    );
     assert_eq!(traits::VerificationMethod::ZkProof.assurance_level(), 3);
     assert_eq!(traits::VerificationMethod::Hybrid.assurance_level(), 4);
 }
@@ -436,10 +450,22 @@ fn test_verification_method_score_multiplier() {
 
 #[test]
 fn test_verification_method_from_u8() {
-    assert_eq!(traits::VerificationMethod::from_u8(0), Some(traits::VerificationMethod::TeeAttestation));
-    assert_eq!(traits::VerificationMethod::from_u8(1), Some(traits::VerificationMethod::ZkProof));
-    assert_eq!(traits::VerificationMethod::from_u8(2), Some(traits::VerificationMethod::Hybrid));
-    assert_eq!(traits::VerificationMethod::from_u8(3), Some(traits::VerificationMethod::ReExecution));
+    assert_eq!(
+        traits::VerificationMethod::from_u8(0),
+        Some(traits::VerificationMethod::TeeAttestation)
+    );
+    assert_eq!(
+        traits::VerificationMethod::from_u8(1),
+        Some(traits::VerificationMethod::ZkProof)
+    );
+    assert_eq!(
+        traits::VerificationMethod::from_u8(2),
+        Some(traits::VerificationMethod::Hybrid)
+    );
+    assert_eq!(
+        traits::VerificationMethod::from_u8(3),
+        Some(traits::VerificationMethod::ReExecution)
+    );
     assert_eq!(traits::VerificationMethod::from_u8(4), None);
     assert_eq!(traits::VerificationMethod::from_u8(255), None);
 }

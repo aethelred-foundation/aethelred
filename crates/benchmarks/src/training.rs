@@ -4,10 +4,10 @@
 //! forward/backward pass, optimizer steps, distributed training,
 //! and gradient accumulation.
 
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
-use crate::{BenchmarkResult, black_box};
+use crate::{black_box, BenchmarkResult};
 
 // ============ Training Benchmark Config ============
 
@@ -73,19 +73,27 @@ impl TrainingBenchmark {
 
         for &batch_size in &self.config.batch_sizes {
             // Forward pass
-            results.forward_results.push(self.benchmark_forward(batch_size));
+            results
+                .forward_results
+                .push(self.benchmark_forward(batch_size));
 
             // Backward pass
-            results.backward_results.push(self.benchmark_backward(batch_size));
+            results
+                .backward_results
+                .push(self.benchmark_backward(batch_size));
 
             // Optimizer step
             results.optimizer_results.push(self.benchmark_optimizer());
 
             // Full training step
-            results.full_step_results.push(self.benchmark_full_step(batch_size));
+            results
+                .full_step_results
+                .push(self.benchmark_full_step(batch_size));
 
             // Throughput
-            results.throughput_results.push(self.benchmark_throughput(batch_size));
+            results
+                .throughput_results
+                .push(self.benchmark_throughput(batch_size));
         }
 
         results
@@ -108,10 +116,8 @@ impl TrainingBenchmark {
             samples.push(start.elapsed());
         }
 
-        let benchmark = BenchmarkResult::new(
-            format!("forward_batch_{}", batch_size),
-            samples.clone(),
-        );
+        let benchmark =
+            BenchmarkResult::new(format!("forward_batch_{}", batch_size), samples.clone());
 
         ForwardResult {
             batch_size,
@@ -138,10 +144,8 @@ impl TrainingBenchmark {
             samples.push(start.elapsed());
         }
 
-        let benchmark = BenchmarkResult::new(
-            format!("backward_batch_{}", batch_size),
-            samples.clone(),
-        );
+        let benchmark =
+            BenchmarkResult::new(format!("backward_batch_{}", batch_size), samples.clone());
 
         // Calculate backward/forward ratio
         let forward = self.benchmark_forward(batch_size);
@@ -219,19 +223,20 @@ impl TrainingBenchmark {
             samples.push(total_start.elapsed());
         }
 
-        let total_benchmark = BenchmarkResult::new(
-            format!("full_step_batch_{}", batch_size),
-            samples,
-        );
+        let total_benchmark =
+            BenchmarkResult::new(format!("full_step_batch_{}", batch_size), samples);
 
         let forward_avg = Duration::from_nanos(
-            (forward_times.iter().map(|d| d.as_nanos()).sum::<u128>() / forward_times.len() as u128) as u64
+            (forward_times.iter().map(|d| d.as_nanos()).sum::<u128>() / forward_times.len() as u128)
+                as u64,
         );
         let backward_avg = Duration::from_nanos(
-            (backward_times.iter().map(|d| d.as_nanos()).sum::<u128>() / backward_times.len() as u128) as u64
+            (backward_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / backward_times.len() as u128) as u64,
         );
         let optimizer_avg = Duration::from_nanos(
-            (optimizer_times.iter().map(|d| d.as_nanos()).sum::<u128>() / optimizer_times.len() as u128) as u64
+            (optimizer_times.iter().map(|d| d.as_nanos()).sum::<u128>()
+                / optimizer_times.len() as u128) as u64,
         );
 
         FullStepResult {
@@ -316,14 +321,20 @@ pub struct TrainingResults {
 impl TrainingResults {
     /// Get best throughput
     pub fn best_throughput(&self) -> Option<&ThroughputResult> {
-        self.throughput_results.iter()
-            .max_by(|a, b| a.samples_per_second.partial_cmp(&b.samples_per_second).unwrap())
+        self.throughput_results.iter().max_by(|a, b| {
+            a.samples_per_second
+                .partial_cmp(&b.samples_per_second)
+                .unwrap()
+        })
     }
 
     /// Generate summary
     pub fn summary(&self) -> String {
         let mut s = String::new();
-        s.push_str(&format!("Training Benchmark Results: {}\n", self.model_name));
+        s.push_str(&format!(
+            "Training Benchmark Results: {}\n",
+            self.model_name
+        ));
         s.push_str(&format!("{}\n\n", "=".repeat(50)));
 
         if let Some(best) = self.best_throughput() {
@@ -412,7 +423,10 @@ pub struct DistributedBenchmark {
 
 impl DistributedBenchmark {
     pub fn new(config: TrainingConfig, num_workers: usize) -> Self {
-        DistributedBenchmark { config, num_workers }
+        DistributedBenchmark {
+            config,
+            num_workers,
+        }
     }
 
     /// Benchmark all-reduce operation
@@ -425,10 +439,7 @@ impl DistributedBenchmark {
             samples.push(start.elapsed());
         }
 
-        BenchmarkResult::new(
-            format!("all_reduce_{}_workers", self.num_workers),
-            samples,
-        )
+        BenchmarkResult::new(format!("all_reduce_{}_workers", self.num_workers), samples)
     }
 
     /// Benchmark gradient synchronization
@@ -450,18 +461,22 @@ impl DistributedBenchmark {
     /// Calculate communication overhead
     pub fn communication_overhead(&self, model_size: usize, batch_size: usize) -> f64 {
         // Benchmark compute time
-        let compute_samples: Vec<Duration> = (0..10).map(|_| {
-            let start = Instant::now();
-            self.simulate_compute(batch_size);
-            start.elapsed()
-        }).collect();
+        let compute_samples: Vec<Duration> = (0..10)
+            .map(|_| {
+                let start = Instant::now();
+                self.simulate_compute(batch_size);
+                start.elapsed()
+            })
+            .collect();
 
         // Benchmark communication time
-        let comm_samples: Vec<Duration> = (0..10).map(|_| {
-            let start = Instant::now();
-            self.simulate_gradient_sync(model_size);
-            start.elapsed()
-        }).collect();
+        let comm_samples: Vec<Duration> = (0..10)
+            .map(|_| {
+                let start = Instant::now();
+                self.simulate_gradient_sync(model_size);
+                start.elapsed()
+            })
+            .collect();
 
         let compute_avg: Duration = compute_samples.iter().sum::<Duration>() / 10;
         let comm_avg: Duration = comm_samples.iter().sum::<Duration>() / 10;
@@ -501,26 +516,32 @@ impl MemoryEfficientBenchmark {
     /// Benchmark gradient checkpointing
     pub fn benchmark_gradient_checkpointing(&self, batch_size: usize) -> GradientCheckpointResult {
         // Without checkpointing
-        let without_samples: Vec<Duration> = (0..self.config.steps).map(|_| {
-            let start = Instant::now();
-            self.simulate_forward_full(batch_size);
-            self.simulate_backward(batch_size);
-            start.elapsed()
-        }).collect();
+        let without_samples: Vec<Duration> = (0..self.config.steps)
+            .map(|_| {
+                let start = Instant::now();
+                self.simulate_forward_full(batch_size);
+                self.simulate_backward(batch_size);
+                start.elapsed()
+            })
+            .collect();
 
         // With checkpointing (slower but less memory)
-        let with_samples: Vec<Duration> = (0..self.config.steps).map(|_| {
-            let start = Instant::now();
-            self.simulate_forward_checkpointed(batch_size);
-            self.simulate_backward_checkpointed(batch_size);
-            start.elapsed()
-        }).collect();
+        let with_samples: Vec<Duration> = (0..self.config.steps)
+            .map(|_| {
+                let start = Instant::now();
+                self.simulate_forward_checkpointed(batch_size);
+                self.simulate_backward_checkpointed(batch_size);
+                start.elapsed()
+            })
+            .collect();
 
         let without_avg = Duration::from_nanos(
-            (without_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.steps as u128) as u64
+            (without_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.steps as u128)
+                as u64,
         );
         let with_avg = Duration::from_nanos(
-            (with_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.steps as u128) as u64
+            (with_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.steps as u128)
+                as u64,
         );
 
         let slowdown = with_avg.as_nanos() as f64 / without_avg.as_nanos() as f64;

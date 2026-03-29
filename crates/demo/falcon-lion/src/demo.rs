@@ -32,9 +32,9 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::compliance::{ComplianceEngine, VerificationResult};
+use crate::error::{FalconLionError, FalconLionResult};
 use crate::settlement::{SettlementEngine, VerifiableLetterOfCredit};
 use crate::types::*;
-use crate::error::{FalconLionError, FalconLionResult};
 
 // =============================================================================
 // DEMO CONFIGURATION
@@ -336,11 +336,9 @@ impl FalconLionDemo {
         let dbs_result = self.step_dbs_verification(&trade_deal).await?;
 
         // Step 4: Cross-border settlement
-        let minted_lc = self.step_settlement(
-            &trade_deal,
-            &fab_result,
-            &dbs_result,
-        ).await?;
+        let minted_lc = self
+            .step_settlement(&trade_deal, &fab_result, &dbs_result)
+            .await?;
 
         // Complete
         self.set_step(DemoStep::Completed);
@@ -384,7 +382,9 @@ impl FalconLionDemo {
         self.emit_event(DemoEvent {
             event_type: DemoEventType::StepStarted,
             timestamp: Utc::now(),
-            message: "📋 Creating trade deal between UAE Solar Manufacturing and Singapore Construction".to_string(),
+            message:
+                "📋 Creating trade deal between UAE Solar Manufacturing and Singapore Construction"
+                    .to_string(),
             step: DemoStep::CreatingDeal,
             progress: 10,
             data: None,
@@ -399,7 +399,10 @@ impl FalconLionDemo {
         let importer = self.create_singapore_importer();
 
         let deal_amount = self.config.deal_amount.unwrap_or(Decimal::from(5_000_000));
-        let goods_desc = self.config.goods_description.clone()
+        let goods_desc = self
+            .config
+            .goods_description
+            .clone()
             .unwrap_or_else(|| "Solar Panels 500W Monocrystalline - 10,000 units".to_string());
 
         let trade_deal = TradeDeal {
@@ -452,7 +455,10 @@ impl FalconLionDemo {
         self.emit_event(DemoEvent {
             event_type: DemoEventType::StepCompleted,
             timestamp: Utc::now(),
-            message: format!("✅ Trade deal created: {} ({})", trade_deal.reference, trade_deal.total_value),
+            message: format!(
+                "✅ Trade deal created: {} ({})",
+                trade_deal.reference, trade_deal.total_value
+            ),
             step: DemoStep::CreatingDeal,
             progress: 20,
             data: None,
@@ -473,7 +479,10 @@ impl FalconLionDemo {
     }
 
     /// Step 2: FAB Verification
-    async fn step_fab_verification(&self, deal: &TradeDeal) -> FalconLionResult<VerificationResult> {
+    async fn step_fab_verification(
+        &self,
+        deal: &TradeDeal,
+    ) -> FalconLionResult<VerificationResult> {
         self.set_step(DemoStep::FabVerification);
 
         self.emit_event(DemoEvent {
@@ -494,10 +503,9 @@ impl FalconLionDemo {
         println!("{}", "─".repeat(70));
 
         // Start compliance session
-        let session_id = self.compliance.start_session(
-            deal.exporter.id,
-            Jurisdiction::Uae,
-        )?;
+        let session_id = self
+            .compliance
+            .start_session(deal.exporter.id, Jurisdiction::Uae)?;
 
         // Record consent
         self.compliance.record_consent(session_id)?;
@@ -509,10 +517,10 @@ impl FalconLionDemo {
 
         // Sanctions check
         print!("   ⏳ Running sanctions screening...");
-        let _sanctions_check = self.compliance.perform_sanctions_check(
-            session_id,
-            &deal.exporter,
-        ).await?;
+        let _sanctions_check = self
+            .compliance
+            .perform_sanctions_check(session_id, &deal.exporter)
+            .await?;
         println!(" ✅ PASSED");
 
         if self.config.simulate_delays {
@@ -521,10 +529,10 @@ impl FalconLionDemo {
 
         // KYC check
         print!("   ⏳ Verifying KYC status...");
-        let _kyc_check = self.compliance.perform_kyc_verification(
-            session_id,
-            &deal.exporter,
-        ).await?;
+        let _kyc_check = self
+            .compliance
+            .perform_kyc_verification(session_id, &deal.exporter)
+            .await?;
         println!(" ✅ PASSED");
 
         // Complete verification
@@ -535,7 +543,10 @@ impl FalconLionDemo {
         println!("   Risk Score:  {}/100", result.risk_score);
         println!("   Confidence:  {}%", result.confidence);
         if let Some(ref proof) = result.proof {
-            println!("   Proof Hash:  {}...", &hex::encode(&proof.proof_hash)[..16]);
+            println!(
+                "   Proof Hash:  {}...",
+                &hex::encode(&proof.proof_hash)[..16]
+            );
         }
         println!("{}", "═".repeat(70));
 
@@ -544,7 +555,10 @@ impl FalconLionDemo {
         self.emit_event(DemoEvent {
             event_type: DemoEventType::StepCompleted,
             timestamp: Utc::now(),
-            message: format!("✅ FAB verification complete (Risk: {}/100)", result.risk_score),
+            message: format!(
+                "✅ FAB verification complete (Risk: {}/100)",
+                result.risk_score
+            ),
             step: DemoStep::FabVerification,
             progress: 50,
             data: None,
@@ -554,7 +568,10 @@ impl FalconLionDemo {
     }
 
     /// Step 3: DBS Verification
-    async fn step_dbs_verification(&self, deal: &TradeDeal) -> FalconLionResult<VerificationResult> {
+    async fn step_dbs_verification(
+        &self,
+        deal: &TradeDeal,
+    ) -> FalconLionResult<VerificationResult> {
         self.set_step(DemoStep::DbsVerification);
 
         self.emit_event(DemoEvent {
@@ -575,10 +592,9 @@ impl FalconLionDemo {
         println!("{}", "─".repeat(70));
 
         // Start compliance session
-        let session_id = self.compliance.start_session(
-            deal.importer.id,
-            Jurisdiction::Singapore,
-        )?;
+        let session_id = self
+            .compliance
+            .start_session(deal.importer.id, Jurisdiction::Singapore)?;
 
         // Record consent
         self.compliance.record_consent(session_id)?;
@@ -593,7 +609,7 @@ impl FalconLionDemo {
 
         // Create a dummy financial data hash
         let financial_hash = {
-            use sha2::{Sha256, Digest};
+            use sha2::{Digest, Sha256};
             let mut hasher = Sha256::new();
             hasher.update(deal.importer.id.as_bytes());
             hasher.update(b"financial_data");
@@ -603,10 +619,10 @@ impl FalconLionDemo {
             hash
         };
 
-        let credit_check = self.compliance.perform_credit_scoring(
-            session_id,
-            financial_hash,
-        ).await?;
+        let credit_check = self
+            .compliance
+            .perform_credit_scoring(session_id, financial_hash)
+            .await?;
 
         let credit_score = 100 - credit_check.risk_score.unwrap_or(0);
         println!(" ✅ Score: {}/100", credit_score);
@@ -617,10 +633,10 @@ impl FalconLionDemo {
 
         // Sanctions check
         print!("   ⏳ Running sanctions screening...");
-        let _sanctions_check = self.compliance.perform_sanctions_check(
-            session_id,
-            &deal.importer,
-        ).await?;
+        let _sanctions_check = self
+            .compliance
+            .perform_sanctions_check(session_id, &deal.importer)
+            .await?;
         println!(" ✅ PASSED");
 
         // Complete verification
@@ -632,7 +648,10 @@ impl FalconLionDemo {
         println!("   Risk Score:   {}/100", result.risk_score);
         println!("   Confidence:   {}%", result.confidence);
         if let Some(ref proof) = result.proof {
-            println!("   Proof Hash:   {}...", &hex::encode(&proof.proof_hash)[..16]);
+            println!(
+                "   Proof Hash:   {}...",
+                &hex::encode(&proof.proof_hash)[..16]
+            );
         }
         println!("{}", "═".repeat(70));
 
@@ -641,7 +660,10 @@ impl FalconLionDemo {
         self.emit_event(DemoEvent {
             event_type: DemoEventType::StepCompleted,
             timestamp: Utc::now(),
-            message: format!("✅ DBS verification complete (Credit: {}/100)", credit_score),
+            message: format!(
+                "✅ DBS verification complete (Credit: {}/100)",
+                credit_score
+            ),
             step: DemoStep::DbsVerification,
             progress: 75,
             data: None,
@@ -676,9 +698,13 @@ impl FalconLionDemo {
         println!("   Signature:   Dilithium3 (Post-Quantum)");
         println!("{}", "─".repeat(70));
 
-        let exporter_proof = fab_result.proof.as_ref()
+        let exporter_proof = fab_result
+            .proof
+            .as_ref()
             .ok_or_else(|| FalconLionError::ProofGenerationFailed("No FAB proof".into()))?;
-        let importer_proof = dbs_result.proof.as_ref()
+        let importer_proof = dbs_result
+            .proof
+            .as_ref()
             .ok_or_else(|| FalconLionError::ProofGenerationFailed("No DBS proof".into()))?;
 
         print!("   ⏳ Verifying proofs on-chain...");
@@ -688,24 +714,33 @@ impl FalconLionDemo {
         println!(" ✅");
 
         print!("   ⏳ Minting Verifiable Letter of Credit...");
-        let minted_lc = self.settlement.mint_letter_of_credit(
-            exporter_proof,
-            importer_proof,
-            deal,
-            &deal.importer_bank, // DBS is issuing bank
-            &deal.exporter_bank, // FAB is advising bank
-        ).await?;
+        let minted_lc = self
+            .settlement
+            .mint_letter_of_credit(
+                exporter_proof,
+                importer_proof,
+                deal,
+                &deal.importer_bank, // DBS is issuing bank
+                &deal.exporter_bank, // FAB is advising bank
+            )
+            .await?;
         println!(" ✅");
 
         println!("{}", "─".repeat(70));
         println!("   🎉 LETTER OF CREDIT MINTED!");
         println!("{}", "─".repeat(70));
         println!("   LC Reference:    {}", minted_lc.reference);
-        println!("   LC ID:           0x{}...", &hex::encode(minted_lc.lc_id)[..16]);
+        println!(
+            "   LC ID:           0x{}...",
+            &hex::encode(minted_lc.lc_id)[..16]
+        );
         println!("   Amount:          {}", deal.total_value);
         println!("   Beneficiary:     {}", deal.exporter.legal_name);
         println!("   Applicant:       {}", deal.importer.legal_name);
-        println!("   TX Hash:         0x{}...", &hex::encode(minted_lc.mint_tx_hash)[..16]);
+        println!(
+            "   TX Hash:         0x{}...",
+            &hex::encode(minted_lc.mint_tx_hash)[..16]
+        );
         println!("   Block:           {}", minted_lc.mint_block);
         println!("{}", "═".repeat(70));
 
@@ -843,7 +878,7 @@ impl FalconLionDemo {
             fab_verification_time_ms: total_time / 3,
             dbs_verification_time_ms: total_time / 3,
             settlement_time_ms: total_time / 3,
-            data_transferred_bytes: 512, // Only proofs transferred
+            data_transferred_bytes: 512,   // Only proofs transferred
             sensitive_data_exposed: false, // NEVER!
         }
     }
@@ -865,12 +900,7 @@ impl FalconLionDemo {
     }
 
     /// Print final summary
-    fn print_summary(
-        &self,
-        output: &DemoOutput,
-        deal: &TradeDeal,
-        lc: &VerifiableLetterOfCredit,
-    ) {
+    fn print_summary(&self, output: &DemoOutput, deal: &TradeDeal, lc: &VerifiableLetterOfCredit) {
         println!("\n");
         println!("╔═══════════════════════════════════════════════════════════════════════╗");
         println!("║                       🎉 DEMO COMPLETE 🎉                              ║");
@@ -886,19 +916,34 @@ impl FalconLionDemo {
         println!("║   ON-CHAIN SETTLEMENT                                                 ║");
         println!("║   ───────────────────                                                 ║");
         println!("║   LC Reference:       {:<44}║", lc.reference);
-        println!("║   LC ID:              0x{:<42}║", &hex::encode(lc.lc_id)[..40]);
-        println!("║   TX Hash:            0x{:<42}║", &hex::encode(lc.mint_tx_hash)[..40]);
+        println!(
+            "║   LC ID:              0x{:<42}║",
+            &hex::encode(lc.lc_id)[..40]
+        );
+        println!(
+            "║   TX Hash:            0x{:<42}║",
+            &hex::encode(lc.mint_tx_hash)[..40]
+        );
         println!("║   Block:              {:<44}║", lc.mint_block);
         println!("║                                                                       ║");
         println!("║   PERFORMANCE                                                         ║");
         println!("║   ───────────                                                         ║");
-        println!("║   Total Time:         {:>6}ms                                        ║", output.total_time_ms);
-        println!("║   Data Transferred:   {:>6} bytes (proofs only)                      ║", output.metrics.data_transferred_bytes);
+        println!(
+            "║   Total Time:         {:>6}ms                                        ║",
+            output.total_time_ms
+        );
+        println!(
+            "║   Data Transferred:   {:>6} bytes (proofs only)                      ║",
+            output.metrics.data_transferred_bytes
+        );
         println!("║   Sensitive Data:     NONE EXPOSED ✅                                 ║");
         println!("║                                                                       ║");
         println!("║   EXPLORER                                                            ║");
         println!("║   ────────                                                            ║");
-        println!("║   {:<66} ║", output.explorer_url.as_ref().unwrap_or(&"-".to_string()));
+        println!(
+            "║   {:<66} ║",
+            output.explorer_url.as_ref().unwrap_or(&"-".to_string())
+        );
         println!("║                                                                       ║");
         println!("╠═══════════════════════════════════════════════════════════════════════╣");
         println!("║                                                                       ║");
@@ -949,6 +994,8 @@ mod tests {
     fn test_demo_steps() {
         assert_eq!(DemoStep::FabVerification.emoji(), "🇦🇪");
         assert_eq!(DemoStep::DbsVerification.emoji(), "🇸🇬");
-        assert!(DemoStep::MintingLC.display_name().contains("Letter of Credit"));
+        assert!(DemoStep::MintingLC
+            .display_name()
+            .contains("Letter of Credit"));
     }
 }

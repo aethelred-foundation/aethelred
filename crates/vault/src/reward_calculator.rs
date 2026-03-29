@@ -102,7 +102,10 @@ pub fn calculate_rewards(
         let mut seen = std::collections::HashSet::with_capacity(request.staker_stakes.len());
         for s in &request.staker_stakes {
             if !seen.insert(&s.address) {
-                return Err(format!("duplicate staker address in reward request: {}", s.address));
+                return Err(format!(
+                    "duplicate staker address in reward request: {}",
+                    s.address
+                ));
             }
         }
     }
@@ -110,7 +113,11 @@ pub fn calculate_rewards(
     // Protocol fee is derived from the enclave-internal constant, never from
     // the caller. This prevents an authorized relayer from requesting a lower
     // fee while still obtaining a valid TEE attestation.
-    let protocol_fee = muldiv(request.total_rewards, PROTOCOL_FEE_BPS as u128, BPS_DENOMINATOR as u128);
+    let protocol_fee = muldiv(
+        request.total_rewards,
+        PROTOCOL_FEE_BPS as u128,
+        BPS_DENOMINATOR as u128,
+    );
     let distributable = request.total_rewards - protocol_fee;
 
     // Build validator performance lookup
@@ -190,7 +197,10 @@ pub fn calculate_rewards(
             // weighted_stake = stake * weight_factor / BPS
             let weighted_stake = muldiv(staker.shares, weight_factor, BPS_DENOMINATOR as u128);
 
-            StakerWeight { index: i, weighted_stake }
+            StakerWeight {
+                index: i,
+                weighted_stake,
+            }
         })
         .collect();
 
@@ -220,7 +230,11 @@ pub fn calculate_rewards(
             // MEV share: informational only — NOT included in total_reward.
             // On-chain, submitMEVRevenue() auto-compounds MEV into the
             // exchange rate, so stakers benefit without explicit claims.
-            let mev_pool = muldiv(request.mev_revenue, MEV_STAKER_SHARE_BPS as u128, BPS_DENOMINATOR as u128);
+            let mev_pool = muldiv(
+                request.mev_revenue,
+                MEV_STAKER_SHARE_BPS as u128,
+                BPS_DENOMINATOR as u128,
+            );
             let mev_share = muldiv(mev_pool, staker.shares, total_stake);
 
             RewardAllocation {
@@ -244,7 +258,8 @@ pub fn calculate_rewards(
     assert!(
         total_distributed <= distributable,
         "BUG: total_distributed ({}) exceeds distributable ({})",
-        total_distributed, distributable
+        total_distributed,
+        distributable
     );
 
     let (merkle_root, merkle_proofs) = build_merkle_tree(&allocations, request.epoch);
@@ -350,10 +365,7 @@ fn build_merkle_tree(
     epoch: u64,
 ) -> (String, Vec<MerkleProofEntry>) {
     if allocations.is_empty() {
-        return (
-            "0x".to_string() + &"0".repeat(64),
-            Vec::new(),
-        );
+        return ("0x".to_string() + &"0".repeat(64), Vec::new());
     }
 
     // Generate leaves (double-hash for security)
@@ -406,7 +418,10 @@ fn build_merkle_tree(
             MerkleProofEntry {
                 address: allocation.address.clone(),
                 amount: allocation.total_reward,
-                proof: proof.iter().map(|h| format!("0x{}", hex::encode(h))).collect(),
+                proof: proof
+                    .iter()
+                    .map(|h| format!("0x{}", hex::encode(h)))
+                    .collect(),
                 leaf: format!("0x{}", hex::encode(layers[0][idx])),
             }
         })
@@ -515,19 +530,17 @@ mod tests {
             epoch: 1,
             total_rewards: 1000_000_000_000_000_000_000, // 1000 AETHEL
             mev_revenue: 10_000_000_000_000_000_000,     // 10 AETHEL
-            validators: vec![
-                ScoredValidator {
-                    address: "validator-1".to_string(),
-                    stake: 100_000,
-                    performance_score: 9500,
-                    decentralization_score: 8000,
-                    reputation_score: 10000,
-                    composite_score: 9100,
-                    tee_public_key: "key-1".to_string(),
-                    commission_bps: 500,
-                    rank: 1,
-                },
-            ],
+            validators: vec![ScoredValidator {
+                address: "validator-1".to_string(),
+                stake: 100_000,
+                performance_score: 9500,
+                decentralization_score: 8000,
+                reputation_score: 10000,
+                composite_score: 9100,
+                tee_public_key: "key-1".to_string(),
+                commission_bps: 500,
+                rank: 1,
+            }],
             staker_stakes: vec![
                 StakerStake {
                     address: "staker-a".to_string(),
@@ -564,8 +577,16 @@ mod tests {
         let response = calculate_rewards(&request).unwrap();
 
         // Staker A has 60% of stake, should get more
-        let a = &response.allocations.iter().find(|a| a.address == "staker-a").unwrap();
-        let b = &response.allocations.iter().find(|a| a.address == "staker-b").unwrap();
+        let a = &response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-a")
+            .unwrap();
+        let b = &response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-b")
+            .unwrap();
 
         assert!(a.base_reward > b.base_reward);
         // A should get roughly 1.5x B's base reward (600/400)
@@ -580,7 +601,8 @@ mod tests {
 
         // Fee is derived from the enclave-internal constant PROTOCOL_FEE_BPS (500 = 5%).
         // 5% of 1000 AETHEL = 50 AETHEL
-        let expected_fee = request.total_rewards * PROTOCOL_FEE_BPS as u128 / BPS_DENOMINATOR as u128;
+        let expected_fee =
+            request.total_rewards * PROTOCOL_FEE_BPS as u128 / BPS_DENOMINATOR as u128;
         assert_eq!(response.protocol_fee, expected_fee);
 
         // Verify the constant matches the Cruzible.sol immutable.
@@ -631,7 +653,7 @@ mod tests {
         let distributable = request.total_rewards - response.protocol_fee;
         assert!(alloc.total_reward <= distributable);
         assert!(alloc.total_reward >= distributable - 1); // at most 1 wei dust
-        // MEV share is informational only (not in total_reward)
+                                                          // MEV share is informational only (not in total_reward)
         assert!(alloc.mev_share > 0, "MEV share should be reported");
     }
 
@@ -668,7 +690,8 @@ mod tests {
         assert!(
             response.total_distributed <= distributable,
             "total_distributed ({}) must not exceed distributable ({})",
-            response.total_distributed, distributable
+            response.total_distributed,
+            distributable
         );
     }
 
@@ -705,7 +728,11 @@ mod tests {
             .map(|i| StakerStake {
                 address: format!("staker-{:03}", i),
                 shares: ((i as u128 + 1) * 10_000_000_000_000_000_000), // varied stakes
-                delegated_to: if i % 2 == 0 { "val-high".to_string() } else { "val-low".to_string() },
+                delegated_to: if i % 2 == 0 {
+                    "val-high".to_string()
+                } else {
+                    "val-low".to_string()
+                },
             })
             .collect();
 
@@ -715,7 +742,8 @@ mod tests {
         assert!(
             response.total_distributed <= distributable,
             "asset-backed invariant violated: {} > {}",
-            response.total_distributed, distributable
+            response.total_distributed,
+            distributable
         );
         assert_eq!(response.allocations.len(), 100);
     }
@@ -764,11 +792,22 @@ mod tests {
         ];
 
         let response = calculate_rewards(&request).unwrap();
-        let good = response.allocations.iter().find(|a| a.address == "staker-good").unwrap();
-        let bad = response.allocations.iter().find(|a| a.address == "staker-bad").unwrap();
+        let good = response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-good")
+            .unwrap();
+        let bad = response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-bad")
+            .unwrap();
 
         // Same stake, but good validator gets higher claim
-        assert!(good.total_reward > bad.total_reward, "perf should affect claim");
+        assert!(
+            good.total_reward > bad.total_reward,
+            "perf should affect claim"
+        );
         assert!(good.performance_bonus > 0);
         assert_eq!(bad.performance_bonus, 0);
 
@@ -832,16 +871,30 @@ mod tests {
         ];
 
         let response = calculate_rewards(&request).unwrap();
-        let a = response.allocations.iter().find(|a| a.address == "staker-a").unwrap();
-        let b = response.allocations.iter().find(|a| a.address == "staker-b").unwrap();
+        let a = response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-a")
+            .unwrap();
+        let b = response
+            .allocations
+            .iter()
+            .find(|a| a.address == "staker-b")
+            .unwrap();
 
         // Staker-a delegates to higher-performing validator → positive bonus
-        assert!(a.performance_bonus > 0, "High-perf staker should get performance bonus");
+        assert!(
+            a.performance_bonus > 0,
+            "High-perf staker should get performance bonus"
+        );
         // Bonus should be reasonable (up to ~10% of base reward)
         assert!(a.performance_bonus <= a.base_reward / 10 + 1);
 
         // Staker-b delegates to lower-performing validator → no upside bonus
-        assert_eq!(b.performance_bonus, 0, "Low-perf staker should not get bonus");
+        assert_eq!(
+            b.performance_bonus, 0,
+            "Low-perf staker should not get bonus"
+        );
 
         // Total distributed stays within budget
         let distributable = request.total_rewards - response.protocol_fee;
@@ -892,7 +945,10 @@ mod tests {
         }];
 
         let result = calculate_rewards(&request);
-        assert!(result.is_err(), "should reject delegation to unknown validator");
+        assert!(
+            result.is_err(),
+            "should reject delegation to unknown validator"
+        );
         let err = result.unwrap_err();
         assert!(
             err.contains("not in the active validator set"),
@@ -920,7 +976,10 @@ mod tests {
         ];
 
         let result = calculate_rewards(&request);
-        assert!(result.is_err(), "entire batch must fail if any delegation is empty");
+        assert!(
+            result.is_err(),
+            "entire batch must fail if any delegation is empty"
+        );
     }
 
     /// Empty staker list still succeeds (no delegation to validate).

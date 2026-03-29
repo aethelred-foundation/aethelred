@@ -66,11 +66,11 @@ use std::time::Instant;
 use chrono::{DateTime, Utc};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::types::*;
 use crate::error::{HelixGuardError, HelixGuardResult};
+use crate::types::*;
 
 // =============================================================================
 // CONSTANTS
@@ -134,17 +134,10 @@ impl Default for EnclaveConfig {
     fn default() -> Self {
         Self {
             default_tee: TeeType::NvidiaH100Tee,
-            available_tees: vec![
-                TeeType::IntelSgx,
-                TeeType::AwsNitro,
-                TeeType::NvidiaH100Tee,
-            ],
+            available_tees: vec![TeeType::IntelSgx, TeeType::AwsNitro, TeeType::NvidiaH100Tee],
             memory_gb: DEFAULT_ENCLAVE_MEMORY_GB,
             gpu_tee_enabled: true,
-            available_gpus: vec![
-                GpuRequirement::NvidiaH100,
-                GpuRequirement::NvidiaA100,
-            ],
+            available_gpus: vec![GpuRequirement::NvidiaH100, GpuRequirement::NvidiaA100],
             attestation_refresh_hours: 1,
             max_concurrent_jobs: 4,
             zkml_enabled: true,
@@ -236,10 +229,7 @@ impl EnclaveEngine {
     }
 
     /// Initialize a new enclave
-    pub async fn initialize_enclave(
-        &self,
-        tee_type: TeeType,
-    ) -> HelixGuardResult<Uuid> {
+    pub async fn initialize_enclave(&self, tee_type: TeeType) -> HelixGuardResult<Uuid> {
         // Check if TEE type is available
         if !self.config.available_tees.contains(&tee_type) {
             return Err(HelixGuardError::TeeNotAvailable {
@@ -286,10 +276,7 @@ impl EnclaveEngine {
     }
 
     /// Execute a blind compute job
-    pub async fn execute_job(
-        &self,
-        job: BlindComputeJob,
-    ) -> HelixGuardResult<EfficacyResult> {
+    pub async fn execute_job(&self, job: BlindComputeJob) -> HelixGuardResult<EfficacyResult> {
         let job_id = job.id;
         let start_time = Instant::now();
 
@@ -303,7 +290,9 @@ impl EnclaveEngine {
         self.validate_job_requirements(&job)?;
 
         // Get or create enclave
-        let enclave_id = self.get_or_create_enclave(job.tee_requirements.tee_type).await?;
+        let enclave_id = self
+            .get_or_create_enclave(job.tee_requirements.tee_type)
+            .await?;
 
         // Update enclave status
         {
@@ -343,7 +332,9 @@ impl EnclaveEngine {
         }
 
         // Store result
-        self.completed_jobs.write().insert(job_id, final_result.clone());
+        self.completed_jobs
+            .write()
+            .insert(job_id, final_result.clone());
 
         // Update metrics
         let elapsed = start_time.elapsed().as_millis() as u64;
@@ -369,7 +360,11 @@ impl EnclaveEngine {
     /// Validate job requirements
     fn validate_job_requirements(&self, job: &BlindComputeJob) -> HelixGuardResult<()> {
         // Check TEE availability
-        if !self.config.available_tees.contains(&job.tee_requirements.tee_type) {
+        if !self
+            .config
+            .available_tees
+            .contains(&job.tee_requirements.tee_type)
+        {
             return Err(HelixGuardError::TeeNotAvailable {
                 tee_type: format!("{:?}", job.tee_requirements.tee_type),
             });
@@ -385,7 +380,9 @@ impl EnclaveEngine {
 
         // Check model availability
         if !self.models.read().contains_key(&job.model_config.model_id) {
-            return Err(HelixGuardError::ModelNotFound(job.model_config.model_id.clone()));
+            return Err(HelixGuardError::ModelNotFound(
+                job.model_config.model_id.clone(),
+            ));
         }
 
         // Check GPU requirements
@@ -480,7 +477,7 @@ impl EnclaveEngine {
         if !leak_check_passed {
             self.metrics.write().data_leaks_detected += 1;
             return Err(HelixGuardError::SovereigntyViolation(
-                "Data leak detected in output".to_string()
+                "Data leak detected in output".to_string(),
             ));
         }
 
@@ -532,7 +529,7 @@ impl EnclaveEngine {
             attestation: TeeAttestation {
                 id: Uuid::new_v4(),
                 tee_type: job.tee_requirements.tee_type,
-                attestation_quote: vec![0u8; 256], // Placeholder
+                attestation_quote: vec![0u8; 256],    // Placeholder
                 enclave_measurement: Hash::default(), // Will be filled later
                 signer_id: vec![0u8; 32],
                 platform_info: PlatformInfo {
@@ -547,8 +544,8 @@ impl EnclaveEngine {
             zkml_proof: None, // Will be generated separately
             royalty_payment: RoyaltyPayment {
                 id: Uuid::new_v4(),
-                recipient: Uuid::new_v4(), // M42
-                payer: Uuid::new_v4(), // Pharma partner
+                recipient: Uuid::new_v4(),                  // M42
+                payer: Uuid::new_v4(),                      // Pharma partner
                 amount_aethel: 500_000_000_000_000_000_000, // 500 AETHEL
                 amount_usd: rust_decimal::Decimal::new(500, 0),
                 status: PaymentStatus::Pending,
@@ -573,7 +570,9 @@ impl EnclaveEngine {
             "Generating TEE attestation"
         );
 
-        let enclave = self.active_enclaves.read()
+        let enclave = self
+            .active_enclaves
+            .read()
             .get(&enclave_id)
             .cloned()
             .ok_or_else(|| HelixGuardError::TeeInitializationFailed {
@@ -740,7 +739,8 @@ impl EnclaveEngine {
                 id: Uuid::new_v4(),
                 category: FindingCategory::PositiveEfficacy,
                 significance: SignificanceLevel::HighlySignificant,
-                description: "Strong positive efficacy signal detected in UAE population".to_string(),
+                description: "Strong positive efficacy signal detected in UAE population"
+                    .to_string(),
                 clinical_relevance: ClinicalRelevance::High,
             });
         }
@@ -824,7 +824,10 @@ mod tests {
     #[tokio::test]
     async fn test_enclave_initialization() {
         let engine = EnclaveEngine::default();
-        let enclave_id = engine.initialize_enclave(TeeType::NvidiaH100Tee).await.unwrap();
+        let enclave_id = engine
+            .initialize_enclave(TeeType::NvidiaH100Tee)
+            .await
+            .unwrap();
 
         let enclaves = engine.active_enclaves.read();
         let enclave = enclaves.get(&enclave_id).unwrap();

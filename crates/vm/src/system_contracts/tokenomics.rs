@@ -218,15 +218,15 @@ impl AllocationCategory {
     /// Get the percentage allocation (basis points)
     pub fn percentage_bps(&self) -> u16 {
         match self {
-            Self::ComputePoUW => 3000,          // 30%
-            Self::CoreContributors => 2000,     // 20%
-            Self::EcosystemGrants => 1500,      // 15%
-            Self::StrategicSeed => 550,         // 5.5%
-            Self::PublicSales => 750,           // 7.5%
-            Self::AirdropSeals => 700,          // 7%
-            Self::TreasuryMM => 600,            // 6%
-            Self::InsuranceFund => 500,         // 5%
-            Self::ContingencyReserve => 400,    // 4%
+            Self::ComputePoUW => 3000,       // 30%
+            Self::CoreContributors => 2000,  // 20%
+            Self::EcosystemGrants => 1500,   // 15%
+            Self::StrategicSeed => 550,      // 5.5%
+            Self::PublicSales => 750,        // 7.5%
+            Self::AirdropSeals => 700,       // 7%
+            Self::TreasuryMM => 600,         // 6%
+            Self::InsuranceFund => 500,      // 5%
+            Self::ContingencyReserve => 400, // 4%
         }
     }
 
@@ -239,44 +239,44 @@ impl AllocationCategory {
                 tge_percent: 0,                                       // No TGE unlock
             },
             Self::CoreContributors => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2),    // 6mo cliff
+                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2), // 6mo cliff
                 duration: Duration::from_secs(4 * SECONDS_PER_YEAR), // 48mo total (6mo cliff + 42mo linear)
-                tge_percent: 0,                                       // No TGE unlock
+                tge_percent: 0,                                      // No TGE unlock
             },
             Self::EcosystemGrants => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2),        // 6mo cliff
+                cliff: Duration::from_secs(SECONDS_PER_YEAR / 2), // 6mo cliff
                 duration: Duration::from_secs(9 * SECONDS_PER_YEAR / 2), // 54mo total (6mo cliff + 48mo linear)
-                tge_percent: 2,                                           // 2% at TGE (30M)
+                tge_percent: 2,                                          // 2% at TGE (30M)
             },
             Self::StrategicSeed => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
+                cliff: Duration::from_secs(SECONDS_PER_YEAR), // 12mo cliff
                 duration: Duration::from_secs(3 * SECONDS_PER_YEAR), // 36mo total (12mo cliff + 24mo linear)
-                tge_percent: 0,                                       // No TGE unlock
+                tge_percent: 0,                                      // No TGE unlock
             },
             Self::PublicSales => VestingSchedule::Linear {
-                cliff: Duration::from_secs(0),                            // No cliff
+                cliff: Duration::from_secs(0),                           // No cliff
                 duration: Duration::from_secs(3 * SECONDS_PER_YEAR / 2), // 18mo linear
-                tge_percent: 20,                                          // 20% at TGE (150M)
+                tge_percent: 20,                                         // 20% at TGE (150M)
             },
             Self::AirdropSeals => VestingSchedule::Linear {
-                cliff: Duration::from_secs(0),              // No cliff
+                cliff: Duration::from_secs(0),                   // No cliff
                 duration: Duration::from_secs(SECONDS_PER_YEAR), // 12mo linear
-                tge_percent: 25,                             // 25% at TGE (175M)
+                tge_percent: 25,                                 // 25% at TGE (175M)
             },
             Self::TreasuryMM => VestingSchedule::Linear {
-                cliff: Duration::from_secs(0),                        // No cliff
+                cliff: Duration::from_secs(0),                       // No cliff
                 duration: Duration::from_secs(3 * SECONDS_PER_YEAR), // 36mo linear
-                tge_percent: 25,                                      // 25% at TGE (150M)
+                tge_percent: 25,                                     // 25% at TGE (150M)
             },
             Self::InsuranceFund => VestingSchedule::Linear {
-                cliff: Duration::from_secs(0),                            // No cliff
+                cliff: Duration::from_secs(0),                           // No cliff
                 duration: Duration::from_secs(5 * SECONDS_PER_YEAR / 2), // 30mo linear
-                tge_percent: 10,                                          // 10% at TGE (50M)
+                tge_percent: 10,                                         // 10% at TGE (50M)
             },
             Self::ContingencyReserve => VestingSchedule::Linear {
-                cliff: Duration::from_secs(SECONDS_PER_YEAR),        // 12mo cliff
+                cliff: Duration::from_secs(SECONDS_PER_YEAR), // 12mo cliff
                 duration: Duration::from_secs(5 * SECONDS_PER_YEAR), // Placeholder: 60mo (vesting TBD per governance)
-                tge_percent: 0,                                       // No TGE unlock
+                tge_percent: 0,                                      // No TGE unlock
             },
         }
     }

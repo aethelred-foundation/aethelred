@@ -264,9 +264,12 @@ impl BatchGroth16VerifyPrecompile {
             if offset + 12 > input.len() {
                 break;
             }
-            let vk_size =
-                u32::from_le_bytes([input[offset], input[offset + 1], input[offset + 2], input[offset + 3]])
-                    as usize;
+            let vk_size = u32::from_le_bytes([
+                input[offset],
+                input[offset + 1],
+                input[offset + 2],
+                input[offset + 3],
+            ]) as usize;
             let proof_size = u32::from_le_bytes([
                 input[offset + 4],
                 input[offset + 5],
@@ -392,7 +395,10 @@ impl Precompile for BatchGroth16VerifyPrecompile {
                 &input[data_start + vk_size + proof_size..data_start + total_entry_size];
 
             // Verify each proof using the inner Groth16 verifier
-            match self.inner.verify_groth16_proof(vk_bytes, proof_bytes, public_inputs) {
+            match self
+                .inner
+                .verify_groth16_proof(vk_bytes, proof_bytes, public_inputs)
+            {
                 Ok(true) => { /* Valid, continue to next proof */ }
                 Ok(false) => {
                     tracing::warn!("Batch Groth16: proof {} is invalid", i);
@@ -939,8 +945,7 @@ impl Precompile for StarkVerifyPrecompile {
 
         // Parse input: [vk_hash:32][num_inputs:u32 LE][inputs...][proof...]
         let vk_hash = &input[0..32];
-        let num_inputs =
-            u32::from_le_bytes([input[32], input[33], input[34], input[35]]) as usize;
+        let num_inputs = u32::from_le_bytes([input[32], input[33], input[34], input[35]]) as usize;
 
         let public_inputs_start = 36;
         let public_inputs_end = public_inputs_start + num_inputs * 32;
