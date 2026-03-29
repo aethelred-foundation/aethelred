@@ -4,8 +4,9 @@
 #   1. SCAFFOLDING JOBS (fast gate): Validate spec/harness file structure.
 #   2. REAL PROOF JOBS: Execute Certora and Kani provers on actual code.
 #
-# Real proof jobs use continue-on-error: true while we stabilize.
-# TODO: Remove continue-on-error once proofs are stable and passing in CI.
+# Real proof jobs: Certora skips cleanly when CERTORAKEY is absent, but fails the
+# pipeline if proofs are executed and any verification run fails.
+# Kani proofs are enforced as a required check.
 
 name: Formal Verification
 
@@ -206,9 +207,10 @@ jobs:
   # =========================================================================
   # TIER 2: Certora Real Proof Execution
   # =========================================================================
-  # Runs certoraRun against Solidity contracts. Requires CERTORAKEY secret.
-  # Currently continue-on-error: true while we stabilize proof runs.
-  # TODO: Set continue-on-error: false once proofs are reliably passing.
+  # Runs certoraRun against each .conf in contracts/certora/conf/.
+  # Requires CERTORAKEY secret. Behavior:
+  #   - No CERTORAKEY: job succeeds with a skip notice (does NOT block pipeline)
+  #   - CERTORAKEY present but proof fails: job FAILS (blocks pipeline)
   # =========================================================================
   certora-proofs:
     name: "Certora: Run real proofs"
@@ -216,13 +218,28 @@ jobs:
     needs: certora-structure
     if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_certora == 'true' }}
     timeout-minutes: 60
-    continue-on-error: true  # TODO: Remove once proofs are stable
+    env:
+      CERTORA_KEY_PRESENT: ${{ secrets.CERTORAKEY != '' }}
     steps:
+      - name: Report Certora skipped (no license key)
+        if: env.CERTORA_KEY_PRESENT != 'true'
+        run: |
+          echo "::notice::Certora proofs SKIPPED: CERTORAKEY secret is not configured."
+          echo ""
+          echo "To enable Certora formal verification:"
+          echo "  1. Obtain a Certora Prover license key from https://www.certora.com/"
+          echo "  2. Add CERTORAKEY to repository secrets: Settings > Secrets and variables > Actions"
+          echo "  3. Re-run this workflow"
+          echo ""
+          echo "Structure validation still passed. This is a non-blocking skip."
+
       - uses: actions/checkout@v4
+        if: env.CERTORA_KEY_PRESENT == 'true'
         with:
           submodules: recursive
 
       - name: Setup Node.js
+        if: env.CERTORA_KEY_PRESENT == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -230,77 +247,57 @@ jobs:
           cache-dependency-path: contracts/package-lock.json
 
       - name: Install contract dependencies
+        if: env.CERTORA_KEY_PRESENT == 'true'
         working-directory: contracts
         run: npm ci
 
       - name: Install solc
+        if: env.CERTORA_KEY_PRESENT == 'true'
         run: |
           pip3 install solc-select
           solc-select install ${{ env.SOLC_VERSION }}
           solc-select use ${{ env.SOLC_VERSION }}
 
       - name: Install Certora CLI
+        if: env.CERTORA_KEY_PRESENT == 'true'
         run: pip3 install certora-cli
 
-      - name: Check CERTORAKEY availability
-        id: check_key
+      - name: Run certoraRun on all conf files
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+        working-directory: contracts
         run: |
-          if [ -n "${{ secrets.CERTORAKEY }}" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::CERTORAKEY secret is not set. Skipping real Certora proof runs."
-            echo "To enable: add CERTORAKEY to repository secrets (Settings > Secrets > Actions)."
+          echo "=== Running Certora Prover on all conf files ==="
+          ERRORS=0
+          for conf in certora/conf/*.conf; do
+            CONF_NAME=$(basename "$conf" .conf)
+            echo ""
+            echo "::group::certoraRun $conf"
+            if certoraRun "$conf"; then
+              echo "PASS: $CONF_NAME"
+            else
+              echo "FAIL: $CONF_NAME"
+              ERRORS=$((ERRORS + 1))
+            fi
+            echo "::endgroup::"
+          done
+          echo ""
+          echo "=== Certora Summary ==="
+          TOTAL=$(ls -1 certora/conf/*.conf | wc -l | tr -d ' ')
+          PASSED=$((TOTAL - ERRORS))
+          echo "Total: $TOTAL | Passed: $PASSED | Failed: $ERRORS"
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "::error::$ERRORS Certora spec(s) failed verification"
+            exit 1
           fi
 
-      - name: "Run Certora: AethelredToken"
-        if: steps.check_key.outputs.available == 'true'
-        env:
-          CERTORAKEY: ${{ secrets.CERTORAKEY }}
-        working-directory: contracts
-        run: |
-          echo "=== Running certoraRun for AethelredToken ==="
-          certoraRun certora/conf/token.conf
-
-      - name: "Run Certora: AethelredBridge"
-        if: steps.check_key.outputs.available == 'true'
-        env:
-          CERTORAKEY: ${{ secrets.CERTORAKEY }}
-        working-directory: contracts
-        run: |
-          echo "=== Running certoraRun for AethelredBridge ==="
-          certoraRun certora/conf/bridge.conf
-
-      - name: "Run Certora: AethelredVesting"
-        if: steps.check_key.outputs.available == 'true'
-        env:
-          CERTORAKEY: ${{ secrets.CERTORAKEY }}
-        working-directory: contracts
-        run: |
-          echo "=== Running certoraRun for AethelredVesting ==="
-          certoraRun certora/conf/vesting.conf
-
-      - name: "Run Certora: SovereignGovernanceTimelock"
-        if: steps.check_key.outputs.available == 'true'
-        env:
-          CERTORAKEY: ${{ secrets.CERTORAKEY }}
-        working-directory: contracts
-        run: |
-          echo "=== Running certoraRun for SovereignGovernanceTimelock ==="
-          certoraRun certora/conf/timelock.conf
-
-      - name: Report Certora skipped (no key)
-        if: steps.check_key.outputs.available == 'false'
-        run: |
-          echo "::notice::Certora proofs skipped: CERTORAKEY secret not provisioned."
-          echo "Structure validation passed. Provision CERTORAKEY to enable real proof runs."
-
   # =========================================================================
-  # TIER 2: Kani Real Proof Execution
+  # TIER 2: Kani Real Proof Execution (required check)
   # =========================================================================
   # Runs cargo kani against Rust crates with #[kani::proof] harnesses.
-  # Currently continue-on-error: true while we stabilize proof runs.
-  # TODO: Set continue-on-error: false once proofs are reliably passing.
+  # These proofs are enforced — failures block the pipeline.
   # =========================================================================
   kani-proofs:
     name: "Kani: Run real proofs"
@@ -308,7 +305,6 @@ jobs:
     needs: kani-structure
     if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_kani == 'true' }}
     timeout-minutes: 60
-    continue-on-error: true  # TODO: Remove once proofs are stable
     strategy:
       fail-fast: false
       matrix:
@@ -317,9 +313,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Kani
-        run: |
-          cargo install --locked kani-verifier
-          cargo kani setup
+        uses: model-checking/kani-verifier-action@v1
 
       - name: "Run Kani proofs: crates/${{ matrix.crate }}"
         run: |
@@ -347,37 +341,57 @@ jobs:
       - kani-proofs
     steps:
       - name: Report verification status
+        env:
+          CERTORA_STRUCTURE: ${{ needs.certora-structure.result }}
+          KANI_STRUCTURE: ${{ needs.kani-structure.result }}
+          CERTORA_PROOFS: ${{ needs.certora-proofs.result }}
+          KANI_PROOFS: ${{ needs.kani-proofs.result }}
         run: |
           echo "================================================================="
           echo "  FORMAL VERIFICATION STATUS"
           echo "================================================================="
           echo ""
           echo "--- Tier 1: Structure Validation (fast gate) ---"
-          echo "  Certora spec structure:  ${{ needs.certora-structure.result }}"
-          echo "  Kani harness structure:  ${{ needs.kani-structure.result }}"
+          echo "  Certora spec structure:  $CERTORA_STRUCTURE"
+          echo "  Kani harness structure:  $KANI_STRUCTURE"
           echo ""
           echo "--- Tier 2: Real Proof Execution ---"
-          echo "  Certora proof runs:      ${{ needs.certora-proofs.result }}"
-          echo "  Kani proof runs:         ${{ needs.kani-proofs.result }}"
+          echo "  Certora proof runs:      $CERTORA_PROOFS"
+          echo "  Kani proof runs:         $KANI_PROOFS"
           echo ""
-          echo "--- Gating Status ---"
-          STRUCTURE_OK=true
-          if [ "${{ needs.certora-structure.result }}" != "success" ]; then
-            STRUCTURE_OK=false
-          fi
-          if [ "${{ needs.kani-structure.result }}" != "success" ]; then
-            STRUCTURE_OK=false
-          fi
-          echo "  Structure validation: $STRUCTURE_OK"
-          echo ""
-          echo "  Note: Tier 2 proof jobs use continue-on-error: true"
-          echo "  while we stabilize. They will become required gates"
-          echo "  once all proofs pass consistently."
+          echo "--- Gating Logic ---"
+          echo "  Certora: skipped (no key) = OK | ran and failed = BLOCK"
+          echo "  Kani: always enforced"
           echo "================================================================="
 
-          # Fail the summary if structure validation failed
-          if [ "$STRUCTURE_OK" = "false" ]; then
-            echo ""
-            echo "ERROR: Structure validation failed. Fix spec/harness issues."
+          GATE_PASS=true
+
+          # Structure validation is always required
+          if [ "$CERTORA_STRUCTURE" != "success" ]; then
+            echo "ERROR: Certora structure validation failed."
+            GATE_PASS=false
+          fi
+          if [ "$KANI_STRUCTURE" != "success" ]; then
+            echo "ERROR: Kani structure validation failed."
+            GATE_PASS=false
+          fi
+
+          # Kani proofs are always required
+          if [ "$KANI_PROOFS" != "success" ]; then
+            echo "ERROR: Kani formal verification proofs failed."
+            GATE_PASS=false
+          fi
+
+          # Certora proofs: failure blocks, but skipped is acceptable
+          # "success" = ran and passed, "skipped" = no key configured (OK),
+          # "failure" = ran and failed (BLOCK)
+          if [ "$CERTORA_PROOFS" = "failure" ]; then
+            echo "ERROR: Certora proofs ran but failed. This blocks the pipeline."
+            GATE_PASS=false
+          elif [ "$CERTORA_PROOFS" = "skipped" ]; then
+            echo "NOTE: Certora proofs were skipped (CERTORAKEY not configured). Non-blocking."
+          fi
+
+          if [ "$GATE_PASS" = "false" ]; then
             exit 1
           fi

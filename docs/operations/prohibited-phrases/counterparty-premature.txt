@@ -1,0 +1,14 @@
+# Prohibited Phrases — Premature Counterparty Disclosure
+# These names must not appear on public surfaces until the counterparty
+# reaches EXECUTED status in the counterparty disclosure register.
+#
+# Policy: docs/operations/CANONICAL_PRODUCT_TRUTH.json counterparty_disclosure_state
+# Current public_named_counterparties: [] (none)
+#
+# Format: one name per line (used as regex patterns in CI)
+
+Wintermute
+\bGSR\b
+Binance
+Bybit
+\bOKX\b

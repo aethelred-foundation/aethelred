@@ -2,12 +2,12 @@ name: dApps CI
 
 on:
   push:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
     paths:
       - 'dApps/**'
       - '.github/workflows/dapps-ci.yml'
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
     paths:
       - 'dApps/**'
       - '.github/workflows/dapps-ci.yml'

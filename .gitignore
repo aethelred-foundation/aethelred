@@ -130,11 +130,13 @@ coverage*.html
 .claude/
 .cursor/
 .codex/
+.serena/
 .aider*
 CLAUDE.md
 
 # ── Local Test Outputs ───────────────────────────────────────────────
 loadtest-results/
+test-results/
 
 # ── Separate Repositories ────────────────────────────────────────────
 dApps/terraqura/

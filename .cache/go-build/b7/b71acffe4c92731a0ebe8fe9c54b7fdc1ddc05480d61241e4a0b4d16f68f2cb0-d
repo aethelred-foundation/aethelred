@@ -1,7 +1,0 @@
-./codec.go
-./errors.go
-./genesis.go
-./keys.go
-./msgs.go
-./packet.go
-./packet.pb.go

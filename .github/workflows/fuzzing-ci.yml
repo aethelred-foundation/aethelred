@@ -2,7 +2,7 @@ name: Fuzzing CI
 
 on:
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   schedule:
     # Run nightly at 02:00 UTC for extended fuzzing
     - cron: "0 2 * * *"
@@ -171,3 +171,193 @@ jobs:
           echo "rust-fuzz=${{ needs.rust-fuzz.result }}"
           test "${{ needs.go-fuzz.result }}" = "success"
           test "${{ needs.rust-fuzz.result }}" = "success"
+
+  # =========================================================================
+  # Extended Fuzz Campaign (nightly / manual)
+  # Runs longer fuzz sessions to find deep bugs that short PR runs miss.
+  # Go: 5 minutes per target, Rust: 10 minutes per target.
+  # Corpus retained for 90 days. Auto-creates issue on crashes.
+  # =========================================================================
+  extended-fuzz-campaign:
+    name: Extended Fuzz Campaign
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Go extended fuzzing (5 min per target) ---
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: "Go extended: FuzzVoteExtensionUnmarshal (5m)"
+        run: go test -fuzz=FuzzVoteExtensionUnmarshal -fuzztime=5m ./app/
+
+      - name: "Go extended: FuzzVoteExtensionSignVerify (5m)"
+        run: go test -fuzz=FuzzVoteExtensionSignVerify -fuzztime=5m ./app/
+
+      - name: "Go extended: FuzzAggregateVoteExtensions (5m)"
+        run: go test -fuzz=FuzzAggregateVoteExtensions -fuzztime=5m ./app/
+
+      - name: "Go extended: FuzzInjectedVoteExtensionTx (5m)"
+        run: go test -fuzz=FuzzInjectedVoteExtensionTx -fuzztime=5m ./app/
+
+      - name: Upload Go extended corpus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-extended-fuzz-corpus
+          path: |
+            **/testdata/fuzz/
+          retention-days: 90
+
+      - name: Check for Go crash artifacts
+        id: go_crashes
+        if: always()
+        run: |
+          CRASH_COUNT=0
+          for dir in $(find . -path '*/testdata/fuzz/Fuzz*' -type d 2>/dev/null); do
+            NON_CORPUS=$(find "$dir" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
+            CRASH_COUNT=$((CRASH_COUNT + NON_CORPUS))
+          done
+          echo "crash_count=$CRASH_COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$CRASH_COUNT" -gt 0 ]; then
+            echo "::warning::Found $CRASH_COUNT Go fuzz crash input(s)"
+          fi
+
+      # --- Rust extended fuzzing (10 min per target) ---
+      - uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Vendor fuzz dependencies
+        run: |
+          chmod +x scripts/vendor-fuzz-deps.sh
+          ./scripts/vendor-fuzz-deps.sh
+
+      - name: "gate: compile-check all fuzz crates"
+        run: |
+          for crate in crates/core/fuzz crates/bridge/fuzz crates/consensus/fuzz crates/vm/fuzz; do
+            echo "::group::cargo check ${crate}"
+            cargo +nightly check --manifest-path "${crate}/Cargo.toml"
+            echo "::endgroup::"
+          done
+
+      - name: "core extended: fuzz_hybrid_signature_from_bytes (10m)"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time=600
+
+      - name: "core extended: fuzz_hybrid_pubkey_from_bytes (10m)"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time=600
+
+      - name: "core extended: fuzz_kyber_pubkey_from_bytes (10m)"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time=600
+
+      - name: "core extended: fuzz_signature_roundtrip (10m)"
+        working-directory: crates/core
+        run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time=600
+
+      - name: "bridge extended: fuzz_bridge_event_parsing (10m)"
+        working-directory: crates/bridge
+        run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time=600
+
+      - name: "bridge extended: fuzz_bridge_state_transition (10m)"
+        working-directory: crates/bridge
+        run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time=600
+
+      - name: "consensus extended: fuzz_vrf_prove_verify (10m)"
+        working-directory: crates/consensus
+        run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time=600
+
+      - name: "consensus extended: fuzz_reputation_score (10m)"
+        working-directory: crates/consensus
+        run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time=600
+
+      - name: "vm extended: fuzz_vm_bytecode_execution (10m)"
+        working-directory: crates/vm
+        run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time=600
+
+      - name: "vm extended: fuzz_precompile_inputs (10m)"
+        working-directory: crates/vm
+        run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time=600
+
+      - name: Upload Rust extended corpus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-extended-fuzz-corpus
+          path: |
+            crates/core/fuzz/corpus/
+            crates/bridge/fuzz/corpus/
+            crates/consensus/fuzz/corpus/
+            crates/vm/fuzz/corpus/
+          retention-days: 90
+
+      - name: Check for Rust crash artifacts
+        id: rust_crashes
+        if: always()
+        run: |
+          CRASH_COUNT=0
+          for crate_dir in crates/core/fuzz crates/bridge/fuzz crates/consensus/fuzz crates/vm/fuzz; do
+            if [ -d "$crate_dir/artifacts" ]; then
+              COUNT=$(find "$crate_dir/artifacts" -type f 2>/dev/null | wc -l | tr -d ' ')
+              CRASH_COUNT=$((CRASH_COUNT + COUNT))
+            fi
+          done
+          echo "crash_count=$CRASH_COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$CRASH_COUNT" -gt 0 ]; then
+            echo "::warning::Found $CRASH_COUNT Rust fuzz crash artifact(s)"
+          fi
+
+      - name: Upload crash artifacts
+        if: always() && (steps.go_crashes.outputs.crash_count != '0' || steps.rust_crashes.outputs.crash_count != '0')
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crash-artifacts
+          path: |
+            **/testdata/fuzz/Fuzz*
+            !**/testdata/fuzz/*/corpus/
+            crates/*/fuzz/artifacts/
+          retention-days: 90
+
+      - name: Create issue on crash
+        if: always() && (steps.go_crashes.outputs.crash_count != '0' || steps.rust_crashes.outputs.crash_count != '0')
+        uses: actions/github-script@v7
+        env:
+          GO_CRASH_COUNT: ${{ steps.go_crashes.outputs.crash_count }}
+          RUST_CRASH_COUNT: ${{ steps.rust_crashes.outputs.crash_count }}
+        with:
+          script: |
+            const goCrashes = process.env.GO_CRASH_COUNT;
+            const rustCrashes = process.env.RUST_CRASH_COUNT;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = `[Fuzz] Extended campaign found crashes (Go: ${goCrashes}, Rust: ${rustCrashes})`;
+            const body = [
+              '## Extended Fuzz Campaign Crash Report',
+              '',
+              `**Run:** ${runUrl}`,
+              `**Date:** ${new Date().toISOString().split('T')[0]}`,
+              '',
+              '### Crash Summary',
+              `- Go crash inputs found: **${goCrashes}**`,
+              `- Rust crash artifacts found: **${rustCrashes}**`,
+              '',
+              '### Next Steps',
+              '1. Download the `fuzz-crash-artifacts` artifact from the run',
+              '2. Reproduce locally with the crash input',
+              '3. Fix the underlying issue and add the input to the regression corpus',
+              '',
+              '_This issue was auto-created by the extended fuzz campaign._',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['bug', 'security', 'fuzzing'],
+            });

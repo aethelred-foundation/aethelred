@@ -1,4 +1,0 @@
-./genesis.go
-./keeper.go
-./migrator.go
-./msg_server.go

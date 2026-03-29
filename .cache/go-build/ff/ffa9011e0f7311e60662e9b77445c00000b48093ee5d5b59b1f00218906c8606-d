@@ -1,6 +1,0 @@
-./module.go
-./orchestrator.go
-./readiness.go
-./registry.go
-./readiness_test.go
-./registry_test.go

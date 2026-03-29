@@ -352,6 +352,6 @@ This document maps each audit scope area to specific repository paths, commit SH
 - Full audit v2 remediation matrix: [`docs/audits/aethelred-full-audit-report-v2-remediation-matrix.md`](aethelred-full-audit-report-v2-remediation-matrix.md)
 - Multi-repo findings disposition: [`docs/audits/aethelred-multi-repo-findings-disposition-2026-02-24.md`](aethelred-multi-repo-findings-disposition-2026-02-24.md)
 - Retest checklist: [`docs/audits/aethelred-v2-retest-checklist.md`](aethelred-v2-retest-checklist.md)
-- Auditability rollout matrix: [`docs/audits/aeth-mr-003-repo-auditability-rollout-matrix.md`](aeth-mr-003-repo-auditability-rollout-matrix.md)
+- Auditability rollout matrix: [`docs/audits/aethel-mr-003-repo-auditability-rollout-matrix.md`](aethel-mr-003-repo-auditability-rollout-matrix.md)
 - Subsystem ownership: [`docs/operations/SUBSYSTEM_OWNERSHIP.md`](../operations/SUBSYSTEM_OWNERSHIP.md)
 - Gate inventory: [`docs/operations/GATE_INVENTORY.md`](../operations/GATE_INVENTORY.md)

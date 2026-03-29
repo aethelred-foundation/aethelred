@@ -1,7 +1,0 @@
-./collect.go
-./doc.go
-./genaccounts.go
-./genesis.go
-./gentx.go
-./module.go
-./utils.go
