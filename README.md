@@ -10,13 +10,13 @@
 </p>
 
 <p align="center">
- <a href="https://github.com/AethelredFoundation/aethelred/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred/aethelred/ci.yml?branch=main&style=flat-square&label=CI&logo=github" alt="CI"></a>
- <a href="https://github.com/AethelredFoundation/aethelred/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/aethelred/aethelred/security.yml?branch=main&style=flat-square&label=Security&logo=shield" alt="Security"></a>
- <a href="https://codecov.io/gh/aethelred/aethelred"><img src="https://img.shields.io/codecov/c/github/aethelred/aethelred?style=flat-square&logo=codecov" alt="Coverage"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml/badge.svg" alt="Security"></a>
+ <img src="https://img.shields.io/badge/status-testnet%20launch-0e8a16?style=flat-square" alt="Status: Testnet Launch">
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
- <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/discord/aethelred?style=flat-square&logo=discord&label=Discord&color=5865F2" alt="Discord"></a>
- <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
- <a href="https://github.com/AethelredFoundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
+ <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=flat-square&logo=discord" alt="Discord"></a>
+ <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
+ <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
 </p>
 
 ---
@@ -99,11 +99,11 @@ aethelred/
 
 ## Quick Start
 
-**Requirements**: Go 1.22+, Rust 1.75+, Docker
+**Requirements**: Go 1.24+, Rust 1.75+, Docker
 
 ```bash
 # 1. Clone
-git clone https://github.com/AethelredFoundation/aethelred.git && cd aethelred
+git clone https://github.com/aethelred-foundation/aethelred.git && cd aethelred
 
 # 2. Start local testnet (4 validators, Docker)
 make local-testnet-up
@@ -127,15 +127,15 @@ aethel tx pouw submit-job \
 
 | Repo | Description |
 |---|---|
-| [aethelred/contracts](https://github.com/AethelredFoundation/contracts) | Solidity bridge + staking contracts |
-| [aethelred/aethelred-sdk-ts](https://github.com/AethelredFoundation/aethelred-sdk-ts) | TypeScript SDK |
-| [aethelred/aethelred-sdk-py](https://github.com/AethelredFoundation/aethelred-sdk-py) | Python SDK |
-| [aethelred/aethelred-sdk-go](https://github.com/AethelredFoundation/aethelred-sdk-go) | Go SDK |
-| [aethelred/aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) | Rust SDK |
-| [aethelred/aethelred-cli](https://github.com/AethelredFoundation/aethelred-cli) | `aethel` CLI |
-| [aethelred/vscode-aethelred](https://github.com/AethelredFoundation/vscode-aethelred) | VSCode extension |
-| [aethelred/aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs) | Documentation site |
-| [aethelred/AIPs](https://github.com/AethelredFoundation/AIPs) | Aethelred Improvement Proposals |
+| [contracts](https://github.com/aethelred-foundation/contracts) | Solidity bridge + staking contracts |
+| [aethelred-sdk-ts](https://github.com/aethelred-foundation/aethelred-sdk-ts) | TypeScript SDK |
+| [aethelred-sdk-py](https://github.com/aethelred-foundation/aethelred-sdk-py) | Python SDK |
+| [aethelred-sdk-go](https://github.com/aethelred-foundation/aethelred-sdk-go) | Go SDK |
+| [aethelred-sdk-rs](https://github.com/aethelred-foundation/aethelred-sdk-rs) | Rust SDK |
+| [aethelred-cli](https://github.com/aethelred-foundation/aethelred-cli) | `aethel` CLI |
+| [vscode-aethelred](https://github.com/aethelred-foundation/vscode-aethelred) | VSCode extension |
+| [aethelred-docs](https://github.com/aethelred-foundation/aethelred-docs) | Documentation site |
+| [AIPs](https://github.com/aethelred-foundation/AIPs) | Aethelred Improvement Proposals |
 
 ---
 
@@ -173,9 +173,9 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md).
 
 We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
-- [Aethelred Improvement Proposals](https://github.com/AethelredFoundation/AIPs)
+- [Aethelred Improvement Proposals](https://github.com/aethelred-foundation/AIPs)
 - [Discord](https://discord.gg/aethelred)
-- [Bug Reports](https://github.com/AethelredFoundation/aethelred/issues/new?template=bug_report.md)
+- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.md)
 
 ---
 
