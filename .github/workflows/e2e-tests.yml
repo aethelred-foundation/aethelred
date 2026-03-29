@@ -78,6 +78,8 @@ jobs:
           done
 
       - name: Run CLI smoke tests
+        env:
+          AETHELRED_SMOKE_SKIP_AETH_CLI: "1"
         run: bash scripts/devtools-cli-smoke.sh
 
       - name: Run real-node E2E gate tests

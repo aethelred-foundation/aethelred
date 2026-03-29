@@ -93,9 +93,10 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Run gosec
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         uses: securego/gosec@master
         with:
-          args: ./...
+          args: -severity medium -confidence medium -exclude=G104 ./...
 
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.35.0

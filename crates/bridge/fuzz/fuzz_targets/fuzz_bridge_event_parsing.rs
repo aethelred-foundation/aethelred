@@ -43,9 +43,9 @@ fuzz_target!(|data: &[u8]| {
     // -----------------------------------------------------------------------
     // 3. Fuzz EthereumDeposit construction and generate_id determinism
     // -----------------------------------------------------------------------
-    // Build a deposit from raw bytes (minimum 120 bytes needed to fill all
+    // Build a deposit from raw bytes (minimum 128 bytes needed to fill all
     // fixed-size fields without panicking).
-    if data.len() >= 120 {
+    if data.len() >= 128 {
         let mut depositor = [0u8; 20];
         depositor.copy_from_slice(&data[0..20]);
 

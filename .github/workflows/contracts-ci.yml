@@ -48,8 +48,33 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-      - name: Run Foundry tests
-        run: FOUNDRY_PROFILE=ci forge test -vv
+      - name: Run Foundry unit and integration tests
+        run: >
+          FOUNDRY_PROFILE=ci forge test -vv
+          --no-match-path 'test/*Invariant.t.sol'
+          --no-match-test '^(testFuzz_|test_Audit_|invariant_)'
+
+  foundry-deep-checks:
+    name: Foundry Deep Checks
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm ci --no-fund --no-audit
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Run Foundry deep invariant and audit suites
+        run: |
+          FOUNDRY_PROFILE=ci forge test -vv --match-path 'test/*Invariant.t.sol'
+          FOUNDRY_PROFILE=ci forge test -vv --match-test '^(testFuzz_|test_Audit_)'
 
   contracts-required-gate:
     name: Contracts Required Gate

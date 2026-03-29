@@ -57,6 +57,7 @@ jobs:
         run: |
           cargo bench \
             --manifest-path sdk/aethelred-sdk/Cargo.toml \
+            --bench crypto_benchmarks \
             -- --output-format bencher 2>&1 | tee bench-results.txt
 
       - name: Store benchmark results
