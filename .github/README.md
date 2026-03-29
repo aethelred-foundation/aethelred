@@ -1,5 +1,12 @@
 # GitHub Configuration
 
+<p>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+ <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml/badge.svg" alt="Security"></a>
+ <img src="https://img.shields.io/badge/status-pre--launch-yellow?style=flat-square" alt="Status: Pre-Launch">
+ <a href="../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
+</p>
+
 This directory contains the repository-wide GitHub configuration for Aethelred.
 
 ## What Lives Here
