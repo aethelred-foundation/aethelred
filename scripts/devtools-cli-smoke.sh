@@ -13,6 +13,7 @@ NEXTJS_URL="${AETHELRED_SMOKE_NEXTJS_URL:-http://127.0.0.1:3000}"
 DASHBOARD_URL="${AETHELRED_SMOKE_DASHBOARD_URL:-http://127.0.0.1:3101}"
 SEAL_ID="${AETHELRED_SMOKE_SEAL_ID:-seal_demo}"
 TIMEOUT_SEC="${AETHELRED_SMOKE_TIMEOUT_SEC:-120}"
+SKIP_AETH_CLI="${AETHELRED_SMOKE_SKIP_AETH_CLI:-0}"
 
 require_file() {
   local file="$1"
@@ -60,8 +61,10 @@ run_cmd() {
 }
 
 main() {
-  require_file "$AETH_CLI"
   require_file "$SEAL_VERIFIER_CLI"
+  if [[ "$SKIP_AETH_CLI" != "1" ]]; then
+    require_file "$AETH_CLI"
+  fi
 
   echo "== Waiting for local devtools stack =="
   wait_for_http "${RPC_URL}/health" "rpc-health"
@@ -69,11 +72,15 @@ main() {
   wait_for_http "${NEXTJS_URL}/api/health" "nextjs-health"
   wait_for_http "${DASHBOARD_URL}/devtools" "dashboard-devtools"
 
-  echo "== CLI smoke: aeth status =="
-  run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" status
+  if [[ "$SKIP_AETH_CLI" != "1" ]]; then
+    echo "== CLI smoke: aeth status =="
+    run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" status
 
-  echo "== CLI smoke: aeth diagnostics doctor =="
-  run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" diagnostics doctor
+    echo "== CLI smoke: aeth diagnostics doctor =="
+    run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" diagnostics doctor
+  else
+    echo "== CLI smoke: aeth skipped by AETHELRED_SMOKE_SKIP_AETH_CLI =="
+  fi
 
   local seal_file verify_file
   seal_file="$(mktemp "${TMPDIR:-/tmp}/aethelred-smoke-seal.XXXXXX")"
