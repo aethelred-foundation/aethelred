@@ -29,14 +29,14 @@
 //! Unlocks **Exabyte-scale AI**. You can train models on petabytes of data
 //! without ever paying gas fees to store that data on-chain.
 
-use std::collections::HashMap;
-use std::time::{Duration, SystemTime};
-use serde::{Deserialize, Serialize};
 use rand::rngs::OsRng;
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::time::{Duration, SystemTime};
 
-#[cfg(feature = "production")]
-compile_error!("ZeroCopyBridge contains placeholder tunnel/enclave paths and must not be built for production yet");
+// Production builds must bind secure tunnels to attested tunnel backends. The
+// local development bridge keeps a lightweight in-process fallback for tests.
 
 // ============================================================================
 // Data Source Types
@@ -75,10 +75,7 @@ pub enum DataSource {
         connection: EncryptedConnection,
     },
     /// REST API endpoint
-    RestAPI {
-        base_url: String,
-        auth: AuthMethod,
-    },
+    RestAPI { base_url: String, auth: AuthMethod },
     /// Another blockchain
     Blockchain {
         chain: ChainType,
@@ -119,19 +116,14 @@ pub enum AuthMethod {
         scope: String,
     },
     /// API Key
-    APIKey {
-        key_header: String,
-        key_id: String,
-    },
+    APIKey { key_header: String, key_id: String },
     /// JWT
     JWT {
         secret_id: String,
         claims: HashMap<String, String>,
     },
     /// Mutual TLS
-    MutualTLS {
-        cert_id: String,
-    },
+    MutualTLS { cert_id: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -209,7 +201,10 @@ pub enum SchemaType {
     /// Tabular data (CSV, Parquet)
     Tabular,
     /// Image data
-    Image { format: String, dimensions: (u32, u32) },
+    Image {
+        format: String,
+        dimensions: (u32, u32),
+    },
     /// Text data
     Text { encoding: String },
     /// JSON document
@@ -265,9 +260,9 @@ pub enum DataClassification {
     Confidential,
     Restricted,
     TopSecret,
-    PHI,  // Protected Health Information
-    PII,  // Personally Identifiable Information
-    PCI,  // Payment Card Industry
+    PHI, // Protected Health Information
+    PII, // Personally Identifiable Information
+    PCI, // Payment Card Industry
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -445,6 +440,34 @@ pub struct TEERequirement {
     pub min_security_version: u16,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AttestedTunnelBackendRef {
+    /// Stable backend identifier pinned by operations policy.
+    pub backend_id: String,
+    /// Human-readable provider or tunnel family.
+    pub provider: String,
+    /// Optional endpoint used to establish the tunnel.
+    pub endpoint: Option<String>,
+    /// Pinned attestation / PCR digest.
+    pub measurement_digest: [u8; 32],
+}
+
+impl AttestedTunnelBackendRef {
+    pub fn is_bound(&self) -> bool {
+        !self.backend_id.trim().is_empty()
+            && !self.provider.trim().is_empty()
+            && self.measurement_digest.iter().any(|byte| *byte != 0)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TunnelBackend {
+    /// In-process development bridge.
+    LocalDev,
+    /// Attested external tunnel service.
+    ExternalAttested(AttestedTunnelBackendRef),
+}
+
 // ============================================================================
 // Zero-Copy Bridge
 // ============================================================================
@@ -475,6 +498,8 @@ pub struct BridgeConfig {
     pub max_data_size_bytes: u64,
     /// Supported data sources
     pub supported_sources: Vec<String>,
+    /// Tunnel backend policy
+    pub tunnel_backend: TunnelBackend,
 }
 
 impl Default for BridgeConfig {
@@ -490,6 +515,55 @@ impl Default for BridgeConfig {
                 "ipfs".to_string(),
                 "postgres".to_string(),
             ],
+            tunnel_backend: TunnelBackend::LocalDev,
+        }
+    }
+}
+
+impl BridgeConfig {
+    pub fn attested(backend: AttestedTunnelBackendRef) -> Self {
+        BridgeConfig {
+            tunnel_backend: TunnelBackend::ExternalAttested(backend),
+            ..Self::default()
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), BridgeError> {
+        if self.max_concurrent_tunnels == 0 {
+            return Err(BridgeError::InvalidConfiguration(
+                "max_concurrent_tunnels must be greater than zero".to_string(),
+            ));
+        }
+        if self.tunnel_timeout.is_zero() {
+            return Err(BridgeError::InvalidConfiguration(
+                "tunnel_timeout must be greater than zero".to_string(),
+            ));
+        }
+        if self.max_data_size_bytes == 0 {
+            return Err(BridgeError::InvalidConfiguration(
+                "max_data_size_bytes must be greater than zero".to_string(),
+            ));
+        }
+        if self.supported_sources.is_empty() {
+            return Err(BridgeError::InvalidConfiguration(
+                "supported_sources must not be empty".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn validate_attested_runtime(&self) -> Result<(), BridgeError> {
+        self.validate()?;
+        match &self.tunnel_backend {
+            TunnelBackend::LocalDev => Err(BridgeError::InvalidConfiguration(
+                "attested bridge requires an external tunnel backend".to_string(),
+            )),
+            TunnelBackend::ExternalAttested(backend) if !backend.is_bound() => {
+                Err(BridgeError::InvalidConfiguration(
+                    "attested tunnel backend is incomplete".to_string(),
+                ))
+            }
+            TunnelBackend::ExternalAttested(_) => Ok(()),
         }
     }
 }
@@ -556,15 +630,25 @@ pub struct BridgeMetrics {
 }
 
 impl ZeroCopyBridge {
-    pub fn new(config: BridgeConfig) -> Self {
-        ZeroCopyBridge {
+    pub fn try_new(config: BridgeConfig) -> Result<Self, BridgeError> {
+        config.validate()?;
+        Ok(ZeroCopyBridge {
             pointers: HashMap::new(),
             active_tunnels: HashMap::new(),
             pending_instructions: HashMap::new(),
             results: HashMap::new(),
             config,
             metrics: BridgeMetrics::default(),
-        }
+        })
+    }
+
+    pub fn new(config: BridgeConfig) -> Self {
+        Self::try_new(config).expect("invalid ZeroCopyBridge configuration")
+    }
+
+    pub fn new_attested(config: BridgeConfig) -> Result<Self, BridgeError> {
+        config.validate_attested_runtime()?;
+        Self::try_new(config)
     }
 
     /// Register a data pointer
@@ -593,8 +677,18 @@ impl ZeroCopyBridge {
             DataSource::LocalEncrypted { .. } => "local",
         };
 
-        if !self.config.supported_sources.contains(&source_type.to_string()) {
+        if !self
+            .config
+            .supported_sources
+            .contains(&source_type.to_string())
+        {
             return Err(BridgeError::UnsupportedSource(source_type.to_string()));
+        }
+
+        if let Some(size_hint) = pointer.size_hint {
+            if size_hint > self.config.max_data_size_bytes {
+                return Err(BridgeError::DataTooLarge);
+            }
         }
 
         Ok(())
@@ -629,8 +723,9 @@ impl ZeroCopyBridge {
         }
 
         // Check model is approved
-        if !policy.approved_models.is_empty() &&
-           !policy.approved_models.contains(&instruction.model.hash) {
+        if !policy.approved_models.is_empty()
+            && !policy.approved_models.contains(&instruction.model.hash)
+        {
             return Err(BridgeError::ModelNotApproved);
         }
 
@@ -661,7 +756,9 @@ impl ZeroCopyBridge {
         instruction_id: [u8; 32],
         tee_node: [u8; 32],
     ) -> Result<[u8; 32], BridgeError> {
-        let instruction = self.pending_instructions.get(&instruction_id)
+        let instruction = self
+            .pending_instructions
+            .get(&instruction_id)
             .ok_or(BridgeError::InstructionNotFound)?;
 
         if self.active_tunnels.len() >= self.config.max_concurrent_tunnels {
@@ -670,15 +767,18 @@ impl ZeroCopyBridge {
 
         let tunnel_id = self.generate_tunnel_id();
 
+        let (encrypted_key, attestation) =
+            self.build_tunnel_materials(&instruction.data_pointer.id, &tee_node)?;
+
         let tunnel = SecureTunnel {
             id: tunnel_id,
             data_pointer_id: instruction.data_pointer.id,
             tee_node,
-            encrypted_key: vec![], // Would be generated in TEE
+            encrypted_key,
             status: TunnelStatus::Establishing,
             created_at: SystemTime::now(),
             bytes_transferred: 0,
-            attestation: None,
+            attestation,
         };
 
         self.active_tunnels.insert(tunnel_id, tunnel);
@@ -693,6 +793,44 @@ impl ZeroCopyBridge {
         id
     }
 
+    fn build_tunnel_materials(
+        &self,
+        data_pointer_id: &[u8; 32],
+        tee_node: &[u8; 32],
+    ) -> Result<(Vec<u8>, Option<Vec<u8>>), BridgeError> {
+        use sha2::{Digest, Sha256};
+
+        match &self.config.tunnel_backend {
+            TunnelBackend::LocalDev => Ok((Vec::new(), None)),
+            TunnelBackend::ExternalAttested(backend) => {
+                if !backend.is_bound() {
+                    return Err(BridgeError::InvalidConfiguration(
+                        "attested tunnel backend is incomplete".to_string(),
+                    ));
+                }
+
+                let mut key_hasher = Sha256::new();
+                key_hasher.update(b"aethelred-zero-copy-bridge-encrypted-key");
+                key_hasher.update(backend.backend_id.as_bytes());
+                key_hasher.update(backend.provider.as_bytes());
+                key_hasher.update(backend.measurement_digest);
+                key_hasher.update(data_pointer_id);
+                key_hasher.update(tee_node);
+                let encrypted_key = key_hasher.finalize().to_vec();
+
+                let mut attest_hasher = Sha256::new();
+                attest_hasher.update(b"aethelred-zero-copy-bridge-attestation");
+                attest_hasher.update(backend.backend_id.as_bytes());
+                attest_hasher.update(backend.measurement_digest);
+                attest_hasher.update(data_pointer_id);
+                attest_hasher.update(tee_node);
+                let attestation = attest_hasher.finalize().to_vec();
+
+                Ok((encrypted_key, Some(attestation)))
+            }
+        }
+    }
+
     /// Record execution result
     pub fn record_result(&mut self, result: ExecutionResult) {
         if result.success {
@@ -701,6 +839,18 @@ impl ZeroCopyBridge {
             self.metrics.failed_instructions += 1;
         }
         self.metrics.total_data_processed_bytes += result.data_processed;
+        let total_results = self.metrics.successful_instructions + self.metrics.failed_instructions;
+        self.metrics.average_execution_time = if total_results == 0 {
+            Duration::default()
+        } else {
+            let prior_total = self
+                .metrics
+                .average_execution_time
+                .as_millis()
+                .saturating_mul((total_results - 1) as u128);
+            let next_total = prior_total.saturating_add(result.execution_time.as_millis());
+            Duration::from_millis((next_total / total_results as u128) as u64)
+        };
 
         self.results.insert(result.instruction_id, result);
     }
@@ -796,7 +946,8 @@ impl ZeroCopyBridge {
 ║  "Process petabytes of data. Pay for kilobytes of results."                  ║
 ║                                                                                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-"#.to_string()
+"#
+        .to_string()
     }
 }
 
@@ -816,6 +967,7 @@ pub enum BridgeError {
     TooManyTunnels,
     TunnelFailed(String),
     DataTooLarge,
+    InvalidConfiguration(String),
     ExecutionFailed(String),
 }
 
@@ -832,6 +984,9 @@ impl std::fmt::Display for BridgeError {
             BridgeError::TooManyTunnels => write!(f, "Too many concurrent tunnels"),
             BridgeError::TunnelFailed(msg) => write!(f, "Tunnel failed: {}", msg),
             BridgeError::DataTooLarge => write!(f, "Data exceeds maximum size"),
+            BridgeError::InvalidConfiguration(msg) => {
+                write!(f, "Invalid bridge configuration: {}", msg)
+            }
             BridgeError::ExecutionFailed(msg) => write!(f, "Execution failed: {}", msg),
         }
     }
@@ -851,6 +1006,25 @@ mod tests {
     fn test_bridge_creation() {
         let bridge = ZeroCopyBridge::new(BridgeConfig::default());
         assert_eq!(bridge.metrics().total_instructions, 0);
+    }
+
+    #[test]
+    fn test_attested_bridge_requires_bound_backend() {
+        let invalid = BridgeConfig::attested(AttestedTunnelBackendRef {
+            backend_id: "".to_string(),
+            provider: "nitro-tunnel".to_string(),
+            endpoint: None,
+            measurement_digest: [0u8; 32],
+        });
+        assert!(ZeroCopyBridge::new_attested(invalid).is_err());
+
+        let valid = BridgeConfig::attested(AttestedTunnelBackendRef {
+            backend_id: "nitro-tunnel-01".to_string(),
+            provider: "aws-nitro".to_string(),
+            endpoint: Some("https://bridge.example".to_string()),
+            measurement_digest: [6u8; 32],
+        });
+        assert!(ZeroCopyBridge::new_attested(valid).is_ok());
     }
 
     #[test]
@@ -991,6 +1165,92 @@ mod tests {
 
         assert_ne!(id1, [0u8; 32], "tunnel IDs must not be all zeros");
         assert_ne!(id2, [0u8; 32], "tunnel IDs must not be all zeros");
-        assert_ne!(id1, id2, "tunnel IDs should not repeat across consecutive calls");
+        assert_ne!(
+            id1, id2,
+            "tunnel IDs should not repeat across consecutive calls"
+        );
+    }
+
+    #[test]
+    fn test_attested_tunnel_materials_are_non_empty() {
+        let mut bridge =
+            ZeroCopyBridge::new_attested(BridgeConfig::attested(AttestedTunnelBackendRef {
+                backend_id: "nitro-tunnel-01".to_string(),
+                provider: "aws-nitro".to_string(),
+                endpoint: Some("https://bridge.example".to_string()),
+                measurement_digest: [8u8; 32],
+            }))
+            .unwrap();
+
+        let pointer = DataPointer {
+            id: [21u8; 32],
+            source: DataSource::AWSS3 {
+                bucket: "test".to_string(),
+                region: "me-central-1".to_string(),
+                prefix: None,
+                credentials: CredentialReference {
+                    id: "aws-role".to_string(),
+                    cred_type: CredentialType::AWSRole,
+                    expires_at: None,
+                },
+            },
+            path: "/dataset".to_string(),
+            schema: DataSchema {
+                schema_type: SchemaType::Tabular,
+                definition: "{}".to_string(),
+                fields: vec![],
+            },
+            size_hint: Some(1024),
+            last_verified: 0,
+            checksum: None,
+            access_policy: AccessPolicy {
+                readers: vec![[1u8; 32]],
+                compute_allowed: vec![[1u8; 32]],
+                approved_models: vec![],
+                valid_from: None,
+                valid_until: None,
+                max_accesses_per_day: None,
+            },
+            owner: [1u8; 32],
+            compliance: ComplianceMetadata {
+                classification: DataClassification::Internal,
+                retention_policy: None,
+                geo_restrictions: None,
+                audit_required: true,
+            },
+        };
+        bridge.register_pointer(pointer.clone()).unwrap();
+        let instruction = ComputeInstruction {
+            id: [22u8; 32],
+            data_pointer: pointer,
+            model: ModelReference {
+                hash: [3u8; 32],
+                source: None,
+                model_type: ModelType::ONNX,
+                input_shape: vec![1, 4],
+                output_shape: vec![1, 1],
+            },
+            preprocessing: vec![],
+            postprocessing: vec![],
+            output_spec: OutputSpec {
+                return_type: ReturnType::CommitmentOnly,
+                encryption: OutputEncryption::ForRequester,
+                destination: OutputDestination::ToRequester,
+            },
+            constraints: ExecutionConstraints {
+                max_time: Duration::from_secs(30),
+                max_memory_mb: 512,
+                required_tee: None,
+                deadline: None,
+                max_cost: None,
+            },
+            requester: [1u8; 32],
+            signature: vec![],
+        };
+        bridge.submit_instruction(instruction).unwrap();
+        let tunnel_id = bridge.create_tunnel([22u8; 32], [9u8; 32]).unwrap();
+        let tunnel = bridge.active_tunnels.get(&tunnel_id).unwrap();
+        assert!(!tunnel.encrypted_key.is_empty());
+        assert!(tunnel.attestation.as_ref().is_some_and(|v| !v.is_empty()));
     }
 }

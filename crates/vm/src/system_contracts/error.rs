@@ -181,6 +181,10 @@ pub enum SystemContractError {
         actual: super::types::VerificationMethod,
     },
 
+    /// Settlement failed (enterprise compliance)
+    #[error("Settlement failed: {reason}")]
+    SettlementFailed { reason: String },
+
     // =========================================================================
     // CONFIGURATION ERRORS
     // =========================================================================
@@ -369,6 +373,7 @@ impl SystemContractError {
             SystemContractError::ZkVerificationFailed { .. } => 1402,
             SystemContractError::MeasurementMismatch { .. } => 1403,
             SystemContractError::ProofMethodMismatch { .. } => 1404,
+            SystemContractError::SettlementFailed { .. } => 1405,
 
             // Config errors: 1500-1599
             SystemContractError::InvalidConfig(_) => 1500,

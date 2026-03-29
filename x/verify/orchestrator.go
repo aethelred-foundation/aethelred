@@ -66,12 +66,19 @@ type OrchestratorConfig struct {
 
 	// NitroConfig overrides the default Nitro enclave configuration
 	NitroConfig *tee.NitroConfig
+
+	// EnterpriseMode enables fail-closed enterprise constraints.
+	// When true, DefaultVerificationType MUST be Hybrid,
+	// RequireBothForHybrid MUST be true, and simulated/mock backends
+	// are rejected. Use ValidateEnterpriseConfig() to check.
+	EnterpriseMode bool
 }
 
-// DefaultOrchestratorConfig returns default configuration
+// DefaultOrchestratorConfig returns default configuration.
+// SQ01: Enterprise default is Hybrid verification for maximum assurance.
 func DefaultOrchestratorConfig() OrchestratorConfig {
 	return OrchestratorConfig{
-		DefaultVerificationType: types.VerificationTypeTEE,
+		DefaultVerificationType: types.VerificationTypeHybrid, // SQ01: enterprise default
 		ParallelVerification:    true,
 		CacheEnabled:            true,
 		CacheTTL:                5 * time.Minute,
@@ -80,6 +87,38 @@ func DefaultOrchestratorConfig() OrchestratorConfig {
 		MaxRetries:              2,
 		VerificationTimeout:     5 * time.Minute,
 	}
+}
+
+// ValidateEnterpriseConfig checks that the OrchestratorConfig satisfies all
+// enterprise fail-closed constraints. Returns nil when EnterpriseMode is false.
+//
+// Enterprise constraints:
+//   - DefaultVerificationType must be Hybrid
+//   - RequireBothForHybrid must be true
+//   - Simulated/mock prover backends are rejected
+//   - Simulated/mock TEE backends are rejected
+func (cfg OrchestratorConfig) ValidateEnterpriseConfig() error {
+	if !cfg.EnterpriseMode {
+		return nil
+	}
+
+	if cfg.DefaultVerificationType != types.VerificationTypeHybrid {
+		return fmt.Errorf("enterprise mode requires DefaultVerificationType=Hybrid, got %s", cfg.DefaultVerificationType)
+	}
+
+	if !cfg.RequireBothForHybrid {
+		return fmt.Errorf("enterprise mode requires RequireBothForHybrid=true")
+	}
+
+	if cfg.ProverConfig != nil && cfg.ProverConfig.AllowSimulated {
+		return fmt.Errorf("enterprise mode rejects simulated prover backend")
+	}
+
+	if cfg.NitroConfig != nil && cfg.NitroConfig.AllowSimulated {
+		return fmt.Errorf("enterprise mode rejects simulated TEE backend")
+	}
+
+	return nil
 }
 
 // OrchestratorMetrics tracks orchestrator performance
@@ -209,8 +248,14 @@ func NewVerificationOrchestrator(logger log.Logger, config OrchestratorConfig) *
 	}
 }
 
-// Initialize initializes all verification services
+// Initialize initializes all verification services.
+// In enterprise mode, it re-validates the config to guarantee fail-closed
+// invariants hold even if the config was mutated after construction.
 func (vo *VerificationOrchestrator) Initialize(ctx context.Context) error {
+	if err := vo.config.ValidateEnterpriseConfig(); err != nil {
+		return fmt.Errorf("enterprise config validation failed: %w", err)
+	}
+
 	// Initialize Nitro Enclave service
 	if err := vo.nitroService.Initialize(ctx); err != nil {
 		allowSimulated := vo.config.NitroConfig != nil && vo.config.NitroConfig.AllowSimulated

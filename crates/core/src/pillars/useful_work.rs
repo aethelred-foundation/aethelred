@@ -24,10 +24,10 @@
 //!
 //! This ensures the network is always productive, not just secure.
 
-use std::collections::{BinaryHeap, HashMap, VecDeque};
-use std::cmp::Ordering;
-use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::time::{Duration, SystemTime};
 
 // ============================================================================
 // Work Categories
@@ -61,9 +61,7 @@ pub enum UsefulWorkCategory {
         framework: MLFramework,
     },
     /// Rendering and graphics
-    Rendering {
-        render_type: RenderType,
-    },
+    Rendering { render_type: RenderType },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -255,9 +253,18 @@ pub struct GovernanceTransaction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GovernanceAction {
-    Propose { proposal_id: u64, description: String },
-    Vote { proposal_id: u64, vote: bool },
-    Veto { proposal_id: u64, reason: String },
+    Propose {
+        proposal_id: u64,
+        description: String,
+    },
+    Vote {
+        proposal_id: u64,
+        vote: bool,
+    },
+    Veto {
+        proposal_id: u64,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -327,7 +334,7 @@ impl Default for RouterConfig {
         RouterConfig {
             max_fast_lane_size: 10_000,
             max_compute_lane_size: 1_000,
-            useful_work_ratio: 0.80, // 80% useful work
+            useful_work_ratio: 0.80,       // 80% useful work
             min_compute_bounty: 1_000_000, // Minimum 0.001 AETHEL
             max_parallel_jobs: 64,
             block_time_target: Duration::from_millis(400),
@@ -511,7 +518,8 @@ impl UsefulWorkRouter {
             estimated_gas: 0,
         };
 
-        let target_useful_work_gas = (block_gas_limit as f64 * self.config.useful_work_ratio) as u64;
+        let target_useful_work_gas =
+            (block_gas_limit as f64 * self.config.useful_work_ratio) as u64;
         let target_financial_gas = block_gas_limit - target_useful_work_gas;
 
         // Fill compute jobs first (useful work)
@@ -574,7 +582,9 @@ impl UsefulWorkRouter {
                 ScientificDomain::ParticlePhysics => 4_000_000,
                 ScientificDomain::MaterialsScience => 2_500_000,
             },
-            UsefulWorkCategory::Healthcare { computation_type, .. } => match computation_type {
+            UsefulWorkCategory::Healthcare {
+                computation_type, ..
+            } => match computation_type {
                 HealthcareComputation::MedicalImaging => 2_000_000,
                 HealthcareComputation::Diagnosis => 1_000_000,
                 HealthcareComputation::TreatmentPlan => 1_500_000,
@@ -638,7 +648,7 @@ impl UsefulWorkRouter {
             useful_computation_twh,
             wasted_energy_twh: estimated_annual_energy_twh * wasted_energy_ratio,
             equivalent_research_value_usd: useful_computation_twh * 1_000_000.0, // $1M per TWh of compute
-            carbon_offset_potential_tons: useful_computation_twh * 500.0, // Rough estimate
+            carbon_offset_potential_tons: useful_computation_twh * 500.0,        // Rough estimate
             research_contributions: ResearchContributions {
                 protein_structures_predicted: self.metrics.total_useful_work_units / 1000,
                 drug_candidates_screened: self.metrics.total_useful_work_units / 500,

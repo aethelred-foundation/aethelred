@@ -480,9 +480,19 @@ func TestZKVerifierPrecompileAndSystemVerifier(t *testing.T) {
 		System:       ProofSystemEZKL,
 	}))
 
+	jobID := "job-precompile-001"
 	proofBytes := append([]byte("EZKL"), bytes.Repeat([]byte{0xAB}, 252)...)
-	publicInputs := bytes.Repeat([]byte{0xBC}, 96)
-	input := buildPrecompileInput(ProofSystemEZKL, vkHash, circuitHash, proofBytes, publicInputs)
+	publicInputs := appendDomainBinding(bytes.Repeat([]byte{0xBC}, 64), jobID, "aethelred-test-verify", 100)
+	input := buildPrecompileInputWithDomainBinding(
+		ProofSystemEZKL,
+		vkHash,
+		circuitHash,
+		proofBytes,
+		publicInputs,
+		jobID,
+		"aethelred-test-verify",
+		100,
+	)
 
 	precompile := NewZKVerifierPrecompile(verifier)
 	addr := precompile.PrecompileAddress()
@@ -607,6 +617,35 @@ func buildPrecompileInput(system ProofSystem, vkHash [32]byte, circuitHash [32]b
 	binary.BigEndian.PutUint32(inputLen, uint32(len(inputs)))
 	out = append(out, inputLen...)
 	out = append(out, inputs...)
+
+	return out
+}
+
+func buildPrecompileInputWithDomainBinding(
+	system ProofSystem,
+	vkHash [32]byte,
+	circuitHash [32]byte,
+	proof []byte,
+	inputs []byte,
+	jobID string,
+	chainID string,
+	height int64,
+) []byte {
+	out := buildPrecompileInput(system, vkHash, circuitHash, proof, inputs)
+
+	jobIDLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(jobIDLen, uint32(len(jobID)))
+	out = append(out, jobIDLen...)
+	out = append(out, []byte(jobID)...)
+
+	chainIDLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(chainIDLen, uint32(len(chainID)))
+	out = append(out, chainIDLen...)
+	out = append(out, []byte(chainID)...)
+
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, uint64(height))
+	out = append(out, heightBytes...)
 
 	return out
 }

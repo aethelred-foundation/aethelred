@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/aethelred/aethelred/x/pouw/keeper"
@@ -202,7 +203,22 @@ func TestPerformanceProfile_Mainnet(t *testing.T) {
 	require.NoError(t, profile.ValidateProfile())
 	require.Equal(t, 25, profile.MaxJobsPerBlock)
 	require.Equal(t, 5, profile.MinValidatorsRequired)
+	require.Equal(t, 5, profile.ValidatorsPerJob)
 	require.Equal(t, int64(200), profile.MaxBlockBudgetMs)
+}
+
+func TestPerformanceProfile_ReferenceBenchmark(t *testing.T) {
+	profile := keeper.ReferenceBenchmarkProfile()
+
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, profile.Name)
+	require.NoError(t, profile.ValidateProfile())
+	require.Equal(t, 2000, profile.MaxJobsPerBlock)
+	require.Equal(t, 20, profile.MaxJobsPerValidator)
+	require.Equal(t, 67, profile.MinValidatorsRequired)
+	require.Equal(t, 1, profile.ValidatorsPerJob)
+	require.Equal(t, int64(2800), profile.TargetBlockTimeMs)
+	require.Equal(t, 650, profile.ClaimedComputeJobsPerSec)
+	require.Equal(t, 12500, profile.ClaimedTransfersTPS)
 }
 
 func TestPerformanceProfile_StressTest(t *testing.T) {
@@ -211,6 +227,7 @@ func TestPerformanceProfile_StressTest(t *testing.T) {
 	require.Equal(t, "stress", profile.Name)
 	require.NoError(t, profile.ValidateProfile())
 	require.Equal(t, 100, profile.MaxJobsPerBlock)
+	require.Equal(t, 3, profile.ValidatorsPerJob)
 }
 
 func TestPerformanceProfile_ValidationRejectsInvalid(t *testing.T) {
@@ -250,12 +267,86 @@ func TestPerformanceProfile_AllProfilesValid(t *testing.T) {
 	profiles := []keeper.PerformanceProfile{
 		keeper.TestnetProfile(),
 		keeper.MainnetProfile(),
+		keeper.ReferenceBenchmarkProfile(),
 		keeper.StressTestProfile(),
 	}
 
 	for _, p := range profiles {
 		require.NoError(t, p.ValidateProfile(), "profile %s should be valid", p.Name)
 	}
+}
+
+func TestPerformanceProfile_ByName(t *testing.T) {
+	profile, err := keeper.PerformanceProfileByName("reference-benchmark")
+	require.NoError(t, err)
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, profile.Name)
+
+	profile, err = keeper.PerformanceProfileByName("benchmark")
+	require.NoError(t, err)
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, profile.Name)
+
+	_, err = keeper.PerformanceProfileByName("does-not-exist")
+	require.Error(t, err)
+}
+
+func TestPerformanceProfile_ReferenceClaimsFitProfileCapacity(t *testing.T) {
+	claims := keeper.ReferenceBenchmarkClaims()
+	profile := keeper.ReferenceBenchmarkProfile()
+
+	requiredJobsPerBlock := claims.RequiredJobsPerBlock()
+	require.Equal(t, 1820, requiredJobsPerBlock)
+	require.GreaterOrEqual(t, profile.MaxJobsPerBlock, requiredJobsPerBlock)
+	require.GreaterOrEqual(
+		t,
+		profile.ReferenceValidatorCount*profile.MaxJobsPerValidator,
+		profile.MaxJobsPerBlock*profile.ValidatorsPerJob,
+	)
+}
+
+func TestThroughputLanePlan_EffectiveCapacity(t *testing.T) {
+	lane := keeper.ThroughputLanePlan{
+		Name:                      "fast-small-model",
+		Workload:                  "small-model inference",
+		Description:               "test lane",
+		ExecutionWorkers:          192,
+		MaxJobsPerWorkerPerWindow: 64,
+		WorkersPerJob:             1,
+		TargetWindowMs:            1200,
+		ReservedHeadroomPercent:   20,
+		JobsPerAggregatedProof:    512,
+		MandatoryTEE:              true,
+		MandatoryZKML:             true,
+	}
+
+	require.NoError(t, lane.Validate())
+	require.InDelta(t, 10240.0, lane.RawJobsPerSecond(), 0.001)
+	require.InDelta(t, 8192.0, lane.EffectiveJobsPerSecond(), 0.001)
+	require.InDelta(t, 16.0, lane.AggregatedProofsPerSecond(), 0.001)
+}
+
+func TestDayOneTenKScalePlan_ValidAndExceedsTarget(t *testing.T) {
+	plan := keeper.DayOneTenKScalePlan()
+
+	require.NoError(t, plan.Validate())
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, plan.SettlementProfileName)
+	require.Equal(t, 100, plan.SettlementValidators)
+	require.True(t, plan.RequiresDecoupledExecutionPlane)
+	require.True(t, plan.RequiresAggregatedSettlement)
+	require.Len(t, plan.Lanes, 3)
+	require.Greater(t, plan.TotalExecutionWorkers(), plan.SettlementValidators)
+	require.InDelta(t, 11724.8, plan.TotalEffectiveJobsPerSecond(), 0.001)
+	require.GreaterOrEqual(t, plan.TotalEffectiveJobsPerSecond(), float64(plan.TargetVerifiedJobsPerSecond))
+}
+
+func TestThroughputScalePlan_RejectsInvalidTenKPlan(t *testing.T) {
+	plan := keeper.DayOneTenKScalePlan()
+	plan.RequiresDecoupledExecutionPlane = false
+
+	require.Error(t, plan.Validate())
+
+	plan = keeper.DayOneTenKScalePlan()
+	plan.Lanes[0].MandatoryZKML = false
+	require.Error(t, plan.Validate())
 }
 
 // =============================================================================
@@ -327,6 +418,15 @@ func TestProtocolManifest_Render(t *testing.T) {
 	require.Contains(t, rendered, "PERFORMANCE PROFILE")
 
 	t.Log(rendered)
+}
+
+func TestProtocolManifest_DetectsReferenceBenchmarkProfile(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	require.NoError(t, k.SetParams(ctx, keeper.ReferenceBenchmarkParams()))
+	manifest := keeper.BuildProtocolManifest(ctx, k)
+
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, manifest.ActiveProfile)
 }
 
 // =============================================================================
@@ -544,7 +644,17 @@ func TestPerformanceReport_BudgetUtilization(t *testing.T) {
 	// Budget utilization should be very low in clean state
 	require.Less(t, report.BudgetUtilization, 0.5,
 		"clean state budget utilization should be < 50%%")
-	require.Equal(t, int64(200), report.BlockBudgetMs)
+	require.Equal(t, int64(500), report.BlockBudgetMs)
+}
+
+func TestPerformanceReport_UsesReferenceBenchmarkProfileWhenParamsMatch(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	require.NoError(t, k.SetParams(ctx, keeper.ReferenceBenchmarkParams()))
+	report := keeper.RunPerformanceTuningReport(ctx, k)
+
+	require.Equal(t, keeper.ReferenceBenchmarkProfileName, report.ActiveProfile.Name)
+	require.Equal(t, 2000, report.ActiveProfile.MaxJobsPerBlock)
 }
 
 // =============================================================================
@@ -621,6 +731,42 @@ func TestStress_10KConcurrentJobs(t *testing.T) {
 	require.GreaterOrEqual(t, jobsPerSecond, float64(1000),
 		"Should process at least 1000 jobs/sec")
 	require.Equal(t, 0, failedCreation, "All jobs should be created successfully")
+}
+
+func TestReferenceBenchmarkProfile_SchedulesPublishedCapacity(t *testing.T) {
+	_, ctx := newTestKeeper(t)
+	profile := keeper.ReferenceBenchmarkProfile()
+	cfg := profile.ToSchedulerConfig()
+	scheduler := keeper.NewJobScheduler(log.NewNopLogger(), nil, cfg)
+
+	for i := 0; i < profile.ReferenceValidatorCount; i++ {
+		addr := fmt.Sprintf("ref-val-%03d", i)
+		cap := &types.ValidatorCapability{
+			Address:           addr,
+			TeePlatforms:      []string{"aws-nitro"},
+			ZkmlSystems:       []string{"ezkl"},
+			MaxConcurrentJobs: int64(profile.MaxJobsPerValidator),
+			IsOnline:          true,
+			ReputationScore:   90,
+		}
+		scheduler.RegisterValidator(cap)
+	}
+
+	for i := 0; i < profile.MaxJobsPerBlock; i++ {
+		job := &types.ComputeJob{
+			Id:          fmt.Sprintf("reference-job-%04d", i),
+			Status:      types.JobStatusPending,
+			RequestedBy: "cosmos1referencebench",
+			ModelHash:   randomHash(),
+			InputHash:   randomHash(),
+			ProofType:   types.ProofTypeHybrid,
+			Priority:    int64(i % 10),
+		}
+		require.NoError(t, scheduler.EnqueueJob(ctx, job))
+	}
+
+	selected := scheduler.GetNextJobs(ctx, 100)
+	require.Len(t, selected, profile.MaxJobsPerBlock)
 }
 
 // TestStress_1000Validators tests consensus with 1000+ validators

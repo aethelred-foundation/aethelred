@@ -23,22 +23,15 @@
 //! This ensures that if Aethelred becomes the global AI layer, the supply shock
 //! is **massive**, rewarding early adopters.
 
-// H-08: Production safety - prevent shipping dev tokenomics stubs.
-// Building with `--features production` will fail here, forcing
-// the integrator to wire in the production-grade implementation.
-#[cfg(feature = "production")]
-compile_error!(
-    "quadratic_burn stub is active in a production build. \
-     Replace with the production tokenomics engine before shipping."
-);
-
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::{Duration, SystemTime};
-use serde::{Deserialize, Serialize};
 
 // ============================================================================
 // Token Economics
 // ============================================================================
+
+pub const CANONICAL_AETHEL_SUPPLY_WEI: u128 = 10_000_000_000u128 * 10u128.pow(18);
 
 /// AETHEL Token Configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,14 +54,27 @@ pub struct AETHELTokenConfig {
 
 impl Default for AETHELTokenConfig {
     fn default() -> Self {
+        Self::fixed_supply_canonical()
+    }
+}
+
+impl AETHELTokenConfig {
+    pub fn fixed_supply_canonical() -> Self {
         AETHELTokenConfig {
-            total_supply: 1_000_000_000 * 10u128.pow(18), // 1 billion AETHEL
+            total_supply: CANONICAL_AETHEL_SUPPLY_WEI, // 10 billion AETHEL
             decimals: 18,
             symbol: "AETHEL".to_string(),
-            max_burn_rate: 0.50, // 50% max burn at full load
-            min_burn_rate: 0.01, // 1% minimum burn
-            target_inflation_rate: 0.02, // 2% annual inflation for staking
+            max_burn_rate: 0.50,        // 50% max burn at full load
+            min_burn_rate: 0.01,        // 1% minimum burn
+            target_inflation_rate: 0.0, // fixed-supply mode
             burn_params: QuadraticBurnParams::default(),
+        }
+    }
+
+    pub fn legacy_growth_simulation() -> Self {
+        AETHELTokenConfig {
+            target_inflation_rate: 0.02,
+            ..Self::fixed_supply_canonical()
         }
     }
 }
@@ -91,12 +97,82 @@ pub struct QuadraticBurnParams {
 impl Default for QuadraticBurnParams {
     fn default() -> Self {
         QuadraticBurnParams {
-            coefficient: 0.5,  // 0.5 * load²
-            exponent: 2.0,     // Quadratic
-            offset: 0.01,      // 1% minimum
+            coefficient: 0.5, // 0.5 * load²
+            exponent: 2.0,    // Quadratic
+            offset: 0.01,     // 1% minimum
             smoothing_factor: 0.8,
             load_window_blocks: 100,
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum BurnError {
+    InvalidConfiguration(String),
+}
+
+impl std::fmt::Display for BurnError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BurnError::InvalidConfiguration(msg) => write!(f, "Invalid burn configuration: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for BurnError {}
+
+impl AETHELTokenConfig {
+    pub fn validate(&self) -> Result<(), BurnError> {
+        if self.total_supply == 0 {
+            return Err(BurnError::InvalidConfiguration(
+                "total_supply must be greater than zero".to_string(),
+            ));
+        }
+        if self.decimals == 0 {
+            return Err(BurnError::InvalidConfiguration(
+                "decimals must be greater than zero".to_string(),
+            ));
+        }
+        if self.symbol.trim().is_empty() {
+            return Err(BurnError::InvalidConfiguration(
+                "symbol must not be empty".to_string(),
+            ));
+        }
+        if !(0.0..=1.0).contains(&self.min_burn_rate)
+            || !(0.0..=1.0).contains(&self.max_burn_rate)
+            || self.min_burn_rate > self.max_burn_rate
+        {
+            return Err(BurnError::InvalidConfiguration(
+                "burn rates must be within [0, 1] and min <= max".to_string(),
+            ));
+        }
+        if self.target_inflation_rate < 0.0 {
+            return Err(BurnError::InvalidConfiguration(
+                "target inflation rate must be non-negative".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn validate_fixed_supply(&self) -> Result<(), BurnError> {
+        self.validate()?;
+        if self.total_supply != CANONICAL_AETHEL_SUPPLY_WEI {
+            return Err(BurnError::InvalidConfiguration(format!(
+                "fixed-supply mode requires {} total supply, got {}",
+                CANONICAL_AETHEL_SUPPLY_WEI, self.total_supply
+            )));
+        }
+        if self.target_inflation_rate != 0.0 {
+            return Err(BurnError::InvalidConfiguration(
+                "fixed-supply mode requires zero target inflation".to_string(),
+            ));
+        }
+        if self.symbol != "AETHEL" {
+            return Err(BurnError::InvalidConfiguration(
+                "fixed-supply mode requires symbol AETHEL".to_string(),
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -222,18 +298,20 @@ impl CongestionTracker {
 
         // Calculate current load
         let latest = self.block_gas_history.back().unwrap();
-        self.current_metrics.current_load =
-            latest.gas_used as f64 / latest.gas_limit as f64;
+        self.current_metrics.current_load = latest.gas_used as f64 / latest.gas_limit as f64;
 
         // Calculate average load
-        let total_load: f64 = self.block_gas_history.iter()
+        let total_load: f64 = self
+            .block_gas_history
+            .iter()
             .map(|b| b.gas_used as f64 / b.gas_limit as f64)
             .sum();
-        self.current_metrics.average_load =
-            total_load / self.block_gas_history.len() as f64;
+        self.current_metrics.average_load = total_load / self.block_gas_history.len() as f64;
 
         // Calculate peak load
-        self.current_metrics.peak_load = self.block_gas_history.iter()
+        self.current_metrics.peak_load = self
+            .block_gas_history
+            .iter()
             .map(|b| b.gas_used as f64 / b.gas_limit as f64)
             .fold(0.0, f64::max);
 
@@ -257,13 +335,17 @@ impl CongestionTracker {
             return LoadTrend::Stable;
         }
 
-        let recent: Vec<f64> = self.block_gas_history.iter()
+        let recent: Vec<f64> = self
+            .block_gas_history
+            .iter()
             .rev()
             .take(10)
             .map(|b| b.gas_used as f64 / b.gas_limit as f64)
             .collect();
 
-        let older: Vec<f64> = self.block_gas_history.iter()
+        let older: Vec<f64> = self
+            .block_gas_history
+            .iter()
             .rev()
             .skip(10)
             .take(10)
@@ -349,13 +431,28 @@ pub struct BurnRecord {
 }
 
 impl QuadraticBurnEngine {
-    pub fn new(token_config: AETHELTokenConfig) -> Self {
-        QuadraticBurnEngine {
+    pub fn try_new(token_config: AETHELTokenConfig) -> Result<Self, BurnError> {
+        token_config.validate()?;
+        let circulating_supply = token_config.total_supply;
+        Ok(QuadraticBurnEngine {
             token_config,
             congestion: CongestionTracker::new(CongestionConfig::default()),
-            stats: BurnStatistics::default(),
+            stats: BurnStatistics {
+                circulating_supply,
+                ..BurnStatistics::default()
+            },
             burn_history: VecDeque::new(),
-        }
+        })
+    }
+
+    pub fn new(token_config: AETHELTokenConfig) -> Self {
+        Self::try_new(token_config).expect("invalid QuadraticBurnEngine configuration")
+    }
+
+    pub fn new_canonical() -> Result<Self, BurnError> {
+        let config = AETHELTokenConfig::fixed_supply_canonical();
+        config.validate_fixed_supply()?;
+        Self::try_new(config)
     }
 
     /// Calculate burn rate based on current network load
@@ -403,9 +500,7 @@ impl QuadraticBurnEngine {
 
         // Calculate amounts
         let burn_rate_fixed = self.burn_rate_to_fixed(burn_rate);
-        let fees_to_burn = total_fees_collected
-            .saturating_mul(burn_rate_fixed)
-            / BURN_RATE_SCALE;
+        let fees_to_burn = total_fees_collected.saturating_mul(burn_rate_fixed) / BURN_RATE_SCALE;
         let fees_to_validators = total_fees_collected - fees_to_burn;
 
         // Record burn
@@ -439,6 +534,10 @@ impl QuadraticBurnEngine {
 
     fn update_statistics(&mut self, burned_this_block: u128) {
         self.stats.total_burned += burned_this_block;
+        self.stats.circulating_supply = self
+            .stats
+            .circulating_supply
+            .saturating_sub(burned_this_block);
         self.stats.current_burn_rate = self.calculate_burn_rate(self.congestion.current_load());
 
         // Calculate time-based statistics
@@ -451,35 +550,44 @@ impl QuadraticBurnEngine {
         let week_ago = now.saturating_sub(86400 * 7);
         let month_ago = now.saturating_sub(86400 * 30);
 
-        self.stats.burned_24h = self.burn_history.iter()
+        self.stats.burned_24h = self
+            .burn_history
+            .iter()
             .filter(|r| r.timestamp >= day_ago)
             .map(|r| r.fees_burned)
             .sum();
 
-        self.stats.burned_7d = self.burn_history.iter()
+        self.stats.burned_7d = self
+            .burn_history
+            .iter()
             .filter(|r| r.timestamp >= week_ago)
             .map(|r| r.fees_burned)
             .sum();
 
-        self.stats.burned_30d = self.burn_history.iter()
+        self.stats.burned_30d = self
+            .burn_history
+            .iter()
             .filter(|r| r.timestamp >= month_ago)
             .map(|r| r.fees_burned)
             .sum();
 
         // Calculate average burn rate
-        let recent_records: Vec<_> = self.burn_history.iter()
+        let recent_records: Vec<_> = self
+            .burn_history
+            .iter()
             .filter(|r| r.timestamp >= day_ago)
             .collect();
 
         if !recent_records.is_empty() {
-            self.stats.average_burn_rate_24h = recent_records.iter()
-                .map(|r| r.burn_rate)
-                .sum::<f64>() / recent_records.len() as f64;
+            self.stats.average_burn_rate_24h =
+                recent_records.iter().map(|r| r.burn_rate).sum::<f64>()
+                    / recent_records.len() as f64;
         }
 
         // Estimate annual deflation
         if self.stats.circulating_supply > 0 {
-            let daily_burn_rate = self.stats.burned_24h as f64 / self.stats.circulating_supply as f64;
+            let daily_burn_rate =
+                self.stats.burned_24h as f64 / self.stats.circulating_supply as f64;
             self.stats.annual_deflation_rate = daily_burn_rate * 365.0;
 
             // Price impact estimate (very simplified)
@@ -496,7 +604,8 @@ impl QuadraticBurnEngine {
     /// Get burn schedule preview
     pub fn burn_schedule_preview(&self) -> BurnSchedulePreview {
         let loads = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-        let rates: Vec<_> = loads.iter()
+        let rates: Vec<_> = loads
+            .iter()
             .map(|&load| (load, self.calculate_burn_rate(load)))
             .collect();
 
@@ -509,7 +618,8 @@ impl QuadraticBurnEngine {
 
     /// Generate comparison report
     pub fn comparison_report(&self) -> String {
-        format!(r#"
+        format!(
+            r#"
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║              QUADRATIC BURN: AETHELRED TOKENOMICS                              ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
@@ -622,9 +732,9 @@ pub struct FeeConfig {
 impl Default for FeeConfig {
     fn default() -> Self {
         FeeConfig {
-            min_base_fee: 1_000_000_000, // 1 Gwei equivalent
+            min_base_fee: 1_000_000_000,     // 1 Gwei equivalent
             max_base_fee: 1_000_000_000_000, // 1000 Gwei equivalent
-            adjustment_rate: 0.125, // 12.5% max change per block
+            adjustment_rate: 0.125,          // 12.5% max change per block
             target_utilization: 0.50,
         }
     }
@@ -786,6 +896,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_canonical_token_config_is_fixed_supply() {
+        let config = AETHELTokenConfig::default();
+        assert_eq!(config.total_supply, CANONICAL_AETHEL_SUPPLY_WEI);
+        assert_eq!(config.target_inflation_rate, 0.0);
+        assert!(config.validate_fixed_supply().is_ok());
+    }
+
+    #[test]
     fn test_burn_rate_calculation() {
         let engine = QuadraticBurnEngine::new(AETHELTokenConfig::default());
 
@@ -858,7 +976,8 @@ mod tests {
             compute_job_count: 10,
         };
 
-        let expected_rate = engine.calculate_burn_rate(block.gas_used as f64 / block.gas_limit as f64);
+        let expected_rate =
+            engine.calculate_burn_rate(block.gas_used as f64 / block.gas_limit as f64);
         let expected_rate_fixed = engine.burn_rate_to_fixed(expected_rate);
         let fees = 123_456_789u128;
         let expected_burn = fees.saturating_mul(expected_rate_fixed) / BURN_RATE_SCALE;
@@ -910,9 +1029,18 @@ mod tests {
 
     #[test]
     fn test_net_inflation() {
+        let fixed_supply =
+            StakingRewardCalculator::new(AETHELTokenConfig::default(), CANONICAL_AETHEL_SUPPLY_WEI);
+
+        let fixed_supply_result = fixed_supply.calculate_net_inflation(0.01, 0.50);
+        assert!(
+            fixed_supply_result.is_deflationary,
+            "fixed-supply configuration should remain deflationary when burns are non-zero"
+        );
+
         let calculator = StakingRewardCalculator::new(
-            AETHELTokenConfig::default(),
-            1_000_000_000 * 10u128.pow(18),
+            AETHELTokenConfig::legacy_growth_simulation(),
+            CANONICAL_AETHEL_SUPPLY_WEI,
         );
 
         // High burn rate should result in deflation

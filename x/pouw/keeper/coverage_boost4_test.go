@@ -1008,7 +1008,7 @@ func TestCB4_BondingCurve_CalculateSaleReturn(t *testing.T) {
 // =============================================================================
 
 func TestCB4_ComputeEmissionScheduleSafe_AllYears(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	btConfig := keeper.DefaultBlockTimeConfig()
 	schedule, err := keeper.ComputeEmissionScheduleSafe(config, 5, btConfig)
 	require.NoError(t, err)

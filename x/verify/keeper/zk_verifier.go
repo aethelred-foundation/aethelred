@@ -356,19 +356,33 @@ func (v *ZKVerifier) VerifyProof(ctx sdk.Context, proof *ZKProof) *ZKVerificatio
 	return result
 }
 
+func computeDomainBindingDigest(jobID, chainID string, height int64) [32]byte {
+	h := sha256.New()
+	h.Write([]byte(jobID))
+	h.Write([]byte(chainID))
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, uint64(height))
+	h.Write(heightBytes)
+
+	var digest [32]byte
+	copy(digest[:], h.Sum(nil))
+	return digest
+}
+
+func appendDomainBinding(publicInputs []byte, jobID, chainID string, height int64) []byte {
+	digest := computeDomainBindingDigest(jobID, chainID, height)
+	bound := make([]byte, 0, len(publicInputs)+len(digest))
+	bound = append(bound, publicInputs...)
+	bound = append(bound, digest[:]...)
+	return bound
+}
+
 // validateDomainBinding ensures that the proof's public inputs commit to the
 // claimed JobID, ChainID, and Height. This prevents replay attacks where a
 // valid proof for one job is re-submitted for a different job or on a different
 // chain (ZK-06).
 func (v *ZKVerifier) validateDomainBinding(proof *ZKProof) error {
-	// Compute expected domain binding digest: SHA-256(jobID || chainID || height).
-	h := sha256.New()
-	h.Write([]byte(proof.JobID))
-	h.Write([]byte(proof.ChainID))
-	heightBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(heightBytes, uint64(proof.Height))
-	h.Write(heightBytes)
-	expectedBinding := h.Sum(nil)
+	expectedBinding := computeDomainBindingDigest(proof.JobID, proof.ChainID, proof.Height)
 
 	// The domain binding must appear in the public inputs.
 	// Convention: last 32 bytes of public inputs contain the domain binding digest.
@@ -376,7 +390,7 @@ func (v *ZKVerifier) validateDomainBinding(proof *ZKProof) error {
 		return fmt.Errorf("public inputs too short (%d bytes) to contain domain binding", len(proof.PublicInputs))
 	}
 	tail := proof.PublicInputs[len(proof.PublicInputs)-32:]
-	if !bytes.Equal(tail, expectedBinding) {
+	if !bytes.Equal(tail, expectedBinding[:]) {
 		return fmt.Errorf("domain binding mismatch: public inputs do not commit to jobID=%s chainID=%s height=%d",
 			proof.JobID, proof.ChainID, proof.Height)
 	}
@@ -864,6 +878,46 @@ func (p *ZKVerifierPrecompile) parsePrecompileInput(input []byte) (*ZKProof, err
 		return nil, errors.New("public inputs data truncated")
 	}
 	proof.PublicInputs = input[offset+4 : offset+4+inputsLen]
+	offset += 4 + inputsLen
+
+	// Optional domain-binding trailer for production verification:
+	// [jobIDLen:4][jobID][chainIDLen:4][chainID][height:8]
+	// Legacy callers can omit this trailer and will continue to parse.
+	if uint32(len(input)) == offset {
+		return proof, nil
+	}
+
+	if uint32(len(input)) < offset+4 {
+		return nil, errors.New("missing job id length")
+	}
+	jobIDLen := binary.BigEndian.Uint32(input[offset : offset+4])
+	offset += 4
+	if uint32(len(input)) < offset+jobIDLen {
+		return nil, errors.New("job id truncated")
+	}
+	proof.JobID = string(input[offset : offset+jobIDLen])
+	offset += jobIDLen
+
+	if uint32(len(input)) < offset+4 {
+		return nil, errors.New("missing chain id length")
+	}
+	chainIDLen := binary.BigEndian.Uint32(input[offset : offset+4])
+	offset += 4
+	if uint32(len(input)) < offset+chainIDLen {
+		return nil, errors.New("chain id truncated")
+	}
+	proof.ChainID = string(input[offset : offset+chainIDLen])
+	offset += chainIDLen
+
+	if uint32(len(input)) < offset+8 {
+		return nil, errors.New("missing bound height")
+	}
+	proof.Height = int64(binary.BigEndian.Uint64(input[offset : offset+8]))
+	offset += 8
+
+	if uint32(len(input)) != offset {
+		return nil, errors.New("unexpected trailing bytes after domain binding")
+	}
 
 	return proof, nil
 }

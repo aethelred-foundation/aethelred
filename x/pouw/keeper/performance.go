@@ -221,6 +221,50 @@ func (bb *BlockBudget) TotalSpent() time.Duration {
 // Section 3: Performance Profile
 // ---------------------------------------------------------------------------
 
+const (
+	// ReferenceBenchmarkProfileName is the canonical profile used to back the
+	// published 2.8s / 12.5K TPS / 650 jobs/s benchmark pack.
+	ReferenceBenchmarkProfileName = "reference-benchmark"
+
+	referenceBenchmarkTargetBlockTimeMs = 2800
+	referenceBenchmarkTransfersTPS      = 12500
+	referenceBenchmarkComputeJobsPerSec = 650
+	referenceBenchmarkValidatorCount    = 100
+	referenceBenchmarkJobsPerValidator  = 20
+	referenceBenchmarkJobsPerBlock      = 2000
+)
+
+// PublishedPerformanceClaims captures the benchmark-backed public numbers tied
+// to a named runtime profile.
+type PublishedPerformanceClaims struct {
+	FinalitySeconds           float64
+	TransfersTPS              int
+	ComputeJobsPerSecond      int
+	ReferenceValidatorCount   int
+	ReferenceJobsPerValidator int
+}
+
+// RequiredJobsPerBlock computes the minimum jobs-per-block capacity required
+// to sustain the published compute throughput at the claimed finality.
+func (c PublishedPerformanceClaims) RequiredJobsPerBlock() int {
+	if c.FinalitySeconds <= 0 || c.ComputeJobsPerSecond <= 0 {
+		return 0
+	}
+	return int(math.Ceil(c.FinalitySeconds * float64(c.ComputeJobsPerSecond)))
+}
+
+// ReferenceBenchmarkClaims returns the public performance numbers currently
+// published for the benchmark reference network profile.
+func ReferenceBenchmarkClaims() PublishedPerformanceClaims {
+	return PublishedPerformanceClaims{
+		FinalitySeconds:           float64(referenceBenchmarkTargetBlockTimeMs) / 1000,
+		TransfersTPS:              referenceBenchmarkTransfersTPS,
+		ComputeJobsPerSecond:      referenceBenchmarkComputeJobsPerSec,
+		ReferenceValidatorCount:   referenceBenchmarkValidatorCount,
+		ReferenceJobsPerValidator: referenceBenchmarkJobsPerValidator,
+	}
+}
+
 // PerformanceProfile defines a named set of tuning parameters for the module.
 // Profiles are selected based on network conditions and phase (testnet, mainnet).
 type PerformanceProfile struct {
@@ -235,6 +279,7 @@ type PerformanceProfile struct {
 
 	// Consensus tuning
 	MinValidatorsRequired  int
+	ValidatorsPerJob       int
 	ConsensusTimeoutBlocks int64
 	VoteExtensionMaxBytes  int
 
@@ -243,9 +288,262 @@ type PerformanceProfile struct {
 	MaxBlockBudgetMs int64
 	MaxQueryPageSize int
 
+	// Timing and published-claim hints
+	TargetBlockTimeMs        int64
+	ClaimedTransfersTPS      int
+	ClaimedComputeJobsPerSec int
+	ReferenceValidatorCount  int
+
 	// SLA targets (in blocks)
 	TargetJobCompletionBlocks int64
 	MaxJobCompletionBlocks    int64
+}
+
+// ThroughputLanePlan models a dedicated execution lane for capacity planning.
+// It is an internal planning construct, not a benchmark-backed public claim.
+//
+// The core assumption for 10k+ verified jobs/s is that execution workers are
+// decoupled from the BFT settlement validator set. Consensus validators seal
+// batched results, while attested workers handle inference and proof
+// production inside dedicated lanes.
+type ThroughputLanePlan struct {
+	Name        string
+	Workload    string
+	Description string
+
+	ExecutionWorkers          int
+	MaxJobsPerWorkerPerWindow int
+	WorkersPerJob             int
+	TargetWindowMs            int64
+
+	// ReservedHeadroomPercent keeps slack for retries, jitter, stragglers,
+	// enclave warmups, and burst control. This keeps planning numbers honest.
+	ReservedHeadroomPercent int
+
+	// JobsPerAggregatedProof models batched settlement. Without aggregation,
+	// mandatory zkML quickly becomes the throughput bottleneck.
+	JobsPerAggregatedProof int
+
+	MandatoryTEE  bool
+	MandatoryZKML bool
+}
+
+// RawJobsPerSecond returns the theoretical lane throughput before headroom.
+func (lp ThroughputLanePlan) RawJobsPerSecond() float64 {
+	if lp.ExecutionWorkers <= 0 || lp.MaxJobsPerWorkerPerWindow <= 0 ||
+		lp.WorkersPerJob <= 0 || lp.TargetWindowMs <= 0 {
+		return 0
+	}
+	return (float64(lp.ExecutionWorkers*lp.MaxJobsPerWorkerPerWindow) / float64(lp.WorkersPerJob)) /
+		(float64(lp.TargetWindowMs) / 1000.0)
+}
+
+// EffectiveJobsPerSecond returns the headroom-adjusted capacity target.
+func (lp ThroughputLanePlan) EffectiveJobsPerSecond() float64 {
+	raw := lp.RawJobsPerSecond()
+	if raw <= 0 {
+		return 0
+	}
+	headroom := 1.0 - (float64(lp.ReservedHeadroomPercent) / 100.0)
+	if headroom < 0 {
+		headroom = 0
+	}
+	return raw * headroom
+}
+
+// AggregatedProofsPerSecond returns how many settlement proofs the lane emits
+// when results are rolled up into mandatory batched proofs.
+func (lp ThroughputLanePlan) AggregatedProofsPerSecond() float64 {
+	if lp.JobsPerAggregatedProof <= 0 {
+		return 0
+	}
+	return lp.EffectiveJobsPerSecond() / float64(lp.JobsPerAggregatedProof)
+}
+
+// Validate ensures the lane plan is internally consistent.
+func (lp ThroughputLanePlan) Validate() error {
+	if strings.TrimSpace(lp.Name) == "" {
+		return fmt.Errorf("lane name is required")
+	}
+	if lp.ExecutionWorkers < 1 {
+		return fmt.Errorf("ExecutionWorkers must be >= 1, got %d", lp.ExecutionWorkers)
+	}
+	if lp.MaxJobsPerWorkerPerWindow < 1 {
+		return fmt.Errorf("MaxJobsPerWorkerPerWindow must be >= 1, got %d", lp.MaxJobsPerWorkerPerWindow)
+	}
+	if lp.WorkersPerJob < 1 {
+		return fmt.Errorf("WorkersPerJob must be >= 1, got %d", lp.WorkersPerJob)
+	}
+	if lp.TargetWindowMs < 250 || lp.TargetWindowMs > 10000 {
+		return fmt.Errorf("TargetWindowMs must be in [250, 10000], got %d", lp.TargetWindowMs)
+	}
+	if lp.ReservedHeadroomPercent < 0 || lp.ReservedHeadroomPercent > 60 {
+		return fmt.Errorf("ReservedHeadroomPercent must be in [0, 60], got %d", lp.ReservedHeadroomPercent)
+	}
+	if lp.JobsPerAggregatedProof < 1 {
+		return fmt.Errorf("JobsPerAggregatedProof must be >= 1, got %d", lp.JobsPerAggregatedProof)
+	}
+	if !lp.MandatoryTEE {
+		return fmt.Errorf("lane %q must require TEE", lp.Name)
+	}
+	if !lp.MandatoryZKML {
+		return fmt.Errorf("lane %q must require zkML", lp.Name)
+	}
+	return nil
+}
+
+// ThroughputScalePlan models a full-network scale target across multiple
+// execution lanes that settle to a common validator set.
+type ThroughputScalePlan struct {
+	Name        string
+	Description string
+
+	SettlementProfileName string
+	SettlementValidators  int
+
+	RequiresDecoupledExecutionPlane bool
+	RequiresAggregatedSettlement    bool
+	TargetVerifiedJobsPerSecond     int
+
+	Lanes []ThroughputLanePlan
+}
+
+// TotalRawJobsPerSecond returns the sum of all lane capacities before headroom.
+func (sp ThroughputScalePlan) TotalRawJobsPerSecond() float64 {
+	total := 0.0
+	for _, lane := range sp.Lanes {
+		total += lane.RawJobsPerSecond()
+	}
+	return total
+}
+
+// TotalEffectiveJobsPerSecond returns the summed headroom-adjusted capacity.
+func (sp ThroughputScalePlan) TotalEffectiveJobsPerSecond() float64 {
+	total := 0.0
+	for _, lane := range sp.Lanes {
+		total += lane.EffectiveJobsPerSecond()
+	}
+	return total
+}
+
+// TotalAggregatedProofsPerSecond returns the overall settlement proof rate.
+func (sp ThroughputScalePlan) TotalAggregatedProofsPerSecond() float64 {
+	total := 0.0
+	for _, lane := range sp.Lanes {
+		total += lane.AggregatedProofsPerSecond()
+	}
+	return total
+}
+
+// TotalExecutionWorkers returns the aggregate execution worker count.
+func (sp ThroughputScalePlan) TotalExecutionWorkers() int {
+	total := 0
+	for _, lane := range sp.Lanes {
+		total += lane.ExecutionWorkers
+	}
+	return total
+}
+
+// Validate ensures the scale plan is internally consistent and large enough to
+// support its declared target.
+func (sp ThroughputScalePlan) Validate() error {
+	if strings.TrimSpace(sp.Name) == "" {
+		return fmt.Errorf("scale plan name is required")
+	}
+	if strings.TrimSpace(sp.SettlementProfileName) == "" {
+		return fmt.Errorf("SettlementProfileName is required")
+	}
+	if sp.SettlementValidators < 1 {
+		return fmt.Errorf("SettlementValidators must be >= 1, got %d", sp.SettlementValidators)
+	}
+	if sp.TargetVerifiedJobsPerSecond < 1 {
+		return fmt.Errorf("TargetVerifiedJobsPerSecond must be >= 1, got %d", sp.TargetVerifiedJobsPerSecond)
+	}
+	if len(sp.Lanes) < 3 {
+		return fmt.Errorf("scale plan must define at least 3 lanes, got %d", len(sp.Lanes))
+	}
+	if sp.TargetVerifiedJobsPerSecond >= 10000 {
+		if !sp.RequiresDecoupledExecutionPlane {
+			return fmt.Errorf("10k+ target requires a decoupled execution plane")
+		}
+		if !sp.RequiresAggregatedSettlement {
+			return fmt.Errorf("10k+ target requires aggregated settlement")
+		}
+	}
+	for _, lane := range sp.Lanes {
+		if err := lane.Validate(); err != nil {
+			return err
+		}
+	}
+	if sp.TotalEffectiveJobsPerSecond() < float64(sp.TargetVerifiedJobsPerSecond) {
+		return fmt.Errorf(
+			"effective capacity %.2f jobs/s is below target %d jobs/s",
+			sp.TotalEffectiveJobsPerSecond(), sp.TargetVerifiedJobsPerSecond,
+		)
+	}
+	if sp.TotalExecutionWorkers() <= sp.SettlementValidators && sp.TargetVerifiedJobsPerSecond >= 10000 {
+		return fmt.Errorf(
+			"10k+ target requires more execution workers (%d) than settlement validators (%d)",
+			sp.TotalExecutionWorkers(), sp.SettlementValidators,
+		)
+	}
+	return nil
+}
+
+// DayOneTenKScalePlan returns the internal architecture target required to
+// reach 10k+ verified jobs/s from day one. This is intentionally a planning
+// model only; it is not a benchmark-backed public claim.
+func DayOneTenKScalePlan() ThroughputScalePlan {
+	return ThroughputScalePlan{
+		Name:                            "day-one-10k-verified-jobs",
+		Description:                     "Lane-based execution plane plus batched settlement for 10k+ regulated-AI verified jobs/s",
+		SettlementProfileName:           ReferenceBenchmarkProfileName,
+		SettlementValidators:            referenceBenchmarkValidatorCount,
+		RequiresDecoupledExecutionPlane: true,
+		RequiresAggregatedSettlement:    true,
+		TargetVerifiedJobsPerSecond:     10000,
+		Lanes: []ThroughputLanePlan{
+			{
+				Name:                      "fast-small-model",
+				Workload:                  "small-model inference",
+				Description:               "Nitro-first low-latency lane for small regulated inference workloads",
+				ExecutionWorkers:          192,
+				MaxJobsPerWorkerPerWindow: 64,
+				WorkersPerJob:             1,
+				TargetWindowMs:            1200,
+				ReservedHeadroomPercent:   20,
+				JobsPerAggregatedProof:    512,
+				MandatoryTEE:              true,
+				MandatoryZKML:             true,
+			},
+			{
+				Name:                      "medium-enterprise-scoring",
+				Workload:                  "enterprise scoring",
+				Description:               "Primary enterprise lane for scoring, classification, and rules-heavy workloads",
+				ExecutionWorkers:          144,
+				MaxJobsPerWorkerPerWindow: 36,
+				WorkersPerJob:             1,
+				TargetWindowMs:            1500,
+				ReservedHeadroomPercent:   20,
+				JobsPerAggregatedProof:    256,
+				MandatoryTEE:              true,
+				MandatoryZKML:             true,
+			},
+			{
+				Name:                      "heavy-proof-large-model",
+				Workload:                  "larger-model proofs",
+				Description:               "Asynchronous lane for larger models, recursive proofs, and proof-heavy workloads",
+				ExecutionWorkers:          96,
+				MaxJobsPerWorkerPerWindow: 20,
+				WorkersPerJob:             1,
+				TargetWindowMs:            2000,
+				ReservedHeadroomPercent:   20,
+				JobsPerAggregatedProof:    64,
+				MandatoryTEE:              true,
+				MandatoryZKML:             true,
+			},
+		},
+	}
 }
 
 // TestnetProfile returns conservative settings for testnet operation.
@@ -260,12 +558,14 @@ func TestnetProfile() PerformanceProfile {
 		MaxRetries:            5,
 
 		MinValidatorsRequired:  3,
+		ValidatorsPerJob:       3,
 		ConsensusTimeoutBlocks: 100,
 		VoteExtensionMaxBytes:  65536,
 
-		MaxPendingJobs:   500,
-		MaxBlockBudgetMs: 500,
-		MaxQueryPageSize: 100,
+		MaxPendingJobs:    500,
+		MaxBlockBudgetMs:  500,
+		MaxQueryPageSize:  100,
+		TargetBlockTimeMs: 6000,
 
 		TargetJobCompletionBlocks: 20,
 		MaxJobCompletionBlocks:    100,
@@ -284,15 +584,49 @@ func MainnetProfile() PerformanceProfile {
 		MaxRetries:            3,
 
 		MinValidatorsRequired:  5,
+		ValidatorsPerJob:       5,
 		ConsensusTimeoutBlocks: 50,
 		VoteExtensionMaxBytes:  32768,
 
-		MaxPendingJobs:   1000,
-		MaxBlockBudgetMs: 200,
-		MaxQueryPageSize: 50,
+		MaxPendingJobs:    1000,
+		MaxBlockBudgetMs:  200,
+		MaxQueryPageSize:  50,
+		TargetBlockTimeMs: 6000,
 
 		TargetJobCompletionBlocks: 10,
 		MaxJobCompletionBlocks:    50,
+	}
+}
+
+// ReferenceBenchmarkProfile returns the profile that backs the published
+// benchmark pack used by the deck, whitepaper, and website performance claims.
+func ReferenceBenchmarkProfile() PerformanceProfile {
+	claims := ReferenceBenchmarkClaims()
+
+	return PerformanceProfile{
+		Name:        ReferenceBenchmarkProfileName,
+		Description: "Claim-bearing benchmark reference network profile for 2.8s / 12.5K TPS / 650 jobs/s",
+
+		MaxJobsPerBlock:       referenceBenchmarkJobsPerBlock,
+		MaxJobsPerValidator:   referenceBenchmarkJobsPerValidator,
+		PriorityBoostPerBlock: 3,
+		MaxRetries:            2,
+
+		MinValidatorsRequired:  67,
+		ValidatorsPerJob:       1,
+		ConsensusTimeoutBlocks: 20,
+		VoteExtensionMaxBytes:  262144,
+
+		MaxPendingJobs:           8000,
+		MaxBlockBudgetMs:         750,
+		MaxQueryPageSize:         500,
+		TargetBlockTimeMs:        referenceBenchmarkTargetBlockTimeMs,
+		ClaimedTransfersTPS:      claims.TransfersTPS,
+		ClaimedComputeJobsPerSec: claims.ComputeJobsPerSecond,
+		ReferenceValidatorCount:  claims.ReferenceValidatorCount,
+
+		TargetJobCompletionBlocks: 3,
+		MaxJobCompletionBlocks:    12,
 	}
 }
 
@@ -308,12 +642,14 @@ func StressTestProfile() PerformanceProfile {
 		MaxRetries:            1,
 
 		MinValidatorsRequired:  3,
+		ValidatorsPerJob:       3,
 		ConsensusTimeoutBlocks: 20,
 		VoteExtensionMaxBytes:  131072,
 
-		MaxPendingJobs:   5000,
-		MaxBlockBudgetMs: 1000,
-		MaxQueryPageSize: 200,
+		MaxPendingJobs:    5000,
+		MaxBlockBudgetMs:  1000,
+		MaxQueryPageSize:  200,
+		TargetBlockTimeMs: 3000,
 
 		TargetJobCompletionBlocks: 5,
 		MaxJobCompletionBlocks:    20,
@@ -322,26 +658,85 @@ func StressTestProfile() PerformanceProfile {
 
 // ToSchedulerConfig converts the profile to a SchedulerConfig.
 func (pp PerformanceProfile) ToSchedulerConfig() SchedulerConfig {
-	return SchedulerConfig{
-		MaxJobsPerBlock:       pp.MaxJobsPerBlock,
-		MaxJobsPerValidator:   pp.MaxJobsPerValidator,
-		JobTimeoutBlocks:      pp.ConsensusTimeoutBlocks,
-		MinValidatorsRequired: pp.MinValidatorsRequired,
-		PriorityBoostPerBlock: pp.PriorityBoostPerBlock,
-		MaxRetries:            pp.MaxRetries,
+	cfg := DefaultSchedulerConfig()
+	cfg.MaxJobsPerBlock = pp.MaxJobsPerBlock
+	cfg.MaxJobsPerValidator = pp.MaxJobsPerValidator
+	cfg.JobTimeoutBlocks = pp.ConsensusTimeoutBlocks
+	cfg.MinValidatorsRequired = pp.MinValidatorsRequired
+	cfg.ValidatorsPerJob = pp.ValidatorsPerJob
+	cfg.PriorityBoostPerBlock = pp.PriorityBoostPerBlock
+	cfg.MaxRetries = pp.MaxRetries
+	return cfg
+}
+
+// PerformanceProfileByName resolves the named runtime or benchmark profile.
+func PerformanceProfileByName(name string) (PerformanceProfile, error) {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "", "mainnet", "production":
+		return MainnetProfile(), nil
+	case "testnet":
+		return TestnetProfile(), nil
+	case "stress", "stress-test":
+		return StressTestProfile(), nil
+	case "benchmark", "reference", "reference-network", ReferenceBenchmarkProfileName:
+		return ReferenceBenchmarkProfile(), nil
+	default:
+		return PerformanceProfile{}, fmt.Errorf("unknown performance profile %q", name)
+	}
+}
+
+// MatchParams returns true when the performance-critical params match the
+// profile shape closely enough to identify the runtime.
+func (pp PerformanceProfile) MatchParams(params *types.Params) bool {
+	if params == nil {
+		return false
+	}
+	return int64(pp.MaxJobsPerBlock) == params.MaxJobsPerBlock &&
+		int64(pp.MinValidatorsRequired) == params.MinValidators &&
+		pp.ConsensusTimeoutBlocks == params.JobTimeoutBlocks
+}
+
+// ActivePerformanceProfile returns the best profile match for the provided
+// params. If no exact match exists, a synthetic custom profile is returned.
+func ActivePerformanceProfile(params *types.Params) PerformanceProfile {
+	if params == nil {
+		return MainnetProfile()
+	}
+
+	candidates := []PerformanceProfile{
+		ReferenceBenchmarkProfile(),
+		MainnetProfile(),
+		TestnetProfile(),
+		StressTestProfile(),
+	}
+	for _, profile := range candidates {
+		if profile.MatchParams(params) {
+			return profile
+		}
+	}
+
+	return PerformanceProfile{
+		Name:                   "custom",
+		Description:            "Custom runtime parameters outside the canonical profile set",
+		MaxJobsPerBlock:        int(params.MaxJobsPerBlock),
+		MinValidatorsRequired:  int(params.MinValidators),
+		ConsensusTimeoutBlocks: params.JobTimeoutBlocks,
 	}
 }
 
 // ValidateProfile ensures all profile parameters are within acceptable bounds.
 func (pp PerformanceProfile) ValidateProfile() error {
-	if pp.MaxJobsPerBlock < 1 || pp.MaxJobsPerBlock > 1000 {
-		return fmt.Errorf("MaxJobsPerBlock must be in [1, 1000], got %d", pp.MaxJobsPerBlock)
+	if pp.MaxJobsPerBlock < 1 || pp.MaxJobsPerBlock > 4096 {
+		return fmt.Errorf("MaxJobsPerBlock must be in [1, 4096], got %d", pp.MaxJobsPerBlock)
 	}
 	if pp.MaxJobsPerValidator < 1 || pp.MaxJobsPerValidator > 50 {
 		return fmt.Errorf("MaxJobsPerValidator must be in [1, 50], got %d", pp.MaxJobsPerValidator)
 	}
 	if pp.MinValidatorsRequired < 1 || pp.MinValidatorsRequired > 100 {
 		return fmt.Errorf("MinValidatorsRequired must be in [1, 100], got %d", pp.MinValidatorsRequired)
+	}
+	if pp.ValidatorsPerJob < 1 || pp.ValidatorsPerJob > pp.MinValidatorsRequired {
+		return fmt.Errorf("ValidatorsPerJob must be in [1, %d], got %d", pp.MinValidatorsRequired, pp.ValidatorsPerJob)
 	}
 	if pp.ConsensusTimeoutBlocks < 5 {
 		return fmt.Errorf("ConsensusTimeoutBlocks must be >= 5, got %d", pp.ConsensusTimeoutBlocks)
@@ -352,12 +747,38 @@ func (pp PerformanceProfile) ValidateProfile() error {
 	if pp.MaxBlockBudgetMs < 50 || pp.MaxBlockBudgetMs > 5000 {
 		return fmt.Errorf("MaxBlockBudgetMs must be in [50, 5000], got %d", pp.MaxBlockBudgetMs)
 	}
+	if pp.TargetBlockTimeMs < 500 || pp.TargetBlockTimeMs > 10000 {
+		return fmt.Errorf("TargetBlockTimeMs must be in [500, 10000], got %d", pp.TargetBlockTimeMs)
+	}
+	if pp.MaxBlockBudgetMs >= pp.TargetBlockTimeMs {
+		return fmt.Errorf("MaxBlockBudgetMs (%d) must be below TargetBlockTimeMs (%d)",
+			pp.MaxBlockBudgetMs, pp.TargetBlockTimeMs)
+	}
 	if pp.TargetJobCompletionBlocks < 1 {
 		return fmt.Errorf("TargetJobCompletionBlocks must be >= 1, got %d", pp.TargetJobCompletionBlocks)
 	}
 	if pp.MaxJobCompletionBlocks < pp.TargetJobCompletionBlocks {
 		return fmt.Errorf("MaxJobCompletionBlocks (%d) must be >= TargetJobCompletionBlocks (%d)",
 			pp.MaxJobCompletionBlocks, pp.TargetJobCompletionBlocks)
+	}
+	if pp.ClaimedComputeJobsPerSec > 0 {
+		requiredJobsPerBlock := int(math.Ceil(
+			float64(pp.ClaimedComputeJobsPerSec) * float64(pp.TargetBlockTimeMs) / 1000,
+		))
+		if requiredJobsPerBlock > pp.MaxJobsPerBlock {
+			return fmt.Errorf(
+				"claimed compute throughput requires %d jobs/block, but profile only supports %d",
+				requiredJobsPerBlock, pp.MaxJobsPerBlock,
+			)
+		}
+	}
+	if pp.ReferenceValidatorCount > 0 &&
+		pp.ReferenceValidatorCount*pp.MaxJobsPerValidator < pp.MaxJobsPerBlock*pp.ValidatorsPerJob {
+		return fmt.Errorf(
+			"reference validator capacity (%d x %d = %d slots) is below MaxJobsPerBlock*ValidatorsPerJob (%d)",
+			pp.ReferenceValidatorCount, pp.MaxJobsPerValidator,
+			pp.ReferenceValidatorCount*pp.MaxJobsPerValidator, pp.MaxJobsPerBlock*pp.ValidatorsPerJob,
+		)
 	}
 	return nil
 }
@@ -434,6 +855,8 @@ func BuildProtocolManifest(ctx sdk.Context, k Keeper) *ProtocolManifest {
 	invariants := AllInvariants(k)
 	_, broken := invariants(ctx)
 
+	activeProfile := ActivePerformanceProfile(params)
+
 	manifest := &ProtocolManifest{
 		ChainID:       ctx.ChainID(),
 		ModuleName:    types.ModuleName,
@@ -460,7 +883,7 @@ func BuildProtocolManifest(ctx sdk.Context, k Keeper) *ProtocolManifest {
 		InvariantCount: 7,
 		InvariantsPass: !broken,
 
-		ActiveProfile: "mainnet",
+		ActiveProfile: activeProfile.Name,
 
 		TotalJobs:        totalJobs,
 		TotalValidators:  validatorCount,
@@ -846,7 +1269,8 @@ type PerformanceReport struct {
 
 // RunPerformanceTuningReport generates a comprehensive performance report.
 func RunPerformanceTuningReport(ctx sdk.Context, k Keeper) *PerformanceReport {
-	profile := MainnetProfile()
+	params, _ := k.GetParams(ctx)
+	profile := ActivePerformanceProfile(params)
 
 	// Run benchmarks
 	benchmarks := []BenchmarkResult{

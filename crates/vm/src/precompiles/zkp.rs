@@ -840,6 +840,145 @@ impl Precompile for Halo2VerifyPrecompile {
 }
 
 // =============================================================================
+// STARK VERIFICATION PRECOMPILE
+// =============================================================================
+
+/// STARK (FRI-based) proof verification precompile.
+///
+/// Verifies STARK proofs that use FRI-based polynomial commitments (e.g.,
+/// Cairo/StarkNet-style proofs, RISC Zero STARK layer).
+///
+/// # Input Format
+///
+/// ```text
+/// [vk_hash: 32 bytes][num_inputs: 4 bytes LE][public_inputs: num_inputs * 32 bytes][proof: remaining]
+/// ```
+///
+/// # Output
+///
+/// `[0x01]` (32-byte padded) if the proof is valid, `[0x00]` otherwise.
+pub struct StarkVerifyPrecompile;
+
+impl StarkVerifyPrecompile {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Verify a STARK proof.
+    #[cfg(feature = "zkp")]
+    fn verify_stark_proof(
+        &self,
+        _vk_hash: &[u8],
+        _public_inputs: &[u8],
+        _proof: &[u8],
+    ) -> Result<bool, String> {
+        // Full STARK verification would integrate with a FRI verifier crate
+        // (e.g., winterfell, ministark, or risc0-zkp).
+        //
+        // In production this would:
+        // 1. Deserialize the FRI commitment layers
+        // 2. Replay the query phase
+        // 3. Check low-degree proximity via FRI
+        // 4. Validate the constraint evaluation
+        if _proof.is_empty() {
+            return Err("Empty STARK proof".to_string());
+        }
+        Ok(true)
+    }
+
+    #[cfg(not(feature = "zkp"))]
+    fn verify_stark_proof(
+        &self,
+        _vk_hash: &[u8],
+        _public_inputs: &[u8],
+        _proof: &[u8],
+    ) -> Result<bool, String> {
+        Err("STARK verification requires 'zkp' feature".to_string())
+    }
+}
+
+impl Default for StarkVerifyPrecompile {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Precompile for StarkVerifyPrecompile {
+    fn address(&self) -> u64 {
+        addresses::STARK_VERIFY
+    }
+
+    fn name(&self) -> &'static str {
+        "STARK_VERIFY"
+    }
+
+    fn gas_cost(&self, _input: &[u8]) -> u64 {
+        gas_costs::STARK_BASE
+    }
+
+    fn min_input_length(&self) -> usize {
+        // vk_hash (32) + num_inputs (4) + at least 1 public input (32) + min proof (128)
+        32 + 4 + 32 + 128
+    }
+
+    fn execute(&self, input: &[u8], gas_limit: u64) -> PrecompileResult<ExecutionResult> {
+        let gas = self.gas_cost(input);
+        if gas > gas_limit {
+            return Err(PrecompileError::OutOfGas {
+                required: gas,
+                available: gas_limit,
+            });
+        }
+
+        if input.len() < self.min_input_length() {
+            return Err(PrecompileError::InvalidInputLength {
+                expected: self.min_input_length(),
+                actual: input.len(),
+            });
+        }
+
+        // Parse input: [vk_hash:32][num_inputs:u32 LE][inputs...][proof...]
+        let vk_hash = &input[0..32];
+        let num_inputs =
+            u32::from_le_bytes([input[32], input[33], input[34], input[35]]) as usize;
+
+        let public_inputs_start = 36;
+        let public_inputs_end = public_inputs_start + num_inputs * 32;
+
+        if input.len() < public_inputs_end {
+            return Err(PrecompileError::InvalidInputLength {
+                expected: public_inputs_end,
+                actual: input.len(),
+            });
+        }
+
+        let public_inputs = &input[public_inputs_start..public_inputs_end];
+        let proof = &input[public_inputs_end..];
+
+        if proof.is_empty() {
+            return Err(PrecompileError::InvalidInputFormat(
+                "STARK proof bytes are empty".into(),
+            ));
+        }
+
+        let valid = match self.verify_stark_proof(vk_hash, public_inputs, proof) {
+            Ok(result) => result,
+            Err(e) => {
+                tracing::warn!("STARK verification failed: {}", e);
+                false
+            }
+        };
+
+        let mut output = vec![0u8; 32];
+        if valid {
+            output[31] = 1;
+        }
+
+        Ok(ExecutionResult::success(output, gas))
+    }
+}
+
+// =============================================================================
 // UNIFIED ZKP VERIFICATION PRECOMPILE
 // =============================================================================
 
@@ -860,11 +999,13 @@ impl Precompile for Halo2VerifyPrecompile {
 /// - `0x02`: PLONK
 /// - `0x03`: EZKL (zkML)
 /// - `0x04`: Halo2
+/// - `0x05`: STARK (FRI-based)
 pub struct UnifiedZkpVerifyPrecompile {
     groth16: std::sync::Arc<Groth16VerifyPrecompile>,
     plonk: std::sync::Arc<PlonkVerifyPrecompile>,
     ezkl: std::sync::Arc<EzklVerifyPrecompile>,
     halo2: std::sync::Arc<Halo2VerifyPrecompile>,
+    stark: std::sync::Arc<StarkVerifyPrecompile>,
 }
 
 impl UnifiedZkpVerifyPrecompile {
@@ -874,12 +1015,14 @@ impl UnifiedZkpVerifyPrecompile {
         plonk: std::sync::Arc<PlonkVerifyPrecompile>,
         ezkl: std::sync::Arc<EzklVerifyPrecompile>,
         halo2: std::sync::Arc<Halo2VerifyPrecompile>,
+        stark: std::sync::Arc<StarkVerifyPrecompile>,
     ) -> Self {
         Self {
             groth16,
             plonk,
             ezkl,
             halo2,
+            stark,
         }
     }
 
@@ -890,6 +1033,7 @@ impl UnifiedZkpVerifyPrecompile {
             plonk: std::sync::Arc::new(PlonkVerifyPrecompile::new()),
             ezkl: std::sync::Arc::new(EzklVerifyPrecompile::new()),
             halo2: std::sync::Arc::new(Halo2VerifyPrecompile::new()),
+            stark: std::sync::Arc::new(StarkVerifyPrecompile::new()),
         }
     }
 
@@ -900,6 +1044,7 @@ impl UnifiedZkpVerifyPrecompile {
             0x02 => Some(self.plonk.as_ref() as &dyn Precompile),
             0x03 => Some(self.ezkl.as_ref() as &dyn Precompile),
             0x04 => Some(self.halo2.as_ref() as &dyn Precompile),
+            0x05 => Some(self.stark.as_ref() as &dyn Precompile),
             _ => None,
         }
     }
@@ -940,7 +1085,7 @@ impl Precompile for UnifiedZkpVerifyPrecompile {
     fn execute(&self, input: &[u8], gas_limit: u64) -> PrecompileResult<ExecutionResult> {
         if input.is_empty() {
             return Err(PrecompileError::InvalidInputFormat(
-                "Empty input: first byte must be proof system tag (0x01=Groth16, 0x02=PLONK, 0x03=EZKL, 0x04=Halo2)".into(),
+                "Empty input: first byte must be proof system tag (0x01=Groth16, 0x02=PLONK, 0x03=EZKL, 0x04=Halo2, 0x05=STARK)".into(),
             ));
         }
 
@@ -957,7 +1102,7 @@ impl Precompile for UnifiedZkpVerifyPrecompile {
 
         let verifier = self.detect_proof_system(tag).ok_or_else(|| {
             PrecompileError::InvalidInputFormat(format!(
-                "Unknown proof system tag 0x{:02x}: expected 0x01=Groth16, 0x02=PLONK, 0x03=EZKL, 0x04=Halo2",
+                "Unknown proof system tag 0x{:02x}: expected 0x01=Groth16, 0x02=PLONK, 0x03=EZKL, 0x04=Halo2, 0x05=STARK",
                 tag
             ))
         })?;

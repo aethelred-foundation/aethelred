@@ -20,8 +20,8 @@
 
 use super::{CryptoError, CryptoResult};
 use k256::ecdsa::{
-    RecoveryId, Signature as K256Signature, SigningKey, VerifyingKey,
-    signature::hazmat::PrehashVerifier,
+    signature::hazmat::PrehashVerifier, RecoveryId, Signature as K256Signature, SigningKey,
+    VerifyingKey,
 };
 
 use sha2::{Digest, Sha256};
@@ -82,9 +82,8 @@ impl EcdsaPublicKey {
         }
 
         // Parse as a verifying key to validate and compress properly
-        let vk = VerifyingKey::from_sec1_bytes(bytes).map_err(|_| {
-            CryptoError::InvalidKeyFormat("Invalid uncompressed public key".into())
-        })?;
+        let vk = VerifyingKey::from_sec1_bytes(bytes)
+            .map_err(|_| CryptoError::InvalidKeyFormat("Invalid uncompressed public key".into()))?;
 
         let compressed = vk.to_encoded_point(true);
         let mut key = [0u8; 33];
@@ -241,9 +240,8 @@ impl EcdsaSignature {
     /// Create from DER-encoded bytes
     pub fn from_der(bytes: &[u8]) -> CryptoResult<Self> {
         // Parse via k256 for correct DER handling
-        let k256_sig = K256Signature::from_der(bytes).map_err(|_| {
-            CryptoError::InvalidKeyFormat("Invalid DER signature".into())
-        })?;
+        let k256_sig = K256Signature::from_der(bytes)
+            .map_err(|_| CryptoError::InvalidKeyFormat("Invalid DER signature".into()))?;
 
         let sig_bytes = k256_sig.to_bytes();
         let mut r = [0u8; 32];
@@ -375,9 +373,8 @@ impl fmt::Debug for EcdsaKeyPair {
 
 /// Derive public key from secret key using real EC scalar multiplication
 pub fn derive_public_key(secret_key: &EcdsaSecretKey) -> CryptoResult<EcdsaPublicKey> {
-    let signing_key = SigningKey::from_slice(secret_key.as_bytes()).map_err(|_| {
-        CryptoError::InvalidKeyFormat("Invalid secp256k1 secret key scalar".into())
-    })?;
+    let signing_key = SigningKey::from_slice(secret_key.as_bytes())
+        .map_err(|_| CryptoError::InvalidKeyFormat("Invalid secp256k1 secret key scalar".into()))?;
 
     let verifying_key = signing_key.verifying_key();
     let compressed = verifying_key.to_encoded_point(true);
@@ -446,9 +443,8 @@ pub fn verify_prehash(
 
     // Reconstruct the k256 signature from r || s
     let compact = signature.to_compact();
-    let k256_sig = K256Signature::from_slice(&compact).map_err(|_| {
-        CryptoError::InvalidKeyFormat("Invalid ECDSA signature components".into())
-    })?;
+    let k256_sig = K256Signature::from_slice(&compact)
+        .map_err(|_| CryptoError::InvalidKeyFormat("Invalid ECDSA signature components".into()))?;
 
     // Perform the actual ECDSA verification: u1*G + u2*P == R
     match vk.verify_prehash(hash, &k256_sig) {

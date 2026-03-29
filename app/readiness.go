@@ -132,6 +132,27 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 		}
 	}
 
+	// Enterprise readiness gate.
+	// When AETHELRED_ENTERPRISE_MODE=1 is set, perform the enterprise
+	// fail-closed validation: hybrid+require-both config, no mocks, and
+	// all verification dependency endpoints must be reachable.
+	if orchConfig != nil && orchConfig.EnterpriseMode {
+		erc := &verify.EnterpriseReadinessCheck{OrchestratorConfig: orchConfig}
+		entResult, entErr := erc.Validate()
+		for _, c := range entResult.Checks {
+			report.Checks = append(report.Checks, c)
+		}
+		if entErr != nil {
+			report.Ready = false
+			msg := fmt.Sprintf("FATAL: Enterprise readiness check failed: %v\n%s", entErr, entResult.String())
+			if isTestEnvironment() {
+				app.Logger().Error(msg)
+			} else {
+				panic(msg)
+			}
+		}
+	}
+
 	return report
 }
 
@@ -139,6 +160,14 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 // current TEE and prover settings. This is used for readiness checks.
 func (app *AethelredApp) buildOrchestratorConfig() *verify.OrchestratorConfig {
 	cfg := &verify.OrchestratorConfig{}
+
+	// Enterprise mode: set from environment variable.
+	enterpriseMode := strings.ToLower(strings.TrimSpace(os.Getenv("AETHELRED_ENTERPRISE_MODE")))
+	if enterpriseMode == "1" || enterpriseMode == "true" {
+		cfg.EnterpriseMode = true
+		cfg.DefaultVerificationType = types.VerificationTypeHybrid
+		cfg.RequireBothForHybrid = true
+	}
 	teeEndpoint := strings.TrimSpace(firstNonEmpty(
 		os.Getenv("AETHELRED_TEE_ENDPOINT"),
 		os.Getenv("TEE_ENDPOINT"),

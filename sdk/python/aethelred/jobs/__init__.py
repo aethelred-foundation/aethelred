@@ -34,7 +34,7 @@ class JobsModule:
         self,
         model_hash: bytes,
         input_hash: bytes,
-        proof_type: ProofType = ProofType.TEE,
+        proof_type: ProofType = ProofType.HYBRID,
         priority: int = 1,
         max_gas: int = 0,
         timeout_blocks: int = 100,
@@ -46,7 +46,7 @@ class JobsModule:
         Args:
             model_hash: SHA-256 hash of the model
             input_hash: SHA-256 hash of input data
-            proof_type: Type of proof required (TEE, ZKML, HYBRID)
+            proof_type: Type of proof required (default: HYBRID for enterprise)
             priority: Job priority (1-10)
             max_gas: Maximum gas to spend
             timeout_blocks: Number of blocks before timeout

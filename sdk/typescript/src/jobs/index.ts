@@ -3,7 +3,7 @@
  */
 
 import type { AethelredClient } from '../core/client';
-import { ComputeJob, JobStatus, SubmitJobRequest, SubmitJobResponse, PageRequest } from '../core/types';
+import { ComputeJob, JobStatus, ProofType, SubmitJobRequest, SubmitJobResponse, PageRequest } from '../core/types';
 import { TimeoutError } from '../core/errors';
 
 export class JobsModule {
@@ -11,8 +11,17 @@ export class JobsModule {
 
   constructor(private readonly client: AethelredClient) {}
 
+  /**
+   * Submit a compute job.
+   * Enterprise default: proofType defaults to HYBRID (TEE + zkML) for
+   * maximum assurance and audit compliance.
+   */
   async submit(request: SubmitJobRequest): Promise<SubmitJobResponse> {
-    return this.client.post(`${this.basePath}/jobs`, request);
+    const withDefaults = {
+      proofType: ProofType.HYBRID,
+      ...request,
+    };
+    return this.client.post(`${this.basePath}/jobs`, withDefaults);
   }
 
   async get(jobId: string): Promise<ComputeJob> {

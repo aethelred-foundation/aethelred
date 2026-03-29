@@ -107,6 +107,20 @@ services:
     depends_on:
       - validator-1
 
+  # Alertmanager for alert routing
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: aethelred-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ../monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - aethelred-network
+
   # Prometheus for metrics
   prometheus:
     image: prom/prometheus:latest
@@ -115,7 +129,10 @@ services:
       - "9099:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../monitoring/prometheus-rules.yml:/etc/prometheus/rules/aethelred-rules.yml
       - prometheus-data:/prometheus
+    depends_on:
+      - alertmanager
     networks:
       - aethelred-network
 
@@ -148,6 +165,7 @@ volumes:
   validator3-data:
   zkml-models:
   prometheus-data:
+  alertmanager-data:
   grafana-data:
 
 networks:

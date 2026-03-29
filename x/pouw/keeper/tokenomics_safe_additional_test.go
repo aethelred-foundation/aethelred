@@ -131,7 +131,7 @@ func TestBlockTimeAndEmissionSafeCalculations(t *testing.T) {
 	schedule, err := ComputeEmissionScheduleSafe(emissionCfg, 3, cfg)
 	require.NoError(t, err)
 	require.Len(t, schedule, 3)
-	require.True(t, schedule[0].AnnualEmission > 0)
+	require.Equal(t, int64(0), schedule[0].AnnualEmission)
 	require.True(t, schedule[1].CumulativeSupply >= schedule[0].CumulativeSupply)
 }
 

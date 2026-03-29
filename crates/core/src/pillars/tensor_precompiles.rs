@@ -21,9 +21,9 @@
 //! This allows smart contracts to verify a neural network inference
 //! **1,000x faster** than running it in WASM or Solidity.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use serde::{Deserialize, Serialize};
 
 // ============================================================================
 // Tensor Types
@@ -88,7 +88,7 @@ pub enum TensorData {
 pub enum Device {
     CPU,
     GPU { device_id: u8 },
-    TEE,  // Trusted Execution Environment
+    TEE, // Trusted Execution Environment
 }
 
 impl Tensor {
@@ -158,7 +158,7 @@ pub enum TensorPrecompile {
     Tanh = 0x1022,
     Softmax = 0x1023,
     GELU = 0x1024,
-    SiLU = 0x1025,  // Swish
+    SiLU = 0x1025, // Swish
     LeakyReLU = 0x1026,
     Mish = 0x1027,
 
@@ -182,10 +182,10 @@ pub enum TensorPrecompile {
     // Transformer operations (0x1050 - 0x105F)
     Attention = 0x1050,
     MultiHeadAttention = 0x1051,
-    FlashAttention = 0x1052,  // Memory-efficient attention
+    FlashAttention = 0x1052, // Memory-efficient attention
     LayerNorm = 0x1053,
     RMSNorm = 0x1054,
-    RotaryEmbedding = 0x1055,  // RoPE
+    RotaryEmbedding = 0x1055, // RoPE
 
     // Quantization (0x1060 - 0x106F)
     Quantize = 0x1060,
@@ -206,7 +206,7 @@ pub enum TensorPrecompile {
     EmbeddingBag = 0x1081,
     CrossEntropy = 0x1082,
     TopK = 0x1083,
-    NMS = 0x1084,  // Non-Maximum Suppression
+    NMS = 0x1084, // Non-Maximum Suppression
 
     // Verification (0x10F0 - 0x10FF)
     VerifyModelHash = 0x10F0,
@@ -226,10 +226,14 @@ impl TensorPrecompile {
             TensorPrecompile::OuterProduct => 600,
 
             // Element-wise are cheap
-            TensorPrecompile::Add | TensorPrecompile::Sub |
-            TensorPrecompile::Mul | TensorPrecompile::Div => 50,
-            TensorPrecompile::Pow | TensorPrecompile::Sqrt |
-            TensorPrecompile::Exp | TensorPrecompile::Log => 100,
+            TensorPrecompile::Add
+            | TensorPrecompile::Sub
+            | TensorPrecompile::Mul
+            | TensorPrecompile::Div => 50,
+            TensorPrecompile::Pow
+            | TensorPrecompile::Sqrt
+            | TensorPrecompile::Exp
+            | TensorPrecompile::Log => 100,
 
             // Activations are cheap
             TensorPrecompile::ReLU => 30,
@@ -254,13 +258,13 @@ impl TensorPrecompile {
             // Attention is the most expensive
             TensorPrecompile::Attention => 3000,
             TensorPrecompile::MultiHeadAttention => 5000,
-            TensorPrecompile::FlashAttention => 2500,  // Optimized
+            TensorPrecompile::FlashAttention => 2500, // Optimized
             TensorPrecompile::LayerNorm | TensorPrecompile::RMSNorm => 150,
             TensorPrecompile::RotaryEmbedding => 200,
 
             // Quantization
             TensorPrecompile::Quantize | TensorPrecompile::Dequantize => 100,
-            TensorPrecompile::QuantizedMatMul => 300,  // Faster than FP32
+            TensorPrecompile::QuantizedMatMul => 300, // Faster than FP32
 
             // Manipulation
             TensorPrecompile::Reshape | TensorPrecompile::Transpose => 50,
@@ -424,7 +428,10 @@ impl TensorExecutor {
 
     fn matmul(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() != 2 {
-            return Err(ExecutorError::InvalidInputCount { expected: 2, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 2,
+                got: inputs.len(),
+            });
         }
 
         let a = &inputs[0];
@@ -432,9 +439,10 @@ impl TensorExecutor {
 
         // Validate shapes
         if a.shape.len() < 2 || b.shape.len() < 2 {
-            return Err(ExecutorError::ShapeMismatch(
-                format!("MatMul requires 2D+ tensors, got {:?} and {:?}", a.shape, b.shape)
-            ));
+            return Err(ExecutorError::ShapeMismatch(format!(
+                "MatMul requires 2D+ tensors, got {:?} and {:?}",
+                a.shape, b.shape
+            )));
         }
 
         let m = a.shape[a.shape.len() - 2];
@@ -442,9 +450,11 @@ impl TensorExecutor {
         let n = b.shape[b.shape.len() - 1];
 
         if k != b.shape[b.shape.len() - 2] {
-            return Err(ExecutorError::ShapeMismatch(
-                format!("Inner dimensions must match: {} vs {}", k, b.shape[b.shape.len() - 2])
-            ));
+            return Err(ExecutorError::ShapeMismatch(format!(
+                "Inner dimensions must match: {} vs {}",
+                k,
+                b.shape[b.shape.len() - 2]
+            )));
         }
 
         // Create output shape
@@ -460,7 +470,10 @@ impl TensorExecutor {
 
     fn elementwise_add(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() != 2 {
-            return Err(ExecutorError::InvalidInputCount { expected: 2, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 2,
+                got: inputs.len(),
+            });
         }
 
         let a = &inputs[0];
@@ -468,9 +481,10 @@ impl TensorExecutor {
 
         // Broadcasting would be implemented here
         if a.shape != b.shape {
-            return Err(ExecutorError::ShapeMismatch(
-                format!("Shapes must match for add: {:?} vs {:?}", a.shape, b.shape)
-            ));
+            return Err(ExecutorError::ShapeMismatch(format!(
+                "Shapes must match for add: {:?} vs {:?}",
+                a.shape, b.shape
+            )));
         }
 
         let output = Tensor::zeros(a.shape.clone(), a.dtype);
@@ -479,7 +493,10 @@ impl TensorExecutor {
 
     fn relu(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() != 1 {
-            return Err(ExecutorError::InvalidInputCount { expected: 1, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 1,
+                got: inputs.len(),
+            });
         }
 
         let input = &inputs[0];
@@ -487,75 +504,118 @@ impl TensorExecutor {
         Ok(vec![output])
     }
 
-    fn softmax(&self, inputs: &[Tensor], params: &HashMap<String, LayerParam>) -> Result<Vec<Tensor>, ExecutorError> {
+    fn softmax(
+        &self,
+        inputs: &[Tensor],
+        params: &HashMap<String, LayerParam>,
+    ) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() != 1 {
-            return Err(ExecutorError::InvalidInputCount { expected: 1, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 1,
+                got: inputs.len(),
+            });
         }
 
-        let _dim = params.get("dim").and_then(|p| match p {
-            LayerParam::Int(i) => Some(*i),
-            _ => None,
-        }).unwrap_or(-1);
+        let _dim = params
+            .get("dim")
+            .and_then(|p| match p {
+                LayerParam::Int(i) => Some(*i),
+                _ => None,
+            })
+            .unwrap_or(-1);
 
         let input = &inputs[0];
         let output = Tensor::zeros(input.shape.clone(), input.dtype);
         Ok(vec![output])
     }
 
-    fn layer_norm(&self, inputs: &[Tensor], params: &HashMap<String, LayerParam>) -> Result<Vec<Tensor>, ExecutorError> {
+    fn layer_norm(
+        &self,
+        inputs: &[Tensor],
+        params: &HashMap<String, LayerParam>,
+    ) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() < 1 {
-            return Err(ExecutorError::InvalidInputCount { expected: 1, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 1,
+                got: inputs.len(),
+            });
         }
 
-        let _eps = params.get("eps").and_then(|p| match p {
-            LayerParam::Float(f) => Some(*f),
-            _ => None,
-        }).unwrap_or(1e-5);
+        let _eps = params
+            .get("eps")
+            .and_then(|p| match p {
+                LayerParam::Float(f) => Some(*f),
+                _ => None,
+            })
+            .unwrap_or(1e-5);
 
         let input = &inputs[0];
         let output = Tensor::zeros(input.shape.clone(), input.dtype);
         Ok(vec![output])
     }
 
-    fn attention(&self, inputs: &[Tensor], params: &HashMap<String, LayerParam>) -> Result<Vec<Tensor>, ExecutorError> {
+    fn attention(
+        &self,
+        inputs: &[Tensor],
+        params: &HashMap<String, LayerParam>,
+    ) -> Result<Vec<Tensor>, ExecutorError> {
         // Inputs: query, key, value
         if inputs.len() != 3 {
-            return Err(ExecutorError::InvalidInputCount { expected: 3, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 3,
+                got: inputs.len(),
+            });
         }
 
         let query = &inputs[0];
         let _key = &inputs[1];
         let _value = &inputs[2];
 
-        let _num_heads = params.get("num_heads").and_then(|p| match p {
-            LayerParam::Int(i) => Some(*i as usize),
-            _ => None,
-        }).unwrap_or(8);
+        let _num_heads = params
+            .get("num_heads")
+            .and_then(|p| match p {
+                LayerParam::Int(i) => Some(*i as usize),
+                _ => None,
+            })
+            .unwrap_or(8);
 
         // Output shape same as query
         let output = Tensor::zeros(query.shape.clone(), query.dtype);
         Ok(vec![output])
     }
 
-    fn conv2d(&self, inputs: &[Tensor], params: &HashMap<String, LayerParam>) -> Result<Vec<Tensor>, ExecutorError> {
+    fn conv2d(
+        &self,
+        inputs: &[Tensor],
+        params: &HashMap<String, LayerParam>,
+    ) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() < 2 {
-            return Err(ExecutorError::InvalidInputCount { expected: 2, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 2,
+                got: inputs.len(),
+            });
         }
 
         let input = &inputs[0];
         let _weight = &inputs[1];
 
-        let stride = params.get("stride").and_then(|p| match p {
-            LayerParam::IntList(v) => Some(v.clone()),
-            LayerParam::Int(i) => Some(vec![*i, *i]),
-            _ => None,
-        }).unwrap_or(vec![1, 1]);
+        let stride = params
+            .get("stride")
+            .and_then(|p| match p {
+                LayerParam::IntList(v) => Some(v.clone()),
+                LayerParam::Int(i) => Some(vec![*i, *i]),
+                _ => None,
+            })
+            .unwrap_or(vec![1, 1]);
 
-        let padding = params.get("padding").and_then(|p| match p {
-            LayerParam::IntList(v) => Some(v.clone()),
-            LayerParam::Int(i) => Some(vec![*i, *i]),
-            _ => None,
-        }).unwrap_or(vec![0, 0]);
+        let padding = params
+            .get("padding")
+            .and_then(|p| match p {
+                LayerParam::IntList(v) => Some(v.clone()),
+                LayerParam::Int(i) => Some(vec![*i, *i]),
+                _ => None,
+            })
+            .unwrap_or(vec![0, 0]);
 
         // Calculate output shape (simplified)
         let batch = input.shape[0];
@@ -568,9 +628,16 @@ impl TensorExecutor {
         Ok(vec![output])
     }
 
-    fn embedding(&self, inputs: &[Tensor], _params: &HashMap<String, LayerParam>) -> Result<Vec<Tensor>, ExecutorError> {
+    fn embedding(
+        &self,
+        inputs: &[Tensor],
+        _params: &HashMap<String, LayerParam>,
+    ) -> Result<Vec<Tensor>, ExecutorError> {
         if inputs.len() != 2 {
-            return Err(ExecutorError::InvalidInputCount { expected: 2, got: inputs.len() });
+            return Err(ExecutorError::InvalidInputCount {
+                expected: 2,
+                got: inputs.len(),
+            });
         }
 
         let indices = &inputs[0];
@@ -608,10 +675,21 @@ impl std::fmt::Display for ExecutorError {
             }
             ExecutorError::ShapeMismatch(msg) => write!(f, "Shape mismatch: {}", msg),
             ExecutorError::DataTypeMismatch { expected, got } => {
-                write!(f, "Data type mismatch: expected {:?}, got {:?}", expected, got)
+                write!(
+                    f,
+                    "Data type mismatch: expected {:?}, got {:?}",
+                    expected, got
+                )
             }
-            ExecutorError::OutOfMemory { requested, available } => {
-                write!(f, "Out of memory: requested {} bytes, {} available", requested, available)
+            ExecutorError::OutOfMemory {
+                requested,
+                available,
+            } => {
+                write!(
+                    f,
+                    "Out of memory: requested {} bytes, {} available",
+                    requested, available
+                )
             }
             ExecutorError::NotImplemented(op) => write!(f, "Not implemented: {:?}", op),
             ExecutorError::ModelNotFound(hash) => write!(f, "Model not found: {:?}", hash),
@@ -677,7 +755,9 @@ impl ONNXExecutor {
         model_hash: [u8; 32],
         inputs: HashMap<String, Tensor>,
     ) -> Result<HashMap<String, Tensor>, ExecutorError> {
-        let model = self.models.get(&model_hash)
+        let model = self
+            .models
+            .get(&model_hash)
             .ok_or(ExecutorError::ModelNotFound(model_hash))?
             .clone();
 
@@ -694,7 +774,9 @@ impl ONNXExecutor {
             let precompile = self.op_to_precompile(&node.op_type)?;
 
             // Gather inputs
-            let node_inputs: Vec<Tensor> = node.inputs.iter()
+            let node_inputs: Vec<Tensor> = node
+                .inputs
+                .iter()
                 .filter_map(|name| tensors.get(name).cloned())
                 .collect();
 
@@ -702,7 +784,9 @@ impl ONNXExecutor {
             let params: HashMap<String, LayerParam> = node.attributes.clone();
 
             // Execute
-            let outputs = self.tensor_executor.execute(precompile, node_inputs, params)?;
+            let outputs = self
+                .tensor_executor
+                .execute(precompile, node_inputs, params)?;
 
             // Store outputs
             for (i, output_name) in node.outputs.iter().enumerate() {
@@ -750,7 +834,9 @@ impl ONNXExecutor {
 
     /// Calculate total gas for model execution
     pub fn estimate_gas(&self, model_hash: [u8; 32]) -> Result<u64, ExecutorError> {
-        let model = self.models.get(&model_hash)
+        let model = self
+            .models
+            .get(&model_hash)
             .ok_or(ExecutorError::ModelNotFound(model_hash))?;
 
         let mut total_gas = 0u64;
@@ -842,7 +928,8 @@ impl PerformanceComparison {
 ║  This is why banks can deploy AI models on Aethelred but not on Ethereum.    ║
 ║                                                                                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-"#.to_string()
+"#
+        .to_string()
     }
 }
 
@@ -875,11 +962,7 @@ mod tests {
         let a = Tensor::zeros(vec![32, 768], DataType::Float32);
         let b = Tensor::zeros(vec![768, 512], DataType::Float32);
 
-        let result = executor.execute(
-            TensorPrecompile::MatMul,
-            vec![a, b],
-            HashMap::new(),
-        );
+        let result = executor.execute(TensorPrecompile::MatMul, vec![a, b], HashMap::new());
 
         assert!(result.is_ok());
         let outputs = result.unwrap();
@@ -894,11 +977,7 @@ mod tests {
         let a = Tensor::zeros(vec![32, 768], DataType::Float32);
         let b = Tensor::zeros(vec![512, 256], DataType::Float32); // Wrong shape
 
-        let result = executor.execute(
-            TensorPrecompile::MatMul,
-            vec![a, b],
-            HashMap::new(),
-        );
+        let result = executor.execute(TensorPrecompile::MatMul, vec![a, b], HashMap::new());
 
         assert!(matches!(result, Err(ExecutorError::ShapeMismatch(_))));
     }
