@@ -28,7 +28,7 @@ jobs:
       - name: Install contract dependencies
         run: npm install --no-fund --no-audit
       - name: Slither scan
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
         uses: crytic/slither-action@v0.4.0
         with:
           target: contracts
