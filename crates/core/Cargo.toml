@@ -92,7 +92,7 @@ argon2 = "0.5"          # Memory-hard KDF for passwords
 # =============================================================================
 # Random Number Generation
 # =============================================================================
-rand = "0.8"
+rand = "0.10"
 rand_core = "0.6"
 rand_chacha = "0.3"     # CSPRNG
 getrandom = { version = "0.2", features = ["std"] }
