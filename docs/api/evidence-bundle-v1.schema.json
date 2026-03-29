@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aethelred.network/schemas/evidence-bundle-v1.schema.json",
+  "title": "Aethelred Enterprise Evidence Bundle v1",
+  "description": "Canonical schema for enterprise hybrid job evidence bundles. Every enterprise hybrid job produces an evidence bundle containing TEE attestation and zkML proof evidence.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "job_id",
+    "timestamp",
+    "model_hash",
+    "circuit_hash",
+    "verifying_key_hash",
+    "tee_evidence",
+    "zkml_evidence",
+    "region",
+    "operator",
+    "policy_decision"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version. Must be '1.0.0' for this version."
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Unique bundle identifier (UUID v4)."
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$",
+      "description": "On-chain job identifier (hex-encoded transaction hash, 32 bytes)."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Bundle creation time in UTC (ISO 8601 with Z suffix)."
+    },
+    "model_hash": {
+      "$ref": "#/definitions/sha256_hex",
+      "description": "SHA-256 hash of model weights used for inference."
+    },
+    "circuit_hash": {
+      "$ref": "#/definitions/sha256_hex",
+      "description": "SHA-256 hash of the zkML circuit definition."
+    },
+    "verifying_key_hash": {
+      "$ref": "#/definitions/sha256_hex",
+      "description": "SHA-256 hash of the verifying key."
+    },
+    "tee_evidence": {
+      "$ref": "#/definitions/tee_evidence",
+      "description": "TEE attestation evidence."
+    },
+    "zkml_evidence": {
+      "$ref": "#/definitions/zkml_evidence",
+      "description": "zkML proof evidence."
+    },
+    "region": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Processing region identifier (e.g., 'us-east-1', 'eu-west-1')."
+    },
+    "operator": {
+      "type": "string",
+      "pattern": "^aethel1[a-z0-9]{38,58}$",
+      "description": "Operator identifier (validator address, bech32-encoded with 'aethel' prefix)."
+    },
+    "policy_decision": {
+      "$ref": "#/definitions/policy_decision",
+      "description": "Policy engine output for this job."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional extensible metadata. Reserved for future use.",
+      "additionalProperties": true
+    }
+  },
+  "definitions": {
+    "sha256_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 hash as a 64-character lowercase hex string (32 bytes).",
+      "not": {
+        "const": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    "tee_evidence": {
+      "type": "object",
+      "required": [
+        "platform",
+        "enclave_id",
+        "measurement",
+        "quote",
+        "nonce"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["sgx", "nitro", "sev-snp"],
+          "description": "TEE platform type."
+        },
+        "enclave_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Platform-specific enclave identifier."
+        },
+        "measurement": {
+          "type": "string",
+          "pattern": "^[0-9a-f]+$",
+          "minLength": 2,
+          "description": "Platform measurement (MRENCLAVE for SGX, PCR values for Nitro, launch digest for SEV-SNP)."
+        },
+        "quote": {
+          "$ref": "#/definitions/non_empty_base64",
+          "description": "Raw attestation quote, base64-encoded."
+        },
+        "nonce": {
+          "$ref": "#/definitions/sha256_hex",
+          "description": "Freshness nonce (32 bytes hex-encoded) binding the quote to this specific job."
+        }
+      }
+    },
+    "zkml_evidence": {
+      "type": "object",
+      "required": [
+        "proof_system",
+        "proof_bytes",
+        "public_inputs",
+        "output_commitment"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "proof_system": {
+          "type": "string",
+          "enum": ["groth16", "plonk", "ezkl", "halo2", "stark"],
+          "description": "Proof system used to generate the proof."
+        },
+        "proof_bytes": {
+          "$ref": "#/definitions/non_empty_base64",
+          "description": "Serialized proof, base64-encoded."
+        },
+        "public_inputs": {
+          "$ref": "#/definitions/non_empty_base64",
+          "description": "Serialized public inputs, base64-encoded."
+        },
+        "output_commitment": {
+          "$ref": "#/definitions/sha256_hex",
+          "description": "SHA-256 commitment to the inference output, binding proof to result."
+        }
+      }
+    },
+    "policy_decision": {
+      "type": "object",
+      "required": [
+        "mode",
+        "require_both",
+        "fallback_allowed"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "hybrid",
+          "description": "Execution mode. Must be 'hybrid' for enterprise bundles."
+        },
+        "require_both": {
+          "type": "boolean",
+          "const": true,
+          "description": "Whether both TEE and zkML evidence are required. Must be true."
+        },
+        "fallback_allowed": {
+          "type": "boolean",
+          "const": false,
+          "description": "Whether fallback to single-evidence mode is permitted. Must be false."
+        },
+        "policy_version": {
+          "type": "string",
+          "description": "Version of the policy engine that produced this decision."
+        }
+      }
+    },
+    "non_empty_base64": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]+=*$",
+      "minLength": 4,
+      "description": "Non-empty base64-encoded string (RFC 4648 Section 4)."
+    }
+  }
+}
