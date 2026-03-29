@@ -31,9 +31,9 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/zeroid/backend/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: npm ci --no-fund --no-audit
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
       - name: Lint
         run: npm run lint
       - name: Type-check

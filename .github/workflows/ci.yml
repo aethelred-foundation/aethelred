@@ -7,8 +7,8 @@ on:
     branches: [main, develop]
 
 env:
-  GO_VERSION: "1.22"
-  RUST_VERSION: "1.75"
+  GO_VERSION: "1.24.6"
+  RUST_VERSION: "1.85.0"
 
 jobs:
   go-lint:
@@ -86,7 +86,6 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
       - name: Lint protos
         run: buf lint
-        working-directory: proto
 
   docker-build:
     name: Docker Build

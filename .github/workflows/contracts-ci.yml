@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-fund
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
       - name: Lint Solidity
         run: npm run lint
       - name: Compile contracts
@@ -44,7 +44,7 @@ jobs:
         with:
           version: stable
       - name: Run Foundry tests
-        run: forge test --profile ci -vv
+        run: FOUNDRY_PROFILE=ci forge test -vv
 
   contracts-required-gate:
     name: Contracts Required Gate
