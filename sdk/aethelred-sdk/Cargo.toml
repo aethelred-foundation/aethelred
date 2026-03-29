@@ -32,7 +32,7 @@ required-features = ["full-sdk"]
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.8"
 sha2 = "0.10"
 
 [features]
