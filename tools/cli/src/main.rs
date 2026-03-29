@@ -1140,14 +1140,16 @@ The Most Advanced AI Blockchain Platform
 
 fn print_version() {
     let sdk_version = read_sdk_version_from_matrix().unwrap_or_else(|| "unknown".to_string());
+    let git_sha = option_env!("VERGEN_GIT_SHA").unwrap_or("unknown");
+    let rust_semver = option_env!("VERGEN_RUSTC_SEMVER").unwrap_or(env!("CARGO_PKG_VERSION"));
 
     println!("{}", BANNER.cyan());
     println!();
     println!("  {} {}", "CLI Version:".bold(), env!("CARGO_PKG_VERSION"));
     println!("  {} {}", "SDK Version:".bold(), sdk_version);
     println!("  {} {}", "API Version:".bold(), "v1");
-    println!("  {} {}", "Build:".bold(), env!("VERGEN_GIT_SHA"));
-    println!("  {} {}", "Rust:".bold(), env!("VERGEN_RUSTC_SEMVER"));
+    println!("  {} {}", "Build:".bold(), git_sha);
+    println!("  {} {}", "Rust:".bold(), rust_semver);
     println!();
     println!("  {} https://aethelred.io", "Website:".bold());
     println!("  {} https://docs.aethelred.io", "Docs:".bold());

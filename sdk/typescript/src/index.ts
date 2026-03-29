@@ -16,6 +16,13 @@ export { Config, Network, type NetworkConfig } from './core/config';
 export * from './core/types';
 export * from './core/errors';
 
+import { AethelredClient } from './core/client';
+import type { Config } from './core/config';
+
+export function createAethelredClient(config: Config | string = {}): AethelredClient {
+  return new AethelredClient(config);
+}
+
 // Module classes (low-level access)
 export { JobsModule } from './jobs';
 export { SealsModule } from './seals';

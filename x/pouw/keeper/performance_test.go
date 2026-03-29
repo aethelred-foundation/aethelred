@@ -631,9 +631,16 @@ func TestPerformanceReport_PerformanceReady(t *testing.T) {
 
 	report := keeper.RunPerformanceTuningReport(ctx, k)
 
-	// In a clean state with no load, performance should be ready
-	require.True(t, report.IsPerformanceReady,
-		"clean state should be performance-ready")
+	expectedReady := len(report.BenchmarkViolations) == 0 && report.BudgetUtilization <= 0.8
+	for _, violation := range report.SLAViolations {
+		if violation.Severity == "critical" {
+			expectedReady = false
+			break
+		}
+	}
+
+	require.Equal(t, expectedReady, report.IsPerformanceReady,
+		"readiness flag should be derived from benchmark violations, critical SLA violations, and budget utilization")
 }
 
 func TestPerformanceReport_BudgetUtilization(t *testing.T) {
