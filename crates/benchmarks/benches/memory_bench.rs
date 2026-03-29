@@ -3,8 +3,8 @@
 //! These benchmarks measure memory allocation performance,
 //! bandwidth, and pool efficiency.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use aethelred_benchmarks::memory::{MemoryBenchmark, MemoryBenchmarkConfig};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn memory_allocation_bench(c: &mut Criterion) {
     let config = MemoryBenchmarkConfig {

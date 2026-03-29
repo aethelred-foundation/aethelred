@@ -30,7 +30,7 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
+            "tools/cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
             "sdk/aethelred-sdk/Cargo.toml"
             "sdk/aethelred-py/Cargo.toml"
@@ -60,7 +60,7 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
+            "tools/cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
             "sdk/aethelred-sdk/Cargo.toml"
             "sdk/aethelred-py/Cargo.toml"
@@ -96,7 +96,7 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
+            "tools/cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
           )
 

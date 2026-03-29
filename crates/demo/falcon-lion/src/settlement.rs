@@ -72,20 +72,19 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use parking_lot::RwLock;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use sha3::Keccak256;
 #[cfg(test)]
 use uuid::Uuid;
 
-use crate::types::{
-    VerificationProof, MonetaryAmount, Currency, Hash, TradeDeal, BankIdentifier,
-    TradeParticipant,
-};
 use crate::error::{FalconLionError, FalconLionResult};
+use crate::types::{
+    BankIdentifier, Currency, Hash, MonetaryAmount, TradeDeal, TradeParticipant, VerificationProof,
+};
 
 // =============================================================================
 // CONSTANTS
@@ -411,16 +410,14 @@ impl SettlementEngine {
         if exporter_proof.data_jurisdiction != advising_bank.jurisdiction {
             return Err(FalconLionError::InvalidProof(format!(
                 "Exporter proof jurisdiction {} does not match advising bank {}",
-                exporter_proof.data_jurisdiction,
-                advising_bank.jurisdiction
+                exporter_proof.data_jurisdiction, advising_bank.jurisdiction
             )));
         }
 
         if importer_proof.data_jurisdiction != issuing_bank.jurisdiction {
             return Err(FalconLionError::InvalidProof(format!(
                 "Importer proof jurisdiction {} does not match issuing bank {}",
-                importer_proof.data_jurisdiction,
-                issuing_bank.jurisdiction
+                importer_proof.data_jurisdiction, issuing_bank.jurisdiction
             )));
         }
 
@@ -444,14 +441,16 @@ impl SettlementEngine {
         let expiry = now + Duration::days(90); // 90-day LC
 
         // Step 7: Simulate blockchain transaction
-        let (tx_hash, block_number) = self.execute_mint_transaction(
-            &lc_id,
-            amount_smallest_unit,
-            &beneficiary_address,
-            &applicant_address,
-            exporter_proof,
-            importer_proof,
-        ).await?;
+        let (tx_hash, block_number) = self
+            .execute_mint_transaction(
+                &lc_id,
+                amount_smallest_unit,
+                &beneficiary_address,
+                &applicant_address,
+                exporter_proof,
+                importer_proof,
+            )
+            .await?;
 
         // Step 8: Create on-chain LC representation
         let vlc = VerifiableLetterOfCredit {
@@ -485,12 +484,14 @@ impl SettlementEngine {
         {
             let mut metrics = self.metrics.write();
             metrics.total_lcs_minted += 1;
-            metrics.total_value_settled_usd += self.to_usd_equivalent(amount_smallest_unit, deal.total_value.currency);
+            metrics.total_value_settled_usd +=
+                self.to_usd_equivalent(amount_smallest_unit, deal.total_value.currency);
 
             let elapsed = start_time.elapsed().as_secs();
             let total_settlements = metrics.total_lcs_minted;
             metrics.avg_settlement_time_secs =
-                (metrics.avg_settlement_time_secs * (total_settlements - 1) + elapsed) / total_settlements;
+                (metrics.avg_settlement_time_secs * (total_settlements - 1) + elapsed)
+                    / total_settlements;
         }
 
         // Step 11: Emit event
@@ -537,7 +538,7 @@ impl SettlementEngine {
         // Check result
         if !proof.result_summary.passed {
             return Err(FalconLionError::ProofVerificationFailed(
-                "Proof did not pass verification".to_string()
+                "Proof did not pass verification".to_string(),
             ));
         }
 
@@ -584,7 +585,10 @@ impl SettlementEngine {
     fn to_smallest_unit(&self, amount: &MonetaryAmount) -> u128 {
         let decimals = amount.currency.decimal_places();
         let multiplier = 10u128.pow(decimals as u32);
-        (amount.amount * Decimal::from(multiplier)).to_string().parse().unwrap_or(0)
+        (amount.amount * Decimal::from(multiplier))
+            .to_string()
+            .parse()
+            .unwrap_or(0)
     }
 
     /// Convert to USD equivalent (simplified)
@@ -686,7 +690,7 @@ impl SettlementEngine {
 
         // Function selector: mintLetterOfCredit(bytes32,uint256,address,address,bytes,bytes)
         let selector = self.compute_function_selector(
-            "mintLetterOfCredit(bytes32,uint256,address,address,bytes,bytes)"
+            "mintLetterOfCredit(bytes32,uint256,address,address,bytes,bytes)",
         );
         calldata.extend_from_slice(&selector);
 
@@ -760,7 +764,8 @@ impl SettlementEngine {
 
     /// Get LC by reference
     pub fn get_lc_by_reference(&self, reference: &str) -> Option<VerifiableLetterOfCredit> {
-        self.active_lcs.read()
+        self.active_lcs
+            .read()
             .values()
             .find(|lc| lc.reference == reference)
             .cloned()
@@ -778,7 +783,8 @@ impl SettlementEngine {
 
     /// Get transaction by hash
     pub fn get_transaction(&self, tx_hash: &TxHash) -> Option<SettlementTransaction> {
-        self.tx_history.read()
+        self.tx_history
+            .read()
             .iter()
             .find(|tx| &tx.tx_hash == tx_hash)
             .cloned()
@@ -824,10 +830,7 @@ impl SettlementEngine {
 
     /// Get explorer URL for LC
     pub fn get_lc_explorer_url(&self, lc_id: &Hash) -> String {
-        format!(
-            "https://explorer.aethelred.org/lc/0x{}",
-            hex::encode(lc_id)
-        )
+        format!("https://explorer.aethelred.org/lc/0x{}", hex::encode(lc_id))
     }
 }
 
@@ -998,13 +1001,16 @@ mod tests {
         let importer_proof = create_test_proof(Jurisdiction::Singapore);
         let deal = create_test_deal();
 
-        let vlc = engine.mint_letter_of_credit(
-            &exporter_proof,
-            &importer_proof,
-            &deal,
-            &BankIdentifier::dbs(), // Issuing bank
-            &BankIdentifier::fab(), // Advising bank
-        ).await.unwrap();
+        let vlc = engine
+            .mint_letter_of_credit(
+                &exporter_proof,
+                &importer_proof,
+                &deal,
+                &BankIdentifier::dbs(), // Issuing bank
+                &BankIdentifier::fab(), // Advising bank
+            )
+            .await
+            .unwrap();
 
         assert!(vlc.reference.starts_with("VLC-"));
         assert_eq!(vlc.status, OnChainLcStatus::Active);
@@ -1033,7 +1039,7 @@ mod tests {
     fn test_function_selector() {
         let engine = SettlementEngine::new();
         let selector = engine.compute_function_selector(
-            "mintLetterOfCredit(bytes32,uint256,address,address,bytes,bytes)"
+            "mintLetterOfCredit(bytes32,uint256,address,address,bytes,bytes)",
         );
         assert_eq!(selector.len(), 4);
     }

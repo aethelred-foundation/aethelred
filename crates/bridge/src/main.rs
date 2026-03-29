@@ -40,9 +40,7 @@ use tokio::signal;
 use tracing::{info, warn, Level};
 use tracing_subscriber::{fmt, EnvFilter};
 
-use aethelred_bridge::{
-    BridgeConfig, BridgeRelayer, BridgeError, Result,
-};
+use aethelred_bridge::{BridgeConfig, BridgeError, BridgeRelayer, Result};
 
 // =============================================================================
 // CLI DEFINITION
@@ -160,29 +158,17 @@ async fn main() -> Result<()> {
             eth_rpc,
             aethelred_rpc,
             debug,
-        } => {
-            start_relayer(config, data_dir, eth_rpc, aethelred_rpc, debug).await
-        }
+        } => start_relayer(config, data_dir, eth_rpc, aethelred_rpc, debug).await,
 
-        Commands::Health { rpc } => {
-            check_health(&rpc).await
-        }
+        Commands::Health { rpc } => check_health(&rpc).await,
 
-        Commands::GenerateKey { output } => {
-            generate_key(&output).await
-        }
+        Commands::GenerateKey { output } => generate_key(&output).await,
 
-        Commands::Stats { config } => {
-            show_stats(&config).await
-        }
+        Commands::Stats { config } => show_stats(&config).await,
 
-        Commands::ProcessDeposit { tx_hash, config } => {
-            process_deposit(&tx_hash, &config).await
-        }
+        Commands::ProcessDeposit { tx_hash, config } => process_deposit(&tx_hash, &config).await,
 
-        Commands::Metrics { listen } => {
-            start_metrics_server(&listen).await
-        }
+        Commands::Metrics { listen } => start_metrics_server(&listen).await,
     }
 }
 
@@ -200,7 +186,10 @@ async fn start_relayer(
     // Initialize logging
     init_logging(debug);
 
-    info!("Starting Aethelred Bridge Relayer v{}", env!("CARGO_PKG_VERSION"));
+    info!(
+        "Starting Aethelred Bridge Relayer v{}",
+        env!("CARGO_PKG_VERSION")
+    );
     info!("Configuration: {:?}", config_path);
     info!("Data directory: {:?}", data_dir);
 
@@ -273,9 +262,7 @@ async fn check_health(rpc: &str) -> Result<()> {
         .map_err(|_| BridgeError::Timeout("Health check connect timed out".to_string()))?
         .map_err(|e| BridgeError::Network(e.to_string()))?;
 
-    let request = format!(
-        "GET /health HTTP/1.1\r\nHost: {endpoint}\r\nConnection: close\r\n\r\n"
-    );
+    let request = format!("GET /health HTTP/1.1\r\nHost: {endpoint}\r\nConnection: close\r\n\r\n");
     stream
         .write_all(request.as_bytes())
         .await
@@ -303,8 +290,8 @@ async fn check_health(rpc: &str) -> Result<()> {
 // =============================================================================
 
 async fn generate_key(output: &PathBuf) -> Result<()> {
-    use sha2::{Sha256, Digest};
     use rand::RngCore;
+    use sha2::{Digest, Sha256};
 
     println!("Generating new relayer key pair...");
 
@@ -365,8 +352,14 @@ async fn show_stats(config_path: &std::path::Path) -> Result<()> {
     println!("  Chain ID: {}", config.aethelred.chain_id);
 
     println!("\nConsensus:");
-    println!("  Threshold: {}%", config.consensus.threshold_bps as f64 / 100.0);
-    println!("  Proposal Timeout: {}s", config.consensus.proposal_timeout_secs);
+    println!(
+        "  Threshold: {}%",
+        config.consensus.threshold_bps as f64 / 100.0
+    );
+    println!(
+        "  Proposal Timeout: {}s",
+        config.consensus.proposal_timeout_secs
+    );
 
     Ok(())
 }
@@ -429,7 +422,11 @@ async fn start_metrics_server(listen: &str) -> Result<()> {
 
             let req = String::from_utf8_lossy(&buf[..read]);
             let (status, content_type, body) = if req.starts_with("GET /health ") {
-                ("200 OK", "application/json", r#"{"status":"healthy"}"#.to_string())
+                (
+                    "200 OK",
+                    "application/json",
+                    r#"{"status":"healthy"}"#.to_string(),
+                )
             } else if req.starts_with("GET /metrics ") {
                 (
                     "200 OK",
@@ -450,7 +447,6 @@ async fn start_metrics_server(listen: &str) -> Result<()> {
             let _ = socket.shutdown().await;
         });
     }
-
 }
 
 fn generate_prometheus_metrics() -> String {
@@ -493,18 +489,30 @@ fn print_config_summary(config: &BridgeConfig) {
     info!("│                  BRIDGE CONFIGURATION                      │");
     info!("├────────────────────────────────────────────────────────────┤");
     info!("│ Ethereum                                                   │");
-    info!("│   RPC:          {}", truncate(&config.ethereum.rpc_url, 40));
+    info!(
+        "│   RPC:          {}",
+        truncate(&config.ethereum.rpc_url, 40)
+    );
     info!("│   Chain ID:     {}", config.ethereum.chain_id);
     info!("│   Confirmations: {}", config.ethereum.confirmations);
     info!("├────────────────────────────────────────────────────────────┤");
     info!("│ Aethelred                                                  │");
-    info!("│   RPC:          {}", truncate(&config.aethelred.rpc_url, 40));
+    info!(
+        "│   RPC:          {}",
+        truncate(&config.aethelred.rpc_url, 40)
+    );
     info!("│   Chain ID:     {}", config.aethelred.chain_id);
     info!("│   Confirmations: {}", config.aethelred.confirmations);
     info!("├────────────────────────────────────────────────────────────┤");
     info!("│ Consensus                                                  │");
-    info!("│   Threshold:    {}%", config.consensus.threshold_bps as f64 / 100.0);
-    info!("│   Timeout:      {}s", config.consensus.proposal_timeout_secs);
+    info!(
+        "│   Threshold:    {}%",
+        config.consensus.threshold_bps as f64 / 100.0
+    );
+    info!(
+        "│   Timeout:      {}s",
+        config.consensus.proposal_timeout_secs
+    );
     info!("└────────────────────────────────────────────────────────────┘");
 }
 

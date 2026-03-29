@@ -56,14 +56,14 @@
 //! └─────────────────────────────────────────────────────────────────────────────────┘
 //! ```
 
+pub mod aethelred;
 pub mod config;
+pub mod consensus;
 pub mod error;
 pub mod ethereum;
-pub mod aethelred;
-pub mod processor;
-pub mod consensus;
-pub mod storage;
 pub mod metrics;
+pub mod processor;
+pub mod storage;
 pub mod types;
 
 pub use config::BridgeConfig;
@@ -72,7 +72,7 @@ pub use types::*;
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 /// Bridge relayer service
 pub struct BridgeRelayer {
@@ -114,39 +114,29 @@ impl BridgeRelayer {
 
         // Initialize Ethereum listener
         let eth_listener = Arc::new(
-            ethereum::EthereumListener::new(
-                &config.ethereum,
-                storage.clone(),
-                metrics.clone(),
-            ).await?
+            ethereum::EthereumListener::new(&config.ethereum, storage.clone(), metrics.clone())
+                .await?,
         );
 
         // Initialize Aethelred listener
         let aethelred_listener = Arc::new(
-            aethelred::AethelredListener::new(
-                &config.aethelred,
-                storage.clone(),
-                metrics.clone(),
-            ).await?
+            aethelred::AethelredListener::new(&config.aethelred, storage.clone(), metrics.clone())
+                .await?,
         );
 
         // Initialize event processor
-        let processor = Arc::new(
-            processor::EventProcessor::new(
-                config.clone(),
-                storage.clone(),
-                metrics.clone(),
-            )
-        );
+        let processor = Arc::new(processor::EventProcessor::new(
+            config.clone(),
+            storage.clone(),
+            metrics.clone(),
+        ));
 
         // Initialize consensus engine
-        let consensus = Arc::new(
-            consensus::ConsensusEngine::new(
-                config.clone(),
-                storage.clone(),
-                metrics.clone(),
-            )
-        );
+        let consensus = Arc::new(consensus::ConsensusEngine::new(
+            config.clone(),
+            storage.clone(),
+            metrics.clone(),
+        ));
 
         Ok(Self {
             config,
@@ -192,7 +182,9 @@ impl BridgeRelayer {
 
         tokio::spawn(async move {
             info!("Starting Aethelred event listener");
-            if let Err(e) = Self::run_aethelred_listener(aethelred_listener, processor, running).await {
+            if let Err(e) =
+                Self::run_aethelred_listener(aethelred_listener, processor, running).await
+            {
                 error!("Aethelred listener error: {}", e);
             }
         });

@@ -1,10 +1,8 @@
-use criterion::{criterion_group, criterion_main, Criterion, black_box};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use aethelred_consensus::vrf::{VrfEngine, VrfKeys};
-use aethelred_consensus::reputation::{
-    ComputeJobRecord, ReputationConfig, ReputationEngine,
-};
+use aethelred_consensus::reputation::{ComputeJobRecord, ReputationConfig, ReputationEngine};
 use aethelred_consensus::traits::VerificationMethod;
+use aethelred_consensus::vrf::{VrfEngine, VrfKeys};
 
 // =============================================================================
 // VRF BENCHMARKS
@@ -21,8 +19,7 @@ fn bench_vrf_key_generation(c: &mut Criterion) {
             let mut seed = [0u8; 32];
             seed[..8].copy_from_slice(&counter.to_le_bytes());
             counter = counter.wrapping_add(1);
-            let keys = VrfKeys::from_seed(black_box(&seed))
-                .expect("key generation must succeed");
+            let keys = VrfKeys::from_seed(black_box(&seed)).expect("key generation must succeed");
             black_box(keys.public_key());
         });
     });
@@ -40,7 +37,8 @@ fn bench_vrf_prove(c: &mut Criterion) {
 
     group.bench_function("prove", |b| {
         b.iter(|| {
-            let result = engine.prove(black_box(&keys), black_box(message.as_slice()))
+            let result = engine
+                .prove(black_box(&keys), black_box(message.as_slice()))
                 .expect("prove must succeed");
             black_box(result);
         });
@@ -58,17 +56,20 @@ fn bench_vrf_verify(c: &mut Criterion) {
     let message = b"benchmark-vrf-verify-input-message-slot-12345";
 
     // Pre-generate proof for verification benchmark
-    let (proof, _output) = engine.prove(&keys, message.as_slice())
+    let (proof, _output) = engine
+        .prove(&keys, message.as_slice())
         .expect("prove must succeed");
     let public_key = keys.public_key_bytes();
 
     group.bench_function("verify", |b| {
         b.iter(|| {
-            let result = engine.verify(
-                black_box(&public_key),
-                black_box(message.as_slice()),
-                black_box(&proof),
-            ).expect("verify must succeed");
+            let result = engine
+                .verify(
+                    black_box(&public_key),
+                    black_box(message.as_slice()),
+                    black_box(&proof),
+                )
+                .expect("verify must succeed");
             black_box(result);
         });
     });
@@ -112,7 +113,8 @@ fn bench_reputation_update(c: &mut Criterion) {
                 true,
             );
 
-            let result = engine.record_job(black_box(address), job)
+            let result = engine
+                .record_job(black_box(address), job)
                 .expect("record_job must succeed");
             black_box(result);
 
@@ -163,7 +165,8 @@ fn bench_reputation_update(c: &mut Criterion) {
                 true,
             );
 
-            let result = engine.record_job(black_box(address), job)
+            let result = engine
+                .record_job(black_box(address), job)
                 .expect("record_job must succeed");
             black_box(result);
 

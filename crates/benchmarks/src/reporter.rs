@@ -57,7 +57,9 @@ impl ReportGenerator {
 
         html.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n");
         html.push_str("  <meta charset=\"UTF-8\">\n");
-        html.push_str("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
+        html.push_str(
+            "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n",
+        );
         html.push_str(&format!("  <title>{}</title>\n", self.config.title));
         html.push_str("  <style>\n");
         html.push_str(REPORT_CSS);
@@ -140,7 +142,10 @@ impl ReportGenerator {
             html.push_str(&format!("          <td>{:.2?}</td>\n", result.std_dev()));
             html.push_str(&format!("          <td>{:.2?}</td>\n", result.p95()));
             html.push_str(&format!("          <td>{:.2?}</td>\n", result.p99()));
-            html.push_str(&format!("          <td>{:.2}/s</td>\n", result.throughput()));
+            html.push_str(&format!(
+                "          <td>{:.2}/s</td>\n",
+                result.throughput()
+            ));
             html.push_str("        </tr>\n");
         }
 
@@ -305,9 +310,15 @@ impl ReportGenerator {
 
         // Summary
         md.push_str("## Summary\n\n");
-        md.push_str(&format!("- **Total Benchmarks:** {}\n", result.total_benchmarks()));
+        md.push_str(&format!(
+            "- **Total Benchmarks:** {}\n",
+            result.total_benchmarks()
+        ));
         md.push_str(&format!("- **Suites:** {}\n", result.suites.len()));
-        md.push_str(&format!("- **Total Duration:** {:.2?}\n\n", result.duration));
+        md.push_str(&format!(
+            "- **Total Duration:** {:.2?}\n\n",
+            result.duration
+        ));
 
         // Per-suite results
         for suite in &result.suites {
@@ -337,9 +348,7 @@ impl ReportGenerator {
 
     /// Save report to file
     pub fn save(&self, result: &RunnerResult, path: &Path) -> std::io::Result<()> {
-        let extension = path.extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("html");
+        let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("html");
 
         let content = match extension {
             "html" => self.generate_html(result),
@@ -444,9 +453,10 @@ mod tests {
     fn test_html_generation() {
         let suite = SuiteResult {
             name: "test_suite".to_string(),
-            results: vec![
-                BenchmarkResult::new("bench1", vec![Duration::from_millis(10)]),
-            ],
+            results: vec![BenchmarkResult::new(
+                "bench1",
+                vec![Duration::from_millis(10)],
+            )],
             duration: Duration::from_secs(1),
         };
 

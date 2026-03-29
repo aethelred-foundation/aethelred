@@ -15,18 +15,18 @@
 //! - Comparison against baselines
 //! - Multiple output formats (JSON, CSV, HTML)
 
+pub mod hardware;
 pub mod inference;
-pub mod training;
 pub mod memory;
 pub mod network;
-pub mod hardware;
 pub mod regression;
 pub mod reporter;
+pub mod training;
 
 use std::collections::HashMap;
 use std::fmt;
-use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 // ============ Benchmark Result ============
 
@@ -77,12 +77,15 @@ impl BenchmarkResult {
         }
 
         let mean_nanos = self.mean().as_nanos() as f64;
-        let variance: f64 = self.samples.iter()
+        let variance: f64 = self
+            .samples
+            .iter()
             .map(|s| {
                 let diff = s.as_nanos() as f64 - mean_nanos;
                 diff * diff
             })
-            .sum::<f64>() / (self.samples.len() - 1) as f64;
+            .sum::<f64>()
+            / (self.samples.len() - 1) as f64;
 
         Duration::from_nanos(variance.sqrt() as u64)
     }
@@ -424,15 +427,9 @@ impl RunnerResult {
     fn format_pretty(&self) -> String {
         let mut output = String::new();
 
-        output.push_str(&format!(
-            "\n{}\n",
-            "=".repeat(80)
-        ));
+        output.push_str(&format!("\n{}\n", "=".repeat(80)));
         output.push_str("Aethelred SDK Benchmark Results\n");
-        output.push_str(&format!(
-            "{}\n\n",
-            "=".repeat(80)
-        ));
+        output.push_str(&format!("{}\n\n", "=".repeat(80)));
 
         for suite in &self.suites {
             output.push_str(&format!("Suite: {}\n", suite.name));
@@ -452,10 +449,7 @@ impl RunnerResult {
             output.push_str(&format!("\n  Suite duration: {:.2?}\n\n", suite.duration));
         }
 
-        output.push_str(&format!(
-            "Total duration: {:.2?}\n",
-            self.duration
-        ));
+        output.push_str(&format!("Total duration: {:.2?}\n", self.duration));
 
         output
     }
@@ -615,7 +609,9 @@ const BENCHMARK_CSS: &str = r#"
 #[macro_export]
 macro_rules! bench {
     ($name:expr, $body:expr) => {
-        $crate::FnBenchmark::new($name, || { $body; })
+        $crate::FnBenchmark::new($name, || {
+            $body;
+        })
     };
 }
 
@@ -681,7 +677,12 @@ pub struct Comparison {
 }
 
 impl Comparison {
-    pub fn new(name: &str, baseline: BenchmarkResult, current: BenchmarkResult, threshold: f64) -> Self {
+    pub fn new(
+        name: &str,
+        baseline: BenchmarkResult,
+        current: BenchmarkResult,
+        threshold: f64,
+    ) -> Self {
         let baseline_mean = baseline.mean().as_nanos() as f64;
         let current_mean = current.mean().as_nanos() as f64;
 
@@ -748,9 +749,7 @@ mod tests {
 
     #[test]
     fn test_percentiles() {
-        let samples: Vec<Duration> = (1..=100)
-            .map(|i| Duration::from_millis(i))
-            .collect();
+        let samples: Vec<Duration> = (1..=100).map(|i| Duration::from_millis(i)).collect();
 
         let result = BenchmarkResult::new("test", samples);
 

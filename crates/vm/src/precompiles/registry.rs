@@ -247,7 +247,9 @@ impl RegistryBuilder {
             config.clone(),
             registry.clone(),
         ))
-        .add(super::tee::UniversalTeeVerifyPrecompile::new(config, registry))
+        .add(super::tee::UniversalTeeVerifyPrecompile::new(
+            config, registry,
+        ))
     }
 
     /// Add all Aethelred precompiles

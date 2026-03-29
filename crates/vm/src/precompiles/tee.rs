@@ -2327,19 +2327,17 @@ mod tests {
         let now = chrono::Utc::now().timestamp() as u64;
 
         // Verify Nitro PCR0 measurements loaded
-        let pcr0_a = hex::decode(
-            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-        )
-        .unwrap();
+        let pcr0_a =
+            hex::decode("a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2")
+                .unwrap();
         assert!(
             registry.is_nitro_trusted(&pcr0_a, now).is_none(),
             "pcr0_a should be trusted"
         );
 
-        let pcr0_dead = hex::decode(
-            "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-        )
-        .unwrap();
+        let pcr0_dead =
+            hex::decode("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+                .unwrap();
         assert!(
             registry.is_nitro_trusted(&pcr0_dead, now).is_none(),
             "pcr0_dead should be trusted"
@@ -2352,29 +2350,30 @@ mod tests {
         );
 
         // Verify SGX MRENCLAVE measurements loaded
-        let mrenclave_a = hex::decode(
-            "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-        )
-        .unwrap();
+        let mrenclave_a =
+            hex::decode("abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789")
+                .unwrap();
         assert!(
-            registry.is_sgx_mrenclave_trusted(&mrenclave_a, now).is_none(),
+            registry
+                .is_sgx_mrenclave_trusted(&mrenclave_a, now)
+                .is_none(),
             "mrenclave_a should be trusted"
         );
 
-        let mrenclave_b = hex::decode(
-            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        )
-        .unwrap();
+        let mrenclave_b =
+            hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+                .unwrap();
         assert!(
-            registry.is_sgx_mrenclave_trusted(&mrenclave_b, now).is_none(),
+            registry
+                .is_sgx_mrenclave_trusted(&mrenclave_b, now)
+                .is_none(),
             "mrenclave_b should be trusted"
         );
 
         // Verify SGX MRSIGNER measurement loaded
-        let mrsigner = hex::decode(
-            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
-        )
-        .unwrap();
+        let mrsigner =
+            hex::decode("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210")
+                .unwrap();
         assert!(
             registry.is_sgx_mrsigner_trusted(&mrsigner, now).is_none(),
             "mrsigner should be trusted"
@@ -2419,7 +2418,10 @@ mod tests {
         assert_eq!(nitro_count, 2, "expected 2 Nitro PCR0 measurements");
 
         let sgx_mrenclave_count = registry.sgx_mrenclave.read().len();
-        assert_eq!(sgx_mrenclave_count, 2, "expected 2 SGX MRENCLAVE measurements");
+        assert_eq!(
+            sgx_mrenclave_count, 2,
+            "expected 2 SGX MRENCLAVE measurements"
+        );
 
         let sgx_mrsigner_count = registry.sgx_mrsigner.read().len();
         assert_eq!(sgx_mrsigner_count, 1, "expected 1 SGX MRSIGNER measurement");
@@ -2429,10 +2431,18 @@ mod tests {
 
         // All loaded measurements should be 32 bytes
         for (_, m) in registry.nitro.read().iter() {
-            assert_eq!(m.measurement.len(), 32, "Nitro measurement should be 32 bytes");
+            assert_eq!(
+                m.measurement.len(),
+                32,
+                "Nitro measurement should be 32 bytes"
+            );
         }
         for (_, m) in registry.sgx_mrenclave.read().iter() {
-            assert_eq!(m.measurement.len(), 32, "SGX measurement should be 32 bytes");
+            assert_eq!(
+                m.measurement.len(),
+                32,
+                "SGX measurement should be 32 bytes"
+            );
         }
 
         // Verify all measurements are active and not expired
@@ -2446,7 +2456,10 @@ mod tests {
     #[test]
     fn test_enterprise_config_has_enterprise_mode() {
         let cfg = TeeVerifierConfig::enterprise();
-        assert!(cfg.enterprise_mode, "Enterprise config must have enterprise_mode=true");
+        assert!(
+            cfg.enterprise_mode,
+            "Enterprise config must have enterprise_mode=true"
+        );
         assert!(cfg.strict_mode);
         assert!(!cfg.allow_debug_enclaves);
     }
@@ -2458,7 +2471,10 @@ mod tests {
         // Feed an input with 0xFF prefix (Simulated/Unknown platform byte)
         let input = vec![0xFF; 128];
         let result = precompile.execute(&input, 1_000_000);
-        assert!(result.is_err(), "Enterprise precompile must reject unknown/simulated platform");
+        assert!(
+            result.is_err(),
+            "Enterprise precompile must reject unknown/simulated platform"
+        );
     }
 
     #[test]
@@ -2469,7 +2485,10 @@ mod tests {
         let mut input = vec![0x02]; // SGX DCAP platform byte
         input.extend_from_slice(&vec![0xAA; 500]);
         let result = precompile.execute(&input, 1_000_000);
-        assert!(result.is_err(), "Enterprise precompile without sgx feature must hard-fail");
+        assert!(
+            result.is_err(),
+            "Enterprise precompile without sgx feature must hard-fail"
+        );
     }
 
     #[test]
@@ -2489,7 +2508,10 @@ mod tests {
             Ok(Ok(_)) => {} // mock verification passed - fine for devnet
             Ok(Err(ref e)) => {
                 let msg = format!("{:?}", e);
-                assert!(!msg.contains("Enterprise mode"), "Devnet should not trigger enterprise guard, got: {msg}");
+                assert!(
+                    !msg.contains("Enterprise mode"),
+                    "Devnet should not trigger enterprise guard, got: {msg}"
+                );
             }
             Err(_) => {} // panic from mock verifier overflow - acceptable in devnet
         }

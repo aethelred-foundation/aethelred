@@ -118,7 +118,10 @@ impl std::fmt::Display for AttestationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AttestationError::MockDisabled => {
-                write!(f, "mock attestation disabled (set allow_simulated = true for testing)")
+                write!(
+                    f,
+                    "mock attestation disabled (set allow_simulated = true for testing)"
+                )
             }
             AttestationError::PlatformNotAvailable(p) => {
                 write!(f, "TEE platform '{}' is not available on this host", p)
@@ -131,7 +134,11 @@ impl std::fmt::Display for AttestationError {
                     p
                 )
             }
-            AttestationError::MeasurementMismatch { field, expected, got } => {
+            AttestationError::MeasurementMismatch {
+                field,
+                expected,
+                got,
+            } => {
                 write!(
                     f,
                     "hardware report {} mismatch: expected {}, got {}",
@@ -252,10 +259,8 @@ pub trait HardwareAttestationProvider: Send + Sync {
     ///
     /// Mock provider: generates a random key in software and signs with a test
     /// vendor root key (D=2) for testing.
-    fn generate_platform_key(
-        &self,
-        platform_id: u8,
-    ) -> Result<PlatformKeyBundle, AttestationError>;
+    fn generate_platform_key(&self, platform_id: u8)
+        -> Result<PlatformKeyBundle, AttestationError>;
 
     /// Sign a report body with the hardware-held P-256 platform key.
     ///
@@ -344,8 +349,8 @@ impl VendorAttester for LocalVendorAttester {
         platform_id: u8,
         _hardware_evidence: &[u8],
     ) -> Result<VendorKeyAttestation, AttestationError> {
-        use p256::ecdsa::{SigningKey as P256SigningKey, Signature as P256Signature};
         use p256::ecdsa::signature::hazmat::PrehashSigner;
+        use p256::ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey};
 
         let mut hasher = Sha256::new();
         hasher.update(pk_x);
@@ -360,8 +365,9 @@ impl VendorAttester for LocalVendorAttester {
 
         let vendor_key = P256SigningKey::from_slice(&self.vendor_key)
             .map_err(|e| AttestationError::SigningFailed(format!("invalid vendor key: {}", e)))?;
-        let sig: P256Signature = vendor_key.sign_prehash(&msg_hash)
-            .map_err(|e| AttestationError::SigningFailed(format!("vendor signing failed: {}", e)))?;
+        let sig: P256Signature = vendor_key.sign_prehash(&msg_hash).map_err(|e| {
+            AttestationError::SigningFailed(format!("vendor signing failed: {}", e))
+        })?;
 
         let mut r = [0u8; 32];
         let mut s = [0u8; 32];
@@ -450,39 +456,55 @@ impl VendorAttester for RemoteVendorAttester {
         });
 
         let client = reqwest::blocking::Client::new();
-        let response = client.post(&self.relay_url)
+        let response = client
+            .post(&self.relay_url)
             .json(&request_body)
             .send()
-            .map_err(|e| AttestationError::HardwareUnavailable(
-                format!("attestation relay request to {} failed: {}", self.relay_url, e)))?;
+            .map_err(|e| {
+                AttestationError::HardwareUnavailable(format!(
+                    "attestation relay request to {} failed: {}",
+                    self.relay_url, e
+                ))
+            })?;
 
         if !response.status().is_success() {
-            return Err(AttestationError::HardwareUnavailable(
-                format!("attestation relay returned HTTP {}", response.status())));
+            return Err(AttestationError::HardwareUnavailable(format!(
+                "attestation relay returned HTTP {}",
+                response.status()
+            )));
         }
 
-        let resp_body: serde_json::Value = response.json()
-            .map_err(|e| AttestationError::HardwareUnavailable(
-                format!("attestation relay response parse failed: {}", e)))?;
+        let resp_body: serde_json::Value = response.json().map_err(|e| {
+            AttestationError::HardwareUnavailable(format!(
+                "attestation relay response parse failed: {}",
+                e
+            ))
+        })?;
 
-        let r_hex = resp_body["vendor_sig_r"].as_str()
-            .ok_or_else(|| AttestationError::HardwareUnavailable(
-                "attestation relay response missing 'vendor_sig_r'".into()))?;
-        let s_hex = resp_body["vendor_sig_s"].as_str()
-            .ok_or_else(|| AttestationError::HardwareUnavailable(
-                "attestation relay response missing 'vendor_sig_s'".into()))?;
+        let r_hex = resp_body["vendor_sig_r"].as_str().ok_or_else(|| {
+            AttestationError::HardwareUnavailable(
+                "attestation relay response missing 'vendor_sig_r'".into(),
+            )
+        })?;
+        let s_hex = resp_body["vendor_sig_s"].as_str().ok_or_else(|| {
+            AttestationError::HardwareUnavailable(
+                "attestation relay response missing 'vendor_sig_s'".into(),
+            )
+        })?;
 
-        let r_bytes = hex::decode(r_hex)
-            .map_err(|e| AttestationError::HardwareUnavailable(
-                format!("invalid vendor_sig_r hex: {}", e)))?;
-        let s_bytes = hex::decode(s_hex)
-            .map_err(|e| AttestationError::HardwareUnavailable(
-                format!("invalid vendor_sig_s hex: {}", e)))?;
+        let r_bytes = hex::decode(r_hex).map_err(|e| {
+            AttestationError::HardwareUnavailable(format!("invalid vendor_sig_r hex: {}", e))
+        })?;
+        let s_bytes = hex::decode(s_hex).map_err(|e| {
+            AttestationError::HardwareUnavailable(format!("invalid vendor_sig_s hex: {}", e))
+        })?;
 
         if r_bytes.len() != 32 || s_bytes.len() != 32 {
-            return Err(AttestationError::HardwareUnavailable(
-                format!("vendor signature components must be 32 bytes each, got r={} s={}",
-                    r_bytes.len(), s_bytes.len())));
+            return Err(AttestationError::HardwareUnavailable(format!(
+                "vendor signature components must be 32 bytes each, got r={} s={}",
+                r_bytes.len(),
+                s_bytes.len()
+            )));
         }
 
         let mut r = [0u8; 32];
@@ -511,7 +533,10 @@ impl VendorAttester for RemoteVendorAttester {
 /// state, which could be extracted after process compromise.
 ///
 /// Returns `(private_key, public_key_x, public_key_y)`.
-#[cfg_attr(not(any(feature = "sgx", feature = "nitro", feature = "sev")), allow(dead_code))]
+#[cfg_attr(
+    not(any(feature = "sgx", feature = "nitro", feature = "sev")),
+    allow(dead_code)
+)]
 fn generate_p256_platform_key() -> Result<([u8; 32], [u8; 32], [u8; 32]), AttestationError> {
     use p256::ecdsa::SigningKey as P256SigningKey;
     use rand::rngs::OsRng;
@@ -549,8 +574,8 @@ fn p256_sign_report_body(
     key_bytes: &[u8; 32],
     report_body: &[u8],
 ) -> Result<([u8; 32], [u8; 32]), AttestationError> {
-    use p256::ecdsa::{SigningKey as P256SigningKey, Signature as P256Signature};
     use p256::ecdsa::signature::hazmat::PrehashSigner;
+    use p256::ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey};
 
     let report_hash = {
         let mut h = Sha256::new();
@@ -561,10 +586,12 @@ fn p256_sign_report_body(
         hash
     };
 
-    let p256_key = P256SigningKey::from_slice(key_bytes)
-        .map_err(|e| AttestationError::SigningFailed(format!("invalid P-256 platform key: {}", e)))?;
-    let sig: P256Signature = p256_key.sign_prehash(&report_hash)
-        .map_err(|e| AttestationError::SigningFailed(format!("P-256 evidence signing failed: {}", e)))?;
+    let p256_key = P256SigningKey::from_slice(key_bytes).map_err(|e| {
+        AttestationError::SigningFailed(format!("invalid P-256 platform key: {}", e))
+    })?;
+    let sig: P256Signature = p256_key.sign_prehash(&report_hash).map_err(|e| {
+        AttestationError::SigningFailed(format!("P-256 evidence signing failed: {}", e))
+    })?;
 
     let mut r = [0u8; 32];
     let mut s = [0u8; 32];
@@ -644,8 +671,8 @@ impl HardwareAttestationProvider for MockHardwareProvider {
         &self,
         platform_id: u8,
     ) -> Result<PlatformKeyBundle, AttestationError> {
-        use p256::ecdsa::{SigningKey as P256SigningKey, Signature as P256Signature};
         use p256::ecdsa::signature::hazmat::PrehashSigner;
+        use p256::ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey};
 
         // Generate a random P-256 key (simulates hardware key generation).
         // In a real TEE, this would use hardware RNG + sealed storage.
@@ -686,10 +713,12 @@ impl HardwareAttestationProvider for MockHardwareProvider {
         };
 
         // Sign with test vendor root key
-        let vendor_key = P256SigningKey::from_slice(&self.vendor_root_key)
-            .map_err(|e| AttestationError::SigningFailed(format!("invalid vendor root key: {}", e)))?;
-        let sig: P256Signature = vendor_key.sign_prehash(&msg_hash)
-            .map_err(|e| AttestationError::SigningFailed(format!("vendor signing failed: {}", e)))?;
+        let vendor_key = P256SigningKey::from_slice(&self.vendor_root_key).map_err(|e| {
+            AttestationError::SigningFailed(format!("invalid vendor root key: {}", e))
+        })?;
+        let sig: P256Signature = vendor_key.sign_prehash(&msg_hash).map_err(|e| {
+            AttestationError::SigningFailed(format!("vendor signing failed: {}", e))
+        })?;
 
         let mut r = [0u8; 32];
         let mut s = [0u8; 32];
@@ -709,10 +738,15 @@ impl HardwareAttestationProvider for MockHardwareProvider {
         })
     }
 
-    fn sign_with_platform_key(&self, report_body: &[u8]) -> Result<([u8; 32], [u8; 32]), AttestationError> {
-        let key_bytes = self.platform_key.get()
-            .ok_or_else(|| AttestationError::SigningFailed(
-                "platform key not yet generated; call generate_platform_key() first".into()))?;
+    fn sign_with_platform_key(
+        &self,
+        report_body: &[u8],
+    ) -> Result<([u8; 32], [u8; 32]), AttestationError> {
+        let key_bytes = self.platform_key.get().ok_or_else(|| {
+            AttestationError::SigningFailed(
+                "platform key not yet generated; call generate_platform_key() first".into(),
+            )
+        })?;
         p256_sign_report_body(key_bytes, report_body)
     }
 
@@ -795,22 +829,28 @@ impl SgxHardwareProvider {
 ///
 /// Returns (quote_bytes, mrenclave, mrsigner).
 #[cfg(feature = "sgx")]
-fn sgx_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8; 32]), AttestationError> {
+fn sgx_get_attestation(
+    user_data: &[u8; 32],
+) -> Result<(Vec<u8>, [u8; 32], [u8; 32]), AttestationError> {
     // Gramine: write report data (padded to 64 bytes for SGX REPORTDATA field)
     let mut padded = [0u8; 64];
     padded[..32].copy_from_slice(user_data);
-    std::fs::write("/dev/attestation/user_report_data", &padded)
-        .map_err(|e| AttestationError::HardwareUnavailable(
-            format!("SGX write user_report_data: {} (is Gramine configured?)", e)))?;
+    std::fs::write("/dev/attestation/user_report_data", &padded).map_err(|e| {
+        AttestationError::HardwareUnavailable(format!(
+            "SGX write user_report_data: {} (is Gramine configured?)",
+            e
+        ))
+    })?;
 
     // Read the SGX report (432 bytes = 384 body + 32 keyid + 16 mac)
     let report_bytes = std::fs::read("/dev/attestation/report")
-        .map_err(|e| AttestationError::HardwareUnavailable(
-            format!("SGX read report: {}", e)))?;
+        .map_err(|e| AttestationError::HardwareUnavailable(format!("SGX read report: {}", e)))?;
 
     if report_bytes.len() < 384 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("SGX report too short: {} bytes (expected >= 384)", report_bytes.len())));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "SGX report too short: {} bytes (expected >= 384)",
+            report_bytes.len()
+        )));
     }
 
     // Extract MRENCLAVE (offset 64, 32 bytes) and MRSIGNER (offset 128, 32 bytes)
@@ -820,13 +860,18 @@ fn sgx_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8; 
     mrsigner.copy_from_slice(&report_bytes[128..160]);
 
     // Read the DCAP quote (remotely verifiable attestation artifact)
-    let quote_bytes = std::fs::read("/dev/attestation/quote")
-        .map_err(|e| AttestationError::HardwareUnavailable(
-            format!("SGX read quote: {} (is DCAP configured?)", e)))?;
+    let quote_bytes = std::fs::read("/dev/attestation/quote").map_err(|e| {
+        AttestationError::HardwareUnavailable(format!(
+            "SGX read quote: {} (is DCAP configured?)",
+            e
+        ))
+    })?;
 
     if quote_bytes.len() < 432 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("SGX quote too short: {} bytes", quote_bytes.len())));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "SGX quote too short: {} bytes",
+            quote_bytes.len()
+        )));
     }
 
     Ok((quote_bytes, mrenclave, mrsigner))
@@ -854,16 +899,23 @@ impl HardwareAttestationProvider for SgxHardwareProvider {
         #[cfg(not(feature = "sgx"))]
         {
             let _ = report_data;
-            Err(AttestationError::PlatformNotAvailable(TEEPlatform::IntelSGX))
+            Err(AttestationError::PlatformNotAvailable(
+                TEEPlatform::IntelSGX,
+            ))
         }
     }
 
-    fn generate_platform_key(&self, platform_id: u8) -> Result<PlatformKeyBundle, AttestationError> {
+    fn generate_platform_key(
+        &self,
+        platform_id: u8,
+    ) -> Result<PlatformKeyBundle, AttestationError> {
         #[cfg(feature = "sgx")]
         {
-            let vendor_attester = self.vendor_attester.as_ref()
-                .ok_or_else(|| AttestationError::HardwareUnavailable(
-                    "SGX provider requires a VendorAttester for key generation".into()))?;
+            let vendor_attester = self.vendor_attester.as_ref().ok_or_else(|| {
+                AttestationError::HardwareUnavailable(
+                    "SGX provider requires a VendorAttester for key generation".into(),
+                )
+            })?;
 
             // Generate P-256 key from OS-level CSPRNG (OsRng → getrandom).
             // Inside SGX / Gramine: getrandom() → Gramine shim → RDRAND
@@ -884,9 +936,8 @@ impl HardwareAttestationProvider for SgxHardwareProvider {
             let (hw_evidence, _, _) = sgx_get_attestation(&key_digest)?;
 
             // Get vendor attestation (verifies DCAP quote + signs key binding)
-            let vendor_attestation = vendor_attester.attest_platform_key(
-                &pk_x, &pk_y, platform_id, &hw_evidence,
-            )?;
+            let vendor_attestation =
+                vendor_attester.attest_platform_key(&pk_x, &pk_y, platform_id, &hw_evidence)?;
 
             Ok(PlatformKeyBundle {
                 public_key_x: pk_x,
@@ -897,18 +948,27 @@ impl HardwareAttestationProvider for SgxHardwareProvider {
         #[cfg(not(feature = "sgx"))]
         {
             let _ = platform_id;
-            Err(AttestationError::PlatformNotAvailable(TEEPlatform::IntelSGX))
+            Err(AttestationError::PlatformNotAvailable(
+                TEEPlatform::IntelSGX,
+            ))
         }
     }
 
-    fn sign_with_platform_key(&self, report_body: &[u8]) -> Result<([u8; 32], [u8; 32]), AttestationError> {
-        let key_bytes = self.platform_key.get()
-            .ok_or_else(|| AttestationError::SigningFailed(
-                "SGX platform key not yet generated; call generate_platform_key() first".into()))?;
+    fn sign_with_platform_key(
+        &self,
+        report_body: &[u8],
+    ) -> Result<([u8; 32], [u8; 32]), AttestationError> {
+        let key_bytes = self.platform_key.get().ok_or_else(|| {
+            AttestationError::SigningFailed(
+                "SGX platform key not yet generated; call generate_platform_key() first".into(),
+            )
+        })?;
         p256_sign_report_body(key_bytes, report_body)
     }
 
-    fn platform(&self) -> TEEPlatform { TEEPlatform::IntelSGX }
+    fn platform(&self) -> TEEPlatform {
+        TEEPlatform::IntelSGX
+    }
 
     #[cfg(test)]
     fn platform_key_bytes_for_testing(&self) -> Option<[u8; 32]> {
@@ -991,8 +1051,7 @@ struct NsmMessage {
 /// NSM_IO_REQUEST ioctl number: _IOWR(0x0A, 0, NsmMessage).
 /// NsmMessage is 32 bytes (2 × (ptr + u64) = 2 × 16).
 #[cfg(feature = "nitro")]
-const NSM_IOCTL_REQUEST: libc::c_ulong =
-    (3 << 30) | (32 << 16) | (0x0A << 8) | 0; // 0xC020_0A00
+const NSM_IOCTL_REQUEST: libc::c_ulong = (3 << 30) | (32 << 16) | (0x0A << 8) | 0; // 0xC020_0A00
 
 /// Send a CBOR request to the NSM device and return the CBOR response.
 #[cfg(feature = "nitro")]
@@ -1000,10 +1059,15 @@ fn nsm_request(request_cbor: &[u8]) -> Result<Vec<u8>, AttestationError> {
     use std::os::unix::io::AsRawFd;
 
     let nsm_fd = std::fs::OpenOptions::new()
-        .read(true).write(true)
+        .read(true)
+        .write(true)
         .open("/dev/nsm")
-        .map_err(|e| AttestationError::HardwareUnavailable(
-            format!("Nitro NSM open: {} (running inside a Nitro enclave?)", e)))?;
+        .map_err(|e| {
+            AttestationError::HardwareUnavailable(format!(
+                "Nitro NSM open: {} (running inside a Nitro enclave?)",
+                e
+            ))
+        })?;
 
     let mut req_buf = request_cbor.to_vec();
     let mut resp_buf = vec![0u8; 0x3000]; // NSM_RESPONSE_MAX_SIZE
@@ -1020,11 +1084,17 @@ fn nsm_request(request_cbor: &[u8]) -> Result<Vec<u8>, AttestationError> {
     };
 
     let ret = unsafe {
-        libc::ioctl(nsm_fd.as_raw_fd(), NSM_IOCTL_REQUEST, &mut msg as *mut NsmMessage)
+        libc::ioctl(
+            nsm_fd.as_raw_fd(),
+            NSM_IOCTL_REQUEST,
+            &mut msg as *mut NsmMessage,
+        )
     };
     if ret != 0 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("NSM ioctl failed: errno {}", std::io::Error::last_os_error())));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "NSM ioctl failed: errno {}",
+            std::io::Error::last_os_error()
+        )));
     }
 
     let resp_len = msg.response.len as usize;
@@ -1038,15 +1108,24 @@ fn nsm_request(request_cbor: &[u8]) -> Result<Vec<u8>, AttestationError> {
 /// Returns (document_bytes, pcr0_hash, pcr1_hash, pcr2_hash) where
 /// PCR hashes are `sha256(pcr_48_bytes)` compressed to 32 bytes.
 #[cfg(feature = "nitro")]
-fn nitro_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8; 32], [u8; 32]), AttestationError> {
+fn nitro_get_attestation(
+    user_data: &[u8; 32],
+) -> Result<(Vec<u8>, [u8; 32], [u8; 32], [u8; 32]), AttestationError> {
     // Encode CBOR request: {"Attestation": {"user_data": <bytes32>}}
-    let request = ciborium::Value::Map(vec![
-        (ciborium::Value::Text("Attestation".into()), ciborium::Value::Map(vec![
-            (ciborium::Value::Text("user_data".into()), ciborium::Value::Bytes(user_data.to_vec())),
+    let request = ciborium::Value::Map(vec![(
+        ciborium::Value::Text("Attestation".into()),
+        ciborium::Value::Map(vec![
+            (
+                ciborium::Value::Text("user_data".into()),
+                ciborium::Value::Bytes(user_data.to_vec()),
+            ),
             (ciborium::Value::Text("nonce".into()), ciborium::Value::Null),
-            (ciborium::Value::Text("public_key".into()), ciborium::Value::Null),
-        ])),
-    ]);
+            (
+                ciborium::Value::Text("public_key".into()),
+                ciborium::Value::Null,
+            ),
+        ]),
+    )]);
     let mut request_bytes = Vec::new();
     ciborium::into_writer(&request, &mut request_bytes)
         .map_err(|e| AttestationError::HardwareUnavailable(format!("CBOR encode: {}", e)))?;
@@ -1054,8 +1133,9 @@ fn nitro_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8
     let resp_bytes = nsm_request(&request_bytes)?;
 
     // Parse response: {"Attestation": {"document": <bytes>}}
-    let resp: ciborium::Value = ciborium::from_reader(&resp_bytes[..])
-        .map_err(|e| AttestationError::HardwareUnavailable(format!("CBOR decode response: {}", e)))?;
+    let resp: ciborium::Value = ciborium::from_reader(&resp_bytes[..]).map_err(|e| {
+        AttestationError::HardwareUnavailable(format!("CBOR decode response: {}", e))
+    })?;
 
     let document_bytes = extract_cbor_attestation_document(&resp)?;
 
@@ -1067,8 +1147,9 @@ fn nitro_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8
     let payload_bytes = extract_cose_payload(&cose)?;
 
     // Parse payload: {"pcrs": {0: <bytes48>, 1: <bytes48>, 2: <bytes48>}, ...}
-    let payload: ciborium::Value = ciborium::from_reader(&payload_bytes[..])
-        .map_err(|e| AttestationError::HardwareUnavailable(format!("CBOR decode payload: {}", e)))?;
+    let payload: ciborium::Value = ciborium::from_reader(&payload_bytes[..]).map_err(|e| {
+        AttestationError::HardwareUnavailable(format!("CBOR decode payload: {}", e))
+    })?;
 
     let (pcr0, pcr1, pcr2) = extract_pcr_values(&payload)?;
 
@@ -1083,30 +1164,37 @@ fn nitro_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8
 /// Extract the attestation document bytes from an NSM CBOR response.
 #[cfg(feature = "nitro")]
 fn extract_cbor_attestation_document(resp: &ciborium::Value) -> Result<Vec<u8>, AttestationError> {
-    let map = resp.as_map()
+    let map = resp
+        .as_map()
         .ok_or_else(|| AttestationError::HardwareUnavailable("NSM response not a map".into()))?;
 
     for (k, v) in map {
         if k.as_text() == Some("Attestation") {
-            let inner = v.as_map()
-                .ok_or_else(|| AttestationError::HardwareUnavailable("Attestation not a map".into()))?;
+            let inner = v.as_map().ok_or_else(|| {
+                AttestationError::HardwareUnavailable("Attestation not a map".into())
+            })?;
             for (ik, iv) in inner {
                 if ik.as_text() == Some("document") {
-                    return iv.as_bytes()
-                        .map(|b| b.to_vec())
-                        .ok_or_else(|| AttestationError::HardwareUnavailable(
-                            "document field not bytes".into()));
+                    return iv.as_bytes().map(|b| b.to_vec()).ok_or_else(|| {
+                        AttestationError::HardwareUnavailable("document field not bytes".into())
+                    });
                 }
             }
-            return Err(AttestationError::HardwareUnavailable("no document in Attestation".into()));
+            return Err(AttestationError::HardwareUnavailable(
+                "no document in Attestation".into(),
+            ));
         }
         // Check for error response
         if k.as_text() == Some("Error") {
-            return Err(AttestationError::HardwareUnavailable(
-                format!("NSM returned error: {:?}", v)));
+            return Err(AttestationError::HardwareUnavailable(format!(
+                "NSM returned error: {:?}",
+                v
+            )));
         }
     }
-    Err(AttestationError::HardwareUnavailable("no Attestation key in NSM response".into()))
+    Err(AttestationError::HardwareUnavailable(
+        "no Attestation key in NSM response".into(),
+    ))
 }
 
 /// Extract the payload bytes from a COSE_Sign1 structure.
@@ -1118,26 +1206,31 @@ fn extract_cose_payload(cose: &ciborium::Value) -> Result<Vec<u8>, AttestationEr
         ciborium::Value::Tag(18, inner) => inner.as_array(),
         ciborium::Value::Array(_) => cose.as_array(),
         _ => None,
-    }.ok_or_else(|| AttestationError::HardwareUnavailable(
-        "COSE_Sign1 not an array".into()))?;
+    }
+    .ok_or_else(|| AttestationError::HardwareUnavailable("COSE_Sign1 not an array".into()))?;
 
     if array.len() < 4 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("COSE_Sign1 array too short: {} elements", array.len())));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "COSE_Sign1 array too short: {} elements",
+            array.len()
+        )));
     }
 
     // Payload is the 3rd element (index 2), a byte string containing CBOR
-    array[2].as_bytes()
+    array[2]
+        .as_bytes()
         .map(|b| b.to_vec())
-        .ok_or_else(|| AttestationError::HardwareUnavailable(
-            "COSE_Sign1 payload not bytes".into()))
+        .ok_or_else(|| AttestationError::HardwareUnavailable("COSE_Sign1 payload not bytes".into()))
 }
 
 /// Extract PCR0, PCR1, PCR2 byte values from a Nitro attestation payload.
 /// PCRs are 48 bytes each (SHA-384 digests).
 #[cfg(feature = "nitro")]
-fn extract_pcr_values(payload: &ciborium::Value) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), AttestationError> {
-    let map = payload.as_map()
+fn extract_pcr_values(
+    payload: &ciborium::Value,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), AttestationError> {
+    let map = payload
+        .as_map()
         .ok_or_else(|| AttestationError::HardwareUnavailable("payload not a map".into()))?;
 
     let mut pcrs_map = None;
@@ -1195,16 +1288,23 @@ impl HardwareAttestationProvider for NitroHardwareProvider {
         #[cfg(not(feature = "nitro"))]
         {
             let _ = report_data;
-            Err(AttestationError::PlatformNotAvailable(TEEPlatform::AWSNitro))
+            Err(AttestationError::PlatformNotAvailable(
+                TEEPlatform::AWSNitro,
+            ))
         }
     }
 
-    fn generate_platform_key(&self, platform_id: u8) -> Result<PlatformKeyBundle, AttestationError> {
+    fn generate_platform_key(
+        &self,
+        platform_id: u8,
+    ) -> Result<PlatformKeyBundle, AttestationError> {
         #[cfg(feature = "nitro")]
         {
-            let vendor_attester = self.vendor_attester.as_ref()
-                .ok_or_else(|| AttestationError::HardwareUnavailable(
-                    "Nitro provider requires a VendorAttester for key generation".into()))?;
+            let vendor_attester = self.vendor_attester.as_ref().ok_or_else(|| {
+                AttestationError::HardwareUnavailable(
+                    "Nitro provider requires a VendorAttester for key generation".into(),
+                )
+            })?;
 
             // Generate P-256 key from OS-level CSPRNG (OsRng → getrandom).
             // Inside Nitro Enclaves: getrandom() → virtio-rng device →
@@ -1224,9 +1324,8 @@ impl HardwareAttestationProvider for NitroHardwareProvider {
 
             let (hw_evidence, _, _, _) = nitro_get_attestation(&key_digest)?;
 
-            let vendor_attestation = vendor_attester.attest_platform_key(
-                &pk_x, &pk_y, platform_id, &hw_evidence,
-            )?;
+            let vendor_attestation =
+                vendor_attester.attest_platform_key(&pk_x, &pk_y, platform_id, &hw_evidence)?;
 
             Ok(PlatformKeyBundle {
                 public_key_x: pk_x,
@@ -1237,18 +1336,27 @@ impl HardwareAttestationProvider for NitroHardwareProvider {
         #[cfg(not(feature = "nitro"))]
         {
             let _ = platform_id;
-            Err(AttestationError::PlatformNotAvailable(TEEPlatform::AWSNitro))
+            Err(AttestationError::PlatformNotAvailable(
+                TEEPlatform::AWSNitro,
+            ))
         }
     }
 
-    fn sign_with_platform_key(&self, report_body: &[u8]) -> Result<([u8; 32], [u8; 32]), AttestationError> {
-        let key_bytes = self.platform_key.get()
-            .ok_or_else(|| AttestationError::SigningFailed(
-                "Nitro platform key not yet generated; call generate_platform_key() first".into()))?;
+    fn sign_with_platform_key(
+        &self,
+        report_body: &[u8],
+    ) -> Result<([u8; 32], [u8; 32]), AttestationError> {
+        let key_bytes = self.platform_key.get().ok_or_else(|| {
+            AttestationError::SigningFailed(
+                "Nitro platform key not yet generated; call generate_platform_key() first".into(),
+            )
+        })?;
         p256_sign_report_body(key_bytes, report_body)
     }
 
-    fn platform(&self) -> TEEPlatform { TEEPlatform::AWSNitro }
+    fn platform(&self) -> TEEPlatform {
+        TEEPlatform::AWSNitro
+    }
 
     #[cfg(test)]
     fn platform_key_bytes_for_testing(&self) -> Option<[u8; 32]> {
@@ -1345,8 +1453,7 @@ mod sev_ioctl {
 
     /// SNP_GET_REPORT = _IOWR('S', 0x0, SnpGuestRequestIoctl)
     /// Size = 32 bytes → ioctl number = 0xC020_5300
-    pub const SNP_GET_REPORT: libc::c_ulong =
-        (3 << 30) | (32 << 16) | (0x53 << 8) | 0;
+    pub const SNP_GET_REPORT: libc::c_ulong = (3 << 30) | (32 << 16) | (0x53 << 8) | 0;
 }
 
 /// Send an SNP_GET_REPORT request and extract measurements from the report.
@@ -1356,15 +1463,22 @@ mod sev_ioctl {
 ///   - measurement_hash: SHA-256 of the 48-byte MEASUREMENT field
 ///   - host_data: 32-byte HOST_DATA field
 #[cfg(feature = "sev")]
-fn sev_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8; 32]), AttestationError> {
-    use std::os::unix::io::AsRawFd;
+fn sev_get_attestation(
+    user_data: &[u8; 32],
+) -> Result<(Vec<u8>, [u8; 32], [u8; 32]), AttestationError> {
     use sev_ioctl::*;
+    use std::os::unix::io::AsRawFd;
 
     let fd = std::fs::OpenOptions::new()
-        .read(true).write(true)
+        .read(true)
+        .write(true)
         .open("/dev/sev-guest")
-        .map_err(|e| AttestationError::HardwareUnavailable(
-            format!("SEV open /dev/sev-guest: {} (running inside SEV-SNP VM?)", e)))?;
+        .map_err(|e| {
+            AttestationError::HardwareUnavailable(format!(
+                "SEV open /dev/sev-guest: {} (running inside SEV-SNP VM?)",
+                e
+            ))
+        })?;
 
     let mut req = SnpReportReq {
         user_data: [0u8; 64],
@@ -1384,18 +1498,26 @@ fn sev_get_attestation(user_data: &[u8; 32]) -> Result<(Vec<u8>, [u8; 32], [u8; 
     };
 
     let ret = unsafe {
-        libc::ioctl(fd.as_raw_fd(), SNP_GET_REPORT, &mut ioctl_data as *mut SnpGuestRequestIoctl)
+        libc::ioctl(
+            fd.as_raw_fd(),
+            SNP_GET_REPORT,
+            &mut ioctl_data as *mut SnpGuestRequestIoctl,
+        )
     };
     if ret != 0 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("SNP_GET_REPORT ioctl failed: errno {}", std::io::Error::last_os_error())));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "SNP_GET_REPORT ioctl failed: errno {}",
+            std::io::Error::last_os_error()
+        )));
     }
 
     // Check firmware error
     let fw_error = (ioctl_data.exitinfo2 & 0xFFFF_FFFF) as u32;
     if fw_error != 0 {
-        return Err(AttestationError::HardwareUnavailable(
-            format!("SEV firmware error: 0x{:08x}", fw_error)));
+        return Err(AttestationError::HardwareUnavailable(format!(
+            "SEV firmware error: 0x{:08x}",
+            fw_error
+        )));
     }
 
     let report_bytes = resp.data[..SNP_REPORT_SIZE].to_vec();
@@ -1437,12 +1559,17 @@ impl HardwareAttestationProvider for SevHardwareProvider {
         }
     }
 
-    fn generate_platform_key(&self, platform_id: u8) -> Result<PlatformKeyBundle, AttestationError> {
+    fn generate_platform_key(
+        &self,
+        platform_id: u8,
+    ) -> Result<PlatformKeyBundle, AttestationError> {
         #[cfg(feature = "sev")]
         {
-            let vendor_attester = self.vendor_attester.as_ref()
-                .ok_or_else(|| AttestationError::HardwareUnavailable(
-                    "SEV provider requires a VendorAttester for key generation".into()))?;
+            let vendor_attester = self.vendor_attester.as_ref().ok_or_else(|| {
+                AttestationError::HardwareUnavailable(
+                    "SEV provider requires a VendorAttester for key generation".into(),
+                )
+            })?;
 
             // Generate P-256 key from OS-level CSPRNG (OsRng → getrandom).
             // Inside SEV-SNP: getrandom() → /dev/urandom → AMD CCP TRNG
@@ -1462,9 +1589,8 @@ impl HardwareAttestationProvider for SevHardwareProvider {
 
             let (hw_evidence, _, _) = sev_get_attestation(&key_digest)?;
 
-            let vendor_attestation = vendor_attester.attest_platform_key(
-                &pk_x, &pk_y, platform_id, &hw_evidence,
-            )?;
+            let vendor_attestation =
+                vendor_attester.attest_platform_key(&pk_x, &pk_y, platform_id, &hw_evidence)?;
 
             Ok(PlatformKeyBundle {
                 public_key_x: pk_x,
@@ -1479,14 +1605,21 @@ impl HardwareAttestationProvider for SevHardwareProvider {
         }
     }
 
-    fn sign_with_platform_key(&self, report_body: &[u8]) -> Result<([u8; 32], [u8; 32]), AttestationError> {
-        let key_bytes = self.platform_key.get()
-            .ok_or_else(|| AttestationError::SigningFailed(
-                "SEV platform key not yet generated; call generate_platform_key() first".into()))?;
+    fn sign_with_platform_key(
+        &self,
+        report_body: &[u8],
+    ) -> Result<([u8; 32], [u8; 32]), AttestationError> {
+        let key_bytes = self.platform_key.get().ok_or_else(|| {
+            AttestationError::SigningFailed(
+                "SEV platform key not yet generated; call generate_platform_key() first".into(),
+            )
+        })?;
         p256_sign_report_body(key_bytes, report_body)
     }
 
-    fn platform(&self) -> TEEPlatform { TEEPlatform::AMDSEV }
+    fn platform(&self) -> TEEPlatform {
+        TEEPlatform::AMDSEV
+    }
 
     #[cfg(test)]
     fn platform_key_bytes_for_testing(&self) -> Option<[u8; 32]> {
@@ -1542,7 +1675,11 @@ impl AttestationGenerator {
         }
         let hw_provider: Box<dyn HardwareAttestationProvider> = match config.platform {
             TEEPlatform::Mock => {
-                let mut mock = MockHardwareProvider::new(config.enclave_hash, config.signer_hash, vendor_root_key);
+                let mut mock = MockHardwareProvider::new(
+                    config.enclave_hash,
+                    config.signer_hash,
+                    vendor_root_key,
+                );
                 if let Some(app_hash) = config.application_hash {
                     mock = mock.with_application_hash(app_hash);
                 }
@@ -1569,13 +1706,16 @@ impl AttestationGenerator {
     ) -> Result<Self, AttestationError> {
         if config.platform == TEEPlatform::Mock {
             return Err(AttestationError::HardwareUnavailable(
-                "use new() for Mock platform; with_vendor_attester() is for real TEE platforms".into()
+                "use new() for Mock platform; with_vendor_attester() is for real TEE platforms"
+                    .into(),
             ));
         }
         let hw_provider: Box<dyn HardwareAttestationProvider> = match config.platform {
             TEEPlatform::Mock => unreachable!(), // guarded above
             TEEPlatform::IntelSGX => Box::new(SgxHardwareProvider::with_attester(vendor_attester)),
-            TEEPlatform::AWSNitro => Box::new(NitroHardwareProvider::with_attester(vendor_attester)),
+            TEEPlatform::AWSNitro => {
+                Box::new(NitroHardwareProvider::with_attester(vendor_attester))
+            }
             TEEPlatform::AMDSEV => Box::new(SevHardwareProvider::with_attester(vendor_attester)),
         };
         Self::init(config, hw_provider)
@@ -1584,12 +1724,18 @@ impl AttestationGenerator {
     /// Create with a custom hardware provider (for production or testing).
     ///
     /// The P-256 platform key is generated by the provider during construction.
-    pub fn with_provider(config: TEEConfig, provider: Box<dyn HardwareAttestationProvider>) -> Result<Self, AttestationError> {
+    pub fn with_provider(
+        config: TEEConfig,
+        provider: Box<dyn HardwareAttestationProvider>,
+    ) -> Result<Self, AttestationError> {
         Self::init(config, provider)
     }
 
     /// Internal constructor: generates platform key from the hardware provider.
-    fn init(config: TEEConfig, hw_provider: Box<dyn HardwareAttestationProvider>) -> Result<Self, AttestationError> {
+    fn init(
+        config: TEEConfig,
+        hw_provider: Box<dyn HardwareAttestationProvider>,
+    ) -> Result<Self, AttestationError> {
         let platform_id = config.platform as u8;
 
         // Gate on platform availability before key generation.
@@ -1771,17 +1917,17 @@ impl AttestationGenerator {
     /// instead of the raw report hash. This lets on-chain verifiers independently
     /// compute the binding hash and verify that the measurements in evidence are
     /// cryptographically bound to the specific hardware report.
-    fn generate_evidence(&self, digest: &[u8; 32], hw_report: &HardwareReport) -> Result<Vec<u8>, AttestationError> {
+    fn generate_evidence(
+        &self,
+        digest: &[u8; 32],
+        hw_report: &HardwareReport,
+    ) -> Result<Vec<u8>, AttestationError> {
         match self.config.platform {
             TEEPlatform::IntelSGX | TEEPlatform::Mock => {
                 self.generate_sgx_evidence(digest, hw_report)
             }
-            TEEPlatform::AWSNitro => {
-                self.generate_nitro_evidence(digest, hw_report)
-            }
-            TEEPlatform::AMDSEV => {
-                self.generate_sev_evidence(digest, hw_report)
-            }
+            TEEPlatform::AWSNitro => self.generate_nitro_evidence(digest, hw_report),
+            TEEPlatform::AMDSEV => self.generate_sev_evidence(digest, hw_report),
         }
     }
 
@@ -1814,7 +1960,11 @@ impl AttestationGenerator {
     /// where bindingHash = SHA-256(rawReportHash || mrenclave || mrsigner).
     /// The evidence stores rawReportHash (direct hardware commitment), but the
     /// P-256 signature covers bindingHash so verifiers can prove measurement binding.
-    fn generate_sgx_evidence(&self, digest: &[u8; 32], hw_report: &HardwareReport) -> Result<Vec<u8>, AttestationError> {
+    fn generate_sgx_evidence(
+        &self,
+        digest: &[u8; 32],
+        hw_report: &HardwareReport,
+    ) -> Result<Vec<u8>, AttestationError> {
         let mut evidence = Vec::with_capacity(8 * 32);
         // bytes32 mrenclave — from hardware report, NOT config
         evidence.extend_from_slice(&hw_report.enclave_measurement);
@@ -1867,7 +2017,11 @@ impl AttestationGenerator {
     ///   SHA-256(pcr0[32] || pcr1[32] || pcr2[32] || userData[32] || bindingHash[32]) = 160 bytes
     ///
     /// where bindingHash = SHA-256(rawReportHash || pcr0 || pcr1).
-    fn generate_nitro_evidence(&self, digest: &[u8; 32], hw_report: &HardwareReport) -> Result<Vec<u8>, AttestationError> {
+    fn generate_nitro_evidence(
+        &self,
+        digest: &[u8; 32],
+        hw_report: &HardwareReport,
+    ) -> Result<Vec<u8>, AttestationError> {
         // Require PCR2 (application hash) for Nitro evidence
         let pcr2 = hw_report.application_measurement.unwrap_or([0u8; 32]);
 
@@ -1913,7 +2067,11 @@ impl AttestationGenerator {
     ///   SHA-256(measurement[32] || hostData[32] || reportData[32] || vmpl[1] || bindingHash[32]) = 129 bytes
     ///
     /// where bindingHash = SHA-256(rawReportHash || measurement || hostData).
-    fn generate_sev_evidence(&self, digest: &[u8; 32], hw_report: &HardwareReport) -> Result<Vec<u8>, AttestationError> {
+    fn generate_sev_evidence(
+        &self,
+        digest: &[u8; 32],
+        hw_report: &HardwareReport,
+    ) -> Result<Vec<u8>, AttestationError> {
         let mut evidence = Vec::with_capacity(7 * 32);
         // bytes32 measurementHash — from hardware report
         evidence.extend_from_slice(&hw_report.enclave_measurement);
@@ -2070,8 +2228,8 @@ pub fn verify_attestation(
     }
 
     // Verify ECDSA signature and recover signer
-    let sig_bytes = hex::decode(&attestation.signature)
-        .map_err(|_| "invalid signature hex".to_string())?;
+    let sig_bytes =
+        hex::decode(&attestation.signature).map_err(|_| "invalid signature hex".to_string())?;
     if sig_bytes.len() != 65 {
         return Err(format!(
             "invalid signature length: {} (expected 65 bytes / 130 hex chars)",
@@ -2165,13 +2323,18 @@ mod tests {
     /// Uses the test-only `platform_key_bytes_for_testing()` trait method
     /// to retrieve the key held inside the hardware provider.
     fn extract_platform_key(gen: &AttestationGenerator) -> [u8; 32] {
-        gen.hw_provider.platform_key_bytes_for_testing()
+        gen.hw_provider
+            .platform_key_bytes_for_testing()
             .expect("platform key should be generated during init")
     }
 
     /// Helper: compute the binding hash for test report body reconstruction.
     /// bindingHash = SHA-256(rawReportHash || enclaveMeasurement || signerMeasurement)
-    fn test_binding_hash(raw_report_hash: &[u8], enclave: &[u8; 32], signer: &[u8; 32]) -> [u8; 32] {
+    fn test_binding_hash(
+        raw_report_hash: &[u8],
+        enclave: &[u8; 32],
+        signer: &[u8; 32],
+    ) -> [u8; 32] {
         let mut hasher = Sha256::new();
         hasher.update(raw_report_hash);
         hasher.update(enclave);
@@ -2188,12 +2351,11 @@ mod tests {
         r_bytes: &[u8],
         s_bytes: &[u8],
     ) {
-        use p256::ecdsa::{
-            SigningKey as P256SigningKey,
-            VerifyingKey as P256VerifyingKey,
-            Signature as P256Signature,
-        };
         use p256::ecdsa::signature::hazmat::PrehashVerifier;
+        use p256::ecdsa::{
+            Signature as P256Signature, SigningKey as P256SigningKey,
+            VerifyingKey as P256VerifyingKey,
+        };
 
         let p256_key = P256SigningKey::from_slice(platform_key).unwrap();
         let verifying_key = P256VerifyingKey::from(&p256_key);
@@ -2202,8 +2364,7 @@ mod tests {
         r_arr.copy_from_slice(r_bytes);
         let mut s_arr = p256::FieldBytes::default();
         s_arr.copy_from_slice(s_bytes);
-        let sig = P256Signature::from_scalars(r_arr, s_arr)
-            .expect("valid P-256 signature scalars");
+        let sig = P256Signature::from_scalars(r_arr, s_arr).expect("valid P-256 signature scalars");
 
         let report_hash = sha256_raw(report_body);
         assert!(
@@ -2223,7 +2384,10 @@ mod tests {
         assert!(!attestation.payload_hash.is_empty());
         assert!(!attestation.signature.is_empty());
         assert!(attestation.timestamp > 0);
-        assert!(!attestation.platform_evidence.is_empty(), "platform_evidence should be non-empty");
+        assert!(
+            !attestation.platform_evidence.is_empty(),
+            "platform_evidence should be non-empty"
+        );
 
         // Signature must be exactly 65 bytes (130 hex chars)
         let sig_bytes = hex::decode(&attestation.signature).unwrap();
@@ -2293,7 +2457,10 @@ mod tests {
             signing_key: test_signing_key(),
         };
         let result = AttestationGenerator::new(config, test_vendor_root_key());
-        assert!(result.is_err(), "SGX without hardware must fail at construction");
+        assert!(
+            result.is_err(),
+            "SGX without hardware must fail at construction"
+        );
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
             err_msg.contains("not available") || err_msg.contains("unavailable"),
@@ -2315,9 +2482,16 @@ mod tests {
             allow_simulated: false,
             signing_key: test_signing_key(),
         };
-        let mock_provider = Box::new(MockHardwareProvider::new([0xAB; 32], [0xCD; 32], test_vendor_root_key()));
+        let mock_provider = Box::new(MockHardwareProvider::new(
+            [0xAB; 32],
+            [0xCD; 32],
+            test_vendor_root_key(),
+        ));
         let result = AttestationGenerator::with_provider(config, mock_provider);
-        assert!(result.is_err(), "mock provider for real platform must fail at construction without allow_simulated");
+        assert!(
+            result.is_err(),
+            "mock provider for real platform must fail at construction without allow_simulated"
+        );
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
             err_msg.contains("simulated hardware") || err_msg.contains("not allowed"),
@@ -2338,7 +2512,11 @@ mod tests {
             allow_simulated: true,
             signing_key: test_signing_key(),
         };
-        let mock_provider = Box::new(MockHardwareProvider::new([0xAB; 32], [0xCD; 32], test_vendor_root_key()));
+        let mock_provider = Box::new(MockHardwareProvider::new(
+            [0xAB; 32],
+            [0xCD; 32],
+            test_vendor_root_key(),
+        ));
         let gen = AttestationGenerator::with_provider(config, mock_provider).unwrap();
         let attestation = gen.generate(b"test").unwrap();
 
@@ -2346,11 +2524,7 @@ mod tests {
         assert_eq!(attestation.platform, 0);
 
         // Signature is valid and recoverable
-        let result = verify_attestation(
-            &attestation,
-            &hex::encode([0xAB; 32]),
-            300,
-        );
+        let result = verify_attestation(&attestation, &hex::encode([0xAB; 32]), 300);
         assert!(result.is_ok(), "SGX attestation failed: {:?}", result.err());
 
         // Same operator key
@@ -2360,7 +2534,11 @@ mod tests {
 
         // Verify P-256 signature in evidence (SGX = 256 bytes)
         let evidence_bytes = hex::decode(&attestation.platform_evidence).unwrap();
-        assert_eq!(evidence_bytes.len(), 256, "SGX evidence should be 256 bytes (8 words)");
+        assert_eq!(
+            evidence_bytes.len(),
+            256,
+            "SGX evidence should be 256 bytes (8 words)"
+        );
 
         let digest = compute_attestation_digest(
             attestation.platform,
@@ -2404,7 +2582,10 @@ mod tests {
             signing_key: test_signing_key(),
         };
         let result = AttestationGenerator::new(config, test_vendor_root_key());
-        assert!(result.is_err(), "mock platform without allow_simulated must fail at construction");
+        assert!(
+            result.is_err(),
+            "mock platform without allow_simulated must fail at construction"
+        );
     }
 
     #[test]
@@ -2415,12 +2596,24 @@ mod tests {
         // Decode evidence and verify it contains the attestation digest
         let evidence_bytes = hex::decode(&attestation.platform_evidence).unwrap();
         // SGX evidence: 8 words x 32 bytes = 256 bytes (with P-256 sig and rawReportHash)
-        assert_eq!(evidence_bytes.len(), 256, "SGX evidence should be 256 bytes (8 words)");
+        assert_eq!(
+            evidence_bytes.len(),
+            256,
+            "SGX evidence should be 256 bytes (8 words)"
+        );
 
         // First 32 bytes = mrenclave = hardware report enclave measurement
-        assert_eq!(&evidence_bytes[0..32], &[0xAB; 32], "mrenclave should match hw report measurement");
+        assert_eq!(
+            &evidence_bytes[0..32],
+            &[0xAB; 32],
+            "mrenclave should match hw report measurement"
+        );
         // Next 32 bytes = mrsigner = hardware report signer measurement
-        assert_eq!(&evidence_bytes[32..64], &[0xCD; 32], "mrsigner should match hw report measurement");
+        assert_eq!(
+            &evidence_bytes[32..64],
+            &[0xCD; 32],
+            "mrsigner should match hw report measurement"
+        );
 
         // reportData (bytes 64..96) should equal the attestation digest
         let digest = compute_attestation_digest(
@@ -2431,7 +2624,11 @@ mod tests {
             &attestation.signer_hash,
             &attestation.payload_hash,
         );
-        assert_eq!(&evidence_bytes[64..96], &digest, "reportData should equal attestation digest");
+        assert_eq!(
+            &evidence_bytes[64..96],
+            &digest,
+            "reportData should equal attestation digest"
+        );
 
         // Extract rawReportHash from evidence[160:192]
         let raw_report_hash = &evidence_bytes[160..192];
@@ -2576,7 +2773,11 @@ mod tests {
                 allow_simulated: true,
                 signing_key: test_signing_key(),
             };
-            let mock_provider = Box::new(MockHardwareProvider::new([0xAB; 32], [0xCD; 32], test_vendor_root_key()));
+            let mock_provider = Box::new(MockHardwareProvider::new(
+                [0xAB; 32],
+                [0xCD; 32],
+                test_vendor_root_key(),
+            ));
             let gen = AttestationGenerator::with_provider(config, mock_provider).unwrap();
             let attestation = gen.generate(b"p256-nitro-test").unwrap();
             let evidence = hex::decode(&attestation.platform_evidence).unwrap();
@@ -2599,8 +2800,8 @@ mod tests {
             let mut report_body = Vec::with_capacity(160);
             report_body.extend_from_slice(&[0xAB; 32]); // pcr0
             report_body.extend_from_slice(&[0xCD; 32]); // pcr1
-            report_body.extend_from_slice(&[0u8; 32]);   // pcr2
-            report_body.extend_from_slice(&digest);       // userData
+            report_body.extend_from_slice(&[0u8; 32]); // pcr2
+            report_body.extend_from_slice(&digest); // userData
             report_body.extend_from_slice(&binding_hash);
 
             verify_p256_signature(
@@ -2621,7 +2822,11 @@ mod tests {
                 allow_simulated: true,
                 signing_key: test_signing_key(),
             };
-            let mock_provider = Box::new(MockHardwareProvider::new([0xAB; 32], [0xCD; 32], test_vendor_root_key()));
+            let mock_provider = Box::new(MockHardwareProvider::new(
+                [0xAB; 32],
+                [0xCD; 32],
+                test_vendor_root_key(),
+            ));
             let gen = AttestationGenerator::with_provider(config, mock_provider).unwrap();
             let attestation = gen.generate(b"p256-sev-test").unwrap();
             let evidence = hex::decode(&attestation.platform_evidence).unwrap();
@@ -2644,8 +2849,8 @@ mod tests {
             let mut report_body = Vec::with_capacity(129);
             report_body.extend_from_slice(&[0xAB; 32]); // measurement
             report_body.extend_from_slice(&[0xCD; 32]); // hostData
-            report_body.extend_from_slice(&digest);       // reportData
-            report_body.push(0u8);                        // vmpl
+            report_body.extend_from_slice(&digest); // reportData
+            report_body.push(0u8); // vmpl
             report_body.extend_from_slice(&binding_hash);
 
             verify_p256_signature(
@@ -2672,12 +2877,11 @@ mod tests {
         let attestation = gen.key_attestation().clone();
 
         // Verify the vendor signature
-        use p256::ecdsa::{
-            SigningKey as P256SigningKey,
-            VerifyingKey as P256VerifyingKey,
-            Signature as P256Signature,
-        };
         use p256::ecdsa::signature::hazmat::PrehashVerifier;
+        use p256::ecdsa::{
+            Signature as P256Signature, SigningKey as P256SigningKey,
+            VerifyingKey as P256VerifyingKey,
+        };
 
         // Reconstruct the message
         let mut hasher = Sha256::new();
@@ -2714,12 +2918,11 @@ mod tests {
         let gen = test_generator();
         let attestation = gen.key_attestation().clone();
 
-        use p256::ecdsa::{
-            SigningKey as P256SigningKey,
-            VerifyingKey as P256VerifyingKey,
-            Signature as P256Signature,
-        };
         use p256::ecdsa::signature::hazmat::PrehashVerifier;
+        use p256::ecdsa::{
+            Signature as P256Signature, SigningKey as P256SigningKey,
+            VerifyingKey as P256VerifyingKey,
+        };
 
         // Reconstruct the message
         let mut hasher = Sha256::new();
@@ -2781,7 +2984,10 @@ mod tests {
         let report_data = [0xFF; 32];
         let report = provider.generate_report(&report_data).unwrap();
 
-        assert_ne!(report.report_hash, [0u8; 32], "mock report hash must be non-zero");
+        assert_ne!(
+            report.report_hash, [0u8; 32],
+            "mock report hash must be non-zero"
+        );
         assert_eq!(report.enclave_measurement, [0xAB; 32]);
         assert_eq!(report.signer_measurement, [0xCD; 32]);
 
@@ -2808,7 +3014,10 @@ mod tests {
         // Real providers cannot generate platform keys without hardware
         let provider = SgxHardwareProvider::create(test_vendor_root_key());
         let result = provider.generate_platform_key(0);
-        assert!(result.is_err(), "SGX platform key generation without hardware must fail");
+        assert!(
+            result.is_err(),
+            "SGX platform key generation without hardware must fail"
+        );
     }
 
     #[test]
@@ -2825,18 +3034,19 @@ mod tests {
             signing_key: test_signing_key(),
         };
         let mock_provider = Box::new(MockHardwareProvider::new(
-            [0xAB; 32], [0xCD; 32], test_vendor_root_key(), // D=2
+            [0xAB; 32],
+            [0xCD; 32],
+            test_vendor_root_key(), // D=2
         ));
         let gen = AttestationGenerator::with_provider(config, mock_provider).unwrap();
         let attestation = gen.key_attestation();
 
         // Verify signature against D=2 (provider's vendor root key) — must succeed
-        use p256::ecdsa::{
-            SigningKey as P256SigningKey,
-            VerifyingKey as P256VerifyingKey,
-            Signature as P256Signature,
-        };
         use p256::ecdsa::signature::hazmat::PrehashVerifier;
+        use p256::ecdsa::{
+            Signature as P256Signature, SigningKey as P256SigningKey,
+            VerifyingKey as P256VerifyingKey,
+        };
 
         let mut hasher = Sha256::new();
         hasher.update(&attestation.platform_key_x);
@@ -2890,7 +3100,10 @@ mod tests {
             signing_key: test_signing_key(),
         };
         let result = AttestationGenerator::new(config, test_vendor_root_key());
-        assert!(result.is_err(), "SGX construction without hardware must fail");
+        assert!(
+            result.is_err(),
+            "SGX construction without hardware must fail"
+        );
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
             err_msg.contains("not available") || err_msg.contains("unavailable"),
@@ -2945,14 +3158,20 @@ mod tests {
 
         // rawReportHash[160:192] must be non-zero
         let raw_report_hash = &evidence[160..192];
-        assert_ne!(raw_report_hash, &[0u8; 32], "rawReportHash must be non-zero");
+        assert_ne!(
+            raw_report_hash, &[0u8; 32],
+            "rawReportHash must be non-zero"
+        );
 
         // The P-256 signature covers the binding hash (not the raw report hash).
         // Verify by reconstructing with binding hash and checking the sig.
         let digest = compute_attestation_digest(
-            attestation.platform, attestation.timestamp,
-            &attestation.nonce, &attestation.enclave_hash,
-            &attestation.signer_hash, &attestation.payload_hash,
+            attestation.platform,
+            attestation.timestamp,
+            &attestation.nonce,
+            &attestation.enclave_hash,
+            &attestation.signer_hash,
+            &attestation.payload_hash,
         );
         let binding_hash = test_binding_hash(raw_report_hash, &[0xAB; 32], &[0xCD; 32]);
 
@@ -2981,12 +3200,11 @@ mod tests {
         wrong_body.extend_from_slice(&1u16.to_be_bytes());
         wrong_body.extend_from_slice(raw_report_hash); // raw hash, NOT binding hash
 
-        use p256::ecdsa::{
-            SigningKey as P256SigningKey,
-            VerifyingKey as P256VerifyingKey,
-            Signature as P256Signature,
-        };
         use p256::ecdsa::signature::hazmat::PrehashVerifier;
+        use p256::ecdsa::{
+            Signature as P256Signature, SigningKey as P256SigningKey,
+            VerifyingKey as P256VerifyingKey,
+        };
 
         let p256_key = P256SigningKey::from_slice(&extract_platform_key(&gen)).unwrap();
         let verifying_key = P256VerifyingKey::from(&p256_key);
@@ -3015,10 +3233,15 @@ mod tests {
             signing_key: test_signing_key(),
         };
         let mock_provider = Box::new(MockHardwareProvider::new(
-            [0xAB; 32], [0xCD; 32], test_vendor_root_key(),
+            [0xAB; 32],
+            [0xCD; 32],
+            test_vendor_root_key(),
         ));
         let result = AttestationGenerator::with_provider(config, mock_provider);
-        assert!(result.is_err(), "mock provider for real platform must fail at construction");
+        assert!(
+            result.is_err(),
+            "mock provider for real platform must fail at construction"
+        );
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
             err_msg.contains("simulated") || err_msg.contains("not allowed"),
@@ -3031,7 +3254,11 @@ mod tests {
     fn test_zero_vendor_key_rejected_for_real_platforms() {
         // AttestationGenerator::new() with [0u8; 32] as vendor key MUST fail
         // for all real TEE platforms. This prevents accidental insecure boot.
-        for platform in [TEEPlatform::IntelSGX, TEEPlatform::AWSNitro, TEEPlatform::AMDSEV] {
+        for platform in [
+            TEEPlatform::IntelSGX,
+            TEEPlatform::AWSNitro,
+            TEEPlatform::AMDSEV,
+        ] {
             let config = TEEConfig {
                 platform,
                 enclave_hash: [0xAE; 32],
@@ -3041,11 +3268,17 @@ mod tests {
                 signing_key: test_signing_key(),
             };
             let result = AttestationGenerator::new(config, [0u8; 32]);
-            assert!(result.is_err(), "zero vendor key must be rejected for {:?}", platform);
+            assert!(
+                result.is_err(),
+                "zero vendor key must be rejected for {:?}",
+                platform
+            );
             let err_msg = format!("{}", result.err().unwrap());
             assert!(
                 err_msg.contains("vendor attestation") && err_msg.contains("[0; 32]"),
-                "expected zero-key rejection message for {:?}, got: {}", platform, err_msg
+                "expected zero-key rejection message for {:?}, got: {}",
+                platform,
+                err_msg
             );
         }
     }
@@ -3068,7 +3301,10 @@ mod tests {
         };
         // Mock with a real vendor key should work.
         let result = AttestationGenerator::new(config, test_vendor_root_key());
-        assert!(result.is_ok(), "mock platform with valid vendor key should succeed");
+        assert!(
+            result.is_ok(),
+            "mock platform with valid vendor key should succeed"
+        );
     }
 
     #[test]
@@ -3085,11 +3321,15 @@ mod tests {
         };
         let attester = Box::new(LocalVendorAttester::new(test_vendor_root_key()));
         let result = AttestationGenerator::with_vendor_attester(config, attester);
-        assert!(result.is_err(), "with_vendor_attester must reject Mock platform");
+        assert!(
+            result.is_err(),
+            "with_vendor_attester must reject Mock platform"
+        );
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
             err_msg.contains("Mock") && err_msg.contains("new()"),
-            "expected Mock-rejection message, got: {}", err_msg
+            "expected Mock-rejection message, got: {}",
+            err_msg
         );
     }
 
@@ -3114,9 +3354,11 @@ mod tests {
         assert!(result.is_err(), "SGX without hardware should fail");
         let err_msg = format!("{}", result.err().unwrap());
         assert!(
-            err_msg.contains("SGX") || err_msg.contains("not available") || err_msg.contains("unavailable"),
-            "expected platform unavailable error, got: {}", err_msg
+            err_msg.contains("SGX")
+                || err_msg.contains("not available")
+                || err_msg.contains("unavailable"),
+            "expected platform unavailable error, got: {}",
+            err_msg
         );
     }
-
 }

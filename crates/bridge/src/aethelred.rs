@@ -4,12 +4,12 @@
 
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::config::AethelredConfig;
 use crate::error::{BridgeError, Result};
-use crate::storage::BridgeStorage;
 use crate::metrics::BridgeMetrics;
+use crate::storage::BridgeStorage;
 use crate::types::*;
 
 /// Aethelred event listener
@@ -45,10 +45,7 @@ impl AethelredListener {
 
         let (event_tx, _) = broadcast::channel(1000);
 
-        info!(
-            "Initializing Aethelred listener from block {}",
-            start_block
-        );
+        info!("Initializing Aethelred listener from block {}", start_block);
 
         Ok(Self {
             config: config.clone(),
@@ -264,9 +261,8 @@ impl AethelredClient {
             .ok_or_else(|| BridgeError::Aethelred("Missing block hash".into()))?;
 
         // Tendermint block hashes are hex-encoded
-        let hash_bytes = hex::decode(hash_str).map_err(|e| {
-            BridgeError::Aethelred(format!("Invalid block hash hex: {}", e))
-        })?;
+        let hash_bytes = hex::decode(hash_str)
+            .map_err(|e| BridgeError::Aethelred(format!("Invalid block hash hex: {}", e)))?;
 
         let mut hash = [0u8; 32];
         if hash_bytes.len() == 32 {
@@ -342,11 +338,7 @@ impl AethelredClient {
             tx_hash.copy_from_slice(&tx_hash_bytes);
         }
 
-        let height = tx
-            .get("height")?
-            .as_str()?
-            .parse::<u64>()
-            .ok()?;
+        let height = tx.get("height")?.as_str()?.parse::<u64>().ok()?;
 
         let timestamp = tx
             .get("timestamp")
@@ -381,21 +373,20 @@ impl AethelredClient {
                                 }
                             }
                             "sender" | "burner" => {
-                                if let Ok(bytes) = hex::decode(
-                                    value.strip_prefix("0x").unwrap_or(value),
-                                ) {
+                                if let Ok(bytes) =
+                                    hex::decode(value.strip_prefix("0x").unwrap_or(value))
+                                {
                                     if bytes.len() == 32 {
                                         burner.copy_from_slice(&bytes);
                                     }
                                 }
                             }
                             "eth_recipient" => {
-                                if let Ok(bytes) = hex::decode(
-                                    value.strip_prefix("0x").unwrap_or(value),
-                                ) {
+                                if let Ok(bytes) =
+                                    hex::decode(value.strip_prefix("0x").unwrap_or(value))
+                                {
                                     if bytes.len() >= 20 {
-                                        eth_recipient
-                                            .copy_from_slice(&bytes[bytes.len() - 20..]);
+                                        eth_recipient.copy_from_slice(&bytes[bytes.len() - 20..]);
                                     }
                                 }
                             }
@@ -489,10 +480,8 @@ impl AethelredClient {
                                     event.get("attributes").and_then(|a| a.as_array())
                                 {
                                     for attr in attrs {
-                                        let key = attr
-                                            .get("key")
-                                            .and_then(|k| k.as_str())
-                                            .unwrap_or("");
+                                        let key =
+                                            attr.get("key").and_then(|k| k.as_str()).unwrap_or("");
                                         let value = attr
                                             .get("value")
                                             .and_then(|v| v.as_str())
@@ -570,11 +559,12 @@ impl AethelredClient {
         let tx_hash_str = json
             .pointer("/tx_response/txhash")
             .and_then(|h| h.as_str())
-            .ok_or_else(|| BridgeError::Aethelred("Missing tx hash in broadcast response".into()))?;
+            .ok_or_else(|| {
+                BridgeError::Aethelred("Missing tx hash in broadcast response".into())
+            })?;
 
-        let tx_hash_bytes = hex::decode(tx_hash_str).map_err(|e| {
-            BridgeError::Aethelred(format!("Invalid tx hash hex: {}", e))
-        })?;
+        let tx_hash_bytes = hex::decode(tx_hash_str)
+            .map_err(|e| BridgeError::Aethelred(format!("Invalid tx hash hex: {}", e)))?;
 
         let mut tx_hash = [0u8; 32];
         if tx_hash_bytes.len() == 32 {

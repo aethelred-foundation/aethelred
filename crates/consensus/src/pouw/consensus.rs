@@ -65,18 +65,18 @@
 //! 4. **Anti-Whale Logarithmic Scaling**: Prevents pure capital domination
 //! 5. **Multi-Method Verification**: TEE, zkML, Hybrid, Re-execution, AI Proof
 
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
-use parking_lot::RwLock;
 
-use crate::error::{ConsensusError, ConsensusResult};
-use crate::traits::{Consensus, ConsensusState, BlockValidator, LeaderElection};
-use crate::types::{
-    PoUWBlockHeader, ValidatorInfo, SlotTiming, Slot, Epoch, EpochSeed, Hash, Address,
-};
-use crate::vrf::{VrfKeys, VrfProof, VrfOutput, VrfEngine};
 use super::config::{PoUWConfig, UtilityCategory, VerificationMethod};
 use super::election::PoUWElection;
+use crate::error::{ConsensusError, ConsensusResult};
+use crate::traits::{BlockValidator, Consensus, ConsensusState, LeaderElection};
+use crate::types::{
+    Address, Epoch, EpochSeed, Hash, PoUWBlockHeader, Slot, SlotTiming, ValidatorInfo,
+};
+use crate::vrf::{VrfEngine, VrfKeys, VrfOutput, VrfProof};
 
 // =============================================================================
 // USEFUL WORK RESULT TYPES
@@ -159,7 +159,7 @@ impl UsefulWorkResult {
 
     /// Calculate hash for merkle tree
     pub fn hash(&self) -> Hash {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
         hasher.update(&self.job_id);
@@ -353,7 +353,8 @@ impl PoUWState {
 
     /// Recalculate active validator set
     fn recalculate_active_set(&mut self) {
-        self.active_validators = self.validators
+        self.active_validators = self
+            .validators
             .iter()
             .filter(|(_, v)| v.is_eligible(self.current_slot))
             .map(|(addr, _)| *addr)
@@ -409,8 +410,14 @@ impl PoUWState {
     }
 
     /// Update validator useful work score
-    pub fn update_useful_work_score(&mut self, address: &Address, delta: i64) -> ConsensusResult<()> {
-        let validator = self.validators.get_mut(address)
+    pub fn update_useful_work_score(
+        &mut self,
+        address: &Address,
+        delta: i64,
+    ) -> ConsensusResult<()> {
+        let validator = self
+            .validators
+            .get_mut(address)
             .ok_or_else(|| ConsensusError::ValidatorNotFound(*address))?;
 
         let current_score = self.useful_work_scores.entry(*address).or_insert(0);
@@ -454,10 +461,12 @@ impl PoUWState {
         stats.total_uwu += uwu;
 
         // Rolling average for difficulty
-        stats.avg_difficulty = (stats.avg_difficulty * old_total_jobs + difficulty) / stats.total_jobs;
+        stats.avg_difficulty =
+            (stats.avg_difficulty * old_total_jobs + difficulty) / stats.total_jobs;
 
         // Rolling average for completion time
-        stats.avg_completion_time = (stats.avg_completion_time * old_total_jobs + completion_time) / stats.total_jobs;
+        stats.avg_completion_time =
+            (stats.avg_completion_time * old_total_jobs + completion_time) / stats.total_jobs;
 
         // Update SLA compliance rate
         let old_compliance_count = (stats.sla_compliance_bps as u64 * old_total_jobs) / 10000;
@@ -613,7 +622,8 @@ impl PoUWConsensus {
     /// Advance to new slot
     pub fn advance_slot(&self, slot: Slot) {
         self.state.write().advance_slot(slot, &self.timing);
-        self.election.set_current_epoch(self.timing.epoch_for_slot(slot));
+        self.election
+            .set_current_epoch(self.timing.epoch_for_slot(slot));
     }
 
     /// Register validator
@@ -629,7 +639,9 @@ impl PoUWConsensus {
 
     /// Check if local node should propose for slot
     pub fn should_propose(&self, slot: Slot) -> ConsensusResult<bool> {
-        let keys = self.local_keys.as_ref()
+        let keys = self
+            .local_keys
+            .as_ref()
             .ok_or(ConsensusError::NotValidator)?;
 
         let state = self.state.read();
@@ -637,7 +649,8 @@ impl PoUWConsensus {
         let address = self.derive_address_from_keys(keys);
 
         // Check basic eligibility
-        let validator = state.get_validator(&address)
+        let validator = state
+            .get_validator(&address)
             .ok_or(ConsensusError::ValidatorNotFound(address))?;
 
         if !validator.is_eligible(slot) {
@@ -656,7 +669,9 @@ impl PoUWConsensus {
         let stake = state.get_stake(&address);
         let total_weighted = state.total_weighted_stake();
 
-        let threshold = self.election.calculate_threshold(stake, useful_work_score, total_weighted);
+        let threshold = self
+            .election
+            .calculate_threshold(stake, useful_work_score, total_weighted);
         let vrf_value = output.to_bigint();
 
         Ok(vrf_value < threshold)
@@ -664,14 +679,17 @@ impl PoUWConsensus {
 
     /// Generate leader credentials for slot
     pub fn generate_credentials(&self, slot: Slot) -> ConsensusResult<LeaderCredentials> {
-        let keys = self.local_keys.as_ref()
+        let keys = self
+            .local_keys
+            .as_ref()
             .ok_or(ConsensusError::NotValidator)?;
 
         let state = self.state.read();
         let epoch_seed = state.epoch_seed;
         let address = self.derive_address_from_keys(keys);
 
-        let validator = state.get_validator(&address)
+        let validator = state
+            .get_validator(&address)
             .ok_or(ConsensusError::ValidatorNotFound(address))?;
 
         let stake = validator.stake;
@@ -683,7 +701,9 @@ impl PoUWConsensus {
         let (proof, output) = self.vrf_engine.prove(keys, &vrf_input)?;
 
         use std::sync::atomic::Ordering;
-        self.metrics.vrf_proofs_generated.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .vrf_proofs_generated
+            .fetch_add(1, Ordering::Relaxed);
 
         Ok(LeaderCredentials {
             slot,
@@ -700,7 +720,8 @@ impl PoUWConsensus {
         let state = self.state.read();
 
         // Get validator info
-        let validator = state.get_validator(&credentials.address)
+        let validator = state
+            .get_validator(&credentials.address)
             .ok_or(ConsensusError::ValidatorNotFound(credentials.address))?;
 
         if !validator.is_eligible(credentials.slot) {
@@ -710,16 +731,18 @@ impl PoUWConsensus {
         // Verify stake matches
         if validator.stake != credentials.stake {
             return Err(ConsensusError::InvalidLeaderCredentials(
-                "Stake mismatch".into()
+                "Stake mismatch".into(),
             ));
         }
 
         // Verify useful work score matches (with tolerance)
         let actual_score = state.get_useful_work_score(&credentials.address);
         let tolerance = actual_score / 100; // 1% tolerance
-        if (credentials.useful_work_score as i128 - actual_score as i128).unsigned_abs() > tolerance as u128 {
+        if (credentials.useful_work_score as i128 - actual_score as i128).unsigned_abs()
+            > tolerance as u128
+        {
             return Err(ConsensusError::InvalidLeaderCredentials(
-                "Useful work score mismatch".into()
+                "Useful work score mismatch".into(),
             ));
         }
 
@@ -730,7 +753,9 @@ impl PoUWConsensus {
 
         // Verify VRF proof
         let vrf_input = self.compute_vrf_input(credentials.slot, &epoch_seed);
-        let output = self.vrf_engine.verify(&vrf_pubkey, &vrf_input, &credentials.vrf_proof)?;
+        let output = self
+            .vrf_engine
+            .verify(&vrf_pubkey, &vrf_input, &credentials.vrf_proof)?;
 
         // Check threshold
         let threshold = self.election.calculate_threshold(
@@ -764,8 +789,12 @@ impl PoUWConsensus {
                 *score_updates.entry(result.validator).or_insert(0) += score_delta;
 
                 use std::sync::atomic::Ordering;
-                self.metrics.useful_work_verified.fetch_add(1, Ordering::Relaxed);
-                self.metrics.total_uwu_awarded.fetch_add(result.useful_work_units, Ordering::Relaxed);
+                self.metrics
+                    .useful_work_verified
+                    .fetch_add(1, Ordering::Relaxed);
+                self.metrics
+                    .total_uwu_awarded
+                    .fetch_add(result.useful_work_units, Ordering::Relaxed);
             }
         }
 
@@ -829,20 +858,16 @@ impl PoUWConsensus {
             VerificationMethod::TeeAttestation => {
                 self.verification_engine.verify_tee_attestation(result)?
             }
-            VerificationMethod::ZkProof => {
-                self.verification_engine.verify_zkml_proof(result)?
-            }
+            VerificationMethod::ZkProof => self.verification_engine.verify_zkml_proof(result)?,
             VerificationMethod::Hybrid => {
                 // Both must pass
-                self.verification_engine.verify_tee_attestation(result)? &&
-                self.verification_engine.verify_zkml_proof(result)?
+                self.verification_engine.verify_tee_attestation(result)?
+                    && self.verification_engine.verify_zkml_proof(result)?
             }
             VerificationMethod::ReExecution => {
                 result.confirmations >= self.config.min_reexecution_validators
             }
-            VerificationMethod::AiProof => {
-                self.verification_engine.verify_ai_proof(result)?
-            }
+            VerificationMethod::AiProof => self.verification_engine.verify_ai_proof(result)?,
         };
 
         if verified {
@@ -850,17 +875,27 @@ impl PoUWConsensus {
             use std::sync::atomic::Ordering;
             match result.verification_method {
                 VerificationMethod::TeeAttestation => {
-                    self.metrics.tee_verifications.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .tee_verifications
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 VerificationMethod::ZkProof => {
-                    self.metrics.zkml_verifications.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .zkml_verifications
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 VerificationMethod::Hybrid => {
-                    self.metrics.tee_verifications.fetch_add(1, Ordering::Relaxed);
-                    self.metrics.zkml_verifications.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .tee_verifications
+                        .fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .zkml_verifications
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 VerificationMethod::AiProof => {
-                    self.metrics.ai_proof_verifications.fetch_add(1, Ordering::Relaxed);
+                    self.metrics
+                        .ai_proof_verifications
+                        .fetch_add(1, Ordering::Relaxed);
                 }
                 _ => {}
             }
@@ -902,7 +937,7 @@ impl PoUWConsensus {
 
     /// Derive address from VRF keys
     fn derive_address_from_keys(&self, keys: &VrfKeys) -> Address {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(&keys.public_key_bytes());
         let hash = hasher.finalize();
@@ -1087,9 +1122,15 @@ impl VerificationEngine {
 // =============================================================================
 
 impl BlockValidator for PoUWConsensus {
-    fn validate_header(&self, header: &PoUWBlockHeader, parent: &PoUWBlockHeader) -> ConsensusResult<()> {
+    fn validate_header(
+        &self,
+        header: &PoUWBlockHeader,
+        parent: &PoUWBlockHeader,
+    ) -> ConsensusResult<()> {
         // 1. Basic structure validation
-        header.validate_structure().map_err(|e| ConsensusError::BlockValidation(e))?;
+        header
+            .validate_structure()
+            .map_err(|e| ConsensusError::BlockValidation(e))?;
 
         // 2. Parent link validation
         let parent_hash = parent.hash();
@@ -1141,12 +1182,14 @@ impl BlockValidator for PoUWConsensus {
         // 8. Finality fields validation
         if header.last_finalized_slot > header.slot {
             return Err(ConsensusError::FinalityValidation(
-                "Finalized slot cannot be in the future".into()
+                "Finalized slot cannot be in the future".into(),
             ));
         }
 
         use std::sync::atomic::Ordering;
-        self.metrics.blocks_validated.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .blocks_validated
+            .fetch_add(1, Ordering::Relaxed);
 
         Ok(())
     }
@@ -1170,8 +1213,7 @@ impl BlockValidator for PoUWConsensus {
         if total_complexity != header.compute_complexity {
             return Err(ConsensusError::ComputeValidation(format!(
                 "Complexity mismatch: header says {}, computed {}",
-                header.compute_complexity,
-                total_complexity
+                header.compute_complexity, total_complexity
             )));
         }
 
@@ -1179,7 +1221,7 @@ impl BlockValidator for PoUWConsensus {
         let computed_root = self.compute_results_merkle_root(results);
         if computed_root != header.compute_results_root {
             return Err(ConsensusError::ComputeValidation(
-                "Compute results root mismatch".into()
+                "Compute results root mismatch".into(),
             ));
         }
 
@@ -1201,13 +1243,12 @@ impl PoUWConsensus {
 
         // Parse VRF proof from header
         if header.vrf_proof.len() < 100 {
-            return Err(ConsensusError::VrfValidation(
-                "VRF proof too short".into()
-            ));
+            return Err(ConsensusError::VrfValidation("VRF proof too short".into()));
         }
 
         let state = self.state.read();
-        let validator = state.get_validator(&header.proposer_address)
+        let validator = state
+            .get_validator(&header.proposer_address)
             .ok_or(ConsensusError::ValidatorNotFound(header.proposer_address))?;
 
         let epoch_seed = state.epoch_seed;
@@ -1225,12 +1266,14 @@ impl PoUWConsensus {
         let output = self.vrf_engine.verify(&vrf_pubkey, &vrf_input, &proof)?;
 
         // Check threshold
-        let threshold = self.election.calculate_threshold(stake, useful_work_score, total_weighted);
+        let threshold = self
+            .election
+            .calculate_threshold(stake, useful_work_score, total_weighted);
         let vrf_value = output.to_bigint();
 
         if vrf_value >= threshold {
             return Err(ConsensusError::VrfValidation(
-                "VRF output does not meet threshold".into()
+                "VRF output does not meet threshold".into(),
             ));
         }
 
@@ -1246,7 +1289,8 @@ impl PoUWConsensus {
         let state = self.state.read();
 
         // Check proposer exists and is active
-        let validator = state.get_validator(&header.proposer_address)
+        let validator = state
+            .get_validator(&header.proposer_address)
             .ok_or(ConsensusError::ValidatorNotFound(header.proposer_address))?;
 
         if !validator.is_eligible(header.slot) {
@@ -1256,7 +1300,9 @@ impl PoUWConsensus {
         // Verify proposer useful work score matches (with tolerance)
         let actual_score = state.get_useful_work_score(&header.proposer_address);
         let tolerance = actual_score / 100; // 1% tolerance
-        if (header.proposer_useful_work_score as i128 - actual_score as i128).unsigned_abs() > tolerance as u128 {
+        if (header.proposer_useful_work_score as i128 - actual_score as i128).unsigned_abs()
+            > tolerance as u128
+        {
             return Err(ConsensusError::BlockValidation(format!(
                 "Proposer useful work score mismatch: expected ~{}, got {}",
                 actual_score, header.proposer_useful_work_score
@@ -1279,21 +1325,21 @@ impl PoUWConsensus {
         // Check job ID is valid
         if result.job_id == [0u8; 32] {
             return Err(ConsensusError::ComputeValidation(
-                "Invalid job ID (all zeros)".into()
+                "Invalid job ID (all zeros)".into(),
             ));
         }
 
         // Check model hash is valid
         if result.model_hash == [0u8; 32] {
             return Err(ConsensusError::ComputeValidation(
-                "Invalid model hash (all zeros)".into()
+                "Invalid model hash (all zeros)".into(),
             ));
         }
 
         // Check complexity is reasonable
         if result.complexity == 0 {
             return Err(ConsensusError::ComputeValidation(
-                "Complexity cannot be zero".into()
+                "Complexity cannot be zero".into(),
             ));
         }
 
@@ -1308,24 +1354,27 @@ impl PoUWConsensus {
 
     /// Compute merkle root of compute results
     fn compute_results_merkle_root(&self, results: &[crate::traits::ComputeResult]) -> Hash {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         if results.is_empty() {
             return [0u8; 32];
         }
 
         // Hash each result
-        let mut hashes: Vec<[u8; 32]> = results.iter().map(|r| {
-            let mut hasher = Sha256::new();
-            hasher.update(&r.job_id);
-            hasher.update(&r.output_hash);
-            hasher.update(&r.complexity.to_le_bytes());
-            hasher.update(&[r.verification_method as u8]);
-            let result = hasher.finalize();
-            let mut hash = [0u8; 32];
-            hash.copy_from_slice(&result);
-            hash
-        }).collect();
+        let mut hashes: Vec<[u8; 32]> = results
+            .iter()
+            .map(|r| {
+                let mut hasher = Sha256::new();
+                hasher.update(&r.job_id);
+                hasher.update(&r.output_hash);
+                hasher.update(&r.complexity.to_le_bytes());
+                hasher.update(&[r.verification_method as u8]);
+                let result = hasher.finalize();
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&result);
+                hash
+            })
+            .collect();
 
         // Build merkle tree
         while hashes.len() > 1 {
@@ -1358,7 +1407,8 @@ impl Consensus for PoUWConsensus {
     fn is_leader(&self, slot: Slot, address: &Address, vrf_output: &[u8]) -> ConsensusResult<bool> {
         let state = self.state.read();
 
-        let validator = state.get_validator(address)
+        let validator = state
+            .get_validator(address)
             .ok_or(ConsensusError::ValidatorNotFound(*address))?;
 
         if !validator.is_eligible(slot) {
@@ -1373,13 +1423,15 @@ impl Consensus for PoUWConsensus {
         // Parse VRF output
         if vrf_output.len() != 32 {
             return Err(ConsensusError::VrfValidation(
-                "Invalid VRF output length".into()
+                "Invalid VRF output length".into(),
             ));
         }
 
         let output = VrfOutput::from_bytes(vrf_output.try_into().unwrap());
         let vrf_value = output.to_bigint();
-        let threshold = self.election.calculate_threshold(stake, useful_work_score, total_weighted);
+        let threshold = self
+            .election
+            .calculate_threshold(stake, useful_work_score, total_weighted);
 
         Ok(vrf_value < threshold)
     }
@@ -1393,13 +1445,14 @@ impl Consensus for PoUWConsensus {
     ) -> ConsensusResult<bool> {
         let state = self.state.read();
 
-        let validator = state.get_validator(address)
+        let validator = state
+            .get_validator(address)
             .ok_or(ConsensusError::ValidatorNotFound(*address))?;
 
         // Verify VRF public key matches
         if validator.vrf_pubkey != vrf_pubkey {
             return Err(ConsensusError::VrfValidation(
-                "VRF public key mismatch".into()
+                "VRF public key mismatch".into(),
             ));
         }
 
@@ -1417,14 +1470,18 @@ impl Consensus for PoUWConsensus {
         let output = self.vrf_engine.verify(vrf_pubkey, &vrf_input, &proof)?;
 
         // Check threshold
-        let threshold = self.election.calculate_threshold(stake, useful_work_score, total_weighted);
+        let threshold = self
+            .election
+            .calculate_threshold(stake, useful_work_score, total_weighted);
         let vrf_value = output.to_bigint();
 
         Ok(vrf_value < threshold)
     }
 
     fn produce_vrf_proof(&self, _slot: Slot, seed: &[u8]) -> ConsensusResult<(Vec<u8>, Vec<u8>)> {
-        let keys = self.local_keys.as_ref()
+        let keys = self
+            .local_keys
+            .as_ref()
             .ok_or(ConsensusError::NotValidator)?;
 
         let (proof, output) = self.vrf_engine.prove(keys, seed)?;
@@ -1650,7 +1707,9 @@ mod tests {
             sla_deadline: 2000,
         };
 
-        assert!(!engine.verify_tee_attestation(&result_no_attestation).unwrap());
+        assert!(!engine
+            .verify_tee_attestation(&result_no_attestation)
+            .unwrap());
 
         // With valid-looking attestation
         let mut result_with_attestation = result_no_attestation.clone();
@@ -1658,6 +1717,8 @@ mod tests {
         att.resize(100, 0x00);
         result_with_attestation.tee_attestation = att;
 
-        assert!(engine.verify_tee_attestation(&result_with_attestation).unwrap());
+        assert!(engine
+            .verify_tee_attestation(&result_with_attestation)
+            .unwrap());
     }
 }

@@ -47,31 +47,25 @@ fn bench_attestation_structural_validation(c: &mut Criterion) {
     // SGX quotes at various sizes.
     for size in [432, 1024, 2048, 4096] {
         let quote: Vec<u8> = (0..size).map(|i| (i % 251) as u8).collect();
-        group.bench_with_input(
-            BenchmarkId::new("SGX", size),
-            &quote,
-            |b, q| b.iter(|| sgx_quote_structural_validation(black_box(q))),
-        );
+        group.bench_with_input(BenchmarkId::new("SGX", size), &quote, |b, q| {
+            b.iter(|| sgx_quote_structural_validation(black_box(q)))
+        });
     }
 
     // Nitro attestations.
     for size in [1000, 2048, 4096, 8192] {
         let att: Vec<u8> = (0..size).map(|i| (i % 251) as u8).collect();
-        group.bench_with_input(
-            BenchmarkId::new("Nitro", size),
-            &att,
-            |b, a| b.iter(|| nitro_attestation_structural_validation(black_box(a))),
-        );
+        group.bench_with_input(BenchmarkId::new("Nitro", size), &att, |b, a| {
+            b.iter(|| nitro_attestation_structural_validation(black_box(a)))
+        });
     }
 
     // SEV-SNP reports.
     for size in [672, 1024, 2048] {
         let report: Vec<u8> = (0..size).map(|i| (i % 251) as u8).collect();
-        group.bench_with_input(
-            BenchmarkId::new("SEV", size),
-            &report,
-            |b, r| b.iter(|| sev_report_structural_validation(black_box(r))),
-        );
+        group.bench_with_input(BenchmarkId::new("SEV", size), &report, |b, r| {
+            b.iter(|| sev_report_structural_validation(black_box(r)))
+        });
     }
 
     group.finish();
@@ -113,13 +107,17 @@ fn bench_measurement_comparison(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("linear_scan", registry_size),
             &(trusted.clone(), target.clone()),
-            |b, (trusted, target)| b.iter(|| measurement_lookup_linear(black_box(trusted), black_box(target))),
+            |b, (trusted, target)| {
+                b.iter(|| measurement_lookup_linear(black_box(trusted), black_box(target)))
+            },
         );
 
         group.bench_with_input(
             BenchmarkId::new("hashmap_lookup", registry_size),
             &(registry.clone(), target.clone()),
-            |b, (reg, target)| b.iter(|| measurement_lookup_hashmap(black_box(reg), black_box(target))),
+            |b, (reg, target)| {
+                b.iter(|| measurement_lookup_hashmap(black_box(reg), black_box(target)))
+            },
         );
     }
 
@@ -151,11 +149,9 @@ fn bench_tee_precompile_operations(c: &mut Criterion) {
     // Report data hashing at various input sizes.
     for size in [32, 64, 256, 1024, 4096] {
         let data: Vec<u8> = (0..size).map(|i| (i % 256) as u8).collect();
-        group.bench_with_input(
-            BenchmarkId::new("report_data_hash", size),
-            &data,
-            |b, d| b.iter(|| compute_report_data_hash(black_box(d))),
-        );
+        group.bench_with_input(BenchmarkId::new("report_data_hash", size), &data, |b, d| {
+            b.iter(|| compute_report_data_hash(black_box(d)))
+        });
     }
 
     // Measurement hex encoding.

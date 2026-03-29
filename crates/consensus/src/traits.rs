@@ -10,7 +10,7 @@
 //! - **Flexible**: Support different backend implementations
 
 use crate::error::ConsensusResult;
-use crate::types::{PoUWBlockHeader, Slot, Epoch, EpochSeed, Address};
+use crate::types::{Address, Epoch, EpochSeed, PoUWBlockHeader, Slot};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 
@@ -286,11 +286,8 @@ impl Default for VerificationMethod {
 /// Epoch transition handler
 pub trait EpochHandler: Send + Sync {
     /// Handle transition to a new epoch
-    fn on_epoch_transition(
-        &self,
-        old_epoch: Epoch,
-        new_epoch: Epoch,
-    ) -> ConsensusResult<EpochSeed>;
+    fn on_epoch_transition(&self, old_epoch: Epoch, new_epoch: Epoch)
+        -> ConsensusResult<EpochSeed>;
 
     /// Calculate new epoch seed from accumulated randomness
     fn compute_epoch_seed(
@@ -347,16 +344,22 @@ mod tests {
 
     #[test]
     fn test_verification_method_ordering() {
-        assert!(VerificationMethod::Hybrid.assurance_level() >
-                VerificationMethod::TeeAttestation.assurance_level());
-        assert!(VerificationMethod::ZkProof.assurance_level() >
-                VerificationMethod::ReExecution.assurance_level());
+        assert!(
+            VerificationMethod::Hybrid.assurance_level()
+                > VerificationMethod::TeeAttestation.assurance_level()
+        );
+        assert!(
+            VerificationMethod::ZkProof.assurance_level()
+                > VerificationMethod::ReExecution.assurance_level()
+        );
     }
 
     #[test]
     fn test_verification_method_multiplier() {
-        assert!(VerificationMethod::Hybrid.score_multiplier() >
-                VerificationMethod::TeeAttestation.score_multiplier());
+        assert!(
+            VerificationMethod::Hybrid.score_multiplier()
+                > VerificationMethod::TeeAttestation.score_multiplier()
+        );
     }
 
     #[test]

@@ -3,11 +3,11 @@
 //! Comprehensive network performance benchmarks for distributed AI/ML
 //! including latency, throughput, connection pooling, and API performance.
 
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
-use crate::{BenchmarkResult, black_box};
+use crate::{black_box, BenchmarkResult};
 
 // ============ Network Benchmark Config ============
 
@@ -69,12 +69,16 @@ impl NetworkBenchmark {
 
         // Throughput benchmarks
         for &size in &self.config.payload_sizes {
-            results.throughput_results.push(self.benchmark_throughput(size));
+            results
+                .throughput_results
+                .push(self.benchmark_throughput(size));
         }
 
         // Concurrency benchmarks
         for &concurrency in &self.config.concurrent_connections {
-            results.concurrency_results.push(self.benchmark_concurrency(concurrency));
+            results
+                .concurrency_results
+                .push(self.benchmark_concurrency(concurrency));
         }
 
         // Connection pool benchmark
@@ -95,13 +99,11 @@ impl NetworkBenchmark {
             samples.push(total);
         }
 
-        let benchmark = BenchmarkResult::new(
-            format!("latency_{}b", payload_size),
-            samples.clone(),
-        );
+        let benchmark = BenchmarkResult::new(format!("latency_{}b", payload_size), samples.clone());
 
         let ttfb_avg = Duration::from_nanos(
-            (ttfb_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.requests as u128) as u64
+            (ttfb_samples.iter().map(|d| d.as_nanos()).sum::<u128>() / self.config.requests as u128)
+                as u64,
         );
 
         LatencyResult {
@@ -145,8 +147,8 @@ impl NetworkBenchmark {
 
     /// Benchmark concurrent connections
     pub fn benchmark_concurrency(&self, num_connections: usize) -> ConcurrencyResult {
-        use std::thread;
         use std::sync::mpsc;
+        use std::thread;
 
         let payload_size = 10 * 1024; // 10 KB
         let requests_per_connection = self.config.requests / num_connections.max(1);
@@ -192,7 +194,8 @@ impl NetworkBenchmark {
         let total_duration = start.elapsed();
         let avg_latency = if !all_latencies.is_empty() {
             Duration::from_nanos(
-                (all_latencies.iter().map(|d| d.as_nanos()).sum::<u128>() / all_latencies.len() as u128) as u64
+                (all_latencies.iter().map(|d| d.as_nanos()).sum::<u128>()
+                    / all_latencies.len() as u128) as u64,
             )
         } else {
             Duration::ZERO
@@ -247,7 +250,7 @@ impl NetworkBenchmark {
         }
 
         Duration::from_nanos(
-            (samples.iter().map(|d| d.as_nanos()).sum::<u128>() / samples.len() as u128) as u64
+            (samples.iter().map(|d| d.as_nanos()).sum::<u128>() / samples.len() as u128) as u64,
         )
     }
 
@@ -263,7 +266,7 @@ impl NetworkBenchmark {
         }
 
         Duration::from_nanos(
-            (samples.iter().map(|d| d.as_nanos()).sum::<u128>() / samples.len() as u128) as u64
+            (samples.iter().map(|d| d.as_nanos()).sum::<u128>() / samples.len() as u128) as u64,
         )
     }
 
@@ -304,10 +307,7 @@ impl NetworkResults {
         for result in &self.latency_results {
             s.push_str(&format!(
                 "  {:>8} bytes: mean={:>10.2?}, p95={:>10.2?}, p99={:>10.2?}\n",
-                result.payload_size,
-                result.mean,
-                result.p95,
-                result.p99
+                result.payload_size, result.mean, result.p95, result.p99
             ));
         }
 
@@ -315,9 +315,7 @@ impl NetworkResults {
         for result in &self.throughput_results {
             s.push_str(&format!(
                 "  {:>8} bytes: {:.2} Mbps, {:.2} req/s\n",
-                result.payload_size,
-                result.throughput_mbps,
-                result.requests_per_second
+                result.payload_size, result.throughput_mbps, result.requests_per_second
             ));
         }
 
@@ -325,9 +323,7 @@ impl NetworkResults {
         for result in &self.concurrency_results {
             s.push_str(&format!(
                 "  {:>3} connections: {:.2} req/s, avg latency={:.2?}\n",
-                result.num_connections,
-                result.requests_per_second,
-                result.avg_latency
+                result.num_connections, result.requests_per_second, result.avg_latency
             ));
         }
 
@@ -335,8 +331,7 @@ impl NetworkResults {
         for result in &self.connection_pool_results {
             s.push_str(&format!(
                 "  pool_size={:>2}: {:.2}x speedup\n",
-                result.pool_size,
-                result.speedup
+                result.pool_size, result.speedup
             ));
         }
 
@@ -436,7 +431,8 @@ impl ApiBenchmark {
         }
 
         let benchmark = BenchmarkResult::new(&endpoint.name, samples.clone());
-        let success_rate = (self.config.requests - error_count) as f64 / self.config.requests as f64 * 100.0;
+        let success_rate =
+            (self.config.requests - error_count) as f64 / self.config.requests as f64 * 100.0;
 
         Some(ApiResult {
             endpoint_name: endpoint.name.clone(),
@@ -452,7 +448,8 @@ impl ApiBenchmark {
 
     /// Benchmark all endpoints
     pub fn benchmark_all(&self) -> Vec<ApiResult> {
-        self.endpoints.keys()
+        self.endpoints
+            .keys()
             .filter_map(|name| self.benchmark_endpoint(name))
             .collect()
     }
@@ -517,7 +514,8 @@ impl GrpcBenchmark {
 
         let total_duration = start.elapsed();
         let avg_message_time = Duration::from_nanos(
-            (message_times.iter().map(|d| d.as_nanos()).sum::<u128>() / num_messages as u128) as u64
+            (message_times.iter().map(|d| d.as_nanos()).sum::<u128>() / num_messages as u128)
+                as u64,
         );
 
         StreamingResult {

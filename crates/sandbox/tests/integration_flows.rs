@@ -87,6 +87,7 @@ fn profiler_can_load_cloud_pricing_from_env() {
     let lock = ENV_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock.lock().expect("env lock poisoned");
 
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_FILE");
     std::env::set_var(
         "AETHELRED_SANDBOX_CLOUD_PRICING_JSON",
         r#"{
@@ -127,6 +128,7 @@ fn profiler_can_load_cloud_pricing_from_env() {
         .expect("aws comparison missing");
     assert!((aws.cost_usd - 0.77).abs() < 1e-9);
 
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_FILE");
     std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_JSON");
 }
 

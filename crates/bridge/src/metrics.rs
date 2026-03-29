@@ -2,9 +2,9 @@
 //!
 //! Prometheus metrics for bridge monitoring.
 
+use crate::error::Result;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
-use crate::error::Result;
 
 /// Bridge metrics collector
 pub struct BridgeMetrics {

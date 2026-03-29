@@ -3,8 +3,8 @@
 //! These benchmarks measure the overhead and performance of the
 //! Aethelred testing framework itself.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use aethelred_testing::TestCase;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn test_case_creation_bench(c: &mut Criterion) {
     c.bench_function("test_case_creation", |b| {

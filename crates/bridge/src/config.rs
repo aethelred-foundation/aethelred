@@ -114,9 +114,9 @@ impl BridgeConfig {
             ethereum: EthereumConfig::mainnet(),
             aethelred: AethelredConfig::mainnet(),
             consensus: ConsensusConfig {
-                threshold_bps: 6700, // 67%
+                threshold_bps: 6700,         // 67%
                 proposal_timeout_secs: 3600, // 1 hour
-                vote_timeout_secs: 300, // 5 minutes
+                vote_timeout_secs: 300,      // 5 minutes
                 max_pending_proposals: 1000,
             },
             storage_path: PathBuf::from("./data/bridge-mainnet"),
@@ -311,9 +311,9 @@ pub struct ConsensusConfig {
 impl Default for ConsensusConfig {
     fn default() -> Self {
         Self {
-            threshold_bps: 6700, // 67%
+            threshold_bps: 6700,         // 67%
             proposal_timeout_secs: 1800, // 30 minutes
-            vote_timeout_secs: 180, // 3 minutes
+            vote_timeout_secs: 180,      // 3 minutes
             max_pending_proposals: 500,
         }
     }

@@ -22,10 +22,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
-use helix_guard::{
-    HelixGuardDemo, DemoConfig, DemoStatus,
-    print_banner, version_info,
-};
+use helix_guard::{print_banner, version_info, DemoConfig, DemoStatus, HelixGuardDemo};
 
 /// Helix-Guard: Sovereign Genomics Collaboration Platform
 #[derive(Parser, Debug)]
@@ -104,7 +101,7 @@ async fn main() -> ExitCode {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("helix_guard=info".parse().unwrap())
+                .add_directive("helix_guard=info".parse().unwrap()),
         )
         .with_target(false)
         .init();
@@ -140,17 +137,44 @@ async fn main() -> ExitCode {
             println!("  Drug Candidates:   {}", config.drug_candidate_count);
             println!();
             println!("Discovery Protocol:");
-            println!("  Strict Sovereignty:    {}", config.discovery_config.strict_sovereignty);
-            println!("  Require Ethics:        {}", config.discovery_config.require_ethics_approval);
-            println!("  Require DoH:           {}", config.discovery_config.require_doh_approval);
-            println!("  Auto Royalty:          {}", config.discovery_config.auto_royalty_payment);
-            println!("  Session Timeout:       {} hours", config.discovery_config.session_timeout_hours);
+            println!(
+                "  Strict Sovereignty:    {}",
+                config.discovery_config.strict_sovereignty
+            );
+            println!(
+                "  Require Ethics:        {}",
+                config.discovery_config.require_ethics_approval
+            );
+            println!(
+                "  Require DoH:           {}",
+                config.discovery_config.require_doh_approval
+            );
+            println!(
+                "  Auto Royalty:          {}",
+                config.discovery_config.auto_royalty_payment
+            );
+            println!(
+                "  Session Timeout:       {} hours",
+                config.discovery_config.session_timeout_hours
+            );
             println!();
             println!("Royalty Engine:");
-            println!("  Base Fee:          ${}", config.royalty_config.base_fee_usd);
-            println!("  Auto Settlement:   {}", config.royalty_config.auto_settlement);
-            println!("  Escrow Enabled:    {}", config.royalty_config.escrow_enabled);
-            println!("  Escrow Threshold:  ${}", config.royalty_config.escrow_threshold_usd);
+            println!(
+                "  Base Fee:          ${}",
+                config.royalty_config.base_fee_usd
+            );
+            println!(
+                "  Auto Settlement:   {}",
+                config.royalty_config.auto_settlement
+            );
+            println!(
+                "  Escrow Enabled:    {}",
+                config.royalty_config.escrow_enabled
+            );
+            println!(
+                "  Escrow Threshold:  ${}",
+                config.royalty_config.escrow_threshold_usd
+            );
             ExitCode::SUCCESS
         }
 
@@ -166,7 +190,8 @@ async fn main() -> ExitCode {
                 cli.candidates,
                 cli.zkml,
                 &cli.format,
-            ).await
+            )
+            .await
         }
     }
 }
@@ -192,15 +217,13 @@ async fn run_demo(
     match demo.run().await {
         Ok(output) => {
             match format {
-                "json" => {
-                    match serde_json::to_string_pretty(&output) {
-                        Ok(json) => println!("{}", json),
-                        Err(e) => {
-                            eprintln!("Error serializing output: {}", e);
-                            return ExitCode::FAILURE;
-                        }
+                "json" => match serde_json::to_string_pretty(&output) {
+                    Ok(json) => println!("{}", json),
+                    Err(e) => {
+                        eprintln!("Error serializing output: {}", e);
+                        return ExitCode::FAILURE;
                     }
-                }
+                },
                 _ => {
                     // Text output is already printed by the demo
                     if output.status != DemoStatus::Completed {
@@ -236,11 +259,7 @@ mod tests {
 
     #[test]
     fn test_cli_with_args() {
-        let cli = Cli::parse_from([
-            "helix-guard",
-            "--no-delays",
-            "--candidates", "5",
-        ]);
+        let cli = Cli::parse_from(["helix-guard", "--no-delays", "--candidates", "5"]);
         assert!(cli.no_delays);
         assert_eq!(cli.candidates, 5);
     }

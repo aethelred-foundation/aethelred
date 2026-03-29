@@ -5,8 +5,8 @@
 
 use std::any::Any;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
 use std::fmt::Debug;
+use std::sync::{Arc, Mutex, RwLock};
 
 // ============ Mock Registry ============
 
@@ -35,7 +35,9 @@ impl MockRegistry {
     }
 
     pub fn get<T: Any + Send + Sync + Clone>(&self, name: &str) -> Option<T> {
-        self.mocks.get(name).and_then(|m| m.downcast_ref::<T>().cloned())
+        self.mocks
+            .get(name)
+            .and_then(|m| m.downcast_ref::<T>().cloned())
     }
 
     pub fn record_call(&mut self, name: &str, record: CallRecord) {
@@ -163,9 +165,9 @@ impl<T> ExpectationBuilder<T> {
 
         self.mock_builder.expectations.push(expectation);
 
-        self.mock_builder.behaviors.push(Box::new(move |_| {
-            Some(Box::new(f()) as Box<dyn Any>)
-        }));
+        self.mock_builder
+            .behaviors
+            .push(Box::new(move |_| Some(Box::new(f()) as Box<dyn Any>)));
 
         self.mock_builder
     }
@@ -202,30 +204,22 @@ impl Expectation {
     pub fn verify(&self) -> Result<(), String> {
         let count = *self.call_count.lock().unwrap();
         match self.times {
-            Times::Exactly(n) if count != n => {
-                Err(format!(
-                    "Expected {} to be called exactly {} times, but was called {} times",
-                    self.method, n, count
-                ))
-            }
-            Times::AtLeast(n) if count < n => {
-                Err(format!(
-                    "Expected {} to be called at least {} times, but was called {} times",
-                    self.method, n, count
-                ))
-            }
-            Times::AtMost(n) if count > n => {
-                Err(format!(
-                    "Expected {} to be called at most {} times, but was called {} times",
-                    self.method, n, count
-                ))
-            }
-            Times::Never if count > 0 => {
-                Err(format!(
-                    "Expected {} to never be called, but was called {} times",
-                    self.method, count
-                ))
-            }
+            Times::Exactly(n) if count != n => Err(format!(
+                "Expected {} to be called exactly {} times, but was called {} times",
+                self.method, n, count
+            )),
+            Times::AtLeast(n) if count < n => Err(format!(
+                "Expected {} to be called at least {} times, but was called {} times",
+                self.method, n, count
+            )),
+            Times::AtMost(n) if count > n => Err(format!(
+                "Expected {} to be called at most {} times, but was called {} times",
+                self.method, n, count
+            )),
+            Times::Never if count > 0 => Err(format!(
+                "Expected {} to never be called, but was called {} times",
+                self.method, count
+            )),
             _ => Ok(()),
         }
     }
@@ -317,7 +311,8 @@ impl<T> Mock<T> {
     /// Set return value for a method
     pub fn set_return<R: Any + Send + Sync + 'static>(&self, method: &str, value: R) {
         let mut values = self.return_values.write().unwrap();
-        values.entry(method.to_string())
+        values
+            .entry(method.to_string())
             .or_insert_with(Vec::new)
             .push(Box::new(value));
     }
@@ -457,7 +452,9 @@ impl<T> Stub<T> {
     }
 
     pub fn get<R: Any + Clone>(&self, method: &str) -> Option<R> {
-        self.values.get(method).and_then(|v| v.downcast_ref::<R>().cloned())
+        self.values
+            .get(method)
+            .and_then(|v| v.downcast_ref::<R>().cloned())
     }
 }
 
@@ -502,9 +499,14 @@ impl MockTensor {
     }
 
     pub fn add(&self, other: &MockTensor) -> MockTensor {
-        self.call_history.lock().unwrap().push(CallRecord::new("add", vec![]));
+        self.call_history
+            .lock()
+            .unwrap()
+            .push(CallRecord::new("add", vec![]));
 
-        let data: Vec<f32> = self.data.iter()
+        let data: Vec<f32> = self
+            .data
+            .iter()
             .zip(other.data.iter())
             .map(|(a, b)| a + b)
             .collect();
@@ -519,9 +521,14 @@ impl MockTensor {
     }
 
     pub fn mul(&self, other: &MockTensor) -> MockTensor {
-        self.call_history.lock().unwrap().push(CallRecord::new("mul", vec![]));
+        self.call_history
+            .lock()
+            .unwrap()
+            .push(CallRecord::new("mul", vec![]));
 
-        let data: Vec<f32> = self.data.iter()
+        let data: Vec<f32> = self
+            .data
+            .iter()
             .zip(other.data.iter())
             .map(|(a, b)| a * b)
             .collect();
@@ -536,7 +543,10 @@ impl MockTensor {
     }
 
     pub fn matmul(&self, other: &MockTensor) -> MockTensor {
-        self.call_history.lock().unwrap().push(CallRecord::new("matmul", vec![]));
+        self.call_history
+            .lock()
+            .unwrap()
+            .push(CallRecord::new("matmul", vec![]));
 
         // Simplified 2D matmul
         assert!(self.shape.len() == 2 && other.shape.len() == 2);
@@ -596,7 +606,10 @@ impl MockModel {
     }
 
     pub fn with_parameter(self, name: &str, tensor: MockTensor) -> Self {
-        self.parameters.write().unwrap().insert(name.to_string(), tensor);
+        self.parameters
+            .write()
+            .unwrap()
+            .insert(name.to_string(), tensor);
         self
     }
 
@@ -609,7 +622,10 @@ impl MockModel {
     }
 
     pub fn forward(&self, input: &MockTensor) -> MockTensor {
-        self.call_history.lock().unwrap().push(CallRecord::new("forward", vec![]));
+        self.call_history
+            .lock()
+            .unwrap()
+            .push(CallRecord::new("forward", vec![]));
 
         if let Some(ref f) = self.forward_fn {
             f(input)
@@ -715,11 +731,16 @@ pub mod matchers {
         Box::new(|_| true)
     }
 
-    pub fn eq<T: PartialEq + Send + Sync + 'static>(expected: T) -> Box<dyn Fn(&T) -> bool + Send + Sync> {
+    pub fn eq<T: PartialEq + Send + Sync + 'static>(
+        expected: T,
+    ) -> Box<dyn Fn(&T) -> bool + Send + Sync> {
         Box::new(move |actual| *actual == expected)
     }
 
-    pub fn in_range<T: PartialOrd + Send + Sync + 'static>(min: T, max: T) -> Box<dyn Fn(&T) -> bool + Send + Sync> {
+    pub fn in_range<T: PartialOrd + Send + Sync + 'static>(
+        min: T,
+        max: T,
+    ) -> Box<dyn Fn(&T) -> bool + Send + Sync> {
         Box::new(move |actual| *actual >= min && *actual <= max)
     }
 

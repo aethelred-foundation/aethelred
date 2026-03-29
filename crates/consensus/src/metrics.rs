@@ -10,13 +10,13 @@
 //! - **Reputation**: Score distributions, updates, decay events
 //! - **Network**: Latency, peer connections, message propagation
 
+use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
-use parking_lot::RwLock;
-use serde::{Deserialize, Serialize};
 
-use crate::types::{Address, Slot, Epoch};
+use crate::types::{Address, Epoch, Slot};
 
 // =============================================================================
 // METRICS COLLECTOR
@@ -122,7 +122,10 @@ impl ConsensusMetricsCollector {
         drop(validators);
 
         let mut validators = self.validators.write();
-        validators.entry(address).or_insert_with(|| ValidatorMetrics::new(address)).clone()
+        validators
+            .entry(address)
+            .or_insert_with(|| ValidatorMetrics::new(address))
+            .clone()
     }
 
     /// Update validator metrics
@@ -135,7 +138,9 @@ impl ConsensusMetricsCollector {
         }
 
         let mut validators = self.validators.write();
-        let metrics = validators.entry(address).or_insert_with(|| ValidatorMetrics::new(address));
+        let metrics = validators
+            .entry(address)
+            .or_insert_with(|| ValidatorMetrics::new(address));
         f(metrics);
     }
 }
@@ -267,7 +272,8 @@ impl VrfMetrics {
     /// Record proof generated
     pub fn record_proof_generated(&self, duration_us: u64) {
         self.proofs_generated.fetch_add(1, Ordering::Relaxed);
-        self.proof_generation_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.proof_generation_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
     }
 
     /// Record proof verified
@@ -277,7 +283,8 @@ impl VrfMetrics {
         } else {
             self.proofs_verified_failure.fetch_add(1, Ordering::Relaxed);
         }
-        self.proof_verification_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.proof_verification_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
     }
 
     /// Record threshold check
@@ -366,15 +373,23 @@ impl ComputeMetrics {
     }
 
     /// Record job verified
-    pub fn record_job_verified(&self, success: bool, method: u8, complexity: u64, duration_us: u64) {
+    pub fn record_job_verified(
+        &self,
+        success: bool,
+        method: u8,
+        complexity: u64,
+        duration_us: u64,
+    ) {
         if success {
             self.jobs_verified_success.fetch_add(1, Ordering::Relaxed);
         } else {
             self.jobs_verified_failure.fetch_add(1, Ordering::Relaxed);
         }
 
-        self.total_complexity.fetch_add(complexity, Ordering::Relaxed);
-        self.verification_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.total_complexity
+            .fetch_add(complexity, Ordering::Relaxed);
+        self.verification_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
 
         match method {
             0 => self.verifications_tee.fetch_add(1, Ordering::Relaxed),
@@ -528,19 +543,22 @@ pub struct TimingMetrics {
 impl TimingMetrics {
     /// Record block production time
     pub fn record_block_production(&self, duration_us: u64) {
-        self.block_production_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.block_production_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
         self.block_production_count.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Record block validation time
     pub fn record_block_validation(&self, duration_us: u64) {
-        self.block_validation_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.block_validation_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
         self.block_validation_count.fetch_add(1, Ordering::Relaxed);
     }
 
     /// Record consensus round time
     pub fn record_consensus_round(&self, duration_us: u64) {
-        self.consensus_round_time_us.fetch_add(duration_us, Ordering::Relaxed);
+        self.consensus_round_time_us
+            .fetch_add(duration_us, Ordering::Relaxed);
         self.consensus_round_count.fetch_add(1, Ordering::Relaxed);
     }
 
@@ -685,33 +703,90 @@ impl MetricsSnapshot {
         let mut output = String::new();
 
         // Block metrics
-        output.push_str(&format!("aethelred_blocks_proposed {}\n", self.blocks.blocks_proposed));
-        output.push_str(&format!("aethelred_blocks_validated {}\n", self.blocks.blocks_validated));
-        output.push_str(&format!("aethelred_blocks_rejected {}\n", self.blocks.blocks_rejected));
-        output.push_str(&format!("aethelred_blocks_finalized {}\n", self.blocks.blocks_finalized));
-        output.push_str(&format!("aethelred_current_height {}\n", self.blocks.current_height));
-        output.push_str(&format!("aethelred_current_slot {}\n", self.blocks.current_slot));
-        output.push_str(&format!("aethelred_current_epoch {}\n", self.blocks.current_epoch));
+        output.push_str(&format!(
+            "aethelred_blocks_proposed {}\n",
+            self.blocks.blocks_proposed
+        ));
+        output.push_str(&format!(
+            "aethelred_blocks_validated {}\n",
+            self.blocks.blocks_validated
+        ));
+        output.push_str(&format!(
+            "aethelred_blocks_rejected {}\n",
+            self.blocks.blocks_rejected
+        ));
+        output.push_str(&format!(
+            "aethelred_blocks_finalized {}\n",
+            self.blocks.blocks_finalized
+        ));
+        output.push_str(&format!(
+            "aethelred_current_height {}\n",
+            self.blocks.current_height
+        ));
+        output.push_str(&format!(
+            "aethelred_current_slot {}\n",
+            self.blocks.current_slot
+        ));
+        output.push_str(&format!(
+            "aethelred_current_epoch {}\n",
+            self.blocks.current_epoch
+        ));
 
         // VRF metrics
-        output.push_str(&format!("aethelred_vrf_proofs_generated {}\n", self.vrf.proofs_generated));
-        output.push_str(&format!("aethelred_vrf_threshold_hits {}\n", self.vrf.threshold_hits));
-        output.push_str(&format!("aethelred_vrf_avg_generation_us {}\n", self.vrf.avg_proof_generation_us));
+        output.push_str(&format!(
+            "aethelred_vrf_proofs_generated {}\n",
+            self.vrf.proofs_generated
+        ));
+        output.push_str(&format!(
+            "aethelred_vrf_threshold_hits {}\n",
+            self.vrf.threshold_hits
+        ));
+        output.push_str(&format!(
+            "aethelred_vrf_avg_generation_us {}\n",
+            self.vrf.avg_proof_generation_us
+        ));
 
         // Compute metrics
-        output.push_str(&format!("aethelred_jobs_submitted {}\n", self.compute.jobs_submitted));
-        output.push_str(&format!("aethelred_jobs_verified {}\n", self.compute.jobs_verified_success));
-        output.push_str(&format!("aethelred_total_complexity {}\n", self.compute.total_complexity));
-        output.push_str(&format!("aethelred_job_success_rate {}\n", self.compute.success_rate));
+        output.push_str(&format!(
+            "aethelred_jobs_submitted {}\n",
+            self.compute.jobs_submitted
+        ));
+        output.push_str(&format!(
+            "aethelred_jobs_verified {}\n",
+            self.compute.jobs_verified_success
+        ));
+        output.push_str(&format!(
+            "aethelred_total_complexity {}\n",
+            self.compute.total_complexity
+        ));
+        output.push_str(&format!(
+            "aethelred_job_success_rate {}\n",
+            self.compute.success_rate
+        ));
 
         // Reputation metrics
-        output.push_str(&format!("aethelred_reputation_updates {}\n", self.reputation.score_updates));
-        output.push_str(&format!("aethelred_active_validators {}\n", self.reputation.active_validators));
-        output.push_str(&format!("aethelred_total_score {}\n", self.reputation.total_score));
+        output.push_str(&format!(
+            "aethelred_reputation_updates {}\n",
+            self.reputation.score_updates
+        ));
+        output.push_str(&format!(
+            "aethelred_active_validators {}\n",
+            self.reputation.active_validators
+        ));
+        output.push_str(&format!(
+            "aethelred_total_score {}\n",
+            self.reputation.total_score
+        ));
 
         // Timing metrics
-        output.push_str(&format!("aethelred_avg_block_production_us {}\n", self.timing.avg_block_production_us));
-        output.push_str(&format!("aethelred_avg_block_validation_us {}\n", self.timing.avg_block_validation_us));
+        output.push_str(&format!(
+            "aethelred_avg_block_production_us {}\n",
+            self.timing.avg_block_production_us
+        ));
+        output.push_str(&format!(
+            "aethelred_avg_block_validation_us {}\n",
+            self.timing.avg_block_validation_us
+        ));
 
         // Meta
         output.push_str(&format!("aethelred_uptime_seconds {}\n", self.uptime_secs));

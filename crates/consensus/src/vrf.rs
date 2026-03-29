@@ -29,10 +29,10 @@
 //!   exposes raw secret key material (RS-02).
 //! - **Audit status**: All findings remediated (2026-02-28).
 
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 use crate::error::{ConsensusError, ConsensusResult};
-use crate::types::{Slot, EpochSeed};
+use crate::types::{EpochSeed, Slot};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 /// VRF key pair
 ///
@@ -72,7 +72,7 @@ impl VrfKeys {
             // Mock implementation for development - SECURITY (RS-02 fix):
             // Public key is derived via SHA-256("mock-vrf-pk:" || seed) to avoid
             // embedding the raw secret key in the public key.
-            use sha2::{Sha256, Digest};
+            use sha2::{Digest, Sha256};
             let mut pk_hasher = Sha256::new();
             pk_hasher.update(b"mock-vrf-pk:");
             pk_hasher.update(seed);
@@ -111,7 +111,7 @@ impl VrfKeys {
 
     /// Derive child keys for a specific epoch (key rotation)
     pub fn derive_epoch_keys(&self, epoch: u64) -> ConsensusResult<Self> {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
         hasher.update(&self.secret_key);
@@ -256,17 +256,19 @@ impl VrfEngine {
         // First, compute what the output should be from the proof's gamma
         #[cfg(feature = "vrf")]
         {
-            use k256::{AffinePoint, EncodedPoint};
             use k256::elliptic_curve::sec1::FromEncodedPoint;
+            use k256::{AffinePoint, EncodedPoint};
 
-            let gamma_encoded = EncodedPoint::from_bytes(&proof.gamma)
-                .map_err(|e| ConsensusError::VrfVerificationFailed {
-                    reason: format!("Invalid gamma point: {}", e)
-                })?;
-            let gamma = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&gamma_encoded))
-                .ok_or_else(|| ConsensusError::VrfVerificationFailed {
-                    reason: "Invalid gamma point".into()
-                })?;
+            let gamma_encoded = EncodedPoint::from_bytes(&proof.gamma).map_err(|e| {
+                ConsensusError::VrfVerificationFailed {
+                    reason: format!("Invalid gamma point: {}", e),
+                }
+            })?;
+            let gamma =
+                Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&gamma_encoded))
+                    .ok_or_else(|| ConsensusError::VrfVerificationFailed {
+                        reason: "Invalid gamma point".into(),
+                    })?;
 
             let expected_output = self.hash_gamma(&gamma);
 
@@ -276,7 +278,7 @@ impl VrfEngine {
                 Ok(expected_output)
             } else {
                 Err(ConsensusError::VrfVerificationFailed {
-                    reason: "Proof verification failed".into()
+                    reason: "Proof verification failed".into(),
                 })
             }
         }
@@ -391,12 +393,8 @@ impl VrfEngine {
         message: &[u8],
     ) -> ConsensusResult<(VrfOutput, VrfProof)> {
         use k256::{
+            elliptic_curve::{group::GroupEncoding, ops::Reduce, Field},
             AffinePoint, ProjectivePoint, Scalar,
-            elliptic_curve::{
-                group::GroupEncoding,
-                ops::Reduce,
-                Field,
-            },
         };
 
         // 1. Hash message to curve point
@@ -443,12 +441,8 @@ impl VrfEngine {
         proof: &VrfProof,
     ) -> ConsensusResult<bool> {
         use k256::{
-            AffinePoint, ProjectivePoint, Scalar, EncodedPoint,
-            elliptic_curve::{
-                group::GroupEncoding,
-                ops::Reduce,
-                sec1::FromEncodedPoint,
-            },
+            elliptic_curve::{group::GroupEncoding, ops::Reduce, sec1::FromEncodedPoint},
+            AffinePoint, EncodedPoint, ProjectivePoint, Scalar,
         };
 
         // 1. Parse public key
@@ -458,13 +452,14 @@ impl VrfEngine {
             .ok_or_else(|| ConsensusError::InvalidVrfKey("Invalid public key point".into()))?;
 
         // 2. Parse gamma
-        let gamma_encoded = EncodedPoint::from_bytes(&proof.gamma)
-            .map_err(|e| ConsensusError::VrfVerificationFailed {
-                reason: format!("Invalid gamma point: {}", e)
-            })?;
+        let gamma_encoded = EncodedPoint::from_bytes(&proof.gamma).map_err(|e| {
+            ConsensusError::VrfVerificationFailed {
+                reason: format!("Invalid gamma point: {}", e),
+            }
+        })?;
         let gamma = Option::<AffinePoint>::from(AffinePoint::from_encoded_point(&gamma_encoded))
             .ok_or_else(|| ConsensusError::VrfVerificationFailed {
-                reason: "Invalid gamma point".into()
+                reason: "Invalid gamma point".into(),
             })?;
 
         // 3. Hash message to curve point
@@ -517,8 +512,8 @@ impl VrfEngine {
     /// 7. `return clear_cofactor(P)` - identity for secp256k1 (cofactor = 1)
     #[cfg(feature = "vrf")]
     fn hash_to_curve(&self, message: &[u8]) -> ConsensusResult<k256::ProjectivePoint> {
-        use k256::Secp256k1;
         use k256::elliptic_curve::hash2curve::{ExpandMsgXmd, GroupDigest};
+        use k256::Secp256k1;
 
         // Domain Separation Tag following RFC 9380 §3.1 and §8.10.
         // Format: "protocol-id" || suite_id
@@ -528,12 +523,8 @@ impl VrfEngine {
         // RFC 9380 §5.3: hash_to_curve using random oracle (RO) variant.
         // This is constant-time with respect to the input message:
         // execution path and timing are identical for all inputs.
-        let point = Secp256k1::hash_from_bytes::<ExpandMsgXmd<Sha256>>(
-            &[message],
-            &[DST],
-        ).map_err(|e| ConsensusError::Crypto(
-            format!("RFC 9380 hash_to_curve failed: {}", e)
-        ))?;
+        let point = Secp256k1::hash_from_bytes::<ExpandMsgXmd<Sha256>>(&[message], &[DST])
+            .map_err(|e| ConsensusError::Crypto(format!("RFC 9380 hash_to_curve failed: {}", e)))?;
 
         Ok(point)
     }
@@ -541,8 +532,8 @@ impl VrfEngine {
     /// Generate deterministic nonce
     #[cfg(feature = "vrf")]
     fn generate_nonce(&self, sk: &[u8; 32], message: &[u8]) -> k256::Scalar {
-        use k256::Scalar;
         use k256::elliptic_curve::ops::Reduce;
+        use k256::Scalar;
 
         let mut hasher = Sha256::new();
         hasher.update(b"Aethelred-nonce:");
@@ -593,11 +584,7 @@ impl VrfEngine {
     /// is SHA-256("mock-vrf-pk:" || sk), NOT the raw sk bytes. This prevents
     /// secret key leakage through the public key.
     #[cfg(not(feature = "vrf"))]
-    fn prove_mock(
-        &self,
-        keys: &VrfKeys,
-        message: &[u8],
-    ) -> ConsensusResult<(VrfOutput, VrfProof)> {
+    fn prove_mock(&self, keys: &VrfKeys, message: &[u8]) -> ConsensusResult<(VrfOutput, VrfProof)> {
         // Deterministic but insecure mock for testing
         // Includes domain_tag for chain-ID domain separation
         // Must use public_key[1..33] to match verify() mock path
@@ -632,11 +619,7 @@ impl VrfEngine {
         s_hasher.update(message);
         let s: [u8; 32] = s_hasher.finalize().into();
 
-        let proof = VrfProof {
-            gamma,
-            c,
-            s,
-        };
+        let proof = VrfProof { gamma, c, s };
 
         Ok((VrfOutput(output_bytes), proof))
     }
@@ -821,7 +804,13 @@ mod tests {
             if let Ok(keys) = VrfKeys::from_seed(&seed) {
                 let pk = keys.public_key_bytes();
                 if let Some(ref prev) = prev_pk {
-                    assert_ne!(&pk, prev, "Seeds {} and {} produced same public key", i - 1, i);
+                    assert_ne!(
+                        &pk,
+                        prev,
+                        "Seeds {} and {} produced same public key",
+                        i - 1,
+                        i
+                    );
                 }
                 prev_pk = Some(pk);
             }
@@ -896,7 +885,9 @@ mod tests {
 
         let input = b"epoch-5-message";
         let (proof, output) = engine.prove(&epoch_keys, input).unwrap();
-        let verified = engine.verify(epoch_keys.public_key(), input, &proof).unwrap();
+        let verified = engine
+            .verify(epoch_keys.public_key(), input, &proof)
+            .unwrap();
 
         assert_eq!(output, verified);
     }
@@ -914,13 +905,9 @@ mod tests {
 
         let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
 
-        let valid = engine.verify_for_slot(
-            keys.public_key(),
-            &epoch_seed,
-            slot,
-            &output,
-            &proof,
-        ).unwrap();
+        let valid = engine
+            .verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof)
+            .unwrap();
 
         assert!(valid);
     }
@@ -935,7 +922,10 @@ mod tests {
         let (output1, _) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
         let (output2, _) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
 
-        assert_eq!(output1, output2, "VRF must be deterministic for same inputs");
+        assert_eq!(
+            output1, output2,
+            "VRF must be deterministic for same inputs"
+        );
     }
 
     #[test]
@@ -947,7 +937,10 @@ mod tests {
         let (output1, _) = engine.prove_for_slot(&keys, &epoch_seed, 100).unwrap();
         let (output2, _) = engine.prove_for_slot(&keys, &epoch_seed, 101).unwrap();
 
-        assert_ne!(output1, output2, "Different slots must produce different outputs");
+        assert_ne!(
+            output1, output2,
+            "Different slots must produce different outputs"
+        );
     }
 
     #[test]
@@ -958,7 +951,10 @@ mod tests {
         let (output1, _) = engine.prove_for_slot(&keys, &[1u8; 32], 100).unwrap();
         let (output2, _) = engine.prove_for_slot(&keys, &[2u8; 32], 100).unwrap();
 
-        assert_ne!(output1, output2, "Different epoch seeds must produce different outputs");
+        assert_ne!(
+            output1, output2,
+            "Different epoch seeds must produce different outputs"
+        );
     }
 
     #[test]
@@ -971,7 +967,10 @@ mod tests {
         let (output1, _) = engine.prove_for_slot(&keys1, &epoch_seed, 100).unwrap();
         let (output2, _) = engine.prove_for_slot(&keys2, &epoch_seed, 100).unwrap();
 
-        assert_ne!(output1, output2, "Different keys must produce different outputs");
+        assert_ne!(
+            output1, output2,
+            "Different keys must produce different outputs"
+        );
     }
 
     #[test]
@@ -1025,13 +1024,8 @@ mod tests {
         let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
 
         // Verification with wrong public key should fail
-        let result = engine.verify_for_slot(
-            wrong_keys.public_key(),
-            &epoch_seed,
-            slot,
-            &output,
-            &proof,
-        );
+        let result =
+            engine.verify_for_slot(wrong_keys.public_key(), &epoch_seed, slot, &output, &proof);
 
         match result {
             Ok(valid) => assert!(!valid, "Verify with wrong key must return false"),
@@ -1052,7 +1046,10 @@ mod tests {
         let result = engine.verify(keys.public_key(), wrong_input, &proof);
 
         match result {
-            Ok(verified) => assert_ne!(output, verified, "Wrong message must produce different output"),
+            Ok(verified) => assert_ne!(
+                output, verified,
+                "Wrong message must produce different output"
+            ),
             Err(_) => {} // Also acceptable
         }
     }
@@ -1141,7 +1138,10 @@ mod tests {
         let (_, output1) = engine1.prove(&keys, input).unwrap();
         let (_, output2) = engine2.prove(&keys, input).unwrap();
 
-        assert_ne!(output1, output2, "Different chain IDs must produce different outputs");
+        assert_ne!(
+            output1, output2,
+            "Different chain IDs must produce different outputs"
+        );
     }
 
     #[test]
@@ -1156,13 +1156,7 @@ mod tests {
         let (output, proof) = engine1.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
 
         // Verify on chain 2 - should fail
-        let result = engine2.verify_for_slot(
-            keys.public_key(),
-            &epoch_seed,
-            slot,
-            &output,
-            &proof,
-        );
+        let result = engine2.verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof);
 
         match result {
             Ok(valid) => assert!(!valid, "Cross-chain proof must not verify"),
@@ -1180,7 +1174,10 @@ mod tests {
         let (_, output_default) = default_engine.prove(&keys, input).unwrap();
         let (_, output_chain1) = chain1_engine.prove(&keys, input).unwrap();
 
-        assert_eq!(output_default, output_chain1, "Default engine should use chain ID 1");
+        assert_eq!(
+            output_default, output_chain1,
+            "Default engine should use chain ID 1"
+        );
     }
 
     // =========================================================================
@@ -1214,7 +1211,9 @@ mod tests {
         let restored = VrfProof::from_bytes(&bytes).unwrap();
 
         // Verify the restored proof still works
-        let verified = engine.verify(keys.public_key(), b"serialize me", &restored).unwrap();
+        let verified = engine
+            .verify(keys.public_key(), b"serialize me", &restored)
+            .unwrap();
         assert_eq!(output, verified);
     }
 
@@ -1345,7 +1344,10 @@ mod tests {
         let msg1 = engine.construct_message(&epoch_seed, 100);
         let msg2 = engine.construct_message(&epoch_seed, 101);
 
-        assert_ne!(msg1, msg2, "Different slots must produce different messages");
+        assert_ne!(
+            msg1, msg2,
+            "Different slots must produce different messages"
+        );
     }
 
     #[test]
@@ -1355,7 +1357,10 @@ mod tests {
         let msg1 = engine.construct_message(&[1u8; 32], 100);
         let msg2 = engine.construct_message(&[2u8; 32], 100);
 
-        assert_ne!(msg1, msg2, "Different seeds must produce different messages");
+        assert_ne!(
+            msg1, msg2,
+            "Different seeds must produce different messages"
+        );
     }
 
     #[test]
@@ -1394,9 +1399,9 @@ mod tests {
         let mut outputs = Vec::new();
         for slot in 0..20 {
             let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
-            let valid = engine.verify_for_slot(
-                keys.public_key(), &epoch_seed, slot, &output, &proof,
-            ).unwrap();
+            let valid = engine
+                .verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof)
+                .unwrap();
             assert!(valid, "Slot {} verification failed", slot);
             outputs.push(output);
         }
@@ -1404,7 +1409,11 @@ mod tests {
         // All outputs should be unique
         for i in 0..outputs.len() {
             for j in (i + 1)..outputs.len() {
-                assert_ne!(outputs[i], outputs[j], "Slots {} and {} produced same output", i, j);
+                assert_ne!(
+                    outputs[i], outputs[j],
+                    "Slots {} and {} produced same output",
+                    i, j
+                );
             }
         }
     }
@@ -1422,9 +1431,9 @@ mod tests {
             let keys = VrfKeys::from_seed(&seed).unwrap();
 
             let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
-            let valid = engine.verify_for_slot(
-                keys.public_key(), &epoch_seed, slot, &output, &proof,
-            ).unwrap();
+            let valid = engine
+                .verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof)
+                .unwrap();
             assert!(valid, "Key {} verification failed", i);
             outputs.push(output);
         }
@@ -1432,7 +1441,11 @@ mod tests {
         // All outputs from different keys should be unique
         for i in 0..outputs.len() {
             for j in (i + 1)..outputs.len() {
-                assert_ne!(outputs[i], outputs[j], "Keys {} and {} produced same output", i, j);
+                assert_ne!(
+                    outputs[i], outputs[j],
+                    "Keys {} and {} produced same output",
+                    i, j
+                );
             }
         }
     }
@@ -1452,9 +1465,9 @@ mod tests {
             };
 
             let (output, proof) = engine.prove_for_slot(&epoch_keys, &epoch_seed, 0).unwrap();
-            let valid = engine.verify_for_slot(
-                epoch_keys.public_key(), &epoch_seed, 0, &output, &proof,
-            ).unwrap();
+            let valid = engine
+                .verify_for_slot(epoch_keys.public_key(), &epoch_seed, 0, &output, &proof)
+                .unwrap();
             assert!(valid, "Epoch {} verification failed", epoch);
         }
     }
@@ -1473,7 +1486,9 @@ mod tests {
         let restored_proof = VrfProof::from_bytes(&bytes).unwrap();
 
         // Verify with restored proof
-        let verified = engine.verify(keys.public_key(), input, &restored_proof).unwrap();
+        let verified = engine
+            .verify(keys.public_key(), input, &restored_proof)
+            .unwrap();
         assert_eq!(output, verified, "Restored proof must verify identically");
     }
 
@@ -1498,8 +1513,16 @@ mod tests {
         }
 
         // Expect roughly 50% have high bit set (within reasonable bounds)
-        assert!(high_bit_count > 20, "Output appears biased low: {}/100", high_bit_count);
-        assert!(high_bit_count < 80, "Output appears biased high: {}/100", high_bit_count);
+        assert!(
+            high_bit_count > 20,
+            "Output appears biased low: {}/100",
+            high_bit_count
+        );
+        assert!(
+            high_bit_count < 80,
+            "Output appears biased high: {}/100",
+            high_bit_count
+        );
     }
 
     #[test]
@@ -1528,7 +1551,9 @@ mod tests {
         for i in 0u64..100 {
             let input = format!("stress-message-{}", i);
             let (proof, output) = engine.prove(&keys, input.as_bytes()).unwrap();
-            let verified = engine.verify(keys.public_key(), input.as_bytes(), &proof).unwrap();
+            let verified = engine
+                .verify(keys.public_key(), input.as_bytes(), &proof)
+                .unwrap();
             assert_eq!(output, verified, "Iteration {} failed verification", i);
         }
     }
@@ -1551,7 +1576,11 @@ mod tests {
             }
         }
 
-        assert!(public_keys.len() >= 90, "Expected at least 90 unique keys, got {}", public_keys.len());
+        assert!(
+            public_keys.len() >= 90,
+            "Expected at least 90 unique keys, got {}",
+            public_keys.len()
+        );
     }
 
     #[test]
@@ -1584,8 +1613,14 @@ mod tests {
             let bytes = proof.to_bytes();
             let restored = VrfProof::from_bytes(&bytes).unwrap();
 
-            let verified = engine.verify(keys.public_key(), input.as_bytes(), &restored).unwrap();
-            assert_eq!(output, verified, "Serialization roundtrip failed at iteration {}", i);
+            let verified = engine
+                .verify(keys.public_key(), input.as_bytes(), &restored)
+                .unwrap();
+            assert_eq!(
+                output, verified,
+                "Serialization roundtrip failed at iteration {}",
+                i
+            );
         }
     }
 
@@ -1599,9 +1634,9 @@ mod tests {
         let mut results: Vec<(VrfOutput, VrfProof)> = Vec::new();
         for slot in 0u64..50 {
             let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
-            let valid = engine.verify_for_slot(
-                keys.public_key(), &epoch_seed, slot, &output, &proof,
-            ).unwrap();
+            let valid = engine
+                .verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof)
+                .unwrap();
             assert!(valid, "Slot {} failed verification", slot);
             results.push((output, proof));
         }
@@ -1676,7 +1711,9 @@ mod tests {
         assert_eq!(output1, output2);
 
         let v1 = engine.verify(keys.public_key(), b"test", &proof1).unwrap();
-        let v2 = engine.verify(cloned.public_key(), b"test", &proof2).unwrap();
+        let v2 = engine
+            .verify(cloned.public_key(), b"test", &proof2)
+            .unwrap();
         assert_eq!(v1, v2);
     }
 
@@ -1730,7 +1767,8 @@ mod tests {
         for i in 0..public_keys.len() {
             for j in (i + 1)..public_keys.len() {
                 assert_ne!(
-                    public_keys[i], public_keys[j],
+                    public_keys[i],
+                    public_keys[j],
                     "Seeds {} and {} produced identical public keys",
                     i + 1,
                     j + 1
@@ -1773,7 +1811,13 @@ mod tests {
             assert!(!pk.is_empty());
 
             if let Some(ref prev) = prev_pk {
-                assert_ne!(&pk, prev, "Sequential epochs {} and {} share same key", epoch - 1, epoch);
+                assert_ne!(
+                    &pk,
+                    prev,
+                    "Sequential epochs {} and {} share same key",
+                    epoch - 1,
+                    epoch
+                );
             }
             prev_pk = Some(pk);
         }
@@ -1820,7 +1864,11 @@ mod tests {
         for &epoch in &near_max_epochs {
             let epoch_keys = master.derive_epoch_keys(epoch).unwrap();
             let pk = epoch_keys.public_key_bytes();
-            assert!(pks.insert(pk), "Near-max epoch {} produced duplicate key", epoch);
+            assert!(
+                pks.insert(pk),
+                "Near-max epoch {} produced duplicate key",
+                epoch
+            );
         }
 
         assert_eq!(pks.len(), 3);
@@ -1863,7 +1911,10 @@ mod tests {
 
         let result = engine.verify(keys.public_key(), input, &fake_proof);
         match result {
-            Ok(verified) => assert_ne!(output, verified, "All-zeros proof must not produce correct output"),
+            Ok(verified) => assert_ne!(
+                output, verified,
+                "All-zeros proof must not produce correct output"
+            ),
             Err(_) => {} // Error is also acceptable
         }
     }
@@ -1884,7 +1935,10 @@ mod tests {
 
         let result = engine.verify(keys.public_key(), input, &fake_proof);
         match result {
-            Ok(verified) => assert_ne!(output, verified, "All-ones proof must not produce correct output"),
+            Ok(verified) => assert_ne!(
+                output, verified,
+                "All-ones proof must not produce correct output"
+            ),
             Err(_) => {} // Error is also acceptable
         }
     }
@@ -1913,7 +1967,10 @@ mod tests {
 
         let result = engine.verify(keys.public_key(), input, &fake_proof);
         match result {
-            Ok(verified) => assert_ne!(output, verified, "Random garbage proof must not produce correct output"),
+            Ok(verified) => assert_ne!(
+                output, verified,
+                "Random garbage proof must not produce correct output"
+            ),
             Err(_) => {} // Error is also acceptable
         }
     }
@@ -1935,7 +1992,10 @@ mod tests {
 
         let result = engine.verify(keys.public_key(), input, &swapped_proof);
         match result {
-            Ok(verified) => assert_ne!(output, verified, "Swapped proof fields must not produce correct output"),
+            Ok(verified) => assert_ne!(
+                output, verified,
+                "Swapped proof fields must not produce correct output"
+            ),
             Err(_) => {} // Error is also acceptable
         }
     }
@@ -1978,7 +2038,8 @@ mod tests {
         for i in 0..outputs.len() {
             for j in (i + 1)..outputs.len() {
                 assert_ne!(
-                    outputs[i], outputs[j],
+                    outputs[i],
+                    outputs[j],
                     "Messages '{}' and '{}' produced same output",
                     String::from_utf8_lossy(messages[i]),
                     String::from_utf8_lossy(messages[j])
@@ -2005,7 +2066,11 @@ mod tests {
         for i in 0..20 {
             let input = format!("nonzero-{}", i);
             let (_, output) = engine.prove(&keys, input.as_bytes()).unwrap();
-            assert_ne!(output.0, [0u8; 32], "Output at iteration {} is all zeros", i);
+            assert_ne!(
+                output.0, [0u8; 32],
+                "Output at iteration {} is all zeros",
+                i
+            );
         }
     }
 
@@ -2017,7 +2082,11 @@ mod tests {
         for i in 0..20 {
             let input = format!("nonones-{}", i);
             let (_, output) = engine.prove(&keys, input.as_bytes()).unwrap();
-            assert_ne!(output.0, [0xFF; 32], "Output at iteration {} is all ones", i);
+            assert_ne!(
+                output.0, [0xFF; 32],
+                "Output at iteration {} is all ones",
+                i
+            );
         }
     }
 
@@ -2036,8 +2105,7 @@ mod tests {
             .collect();
 
         // Check that changing one slot doesn't affect others (all unique)
-        let unique: std::collections::HashSet<[u8; 32]> =
-            outputs.iter().map(|o| o.0).collect();
+        let unique: std::collections::HashSet<[u8; 32]> = outputs.iter().map(|o| o.0).collect();
         assert_eq!(unique.len(), 30, "Expected 30 unique outputs for 30 slots");
     }
 
@@ -2069,7 +2137,10 @@ mod tests {
         // The seed should appear in the message (after the domain tag + chain ID)
         // Domain tag: "Aethelred-PoUW-VRF-v1:" (22 bytes) + 8 bytes chain_id = 30 bytes
         let seed_region = &msg[30..30 + 32];
-        assert_eq!(seed_region, &epoch_seed, "Message must contain the epoch seed");
+        assert_eq!(
+            seed_region, &epoch_seed,
+            "Message must contain the epoch seed"
+        );
     }
 
     #[test]
@@ -2092,7 +2163,11 @@ mod tests {
 
         let msg = engine.construct_message(&epoch_seed, 1);
         // Domain (22) + chain_id (8) + seed (32) + slot (8) = 70
-        assert_eq!(msg.len(), 70, "Message length should be domain + chain_id + seed + slot");
+        assert_eq!(
+            msg.len(),
+            70,
+            "Message length should be domain + chain_id + seed + slot"
+        );
     }
 
     // =========================================================================
@@ -2148,9 +2223,8 @@ mod tests {
 
         for other_chain in 2u64..=5 {
             let other_engine = VrfEngine::with_chain_id(other_chain);
-            let result = other_engine.verify_for_slot(
-                keys.public_key(), &epoch_seed, 50, &output, &proof,
-            );
+            let result =
+                other_engine.verify_for_slot(keys.public_key(), &epoch_seed, 50, &output, &proof);
             match result {
                 Ok(valid) => assert!(
                     !valid,
@@ -2208,9 +2282,9 @@ mod tests {
         let restored_proof = VrfProof::from_bytes(&proof_bytes).unwrap();
 
         // Step 5: Verify with deserialized proof and stored public key
-        let valid = engine.verify_for_slot(
-            &pk, &epoch_seed, slot, &output, &restored_proof,
-        ).unwrap();
+        let valid = engine
+            .verify_for_slot(&pk, &epoch_seed, slot, &output, &restored_proof)
+            .unwrap();
         assert!(valid, "Full lifecycle verification must succeed");
     }
 
@@ -2233,19 +2307,24 @@ mod tests {
 
             // Prove 10 slots per epoch
             for slot in 0u64..10 {
-                let (output, proof) = engine.prove_for_slot(&epoch_keys, &epoch_seed, slot).unwrap();
-                let valid = engine.verify_for_slot(
-                    epoch_keys.public_key(), &epoch_seed, slot, &output, &proof,
-                ).unwrap();
+                let (output, proof) = engine
+                    .prove_for_slot(&epoch_keys, &epoch_seed, slot)
+                    .unwrap();
+                let valid = engine
+                    .verify_for_slot(epoch_keys.public_key(), &epoch_seed, slot, &output, &proof)
+                    .unwrap();
                 assert!(valid, "Epoch {} slot {} failed", epoch, slot);
                 all_outputs.push(output);
             }
         }
 
         // All 50 outputs across all epochs should be unique
-        let unique: std::collections::HashSet<[u8; 32]> =
-            all_outputs.iter().map(|o| o.0).collect();
-        assert_eq!(unique.len(), 50, "Expected 50 unique outputs across 5 epochs x 10 slots");
+        let unique: std::collections::HashSet<[u8; 32]> = all_outputs.iter().map(|o| o.0).collect();
+        assert_eq!(
+            unique.len(),
+            50,
+            "Expected 50 unique outputs across 5 epochs x 10 slots"
+        );
     }
 
     #[test]
@@ -2262,10 +2341,12 @@ mod tests {
             let epoch_keys = master.derive_epoch_keys(epoch).unwrap();
             public_keys.push(epoch_keys.public_key_bytes());
 
-            let (output, proof) = engine.prove_for_slot(&epoch_keys, &epoch_seed, slot).unwrap();
-            let valid = engine.verify_for_slot(
-                epoch_keys.public_key(), &epoch_seed, slot, &output, &proof,
-            ).unwrap();
+            let (output, proof) = engine
+                .prove_for_slot(&epoch_keys, &epoch_seed, slot)
+                .unwrap();
+            let valid = engine
+                .verify_for_slot(epoch_keys.public_key(), &epoch_seed, slot, &output, &proof)
+                .unwrap();
             assert!(valid, "Epoch {} failed verification", epoch);
             outputs.push(output);
         }
@@ -2273,14 +2354,22 @@ mod tests {
         // All public keys should be different
         for i in 0..public_keys.len() {
             for j in (i + 1)..public_keys.len() {
-                assert_ne!(public_keys[i], public_keys[j], "Epoch keys {} and {} are identical", i, j);
+                assert_ne!(
+                    public_keys[i], public_keys[j],
+                    "Epoch keys {} and {} are identical",
+                    i, j
+                );
             }
         }
 
         // All outputs should be different (same seed/slot but different keys)
         for i in 0..outputs.len() {
             for j in (i + 1)..outputs.len() {
-                assert_ne!(outputs[i], outputs[j], "Outputs {} and {} are identical", i, j);
+                assert_ne!(
+                    outputs[i], outputs[j],
+                    "Outputs {} and {} are identical",
+                    i, j
+                );
             }
         }
     }
@@ -2297,9 +2386,9 @@ mod tests {
         for &cid in &chain_ids {
             let engine = VrfEngine::with_chain_id(cid);
             let (output, proof) = engine.prove_for_slot(&keys, &epoch_seed, slot).unwrap();
-            let valid = engine.verify_for_slot(
-                keys.public_key(), &epoch_seed, slot, &output, &proof,
-            ).unwrap();
+            let valid = engine
+                .verify_for_slot(keys.public_key(), &epoch_seed, slot, &output, &proof)
+                .unwrap();
             assert!(valid, "Chain {} failed self-verification", cid);
             engine_outputs.push((cid, output));
         }
@@ -2308,11 +2397,9 @@ mod tests {
         for i in 0..engine_outputs.len() {
             for j in (i + 1)..engine_outputs.len() {
                 assert_ne!(
-                    engine_outputs[i].1,
-                    engine_outputs[j].1,
+                    engine_outputs[i].1, engine_outputs[j].1,
                     "Chain {} and chain {} produced same output",
-                    engine_outputs[i].0,
-                    engine_outputs[j].0
+                    engine_outputs[i].0, engine_outputs[j].0
                 );
             }
         }
@@ -2334,7 +2421,9 @@ mod tests {
             let input = format!("valid-input-{}", i);
 
             let (proof, output) = engine.prove(&keys, input.as_bytes()).unwrap();
-            let verified = engine.verify(keys.public_key(), input.as_bytes(), &proof).unwrap();
+            let verified = engine
+                .verify(keys.public_key(), input.as_bytes(), &proof)
+                .unwrap();
             assert_eq!(
                 output, verified,
                 "Valid prove/verify failed for key seed {} and input '{}'",
@@ -2383,7 +2472,9 @@ mod tests {
             let restored = VrfProof::from_bytes(&bytes).unwrap();
 
             // Verify with restored proof
-            let verified = engine.verify(keys.public_key(), input.as_bytes(), &restored).unwrap();
+            let verified = engine
+                .verify(keys.public_key(), input.as_bytes(), &restored)
+                .unwrap();
             assert_eq!(
                 output, verified,
                 "Serialization broke verifiability for seed {}",

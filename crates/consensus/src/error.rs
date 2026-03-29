@@ -10,7 +10,6 @@ pub enum ConsensusError {
     // =========================================================================
     // VRF ERRORS
     // =========================================================================
-
     /// VRF proof verification failed
     #[error("VRF proof verification failed: {reason}")]
     VrfVerificationFailed { reason: String },
@@ -25,12 +24,14 @@ pub enum ConsensusError {
 
     /// VRF output does not meet threshold
     #[error("VRF output {output_hex} exceeds threshold {threshold_hex}")]
-    VrfThresholdNotMet { output_hex: String, threshold_hex: String },
+    VrfThresholdNotMet {
+        output_hex: String,
+        threshold_hex: String,
+    },
 
     // =========================================================================
     // LEADER ELECTION ERRORS
     // =========================================================================
-
     /// Not eligible for leader election
     #[error("Validator {address} not eligible: {reason}")]
     NotEligible { address: String, reason: String },
@@ -54,7 +55,6 @@ pub enum ConsensusError {
     // =========================================================================
     // BLOCK VALIDATION ERRORS
     // =========================================================================
-
     /// Invalid block header
     #[error("Invalid block header: {0}")]
     InvalidBlockHeader(String),
@@ -77,7 +77,11 @@ pub enum ConsensusError {
 
     /// Useful work score mismatch
     #[error("Useful work score mismatch for {address}: claimed {claimed}, actual {actual}")]
-    UsefulWorkScoreMismatch { address: String, claimed: u64, actual: u64 },
+    UsefulWorkScoreMismatch {
+        address: String,
+        claimed: u64,
+        actual: u64,
+    },
 
     /// Block timestamp invalid
     #[error("Invalid block timestamp: {reason}")]
@@ -86,7 +90,6 @@ pub enum ConsensusError {
     // =========================================================================
     // USEFUL WORK ERRORS (PoUW)
     // =========================================================================
-
     /// Suspicious activity detected
     #[error("Suspicious activity for {address}: {reason}")]
     SuspiciousActivity { address: String, reason: String },
@@ -114,7 +117,6 @@ pub enum ConsensusError {
     // =========================================================================
     // REPUTATION ERRORS
     // =========================================================================
-
     /// Reputation update failed
     #[error("Failed to update reputation for {address}: {reason}")]
     ReputationUpdateFailed { address: String, reason: String },
@@ -130,7 +132,6 @@ pub enum ConsensusError {
     // =========================================================================
     // EPOCH ERRORS
     // =========================================================================
-
     /// Epoch transition error
     #[error("Epoch transition failed: {0}")]
     EpochTransitionFailed(String),
@@ -146,7 +147,6 @@ pub enum ConsensusError {
     // =========================================================================
     // FINALITY ERRORS
     // =========================================================================
-
     /// Block not finalized
     #[error("Block at slot {slot} not finalized")]
     NotFinalized { slot: u64 },
@@ -162,7 +162,6 @@ pub enum ConsensusError {
     // =========================================================================
     // SYSTEM ERRORS
     // =========================================================================
-
     /// Configuration error
     #[error("Configuration error: {0}")]
     Config(String),
@@ -186,7 +185,6 @@ pub enum ConsensusError {
     // =========================================================================
     // ADDITIONAL COMPATIBILITY ERRORS
     // =========================================================================
-
     /// Not a validator
     #[error("Node is not configured as a validator")]
     NotValidator,
@@ -240,10 +238,10 @@ impl ConsensusError {
     pub fn is_recoverable(&self) -> bool {
         matches!(
             self,
-            ConsensusError::VrfThresholdNotMet { .. } |
-            ConsensusError::NotEligible { .. } |
-            ConsensusError::InsufficientStake { .. } |
-            ConsensusError::Timeout { .. }
+            ConsensusError::VrfThresholdNotMet { .. }
+                | ConsensusError::NotEligible { .. }
+                | ConsensusError::InsufficientStake { .. }
+                | ConsensusError::Timeout { .. }
         )
     }
 
@@ -251,8 +249,7 @@ impl ConsensusError {
     pub fn is_slashable(&self) -> bool {
         matches!(
             self,
-            ConsensusError::DoubleProposal { .. } |
-            ConsensusError::ConflictingFinalization(_)
+            ConsensusError::DoubleProposal { .. } | ConsensusError::ConflictingFinalization(_)
         )
     }
 
@@ -343,16 +340,31 @@ mod tests {
     fn test_error_recoverable_all_variants() {
         // All recoverable error types
         assert!(ConsensusError::VrfThresholdNotMet {
-            output_hex: "abc".into(), threshold_hex: "def".into(),
-        }.is_recoverable());
+            output_hex: "abc".into(),
+            threshold_hex: "def".into(),
+        }
+        .is_recoverable());
         assert!(ConsensusError::NotEligible {
-            address: "v1".into(), reason: "too new".into(),
-        }.is_recoverable());
-        assert!(ConsensusError::InsufficientStake { required: 100, actual: 50 }.is_recoverable());
-        assert!(ConsensusError::Timeout { operation: "propose".into(), timeout_ms: 5000 }.is_recoverable());
+            address: "v1".into(),
+            reason: "too new".into(),
+        }
+        .is_recoverable());
+        assert!(ConsensusError::InsufficientStake {
+            required: 100,
+            actual: 50
+        }
+        .is_recoverable());
+        assert!(ConsensusError::Timeout {
+            operation: "propose".into(),
+            timeout_ms: 5000
+        }
+        .is_recoverable());
 
         // Non-recoverable examples
-        assert!(!ConsensusError::VrfVerificationFailed { reason: "bad".into() }.is_recoverable());
+        assert!(!ConsensusError::VrfVerificationFailed {
+            reason: "bad".into()
+        }
+        .is_recoverable());
         assert!(!ConsensusError::InvalidBlockHeader("bad".into()).is_recoverable());
         assert!(!ConsensusError::Config("bad".into()).is_recoverable());
         assert!(!ConsensusError::NotValidator.is_recoverable());
@@ -375,117 +387,351 @@ mod tests {
 
     #[test]
     fn test_error_slashable_all_variants() {
-        assert!(ConsensusError::DoubleProposal { address: "v1".into(), slot: 5 }.is_slashable());
+        assert!(ConsensusError::DoubleProposal {
+            address: "v1".into(),
+            slot: 5
+        }
+        .is_slashable());
         assert!(ConsensusError::ConflictingFinalization("conflict".into()).is_slashable());
-        assert!(!ConsensusError::ValidatorJailed { address: "v1".into(), until_slot: 100 }.is_slashable());
+        assert!(!ConsensusError::ValidatorJailed {
+            address: "v1".into(),
+            until_slot: 100
+        }
+        .is_slashable());
         assert!(!ConsensusError::Internal("x".into()).is_slashable());
     }
 
     #[test]
     fn test_error_codes_all_categories() {
         // VRF errors (1xxx)
-        assert_eq!(ConsensusError::VrfVerificationFailed { reason: "t".into() }.error_code(), 1001);
-        assert_eq!(ConsensusError::MalformedVrfProof { expected: 97, actual: 33 }.error_code(), 1002);
-        assert_eq!(ConsensusError::InvalidVrfKey("bad".into()).error_code(), 1003);
-        assert_eq!(ConsensusError::VrfThresholdNotMet { output_hex: "a".into(), threshold_hex: "b".into() }.error_code(), 1004);
+        assert_eq!(
+            ConsensusError::VrfVerificationFailed { reason: "t".into() }.error_code(),
+            1001
+        );
+        assert_eq!(
+            ConsensusError::MalformedVrfProof {
+                expected: 97,
+                actual: 33
+            }
+            .error_code(),
+            1002
+        );
+        assert_eq!(
+            ConsensusError::InvalidVrfKey("bad".into()).error_code(),
+            1003
+        );
+        assert_eq!(
+            ConsensusError::VrfThresholdNotMet {
+                output_hex: "a".into(),
+                threshold_hex: "b".into()
+            }
+            .error_code(),
+            1004
+        );
 
         // Leader election errors (2xxx)
-        assert_eq!(ConsensusError::NotEligible { address: "v".into(), reason: "r".into() }.error_code(), 2001);
-        assert_eq!(ConsensusError::InsufficientStake { required: 1, actual: 0 }.error_code(), 2002);
-        assert_eq!(ConsensusError::ValidatorNotRegistered { address: "v".into() }.error_code(), 2003);
-        assert_eq!(ConsensusError::ValidatorJailed { address: "v".into(), until_slot: 10 }.error_code(), 2004);
-        assert_eq!(ConsensusError::DoubleProposal { address: "v".into(), slot: 1 }.error_code(), 2005);
+        assert_eq!(
+            ConsensusError::NotEligible {
+                address: "v".into(),
+                reason: "r".into()
+            }
+            .error_code(),
+            2001
+        );
+        assert_eq!(
+            ConsensusError::InsufficientStake {
+                required: 1,
+                actual: 0
+            }
+            .error_code(),
+            2002
+        );
+        assert_eq!(
+            ConsensusError::ValidatorNotRegistered {
+                address: "v".into()
+            }
+            .error_code(),
+            2003
+        );
+        assert_eq!(
+            ConsensusError::ValidatorJailed {
+                address: "v".into(),
+                until_slot: 10
+            }
+            .error_code(),
+            2004
+        );
+        assert_eq!(
+            ConsensusError::DoubleProposal {
+                address: "v".into(),
+                slot: 1
+            }
+            .error_code(),
+            2005
+        );
 
         // Block validation errors (3xxx)
-        assert_eq!(ConsensusError::InvalidBlockHeader("h".into()).error_code(), 3001);
-        assert_eq!(ConsensusError::ParentNotFound { parent_hash: "h".into() }.error_code(), 3002);
-        assert_eq!(ConsensusError::InvalidSlot { expected: 1, actual: 0 }.error_code(), 3003);
-        assert_eq!(ConsensusError::InvalidStateRoot { expected: "a".into(), computed: "b".into() }.error_code(), 3004);
-        assert_eq!(ConsensusError::InvalidComputeResultsRoot { expected: "a".into(), computed: "b".into() }.error_code(), 3005);
-        assert_eq!(ConsensusError::UsefulWorkScoreMismatch { address: "v".into(), claimed: 10, actual: 5 }.error_code(), 3006);
-        assert_eq!(ConsensusError::InvalidTimestamp { reason: "too old".into() }.error_code(), 3007);
+        assert_eq!(
+            ConsensusError::InvalidBlockHeader("h".into()).error_code(),
+            3001
+        );
+        assert_eq!(
+            ConsensusError::ParentNotFound {
+                parent_hash: "h".into()
+            }
+            .error_code(),
+            3002
+        );
+        assert_eq!(
+            ConsensusError::InvalidSlot {
+                expected: 1,
+                actual: 0
+            }
+            .error_code(),
+            3003
+        );
+        assert_eq!(
+            ConsensusError::InvalidStateRoot {
+                expected: "a".into(),
+                computed: "b".into()
+            }
+            .error_code(),
+            3004
+        );
+        assert_eq!(
+            ConsensusError::InvalidComputeResultsRoot {
+                expected: "a".into(),
+                computed: "b".into()
+            }
+            .error_code(),
+            3005
+        );
+        assert_eq!(
+            ConsensusError::UsefulWorkScoreMismatch {
+                address: "v".into(),
+                claimed: 10,
+                actual: 5
+            }
+            .error_code(),
+            3006
+        );
+        assert_eq!(
+            ConsensusError::InvalidTimestamp {
+                reason: "too old".into()
+            }
+            .error_code(),
+            3007
+        );
 
         // Reputation errors (4xxx)
-        assert_eq!(ConsensusError::ReputationUpdateFailed { address: "v".into(), reason: "r".into() }.error_code(), 4001);
-        assert_eq!(ConsensusError::InvalidJobResult("bad".into()).error_code(), 4002);
-        assert_eq!(ConsensusError::ReputationCorrupted("corrupt".into()).error_code(), 4003);
+        assert_eq!(
+            ConsensusError::ReputationUpdateFailed {
+                address: "v".into(),
+                reason: "r".into()
+            }
+            .error_code(),
+            4001
+        );
+        assert_eq!(
+            ConsensusError::InvalidJobResult("bad".into()).error_code(),
+            4002
+        );
+        assert_eq!(
+            ConsensusError::ReputationCorrupted("corrupt".into()).error_code(),
+            4003
+        );
 
         // Epoch errors (5xxx)
-        assert_eq!(ConsensusError::EpochTransitionFailed("t".into()).error_code(), 5001);
-        assert_eq!(ConsensusError::InvalidEpochSeed("s".into()).error_code(), 5002);
-        assert_eq!(ConsensusError::EpochBoundaryNotReached { current: 5, boundary: 10 }.error_code(), 5003);
+        assert_eq!(
+            ConsensusError::EpochTransitionFailed("t".into()).error_code(),
+            5001
+        );
+        assert_eq!(
+            ConsensusError::InvalidEpochSeed("s".into()).error_code(),
+            5002
+        );
+        assert_eq!(
+            ConsensusError::EpochBoundaryNotReached {
+                current: 5,
+                boundary: 10
+            }
+            .error_code(),
+            5003
+        );
 
         // Finality errors (6xxx)
         assert_eq!(ConsensusError::NotFinalized { slot: 42 }.error_code(), 6001);
-        assert_eq!(ConsensusError::ConflictingFinalization("c".into()).error_code(), 6002);
-        assert_eq!(ConsensusError::InsufficientAttestations { required: 67, actual: 50 }.error_code(), 6003);
+        assert_eq!(
+            ConsensusError::ConflictingFinalization("c".into()).error_code(),
+            6002
+        );
+        assert_eq!(
+            ConsensusError::InsufficientAttestations {
+                required: 67,
+                actual: 50
+            }
+            .error_code(),
+            6003
+        );
 
         // PoUW errors (7xxx)
-        assert_eq!(ConsensusError::SuspiciousActivity { address: "v".into(), reason: "r".into() }.error_code(), 7002);
-        assert_eq!(ConsensusError::InvalidUsefulWorkResult("bad".into()).error_code(), 7003);
-        assert_eq!(ConsensusError::AiProofVerificationFailed { reason: "r".into() }.error_code(), 7004);
-        assert_eq!(ConsensusError::TeeAttestationFailed { reason: "r".into() }.error_code(), 7005);
-        assert_eq!(ConsensusError::ZkmlProofFailed { reason: "r".into() }.error_code(), 7006);
-        assert_eq!(ConsensusError::UnsupportedCategory { category: "c".into() }.error_code(), 7007);
+        assert_eq!(
+            ConsensusError::SuspiciousActivity {
+                address: "v".into(),
+                reason: "r".into()
+            }
+            .error_code(),
+            7002
+        );
+        assert_eq!(
+            ConsensusError::InvalidUsefulWorkResult("bad".into()).error_code(),
+            7003
+        );
+        assert_eq!(
+            ConsensusError::AiProofVerificationFailed { reason: "r".into() }.error_code(),
+            7004
+        );
+        assert_eq!(
+            ConsensusError::TeeAttestationFailed { reason: "r".into() }.error_code(),
+            7005
+        );
+        assert_eq!(
+            ConsensusError::ZkmlProofFailed { reason: "r".into() }.error_code(),
+            7006
+        );
+        assert_eq!(
+            ConsensusError::UnsupportedCategory {
+                category: "c".into()
+            }
+            .error_code(),
+            7007
+        );
 
         // Compatibility errors (8xxx)
         assert_eq!(ConsensusError::NotValidator.error_code(), 8001);
-        assert_eq!(ConsensusError::ValidatorNotFound([0u8; 32]).error_code(), 8002);
-        assert_eq!(ConsensusError::ValidatorIneligible([0u8; 32]).error_code(), 8003);
-        assert_eq!(ConsensusError::InvalidLeaderCredentials("lc".into()).error_code(), 8004);
-        assert_eq!(ConsensusError::InvalidParentHash { expected: [0u8; 32], got: [1u8; 32] }.error_code(), 8005);
-        assert_eq!(ConsensusError::BlockValidation("bv".into()).error_code(), 8006);
-        assert_eq!(ConsensusError::SlotValidation("sv".into()).error_code(), 8007);
-        assert_eq!(ConsensusError::TimestampValidation("tv".into()).error_code(), 8008);
-        assert_eq!(ConsensusError::VrfValidation("vv".into()).error_code(), 8009);
-        assert_eq!(ConsensusError::ComputeValidation("cv".into()).error_code(), 8010);
-        assert_eq!(ConsensusError::FinalityValidation("fv".into()).error_code(), 8011);
+        assert_eq!(
+            ConsensusError::ValidatorNotFound([0u8; 32]).error_code(),
+            8002
+        );
+        assert_eq!(
+            ConsensusError::ValidatorIneligible([0u8; 32]).error_code(),
+            8003
+        );
+        assert_eq!(
+            ConsensusError::InvalidLeaderCredentials("lc".into()).error_code(),
+            8004
+        );
+        assert_eq!(
+            ConsensusError::InvalidParentHash {
+                expected: [0u8; 32],
+                got: [1u8; 32]
+            }
+            .error_code(),
+            8005
+        );
+        assert_eq!(
+            ConsensusError::BlockValidation("bv".into()).error_code(),
+            8006
+        );
+        assert_eq!(
+            ConsensusError::SlotValidation("sv".into()).error_code(),
+            8007
+        );
+        assert_eq!(
+            ConsensusError::TimestampValidation("tv".into()).error_code(),
+            8008
+        );
+        assert_eq!(
+            ConsensusError::VrfValidation("vv".into()).error_code(),
+            8009
+        );
+        assert_eq!(
+            ConsensusError::ComputeValidation("cv".into()).error_code(),
+            8010
+        );
+        assert_eq!(
+            ConsensusError::FinalityValidation("fv".into()).error_code(),
+            8011
+        );
 
         // System errors (9xxx)
         assert_eq!(ConsensusError::Config("cfg".into()).error_code(), 9001);
         assert_eq!(ConsensusError::StateAccess("sa".into()).error_code(), 9002);
         assert_eq!(ConsensusError::Crypto("cr".into()).error_code(), 9003);
         assert_eq!(ConsensusError::Internal("in".into()).error_code(), 9004);
-        assert_eq!(ConsensusError::Timeout { operation: "op".into(), timeout_ms: 1000 }.error_code(), 9005);
+        assert_eq!(
+            ConsensusError::Timeout {
+                operation: "op".into(),
+                timeout_ms: 1000
+            }
+            .error_code(),
+            9005
+        );
     }
 
     #[test]
     fn test_error_display_messages() {
         // Test that Display formatting works for all major variants
-        let err = ConsensusError::VrfVerificationFailed { reason: "invalid gamma".into() };
+        let err = ConsensusError::VrfVerificationFailed {
+            reason: "invalid gamma".into(),
+        };
         assert!(format!("{}", err).contains("invalid gamma"));
 
-        let err = ConsensusError::MalformedVrfProof { expected: 97, actual: 33 };
+        let err = ConsensusError::MalformedVrfProof {
+            expected: 97,
+            actual: 33,
+        };
         assert!(format!("{}", err).contains("97"));
         assert!(format!("{}", err).contains("33"));
 
-        let err = ConsensusError::NotEligible { address: "cosmos1abc".into(), reason: "jailed".into() };
+        let err = ConsensusError::NotEligible {
+            address: "cosmos1abc".into(),
+            reason: "jailed".into(),
+        };
         assert!(format!("{}", err).contains("cosmos1abc"));
         assert!(format!("{}", err).contains("jailed"));
 
-        let err = ConsensusError::DoubleProposal { address: "val1".into(), slot: 42 };
+        let err = ConsensusError::DoubleProposal {
+            address: "val1".into(),
+            slot: 42,
+        };
         assert!(format!("{}", err).contains("val1"));
         assert!(format!("{}", err).contains("42"));
 
-        let err = ConsensusError::InvalidSlot { expected: 10, actual: 5 };
+        let err = ConsensusError::InvalidSlot {
+            expected: 10,
+            actual: 5,
+        };
         let msg = format!("{}", err);
         assert!(msg.contains("10"));
         assert!(msg.contains("5"));
 
-        let err = ConsensusError::EpochBoundaryNotReached { current: 5, boundary: 10 };
+        let err = ConsensusError::EpochBoundaryNotReached {
+            current: 5,
+            boundary: 10,
+        };
         assert!(format!("{}", err).contains("5"));
 
-        let err = ConsensusError::InsufficientAttestations { required: 67, actual: 50 };
+        let err = ConsensusError::InsufficientAttestations {
+            required: 67,
+            actual: 50,
+        };
         assert!(format!("{}", err).contains("67"));
 
-        let err = ConsensusError::Timeout { operation: "finalize".into(), timeout_ms: 3000 };
+        let err = ConsensusError::Timeout {
+            operation: "finalize".into(),
+            timeout_ms: 3000,
+        };
         assert!(format!("{}", err).contains("finalize"));
         assert!(format!("{}", err).contains("3000"));
 
         let err = ConsensusError::NotValidator;
         assert!(format!("{}", err).contains("not configured"));
 
-        let err = ConsensusError::InvalidParentHash { expected: [1u8; 32], got: [2u8; 32] };
+        let err = ConsensusError::InvalidParentHash {
+            expected: [1u8; 32],
+            got: [2u8; 32],
+        };
         assert!(format!("{}", err).contains("Invalid parent hash"));
     }
 
@@ -498,7 +744,10 @@ mod tests {
 
     #[test]
     fn test_error_clone() {
-        let err = ConsensusError::DoubleProposal { address: "v1".into(), slot: 5 };
+        let err = ConsensusError::DoubleProposal {
+            address: "v1".into(),
+            slot: 5,
+        };
         let cloned = err.clone();
         assert_eq!(err.error_code(), cloned.error_code());
     }
