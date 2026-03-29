@@ -2,9 +2,9 @@ name: Load Testing
 
 on:
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   push:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   schedule:
     - cron: "0 2 * * *"
   workflow_dispatch:

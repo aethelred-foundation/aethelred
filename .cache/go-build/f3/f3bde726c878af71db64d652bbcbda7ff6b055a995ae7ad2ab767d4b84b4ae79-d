@@ -1,6 +1,0 @@
-./chain_id.go
-./expected_keepers.go
-./genesis.go
-./genesis.pb.go
-./genesis_state.go
-./types.go

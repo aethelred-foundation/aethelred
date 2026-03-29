@@ -109,7 +109,7 @@ OUT_DIR="${OUT_DIR:-$DEFAULT_OUT}"
 BRANCH="${BRANCH:-monorepo-sync-${SDK}-$(date +%Y%m%d%H%M%S)}"
 COMMIT_MESSAGE="${COMMIT_MESSAGE:-chore: sync ${SDK} SDK from monorepo}"
 PR_TITLE="${PR_TITLE:-chore: sync ${SDK} SDK from monorepo}"
-PR_BODY="${PR_BODY:-Automated export/sync from AethelredMVP monorepo.}"
+PR_BODY="${PR_BODY:-Automated export/sync from the canonical AETHELRED monorepo.}"
 
 echo "==> Exporting ${SDK} SDK to ${OUT_DIR}"
 "$ROOT_DIR/scripts/export-sdk-standalone-repo.sh" "$SDK" "$OUT_DIR"

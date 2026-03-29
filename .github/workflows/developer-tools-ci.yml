@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build local TypeScript SDK for file: deps
+      - name: "Build local TypeScript SDK for file deps"
         if: ${{ matrix.cli_dir == 'tools/cli/aethel' || matrix.cli_dir == 'tools/cli/seal-verifier' }}
         run: |
           cd sdk/typescript
@@ -76,7 +76,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build local TypeScript SDK for file: dep
+      - name: "Build local TypeScript SDK for file dep"
         run: |
           cd sdk/typescript
           npm install
@@ -134,7 +134,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build local TypeScript SDK for file: deps
+      - name: "Build local TypeScript SDK for file deps"
         run: |
           cd sdk/typescript
           npm install

@@ -1,7 +1,0 @@
-./account.go
-./compare.go
-./context.go
-./ioutil.go
-./key.go
-./list.go
-./rest.go

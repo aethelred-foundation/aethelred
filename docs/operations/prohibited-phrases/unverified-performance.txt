@@ -1,0 +1,23 @@
+# Prohibited Phrases — Unverified Performance Claims
+# These phrases must not appear on any public-facing surface until the
+# corresponding register row in PERFORMANCE_CLAIMS_REGISTER.md reaches VERIFIED status.
+#
+# Format: one phrase per line. Used by .github/workflows/truth-drift-check.yml
+# and scripts/validate_canonical_product_truth.py
+
+10,000+ verified jobs
+11,724.8
+8192 jobs/s
+2764.8 jobs
+768 jobs/s
+Sub-2-second block
+Sub-2-second finality
+&lt;2s
+10M vectors/ns
+vectors/ns
+400 PFLOPS
+50K+ IPS
+50,000+ IPS
+650 jobs/s verified
+12,500 TPS
+12.5K TPS

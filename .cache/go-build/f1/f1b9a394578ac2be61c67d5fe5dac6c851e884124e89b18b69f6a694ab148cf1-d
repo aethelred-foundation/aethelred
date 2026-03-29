@@ -1,6 +1,0 @@
-./doc.go
-./option.go
-./sys.go
-./sys_darwin.go
-./tcp.go
-./zsys_darwin.go

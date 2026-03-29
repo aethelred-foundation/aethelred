@@ -1,7 +1,0 @@
-./doc.go
-./option.go
-./parse.go
-./sys.go
-./sys_darwin.go
-./sys_unix.go
-./zsys_darwin.go
