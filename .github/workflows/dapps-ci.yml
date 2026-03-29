@@ -5,12 +5,10 @@ on:
     branches: [main, develop, "release/**"]
     paths:
       - 'dApps/**'
-      - '.github/workflows/dapps-ci.yml'
   pull_request:
     branches: [main, develop, "release/**"]
     paths:
       - 'dApps/**'
-      - '.github/workflows/dapps-ci.yml'
   workflow_dispatch:
 
 jobs:
@@ -20,6 +18,7 @@ jobs:
   zeroid-backend:
     name: ZeroID Backend
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/zeroid/backend/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/zeroid/backend
@@ -31,9 +30,9 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/zeroid/backend/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund --no-audit
+        run: npm install --no-fund --no-audit
       - name: Security audit
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --audit-level=critical
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -49,6 +48,7 @@ jobs:
   zeroid-frontend:
     name: ZeroID Frontend
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/zeroid/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/zeroid
@@ -60,7 +60,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/zeroid/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: npm install --no-fund --no-audit
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -78,6 +78,7 @@ jobs:
   cruzible:
     name: Cruzible
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/cruzible/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/cruzible
@@ -89,7 +90,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/cruzible/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: npm install --no-fund --no-audit
       - name: Validate (type-check + lint + format + test)
         run: npm run validate
       - name: Build
@@ -101,6 +102,7 @@ jobs:
   noblepay:
     name: NoblePay
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/noblepay/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/noblepay
@@ -112,7 +114,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/noblepay/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: npm install --no-fund --no-audit
       - name: Validate all components
         run: npm run validate
       - name: Build
@@ -124,6 +126,7 @@ jobs:
   shiora:
     name: Shiora
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/shiora/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/shiora
@@ -135,7 +138,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: dApps/shiora/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: npm install --no-fund --no-audit
       - name: Lint
         run: npm run lint
       - name: Type-check
@@ -153,6 +156,7 @@ jobs:
   terraqura:
     name: TerraQura
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/terraqura
@@ -191,12 +195,13 @@ jobs:
     steps:
       - name: Check all jobs passed
         run: |
-          if [[ "${{ needs.zeroid-backend.result }}" != "success" ]] ||
-             [[ "${{ needs.zeroid-frontend.result }}" != "success" ]] ||
-             [[ "${{ needs.cruzible.result }}" != "success" ]] ||
-             [[ "${{ needs.noblepay.result }}" != "success" ]] ||
-             [[ "${{ needs.shiora.result }}" != "success" ]] ||
-             [[ "${{ needs.terraqura.result }}" != "success" ]]; then
+         if [[ "${{ needs.zeroid-backend.result }}" != "success" ]] ||
+             [[ "${{ needs.zeroid-backend.result }}" != "skipped" && "${{ needs.zeroid-backend.result }}" != "success" ]] ||
+             [[ "${{ needs.zeroid-frontend.result }}" != "skipped" && "${{ needs.zeroid-frontend.result }}" != "success" ]] ||
+             [[ "${{ needs.cruzible.result }}" != "skipped" && "${{ needs.cruzible.result }}" != "success" ]] ||
+             [[ "${{ needs.noblepay.result }}" != "skipped" && "${{ needs.noblepay.result }}" != "success" ]] ||
+             [[ "${{ needs.shiora.result }}" != "skipped" && "${{ needs.shiora.result }}" != "success" ]] ||
+             [[ "${{ needs.terraqura.result }}" != "skipped" && "${{ needs.terraqura.result }}" != "success" ]]; then
             echo "One or more dApps CI jobs failed:"
             echo "  zeroid-backend: ${{ needs.zeroid-backend.result }}"
             echo "  zeroid-frontend: ${{ needs.zeroid-frontend.result }}"

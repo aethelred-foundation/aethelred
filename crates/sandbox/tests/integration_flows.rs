@@ -1,6 +1,6 @@
 use std::sync::{Mutex, OnceLock};
 
-use aethelred_infinity_sandbox::{
+use aethelred_sandbox::{
     AIGasProfiler, CloudProvider, DataCenterLocation, HardwareRuntime, HardwareTarget,
     InfinitySandbox, Jurisdiction, ModelSpec, ParticipantId, ScenarioLibrary,
 };

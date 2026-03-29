@@ -1,5 +1,5 @@
 [build-system]
-requires = []
+requires = ["tomli>=1.1.0; python_version < '3.11'"]
 build-backend = "aethelred_build_backend"
 backend-path = ["build_backend"]
 

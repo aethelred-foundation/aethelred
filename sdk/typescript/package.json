@@ -61,6 +61,7 @@
     "format": "prettier --write src",
     "typecheck": "tsc --noEmit",
     "docs": "typedoc",
+    "prepack": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

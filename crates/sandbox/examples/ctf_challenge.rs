@@ -3,7 +3,7 @@
 //! This example demonstrates the Capture The Flag mode,
 //! showing how security researchers can compete to find vulnerabilities.
 
-use aethelred_infinity_sandbox::ctf::*;
+use aethelred_sandbox::ctf::*;
 
 fn main() {
     println!("\n🚩 AETHELRED CAPTURE THE FLAG\n");

@@ -224,6 +224,21 @@ fn truncate(s: &str, max_len: usize) -> String {
     }
 }
 
+/// Format whole numbers with thousands separators for CLI output.
+fn format_number(value: u64) -> String {
+    let digits = value.to_string();
+    let mut output = String::with_capacity(digits.len() + digits.len() / 3);
+
+    for (index, ch) in digits.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            output.push(',');
+        }
+        output.push(ch);
+    }
+
+    output.chars().rev().collect()
+}
+
 // =============================================================================
 // JSON EXPORT
 // =============================================================================
