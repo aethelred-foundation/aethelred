@@ -28,9 +28,9 @@
 //! Banks get certainty that the protocol won't change overnight due to
 //! a "crypto mob," while still allowing decentralized economic growth.
 
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, SystemTime};
-use serde::{Deserialize, Serialize};
 
 // ============================================================================
 // Governance Roles
@@ -86,25 +86,15 @@ pub enum EntityType {
         regulator: String,
     },
     /// Healthcare provider
-    HealthcareProvider {
-        accreditation: String,
-    },
+    HealthcareProvider { accreditation: String },
     /// Government entity
-    Government {
-        department: String,
-    },
+    Government { department: String },
     /// Technology company (AI providers)
-    TechnologyCompany {
-        specialization: String,
-    },
+    TechnologyCompany { specialization: String },
     /// Research institution
-    ResearchInstitution {
-        focus_area: String,
-    },
+    ResearchInstitution { focus_area: String },
     /// Validator operator
-    ValidatorOperator {
-        nodes_operated: u32,
-    },
+    ValidatorOperator { nodes_operated: u32 },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -133,10 +123,7 @@ pub enum VerificationStatus {
     /// Verification expired
     Expired,
     /// Suspended
-    Suspended {
-        reason: String,
-        suspended_at: u64,
-    },
+    Suspended { reason: String, suspended_at: u64 },
 }
 
 // ============================================================================
@@ -187,9 +174,9 @@ impl Default for CommonsConfig {
     fn default() -> Self {
         CommonsConfig {
             proposal_threshold: 10_000 * 10u128.pow(18), // 10,000 AETHEL
-            quorum_percentage: 0.04, // 4% of total supply
-            voting_period_blocks: 50_400, // ~7 days at 12s blocks
-            timelock_blocks: 14_400, // ~2 days
+            quorum_percentage: 0.04,                     // 4% of total supply
+            voting_period_blocks: 50_400,                // ~7 days at 12s blocks
+            timelock_blocks: 14_400,                     // ~2 days
             quadratic_voting: true,
             max_voting_power_percentage: 0.10, // 10% cap
         }
@@ -250,14 +237,9 @@ pub enum CommonsProposalType {
         purpose: String,
     },
     /// Inflation rate change
-    InflationChange {
-        old_rate: f64,
-        new_rate: f64,
-    },
+    InflationChange { old_rate: f64, new_rate: f64 },
     /// Signal proposal (non-binding)
-    Signal {
-        topic: String,
-    },
+    Signal { topic: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -342,7 +324,9 @@ impl HouseOfTokens {
         current_block: u64,
     ) -> Result<u64, GovernanceError> {
         // Check threshold
-        let holder = self.holders.get(&proposer)
+        let holder = self
+            .holders
+            .get(&proposer)
             .ok_or(GovernanceError::NotAHolder)?;
 
         if holder.voting_power < self.config.proposal_threshold {
@@ -388,7 +372,9 @@ impl HouseOfTokens {
     ) -> Result<(), GovernanceError> {
         // Validate proposal exists and voting period (immutable borrow)
         {
-            let proposal = self.proposals.get(&proposal_id)
+            let proposal = self
+                .proposals
+                .get(&proposal_id)
                 .ok_or(GovernanceError::ProposalNotFound)?;
 
             // Check voting period
@@ -406,7 +392,9 @@ impl HouseOfTokens {
         }
 
         // Get voting power (immutable borrow)
-        let holder = self.holders.get(&voter)
+        let holder = self
+            .holders
+            .get(&voter)
             .ok_or(GovernanceError::NotAHolder)?;
         let holder_total = holder.balance + holder.staked;
 
@@ -418,7 +406,9 @@ impl HouseOfTokens {
         let effective_power = voting_power.min(max_power);
 
         // Now borrow proposal mutably for updates
-        let proposal = self.proposals.get_mut(&proposal_id)
+        let proposal = self
+            .proposals
+            .get_mut(&proposal_id)
             .ok_or(GovernanceError::ProposalNotFound)?;
 
         // Record vote
@@ -444,8 +434,14 @@ impl HouseOfTokens {
     }
 
     /// Finalize a proposal
-    pub fn finalize(&mut self, proposal_id: u64, current_block: u64) -> Result<ProposalStatus, GovernanceError> {
-        let proposal = self.proposals.get_mut(&proposal_id)
+    pub fn finalize(
+        &mut self,
+        proposal_id: u64,
+        current_block: u64,
+    ) -> Result<ProposalStatus, GovernanceError> {
+        let proposal = self
+            .proposals
+            .get_mut(&proposal_id)
             .ok_or(GovernanceError::ProposalNotFound)?;
 
         if current_block <= proposal.voting_end_block {
@@ -546,11 +542,11 @@ pub struct SenateConfig {
 impl Default for SenateConfig {
     fn default() -> Self {
         SenateConfig {
-            veto_threshold: 0.51, // Simple majority to veto
-            security_threshold: 0.67, // Supermajority for security
-            member_addition_threshold: 0.67, // Supermajority to add members
+            veto_threshold: 0.51,                 // Simple majority to veto
+            security_threshold: 0.67,             // Supermajority for security
+            member_addition_threshold: 0.67,      // Supermajority to add members
             max_term_length: 2 * 365 * 24 * 3600, // 2 years
-            min_stake: 100_000 * 10u128.pow(18), // 100,000 AETHEL
+            min_stake: 100_000 * 10u128.pow(18),  // 100,000 AETHEL
         }
     }
 }
@@ -594,8 +590,8 @@ pub enum VetoCategory {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VetoStatus {
     Pending,
-    Passed,   // Veto successful
-    Failed,   // Veto failed
+    Passed, // Veto successful
+    Failed, // Veto failed
     Expired,
 }
 
@@ -632,14 +628,9 @@ pub enum SecurityProposalType {
         upgrade_hash: [u8; 32],
     },
     /// Compliance module change
-    ComplianceModule {
-        module_name: String,
-        action: String,
-    },
+    ComplianceModule { module_name: String, action: String },
     /// TEE policy change
-    TEEPolicy {
-        policy: String,
-    },
+    TEEPolicy { policy: String },
     /// Emergency fund release
     EmergencyFundRelease {
         amount: u128,
@@ -733,7 +724,9 @@ impl HouseOfSovereigns {
             return Err(GovernanceError::NotASenator);
         }
 
-        let veto = self.veto_proposals.get_mut(&veto_id)
+        let veto = self
+            .veto_proposals
+            .get_mut(&veto_id)
             .ok_or(GovernanceError::ProposalNotFound)?;
 
         if veto.votes.contains_key(&voter) {
@@ -839,7 +832,10 @@ impl BicameralGovernance {
     /// Check if a proposal can be executed
     pub fn can_execute(&self, proposal_id: u64) -> Result<bool, GovernanceError> {
         // Check if passed in Commons
-        let proposal = self.commons.proposals.get(&proposal_id)
+        let proposal = self
+            .commons
+            .proposals
+            .get(&proposal_id)
             .ok_or(GovernanceError::ProposalNotFound)?;
 
         if proposal.status != ProposalStatus::Passed {
@@ -935,7 +931,8 @@ impl BicameralGovernance {
 ║   the security controls our regulators require."                              ║
 ║                                                                                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-"#.to_string()
+"#
+        .to_string()
     }
 }
 
@@ -970,10 +967,18 @@ impl std::fmt::Display for GovernanceError {
             GovernanceError::NotAHolder => write!(f, "Address is not a token holder"),
             GovernanceError::NotASenator => write!(f, "Address is not a Senate member"),
             GovernanceError::InsufficientVotingPower { required, actual } => {
-                write!(f, "Insufficient voting power: {} required, {} actual", required, actual)
+                write!(
+                    f,
+                    "Insufficient voting power: {} required, {} actual",
+                    required, actual
+                )
             }
             GovernanceError::InsufficientStake { required, actual } => {
-                write!(f, "Insufficient stake: {} required, {} actual", required, actual)
+                write!(
+                    f,
+                    "Insufficient stake: {} required, {} actual",
+                    required, actual
+                )
             }
             GovernanceError::ProposalNotFound => write!(f, "Proposal not found"),
             GovernanceError::VotingNotStarted => write!(f, "Voting has not started"),
@@ -1037,12 +1042,14 @@ mod tests {
         assert_eq!(senate.member_count(), 5);
 
         // Initiate veto
-        let veto_id = senate.initiate_veto(
-            [0; 32],
-            1,
-            "Security concern".to_string(),
-            VetoCategory::Security,
-        ).unwrap();
+        let veto_id = senate
+            .initiate_veto(
+                [0; 32],
+                1,
+                "Security concern".to_string(),
+                VetoCategory::Security,
+            )
+            .unwrap();
 
         // Vote to veto
         for i in 0..3 {

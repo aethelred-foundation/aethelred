@@ -967,7 +967,7 @@ func TestCB3_GenesisValidatorSet_InsufficientValidators(t *testing.T) {
 // =============================================================================
 
 func TestCB3_ComputeInflationForYear_BoundaryYears(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 
 	// Year 0
 	y0 := keeper.ComputeInflationForYearForTest(config, 0)

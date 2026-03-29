@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,7 +28,7 @@ func TestHTTPDrandPulseProvider_LatestPulse(t *testing.T) {
 	signature := bytesFromString("drand-signature-v1-with-production-like-length-abcdefghijklmnopqrstuvwxyz")
 	randomness := sha256.Sum256(signature)
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newIPv4TestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(
 			w,
 			`{"round":12345,"randomness":"%s","signature":"%s"}`,
@@ -56,7 +57,7 @@ func TestHTTPDrandPulseProvider_LatestPulse(t *testing.T) {
 func TestHTTPDrandPulseProvider_RejectsInconsistentPayload(t *testing.T) {
 	signature := bytesFromString("drand-signature-v1-with-production-like-length-abcdefghijklmnopqrstuvwxyz")
 	wrongRandomness := sha256.Sum256(bytesFromString("wrong-randomness"))
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newIPv4TestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(
 			w,
 			`{"round":12345,"randomness":"%s","signature":"%s"}`,
@@ -122,4 +123,19 @@ func bytesFromString(value string) []byte {
 	out := make([]byte, len(value))
 	copy(out, []byte(value))
 	return out
+}
+
+func newIPv4TestServer(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen tcp4: %v", err)
+	}
+
+	server := httptest.NewUnstartedServer(handler)
+	server.Listener = listener
+	server.Start()
+	t.Cleanup(server.Close)
+	return server
 }

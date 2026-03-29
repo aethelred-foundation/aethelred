@@ -215,11 +215,13 @@ impl RegistryBuilder {
         let plonk = std::sync::Arc::new(super::zkp::PlonkVerifyPrecompile::new());
         let ezkl = std::sync::Arc::new(super::zkp::EzklVerifyPrecompile::new());
         let halo2 = std::sync::Arc::new(super::zkp::Halo2VerifyPrecompile::new());
+        let stark = std::sync::Arc::new(super::zkp::StarkVerifyPrecompile::new());
         let unified = super::zkp::UnifiedZkpVerifyPrecompile::new(
             groth16.clone(),
             plonk.clone(),
             ezkl.clone(),
             halo2.clone(),
+            stark.clone(),
         );
         self.add_arc(groth16)
             .add_arc(plonk)

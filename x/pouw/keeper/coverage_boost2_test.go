@@ -1911,7 +1911,7 @@ func TestCB2_FormatWithCommas_MoreCases(t *testing.T) {
 }
 
 func TestCB2_ComputeInflationForYear_MoreCases(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 
 	// Year 0 should be highest
 	year0 := keeper.ComputeInflationForYearForTest(config, 0)

@@ -40,10 +40,7 @@ fn verify_signature_and_pubkey_sizes_positive() {
     let byte: u8 = kani::any();
 
     if let Some(alg) = crypto::SignatureAlgorithm::from_byte(byte) {
-        assert!(
-            alg.signature_size() > 0,
-            "Signature size must be positive"
-        );
+        assert!(alg.signature_size() > 0, "Signature size must be positive");
         assert!(
             alg.public_key_size() > 0,
             "Public key size must be positive"
@@ -120,8 +117,14 @@ fn verify_hash256_from_slice_length_check() {
     let result = crypto::hash::Hash256::from_slice(&data);
 
     if len == crypto::hash::HASH_SIZE_256 {
-        assert!(result.is_some(), "from_slice must succeed for 32-byte input");
+        assert!(
+            result.is_some(),
+            "from_slice must succeed for 32-byte input"
+        );
     } else {
-        assert!(result.is_none(), "from_slice must fail for non-32-byte input");
+        assert!(
+            result.is_none(),
+            "from_slice must fail for non-32-byte input"
+        );
     }
 }

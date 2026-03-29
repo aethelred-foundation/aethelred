@@ -41,7 +41,13 @@ impl JobsModule {
     }
 
     /// Submit a new compute job.
-    pub async fn submit(&self, request: SubmitJobRequest) -> Result<SubmitJobResponse> {
+    ///
+    /// Enterprise default: `proof_type` defaults to `ProofTypeHybrid` (TEE + zkML)
+    /// for maximum assurance and audit compliance.
+    pub async fn submit(&self, mut request: SubmitJobRequest) -> Result<SubmitJobResponse> {
+        if request.proof_type.is_none() {
+            request.proof_type = Some(ProofType::ProofTypeHybrid);
+        }
         self.client
             .post(&format!("{}/jobs", BASE_PATH), &request)
             .await

@@ -46,7 +46,12 @@ type SubmitResponse struct {
 }
 
 // Submit submits a new job.
+// Enterprise default: ProofType defaults to HYBRID (TEE + zkML) for
+// maximum assurance and audit compliance.
 func (m *Module) Submit(ctx context.Context, req SubmitRequest) (*SubmitResponse, error) {
+	if req.ProofType == "" {
+		req.ProofType = types.ProofTypeHybrid
+	}
 	var resp SubmitResponse
 	if err := m.client.Post(ctx, basePath+"/jobs", req, &resp); err != nil {
 		return nil, err

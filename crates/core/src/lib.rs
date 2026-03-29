@@ -21,8 +21,9 @@ pub mod serde_byte_array_48 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<[u8; 48], D::Error> {
         let v: Vec<u8> = Vec::deserialize(deserializer)?;
-        v.try_into()
-            .map_err(|v: Vec<u8>| serde::de::Error::custom(format!("expected 48 bytes, got {}", v.len())))
+        v.try_into().map_err(|v: Vec<u8>| {
+            serde::de::Error::custom(format!("expected 48 bytes, got {}", v.len()))
+        })
     }
 }
 
@@ -35,7 +36,8 @@ pub mod serde_byte_array_64 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<[u8; 64], D::Error> {
         let v: Vec<u8> = Vec::deserialize(deserializer)?;
-        v.try_into()
-            .map_err(|v: Vec<u8>| serde::de::Error::custom(format!("expected 64 bytes, got {}", v.len())))
+        v.try_into().map_err(|v: Vec<u8>| {
+            serde::de::Error::custom(format!("expected 64 bytes, got {}", v.len()))
+        })
     }
 }

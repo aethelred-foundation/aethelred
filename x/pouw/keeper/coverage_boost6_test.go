@@ -1506,7 +1506,7 @@ func TestCB6_IntSqrt(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestCB6_ComputeEmissionScheduleSafe_Valid(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	btc := keeper.DefaultBlockTimeConfig()
 	schedule, err := keeper.ComputeEmissionScheduleSafe(config, 10, btc)
 	require.NoError(t, err)
@@ -1514,7 +1514,7 @@ func TestCB6_ComputeEmissionScheduleSafe_Valid(t *testing.T) {
 }
 
 func TestCB6_ComputeEmissionScheduleSafe_ZeroYears(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	btc := keeper.DefaultBlockTimeConfig()
 	schedule, err := keeper.ComputeEmissionScheduleSafe(config, 0, btc)
 	// Zero years produces an empty schedule with no error

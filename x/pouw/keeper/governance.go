@@ -91,9 +91,9 @@ func ValidateParams(params *types.Params) error {
 		return err
 	}
 
-	// MaxJobsPerBlock: [1, 1000]
-	if params.MaxJobsPerBlock < 1 || params.MaxJobsPerBlock > 1000 {
-		return fmt.Errorf("max_jobs_per_block must be >= 1 and <= 1000, got %d", params.MaxJobsPerBlock)
+	// MaxJobsPerBlock: [1, 4096]
+	if params.MaxJobsPerBlock < 1 || params.MaxJobsPerBlock > 4096 {
+		return fmt.Errorf("max_jobs_per_block must be >= 1 and <= 4096, got %d", params.MaxJobsPerBlock)
 	}
 
 	// AllowedProofTypes: non-empty, values in {"tee", "zkml", "hybrid"}

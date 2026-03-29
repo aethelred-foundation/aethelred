@@ -50,8 +50,6 @@ pub enum KyberLevel {
     Kyber1024,
 }
 
-
-
 impl fmt::Display for KyberLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

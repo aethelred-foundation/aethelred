@@ -45,11 +45,11 @@ pub mod zero_copy_bridge;
 pub mod vector_vault;
 
 // Re-exports
-pub use useful_work::*;
+pub use bicameral_governance::*;
+pub use quadratic_burn::*;
 pub use quantum_immunity::*;
 pub use secret_mempool::*;
 pub use tensor_precompiles::*;
-pub use quadratic_burn::*;
-pub use bicameral_governance::*;
-pub use zero_copy_bridge::*;
+pub use useful_work::*;
 pub use vector_vault::*;
+pub use zero_copy_bridge::*;
