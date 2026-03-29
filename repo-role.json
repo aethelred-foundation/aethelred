@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "repo": "aethelred-foundation/aethelred",
+  "role": "canonical-monorepo",
+  "visibility": "public",
+  "status": "active",
+  "canonical": true,
+  "release_authority": true,
+  "default_community_files_repo": "aethelred-foundation/.github",
+  "source_of_truth_for": [
+    "chain-go",
+    "protocol-governance",
+    "contracts-source",
+    "sdk-source",
+    "docs-source",
+    "developer-tooling"
+  ],
+  "published_standalone_repos": [
+    "aethelred-foundation/contracts",
+    "aethelred-foundation/aethelred-sdk-ts",
+    "aethelred-foundation/aethelred-sdk-py",
+    "aethelred-foundation/aethelred-sdk-go",
+    "aethelred-foundation/aethelred-sdk-rs",
+    "aethelred-foundation/aethelred-cli",
+    "aethelred-foundation/vscode-aethelred",
+    "aethelred-foundation/aethelred-docs",
+    "aethelred-foundation/AIPs",
+    "aethelred-foundation/cruzible"
+  ],
+  "ratification_record": "docs/governance/adr-0001-chain-repo-authority-canonicalization.md"
+}

@@ -3,12 +3,12 @@
 //! Snapshot testing for AI/ML applications. Captures model outputs,
 //! tensor values, and other artifacts for regression testing.
 
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 
 // ============ Snapshot Storage ============
 
@@ -44,10 +44,10 @@ impl SnapshotStorage for FileStorage {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&path)
-            .map_err(|e| SnapshotError::IoError(e.to_string()))?;
-        let snapshot: Snapshot = serde_json::from_str(&content)
-            .map_err(|e| SnapshotError::ParseError(e.to_string()))?;
+        let content =
+            fs::read_to_string(&path).map_err(|e| SnapshotError::IoError(e.to_string()))?;
+        let snapshot: Snapshot =
+            serde_json::from_str(&content).map_err(|e| SnapshotError::ParseError(e.to_string()))?;
 
         Ok(Some(snapshot))
     }
@@ -57,8 +57,7 @@ impl SnapshotStorage for FileStorage {
         let content = serde_json::to_string_pretty(snapshot)
             .map_err(|e| SnapshotError::SerializeError(e.to_string()))?;
 
-        fs::write(&path, content)
-            .map_err(|e| SnapshotError::IoError(e.to_string()))?;
+        fs::write(&path, content).map_err(|e| SnapshotError::IoError(e.to_string()))?;
 
         Ok(())
     }
@@ -66,16 +65,15 @@ impl SnapshotStorage for FileStorage {
     fn delete(&self, name: &str) -> Result<(), SnapshotError> {
         let path = self.snapshot_path(name);
         if path.exists() {
-            fs::remove_file(&path)
-                .map_err(|e| SnapshotError::IoError(e.to_string()))?;
+            fs::remove_file(&path).map_err(|e| SnapshotError::IoError(e.to_string()))?;
         }
         Ok(())
     }
 
     fn list(&self) -> Result<Vec<String>, SnapshotError> {
         let mut names = Vec::new();
-        for entry in fs::read_dir(&self.base_path)
-            .map_err(|e| SnapshotError::IoError(e.to_string()))?
+        for entry in
+            fs::read_dir(&self.base_path).map_err(|e| SnapshotError::IoError(e.to_string()))?
         {
             let entry = entry.map_err(|e| SnapshotError::IoError(e.to_string()))?;
             let path = entry.path();
@@ -114,7 +112,10 @@ impl SnapshotStorage for MemoryStorage {
     }
 
     fn save(&self, name: &str, snapshot: &Snapshot) -> Result<(), SnapshotError> {
-        self.snapshots.write().unwrap().insert(name.to_string(), snapshot.clone());
+        self.snapshots
+            .write()
+            .unwrap()
+            .insert(name.to_string(), snapshot.clone());
         Ok(())
     }
 
@@ -143,11 +144,23 @@ pub struct Snapshot {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SnapshotContent {
-    Text { value: String },
-    Json { value: serde_json::Value },
-    Tensor { shape: Vec<usize>, data: Vec<f32> },
-    Binary { data: Vec<u8>, format: String },
-    ModelOutput { outputs: HashMap<String, serde_json::Value> },
+    Text {
+        value: String,
+    },
+    Json {
+        value: serde_json::Value,
+    },
+    Tensor {
+        shape: Vec<usize>,
+        data: Vec<f32>,
+    },
+    Binary {
+        data: Vec<u8>,
+        format: String,
+    },
+    ModelOutput {
+        outputs: HashMap<String, serde_json::Value>,
+    },
 }
 
 /// Metadata about a snapshot
@@ -197,7 +210,11 @@ impl std::fmt::Display for SnapshotError {
             SnapshotError::SerializeError(e) => write!(f, "Serialize error: {}", e),
             SnapshotError::NotFound(name) => write!(f, "Snapshot not found: {}", name),
             SnapshotError::Mismatch { expected, actual } => {
-                write!(f, "Snapshot mismatch:\nExpected:\n{}\n\nActual:\n{}", expected, actual)
+                write!(
+                    f,
+                    "Snapshot mismatch:\nExpected:\n{}\n\nActual:\n{}",
+                    expected, actual
+                )
             }
         }
     }
@@ -255,18 +272,27 @@ impl SnapshotManager {
 
     /// Assert text matches snapshot
     pub fn assert_text(&self, name: &str, actual: &str) -> Result<(), SnapshotError> {
-        let content = SnapshotContent::Text { value: actual.to_string() };
+        let content = SnapshotContent::Text {
+            value: actual.to_string(),
+        };
         self.assert_snapshot(name, content)
     }
 
     /// Assert JSON matches snapshot
     pub fn assert_json(&self, name: &str, actual: &serde_json::Value) -> Result<(), SnapshotError> {
-        let content = SnapshotContent::Json { value: actual.clone() };
+        let content = SnapshotContent::Json {
+            value: actual.clone(),
+        };
         self.assert_snapshot(name, content)
     }
 
     /// Assert tensor matches snapshot
-    pub fn assert_tensor(&self, name: &str, shape: &[usize], data: &[f32]) -> Result<(), SnapshotError> {
+    pub fn assert_tensor(
+        &self,
+        name: &str,
+        shape: &[usize],
+        data: &[f32],
+    ) -> Result<(), SnapshotError> {
         let content = SnapshotContent::Tensor {
             shape: shape.to_vec(),
             data: data.to_vec(),
@@ -285,7 +311,11 @@ impl SnapshotManager {
     }
 
     /// Core snapshot assertion
-    fn assert_snapshot(&self, name: &str, actual_content: SnapshotContent) -> Result<(), SnapshotError> {
+    fn assert_snapshot(
+        &self,
+        name: &str,
+        actual_content: SnapshotContent,
+    ) -> Result<(), SnapshotError> {
         let hash = self.compute_hash(&actual_content);
 
         let actual_snapshot = Snapshot {
@@ -315,7 +345,11 @@ impl SnapshotManager {
     }
 
     /// Compare two snapshots
-    fn compare_snapshots(&self, expected: &Snapshot, actual: &Snapshot) -> Result<(), SnapshotError> {
+    fn compare_snapshots(
+        &self,
+        expected: &Snapshot,
+        actual: &Snapshot,
+    ) -> Result<(), SnapshotError> {
         match (&expected.content, &actual.content) {
             (SnapshotContent::Text { value: e }, SnapshotContent::Text { value: a }) => {
                 if e != a {
@@ -333,7 +367,16 @@ impl SnapshotManager {
                     });
                 }
             }
-            (SnapshotContent::Tensor { shape: es, data: ed }, SnapshotContent::Tensor { shape: as_, data: ad }) => {
+            (
+                SnapshotContent::Tensor {
+                    shape: es,
+                    data: ed,
+                },
+                SnapshotContent::Tensor {
+                    shape: as_,
+                    data: ad,
+                },
+            ) => {
                 if es != as_ {
                     return Err(SnapshotError::Mismatch {
                         expected: format!("shape: {:?}", es),
@@ -350,7 +393,10 @@ impl SnapshotManager {
                     }
                 }
             }
-            (SnapshotContent::ModelOutput { outputs: e }, SnapshotContent::ModelOutput { outputs: a }) => {
+            (
+                SnapshotContent::ModelOutput { outputs: e },
+                SnapshotContent::ModelOutput { outputs: a },
+            ) => {
                 if e != a {
                     return Err(SnapshotError::Mismatch {
                         expected: serde_json::to_string_pretty(e).unwrap(),
@@ -513,13 +559,12 @@ impl GoldenFileManager {
         if self.update_mode || !path.exists() {
             fs::create_dir_all(path.parent().unwrap())
                 .map_err(|e| SnapshotError::IoError(e.to_string()))?;
-            fs::write(&path, actual)
-                .map_err(|e| SnapshotError::IoError(e.to_string()))?;
+            fs::write(&path, actual).map_err(|e| SnapshotError::IoError(e.to_string()))?;
             return Ok(());
         }
 
-        let expected = fs::read_to_string(&path)
-            .map_err(|e| SnapshotError::IoError(e.to_string()))?;
+        let expected =
+            fs::read_to_string(&path).map_err(|e| SnapshotError::IoError(e.to_string()))?;
 
         if expected != actual {
             Err(SnapshotError::Mismatch {
@@ -531,7 +576,11 @@ impl GoldenFileManager {
         }
     }
 
-    pub fn assert_golden_json<T: Serialize>(&self, name: &str, actual: &T) -> Result<(), SnapshotError> {
+    pub fn assert_golden_json<T: Serialize>(
+        &self,
+        name: &str,
+        actual: &T,
+    ) -> Result<(), SnapshotError> {
         let json = serde_json::to_string_pretty(actual)
             .map_err(|e| SnapshotError::SerializeError(e.to_string()))?;
         self.assert_golden(name, &json)
@@ -553,7 +602,8 @@ macro_rules! assert_snapshot {
 #[macro_export]
 macro_rules! assert_snapshot_file {
     ($manager:expr, $name:expr, $actual:expr) => {
-        $manager.assert_text($name, &$actual.to_string())
+        $manager
+            .assert_text($name, &$actual.to_string())
             .expect(&format!("Snapshot mismatch for '{}'", $name));
     };
 }
@@ -568,7 +618,9 @@ mod tests {
 
         let snapshot = Snapshot {
             name: "test".to_string(),
-            content: SnapshotContent::Text { value: "hello".to_string() },
+            content: SnapshotContent::Text {
+                value: "hello".to_string(),
+            },
             metadata: SnapshotMetadata::new(),
             hash: "abc".to_string(),
         };

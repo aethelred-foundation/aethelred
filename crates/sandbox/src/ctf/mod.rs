@@ -1021,7 +1021,9 @@ mod tests {
             .unwrap();
 
         // Correct flag format
-        let result = engine.submit_flag(&session_id2, "AETHEL{test_flag}").unwrap();
+        let result = engine
+            .submit_flag(&session_id2, "AETHEL{test_flag}")
+            .unwrap();
         assert!(result.correct);
         assert!(result.first_blood);
     }

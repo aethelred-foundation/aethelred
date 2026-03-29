@@ -1,8 +1,0 @@
-./api.pb.go
-./api_grpc.pb.go
-./common.pb.go
-./control.pb.go
-./control_grpc.pb.go
-./interceptors.go
-./protocol.pb.go
-./protocol_grpc.pb.go

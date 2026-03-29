@@ -19,8 +19,8 @@ import (
 //
 //   1. Clear utility: staking, verification fees, slashing collateral,
 //      governance voting
-//   2. Sustainable issuance: avoid runaway inflation; emissions align with
-//      security budget
+//   2. Fixed-supply discipline: no post-genesis inflation; fees and vesting
+//      govern release rather than new minting
 //   3. Fee market design: predictable but responsive to demand
 //   4. Incentive alignment: validators rewarded for correct verification;
 //      penalized for slashable behavior
@@ -88,10 +88,12 @@ const (
 
 // EmissionConfig defines the token issuance parameters.
 type EmissionConfig struct {
-	// Initial annual inflation rate in BPS (e.g., 800 = 8%)
+	// Initial annual inflation rate in BPS.
+	// A value of 0 indicates canonical fixed-supply mode.
 	InitialInflationBps int64
 
-	// Long-term target inflation in BPS (e.g., 200 = 2%)
+	// Long-term target inflation in BPS.
+	// A value of 0 indicates canonical fixed-supply mode.
 	TargetInflationBps int64
 
 	// Decay model determines how inflation decreases over time
@@ -113,8 +115,24 @@ type EmissionConfig struct {
 	SecurityBudgetFloorBps int64
 }
 
-// DefaultEmissionConfig returns conservative emission parameters.
+// DefaultEmissionConfig returns the canonical fixed-supply token emission
+// parameters: no post-genesis inflation and a hard cap locked to genesis supply.
 func DefaultEmissionConfig() EmissionConfig {
+	return EmissionConfig{
+		InitialInflationBps:    0, // fixed-supply mode
+		TargetInflationBps:     0, // fixed-supply mode
+		DecayModel:             EmissionExponentialDecay,
+		DecayPeriodYears:       6,    // halving every 6 years
+		MaxSupplyCap:           InitialSupplyUAETHEL,
+		StakingTargetBps:       5500, // 55% target staking
+		SecurityBudgetFloorBps: 0,
+	}
+}
+
+// InflationarySimulationConfig returns the legacy inflationary schedule used by
+// modeling and regression tests. It is intentionally non-canonical and must
+// not be treated as the production token release posture.
+func InflationarySimulationConfig() EmissionConfig {
 	return EmissionConfig{
 		InitialInflationBps:    800, // 8% initial
 		TargetInflationBps:     200, // 2% long-term target
@@ -128,11 +146,11 @@ func DefaultEmissionConfig() EmissionConfig {
 
 // ValidateEmissionConfig checks that emission parameters are well-formed.
 func ValidateEmissionConfig(config EmissionConfig) error {
-	if config.InitialInflationBps < 100 || config.InitialInflationBps > 2000 {
-		return fmt.Errorf("initial inflation must be in [100, 2000] BPS, got %d", config.InitialInflationBps)
+	if config.InitialInflationBps < 0 || config.InitialInflationBps > 2000 {
+		return fmt.Errorf("initial inflation must be in [0, 2000] BPS, got %d", config.InitialInflationBps)
 	}
-	if config.TargetInflationBps < 50 || config.TargetInflationBps > config.InitialInflationBps {
-		return fmt.Errorf("target inflation must be in [50, initial=%d] BPS, got %d",
+	if config.TargetInflationBps < 0 || config.TargetInflationBps > config.InitialInflationBps {
+		return fmt.Errorf("target inflation must be in [0, initial=%d] BPS, got %d",
 			config.InitialInflationBps, config.TargetInflationBps)
 	}
 	switch config.DecayModel {
@@ -143,6 +161,19 @@ func ValidateEmissionConfig(config EmissionConfig) error {
 	}
 	if config.DecayPeriodYears < 2 || config.DecayPeriodYears > 20 {
 		return fmt.Errorf("decay period must be in [2, 20] years, got %d", config.DecayPeriodYears)
+	}
+	if config.InitialInflationBps == 0 || config.TargetInflationBps == 0 {
+		if config.InitialInflationBps != 0 || config.TargetInflationBps != 0 {
+			return fmt.Errorf("fixed-supply mode requires both initial and target inflation to be 0 BPS")
+		}
+		if config.MaxSupplyCap != InitialSupplyUAETHEL {
+			return fmt.Errorf("fixed-supply mode requires max supply cap %d, got %d",
+				InitialSupplyUAETHEL, config.MaxSupplyCap)
+		}
+		if config.SecurityBudgetFloorBps != 0 {
+			return fmt.Errorf("fixed-supply mode requires security budget floor 0 BPS, got %d",
+				config.SecurityBudgetFloorBps)
+		}
 	}
 	if config.StakingTargetBps < 2000 || config.StakingTargetBps > 9000 {
 		return fmt.Errorf("staking target must be in [2000, 9000] BPS, got %d", config.StakingTargetBps)

@@ -1,0 +1,311 @@
+================================================================================
+WHITEPAPER DISCREPANCY SUMMARY TABLE
+AETHELRED Whitepaper v1.1 (Markdown) vs v2.0 (PDF)
+================================================================================
+
+CRITICAL FINDINGS: 14 Material Discrepancies Identified
+Severity Levels: EXTREME (1) | CRITICAL (8) | HIGH (4) | MEDIUM (1)
+
+================================================================================
+DISCREPANCY #1: WHITEPAPER VERSION
+================================================================================
+Category:      Document Metadata
+Markdown:      Whitepaper v1.1 (March 2026)
+PDF:           Technical Whitepaper v2.0 (March 2026)
+Severity:      MATERIAL DISCREPANCY
+Impact:        Ambiguity about which version is authoritative for ADGM submission
+Recommendation: Resolve version numbering before regulatory filing
+
+================================================================================
+DISCREPANCY #2: PoUW REWARDS VESTING (30% = 3 billion AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      120 months (10 years)
+PDF:           50Y Linear (50 years)
+Difference:    5x LONGER in PDF (40 additional years)
+Severity:      CRITICAL - VALIDATOR ECONOMICS FUNDAMENTALLY ALTERED
+Monthly Rate:  
+  - Markdown: 25,000,000 AETHEL/month
+  - PDF: 5,000,000 AETHEL/month (80% REDUCTION)
+Impact:        Affects validator recruitment, network incentives, long-term sustainability
+ADGM Risk:     High - must declare exact validator reward schedule
+
+================================================================================
+DISCREPANCY #3: CORE CONTRIBUTORS CLIFF (20% = 2 billion AETHEL)
+================================================================================
+Parameter:     Cliff Period
+Markdown:      6 months
+PDF:           12 months (DOUBLED)
+Difference:    +6 months additional lock-up
+Severity:      CRITICAL
+Impact:        Delays team token liquidity by 50%
+ADGM Risk:     Team vesting terms must be precise and investor-protective
+
+================================================================================
+DISCREPANCY #4: CORE CONTRIBUTORS VESTING DURATION (20% = 2 billion AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      60 months (5 years) AFTER 6-month cliff
+PDF:           48 months (4 years) AFTER 12-month cliff
+Difference:    Shorter duration but longer cliff-to-vest ratio
+Severity:      CRITICAL
+Mathematical:  
+  - Markdown: 54-month vesting phase, 36.36M AETHEL/month
+  - PDF: 36-month vesting phase, 41.67M AETHEL/month
+Timeline:      PDF accelerates monthly unlocks but reduces total period
+ADGM Risk:     Contradictory signals on team retention incentives
+
+================================================================================
+DISCREPANCY #5: PUBLIC SALES VESTING (7.5% = 750 million AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      18 months
+PDF:           12 months (1Y Linear)
+Difference:    33% SHORTER in PDF (6 months acceleration)
+Severity:      CRITICAL - INVESTOR TOKEN LIQUIDITY ACCELERATED
+Impact:        Faster investor sell-pressure after TGE
+ADGM Risk:     May require longer lock-up for market stability
+
+================================================================================
+DISCREPANCY #6: PUBLIC SALES TGE UNLOCK (7.5% = 750 million AETHEL)
+================================================================================
+Parameter:     Initial TGE Release
+Markdown:      20% = 150,000,000 AETHEL
+PDF:           350,000,000 AETHEL (absolute amount)
+Percentage:    350M is 46.67% of 750M allocation
+Difference:    2.33x MORE unlocked in PDF than Markdown
+Severity:      CRITICAL - MARKET DILUTION AT TGE
+Mathematical Impact:
+  - Markdown: 150M TGE + 600M over 18 months = 33.33M/month
+  - PDF: 350M TGE + 400M over 12 months = 33.33M/month
+  - Same monthly rate, but 2.33x higher initial release
+ADGM Risk:     Higher initial dilution affects price discovery and market stability
+
+================================================================================
+DISCREPANCY #7: AIRDROP (SEALS) VESTING (7% = 700 million AETHEL)
+================================================================================
+Parameter:     Distribution Model
+Markdown:      Deterministic - 12 months linear vesting
+               25% TGE unlock + 75% over 12 months
+PDF:           DAO-Controlled (no deterministic schedule)
+               0% TGE unlock
+Difference:    GOVERNANCE MODEL FUNDAMENTALLY CHANGED
+Severity:      EXTREME - GOVERNANCE UNCERTAINTY INTRODUCED
+Impact:        
+  - Markdown: Recipients know exact unlock timeline
+  - PDF: Recipients subject to DAO governance discretion
+ADGM Risk:     CRITICAL - Regulatory authorities require deterministic token terms
+               DAO-Controlled vesting without clear governance rules may NOT pass ADGM review
+
+================================================================================
+DISCREPANCY #8: ECOSYSTEM GRANTS VESTING (15% = 1.5 billion AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      54 months (4.5 years) with 6-month cliff
+PDF:           36 months (3 years) linear
+Difference:    33% SHORTER in PDF (1.5 years acceleration)
+Severity:      CRITICAL - DEVELOPER INCENTIVE TIMELINE SHORTENED
+Cliff:         Removed in PDF (was 6 months in Markdown)
+Impact:        Faster developer token availability, less long-term alignment
+ADGM Risk:     Cliff removal may weaken long-term developer commitment assurances
+
+================================================================================
+DISCREPANCY #9: ECOSYSTEM GRANTS TGE UNLOCK (15% = 1.5 billion AETHEL)
+================================================================================
+Parameter:     Initial TGE Release
+Markdown:      2% = 30,000,000 AETHEL
+PDF:           50,000,000 AETHEL (absolute amount)
+Percentage:    50M is 3.33% of 1.5B allocation
+Difference:    66.67% MORE unlocked in PDF
+Severity:      CRITICAL
+ADGM Risk:     TGE unlock discrepancy must be resolved before investor roadshow
+
+================================================================================
+DISCREPANCY #10: TREASURY & MARKET MAKERS TGE UNLOCK (6% = 600 million AETHEL)
+================================================================================
+Parameter:     Initial TGE Release
+Markdown:      25% = 150,000,000 AETHEL
+PDF:           300,000,000 AETHEL (absolute amount)
+Percentage:    300M is 50% of 600M allocation
+Difference:    100% MORE (DOUBLED) in PDF
+Severity:      CRITICAL - MARKET MAKING CAPITAL DOUBLED AT TGE
+Impact:        Significant increase in MM capital availability
+ADGM Risk:     May indicate intentional market support strategy, should be disclosed
+
+================================================================================
+DISCREPANCY #11: TREASURY & MARKET MAKERS VESTING (6% = 600 million AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      36 months
+PDF:           6 months (6M Linear)
+Difference:    83% SHORTER in PDF (30 months acceleration)
+Severity:      CRITICAL - TREASURY LIQUIDITY DRAMATICALLY ACCELERATED
+Mathematical Impact:
+  - Markdown: 150M TGE + 450M over 36 months = 12.5M/month
+  - PDF: 300M TGE + 300M over 6 months = 50M/month
+  - PDF is 4x faster monthly release rate
+ADGM Risk:     EXTREME - 6-month MM vesting is unusually short
+               May indicate aggressive market-making strategy that needs disclosure
+
+================================================================================
+DISCREPANCY #12: INSURANCE FUND TGE UNLOCK (5% = 500 million AETHEL)
+================================================================================
+Parameter:     Initial TGE Release
+Markdown:      10% = 50,000,000 AETHEL
+PDF:           0% (no TGE unlock)
+Difference:    TGE unlock REMOVED in PDF
+Severity:      CRITICAL - INSURANCE CAPITAL AVAILABILITY DELAYED
+Impact:        Protocol security fund has zero liquidity at launch
+ADGM Risk:     May require faster vesting to ensure protocol security
+
+================================================================================
+DISCREPANCY #13: INSURANCE FUND VESTING (5% = 500 million AETHEL)
+================================================================================
+Parameter:     Total Vesting Duration
+Markdown:      30 months
+PDF:           24 months (2Y Linear)
+Difference:    20% SHORTER in PDF
+Severity:      HIGH - INSURANCE FUND AVAILABILITY ACCELERATED
+Impact:        Security reserves reach full liquidity 6 months earlier
+ADGM Risk:     Inconsistent with removal of TGE unlock (may be contradictory)
+
+================================================================================
+DISCREPANCY #14: CONTINGENCY RESERVE VESTING (4% = 400 million AETHEL)
+================================================================================
+Parameter:     Distribution Model
+Markdown:      TBD (To Be Determined)
+               12-month cliff
+PDF:           DAO-Controlled (no deterministic schedule)
+Difference:    TBD removed, replaced with discretionary governance
+Severity:      MEDIUM - FUTURE-USE FLEXIBILITY, BUT GOVERNANCE UNDEFINED
+Impact:        Contingency tokens subject to DAO vote, not automatic schedule
+ADGM Risk:     If DAO-controlled, must define governance parameters
+
+================================================================================
+SUMMARY TABLE: All Allocation Categories
+================================================================================
+
+Category                  Markdown          PDF               Discrepancy
+──────────────────────────────────────────────────────────────────────────────
+PoUW Rewards (30%)        120 mo vesting    50Y vesting       5x DIFFERENCE
+Core Contributors (20%)   6mo cliff/60mo    12mo cliff/48mo   CLIFF DOUBLED
+Ecosystem Grants (15%)    54mo/6mo cliff    36mo/no cliff     33% shorter
+Treasury & MM (6%)        36mo/25% TGE      6mo/50% TGE       83% shorter vesting
+Public Sales (7.5%)       18mo/20% TGE      12mo/46.67% TGE   33% shorter vesting
+Airdrop (Seals) (7%)      12mo/25% TGE      DAO-Controlled    MODEL CHANGED
+Strategic/Seed (5.5%)     36mo/12mo cliff   48mo/12mo cliff   12mo longer vesting
+Insurance Fund (5%)       30mo/10% TGE      24mo/0% TGE       TGE unlock REMOVED
+Contingency (4%)          TBD/12mo cliff    DAO-Controlled    TBD→Governance
+
+================================================================================
+MATHEMATICAL SUMMARY: TGE CIRCULATING SUPPLY IMPACT
+================================================================================
+
+Current Formula (from PDF):
+- TGE Circulating: 630,000,000 AETHEL (6.3% of 10B)
+
+Sum of TGE Unlocks (Markdown basis):
+  PoUW:              0 AETHEL
+  Core Contributors: 0 AETHEL
+  Ecosystem:         30M AETHEL (2%)
+  Treasury:          150M AETHEL (25%)
+  Public Sales:      150M AETHEL (20%)
+  Airdrop:           175M AETHEL (25%)
+  Strategic:         0 AETHEL
+  Insurance:         50M AETHEL (10%)
+  Contingency:       0 AETHEL
+  ─────────────────────
+  Total:             ~555M AETHEL (5.55%)
+
+Sum of TGE Unlocks (PDF basis - absolute amounts):
+  PoUW:              0 AETHEL
+  Core Contributors: 0 AETHEL
+  Ecosystem:         50M AETHEL
+  Treasury:          300M AETHEL (recalculate from absolute)
+  Public Sales:      350M AETHEL (recalculate from absolute)
+  Airdrop:           0 AETHEL
+  Strategic:         0 AETHEL
+  Insurance:         0 AETHEL
+  Contingency:       0 AETHEL
+  ─────────────────────
+  Total:             ~700M AETHEL (7.0%)
+
+DISCREPANCY: Stated 630M (6.3%) vs calculated 555M-700M depending on source
+Resolution Required: Audit final TGE supply calculation
+
+================================================================================
+RECOMMENDED RESOLUTION PROCESS
+================================================================================
+
+PHASE 1 (IMMEDIATE - Days 1-3):
+1. Create authoritative allocation table with three columns:
+   - Markdown v1.1 values
+   - PDF v2.0 values
+   - Final Approved values (indicate which is chosen)
+2. Obtain sign-off from:
+   - Tokenomics lead (validator economics)
+   - Finance lead (investor terms)
+   - Legal/Compliance (ADGM requirements)
+   - CEO (final authority)
+
+PHASE 2 (URGENT - Days 4-7):
+1. For each discrepancy with chosen value, document:
+   - Why this value was selected
+   - Impact on validators, investors, developers
+   - ADGM compliance verification
+2. Update markdown source to match chosen values
+3. Regenerate PDF from updated markdown
+4. Create version control tag (v2.0-FINAL or v2.1)
+
+PHASE 3 (CRITICAL - Days 8-10):
+1. DAO-Controlled allocations: Define governance mechanisms
+   - Airdrop: Specify voting process for Seals distribution
+   - Contingency: Specify governance triggers and procedures
+2. Resolve DAO-Controlled ambiguity or revert to deterministic schedules
+3. Obtain legal review confirmation that final version meets ADGM requirements
+
+PHASE 4 (COMPLIANCE):
+1. Submit to ADGM with signed certification that whitepaper is:
+   - Internally consistent
+   - Mathematically correct
+   - Legally compliant
+   - Binding on the foundation
+
+================================================================================
+FILES GENERATED
+================================================================================
+
+1. /sessions/intelligent-confident-rubin/mnt/aethelred/COMPARISON_REPORT.txt
+   - Full detailed analysis with section-by-section comparison
+   - Regulatory implications for each discrepancy
+   - Recommendations for resolution
+
+2. /sessions/intelligent-confident-rubin/mnt/aethelred/DISCREPANCIES_SUMMARY.txt
+   - This file
+   - Quick reference summary of all 14 discrepancies
+   - Severity levels and mathematical impacts
+   - Recommended resolution process
+
+================================================================================
+NEXT STEPS FOR ADGM SUBMISSION
+================================================================================
+
+DO NOT submit current PDF to ADGM until all 14 discrepancies are resolved.
+
+Critical issues that will cause regulatory rejection:
+1. DAO-Controlled vesting without defined governance rules
+2. Whitepaper version mismatch (v1.1 vs v2.0)
+3. PoUW Rewards 50-year vesting (unusual and requires full justification)
+4. TGE unlock percentage vs absolute amount inconsistencies
+
+Recommended approach:
+1. Schedule emergency alignment meeting with core team
+2. Make explicit choices for each discrepancy (with documented rationale)
+3. Update source documents to be 100% consistent
+4. Regenerate PDF with automated pipeline
+5. Obtain legal sign-off on final version
+6. Submit corrected version to ADGM
+
+================================================================================
+END OF SUMMARY
+================================================================================

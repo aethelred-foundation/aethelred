@@ -90,6 +90,8 @@ lcov.info
 # ── Build Outputs ─────────────────────────────────────────────────────
 build/
 bin/
+!crates/*/src/bin/
+!crates/*/src/bin/*.rs
 
 # ── Solidity / Foundry / Hardhat ──────────────────────────────────────
 contracts/artifacts/
@@ -104,6 +106,8 @@ keyring-test/
 
 # ── Protobuf Generated ───────────────────────────────────────────────
 *.pb.go
+!x/*/types/*.pb.go
+!x/*/types/*_grpc.pb.go
 
 # ── Logs ──────────────────────────────────────────────────────────────
 *.log
@@ -116,6 +120,7 @@ temp/
 
 # ── Build Binaries ───────────────────────────────────────────────────
 aethelred-loadtest
+aethelredd
 
 # ── Coverage Output ──────────────────────────────────────────────────
 coverage*.out
@@ -124,8 +129,21 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI Tooling (local only) ──────────────────────────────────────────
+# ── AI & Dev Tooling (local only) ────────────────────────────────────
+.ai-tools/
 .claude/
+.cursor/
+.codex/
+.serena/
+.aider*
+CLAUDE.md
+
+# ── Local Test Outputs ───────────────────────────────────────────────
+loadtest-results/
+test-results/
+
+# ── Separate Repositories ────────────────────────────────────────────
+dApps/terraqura/
 
 # ── Archives & Generated Reports ────────────────────────────────────
 *.zip

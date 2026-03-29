@@ -176,7 +176,7 @@ watch -n 5 'curl -s http://localhost:3001/health/ready | jq ".checks.indexer"'
 ### 4.3 Communication Template
 
 ```
-🚨 [SEV-X] Cruzible Incident — [Brief Description]
+[SEV-X] Cruzible Incident — [Brief Description]
 
 Status: [Investigating | Mitigating | Resolved]
 Impact: [User-facing impact description]

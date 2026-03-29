@@ -78,12 +78,13 @@ type VerificationPolicy struct {
 }
 
 // DefaultVerificationPolicy returns the production verification policy.
+// Enterprise mode: RequireZKMLProof=true, AllowZKMLFallback=false.
 func DefaultVerificationPolicy() VerificationPolicy {
 	return VerificationPolicy{
 		Mode:                          VerificationModeStrict,
 		RequireTEEAttestation:         true,
-		RequireZKMLProof:              false,
-		AllowZKMLFallback:             true,
+		RequireZKMLProof:              true,
+		AllowZKMLFallback:             false,
 		FailClosed:                    true,
 		MaxAttestationAgeBlocks:       BlocksPerDay, // 24h max attestation age
 		MinProofConfidenceBps:         9500,          // 95% minimum confidence
@@ -102,6 +103,12 @@ func ValidateVerificationPolicy(policy VerificationPolicy) error {
 	}
 	if policy.Mode == VerificationModeStrict && !policy.RequireTEEAttestation {
 		return fmt.Errorf("strict mode requires TEE attestation")
+	}
+	if policy.Mode == VerificationModeStrict && !policy.RequireZKMLProof {
+		return fmt.Errorf("strict mode requires zkML proof (enterprise hybrid)")
+	}
+	if policy.Mode == VerificationModeStrict && policy.AllowZKMLFallback {
+		return fmt.Errorf("strict mode must not allow zkML fallback (enterprise hybrid)")
 	}
 	if policy.MaxAttestationAgeBlocks <= 0 {
 		return fmt.Errorf("max attestation age must be positive, got %d", policy.MaxAttestationAgeBlocks)

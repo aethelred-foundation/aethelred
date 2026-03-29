@@ -10,6 +10,7 @@ package nn
 
 import (
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/aethelred/sdk-go/pkg/tensor"
@@ -433,7 +434,7 @@ func ClipGradNorm(parameters []*Parameter, maxNorm float64, normType float64) fl
 	}
 
 	if normType == 2.0 {
-		totalNorm = totalNorm
+		totalNorm = math.Sqrt(totalNorm)
 	}
 
 	// Clip

@@ -353,6 +353,152 @@ func endpointProbeURLs(endpoint string) []string {
 	return unique
 }
 
+// EnterpriseReadinessCheck validates that all enterprise-grade verification
+// dependencies are configured and reachable. When any dependency is missing
+// or unreachable, startup MUST be blocked (fail-closed).
+type EnterpriseReadinessCheck struct {
+	// OrchestratorConfig to validate enterprise constraints.
+	OrchestratorConfig *OrchestratorConfig
+}
+
+// EnterpriseReadinessResult contains the structured result of an enterprise
+// readiness evaluation.
+type EnterpriseReadinessResult struct {
+	Ready  bool
+	Checks []ReadinessCheck
+}
+
+// String returns a human-readable enterprise readiness report.
+func (r EnterpriseReadinessResult) String() string {
+	var b strings.Builder
+	status := "ENTERPRISE READY"
+	if !r.Ready {
+		status = "ENTERPRISE NOT READY"
+	}
+	fmt.Fprintf(&b, "Enterprise Readiness: %s\n", status)
+	for _, c := range r.Checks {
+		mark := "PASS"
+		if !c.Passed {
+			mark = "FAIL"
+		}
+		fmt.Fprintf(&b, "  [%s] %s: %s\n", mark, c.Name, c.Message)
+	}
+	return b.String()
+}
+
+// Validate performs the enterprise readiness check. It verifies:
+//   - Orchestrator config passes ValidateEnterpriseConfig()
+//   - TEE verifier endpoint is configured and reachable
+//   - Attestation verifier endpoint is configured and reachable
+//   - Prover endpoint is configured and reachable
+//
+// Returns an error if any enterprise dependency is unavailable.
+func (erc *EnterpriseReadinessCheck) Validate() (EnterpriseReadinessResult, error) {
+	result := EnterpriseReadinessResult{Ready: true}
+
+	if erc.OrchestratorConfig == nil {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_config",
+			Passed:  false,
+			Message: "orchestrator config is nil",
+		})
+		return result, fmt.Errorf("enterprise readiness failed: orchestrator config is nil")
+	}
+
+	cfg := erc.OrchestratorConfig
+
+	// 1. Validate enterprise config constraints (hybrid, require-both, no mocks).
+	if err := cfg.ValidateEnterpriseConfig(); err != nil {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_config",
+			Passed:  false,
+			Message: err.Error(),
+		})
+		return result, fmt.Errorf("enterprise readiness failed: %w", err)
+	}
+	result.Checks = append(result.Checks, ReadinessCheck{
+		Name:    "enterprise_config",
+		Passed:  true,
+		Message: "enterprise constraints satisfied",
+	})
+
+	// 2. TEE executor endpoint must be configured and reachable.
+	if cfg.NitroConfig == nil || cfg.NitroConfig.ExecutorEndpoint == "" {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_tee_endpoint",
+			Passed:  false,
+			Message: "TEE executor endpoint not configured",
+		})
+	} else if !isEndpointReachable(cfg.NitroConfig.ExecutorEndpoint) {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_tee_endpoint",
+			Passed:  false,
+			Message: fmt.Sprintf("TEE executor endpoint unreachable: %s", cfg.NitroConfig.ExecutorEndpoint),
+		})
+	} else {
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_tee_endpoint",
+			Passed:  true,
+			Message: fmt.Sprintf("reachable: %s", cfg.NitroConfig.ExecutorEndpoint),
+		})
+	}
+
+	// 3. Attestation verifier endpoint must be configured and reachable.
+	if cfg.NitroConfig == nil || cfg.NitroConfig.AttestationVerifierEndpoint == "" {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_attestation_endpoint",
+			Passed:  false,
+			Message: "attestation verifier endpoint not configured",
+		})
+	} else if !isEndpointReachable(cfg.NitroConfig.AttestationVerifierEndpoint) {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_attestation_endpoint",
+			Passed:  false,
+			Message: fmt.Sprintf("attestation verifier unreachable: %s", cfg.NitroConfig.AttestationVerifierEndpoint),
+		})
+	} else {
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_attestation_endpoint",
+			Passed:  true,
+			Message: fmt.Sprintf("reachable: %s", cfg.NitroConfig.AttestationVerifierEndpoint),
+		})
+	}
+
+	// 4. Prover endpoint must be configured and reachable.
+	if cfg.ProverConfig == nil || cfg.ProverConfig.ProverEndpoint == "" {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_prover_endpoint",
+			Passed:  false,
+			Message: "prover endpoint not configured",
+		})
+	} else if !isEndpointReachable(cfg.ProverConfig.ProverEndpoint) {
+		result.Ready = false
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_prover_endpoint",
+			Passed:  false,
+			Message: fmt.Sprintf("prover endpoint unreachable: %s", cfg.ProverConfig.ProverEndpoint),
+		})
+	} else {
+		result.Checks = append(result.Checks, ReadinessCheck{
+			Name:    "enterprise_prover_endpoint",
+			Passed:  true,
+			Message: fmt.Sprintf("reachable: %s", cfg.ProverConfig.ProverEndpoint),
+		})
+	}
+
+	if !result.Ready {
+		return result, fmt.Errorf("enterprise readiness failed: one or more dependencies unavailable")
+	}
+	return result, nil
+}
+
 // ProverConfig re-exports for package visibility in readiness checks.
 // Avoids the need to import ezkl directly when using ValidateProductionReadiness.
 type ProverConfigRef = ezkl.ProverConfig

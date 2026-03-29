@@ -89,7 +89,7 @@ impl Default for SelectionConfig {
             reputation_weight: 0.3,
             min_uptime_pct: 95.0,
             max_commission_bps: 1000,
-            max_per_region: 0,     // 0 = no limit (dynamic)
+            max_per_region: 0, // 0 = no limit (dynamic)
             max_per_operator: 3,
             min_stake: 32_000_000_000_000_000_000, // 32 AETHEL in wei
         }

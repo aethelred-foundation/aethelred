@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/AethelredFoundation/aethelred-cli/actions"><img src="https://img.shields.io/github/actions/workflow/status/AethelredFoundation/aethelred-cli/cli-ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+  <a href="https://github.com/aethelred-foundation/aethelred-cli/actions"><img src="https://img.shields.io/github/actions/workflow/status/aethelred-foundation/aethelred-cli/cli-ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/built_with-Rust-orange?style=flat-square&logo=rust" alt="Rust">
   <a href="https://docs.aethelred.io/cli"><img src="https://img.shields.io/badge/docs-cli-orange?style=flat-square" alt="Docs"></a>
@@ -18,7 +18,7 @@
 
 **macOS / Linux (Homebrew):**
 ```bash
-brew install AethelredFoundation/tap/aeth
+brew install aethelred-foundation/tap/aeth
 ```
 
 **Cargo:**
@@ -26,7 +26,7 @@ brew install AethelredFoundation/tap/aeth
 cargo install aeth
 ```
 
-**Download binary** from [Releases](https://github.com/AethelredFoundation/aethelred-cli/releases):
+**Download binary** from [Releases](https://github.com/aethelred-foundation/aethelred-cli/releases):
 ```bash
 curl -sSL https://install.aethelred.io | bash
 ```
@@ -117,6 +117,6 @@ cargo run --bin aeth -- --help
 
 ## Related
 
-- [AethelredFoundation/aethelred](https://github.com/AethelredFoundation/aethelred) - Core node
-- [AethelredFoundation/aethelred-sdk-rs](https://github.com/AethelredFoundation/aethelred-sdk-rs) - Rust SDK (used internally)
+- [aethelred-foundation/aethelred](https://github.com/aethelred-foundation/aethelred) - Core node
+- [aethelred-foundation/aethelred-sdk-rs](https://github.com/aethelred-foundation/aethelred-sdk-rs) - Rust SDK (used internally)
 - [Docs](https://docs.aethelred.io/cli)

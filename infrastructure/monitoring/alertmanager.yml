@@ -1,0 +1,53 @@
+# ============================================================================
+# Alertmanager Configuration for Aethelred Protocol
+# ============================================================================
+# Routes alerts from Prometheus to appropriate notification channels.
+#
+# Teams must configure actual webhook URLs before production deployment:
+#   - critical-receiver: PagerDuty / OpsGenie integration
+#   - warning-receiver:  Slack webhook
+#   - default-receiver:  Catch-all webhook
+#
+# Ref: infrastructure/monitoring/prometheus-rules.yml for alert definitions
+# ============================================================================
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      continue: true
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+
+receivers:
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:9095/alerts'  # TODO: Replace with actual webhook
+        send_resolved: true
+
+  - name: 'critical-receiver'
+    webhook_configs:
+      - url: 'http://localhost:9095/alerts/critical'  # TODO: Replace with PagerDuty/OpsGenie
+        send_resolved: true
+
+  - name: 'warning-receiver'
+    webhook_configs:
+      - url: 'http://localhost:9095/alerts/warning'  # TODO: Replace with Slack webhook
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

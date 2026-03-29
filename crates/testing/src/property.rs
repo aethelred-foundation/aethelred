@@ -3,11 +3,11 @@
 //! Property-based testing (fuzzing) framework for AI/ML applications.
 //! Generates random inputs to verify properties hold for all inputs.
 
-use std::fmt::Debug;
-use std::collections::HashMap;
-use std::hash::Hash;
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::hash::Hash;
 
 // ============ Property Test Configuration ============
 
@@ -50,7 +50,11 @@ impl Arbitrary for bool {
     }
 
     fn shrink(&self) -> Vec<Self> {
-        if *self { vec![false] } else { vec![] }
+        if *self {
+            vec![false]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -184,9 +188,9 @@ impl Arbitrary for String {
         let mut shrinks = Vec::new();
         if !self.is_empty() {
             shrinks.push(String::new());
-            shrinks.push(self[..self.len()/2].to_string());
+            shrinks.push(self[..self.len() / 2].to_string());
             shrinks.push(self[1..].to_string());
-            shrinks.push(self[..self.len()-1].to_string());
+            shrinks.push(self[..self.len() - 1].to_string());
         }
         shrinks
     }
@@ -202,7 +206,7 @@ impl<T: Arbitrary> Arbitrary for Vec<T> {
         let mut shrinks = Vec::new();
         if !self.is_empty() {
             shrinks.push(Vec::new());
-            shrinks.push(self[..self.len()/2].to_vec());
+            shrinks.push(self[..self.len() / 2].to_vec());
 
             // Remove each element
             for i in 0..self.len() {
@@ -332,7 +336,7 @@ impl Arbitrary for ArbitraryShape {
         // Remove dimensions
         if self.dims.len() > 1 {
             shrinks.push(ArbitraryShape {
-                dims: self.dims[..self.dims.len()-1].to_vec(),
+                dims: self.dims[..self.dims.len() - 1].to_vec(),
                 max_dim: self.max_dim,
                 max_size: self.max_size,
             });
@@ -393,7 +397,7 @@ impl Arbitrary for ArbitraryTensor {
 
         // Shrink shape
         if self.shape.len() > 1 {
-            let new_shape: Vec<usize> = self.shape[..self.shape.len()-1].to_vec();
+            let new_shape: Vec<usize> = self.shape[..self.shape.len() - 1].to_vec();
             let new_size: usize = new_shape.iter().product();
             shrinks.push(ArbitraryTensor {
                 shape: new_shape,
@@ -427,7 +431,7 @@ impl Arbitrary for ArbitraryProbabilities {
 
         if self.values.len() > 2 {
             // Reduce to fewer elements
-            let mut new_values = self.values[..self.values.len()-1].to_vec();
+            let mut new_values = self.values[..self.values.len() - 1].to_vec();
             let sum: f32 = new_values.iter().sum();
             for v in &mut new_values {
                 *v /= sum;
@@ -767,8 +771,7 @@ macro_rules! assert_property {
         assert!(
             result.passed,
             "Property failed after {} tests with seed {}",
-            result.num_tests,
-            result.seed
+            result.num_tests, result.seed
         );
     };
 }

@@ -71,7 +71,7 @@ func TestC01_VestedAmount_MaxSupplyWithTGE_NoOverflow(t *testing.T) {
 
 	// At cliff: should get TGE + cliff = 35% of 10^16
 	vested := keeper.VestedAmount(schedule, keeper.BlocksPerYear)
-	expectedTGE := int64(10_000_000_000_000_000 * 2000 / 10000)
+	expectedTGE := int64(10_000_000_000_000_000 * 2250 / 10000)
 	expectedCliff := int64(10_000_000_000_000_000 * 1500 / 10000)
 	expected := expectedTGE + expectedCliff
 
@@ -223,7 +223,7 @@ func TestH03_VestedAmount_Block1_SameAsGenesis_WithNoCliff(t *testing.T) {
 // non-deterministic across CPU architectures due to different FP rounding modes.
 // Fix: Uses integer right-shift for halvings with linear interpolation.
 func TestM05_ExponentialDecay_Deterministic(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.DecayPeriodYears = 6
 
@@ -243,7 +243,7 @@ func TestM05_ExponentialDecay_Deterministic(t *testing.T) {
 }
 
 func TestM05_ExponentialDecay_HalvesCorrectly(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.InitialInflationBps = 800 // 8%
 	config.TargetInflationBps = 200  // 2% floor
@@ -270,7 +270,7 @@ func TestM05_ExponentialDecay_HalvesCorrectly(t *testing.T) {
 }
 
 func TestM05_ExponentialDecay_NeverBelowFloor(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.InitialInflationBps = 800
 	config.TargetInflationBps = 200
@@ -287,7 +287,7 @@ func TestM05_ExponentialDecay_NeverBelowFloor(t *testing.T) {
 }
 
 func TestM05_ExponentialDecay_MonotonicDecrease(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.InitialInflationBps = 800
 	config.TargetInflationBps = 200
@@ -303,7 +303,7 @@ func TestM05_ExponentialDecay_MonotonicDecrease(t *testing.T) {
 
 func TestM05_ExponentialDecay_NoZeroInflation(t *testing.T) {
 	// With round-up halving, inflation should never reach zero
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.InitialInflationBps = 800
 	config.TargetInflationBps = 100 // Low floor
@@ -380,7 +380,7 @@ func TestEmissionSchedule_AllModels_ProduceValidSchedules(t *testing.T) {
 
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
-			config := keeper.DefaultEmissionConfig()
+			config := keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 20)
@@ -623,7 +623,7 @@ func TestVestedAmount_ExactCliffBoundary(t *testing.T) {
 // =============================================================================
 
 func TestEmissionSchedule_LinearDecay_Monotonic(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionLinearDecay
 	config.DecayPeriodYears = 10
 
@@ -637,7 +637,7 @@ func TestEmissionSchedule_LinearDecay_Monotonic(t *testing.T) {
 }
 
 func TestEmissionSchedule_LinearDecay_ReachesFloor(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionLinearDecay
 	config.DecayPeriodYears = 6
 
@@ -652,7 +652,7 @@ func TestEmissionSchedule_LinearDecay_ReachesFloor(t *testing.T) {
 }
 
 func TestEmissionSchedule_ExponentialDecay_50Years(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 
 	schedule := keeper.ComputeEmissionSchedule(config, 50)
@@ -667,7 +667,7 @@ func TestEmissionSchedule_ExponentialDecay_50Years(t *testing.T) {
 }
 
 func TestEmissionSchedule_ExponentialDecay_100Years(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 
 	schedule := keeper.ComputeEmissionSchedule(config, 100)
@@ -682,7 +682,7 @@ func TestEmissionSchedule_ExponentialDecay_100Years(t *testing.T) {
 }
 
 func TestEmissionSchedule_StepDecay_DiscreteSteps(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionStepDecay
 	config.DecayPeriodYears = 12
 
@@ -700,7 +700,7 @@ func TestEmissionSchedule_StepDecay_DiscreteSteps(t *testing.T) {
 }
 
 func TestEmissionSchedule_StepDecay_AllStepsPositive(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionStepDecay
 
 	schedule := keeper.ComputeEmissionSchedule(config, 30)
@@ -714,13 +714,13 @@ func TestEmissionSchedule_StepDecay_AllStepsPositive(t *testing.T) {
 }
 
 func TestEmissionSchedule_ZeroYears_Empty(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	schedule := keeper.ComputeEmissionSchedule(config, 0)
 	require.Empty(t, schedule, "0 years should produce empty schedule")
 }
 
 func TestEmissionSchedule_SingleYear(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	schedule := keeper.ComputeEmissionSchedule(config, 1)
 	require.Equal(t, 1, len(schedule), "should produce exactly 1 entry")
 
@@ -740,6 +740,7 @@ func TestEmissionSchedule_CumulativeSupply_AlwaysIncreasing(t *testing.T) {
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
 			config := keeper.DefaultEmissionConfig()
+			config = keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 30)
@@ -761,6 +762,7 @@ func TestEmissionSchedule_InflationBps_AlwaysPositive(t *testing.T) {
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
 			config := keeper.DefaultEmissionConfig()
+			config = keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 50)
@@ -773,7 +775,7 @@ func TestEmissionSchedule_InflationBps_AlwaysPositive(t *testing.T) {
 }
 
 func TestEmissionSchedule_AnnualEmission_NeverNegative(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionExponentialDecay
 	config.DecayPeriodYears = 2 // Fast halving
 
@@ -1357,8 +1359,9 @@ func TestDefaultEmissionConfig_Valid(t *testing.T) {
 	err := keeper.ValidateEmissionConfig(config)
 	require.NoError(t, err, "default emission config must be valid")
 
-	require.Equal(t, int64(800), config.InitialInflationBps)
-	require.Equal(t, int64(200), config.TargetInflationBps)
+	require.Equal(t, int64(0), config.InitialInflationBps)
+	require.Equal(t, int64(0), config.TargetInflationBps)
+	require.Equal(t, keeper.InitialSupplyUAETHEL, config.MaxSupplyCap)
 	require.Equal(t, keeper.EmissionExponentialDecay, config.DecayModel)
 }
 
@@ -1411,7 +1414,7 @@ func TestDefaultFeeDistributionConfig_Valid(t *testing.T) {
 // =============================================================================
 
 func TestCrossModel_EmissionThenVesting_Consistent(t *testing.T) {
-	emissionConfig := keeper.DefaultEmissionConfig()
+	emissionConfig := keeper.InflationarySimulationConfig()
 	schedule := keeper.ComputeEmissionSchedule(emissionConfig, 10)
 	require.NotEmpty(t, schedule)
 
@@ -1436,10 +1439,10 @@ func TestCrossModel_EmissionThenVesting_Consistent(t *testing.T) {
 }
 
 func TestCrossModel_LinearVsExponentialDecay_InitialYear(t *testing.T) {
-	linearConfig := keeper.DefaultEmissionConfig()
+	linearConfig := keeper.InflationarySimulationConfig()
 	linearConfig.DecayModel = keeper.EmissionLinearDecay
 
-	expConfig := keeper.DefaultEmissionConfig()
+	expConfig := keeper.InflationarySimulationConfig()
 	expConfig.DecayModel = keeper.EmissionExponentialDecay
 
 	linearSchedule := keeper.ComputeEmissionSchedule(linearConfig, 1)
@@ -1464,7 +1467,7 @@ func TestCrossModel_AllDecayModels_NeverNegativeEmission(t *testing.T) {
 
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
-			config := keeper.DefaultEmissionConfig()
+			config := keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 100)
@@ -1555,7 +1558,7 @@ func TestCrossModel_FeeDistribution_AllConfigs(t *testing.T) {
 }
 
 func TestCrossModel_SafeEmission_MatchesUnsafe(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	blockTimeConfig := keeper.DefaultBlockTimeConfig()
 
 	unsafeSchedule := keeper.ComputeEmissionSchedule(config, 20)

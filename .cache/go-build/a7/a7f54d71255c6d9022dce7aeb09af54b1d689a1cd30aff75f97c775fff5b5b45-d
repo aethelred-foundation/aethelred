@@ -1,5 +1,0 @@
-./adapter.go
-./handler_map.go
-./sig_verifiable_tx.go
-./sign_mode_handler.go
-./verify.go

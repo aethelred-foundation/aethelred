@@ -1,7 +1,0 @@
-./codec.go
-./genesis.go
-./keys.go
-./msgs.go
-./verification.go
-./verify.pb.go
-./verify_grpc.pb.go

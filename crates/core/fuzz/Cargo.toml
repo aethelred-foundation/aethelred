@@ -7,9 +7,11 @@ publish = false
 [package.metadata]
 cargo-fuzz = true
 
+[workspace]
+
 [dependencies]
 libfuzzer-sys = "0.4"
-aethelred-core = { path = "../..", features = ["full-pqc"] }
+aethelred-core = { path = "..", features = ["full-pqc"] }
 
 [[bin]]
 name = "fuzz_hybrid_signature_from_bytes"

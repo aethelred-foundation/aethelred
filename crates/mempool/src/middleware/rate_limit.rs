@@ -8,9 +8,7 @@
 //! - Per-type: Limits specific transaction types
 //! - Global: Overall transaction throughput limit
 
-use super::{
-    Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult,
-};
+use super::{Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -33,7 +31,10 @@ impl RateLimitMiddleware {
         Self {
             address_limiters: Arc::new(RwLock::new(HashMap::new())),
             type_limiters: Arc::new(RwLock::new(HashMap::new())),
-            global_limiter: Arc::new(RwLock::new(RateLimiter::new(10_000, Duration::from_secs(1)))),
+            global_limiter: Arc::new(RwLock::new(RateLimiter::new(
+                10_000,
+                Duration::from_secs(1),
+            ))),
             last_cleanup: Arc::new(RwLock::new(Instant::now())),
         }
     }
@@ -58,9 +59,9 @@ impl RateLimitMiddleware {
     fn get_address_limiter(&self, address: [u8; 21], limit: u32) -> bool {
         let mut limiters = self.address_limiters.write().unwrap();
 
-        let limiter = limiters.entry(address).or_insert_with(|| {
-            RateLimiter::new(limit, Duration::from_secs(60))
-        });
+        let limiter = limiters
+            .entry(address)
+            .or_insert_with(|| RateLimiter::new(limit, Duration::from_secs(60)));
 
         limiter.try_acquire()
     }
@@ -81,9 +82,9 @@ impl RateLimitMiddleware {
             _ => 100,
         };
 
-        let limiter = limiters.entry(tx_type).or_insert_with(|| {
-            RateLimiter::new(limit, Duration::from_secs(1))
-        });
+        let limiter = limiters
+            .entry(tx_type)
+            .or_insert_with(|| RateLimiter::new(limit, Duration::from_secs(1)));
 
         limiter.try_acquire()
     }
@@ -117,7 +118,7 @@ impl Middleware for RateLimitMiddleware {
         if !self.check_global() {
             ctx.add_tag("rate_limit_type", "global");
             return Ok(MiddlewareAction::Reject(
-                "Global rate limit exceeded".into()
+                "Global rate limit exceeded".into(),
             ));
         }
 
@@ -126,10 +127,7 @@ impl Middleware for RateLimitMiddleware {
             ctx.add_tag("rate_limit_type", "address");
             return Ok(MiddlewareAction::Delay {
                 milliseconds: 1000,
-                reason: format!(
-                    "Address rate limit exceeded ({}/min)",
-                    per_address_limit
-                ),
+                reason: format!("Address rate limit exceeded ({}/min)", per_address_limit),
             });
         }
 
@@ -138,10 +136,7 @@ impl Middleware for RateLimitMiddleware {
             ctx.add_tag("rate_limit_type", "tx_type");
             return Ok(MiddlewareAction::Delay {
                 milliseconds: 500,
-                reason: format!(
-                    "Transaction type {} rate limit exceeded",
-                    tx_type
-                ),
+                reason: format!("Transaction type {} rate limit exceeded", tx_type),
             });
         }
 

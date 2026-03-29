@@ -139,7 +139,7 @@ jobs:
             exit 1
           fi
           BRANCH="monorepo-sync-${{ matrix.sdk }}-${GITHUB_SHA::12}"
-          BODY=$'Automated sync from AethelredMVP monorepo.\n\nSource commit: '"${GITHUB_SHA}"
+          BODY=$'Automated sync from the canonical AETHELRED monorepo.\n\nSource commit: '"${GITHUB_SHA}"
           args=(
             --sdk "${{ matrix.sdk }}"
             --validate

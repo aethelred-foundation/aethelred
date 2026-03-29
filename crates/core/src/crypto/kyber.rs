@@ -67,8 +67,6 @@ impl KyberLevel {
     }
 }
 
-
-
 /// Kyber public key for key encapsulation
 #[derive(Clone, PartialEq, Eq)]
 pub struct KyberPublicKey {

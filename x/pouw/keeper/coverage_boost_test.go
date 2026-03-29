@@ -957,7 +957,7 @@ func TestCB_ValidateBlockTimeConfig(t *testing.T) {
 }
 
 func TestCB_ComputeEmissionScheduleSafe(t *testing.T) {
-	cfg := keeper.DefaultEmissionConfig()
+	cfg := keeper.InflationarySimulationConfig()
 	btCfg := keeper.DefaultBlockTimeConfig()
 	schedule, err := keeper.ComputeEmissionScheduleSafe(cfg, 5, btCfg)
 	require.NoError(t, err)
@@ -981,12 +981,12 @@ func TestCB_ValidateEmissionConfig(t *testing.T) {
 }
 
 func TestCB_ComputeEmissionSchedule(t *testing.T) {
-	schedule := keeper.ComputeEmissionSchedule(keeper.DefaultEmissionConfig(), 5)
+	schedule := keeper.ComputeEmissionSchedule(keeper.InflationarySimulationConfig(), 5)
 	require.NotEmpty(t, schedule)
 }
 
 func TestCB_ComputeInflationForYear(t *testing.T) {
-	cfg := keeper.DefaultEmissionConfig()
+	cfg := keeper.InflationarySimulationConfig()
 	require.Greater(t, keeper.ComputeInflationForYearForTest(cfg, 1), int64(0))
 	require.Greater(t, keeper.ComputeInflationForYearForTest(cfg, 0), int64(0))
 }

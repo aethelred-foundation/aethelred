@@ -1,8 +1,0 @@
-./http_security.go
-./keeper.go
-./registry_genesis.go
-./remote_verifier.go
-./replay_registry.go
-./tee_verification_path.go
-./zk_verification_path.go
-./zk_verifier.go

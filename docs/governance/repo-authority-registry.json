@@ -1,24 +1,21 @@
 {
   "version": 1,
-  "effective_date": "2026-02-24",
+  "effective_date": "2026-03-13",
   "ratification_status": "pending-foundation-ratification",
   "ratification_record": "docs/governance/adr-0001-chain-repo-authority-canonicalization.md",
-  "purpose": "Repository authority and release provenance registry for the Aethelred multi-repo set.",
+  "purpose": "Repository authority and release provenance registry for the public Aethelred GitHub organization.",
   "authority_groups": [
     {
       "id": "chain-go",
-      "description": "Go-based canonical chain implementation track",
-      "canonical_repo": "AethelredFoundation/aethelred-cosmos-node",
+      "description": "Canonical public chain implementation track",
+      "canonical_repo": "aethelred-foundation/aethelred",
       "canonical_go_module": "github.com/aethelred/aethelred",
-      "allow_duplicate_go_module_during_transition": true,
-      "transition_duplicate_repos": [
-        "AethelredFoundation/aethelred-core"
-      ]
+      "allow_duplicate_go_module_during_transition": false
     }
   ],
   "repos": [
     {
-      "repo": "AethelredFoundation/aethelred-cosmos-node",
+      "repo": "aethelred-foundation/aethelred",
       "role": "canonical-chain",
       "authority_group": "chain-go",
       "release_authority": true,
@@ -29,63 +26,70 @@
       }
     },
     {
-      "repo": "AethelredFoundation/aethelred-core",
-      "role": "transitional-mirror",
-      "authority_group": "chain-go",
-      "release_authority": false,
-      "superseded_by": "AethelredFoundation/aethelred-cosmos-node",
-      "declared_modules": {
-        "go": [
-          "github.com/aethelred/aethelred"
-        ]
-      }
-    },
-    {
-      "repo": "AethelredFoundation/aethelred-rust-node",
-      "role": "alternative-implementation",
-      "authority_group": "chain-rust",
-      "release_authority": true,
-      "declared_modules": {
-        "cargo": [
-          "aethelred-rust-node"
-        ]
-      }
-    },
-    {
-      "repo": "AethelredFoundation/aethelred-tee-worker",
-      "role": "runtime-worker",
-      "authority_group": "tee-workers",
-      "release_authority": true
-    },
-    {
-      "repo": "AethelredFoundation/aethelred-contracts",
+      "repo": "aethelred-foundation/contracts",
       "role": "smart-contracts",
       "authority_group": "contracts",
       "release_authority": true
     },
     {
-      "repo": "AethelredFoundation/aethelred-sdks",
-      "role": "sdk-monorepo",
-      "authority_group": "sdks",
+      "repo": "aethelred-foundation/aethelred-sdk-ts",
+      "role": "sdk-typescript",
+      "authority_group": "sdk",
       "release_authority": true
     },
     {
-      "repo": "AethelredFoundation/aethelred-developer-tools",
-      "role": "developer-tools",
+      "repo": "aethelred-foundation/aethelred-sdk-py",
+      "role": "sdk-python",
+      "authority_group": "sdk",
+      "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-sdk-go",
+      "role": "sdk-go",
+      "authority_group": "sdk",
+      "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-sdk-rs",
+      "role": "sdk-rust",
+      "authority_group": "sdk",
+      "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/aethelred-cli",
+      "role": "developer-cli",
       "authority_group": "developer-tools",
       "release_authority": true
     },
     {
-      "repo": "AethelredFoundation/aethelred-integrations",
-      "role": "framework-integrations",
-      "authority_group": "integrations",
+      "repo": "aethelred-foundation/vscode-aethelred",
+      "role": "editor-extension",
+      "authority_group": "developer-tools",
       "release_authority": true
     },
     {
-      "repo": "AethelredFoundation/aethelred-dashboard",
-      "role": "frontend-dashboard",
+      "repo": "aethelred-foundation/aethelred-docs",
+      "role": "documentation-site",
+      "authority_group": "docs",
+      "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/AIPs",
+      "role": "governance-specs",
+      "authority_group": "governance",
+      "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/cruzible",
+      "role": "application-frontend",
       "authority_group": "frontend",
       "release_authority": true
+    },
+    {
+      "repo": "aethelred-foundation/.github",
+      "role": "org-control-plane",
+      "authority_group": "org-control-plane",
+      "release_authority": false
     }
   ]
 }

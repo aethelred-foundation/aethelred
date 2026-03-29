@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 NODE_BIN="${NODE_BIN:-node}"
-AETH_CLI="${AETH_CLI:-${ROOT_DIR}/tools/cli/aeth/dist/index.js}"
+AETH_CLI="${AETH_CLI:-${ROOT_DIR}/tools/cli/aethel/dist/index.js}"
 SEAL_VERIFIER_CLI="${SEAL_VERIFIER_CLI:-${ROOT_DIR}/tools/cli/seal-verifier/dist/index.js}"
 
 RPC_URL="${AETHELRED_SMOKE_RPC_URL:-http://127.0.0.1:26657}"
@@ -13,6 +13,8 @@ NEXTJS_URL="${AETHELRED_SMOKE_NEXTJS_URL:-http://127.0.0.1:3000}"
 DASHBOARD_URL="${AETHELRED_SMOKE_DASHBOARD_URL:-http://127.0.0.1:3101}"
 SEAL_ID="${AETHELRED_SMOKE_SEAL_ID:-seal_demo}"
 TIMEOUT_SEC="${AETHELRED_SMOKE_TIMEOUT_SEC:-120}"
+SKIP_AETH_CLI="${AETHELRED_SMOKE_SKIP_AETH_CLI:-0}"
+SKIP_DASHBOARD="${AETHELRED_SMOKE_SKIP_DASHBOARD:-0}"
 
 require_file() {
   local file="$1"
@@ -60,20 +62,30 @@ run_cmd() {
 }
 
 main() {
-  require_file "$AETH_CLI"
   require_file "$SEAL_VERIFIER_CLI"
+  if [[ "$SKIP_AETH_CLI" != "1" ]]; then
+    require_file "$AETH_CLI"
+  fi
 
   echo "== Waiting for local devtools stack =="
   wait_for_http "${RPC_URL}/health" "rpc-health"
   wait_for_http "${FASTAPI_URL}/health" "fastapi-health"
   wait_for_http "${NEXTJS_URL}/api/health" "nextjs-health"
-  wait_for_http "${DASHBOARD_URL}/devtools" "dashboard-devtools"
+  if [[ "$SKIP_DASHBOARD" != "1" ]]; then
+    wait_for_http "${DASHBOARD_URL}/devtools" "dashboard-devtools"
+  else
+    echo "== Dashboard smoke skipped by AETHELRED_SMOKE_SKIP_DASHBOARD =="
+  fi
 
-  echo "== CLI smoke: aeth status =="
-  run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" status
+  if [[ "$SKIP_AETH_CLI" != "1" ]]; then
+    echo "== CLI smoke: aeth status =="
+    run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" status
 
-  echo "== CLI smoke: aeth diagnostics doctor =="
-  run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" diagnostics doctor
+    echo "== CLI smoke: aeth diagnostics doctor =="
+    run_cmd "$NODE_BIN" "$AETH_CLI" --rpc-url "$RPC_URL" diagnostics doctor
+  else
+    echo "== CLI smoke: aeth skipped by AETHELRED_SMOKE_SKIP_AETH_CLI =="
+  fi
 
   local seal_file verify_file
   seal_file="$(mktemp "${TMPDIR:-/tmp}/aethelred-smoke-seal.XXXXXX")"
@@ -89,9 +101,11 @@ main() {
   }
   echo "✓ seal-verifier reported valid=true"
 
-  echo "== Dashboard HTTP checks =="
-  assert_page_contains "${DASHBOARD_URL}/" "Aethelred" "dashboard-home"
-  assert_page_contains "${DASHBOARD_URL}/devtools" "Developer Tools|FastAPI|Next.js" "dashboard-devtools"
+  if [[ "$SKIP_DASHBOARD" != "1" ]]; then
+    echo "== Dashboard HTTP checks =="
+    assert_page_contains "${DASHBOARD_URL}/" "Aethelred" "dashboard-home"
+    assert_page_contains "${DASHBOARD_URL}/devtools" "Developer Tools|FastAPI|Next.js" "dashboard-devtools"
+  fi
 
   echo "All local devtools CLI smoke checks passed."
 }

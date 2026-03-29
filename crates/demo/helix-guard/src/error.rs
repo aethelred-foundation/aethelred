@@ -11,7 +11,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // SOVEREIGNTY ERRORS
     // =========================================================================
-
     /// Data sovereignty violation
     #[error("Data sovereignty violation: {0}")]
     SovereigntyViolation(String),
@@ -31,7 +30,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // COMPLIANCE ERRORS
     // =========================================================================
-
     /// Ethics approval required
     #[error("Ethics approval required before accessing this data")]
     EthicsApprovalRequired,
@@ -59,7 +57,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // TEE ERRORS
     // =========================================================================
-
     /// TEE initialization failed
     #[error("TEE enclave initialization failed: {reason}")]
     TeeInitializationFailed { reason: String },
@@ -91,7 +88,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // DATA ERRORS
     // =========================================================================
-
     /// Genome cohort not found
     #[error("Genome cohort not found: {0}")]
     CohortNotFound(String),
@@ -123,7 +119,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // MODEL ERRORS
     // =========================================================================
-
     /// Model not found
     #[error("AI model not found: {0}")]
     ModelNotFound(String),
@@ -147,7 +142,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // COMPUTATION ERRORS
     // =========================================================================
-
     /// Job not found
     #[error("Compute job not found: {0}")]
     JobNotFound(String),
@@ -175,7 +169,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // PROOF ERRORS
     // =========================================================================
-
     /// Proof generation failed
     #[error("Proof generation failed: {0}")]
     ProofGenerationFailed(String),
@@ -195,7 +188,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // PAYMENT ERRORS
     // =========================================================================
-
     /// Payment failed
     #[error("Royalty payment failed: {0}")]
     PaymentFailed(String),
@@ -215,7 +207,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // PARTNER ERRORS
     // =========================================================================
-
     /// Partner not found
     #[error("Partner not found: {0}")]
     PartnerNotFound(String),
@@ -235,7 +226,6 @@ pub enum HelixGuardError {
     // =========================================================================
     // SYSTEM ERRORS
     // =========================================================================
-
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
@@ -269,10 +259,10 @@ impl HelixGuardError {
     pub fn is_recoverable(&self) -> bool {
         matches!(
             self,
-            HelixGuardError::Timeout(_) |
-            HelixGuardError::NetworkError(_) |
-            HelixGuardError::JobTimeout { .. } |
-            HelixGuardError::InsufficientConfidence { .. }
+            HelixGuardError::Timeout(_)
+                | HelixGuardError::NetworkError(_)
+                | HelixGuardError::JobTimeout { .. }
+                | HelixGuardError::InsufficientConfidence { .. }
         )
     }
 
@@ -280,11 +270,11 @@ impl HelixGuardError {
     pub fn is_blocking(&self) -> bool {
         matches!(
             self,
-            HelixGuardError::SovereigntyViolation(_) |
-            HelixGuardError::CrossBorderNotAllowed { .. } |
-            HelixGuardError::DataResidencyViolation { .. } |
-            HelixGuardError::UseCaseProhibited { .. } |
-            HelixGuardError::ComplianceCheckFailed(_)
+            HelixGuardError::SovereigntyViolation(_)
+                | HelixGuardError::CrossBorderNotAllowed { .. }
+                | HelixGuardError::DataResidencyViolation { .. }
+                | HelixGuardError::UseCaseProhibited { .. }
+                | HelixGuardError::ComplianceCheckFailed(_)
         )
     }
 
@@ -292,10 +282,10 @@ impl HelixGuardError {
     pub fn requires_notification(&self) -> bool {
         matches!(
             self,
-            HelixGuardError::SovereigntyViolation(_) |
-            HelixGuardError::DataResidencyViolation { .. } |
-            HelixGuardError::TeeAttestationFailed { .. } |
-            HelixGuardError::DataIntegrityFailed
+            HelixGuardError::SovereigntyViolation(_)
+                | HelixGuardError::DataResidencyViolation { .. }
+                | HelixGuardError::TeeAttestationFailed { .. }
+                | HelixGuardError::DataIntegrityFailed
         )
     }
 
@@ -408,14 +398,21 @@ mod tests {
         assert!(HelixGuardError::CrossBorderNotAllowed {
             from: "UAE".into(),
             to: "UK".into()
-        }.is_blocking());
+        }
+        .is_blocking());
         assert!(!HelixGuardError::Timeout(1000).is_blocking());
     }
 
     #[test]
     fn test_error_codes() {
-        assert_eq!(HelixGuardError::SovereigntyViolation("".into()).error_code(), 1001);
-        assert_eq!(HelixGuardError::TeeInitializationFailed { reason: "".into() }.error_code(), 3001);
+        assert_eq!(
+            HelixGuardError::SovereigntyViolation("".into()).error_code(),
+            1001
+        );
+        assert_eq!(
+            HelixGuardError::TeeInitializationFailed { reason: "".into() }.error_code(),
+            3001
+        );
         assert_eq!(HelixGuardError::Internal("".into()).error_code(), 9001);
     }
 }

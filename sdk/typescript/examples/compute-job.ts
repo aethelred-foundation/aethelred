@@ -12,7 +12,7 @@ import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('     Aethelred Compute Job Submission Example');
+  console.log('     Aethelred Enterprise Hybrid Compute Job Example');
   console.log('='.repeat(60));
   console.log();
 

@@ -48,8 +48,10 @@ func (app *AethelredApp) initVerificationPipeline() {
 	// Create the bridge that adapts the orchestrator to the JobVerifier interface.
 	bridge := NewOrchestratorBridge(orchestrator)
 
-	// Create the ConsensusHandler with the keeper and a new scheduler.
-	schedulerConfig := pouwkeeper.DefaultSchedulerConfig()
+	// Create the ConsensusHandler with a profile-aware scheduler config so the
+	// runtime can faithfully switch between operational and benchmark profiles.
+	profile := resolveSchedulerPerformanceProfile(app.Logger())
+	schedulerConfig := profile.ToSchedulerConfig()
 	schedulerConfig.DrandPulseProvider = pouwkeeper.NewHTTPDrandPulseProvider(
 		getEnvOrDefault("AETHELRED_DRAND_ENDPOINT", pouwkeeper.DefaultDrandEndpoint),
 		resolveDurationEnv("AETHELRED_DRAND_TIMEOUT", 4*time.Second),
@@ -69,6 +71,8 @@ func (app *AethelredApp) initVerificationPipeline() {
 	app.Logger().Info("Verification pipeline initialized",
 		"has_tee_client", app.teeClient != nil,
 		"has_orchestrator", true,
+		"performance_profile", profile.Name,
+		"max_jobs_per_block", schedulerConfig.MaxJobsPerBlock,
 	)
 }
 
@@ -129,6 +133,28 @@ func resolveDurationEnv(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return parsed
+}
+
+func resolveSchedulerPerformanceProfile(logger interface {
+	Warn(string, ...interface{})
+}) pouwkeeper.PerformanceProfile {
+	raw := strings.TrimSpace(firstNonEmpty(
+		os.Getenv("AETHELRED_PERFORMANCE_PROFILE"),
+		os.Getenv("AETHELRED_BENCHMARK_PROFILE"),
+	))
+	if raw == "" {
+		return pouwkeeper.MainnetProfile()
+	}
+
+	profile, err := pouwkeeper.PerformanceProfileByName(raw)
+	if err != nil {
+		logger.Warn("Unknown performance profile requested; falling back to mainnet profile",
+			"requested", raw,
+			"error", err,
+		)
+		return pouwkeeper.MainnetProfile()
+	}
+	return profile
 }
 
 // startupAllowsVerificationInitFailure returns true only for explicit simulated/dev modes.

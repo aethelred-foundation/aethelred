@@ -64,7 +64,7 @@ pub struct EthereumDeposit {
 impl EthereumDeposit {
     /// Generate a deterministic ID for this deposit
     pub fn generate_id(&self) -> Hash {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
         hasher.update(b"eth-deposit-v1:");
@@ -290,10 +290,7 @@ pub enum EthereumEvent {
     Deposit(EthereumDeposit),
 
     /// Deposit finalized (enough confirmations)
-    DepositFinalized {
-        deposit_id: Hash,
-        block_number: u64,
-    },
+    DepositFinalized { deposit_id: Hash, block_number: u64 },
 
     /// Withdrawal processed on Ethereum
     WithdrawalProcessed {
@@ -325,10 +322,7 @@ pub enum AethelredEvent {
     Burn(AethelredBurn),
 
     /// Burn finalized
-    BurnFinalized {
-        burn_id: Hash,
-        block_height: u64,
-    },
+    BurnFinalized { burn_id: Hash, block_height: u64 },
 
     /// Mint completed
     MintCompleted {
@@ -390,7 +384,11 @@ impl RelayerSet {
     pub fn min_votes_required(&self) -> usize {
         let active_count = self.relayers.iter().filter(|r| r.active).count();
         let threshold = (active_count * self.threshold_bps as usize) / 10000;
-        if threshold == 0 { 1 } else { threshold }
+        if threshold == 0 {
+            1
+        } else {
+            threshold
+        }
     }
 
     /// Check if consensus is reached

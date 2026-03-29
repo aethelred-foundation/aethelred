@@ -1,9 +1,11 @@
 use std::sync::{Mutex, OnceLock};
 
-use aethelred_infinity_sandbox::{
+use aethelred_sandbox::{
     AIGasProfiler, CloudProvider, DataCenterLocation, HardwareRuntime, HardwareTarget,
     InfinitySandbox, Jurisdiction, ModelSpec, ParticipantId, ScenarioLibrary,
 };
+
+static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn sgx_abu_dhabi() -> HardwareTarget {
     HardwareTarget::IntelSGX {
@@ -83,10 +85,11 @@ fn scenario_library_runtime_compatibility_flow() {
 
 #[test]
 fn profiler_can_load_cloud_pricing_from_env() {
-    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     let lock = ENV_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock.lock().expect("env lock poisoned");
 
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_FILE");
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_JSON");
     std::env::set_var(
         "AETHELRED_SANDBOX_CLOUD_PRICING_JSON",
         r#"{
@@ -127,14 +130,17 @@ fn profiler_can_load_cloud_pricing_from_env() {
         .expect("aws comparison missing");
     assert!((aws.cost_usd - 0.77).abs() < 1e-9);
 
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_FILE");
     std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_JSON");
 }
 
 #[test]
 fn profiler_prefers_cloud_pricing_file_from_env() {
-    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     let lock = ENV_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock.lock().expect("env lock poisoned");
+
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_FILE");
+    std::env::remove_var("AETHELRED_SANDBOX_CLOUD_PRICING_JSON");
 
     let mut file_path = std::env::temp_dir();
     file_path.push(format!(

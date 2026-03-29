@@ -81,11 +81,7 @@ pub fn process_commit_reveal(
 }
 
 /// Verify that hash(block_data || nonce) equals the commitment hash.
-pub fn verify_commitment_hash(
-    block_data: &str,
-    nonce: &str,
-    expected_hash: &str,
-) -> bool {
+pub fn verify_commitment_hash(block_data: &str, nonce: &str, expected_hash: &str) -> bool {
     let computed = compute_commitment_hash(block_data, nonce);
     computed == expected_hash
 }
@@ -133,7 +129,12 @@ pub fn detect_mev_patterns(reveals: &[ValidatedReveal]) -> Vec<MevAlert> {
                     validators.len()
                 ),
                 validators: validators.iter().map(|v| v.to_string()).collect(),
-                severity: if validators.len() > 2 { "HIGH" } else { "MEDIUM" }.to_string(),
+                severity: if validators.len() > 2 {
+                    "HIGH"
+                } else {
+                    "MEDIUM"
+                }
+                .to_string(),
                 block_data_hash: compute_commitment_hash(data, ""),
             });
         }
@@ -142,15 +143,14 @@ pub fn detect_mev_patterns(reveals: &[ValidatedReveal]) -> Vec<MevAlert> {
     // Check for suspiciously close timestamps
     if reveals.len() >= 2 {
         for window in reveals.windows(2) {
-            let time_diff = window[1].ordering_timestamp.saturating_sub(window[0].ordering_timestamp);
+            let time_diff = window[1]
+                .ordering_timestamp
+                .saturating_sub(window[0].ordering_timestamp);
             if time_diff == 0 {
                 alerts.push(MevAlert {
                     alert_type: "SIMULTANEOUS_SUBMISSION".to_string(),
                     description: "Two reveals with identical timestamps".to_string(),
-                    validators: vec![
-                        window[0].validator.clone(),
-                        window[1].validator.clone(),
-                    ],
+                    validators: vec![window[0].validator.clone(), window[1].validator.clone()],
                     severity: "LOW".to_string(),
                     block_data_hash: String::new(),
                 });
@@ -179,7 +179,12 @@ pub struct MevAlert {
 mod tests {
     use super::*;
 
-    fn make_commitment(validator: &str, block_data: &str, nonce: &str, ts: u64) -> (Commitment, Reveal) {
+    fn make_commitment(
+        validator: &str,
+        block_data: &str,
+        nonce: &str,
+        ts: u64,
+    ) -> (Commitment, Reveal) {
         let hash = compute_commitment_hash(block_data, nonce);
         (
             Commitment {

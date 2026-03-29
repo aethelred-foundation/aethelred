@@ -65,8 +65,8 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use parking_lot::RwLock;
-use rust_decimal::Decimal;
 use rust_decimal::prelude::*;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -522,7 +522,10 @@ impl RoyaltyEngine {
         }
 
         // Rare disease marker multiplier
-        if params.marker_types.contains(&GeneticMarkerType::DiseaseAssociated) {
+        if params
+            .marker_types
+            .contains(&GeneticMarkerType::DiseaseAssociated)
+        {
             usage_multipliers.push(UsageMultiplier {
                 name: "Disease Markers".to_string(),
                 value: Decimal::new(150, 2), // 1.50x
@@ -531,7 +534,10 @@ impl RoyaltyEngine {
         }
 
         // Pharmacogenomic data multiplier
-        if params.marker_types.contains(&GeneticMarkerType::Pharmacogenomic) {
+        if params
+            .marker_types
+            .contains(&GeneticMarkerType::Pharmacogenomic)
+        {
             usage_multipliers.push(UsageMultiplier {
                 name: "Pharmacogenomic".to_string(),
                 value: Decimal::new(175, 2), // 1.75x
@@ -543,7 +549,8 @@ impl RoyaltyEngine {
         let combined_usage_multiplier = if usage_multipliers.is_empty() {
             Decimal::ONE
         } else {
-            usage_multipliers.iter()
+            usage_multipliers
+                .iter()
                 .map(|m| m.value)
                 .fold(Decimal::ONE, |acc, v| acc * v)
         };
@@ -553,7 +560,10 @@ impl RoyaltyEngine {
         let volume_discount_percent = volume_tier.discount_percent();
 
         // Calculate totals
-        let subtotal = base_fee * tier_multiplier * combined_usage_multiplier * Decimal::from(params.batch_size);
+        let subtotal = base_fee
+            * tier_multiplier
+            * combined_usage_multiplier
+            * Decimal::from(params.batch_size);
         let discount = subtotal * (volume_discount_percent / Decimal::from(100));
         let final_usd = subtotal - discount;
 
@@ -605,7 +615,9 @@ impl RoyaltyEngine {
             timestamp: Utc::now(),
         };
 
-        self.pending_payments.write().insert(payment.id, payment.clone());
+        self.pending_payments
+            .write()
+            .insert(payment.id, payment.clone());
 
         tracing::info!(
             payment_id = %payment.id,
@@ -684,15 +696,15 @@ impl RoyaltyEngine {
     pub fn release_escrow(&self, escrow_id: Uuid) -> HelixGuardResult<()> {
         let escrow = {
             let mut escrows = self.escrow_balances.write();
-            let escrow = escrows.get_mut(&escrow_id)
-                .ok_or_else(|| HelixGuardError::PaymentFailed(
-                    format!("Escrow {} not found", escrow_id)
-                ))?;
+            let escrow = escrows.get_mut(&escrow_id).ok_or_else(|| {
+                HelixGuardError::PaymentFailed(format!("Escrow {} not found", escrow_id))
+            })?;
 
             if escrow.status != EscrowStatus::Locked {
-                return Err(HelixGuardError::PaymentFailed(
-                    format!("Escrow {} is not locked", escrow_id)
-                ));
+                return Err(HelixGuardError::PaymentFailed(format!(
+                    "Escrow {} is not locked",
+                    escrow_id
+                )));
             }
 
             escrow.status = EscrowStatus::Released;
@@ -703,7 +715,8 @@ impl RoyaltyEngine {
         // Update treasury balance
         {
             let mut treasuries = self.treasuries.write();
-            if let Some(treasury) = treasuries.values_mut()
+            if let Some(treasury) = treasuries
+                .values_mut()
                 .find(|t| t.owner_id == escrow.recipient_id)
             {
                 treasury.balance_aethel += escrow.locked_amount;
@@ -716,7 +729,8 @@ impl RoyaltyEngine {
         // Update metrics
         {
             let mut metrics = self.metrics.write();
-            metrics.total_escrow_locked_aethel = metrics.total_escrow_locked_aethel
+            metrics.total_escrow_locked_aethel = metrics
+                .total_escrow_locked_aethel
                 .saturating_sub(escrow.locked_amount);
             metrics.active_escrows = metrics.active_escrows.saturating_sub(1);
             metrics.total_royalties_aethel += escrow.locked_amount;
@@ -758,13 +772,14 @@ impl RoyaltyEngine {
     pub fn process_payment(&self, payment_id: Uuid) -> HelixGuardResult<Hash> {
         let payment = {
             let mut pending = self.pending_payments.write();
-            let payment = pending.remove(&payment_id)
-                .ok_or_else(|| HelixGuardError::PaymentFailed(
-                    format!("Payment {} not found", payment_id)
-                ))?;
+            let payment = pending.remove(&payment_id).ok_or_else(|| {
+                HelixGuardError::PaymentFailed(format!("Payment {} not found", payment_id))
+            })?;
 
             if payment.status != PaymentStatus::Pending {
-                return Err(HelixGuardError::PaymentAlreadyProcessed(payment_id.to_string()));
+                return Err(HelixGuardError::PaymentAlreadyProcessed(
+                    payment_id.to_string(),
+                ));
             }
 
             payment
@@ -776,7 +791,8 @@ impl RoyaltyEngine {
         // Update treasury balance
         {
             let mut treasuries = self.treasuries.write();
-            if let Some(treasury) = treasuries.values_mut()
+            if let Some(treasury) = treasuries
+                .values_mut()
                 .find(|t| t.owner_id == payment.recipient)
             {
                 treasury.balance_aethel += payment.amount_aethel;
@@ -789,12 +805,14 @@ impl RoyaltyEngine {
         // Update partner account
         {
             let mut partners = self.partner_accounts.write();
-            if let Some(account) = partners.values_mut()
+            if let Some(account) = partners
+                .values_mut()
                 .find(|a| a.partner_id == payment.payer)
             {
                 account.total_spent_aethel += payment.amount_aethel;
                 account.analysis_count += 1;
-                account.volume_discount_tier = VolumeDiscountTier::from_count(account.analysis_count);
+                account.volume_discount_tier =
+                    VolumeDiscountTier::from_count(account.analysis_count);
                 account.last_activity = Utc::now();
             }
         }
@@ -810,7 +828,8 @@ impl RoyaltyEngine {
             // Update average
             let n = metrics.total_analyses as i64;
             if n > 0 {
-                metrics.avg_royalty_per_analysis_usd = metrics.total_royalties_usd / Decimal::from(n);
+                metrics.avg_royalty_per_analysis_usd =
+                    metrics.total_royalties_usd / Decimal::from(n);
             }
         }
 
@@ -821,7 +840,9 @@ impl RoyaltyEngine {
             ..payment
         };
 
-        self.completed_payments.write().push(completed_payment.clone());
+        self.completed_payments
+            .write()
+            .push(completed_payment.clone());
 
         // Create transaction record
         let tx = SettlementTransaction {
@@ -881,7 +902,8 @@ impl RoyaltyEngine {
 
     /// Get treasury balance
     pub fn get_treasury_balance(&self, custodian_id: Uuid) -> Option<u128> {
-        self.treasuries.read()
+        self.treasuries
+            .read()
             .values()
             .find(|t| t.owner_id == custodian_id)
             .map(|t| t.balance_aethel)
@@ -889,7 +911,8 @@ impl RoyaltyEngine {
 
     /// Get partner account
     pub fn get_partner_account(&self, partner_id: Uuid) -> Option<PartnerAccount> {
-        self.partner_accounts.read()
+        self.partner_accounts
+            .read()
             .values()
             .find(|a| a.partner_id == partner_id)
             .cloned()
@@ -902,7 +925,8 @@ impl RoyaltyEngine {
 
     /// Get transactions for session
     pub fn get_session_transactions(&self, session_id: Uuid) -> Vec<SettlementTransaction> {
-        self.transactions.read()
+        self.transactions
+            .read()
             .iter()
             .filter(|t| t.session_id == Some(session_id))
             .cloned()
@@ -979,7 +1003,10 @@ mod tests {
             partner_tier: PartnerTier::Strategic,
             analysis_type: ComputeJobType::PharmacogenomicAnalysis,
             population_size: 100_000,
-            marker_types: vec![GeneticMarkerType::Pharmacogenomic, GeneticMarkerType::DiseaseAssociated],
+            marker_types: vec![
+                GeneticMarkerType::Pharmacogenomic,
+                GeneticMarkerType::DiseaseAssociated,
+            ],
             batch_size: 10,
             total_partner_analyses: 101, // 101+ gets Gold tier
         };
@@ -999,9 +1026,18 @@ mod tests {
     #[test]
     fn test_volume_discount_tiers() {
         assert_eq!(VolumeDiscountTier::from_count(5), VolumeDiscountTier::None);
-        assert_eq!(VolumeDiscountTier::from_count(25), VolumeDiscountTier::Bronze);
-        assert_eq!(VolumeDiscountTier::from_count(75), VolumeDiscountTier::Silver);
-        assert_eq!(VolumeDiscountTier::from_count(150), VolumeDiscountTier::Gold);
+        assert_eq!(
+            VolumeDiscountTier::from_count(25),
+            VolumeDiscountTier::Bronze
+        );
+        assert_eq!(
+            VolumeDiscountTier::from_count(75),
+            VolumeDiscountTier::Silver
+        );
+        assert_eq!(
+            VolumeDiscountTier::from_count(150),
+            VolumeDiscountTier::Gold
+        );
     }
 
     #[test]
@@ -1032,23 +1068,35 @@ mod tests {
         engine.register_treasury(&recipient);
 
         // Lock escrow
-        let escrow_id = engine.lock_escrow(
-            session_id,
-            payer_id,
-            recipient_id,
-            1000_000_000_000_000_000_000, // 1000 AETHEL
-            vec![ReleaseCondition::TeeAttestationVerified],
-        ).unwrap();
+        let escrow_id = engine
+            .lock_escrow(
+                session_id,
+                payer_id,
+                recipient_id,
+                1000_000_000_000_000_000_000, // 1000 AETHEL
+                vec![ReleaseCondition::TeeAttestationVerified],
+            )
+            .unwrap();
 
         // Check escrow is locked
-        let escrow = engine.escrow_balances.read().get(&escrow_id).cloned().unwrap();
+        let escrow = engine
+            .escrow_balances
+            .read()
+            .get(&escrow_id)
+            .cloned()
+            .unwrap();
         assert_eq!(escrow.status, EscrowStatus::Locked);
 
         // Release escrow
         engine.release_escrow(escrow_id).unwrap();
 
         // Check escrow is released
-        let escrow = engine.escrow_balances.read().get(&escrow_id).cloned().unwrap();
+        let escrow = engine
+            .escrow_balances
+            .read()
+            .get(&escrow_id)
+            .cloned()
+            .unwrap();
         assert_eq!(escrow.status, EscrowStatus::Released);
     }
 
@@ -1077,12 +1125,9 @@ mod tests {
             breakdown: "Test".to_string(),
         };
 
-        let payment = engine.create_payment(
-            Uuid::new_v4(),
-            recipient_id,
-            payer_id,
-            &calc,
-        ).unwrap();
+        let payment = engine
+            .create_payment(Uuid::new_v4(), recipient_id, payer_id, &calc)
+            .unwrap();
 
         let tx_hash = engine.process_payment(payment.id).unwrap();
         assert!(!tx_hash.iter().all(|&b| b == 0));

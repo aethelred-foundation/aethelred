@@ -1,0 +1,397 @@
+# Formal Verification Workflow
+#
+# This workflow has two tiers:
+#   1. SCAFFOLDING JOBS (fast gate): Validate spec/harness file structure.
+#   2. REAL PROOF JOBS: Execute Certora and Kani provers on actual code.
+#
+# Real proof jobs: Certora skips cleanly when CERTORAKEY is absent, but fails the
+# pipeline if proofs are executed and any verification run fails.
+# Kani proofs are enforced as a required check.
+
+name: Formal Verification
+
+on:
+  schedule:
+    # Run nightly at 03:00 UTC
+    - cron: "0 3 * * *"
+  pull_request:
+    paths:
+      - 'contracts/**'
+      - 'crates/core/**'
+      - 'crates/consensus/**'
+      - 'crates/vm/**'
+      - 'crates/mempool/**'
+      - '.github/workflows/formal-verification.yml'
+  workflow_dispatch:
+    inputs:
+      run_certora:
+        description: "Run Certora verification"
+        type: boolean
+        default: true
+      run_kani:
+        description: "Run Kani verification"
+        type: boolean
+        default: true
+
+env:
+  RUST_VERSION: "1.85.0"
+  SOLC_VERSION: "0.8.20"
+
+jobs:
+  # =========================================================================
+  # TIER 1: Certora Spec Structure Validation (fast gate)
+  # =========================================================================
+  certora-structure:
+    name: "Certora: Validate spec structure"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_certora == 'true' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Validate Certora conf files are valid JSON
+        working-directory: contracts
+        run: |
+          echo "=== Validating Certora configuration files ==="
+          ERRORS=0
+          for conf in certora/conf/*.conf; do
+            if ! python3 -m json.tool "$conf" > /dev/null 2>&1; then
+              echo "FAIL: $conf is not valid JSON"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "OK:   $conf"
+            fi
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "ERROR: $ERRORS conf file(s) have invalid JSON"
+            exit 1
+          fi
+
+      - name: Validate Certora conf files reference existing contracts
+        working-directory: contracts
+        run: |
+          echo "=== Checking that conf files reference existing Solidity files ==="
+          ERRORS=0
+          for conf in certora/conf/*.conf; do
+            # Extract the "files" array entries from JSON
+            FILES=$(python3 -c "
+          import json, sys
+          with open('$conf') as f:
+              data = json.load(f)
+          for p in data.get('files', []):
+              print(p)
+          ")
+            for sol_path in $FILES; do
+              if [ ! -f "$sol_path" ]; then
+                echo "FAIL: $conf references $sol_path but file does not exist"
+                ERRORS=$((ERRORS + 1))
+              else
+                echo "OK:   $conf -> $sol_path"
+              fi
+            done
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "ERROR: $ERRORS contract reference(s) are broken"
+            exit 1
+          fi
+
+      - name: Validate Certora spec files exist for each conf
+        working-directory: contracts
+        run: |
+          echo "=== Checking that each conf file has a matching spec ==="
+          ERRORS=0
+          for conf in certora/conf/*.conf; do
+            # Extract the spec path from the "verify" field (format: "Contract:path/to/spec")
+            SPEC_PATH=$(python3 -c "
+          import json
+          with open('$conf') as f:
+              data = json.load(f)
+          verify = data.get('verify', '')
+          if ':' in verify:
+              print(verify.split(':')[1])
+          ")
+            if [ -z "$SPEC_PATH" ]; then
+              echo "WARN: $conf has no 'verify' field"
+            elif [ ! -f "$SPEC_PATH" ]; then
+              echo "FAIL: $conf references spec $SPEC_PATH but file does not exist"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "OK:   $conf -> $SPEC_PATH"
+            fi
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "ERROR: $ERRORS spec reference(s) are broken"
+            exit 1
+          fi
+
+      - name: List Certora spec coverage summary
+        working-directory: contracts
+        run: |
+          echo "=== Certora spec inventory ==="
+          echo ""
+          echo "Spec files:"
+          for spec in certora/specs/*.spec; do
+            RULES=$(grep -c "^rule \|^invariant " "$spec" 2>/dev/null || echo 0)
+            echo "  $spec ($RULES rules/invariants)"
+          done
+          echo ""
+          echo "Conf files:"
+          ls -1 certora/conf/*.conf 2>/dev/null | while read f; do echo "  $f"; done
+
+  # =========================================================================
+  # TIER 1: Kani Harness Structure Validation (fast gate)
+  # =========================================================================
+  kani-structure:
+    name: "Kani: Validate harness structure"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_kani == 'true' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "${{ env.RUST_VERSION }}"
+
+      - name: Validate target crates compile
+        run: |
+          echo "=== Checking that verification-target crates compile ==="
+          ERRORS=0
+          for crate in core consensus vm mempool; do
+            MANIFEST="crates/$crate/Cargo.toml"
+            if [ ! -f "$MANIFEST" ]; then
+              echo "FAIL: $MANIFEST does not exist"
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+            echo "Compiling crates/$crate ..."
+            if cargo check --manifest-path "$MANIFEST" 2>&1; then
+              echo "OK:   crates/$crate compiles"
+            else
+              echo "FAIL: crates/$crate failed to compile"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "ERROR: $ERRORS crate(s) failed compilation check"
+            exit 1
+          fi
+
+      - name: Check for Kani proof harnesses
+        run: |
+          echo "=== Scanning for #[kani::proof] harness annotations ==="
+          TOTAL=0
+          for crate in core consensus vm mempool; do
+            COUNT=$(grep -r '#\[kani::proof\]' "crates/$crate/src/" 2>/dev/null | wc -l | tr -d ' ')
+            TOTAL=$((TOTAL + COUNT))
+            if [ "$COUNT" -gt 0 ]; then
+              echo "crates/$crate: $COUNT harness(es) found"
+              grep -rn '#\[kani::proof\]' "crates/$crate/src/" 2>/dev/null | sed 's/^/  /'
+            else
+              echo "crates/$crate: no harnesses yet (pending development)"
+            fi
+          done
+          echo ""
+          echo "Found $TOTAL total harness(es)."
+          if [ "$TOTAL" -lt 3 ]; then
+            echo "WARNING: Expected at least 3 harnesses across crates."
+            exit 1
+          fi
+
+  # =========================================================================
+  # TIER 2: Certora Real Proof Execution
+  # =========================================================================
+  # Runs certoraRun against each .conf in contracts/certora/conf/.
+  # Requires CERTORAKEY secret. Behavior:
+  #   - No CERTORAKEY: job succeeds with a skip notice (does NOT block pipeline)
+  #   - CERTORAKEY present but proof fails: job FAILS (blocks pipeline)
+  # =========================================================================
+  certora-proofs:
+    name: "Certora: Run real proofs"
+    runs-on: ubuntu-latest
+    needs: certora-structure
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_certora == 'true' }}
+    timeout-minutes: 60
+    env:
+      CERTORA_KEY_PRESENT: ${{ secrets.CERTORAKEY != '' }}
+    steps:
+      - name: Report Certora skipped (no license key)
+        if: env.CERTORA_KEY_PRESENT != 'true'
+        run: |
+          echo "::notice::Certora proofs SKIPPED: CERTORAKEY secret is not configured."
+          echo ""
+          echo "To enable Certora formal verification:"
+          echo "  1. Obtain a Certora Prover license key from https://www.certora.com/"
+          echo "  2. Add CERTORAKEY to repository secrets: Settings > Secrets and variables > Actions"
+          echo "  3. Re-run this workflow"
+          echo ""
+          echo "Structure validation still passed. This is a non-blocking skip."
+
+      - uses: actions/checkout@v4
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Install contract dependencies
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        working-directory: contracts
+        run: npm ci
+
+      - name: Install solc
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        run: |
+          pip3 install solc-select
+          solc-select install ${{ env.SOLC_VERSION }}
+          solc-select use ${{ env.SOLC_VERSION }}
+
+      - name: Install Certora CLI
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        run: pip3 install certora-cli
+
+      - name: Run certoraRun on all conf files
+        if: env.CERTORA_KEY_PRESENT == 'true'
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+        working-directory: contracts
+        run: |
+          echo "=== Running Certora Prover on all conf files ==="
+          ERRORS=0
+          for conf in certora/conf/*.conf; do
+            CONF_NAME=$(basename "$conf" .conf)
+            echo ""
+            echo "::group::certoraRun $conf"
+            if certoraRun "$conf"; then
+              echo "PASS: $CONF_NAME"
+            else
+              echo "FAIL: $CONF_NAME"
+              ERRORS=$((ERRORS + 1))
+            fi
+            echo "::endgroup::"
+          done
+          echo ""
+          echo "=== Certora Summary ==="
+          TOTAL=$(ls -1 certora/conf/*.conf | wc -l | tr -d ' ')
+          PASSED=$((TOTAL - ERRORS))
+          echo "Total: $TOTAL | Passed: $PASSED | Failed: $ERRORS"
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "::error::$ERRORS Certora spec(s) failed verification"
+            exit 1
+          fi
+
+  # =========================================================================
+  # TIER 2: Kani Real Proof Execution (required check)
+  # =========================================================================
+  # Runs cargo kani against Rust crates with #[kani::proof] harnesses.
+  # These proofs are enforced — failures block the pipeline.
+  # =========================================================================
+  kani-proofs:
+    name: "Kani: Run real proofs"
+    runs-on: ubuntu-latest
+    needs: kani-structure
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_kani == 'true' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [core, consensus, vm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kani
+        uses: model-checking/kani-verifier-action@v1
+
+      - name: "Run Kani proofs: crates/${{ matrix.crate }}"
+        run: |
+          echo "=== Running cargo kani for crates/${{ matrix.crate }} ==="
+          cargo kani --manifest-path crates/${{ matrix.crate }}/Cargo.toml
+
+      - name: Report harness results
+        if: always()
+        run: |
+          echo "=== Kani proof summary for crates/${{ matrix.crate }} ==="
+          HARNESSES=$(grep -c '#\[kani::proof\]' crates/${{ matrix.crate }}/src/kani_proofs.rs 2>/dev/null || echo 0)
+          echo "Harnesses in crate: $HARNESSES"
+
+  # =========================================================================
+  # Summary: Report both scaffolding and real proof status
+  # =========================================================================
+  formal-verification-gate:
+    name: Formal Verification Summary
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - certora-structure
+      - kani-structure
+      - certora-proofs
+      - kani-proofs
+    steps:
+      - name: Report verification status
+        env:
+          CERTORA_STRUCTURE: ${{ needs.certora-structure.result }}
+          KANI_STRUCTURE: ${{ needs.kani-structure.result }}
+          CERTORA_PROOFS: ${{ needs.certora-proofs.result }}
+          KANI_PROOFS: ${{ needs.kani-proofs.result }}
+        run: |
+          echo "================================================================="
+          echo "  FORMAL VERIFICATION STATUS"
+          echo "================================================================="
+          echo ""
+          echo "--- Tier 1: Structure Validation (fast gate) ---"
+          echo "  Certora spec structure:  $CERTORA_STRUCTURE"
+          echo "  Kani harness structure:  $KANI_STRUCTURE"
+          echo ""
+          echo "--- Tier 2: Real Proof Execution ---"
+          echo "  Certora proof runs:      $CERTORA_PROOFS"
+          echo "  Kani proof runs:         $KANI_PROOFS"
+          echo ""
+          echo "--- Gating Logic ---"
+          echo "  Certora: skipped (no key) = OK | ran and failed = BLOCK"
+          echo "  Kani: always enforced"
+          echo "================================================================="
+
+          GATE_PASS=true
+
+          # Structure validation is always required
+          if [ "$CERTORA_STRUCTURE" != "success" ]; then
+            echo "ERROR: Certora structure validation failed."
+            GATE_PASS=false
+          fi
+          if [ "$KANI_STRUCTURE" != "success" ]; then
+            echo "ERROR: Kani structure validation failed."
+            GATE_PASS=false
+          fi
+
+          # Kani proofs are always required
+          if [ "$KANI_PROOFS" != "success" ]; then
+            echo "ERROR: Kani formal verification proofs failed."
+            GATE_PASS=false
+          fi
+
+          # Certora proofs: failure blocks, but skipped is acceptable
+          # "success" = ran and passed, "skipped" = no key configured (OK),
+          # "failure" = ran and failed (BLOCK)
+          if [ "$CERTORA_PROOFS" = "failure" ]; then
+            echo "ERROR: Certora proofs ran but failed. This blocks the pipeline."
+            GATE_PASS=false
+          elif [ "$CERTORA_PROOFS" = "skipped" ]; then
+            echo "NOTE: Certora proofs were skipped (CERTORAKEY not configured). Non-blocking."
+          fi
+
+          if [ "$GATE_PASS" = "false" ]; then
+            exit 1
+          fi

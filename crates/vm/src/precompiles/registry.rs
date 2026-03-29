@@ -189,6 +189,12 @@ impl RegistryBuilder {
         self
     }
 
+    /// Add a precompile from an existing Arc
+    pub fn add_arc(mut self, precompile: Arc<dyn Precompile>) -> Self {
+        self.precompiles.push(precompile);
+        self
+    }
+
     /// Add standard precompiles
     pub fn with_standard(self) -> Self {
         self.add(super::crypto::Sha256Precompile)
@@ -205,9 +211,23 @@ impl RegistryBuilder {
 
     /// Add ZKP precompiles
     pub fn with_zkp(self) -> Self {
-        self.add(super::zkp::Groth16VerifyPrecompile::new())
-            .add(super::zkp::PlonkVerifyPrecompile::new())
-            .add(super::zkp::EzklVerifyPrecompile::new())
+        let groth16 = std::sync::Arc::new(super::zkp::Groth16VerifyPrecompile::new());
+        let plonk = std::sync::Arc::new(super::zkp::PlonkVerifyPrecompile::new());
+        let ezkl = std::sync::Arc::new(super::zkp::EzklVerifyPrecompile::new());
+        let halo2 = std::sync::Arc::new(super::zkp::Halo2VerifyPrecompile::new());
+        let stark = std::sync::Arc::new(super::zkp::StarkVerifyPrecompile::new());
+        let unified = super::zkp::UnifiedZkpVerifyPrecompile::new(
+            groth16.clone(),
+            plonk.clone(),
+            ezkl.clone(),
+            halo2.clone(),
+            stark.clone(),
+        );
+        self.add_arc(groth16)
+            .add_arc(plonk)
+            .add_arc(ezkl)
+            .add_arc(halo2)
+            .add(unified)
     }
 
     /// Add TEE precompiles
@@ -223,7 +243,13 @@ impl RegistryBuilder {
             config.clone(),
             registry.clone(),
         ))
-        .add(super::tee::SevSnpVerifyPrecompile::new(config, registry))
+        .add(super::tee::SevSnpVerifyPrecompile::new(
+            config.clone(),
+            registry.clone(),
+        ))
+        .add(super::tee::UniversalTeeVerifyPrecompile::new(
+            config, registry,
+        ))
     }
 
     /// Add all Aethelred precompiles

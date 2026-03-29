@@ -14,23 +14,16 @@
 //! the useful work multiplier boosting their threshold.
 
 use crate::pouw::{
-    PoUWElection,
-    PoUWConfig,
-    UtilityCategory,
-    VerificationMethod,
-    calculate_useful_work_multiplier,
-    estimate_leader_probability,
+    calculate_useful_work_multiplier, estimate_leader_probability, PoUWConfig, PoUWElection,
+    UtilityCategory, VerificationMethod,
 };
+use crate::reputation::{ComputeJobRecord, ReputationConfig, ReputationEngine};
 use crate::traits::VerificationMethod as RepVerificationMethod;
-use crate::types::{ValidatorInfo, Address};
+use crate::types::{Address, ValidatorInfo};
 use crate::vrf::VrfKeys;
-use crate::reputation::{ReputationEngine, ReputationConfig, ComputeJobRecord};
 
 /// Create a validator with specific parameters
-fn make_validator(
-    seed: u8,
-    stake: u128,
-) -> (Address, ValidatorInfo, VrfKeys) {
+fn make_validator(seed: u8, stake: u128) -> (Address, ValidatorInfo, VrfKeys) {
     let mut addr = [0u8; 32];
     addr[0] = seed;
 
@@ -56,7 +49,7 @@ fn make_validator(
 fn test_miner_boost() {
     // Configuration
     let stake = 10_000_000_000_000u128; // 10,000 tokens (12 decimals)
-    let high_work = 1_000_000u64;       // High useful work score (~2x multiplier)
+    let high_work = 1_000_000u64; // High useful work score (~2x multiplier)
     let num_slots = 10_000u64;
     let epoch_seed = [42u8; 32];
 
@@ -78,13 +71,15 @@ fn test_miner_boost() {
     election.set_epoch_seed(epoch_seed);
 
     // Grant useful work to validator B
-    election.record_useful_work(
-        &addr_b,
-        high_work,
-        UtilityCategory::General,
-        VerificationMethod::TeeAttestation,
-        10_000,
-    ).unwrap();
+    election
+        .record_useful_work(
+            &addr_b,
+            high_work,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            10_000,
+        )
+        .unwrap();
 
     // Get stats to verify setup
     let stats = election.stats();
@@ -97,7 +92,10 @@ fn test_miner_boost() {
     println!("Validator B useful work score: {}", high_work);
     println!();
     println!("Multiplier A: {:.4}", calculate_useful_work_multiplier(0));
-    println!("Multiplier B: {:.4}", calculate_useful_work_multiplier(high_work));
+    println!(
+        "Multiplier B: {:.4}",
+        calculate_useful_work_multiplier(high_work)
+    );
     println!();
     println!("Total weighted stake: {}", stats.total_weighted_stake);
     println!();
@@ -109,8 +107,14 @@ fn test_miner_boost() {
     let mut neither_win = 0u64;
 
     for slot in 0..num_slots {
-        let a_wins = election.check_eligibility(&addr_a, slot, &keys_a).unwrap().is_some();
-        let b_wins = election.check_eligibility(&addr_b, slot, &keys_b).unwrap().is_some();
+        let a_wins = election
+            .check_eligibility(&addr_a, slot, &keys_a)
+            .unwrap()
+            .is_some();
+        let b_wins = election
+            .check_eligibility(&addr_b, slot, &keys_b)
+            .unwrap()
+            .is_some();
 
         match (a_wins, b_wins) {
             (true, true) => both_win += 1,
@@ -141,7 +145,9 @@ fn test_miner_boost() {
         total_b_eligible > total_a_eligible,
         "Validator B (with {} useful work score) should be eligible more often than A (with 0). \
          Got A={}, B={}",
-        high_work, total_a_eligible, total_b_eligible
+        high_work,
+        total_a_eligible,
+        total_b_eligible
     );
 
     // The useful work multiplier at 1M score is ~2x
@@ -154,8 +160,10 @@ fn test_miner_boost() {
 
     println!();
     println!("=== TEST PASSED ===");
-    println!("Useful work boost verified: {}x advantage for {} useful work score",
-             ratio, high_work);
+    println!(
+        "Useful work boost verified: {}x advantage for {} useful work score",
+        ratio, high_work
+    );
 }
 
 /// Test that the multiplier scales logarithmically
@@ -164,24 +172,29 @@ fn test_useful_work_multiplier_scaling() {
     // Test various useful work scores
     let test_cases = vec![
         (0, 1.0),
-        (1, 1.05),          // log10(2)/6 ≈ 0.05
-        (1_000, 1.5),       // log10(1000)/6 = 0.5
-        (1_000_000, 2.0),   // log10(1,000,000)/6 = 1.0
+        (1, 1.05),            // log10(2)/6 ≈ 0.05
+        (1_000, 1.5),         // log10(1000)/6 = 0.5
+        (1_000_000, 2.0),     // log10(1,000,000)/6 = 1.0
         (1_000_000_000, 2.5), // log10(1,000,000,000)/6 = 1.5
-        (u64::MAX, 4.2),    // u64 max yields ~4.21x with log10/6
+        (u64::MAX, 4.2),      // u64 max yields ~4.21x with log10/6
     ];
 
     println!("=== USEFUL WORK MULTIPLIER SCALING ===");
     for (score, expected) in test_cases {
         let actual = calculate_useful_work_multiplier(score);
-        println!("Score {}: {:.4}x (expected ~{:.1}x)", score, actual, expected);
+        println!(
+            "Score {}: {:.4}x (expected ~{:.1}x)",
+            score, actual, expected
+        );
 
         // Allow 10% tolerance
         let tolerance = 0.2;
         assert!(
             (actual - expected).abs() < tolerance,
             "Score {} should give ~{:.1}x multiplier, got {:.4}x",
-            score, expected, actual
+            score,
+            expected,
+            actual
         );
     }
     println!("=== SCALING TEST PASSED ===");
@@ -194,25 +207,37 @@ fn test_weighted_stake_boost() {
 
     // No useful work
     let weighted_0 = crate::pouw::calculate_weighted_stake(base_stake, 0);
-    assert_eq!(weighted_0, base_stake, "Zero useful work should give 1x stake");
+    assert_eq!(
+        weighted_0, base_stake,
+        "Zero useful work should give 1x stake"
+    );
 
     // Medium useful work
     let weighted_1m = crate::pouw::calculate_weighted_stake(base_stake, 1_000_000);
     let ratio_1m = weighted_1m as f64 / base_stake as f64;
     println!("1M useful work: {:.2}x boost", ratio_1m);
-    assert!(ratio_1m > 1.8 && ratio_1m < 2.2, "1M useful work should give ~2x boost");
+    assert!(
+        ratio_1m > 1.8 && ratio_1m < 2.2,
+        "1M useful work should give ~2x boost"
+    );
 
     // High useful work
     let weighted_1b = crate::pouw::calculate_weighted_stake(base_stake, 1_000_000_000);
     let ratio_1b = weighted_1b as f64 / base_stake as f64;
     println!("1B useful work: {:.2}x boost", ratio_1b);
-    assert!(ratio_1b > 2.3 && ratio_1b < 2.7, "1B useful work should give ~2.5x boost");
+    assert!(
+        ratio_1b > 2.3 && ratio_1b < 2.7,
+        "1B useful work should give ~2.5x boost"
+    );
 
     // Max useful work (capped at 5x)
     let weighted_max = crate::pouw::calculate_weighted_stake(base_stake, u64::MAX);
     let ratio_max = weighted_max as f64 / base_stake as f64;
     println!("MAX useful work: {:.2}x boost (u64 max ~4.2x)", ratio_max);
-    assert!((ratio_max - 4.2).abs() < 0.2, "Max useful work should be ~4.2x for u64::MAX");
+    assert!(
+        (ratio_max - 4.2).abs() < 0.2,
+        "Max useful work should be ~4.2x for u64::MAX"
+    );
 }
 
 /// Test election with multiple validators at different useful work levels
@@ -238,30 +263,42 @@ fn test_multi_validator_useful_work_distribution() {
         info.active = true;
         election.register_validator(info).unwrap();
         if work > 0 {
-            election.record_useful_work(
-                &addr,
-                work,
-                UtilityCategory::General,
-                VerificationMethod::TeeAttestation,
-                10_000,
-            ).unwrap();
+            election
+                .record_useful_work(
+                    &addr,
+                    work,
+                    UtilityCategory::General,
+                    VerificationMethod::TeeAttestation,
+                    10_000,
+                )
+                .unwrap();
         }
         validators.push((addr, keys, work));
     }
     election.set_epoch_seed(epoch_seed);
 
     // Calculate expected win ratios based on multipliers
-    let multipliers: Vec<f64> = work_scores.iter()
+    let multipliers: Vec<f64> = work_scores
+        .iter()
         .map(|&s| calculate_useful_work_multiplier(s))
         .collect();
     let total_multiplier: f64 = multipliers.iter().sum();
 
     println!("=== MULTI-VALIDATOR DISTRIBUTION ===");
-    println!("Validators: {} with equal stake {}", work_scores.len(), stake);
+    println!(
+        "Validators: {} with equal stake {}",
+        work_scores.len(),
+        stake
+    );
     for (i, (&score, &mult)) in work_scores.iter().zip(multipliers.iter()).enumerate() {
         let expected_share = mult / total_multiplier * 100.0;
-        println!("V{}: work_score={}, multiplier={:.2}x, expected share={:.1}%",
-                 i+1, score, mult, expected_share);
+        println!(
+            "V{}: work_score={}, multiplier={:.2}x, expected share={:.1}%",
+            i + 1,
+            score,
+            mult,
+            expected_share
+        );
     }
     println!();
 
@@ -270,7 +307,11 @@ fn test_multi_validator_useful_work_distribution() {
 
     for slot in 0..num_slots {
         for (i, (addr, keys, _work)) in validators.iter().enumerate() {
-            if election.check_eligibility(addr, slot, keys).unwrap().is_some() {
+            if election
+                .check_eligibility(addr, slot, keys)
+                .unwrap()
+                .is_some()
+            {
                 wins[i] += 1;
             }
         }
@@ -280,7 +321,7 @@ fn test_multi_validator_useful_work_distribution() {
     let total_wins: u64 = wins.iter().sum();
     for (i, &w) in wins.iter().enumerate() {
         let actual_share = w as f64 / total_wins.max(1) as f64 * 100.0;
-        println!("V{}: {} wins ({:.1}%)", i+1, w, actual_share);
+        println!("V{}: {} wins ({:.1}%)", i + 1, w, actual_share);
     }
 
     // Verify ordering: higher useful work = more wins
@@ -326,7 +367,7 @@ fn test_reputation_to_election_integration() {
             [2u8; 32],
             [3u8; 32],
             [4u8; 32],
-            10_000,  // 10K complexity per job
+            10_000, // 10K complexity per job
             RepVerificationMethod::TeeAttestation,
             1000 + i as u64,
             true,
@@ -340,13 +381,15 @@ fn test_reputation_to_election_integration() {
     assert!(b_score > 0, "B should have non-zero score after jobs");
 
     // Update election system with new useful work score (mapped from reputation)
-    election.record_useful_work(
-        &addr_b,
-        b_score,
-        UtilityCategory::General,
-        VerificationMethod::TeeAttestation,
-        10_000,
-    ).unwrap();
+    election
+        .record_useful_work(
+            &addr_b,
+            b_score,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            10_000,
+        )
+        .unwrap();
 
     // Now B should have higher threshold
     let stats_updated = election.stats();

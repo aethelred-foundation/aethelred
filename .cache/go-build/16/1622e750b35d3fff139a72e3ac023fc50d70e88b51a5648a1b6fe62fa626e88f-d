@@ -1,5 +1,0 @@
-./context.go
-./handler_map.go
-./sign_mode_handler.go
-./signer_data.go
-./tx_data.go

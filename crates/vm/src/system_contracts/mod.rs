@@ -93,10 +93,10 @@ pub use tokenomics::{
     AdaptiveBurnEngine, AllocationCategory, BurnConfig, BurnStats, CategoryStats,
     EmissionCalculator, EmissionScheduleInfo, FeeDistribution, GenesisAllocation, SupplyInfo,
     TokenomicsConfig, TokenomicsManager, VestingPosition,
-    VestingSchedule as TokenomicsVestingSchedule, COMPUTE_POUW_POOL, CORE_CONTRIBUTORS_POOL,
-    AIRDROP_SEALS_POOL, CONTINGENCY_RESERVE_POOL, DECIMALS, ECOSYSTEM_GRANTS_POOL,
-    HALVING_INTERVAL_SECS, INSURANCE_FUND_POOL, ONE_AETHEL, PUBLIC_SALES_POOL,
-    STRATEGIC_SEED_POOL, TOTAL_GENESIS_SUPPLY, TREASURY_MM_POOL,
+    VestingSchedule as TokenomicsVestingSchedule, AIRDROP_SEALS_POOL, COMPUTE_POUW_POOL,
+    CONTINGENCY_RESERVE_POOL, CORE_CONTRIBUTORS_POOL, DECIMALS, ECOSYSTEM_GRANTS_POOL,
+    HALVING_INTERVAL_SECS, INSURANCE_FUND_POOL, ONE_AETHEL, PUBLIC_SALES_POOL, STRATEGIC_SEED_POOL,
+    TOTAL_GENESIS_SUPPLY, TREASURY_MM_POOL,
 };
 pub use types::{
     generate_job_id, is_zero_address, Address, ComplianceRequirement, ComplianceTag, Did, Hash,

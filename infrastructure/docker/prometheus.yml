@@ -1,0 +1,47 @@
+# ============================================================================
+# Prometheus Configuration for Aethelred Protocol
+# ============================================================================
+# Mounted into the prometheus container at /etc/prometheus/prometheus.yml
+# via docker-compose.yml
+# ============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager integration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load alert rules from the monitoring directory
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Aethelred validator nodes (CometBFT + app metrics)
+  - job_name: 'aethelred-validators'
+    static_configs:
+      - targets:
+          - 'validator-1:26660'
+          - 'validator-2:26660'
+          - 'validator-3:26660'
+        labels:
+          chain_id: 'aethelred-testnet-1'
+
+  # zkML prover service
+  - job_name: 'zkml-prover'
+    static_configs:
+      - targets: ['zkml-prover:8080']
+
+  # Node exporter (if deployed)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']

@@ -1,0 +1,144 @@
+?   	github.com/aethelred/aethelred	[no test files]
+--- FAIL: TestNewApp_NoPanic (0.00s)
+    app_new_test.go:15: app.New panicked: concrete type *types.MsgRelayProof has already been registered under typeURL /, cannot register *types.MsgRequestProof under same typeURL. This usually means that there are conflicting modules registering different concrete types for a same interface implementation
+--- FAIL: TestProcessProposal_FinalityAcceptsValidInjectedTx (0.00s)
+    process_proposal_integration_test.go:133: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/app/process_proposal_integration_test.go:133
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestProcessProposal_FinalityAcceptsValidInjectedTx
+--- FAIL: TestProcessProposal_FinalityRejectsMissingInjectedTx (0.00s)
+    process_proposal_integration_test.go:190: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/app/process_proposal_integration_test.go:190
+        	Error:      	Not equal: 
+        	            	expected: 2
+        	            	actual  : 1
+        	Test:       	TestProcessProposal_FinalityRejectsMissingInjectedTx
+--- FAIL: TestProcessProposal_FinalityRejectsTamperedConsensusPower (0.00s)
+    process_proposal_integration_test.go:234: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/app/process_proposal_integration_test.go:234
+        	Error:      	"[]" should have 1 item(s), but has 0
+        	Test:       	TestProcessProposal_FinalityRejectsTamperedConsensusPower
+--- FAIL: TestProcessProposal_FinalityRejectsInjectedTxWhenCacheMissing (0.00s)
+    process_proposal_integration_test.go:340: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/app/process_proposal_integration_test.go:340
+        	Error:      	Not equal: 
+        	            	expected: 2
+        	            	actual  : 1
+        	Test:       	TestProcessProposal_FinalityRejectsInjectedTxWhenCacheMissing
+--- FAIL: TestVoteExtension_ValidateStrict_AcceptsSignedExtension (0.00s)
+    vote_extension_test.go:297: strict mode should accept properly signed extension: invalid verification at index 0: SECURITY: TEE attestation must include BlockHeight in production mode
+FAIL
+FAIL	github.com/aethelred/aethelred/app	1.121s
+?   	github.com/aethelred/aethelred/cmd/aethelred-loadtest	[no test files]
+ok  	github.com/aethelred/aethelred/cmd/aethelred-tee-worker	(cached)
+ok  	github.com/aethelred/aethelred/cmd/aethelred-zkml-prover	(cached)
+?   	github.com/aethelred/aethelred/cmd/aethelredd	[no test files]
+ok  	github.com/aethelred/aethelred/cmd/aethelredd/cmd	(cached)
+?   	github.com/aethelred/aethelred/crypto/bls	[no test files]
+?   	github.com/aethelred/aethelred/crypto/hsm	[no test files]
+?   	github.com/aethelred/aethelred/crypto/pqc	[no test files]
+?   	github.com/aethelred/aethelred/crypto/pqc/fips204	[no test files]
+?   	github.com/aethelred/aethelred/dApps/cruzible/backend/api/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	github.com/aethelred/aethelred/dApps/cruzible/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	github.com/aethelred/aethelred/dApps/noblepay/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	github.com/aethelred/aethelred/dApps/shiora/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	github.com/aethelred/aethelred/dApps/zeroid/node_modules/flatted/golang/pkg/flatted	[no test files]
+?   	github.com/aethelred/aethelred/integrations/api/github.com/aethelred/aethelred/api/aethelred/pouw/v1	[no test files]
+?   	github.com/aethelred/aethelred/integrations/api/github.com/aethelred/aethelred/api/aethelred/seal/v1	[no test files]
+ok  	github.com/aethelred/aethelred/internal/build	(cached)
+ok  	github.com/aethelred/aethelred/internal/circuitbreaker	(cached)
+ok  	github.com/aethelred/aethelred/internal/config	(cached)
+ok  	github.com/aethelred/aethelred/internal/consensus/vrf	(cached)
+ok  	github.com/aethelred/aethelred/internal/errors	(cached)
+ok  	github.com/aethelred/aethelred/internal/hardware/fpga	(cached)
+ok  	github.com/aethelred/aethelred/internal/httpclient	(cached)
+ok  	github.com/aethelred/aethelred/internal/tee/sev	(cached)
+ok  	github.com/aethelred/aethelred/internal/tee/sgx	(cached)
+ok  	github.com/aethelred/aethelred/internal/vm/wasm	(cached)
+ok  	github.com/aethelred/aethelred/internal/zkml/halo2	(cached)
+ok  	github.com/aethelred/aethelred/network/dag	(cached)
+?   	github.com/aethelred/aethelred/network/libp2p	[no test files]
+?   	github.com/aethelred/aethelred/sdk/typescript/node_modules/flatted/golang/pkg/flatted	[no test files]
+ok  	github.com/aethelred/aethelred/services/tee-worker/executor	(cached)
+?   	github.com/aethelred/aethelred/services/tee-worker/l1-verifier	[no test files]
+?   	github.com/aethelred/aethelred/services/tee-worker/l1-verifier/dcap	[no test files]
+?   	github.com/aethelred/aethelred/tools/tools/compliance	[no test files]
+?   	github.com/aethelred/aethelred/tools/tools/loadtest	[no test files]
+ok  	github.com/aethelred/aethelred/x/crisis/keeper	(cached)
+?   	github.com/aethelred/aethelred/x/crisis/types	[no test files]
+ok  	github.com/aethelred/aethelred/x/demo/credit_scoring	(cached)
+?   	github.com/aethelred/aethelred/x/demo/types	[no test files]
+?   	github.com/aethelred/aethelred/x/ibc	[no test files]
+ok  	github.com/aethelred/aethelred/x/ibc/keeper	(cached)
+?   	github.com/aethelred/aethelred/x/ibc/types	[no test files]
+ok  	github.com/aethelred/aethelred/x/insurance/keeper	(cached)
+?   	github.com/aethelred/aethelred/x/insurance/types	[no test files]
+?   	github.com/aethelred/aethelred/x/lightclient/keeper	[no test files]
+ok  	github.com/aethelred/aethelred/x/pouw	(cached)
+ok  	github.com/aethelred/aethelred/x/pouw/client/cli	(cached)
+--- FAIL: TestCB7_NoDuplicateValidatorCapabilitiesInvariant (0.00s)
+    coverage_boost7_test.go:1250: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/x/pouw/keeper/coverage_boost7_test.go:1250
+        	Error:      	Should be false
+        	Test:       	TestCB7_NoDuplicateValidatorCapabilitiesInvariant
+        	Messages:   	pouw: no-duplicate-validator-capabilities invariant
+        	            	INVARIANT BROKEN: validator cosmos1v36hqttfdemqqqqqqqqqqqqqqqqqqqqq70wljm has non-positive MaxConcurrentJobs 0
+        	            	
+--- FAIL: TestCB7_QueryServer_ValidatorStats_NotFound (0.00s)
+    coverage_boost7_test.go:1308: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/x/pouw/keeper/coverage_boost7_test.go:1308
+        	Error:      	Received unexpected error:
+        	            	validator stats not found: nonexistent
+        	Test:       	TestCB7_QueryServer_ValidatorStats_NotFound
+--- FAIL: TestCB7_MsgServer_SubmitJob_NilRequest (0.00s)
+panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+[signal SIGSEGV: segmentation violation code=0x2 addr=0x38 pc=0x105ea2fb4]
+
+goroutine 4633 [running]:
+testing.tRunner.func1.2({0x1067a51c0, 0x107bf1cc0})
+	/opt/homebrew/Cellar/go/1.25.7/libexec/src/testing/testing.go:1872 +0x190
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.25.7/libexec/src/testing/testing.go:1875 +0x31c
+panic({0x1067a51c0?, 0x107bf1cc0?})
+	/opt/homebrew/Cellar/go/1.25.7/libexec/src/runtime/panic.go:783 +0x120
+github.com/aethelred/aethelred/x/pouw/keeper.msgServer.SubmitJob({{}, {{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, ...}, ...}}, ...)
+	/Users/rameshtamilselvan/Downloads/aethelred/x/pouw/keeper/msg_server.go:46 +0x304
+github.com/aethelred/aethelred/x/pouw/keeper_test.TestCB7_MsgServer_SubmitJob_NilRequest(0x14000ab8e00)
+	/Users/rameshtamilselvan/Downloads/aethelred/x/pouw/keeper/coverage_boost7_test.go:1340 +0x240
+testing.tRunner(0x14000ab8e00, 0x106ac47a0)
+	/opt/homebrew/Cellar/go/1.25.7/libexec/src/testing/testing.go:1934 +0xc8
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.25.7/libexec/src/testing/testing.go:1997 +0x364
+FAIL	github.com/aethelred/aethelred/x/pouw/keeper	1.834s
+ok  	github.com/aethelred/aethelred/x/pouw/types	(cached)
+ok  	github.com/aethelred/aethelred/x/seal	(cached)
+ok  	github.com/aethelred/aethelred/x/seal/keeper	(cached)
+ok  	github.com/aethelred/aethelred/x/seal/types	(cached)
+ok  	github.com/aethelred/aethelred/x/validator/keeper	(cached)
+?   	github.com/aethelred/aethelred/x/validator/types	[no test files]
+ok  	github.com/aethelred/aethelred/x/vault/keeper	(cached)
+?   	github.com/aethelred/aethelred/x/vault/types	[no test files]
+ok  	github.com/aethelred/aethelred/x/verify	(cached)
+?   	github.com/aethelred/aethelred/x/verify/ezkl	[no test files]
+?   	github.com/aethelred/aethelred/x/verify/groth16	[no test files]
+?   	github.com/aethelred/aethelred/x/verify/httputil	[no test files]
+--- FAIL: TestZKVerifierPrecompileAndSystemVerifier (0.00s)
+    registry_and_paths_test.go:497: 
+        	Error Trace:	/Users/rameshtamilselvan/Downloads/aethelred/x/verify/keeper/registry_and_paths_test.go:497
+        	Error:      	Not equal: 
+        	            	expected: 0x1
+        	            	actual  : 0x0
+        	Test:       	TestZKVerifierPrecompileAndSystemVerifier
+--- FAIL: TestZKVerifierVerifyProofErrors (0.00s)
+    zk_verifier_test.go:59: expected proof too large error
+--- FAIL: TestZKVerifierFailsClosedWithoutSystemVerifier (0.00s)
+    zk_verifier_test.go:86: expected invalid proof error code, got INVALID_PUBLIC_INPUT
+--- FAIL: TestZKVerifierValidProofs (0.00s)
+    --- FAIL: TestZKVerifierValidProofs/groth16 (0.00s)
+        zk_verifier_test.go:475: expected valid proof for groth16
+FAIL
+FAIL	github.com/aethelred/aethelred/x/verify/keeper	4.930s
+?   	github.com/aethelred/aethelred/x/verify/tee	[no test files]
+?   	github.com/aethelred/aethelred/x/verify/tee/dcap	[no test files]
+ok  	github.com/aethelred/aethelred/x/verify/types	(cached)
+FAIL

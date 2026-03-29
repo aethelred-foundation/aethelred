@@ -8,5 +8,6 @@ export * as sovereignCircuitBreakerModuleSol from "./SovereignCircuitBreakerModu
 export * as sovereignGovernanceTimelockSol from "./SovereignGovernanceTimelock.sol";
 export * as interfaces from "./interfaces";
 export * as mocks from "./mocks";
+export * as vault from "./vault";
 export { AethelredToken__factory } from "./AethelredToken__factory";
 export { AethelredVesting__factory } from "./AethelredVesting__factory";

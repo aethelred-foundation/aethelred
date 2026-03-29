@@ -2,9 +2,9 @@
 //!
 //! Persistent storage for bridge state using RocksDB.
 
-use std::path::Path;
 use crate::error::Result;
 use crate::types::*;
+use std::path::Path;
 
 /// Bridge storage backed by RocksDB
 pub struct BridgeStorage {
@@ -140,7 +140,10 @@ impl BridgeStorage {
         Ok(())
     }
 
-    pub fn get_withdrawal_proposal(&self, _proposal_id: &Hash) -> Result<Option<WithdrawalProposal>> {
+    pub fn get_withdrawal_proposal(
+        &self,
+        _proposal_id: &Hash,
+    ) -> Result<Option<WithdrawalProposal>> {
         Ok(None)
     }
 

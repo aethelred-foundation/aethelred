@@ -50,7 +50,7 @@ function PhaseBadge({ phase }: { phase: StablecoinPhase }) {
     case StablecoinPhase.ACTIVE:
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-          <LiveDot color="emerald" /> Active
+          <LiveDot color="green" /> Active
         </span>
       );
     case StablecoinPhase.READ_ONLY:

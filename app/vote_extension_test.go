@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -48,15 +49,28 @@ func makeValidTEEAttestation() *app.TEEAttestationData {
 
 func makeValidTEEAttestationWithUserData(userData []byte) *app.TEEAttestationData {
 	nonce := bytes.Repeat([]byte{0x11}, 32)
-	quote := makeValidNitroQuote(userData, nonce)
+	// Recompute UserData to include BlockHeight and ChainID for strict mode:
+	// SHA-256(outputHash || LE64(blockHeight) || chainID)
+	blockHeight := int64(100)
+	chainID := "aethelred-testnet-1"
+	heightBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(heightBytes, uint64(blockHeight))
+	h := sha256.New()
+	h.Write(userData)
+	h.Write(heightBytes)
+	h.Write([]byte(chainID))
+	boundUserData := h.Sum(nil)
+	quote := makeValidNitroQuote(boundUserData, nonce)
 	return &app.TEEAttestationData{
 		Platform:    "aws-nitro",
 		EnclaveID:   "enclave-123",
 		Measurement: make([]byte, 48),
 		Quote:       quote,
-		UserData:    userData,
+		UserData:    boundUserData,
 		Nonce:       nonce,
 		Timestamp:   time.Now().UTC(),
+		BlockHeight: blockHeight,
+		ChainID:     chainID,
 	}
 }
 

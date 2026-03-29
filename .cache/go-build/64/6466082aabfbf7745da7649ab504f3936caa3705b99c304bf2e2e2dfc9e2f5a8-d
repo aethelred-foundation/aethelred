@@ -1,6 +1,0 @@
-./addr_translator.go
-./cmd_reattach.go
-./cmd_runner.go
-./notes_unix.go
-./process.go
-./process_posix.go

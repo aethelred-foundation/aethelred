@@ -3,7 +3,7 @@
 //! This example demonstrates the Quantum Time-Machine feature,
 //! simulating what happens when quantum computers can break ECDSA.
 
-use aethelred_infinity_sandbox::quantum::*;
+use aethelred_sandbox::quantum::*;
 
 fn main() {
     println!("\n{}", QuantumThreatTimeline::display());

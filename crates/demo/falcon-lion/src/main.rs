@@ -27,14 +27,8 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use falcon_lion::{
-    FalconLionDemo,
-    DemoConfig,
-    DemoMode,
-    DemoOutput,
+    print_banner, version_info, DemoConfig, DemoMode, DemoOutput, FalconLionDemo, FalconLionError,
     FalconLionResult,
-    FalconLionError,
-    print_banner,
-    version_info,
 };
 
 // =============================================================================
@@ -106,7 +100,8 @@ impl CliArgs {
 // =============================================================================
 
 fn print_help() {
-    println!(r#"
+    println!(
+        r#"
 Project Falcon-Lion: Zero-Knowledge Letter of Credit Demo
 
 USAGE:
@@ -152,7 +147,8 @@ EXAMPLES:
     falcon-lion --quiet --fast --output results.json
 
 For more information, visit: https://aethelred.io/falcon-lion
-"#);
+"#
+    );
 }
 
 // =============================================================================
@@ -166,28 +162,65 @@ fn print_summary(output: &DemoOutput, duration: std::time::Duration) {
     println!("║                           EXECUTION SUMMARY                                  ║");
     println!("╠══════════════════════════════════════════════════════════════════════════════╣");
     println!("║                                                                              ║");
-    println!("║  Demo ID: {:<63} ║", truncate(&output.demo_id.to_string(), 63));
+    println!(
+        "║  Demo ID: {:<63} ║",
+        truncate(&output.demo_id.to_string(), 63)
+    );
     println!("║  Status: {:<64} ║", format!("{:?}", output.status));
     println!("║                                                                              ║");
     println!("║  Trade Deal:                                                                 ║");
-    println!("║    Reference: {:<59} ║", truncate(&output.deal_reference, 59));
+    println!(
+        "║    Reference: {:<59} ║",
+        truncate(&output.deal_reference, 59)
+    );
     println!("║                                                                              ║");
     println!("║  Letter of Credit:                                                           ║");
-    println!("║    Reference: {:<59} ║", output.lc_reference.as_deref().unwrap_or("-"));
-    println!("║    On-Chain ID: {:<57} ║", truncate(output.lc_id.as_deref().unwrap_or("-"), 57));
+    println!(
+        "║    Reference: {:<59} ║",
+        output.lc_reference.as_deref().unwrap_or("-")
+    );
+    println!(
+        "║    On-Chain ID: {:<57} ║",
+        truncate(output.lc_id.as_deref().unwrap_or("-"), 57)
+    );
     println!("║                                                                              ║");
     println!("║  Settlement:                                                                 ║");
-    println!("║    TX Hash: {:<61} ║", truncate(output.settlement_tx_hash.as_deref().unwrap_or("-"), 61));
+    println!(
+        "║    TX Hash: {:<61} ║",
+        truncate(output.settlement_tx_hash.as_deref().unwrap_or("-"), 61)
+    );
     println!("║                                                                              ║");
     println!("║  Performance:                                                                ║");
-    println!("║    Total Time: {:<55} ║", format!("{}ms", output.total_time_ms));
-    println!("║    Data Transferred: {:<49} ║", format!("{} bytes (proofs only)", output.metrics.data_transferred_bytes));
-    println!("║    Sensitive Data Exposed: {:<43} ║", if output.metrics.sensitive_data_exposed { "YES ⚠️" } else { "NONE ✅" });
+    println!(
+        "║    Total Time: {:<55} ║",
+        format!("{}ms", output.total_time_ms)
+    );
+    println!(
+        "║    Data Transferred: {:<49} ║",
+        format!(
+            "{} bytes (proofs only)",
+            output.metrics.data_transferred_bytes
+        )
+    );
+    println!(
+        "║    Sensitive Data Exposed: {:<43} ║",
+        if output.metrics.sensitive_data_exposed {
+            "YES ⚠️"
+        } else {
+            "NONE ✅"
+        }
+    );
     println!("║                                                                              ║");
     println!("║  Explorer URL:                                                               ║");
-    println!("║    {:<69} ║", truncate(output.explorer_url.as_deref().unwrap_or("-"), 69));
+    println!(
+        "║    {:<69} ║",
+        truncate(output.explorer_url.as_deref().unwrap_or("-"), 69)
+    );
     println!("║                                                                              ║");
-    println!("║  Execution Time: {:<55} ║", format!("{:.2}s", duration.as_secs_f64()));
+    println!(
+        "║  Execution Time: {:<55} ║",
+        format!("{:.2}s", duration.as_secs_f64())
+    );
     println!("║                                                                              ║");
     println!("╚══════════════════════════════════════════════════════════════════════════════╝");
 }
@@ -224,6 +257,21 @@ fn truncate(s: &str, max_len: usize) -> String {
     }
 }
 
+/// Format whole numbers with thousands separators for CLI output.
+fn format_number(value: u64) -> String {
+    let digits = value.to_string();
+    let mut output = String::with_capacity(digits.len() + digits.len() / 3);
+
+    for (index, ch) in digits.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            output.push(',');
+        }
+        output.push(ch);
+    }
+
+    output.chars().rev().collect()
+}
+
 // =============================================================================
 // JSON EXPORT
 // =============================================================================
@@ -256,8 +304,7 @@ fn export_to_json(output: &DemoOutput, path: &PathBuf) -> FalconLionResult<()> {
         "audit_trail_entries": output.audit_trail.len(),
     });
 
-    let mut file = File::create(path)
-        .map_err(|e| FalconLionError::IoError(e.to_string()))?;
+    let mut file = File::create(path).map_err(|e| FalconLionError::IoError(e.to_string()))?;
 
     let json_string = serde_json::to_string_pretty(&json)
         .map_err(|e| FalconLionError::SerializationError(e.to_string()))?;
@@ -300,7 +347,11 @@ async fn main() -> ExitCode {
     let config = DemoConfig {
         verbose: args.verbose,
         simulate_delays: args.simulate_delays,
-        mode: if args.simulate_delays { DemoMode::Presentation } else { DemoMode::Fast },
+        mode: if args.simulate_delays {
+            DemoMode::Presentation
+        } else {
+            DemoMode::Fast
+        },
         deal_amount: None,
         goods_description: None,
     };
@@ -349,17 +400,37 @@ async fn main() -> ExitCode {
         }
         Err(e) => {
             eprintln!();
-            eprintln!("╔══════════════════════════════════════════════════════════════════════════════╗");
-            eprintln!("║                              ❌ DEMO FAILED                                  ║");
-            eprintln!("╠══════════════════════════════════════════════════════════════════════════════╣");
-            eprintln!("║                                                                              ║");
+            eprintln!(
+                "╔══════════════════════════════════════════════════════════════════════════════╗"
+            );
+            eprintln!(
+                "║                              ❌ DEMO FAILED                                  ║"
+            );
+            eprintln!(
+                "╠══════════════════════════════════════════════════════════════════════════════╣"
+            );
+            eprintln!(
+                "║                                                                              ║"
+            );
             eprintln!("║  Error: {:<65} ║", truncate(&e.to_string(), 65));
-            eprintln!("║                                                                              ║");
+            eprintln!(
+                "║                                                                              ║"
+            );
             eprintln!("║  Error Code: {:<60} ║", e.error_code());
-            eprintln!("║  Recoverable: {:<59} ║", if e.is_recoverable() { "Yes" } else { "No" });
-            eprintln!("║  Blocking: {:<62} ║", if e.is_blocking() { "Yes" } else { "No" });
-            eprintln!("║                                                                              ║");
-            eprintln!("╚══════════════════════════════════════════════════════════════════════════════╝");
+            eprintln!(
+                "║  Recoverable: {:<59} ║",
+                if e.is_recoverable() { "Yes" } else { "No" }
+            );
+            eprintln!(
+                "║  Blocking: {:<62} ║",
+                if e.is_blocking() { "Yes" } else { "No" }
+            );
+            eprintln!(
+                "║                                                                              ║"
+            );
+            eprintln!(
+                "╚══════════════════════════════════════════════════════════════════════════════╝"
+            );
             eprintln!();
             eprintln!("For troubleshooting, see: https://aethelred.io/docs/troubleshooting");
 

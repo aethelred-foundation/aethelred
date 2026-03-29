@@ -4,8 +4,8 @@
 //! Provides tensor-aware assertions, floating point comparisons,
 //! and domain-specific validation functions.
 
-use std::fmt::Debug;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 // ============ Tensor Assertions ============
 
@@ -29,7 +29,11 @@ pub fn assert_tensors_equal<T: TensorLike>(left: &T, right: &T, tolerance: f64) 
         assert!(
             diff <= tolerance as f32,
             "Tensors differ at index {}: {} vs {} (diff: {}, tolerance: {})",
-            i, l, r, diff, tolerance
+            i,
+            l,
+            r,
+            diff,
+            tolerance
         );
     }
 }
@@ -56,7 +60,10 @@ pub fn assert_tensor_in_range<T: TensorLike>(tensor: &T, min: f32, max: f32) {
         assert!(
             val >= min && val <= max,
             "Tensor value at index {} is out of range: {} not in [{}, {}]",
-            i, val, min, max
+            i,
+            val,
+            min,
+            max
         );
     }
 }
@@ -64,11 +71,7 @@ pub fn assert_tensor_in_range<T: TensorLike>(tensor: &T, min: f32, max: f32) {
 /// Assert tensor contains no NaN values
 pub fn assert_no_nan<T: TensorLike>(tensor: &T) {
     for (i, &val) in tensor.data().iter().enumerate() {
-        assert!(
-            !val.is_nan(),
-            "Tensor contains NaN at index {}",
-            i
-        );
+        assert!(!val.is_nan(), "Tensor contains NaN at index {}", i);
     }
 }
 
@@ -89,7 +92,8 @@ pub fn assert_tensor_finite<T: TensorLike>(tensor: &T) {
         assert!(
             val.is_finite(),
             "Tensor contains non-finite value at index {}: {}",
-            i, val
+            i,
+            val
         );
     }
 }
@@ -129,7 +133,10 @@ pub fn assert_float_eq(left: f64, right: f64, epsilon: f64) {
     assert!(
         diff <= epsilon,
         "Floats not equal: {} vs {} (diff: {}, epsilon: {})",
-        left, right, diff, epsilon
+        left,
+        right,
+        diff,
+        epsilon
     );
 }
 
@@ -142,7 +149,10 @@ pub fn assert_relative_eq(left: f64, right: f64, rel_epsilon: f64) {
     assert!(
         rel_diff <= rel_epsilon,
         "Floats not relatively equal: {} vs {} (rel_diff: {}, rel_epsilon: {})",
-        left, right, rel_diff, rel_epsilon
+        left,
+        right,
+        rel_diff,
+        rel_epsilon
     );
 }
 
@@ -151,7 +161,9 @@ pub fn assert_in_range(value: f64, min: f64, max: f64) {
     assert!(
         value >= min && value <= max,
         "Value {} is out of range [{}, {}]",
-        value, min, max
+        value,
+        min,
+        max
     );
 }
 
@@ -167,7 +179,8 @@ pub fn assert_same_elements<T: Eq + std::hash::Hash + Debug>(left: &[T], right: 
     assert!(
         left_set == right_set,
         "Collections don't contain same elements:\n  left: {:?}\n  right: {:?}",
-        left, right
+        left,
+        right
     );
 }
 
@@ -175,9 +188,12 @@ pub fn assert_same_elements<T: Eq + std::hash::Hash + Debug>(left: &[T], right: 
 pub fn assert_sorted<T: Ord + Debug>(values: &[T]) {
     for i in 1..values.len() {
         assert!(
-            values[i-1] <= values[i],
+            values[i - 1] <= values[i],
             "Collection not sorted: {:?} > {:?} at indices [{}, {}]",
-            values[i-1], values[i], i-1, i
+            values[i - 1],
+            values[i],
+            i - 1,
+            i
         );
     }
 }
@@ -186,9 +202,12 @@ pub fn assert_sorted<T: Ord + Debug>(values: &[T]) {
 pub fn assert_sorted_desc<T: Ord + Debug>(values: &[T]) {
     for i in 1..values.len() {
         assert!(
-            values[i-1] >= values[i],
+            values[i - 1] >= values[i],
             "Collection not sorted descending: {:?} < {:?} at indices [{}, {}]",
-            values[i-1], values[i], i-1, i
+            values[i - 1],
+            values[i],
+            i - 1,
+            i
         );
     }
 }
@@ -220,7 +239,8 @@ pub fn assert_string_contains(haystack: &str, needle: &str) {
     assert!(
         haystack.contains(needle),
         "String does not contain expected substring:\n  haystack: {}\n  needle: {}",
-        haystack, needle
+        haystack,
+        needle
     );
 }
 
@@ -230,7 +250,8 @@ pub fn assert_matches_pattern(text: &str, pattern: &str) {
     assert!(
         re.is_match(text),
         "String does not match pattern:\n  text: {}\n  pattern: {}",
-        text, pattern
+        text,
+        pattern
     );
 }
 
@@ -239,7 +260,8 @@ pub fn assert_starts_with(text: &str, prefix: &str) {
     assert!(
         text.starts_with(prefix),
         "String does not start with prefix:\n  text: {}\n  prefix: {}",
-        text, prefix
+        text,
+        prefix
     );
 }
 
@@ -248,7 +270,8 @@ pub fn assert_ends_with(text: &str, suffix: &str) {
     assert!(
         text.ends_with(suffix),
         "String does not end with suffix:\n  text: {}\n  suffix: {}",
-        text, suffix
+        text,
+        suffix
     );
 }
 
@@ -256,37 +279,22 @@ pub fn assert_ends_with(text: &str, suffix: &str) {
 
 /// Assert Result is Ok
 pub fn assert_ok<T: Debug, E: Debug>(result: &Result<T, E>) {
-    assert!(
-        result.is_ok(),
-        "Expected Ok, got Err: {:?}",
-        result
-    );
+    assert!(result.is_ok(), "Expected Ok, got Err: {:?}", result);
 }
 
 /// Assert Result is Err
 pub fn assert_err<T: Debug, E: Debug>(result: &Result<T, E>) {
-    assert!(
-        result.is_err(),
-        "Expected Err, got Ok: {:?}",
-        result
-    );
+    assert!(result.is_err(), "Expected Err, got Ok: {:?}", result);
 }
 
 /// Assert Option is Some
 pub fn assert_some<T: Debug>(option: &Option<T>) {
-    assert!(
-        option.is_some(),
-        "Expected Some, got None"
-    );
+    assert!(option.is_some(), "Expected Some, got None");
 }
 
 /// Assert Option is None
 pub fn assert_none<T: Debug>(option: &Option<T>) {
-    assert!(
-        option.is_none(),
-        "Expected None, got Some: {:?}",
-        option
-    );
+    assert!(option.is_none(), "Expected None, got Some: {:?}", option);
 }
 
 // ============ Performance Assertions ============
@@ -382,12 +390,19 @@ pub fn assert_gradients_correct<F>(
         numerical_grads.push(numerical_grad);
     }
 
-    for (i, (num, comp)) in numerical_grads.iter().zip(computed_grads.iter()).enumerate() {
+    for (i, (num, comp)) in numerical_grads
+        .iter()
+        .zip(computed_grads.iter())
+        .enumerate()
+    {
         let diff = (*num - *comp).abs();
         assert!(
             diff <= tolerance as f32,
             "Gradient mismatch at index {}: numerical = {}, computed = {} (diff: {})",
-            i, num, comp, diff
+            i,
+            num,
+            comp,
+            diff
         );
     }
 }
@@ -400,20 +415,25 @@ pub fn assert_mean_in_range(values: &[f64], expected_min: f64, expected_max: f64
     assert!(
         mean >= expected_min && mean <= expected_max,
         "Mean {} is not in expected range [{}, {}]",
-        mean, expected_min, expected_max
+        mean,
+        expected_min,
+        expected_max
     );
 }
 
 /// Assert standard deviation is within expected range
 pub fn assert_std_in_range(values: &[f64], expected_min: f64, expected_max: f64) {
     let mean: f64 = values.iter().sum::<f64>() / values.len() as f64;
-    let variance: f64 = values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
+    let variance: f64 =
+        values.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / values.len() as f64;
     let std = variance.sqrt();
 
     assert!(
         std >= expected_min && std <= expected_max,
         "Standard deviation {} is not in expected range [{}, {}]",
-        std, expected_min, expected_max
+        std,
+        expected_min,
+        expected_max
     );
 }
 
@@ -438,13 +458,15 @@ pub fn assert_normally_distributed(values: &[f64], significance: f64) {
     assert!(
         skewness.abs() <= skewness_threshold,
         "Distribution is not normal: skewness = {} (threshold: {})",
-        skewness, skewness_threshold
+        skewness,
+        skewness_threshold
     );
 
     assert!(
         kurtosis.abs() <= kurtosis_threshold,
         "Distribution is not normal: excess kurtosis = {} (threshold: {})",
-        kurtosis, kurtosis_threshold
+        kurtosis,
+        kurtosis_threshold
     );
 }
 
@@ -472,11 +494,7 @@ pub fn assert_json_has_field(json: &serde_json::Value, field: &str) {
 /// Assert JSON field has expected value
 pub fn assert_json_field_eq(json: &serde_json::Value, field: &str, expected: &serde_json::Value) {
     let actual = json.get(field);
-    assert!(
-        actual.is_some(),
-        "JSON missing field: {}",
-        field
-    );
+    assert!(actual.is_some(), "JSON missing field: {}", field);
     assert!(
         actual.unwrap() == expected,
         "JSON field '{}' has unexpected value:\n  expected: {}\n  actual: {}",
@@ -512,10 +530,7 @@ impl<T: PartialEq + Debug> Assert<T> {
     pub fn is_equal_to(self, expected: T) {
         if self.value != expected {
             if let Some(desc) = self.description {
-                panic!(
-                    "{}: expected {:?}, got {:?}",
-                    desc, expected, self.value
-                );
+                panic!("{}: expected {:?}, got {:?}", desc, expected, self.value);
             } else {
                 panic!("expected {:?}, got {:?}", expected, self.value);
             }

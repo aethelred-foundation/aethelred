@@ -30,6 +30,9 @@ var _ types.MsgServer = (*msgServer)(nil)
 
 // SubmitJob handles MsgSubmitJob.
 func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*types.MsgSubmitJobResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil SubmitJob message")
+	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// Default fee to the module base fee if configured; fallback to zero if parsing fails.
@@ -80,6 +83,9 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 
 // RegisterModel handles MsgRegisterModel.
 func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterModel) (*types.MsgRegisterModelResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil RegisterModel message")
+	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	model := types.NewRegisteredModel(
@@ -108,6 +114,9 @@ func (k msgServer) RegisterModel(goCtx context.Context, msg *types.MsgRegisterMo
 
 // CancelJob handles MsgCancelJob.
 func (k msgServer) CancelJob(goCtx context.Context, msg *types.MsgCancelJob) (*types.MsgCancelJobResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil CancelJob message")
+	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	job, err := k.Keeper.GetJob(ctx, msg.JobId)
@@ -154,6 +163,9 @@ func (k msgServer) CancelJob(goCtx context.Context, msg *types.MsgCancelJob) (*t
 
 // RegisterValidatorCapability handles MsgRegisterValidatorCapability.
 func (k msgServer) RegisterValidatorCapability(goCtx context.Context, msg *types.MsgRegisterValidatorCapability) (*types.MsgRegisterValidatorCapabilityResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil RegisterValidatorCapability message")
+	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	maxInt := int64(^uint(0) >> 1)
@@ -198,6 +210,9 @@ func (k msgServer) RegisterValidatorCapability(goCtx context.Context, msg *types
 
 // RegisterValidatorPCR0 handles MsgRegisterValidatorPCR0.
 func (k msgServer) RegisterValidatorPCR0(goCtx context.Context, msg *types.MsgRegisterValidatorPCR0) (*types.MsgRegisterValidatorPCR0Response, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil RegisterValidatorPCR0 message")
+	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	if err := msg.ValidateBasic(); err != nil {

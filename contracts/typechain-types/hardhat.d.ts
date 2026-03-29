@@ -246,6 +246,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.InstitutionalStablecoinBridge__factory>;
     getContractFactory(
+      name: "ITimelockControllerMinDelay",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITimelockControllerMinDelay__factory>;
+    getContractFactory(
       name: "ITokenMessengerV2",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ITokenMessengerV2__factory>;
@@ -286,6 +290,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockMintableBurnableERC20__factory>;
     getContractFactory(
+      name: "MockTimelockController",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockTimelockController__factory>;
+    getContractFactory(
       name: "MockTokenMessengerV2",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockTokenMessengerV2__factory>;
@@ -305,6 +313,38 @@ declare module "hardhat/types/runtime" {
       name: "SovereignGovernanceTimelock",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SovereignGovernanceTimelock__factory>;
+    getContractFactory(
+      name: "Cruzible",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Cruzible__factory>;
+    getContractFactory(
+      name: "ICruzible",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICruzible__factory>;
+    getContractFactory(
+      name: "IPlatformVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IPlatformVerifier__factory>;
+    getContractFactory(
+      name: "NitroVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.NitroVerifier__factory>;
+    getContractFactory(
+      name: "SevVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SevVerifier__factory>;
+    getContractFactory(
+      name: "SgxVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SgxVerifier__factory>;
+    getContractFactory(
+      name: "StAETHEL",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.StAETHEL__factory>;
+    getContractFactory(
+      name: "VaultTEEVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VaultTEEVerifier__factory>;
     getContractFactory(
       name: "AccessControl",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -1089,6 +1129,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.InstitutionalStablecoinBridge>;
     getContractAt(
+      name: "ITimelockControllerMinDelay",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITimelockControllerMinDelay>;
+    getContractAt(
       name: "ITokenMessengerV2",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -1139,6 +1184,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.MockMintableBurnableERC20>;
     getContractAt(
+      name: "MockTimelockController",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockTimelockController>;
+    getContractAt(
       name: "MockTokenMessengerV2",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -1163,6 +1213,46 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.SovereignGovernanceTimelock>;
+    getContractAt(
+      name: "Cruzible",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Cruzible>;
+    getContractAt(
+      name: "ICruzible",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICruzible>;
+    getContractAt(
+      name: "IPlatformVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IPlatformVerifier>;
+    getContractAt(
+      name: "NitroVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.NitroVerifier>;
+    getContractAt(
+      name: "SevVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SevVerifier>;
+    getContractAt(
+      name: "SgxVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SgxVerifier>;
+    getContractAt(
+      name: "StAETHEL",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.StAETHEL>;
+    getContractAt(
+      name: "VaultTEEVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VaultTEEVerifier>;
     getContractAt(
       name: "AccessControl",
       address: string | ethers.Addressable,
@@ -2012,6 +2102,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.InstitutionalStablecoinBridge>;
     deployContract(
+      name: "ITimelockControllerMinDelay",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ITimelockControllerMinDelay>;
+    deployContract(
       name: "ITokenMessengerV2",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ITokenMessengerV2>;
@@ -2052,6 +2146,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockMintableBurnableERC20>;
     deployContract(
+      name: "MockTimelockController",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockTimelockController>;
+    deployContract(
       name: "MockTokenMessengerV2",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockTokenMessengerV2>;
@@ -2071,6 +2169,38 @@ declare module "hardhat/types/runtime" {
       name: "SovereignGovernanceTimelock",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SovereignGovernanceTimelock>;
+    deployContract(
+      name: "Cruzible",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Cruzible>;
+    deployContract(
+      name: "ICruzible",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ICruzible>;
+    deployContract(
+      name: "IPlatformVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPlatformVerifier>;
+    deployContract(
+      name: "NitroVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.NitroVerifier>;
+    deployContract(
+      name: "SevVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SevVerifier>;
+    deployContract(
+      name: "SgxVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SgxVerifier>;
+    deployContract(
+      name: "StAETHEL",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.StAETHEL>;
+    deployContract(
+      name: "VaultTEEVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.VaultTEEVerifier>;
     deployContract(
       name: "AccessControl",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -2855,6 +2985,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.InstitutionalStablecoinBridge>;
     deployContract(
+      name: "ITimelockControllerMinDelay",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ITimelockControllerMinDelay>;
+    deployContract(
       name: "ITokenMessengerV2",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -2905,6 +3040,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockMintableBurnableERC20>;
     deployContract(
+      name: "MockTimelockController",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockTimelockController>;
+    deployContract(
       name: "MockTokenMessengerV2",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -2929,6 +3069,46 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SovereignGovernanceTimelock>;
+    deployContract(
+      name: "Cruzible",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Cruzible>;
+    deployContract(
+      name: "ICruzible",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ICruzible>;
+    deployContract(
+      name: "IPlatformVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IPlatformVerifier>;
+    deployContract(
+      name: "NitroVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.NitroVerifier>;
+    deployContract(
+      name: "SevVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SevVerifier>;
+    deployContract(
+      name: "SgxVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SgxVerifier>;
+    deployContract(
+      name: "StAETHEL",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.StAETHEL>;
+    deployContract(
+      name: "VaultTEEVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.VaultTEEVerifier>;
     deployContract(
       name: "AccessControl",
       args: any[],

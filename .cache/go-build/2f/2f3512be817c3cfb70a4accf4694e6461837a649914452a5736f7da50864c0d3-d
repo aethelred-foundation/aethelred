@@ -1,8 +1,0 @@
-./codec.go
-./genesis.go
-./job.go
-./keys.go
-./msgs.go
-./pouw.pb.go
-./pouw_grpc.pb.go
-./validator.go

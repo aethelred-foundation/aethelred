@@ -2,15 +2,15 @@
 //!
 //! Handles multi-relayer consensus for bridge operations.
 
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
 use crate::config::BridgeConfig;
 use crate::error::{BridgeError, Result};
-use crate::storage::BridgeStorage;
 use crate::metrics::BridgeMetrics;
+use crate::storage::BridgeStorage;
 use crate::types::*;
 
 /// Consensus engine for bridge operations
@@ -139,8 +139,14 @@ impl ConsensusEngine {
 
         // Check if relayer is in active set
         let relayer_set = self.relayer_set.read().await;
-        if !relayer_set.relayers.iter().any(|r| r.address == vote.relayer && r.active) {
-            return Err(BridgeError::Consensus("Relayer not in active set".to_string()));
+        if !relayer_set
+            .relayers
+            .iter()
+            .any(|r| r.address == vote.relayer && r.active)
+        {
+            return Err(BridgeError::Consensus(
+                "Relayer not in active set".to_string(),
+            ));
         }
 
         // Add vote
@@ -164,10 +170,8 @@ impl ConsensusEngine {
             );
 
             // Update proposal status
-            self.storage.update_mint_proposal_status(
-                &proposal_id,
-                MintProposalStatus::ConsensusReached,
-            )?;
+            self.storage
+                .update_mint_proposal_status(&proposal_id, MintProposalStatus::ConsensusReached)?;
 
             // Submit mint transaction to Aethelred
             self.submit_mint_to_aethelred(&proposal_id).await?;
@@ -189,8 +193,14 @@ impl ConsensusEngine {
 
         // Check if relayer is in active set
         let relayer_set = self.relayer_set.read().await;
-        if !relayer_set.relayers.iter().any(|r| r.address == vote.relayer && r.active) {
-            return Err(BridgeError::Consensus("Relayer not in active set".to_string()));
+        if !relayer_set
+            .relayers
+            .iter()
+            .any(|r| r.address == vote.relayer && r.active)
+        {
+            return Err(BridgeError::Consensus(
+                "Relayer not in active set".to_string(),
+            ));
         }
 
         // Add vote

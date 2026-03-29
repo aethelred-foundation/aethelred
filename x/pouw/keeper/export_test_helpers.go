@@ -144,7 +144,7 @@ func FormatAETHELForTest(uaethel int64) string { return formatAETHEL(uaethel) }
 func FormatWithCommasForTest(n int64) string { return formatWithCommas(n) }
 
 // LoadSchedulingMetadataForTest wraps loadSchedulingMetadata for testing.
-// Returns all 11 values from loadSchedulingMetadata.
+// Returns the original 11-value compatibility tuple used by existing tests.
 func (s *JobScheduler) LoadSchedulingMetadataForTest(job *types.ComputeJob) (
 	retryCount int,
 	lastAttempt int64,
@@ -158,7 +158,20 @@ func (s *JobScheduler) LoadSchedulingMetadataForTest(job *types.ComputeJob) (
 	beaconRandomness string,
 	beaconSigHash string,
 ) {
-	return s.loadSchedulingMetadata(job)
+	retryCount,
+		lastAttempt,
+		assigned,
+		submittedBlock,
+		vrfEntropy,
+		vrfAssignments,
+		beaconSource,
+		beaconVersion,
+		beaconRound,
+		beaconRandomness,
+		beaconSigHash,
+		_,
+		_ = s.loadSchedulingMetadata(job)
+	return
 }
 
 // ---------------------------------------------------------------------------

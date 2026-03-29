@@ -1,3 +1,0 @@
-testing: warning: no tests to run
-PASS
-ok  	github.com/aethelred/aethelred/internal/vm/wasm	5.205s [no tests to run]

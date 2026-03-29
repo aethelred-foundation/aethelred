@@ -2,13 +2,13 @@ name: Rust Crates CI
 
 on:
   push:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   workflow_dispatch:
 
 env:
-  RUST_VERSION: "1.75"
+  RUST_VERSION: "1.85.0"
 
 jobs:
   rust-quality:
@@ -30,7 +30,6 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
             "sdk/aethelred-sdk/Cargo.toml"
             "sdk/aethelred-py/Cargo.toml"
@@ -60,7 +59,6 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
             "sdk/aethelred-sdk/Cargo.toml"
             "sdk/aethelred-py/Cargo.toml"
@@ -96,7 +94,6 @@ jobs:
             "crates/consensus/Cargo.toml"
             "crates/mempool/Cargo.toml"
             "crates/bridge/Cargo.toml"
-            "cli/Cargo.toml"
             "sdk/rust/Cargo.toml"
           )
 

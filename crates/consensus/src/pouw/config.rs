@@ -82,14 +82,14 @@ impl UtilityCategory {
     /// 10000 = 1.0x, 15000 = 1.5x, 20000 = 2.0x
     pub fn default_multiplier_bps(&self) -> u64 {
         match self {
-            UtilityCategory::General => 10000,       // 1.0x baseline
-            UtilityCategory::Financial => 15000,     // 1.5x (high auditability need)
-            UtilityCategory::Medical => 20000,       // 2.0x (highest societal impact)
-            UtilityCategory::Scientific => 17500,    // 1.75x (knowledge advancement)
+            UtilityCategory::General => 10000,        // 1.0x baseline
+            UtilityCategory::Financial => 15000,      // 1.5x (high auditability need)
+            UtilityCategory::Medical => 20000,        // 2.0x (highest societal impact)
+            UtilityCategory::Scientific => 17500,     // 1.75x (knowledge advancement)
             UtilityCategory::Infrastructure => 14000, // 1.4x (enables other activity)
-            UtilityCategory::Environmental => 16000, // 1.6x (ESG importance)
-            UtilityCategory::Education => 13000,     // 1.3x (human capital)
-            UtilityCategory::Entertainment => 10000, // 1.0x baseline
+            UtilityCategory::Environmental => 16000,  // 1.6x (ESG importance)
+            UtilityCategory::Education => 13000,      // 1.3x (human capital)
+            UtilityCategory::Entertainment => 10000,  // 1.0x baseline
         }
     }
 
@@ -99,7 +99,7 @@ impl UtilityCategory {
         match self {
             UtilityCategory::General => 50,
             UtilityCategory::Financial => 90,
-            UtilityCategory::Medical => 100,    // Maximum strictness
+            UtilityCategory::Medical => 100, // Maximum strictness
             UtilityCategory::Scientific => 80,
             UtilityCategory::Infrastructure => 70,
             UtilityCategory::Environmental => 75,
@@ -303,11 +303,11 @@ pub struct VerificationMultipliers {
 impl Default for VerificationMultipliers {
     fn default() -> Self {
         Self {
-            tee_only_bps: 10000,     // 1.0x baseline
-            zkml_only_bps: 15000,    // 1.5x (stronger cryptographic guarantees)
-            hybrid_bps: 20000,       // 2.0x (maximum assurance)
-            reexecution_bps: 8000,   // 0.8x (less efficient)
-            ai_proof_bps: 17500,     // 1.75x (emerging standard)
+            tee_only_bps: 10000,   // 1.0x baseline
+            zkml_only_bps: 15000,  // 1.5x (stronger cryptographic guarantees)
+            hybrid_bps: 20000,     // 2.0x (maximum assurance)
+            reexecution_bps: 8000, // 0.8x (less efficient)
+            ai_proof_bps: 17500,   // 1.75x (emerging standard)
         }
     }
 }
@@ -335,11 +335,11 @@ pub struct DecayConfig {
 impl Default for DecayConfig {
     fn default() -> Self {
         Self {
-            epoch_decay_factor: 0.95,         // 5% decay per epoch
-            rolling_window_epochs: 30,         // ~30 day window
+            epoch_decay_factor: 0.95,  // 5% decay per epoch
+            rolling_window_epochs: 30, // ~30 day window
             minimum_score: 1,
-            inactivity_grace_epochs: 3,        // 3 epoch grace period
-            inactive_decay_factor: 0.80,       // 20% decay when inactive
+            inactivity_grace_epochs: 3,  // 3 epoch grace period
+            inactive_decay_factor: 0.80, // 20% decay when inactive
         }
     }
 }
@@ -369,9 +369,9 @@ pub struct AntiGamingConfig {
 impl Default for AntiGamingConfig {
     fn default() -> Self {
         Self {
-            max_epoch_increase_pct: 200,          // Max 200% increase per epoch
-            min_unique_sources: 3,                 // At least 3 different requesters
-            suspicious_ratio_threshold: 10.0,      // 10x average is suspicious
+            max_epoch_increase_pct: 200,      // Max 200% increase per epoch
+            min_unique_sources: 3,            // At least 3 different requesters
+            suspicious_ratio_threshold: 10.0, // 10x average is suspicious
             suspicious_cooldown_epochs: 5,
             enable_sybil_checks: true,
             max_jobs_per_requester: 1000,
@@ -392,7 +392,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // TIMING
     // =========================================================================
-
     /// Slot duration in milliseconds
     pub slot_duration_ms: u64,
 
@@ -408,7 +407,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // STAKING
     // =========================================================================
-
     /// Minimum stake to be eligible for leader election
     pub min_stake: u128,
 
@@ -424,7 +422,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // USEFUL WORK SCORING
     // =========================================================================
-
     /// Maximum Useful Work Multiplier (caps compute advantage)
     pub max_useful_work_multiplier: f64,
 
@@ -437,7 +434,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // VRF
     // =========================================================================
-
     /// Chain ID for VRF domain separation
     pub chain_id: u64,
 
@@ -450,7 +446,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // FINALITY
     // =========================================================================
-
     /// Percentage of stake required for justification (basis points)
     pub justification_threshold_bps: u64,
 
@@ -466,7 +461,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // SLASHING
     // =========================================================================
-
     /// Slash percentage for double proposal (basis points)
     pub double_proposal_slash_bps: u64,
 
@@ -488,7 +482,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // REWARDS
     // =========================================================================
-
     /// Base block reward
     pub base_block_reward: u128,
 
@@ -507,7 +500,6 @@ pub struct PoUWConfig {
     // =========================================================================
     // VERIFICATION
     // =========================================================================
-
     /// Minimum validators required for re-execution verification
     pub min_reexecution_validators: u32,
 
@@ -543,7 +535,7 @@ impl PoUWConfig {
             // Staking
             min_stake: 1_000_000_000_000_000_000, // 1000 tokens (18 decimals)
             max_validators: 200,
-            unbonding_epochs: 2, // ~60 days
+            unbonding_epochs: 2,           // ~60 days
             min_self_delegation_bps: 1000, // 10% minimum self-delegation
 
             // Useful Work scoring
@@ -563,19 +555,19 @@ impl PoUWConfig {
             enable_fast_finality: true,
 
             // Slashing
-            double_proposal_slash_bps: 500,          // 5%
-            conflicting_finality_slash_bps: 2000,    // 20%
-            invalid_proof_slash_bps: 1000,           // 10%
-            sla_violation_slash_bps: 300,            // 3%
-            minor_jail_duration: 14400,              // ~24 hours
-            major_jail_duration: 432_000,            // ~30 days
+            double_proposal_slash_bps: 500,       // 5%
+            conflicting_finality_slash_bps: 2000, // 20%
+            invalid_proof_slash_bps: 1000,        // 10%
+            sla_violation_slash_bps: 300,         // 3%
+            minor_jail_duration: 14400,           // ~24 hours
+            major_jail_duration: 432_000,         // ~30 days
 
             // Rewards
             base_block_reward: 1_000_000_000_000_000_000, // 1 token
-            reward_per_uwu: 1_000_000,                     // Small per-UWU
-            proposer_reward_bps: 2500,                     // 25%
-            attestor_reward_bps: 5000,                     // 50%
-            verifier_reward_bps: 2500,                     // 25%
+            reward_per_uwu: 1_000_000,                    // Small per-UWU
+            proposer_reward_bps: 2500,                    // 25%
+            attestor_reward_bps: 5000,                    // 50%
+            verifier_reward_bps: 2500,                    // 25%
 
             // Verification
             min_reexecution_validators: 3,
@@ -743,9 +735,8 @@ impl PoUWConfig {
         }
 
         // Rewards
-        let total_reward_bps = self.proposer_reward_bps +
-                               self.attestor_reward_bps +
-                               self.verifier_reward_bps;
+        let total_reward_bps =
+            self.proposer_reward_bps + self.attestor_reward_bps + self.verifier_reward_bps;
         if total_reward_bps != 10000 {
             return Err(format!(
                 "Proposer + attestor + verifier rewards must equal 100% (got {}%)",
@@ -806,7 +797,8 @@ impl PoUWConfig {
         let base = config.base_uwu_per_inference;
 
         // Complexity scaling (with diminishing returns)
-        let complexity_bonus = (effective_complexity as u128 * config.complexity_scaling_bps as u128 / 10000) as u64;
+        let complexity_bonus =
+            (effective_complexity as u128 * config.complexity_scaling_bps as u128 / 10000) as u64;
 
         // Category multiplier
         let category_mult = self.category_multiplier(category);
@@ -910,8 +902,10 @@ mod tests {
     #[test]
     fn test_utility_categories() {
         // Medical should have highest multiplier
-        assert!(UtilityCategory::Medical.default_multiplier_bps() >
-                UtilityCategory::Financial.default_multiplier_bps());
+        assert!(
+            UtilityCategory::Medical.default_multiplier_bps()
+                > UtilityCategory::Financial.default_multiplier_bps()
+        );
 
         // Medical and Financial require TEE
         assert!(UtilityCategory::Medical.requires_tee());
@@ -919,7 +913,10 @@ mod tests {
         assert!(!UtilityCategory::Entertainment.requires_tee());
 
         // Medical requires maximum compliance
-        assert_eq!(UtilityCategory::Medical.compliance_level(), ComplianceLevel::Maximum);
+        assert_eq!(
+            UtilityCategory::Medical.compliance_level(),
+            ComplianceLevel::Maximum
+        );
     }
 
     #[test]
@@ -927,21 +924,42 @@ mod tests {
         let config = PoUWConfig::mainnet();
 
         // Below threshold = 0 UWU
-        let uwu = config.calculate_uwu(100, UtilityCategory::General, VerificationMethod::TeeAttestation);
+        let uwu = config.calculate_uwu(
+            100,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+        );
         assert_eq!(uwu, 0);
 
         // Above threshold = positive UWU
-        let uwu = config.calculate_uwu(10000, UtilityCategory::General, VerificationMethod::TeeAttestation);
+        let uwu = config.calculate_uwu(
+            10000,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+        );
         assert!(uwu > 0);
 
         // Medical should give more than General
-        let uwu_general = config.calculate_uwu(10000, UtilityCategory::General, VerificationMethod::TeeAttestation);
-        let uwu_medical = config.calculate_uwu(10000, UtilityCategory::Medical, VerificationMethod::TeeAttestation);
+        let uwu_general = config.calculate_uwu(
+            10000,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+        );
+        let uwu_medical = config.calculate_uwu(
+            10000,
+            UtilityCategory::Medical,
+            VerificationMethod::TeeAttestation,
+        );
         assert!(uwu_medical > uwu_general);
 
         // Hybrid verification should give more than TEE only
-        let uwu_tee = config.calculate_uwu(10000, UtilityCategory::General, VerificationMethod::TeeAttestation);
-        let uwu_hybrid = config.calculate_uwu(10000, UtilityCategory::General, VerificationMethod::Hybrid);
+        let uwu_tee = config.calculate_uwu(
+            10000,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+        );
+        let uwu_hybrid =
+            config.calculate_uwu(10000, UtilityCategory::General, VerificationMethod::Hybrid);
         assert!(uwu_hybrid > uwu_tee);
     }
 
@@ -958,12 +976,16 @@ mod tests {
     #[test]
     fn test_compliance_levels() {
         // Maximum should require most certifications
-        assert!(ComplianceLevel::Maximum.required_certifications().len() >
-                ComplianceLevel::High.required_certifications().len());
+        assert!(
+            ComplianceLevel::Maximum.required_certifications().len()
+                > ComplianceLevel::High.required_certifications().len()
+        );
 
         // Maximum should have longest retention
-        assert!(ComplianceLevel::Maximum.audit_retention_days() >
-                ComplianceLevel::Minimal.audit_retention_days());
+        assert!(
+            ComplianceLevel::Maximum.audit_retention_days()
+                > ComplianceLevel::Minimal.audit_retention_days()
+        );
     }
 
     // =========================================================================
@@ -975,7 +997,10 @@ mod tests {
         let mut config = PoUWConfig::mainnet();
         config.slot_duration_ms = 0;
         let err = config.validate().unwrap_err();
-        assert!(err.contains("Slot duration must be > 0"), "unexpected: {err}");
+        assert!(
+            err.contains("Slot duration must be > 0"),
+            "unexpected: {err}"
+        );
     }
 
     #[test]
@@ -983,7 +1008,10 @@ mod tests {
         let mut config = PoUWConfig::mainnet();
         config.slots_per_epoch = 0;
         let err = config.validate().unwrap_err();
-        assert!(err.contains("Slots per epoch must be > 0"), "unexpected: {err}");
+        assert!(
+            err.contains("Slots per epoch must be > 0"),
+            "unexpected: {err}"
+        );
     }
 
     #[test]
@@ -1077,13 +1105,31 @@ mod tests {
     #[test]
     fn test_utility_category_from_u8_all_valid() {
         assert_eq!(UtilityCategory::from_u8(0), Some(UtilityCategory::General));
-        assert_eq!(UtilityCategory::from_u8(1), Some(UtilityCategory::Financial));
+        assert_eq!(
+            UtilityCategory::from_u8(1),
+            Some(UtilityCategory::Financial)
+        );
         assert_eq!(UtilityCategory::from_u8(2), Some(UtilityCategory::Medical));
-        assert_eq!(UtilityCategory::from_u8(3), Some(UtilityCategory::Scientific));
-        assert_eq!(UtilityCategory::from_u8(4), Some(UtilityCategory::Infrastructure));
-        assert_eq!(UtilityCategory::from_u8(5), Some(UtilityCategory::Environmental));
-        assert_eq!(UtilityCategory::from_u8(6), Some(UtilityCategory::Education));
-        assert_eq!(UtilityCategory::from_u8(7), Some(UtilityCategory::Entertainment));
+        assert_eq!(
+            UtilityCategory::from_u8(3),
+            Some(UtilityCategory::Scientific)
+        );
+        assert_eq!(
+            UtilityCategory::from_u8(4),
+            Some(UtilityCategory::Infrastructure)
+        );
+        assert_eq!(
+            UtilityCategory::from_u8(5),
+            Some(UtilityCategory::Environmental)
+        );
+        assert_eq!(
+            UtilityCategory::from_u8(6),
+            Some(UtilityCategory::Education)
+        );
+        assert_eq!(
+            UtilityCategory::from_u8(7),
+            Some(UtilityCategory::Entertainment)
+        );
     }
 
     #[test]
@@ -1102,10 +1148,19 @@ mod tests {
         assert_eq!(format!("{}", UtilityCategory::Financial), "Financial");
         assert_eq!(format!("{}", UtilityCategory::Medical), "Medical");
         assert_eq!(format!("{}", UtilityCategory::Scientific), "Scientific");
-        assert_eq!(format!("{}", UtilityCategory::Infrastructure), "Infrastructure");
-        assert_eq!(format!("{}", UtilityCategory::Environmental), "Environmental");
+        assert_eq!(
+            format!("{}", UtilityCategory::Infrastructure),
+            "Infrastructure"
+        );
+        assert_eq!(
+            format!("{}", UtilityCategory::Environmental),
+            "Environmental"
+        );
         assert_eq!(format!("{}", UtilityCategory::Education), "Education");
-        assert_eq!(format!("{}", UtilityCategory::Entertainment), "Entertainment");
+        assert_eq!(
+            format!("{}", UtilityCategory::Entertainment),
+            "Entertainment"
+        );
     }
 
     // =========================================================================
@@ -1127,7 +1182,10 @@ mod tests {
         assert_eq!(UtilityCategory::Financial.verification_strictness(), 90);
         assert_eq!(UtilityCategory::Medical.verification_strictness(), 100);
         assert_eq!(UtilityCategory::Scientific.verification_strictness(), 80);
-        assert_eq!(UtilityCategory::Infrastructure.verification_strictness(), 70);
+        assert_eq!(
+            UtilityCategory::Infrastructure.verification_strictness(),
+            70
+        );
         assert_eq!(UtilityCategory::Environmental.verification_strictness(), 75);
         assert_eq!(UtilityCategory::Education.verification_strictness(), 60);
         assert_eq!(UtilityCategory::Entertainment.verification_strictness(), 40);
@@ -1150,10 +1208,7 @@ mod tests {
     #[test]
     fn test_all_categories_support_zkml() {
         for category in UtilityCategory::all() {
-            assert!(
-                category.supports_zkml(),
-                "{category} should support zkML"
-            );
+            assert!(category.supports_zkml(), "{category} should support zkML");
         }
     }
 
@@ -1182,10 +1237,22 @@ mod tests {
 
     #[test]
     fn test_compliance_level_required_certifications_all_variants() {
-        assert_eq!(ComplianceLevel::Minimal.required_certifications(), &[] as &[&str]);
-        assert_eq!(ComplianceLevel::Standard.required_certifications(), &["KYC"]);
-        assert_eq!(ComplianceLevel::Medium.required_certifications(), &["KYC", "AML"]);
-        assert_eq!(ComplianceLevel::High.required_certifications(), &["KYC", "AML", "SOC2"]);
+        assert_eq!(
+            ComplianceLevel::Minimal.required_certifications(),
+            &[] as &[&str]
+        );
+        assert_eq!(
+            ComplianceLevel::Standard.required_certifications(),
+            &["KYC"]
+        );
+        assert_eq!(
+            ComplianceLevel::Medium.required_certifications(),
+            &["KYC", "AML"]
+        );
+        assert_eq!(
+            ComplianceLevel::High.required_certifications(),
+            &["KYC", "AML", "SOC2"]
+        );
         assert_eq!(
             ComplianceLevel::Maximum.required_certifications(),
             &["KYC", "AML", "SOC2", "HIPAA", "GDPR", "PCI-DSS"]
@@ -1207,7 +1274,10 @@ mod tests {
 
     #[test]
     fn test_verification_method_default_is_tee_attestation() {
-        assert_eq!(VerificationMethod::default(), VerificationMethod::TeeAttestation);
+        assert_eq!(
+            VerificationMethod::default(),
+            VerificationMethod::TeeAttestation
+        );
     }
 
     // =========================================================================
@@ -1231,7 +1301,10 @@ mod tests {
             UtilityCategory::General,
             VerificationMethod::TeeAttestation,
         );
-        assert_eq!(at_cap, above_cap, "UWU must not grow beyond max_complexity_threshold");
+        assert_eq!(
+            at_cap, above_cap,
+            "UWU must not grow beyond max_complexity_threshold"
+        );
     }
 
     #[test]
@@ -1250,7 +1323,10 @@ mod tests {
             VerificationMethod::ZkProof,
         );
         // zkml_only_bps (15000) > tee_only_bps (10000)
-        assert!(uwu_zk > uwu_tee, "ZkProof UWU should exceed TeeAttestation UWU");
+        assert!(
+            uwu_zk > uwu_tee,
+            "ZkProof UWU should exceed TeeAttestation UWU"
+        );
     }
 
     #[test]
@@ -1269,7 +1345,10 @@ mod tests {
             VerificationMethod::ReExecution,
         );
         // reexecution_bps (8000) < tee_only_bps (10000)
-        assert!(uwu_reex < uwu_tee, "ReExecution UWU should be less than TeeAttestation UWU");
+        assert!(
+            uwu_reex < uwu_tee,
+            "ReExecution UWU should be less than TeeAttestation UWU"
+        );
     }
 
     #[test]
@@ -1288,7 +1367,10 @@ mod tests {
             VerificationMethod::AiProof,
         );
         // ai_proof_bps (17500) > tee_only_bps (10000)
-        assert!(uwu_ai > uwu_tee, "AiProof UWU should exceed TeeAttestation UWU");
+        assert!(
+            uwu_ai > uwu_tee,
+            "AiProof UWU should exceed TeeAttestation UWU"
+        );
     }
 
     #[test]

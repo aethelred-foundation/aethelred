@@ -24,8 +24,8 @@
 //! - If PQ crypto has undiscovered flaws → Classical signature protects you
 //! - Maximum security with minimal risk
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // ============================================================================
 // Post-Quantum Cryptography Algorithms
@@ -91,7 +91,7 @@ impl PQSignatureAlgorithm {
             PQSignatureAlgorithm::Dilithium2 => 2420,
             PQSignatureAlgorithm::Dilithium3 => 3293,
             PQSignatureAlgorithm::Dilithium5 => 4595,
-            PQSignatureAlgorithm::Falcon512 => 666,  // Average
+            PQSignatureAlgorithm::Falcon512 => 666, // Average
             PQSignatureAlgorithm::Falcon1024 => 1280, // Average
             PQSignatureAlgorithm::SphincsPlus128f => 17088,
             PQSignatureAlgorithm::SphincsPlus192f => 35664,
@@ -206,7 +206,7 @@ pub struct AethelredAddress {
 impl AethelredAddress {
     /// Create an address from hybrid public keys
     pub fn from_hybrid_keys(classical_pk: &[u8], pq_pk: &[u8]) -> Self {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         // Hash both public keys together
         let mut hasher = Sha256::new();
@@ -337,11 +337,8 @@ impl HybridVerifier {
         // Verify classical signature
         if !self.quantum_only_mode {
             let start = std::time::Instant::now();
-            result.classical_valid = self.verify_classical(
-                message,
-                &signature.classical,
-                classical_pk,
-            )?;
+            result.classical_valid =
+                self.verify_classical(message, &signature.classical, classical_pk)?;
             result.classical_time_us = start.elapsed().as_micros() as u64;
         } else {
             result.classical_valid = true; // Skip in quantum-only mode
@@ -349,11 +346,7 @@ impl HybridVerifier {
 
         // Verify post-quantum signature
         let start = std::time::Instant::now();
-        result.post_quantum_valid = self.verify_pq(
-            message,
-            &signature.post_quantum,
-            pq_pk,
-        )?;
+        result.post_quantum_valid = self.verify_pq(message, &signature.post_quantum, pq_pk)?;
         result.pq_time_us = start.elapsed().as_micros() as u64;
 
         // Overall validity
@@ -394,35 +387,59 @@ impl HybridVerifier {
         public_key: &[u8],
     ) -> Result<bool, VerificationError> {
         match signature.algorithm {
-            PQSignatureAlgorithm::Dilithium2 |
-            PQSignatureAlgorithm::Dilithium3 |
-            PQSignatureAlgorithm::Dilithium5 => {
-                self.verify_dilithium(message, &signature.signature, public_key, signature.algorithm)
-            }
-            PQSignatureAlgorithm::Falcon512 |
-            PQSignatureAlgorithm::Falcon1024 => {
-                self.verify_falcon(message, &signature.signature, public_key, signature.algorithm)
-            }
-            PQSignatureAlgorithm::SphincsPlus128f |
-            PQSignatureAlgorithm::SphincsPlus192f |
-            PQSignatureAlgorithm::SphincsPlus256f => {
-                self.verify_sphincs(message, &signature.signature, public_key, signature.algorithm)
-            }
+            PQSignatureAlgorithm::Dilithium2
+            | PQSignatureAlgorithm::Dilithium3
+            | PQSignatureAlgorithm::Dilithium5 => self.verify_dilithium(
+                message,
+                &signature.signature,
+                public_key,
+                signature.algorithm,
+            ),
+            PQSignatureAlgorithm::Falcon512 | PQSignatureAlgorithm::Falcon1024 => self
+                .verify_falcon(
+                    message,
+                    &signature.signature,
+                    public_key,
+                    signature.algorithm,
+                ),
+            PQSignatureAlgorithm::SphincsPlus128f
+            | PQSignatureAlgorithm::SphincsPlus192f
+            | PQSignatureAlgorithm::SphincsPlus256f => self.verify_sphincs(
+                message,
+                &signature.signature,
+                public_key,
+                signature.algorithm,
+            ),
         }
     }
 
     // Placeholder implementations - would use actual crypto libraries
-    fn verify_ed25519(&self, _message: &[u8], _signature: &[u8], _public_key: &[u8]) -> Result<bool, VerificationError> {
+    fn verify_ed25519(
+        &self,
+        _message: &[u8],
+        _signature: &[u8],
+        _public_key: &[u8],
+    ) -> Result<bool, VerificationError> {
         // In production: use ed25519-dalek crate
         Ok(true) // Placeholder
     }
 
-    fn verify_secp256k1(&self, _message: &[u8], _signature: &[u8], _public_key: &[u8]) -> Result<bool, VerificationError> {
+    fn verify_secp256k1(
+        &self,
+        _message: &[u8],
+        _signature: &[u8],
+        _public_key: &[u8],
+    ) -> Result<bool, VerificationError> {
         // In production: use secp256k1 crate
         Ok(true)
     }
 
-    fn verify_p256(&self, _message: &[u8], _signature: &[u8], _public_key: &[u8]) -> Result<bool, VerificationError> {
+    fn verify_p256(
+        &self,
+        _message: &[u8],
+        _signature: &[u8],
+        _public_key: &[u8],
+    ) -> Result<bool, VerificationError> {
         // In production: use p256 crate
         Ok(true)
     }
@@ -529,10 +546,8 @@ impl HybridKeyGenerator {
         let classical = self.generate_classical()?;
         let post_quantum = self.generate_pq()?;
 
-        let address = AethelredAddress::from_hybrid_keys(
-            &classical.public_key,
-            &post_quantum.public_key,
-        );
+        let address =
+            AethelredAddress::from_hybrid_keys(&classical.public_key, &post_quantum.public_key);
 
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -629,7 +644,7 @@ impl QuantumThreatAssessment {
         QuantumThreatAssessment {
             ecdsa_break_year: 2030, // Optimistic estimate
             ed25519_break_year: 2032,
-            current_qubits: 1000, // IBM's current max
+            current_qubits: 1000,        // IBM's current max
             qubits_needed_for_ecc: 4000, // Rough estimate
             threat_level: 25,
             recommendation: QuantumRecommendation::PlanMigration,
@@ -721,7 +736,7 @@ pub struct QuantumImmuneTransaction {
 impl QuantumImmuneTransaction {
     /// Calculate transaction hash (for signing)
     pub fn hash(&self) -> [u8; 32] {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
         hasher.update(&[self.version]);
@@ -769,8 +784,14 @@ mod tests {
         let keypair = generator.generate().unwrap();
 
         assert_eq!(keypair.version, 1);
-        assert_eq!(keypair.classical.algorithm, ClassicalSignatureAlgorithm::Ed25519);
-        assert_eq!(keypair.post_quantum.algorithm, PQSignatureAlgorithm::Dilithium3);
+        assert_eq!(
+            keypair.classical.algorithm,
+            ClassicalSignatureAlgorithm::Ed25519
+        );
+        assert_eq!(
+            keypair.post_quantum.algorithm,
+            PQSignatureAlgorithm::Dilithium3
+        );
     }
 
     #[test]
@@ -815,7 +836,9 @@ mod tests {
         let classical_pk = vec![0u8; 32];
         let pq_pk = vec![0u8; 1952];
 
-        let result = verifier.verify(message, &signature, &classical_pk, &pq_pk).unwrap();
+        let result = verifier
+            .verify(message, &signature, &classical_pk, &pq_pk)
+            .unwrap();
         assert!(result.overall_valid); // Both should be "valid" (placeholder)
     }
 

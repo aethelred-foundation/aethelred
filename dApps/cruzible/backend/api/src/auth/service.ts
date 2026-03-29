@@ -116,7 +116,11 @@ export function refreshAccessToken(refreshToken: string): AuthTokens {
     return generateTokens({ address, roles });
   } catch (error) {
     logger.error('Token refresh failed', { error });
-    throw new Error('Invalid refresh token');
+    const invalidRefreshTokenError = new Error('Invalid refresh token') as Error & {
+      cause?: unknown;
+    };
+    invalidRefreshTokenError.cause = error;
+    throw invalidRefreshTokenError;
   }
 }
 

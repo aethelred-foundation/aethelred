@@ -320,6 +320,222 @@ func TestValidateProductionReadiness_OrchestratorMissingEndpoint(t *testing.T) {
 	}
 }
 
+// ── Enterprise mode tests ──
+
+func TestEnterprise_OrchestratorRejectsNonHybridDefault(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          true,
+		DefaultVerificationType: types.VerificationTypeTEE,
+		RequireBothForHybrid:    true,
+	}
+	err := cfg.ValidateEnterpriseConfig()
+	if err == nil {
+		t.Fatal("expected error when enterprise mode uses non-Hybrid default")
+	}
+	if !strings.Contains(err.Error(), "Hybrid") {
+		t.Fatalf("expected error to mention Hybrid, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_OrchestratorRejectsDisabledRequireBoth(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          true,
+		DefaultVerificationType: types.VerificationTypeHybrid,
+		RequireBothForHybrid:    false,
+	}
+	err := cfg.ValidateEnterpriseConfig()
+	if err == nil {
+		t.Fatal("expected error when enterprise mode has RequireBothForHybrid=false")
+	}
+	if !strings.Contains(err.Error(), "RequireBothForHybrid") {
+		t.Fatalf("expected error to mention RequireBothForHybrid, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_OrchestratorRejectsSimulatedProver(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          true,
+		DefaultVerificationType: types.VerificationTypeHybrid,
+		RequireBothForHybrid:    true,
+		ProverConfig:            &ezkl.ProverConfig{AllowSimulated: true},
+	}
+	err := cfg.ValidateEnterpriseConfig()
+	if err == nil {
+		t.Fatal("expected error when enterprise mode allows simulated prover")
+	}
+	if !strings.Contains(err.Error(), "simulated prover") {
+		t.Fatalf("expected error to mention simulated prover, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_OrchestratorRejectsSimulatedTEE(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          true,
+		DefaultVerificationType: types.VerificationTypeHybrid,
+		RequireBothForHybrid:    true,
+		NitroConfig:             &tee.NitroConfig{AllowSimulated: true},
+	}
+	err := cfg.ValidateEnterpriseConfig()
+	if err == nil {
+		t.Fatal("expected error when enterprise mode allows simulated TEE")
+	}
+	if !strings.Contains(err.Error(), "simulated TEE") {
+		t.Fatalf("expected error to mention simulated TEE, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_OrchestratorPassesValidConfig(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          true,
+		DefaultVerificationType: types.VerificationTypeHybrid,
+		RequireBothForHybrid:    true,
+		ProverConfig:            &ezkl.ProverConfig{AllowSimulated: false, ProverEndpoint: "https://prover"},
+		NitroConfig: &tee.NitroConfig{
+			AllowSimulated:              false,
+			ExecutorEndpoint:            "https://exec",
+			AttestationVerifierEndpoint: "https://attest",
+		},
+	}
+	if err := cfg.ValidateEnterpriseConfig(); err != nil {
+		t.Fatalf("expected valid enterprise config to pass, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_ValidateSkippedWhenNotEnterprise(t *testing.T) {
+	cfg := OrchestratorConfig{
+		EnterpriseMode:          false,
+		DefaultVerificationType: types.VerificationTypeTEE,
+		RequireBothForHybrid:    false,
+	}
+	if err := cfg.ValidateEnterpriseConfig(); err != nil {
+		t.Fatalf("expected no error when enterprise mode is off, got: %s", err.Error())
+	}
+}
+
+func TestEnterprise_ReadinessFailsWithoutTEEEndpoint(t *testing.T) {
+	check := &EnterpriseReadinessCheck{
+		OrchestratorConfig: &OrchestratorConfig{
+			EnterpriseMode:          true,
+			DefaultVerificationType: types.VerificationTypeHybrid,
+			RequireBothForHybrid:    true,
+			ProverConfig:            &ezkl.ProverConfig{AllowSimulated: false, ProverEndpoint: "https://prover"},
+			NitroConfig: &tee.NitroConfig{
+				AllowSimulated:              false,
+				ExecutorEndpoint:            "",
+				AttestationVerifierEndpoint: "https://attest",
+			},
+		},
+	}
+	result, err := check.Validate()
+	if err == nil {
+		t.Fatal("expected error when TEE endpoint is missing")
+	}
+	if result.Ready {
+		t.Fatal("expected result.Ready=false when TEE endpoint is missing")
+	}
+	if !containsAnyReadinessCheck(result.Checks, "enterprise_tee_endpoint", false) {
+		t.Fatalf("expected enterprise_tee_endpoint failure, got %+v", result.Checks)
+	}
+}
+
+func TestEnterprise_ReadinessFailsWithoutProverEndpoint(t *testing.T) {
+	check := &EnterpriseReadinessCheck{
+		OrchestratorConfig: &OrchestratorConfig{
+			EnterpriseMode:          true,
+			DefaultVerificationType: types.VerificationTypeHybrid,
+			RequireBothForHybrid:    true,
+			ProverConfig:            &ezkl.ProverConfig{AllowSimulated: false, ProverEndpoint: ""},
+			NitroConfig: &tee.NitroConfig{
+				AllowSimulated:              false,
+				ExecutorEndpoint:            "https://exec",
+				AttestationVerifierEndpoint: "https://attest",
+			},
+		},
+	}
+	result, err := check.Validate()
+	if err == nil {
+		t.Fatal("expected error when prover endpoint is missing")
+	}
+	if result.Ready {
+		t.Fatal("expected result.Ready=false when prover endpoint is missing")
+	}
+	if !containsAnyReadinessCheck(result.Checks, "enterprise_prover_endpoint", false) {
+		t.Fatalf("expected enterprise_prover_endpoint failure, got %+v", result.Checks)
+	}
+}
+
+func TestEnterprise_ReadinessFailsWithoutAttestationEndpoint(t *testing.T) {
+	check := &EnterpriseReadinessCheck{
+		OrchestratorConfig: &OrchestratorConfig{
+			EnterpriseMode:          true,
+			DefaultVerificationType: types.VerificationTypeHybrid,
+			RequireBothForHybrid:    true,
+			ProverConfig:            &ezkl.ProverConfig{AllowSimulated: false, ProverEndpoint: "https://prover"},
+			NitroConfig: &tee.NitroConfig{
+				AllowSimulated:              false,
+				ExecutorEndpoint:            "https://exec",
+				AttestationVerifierEndpoint: "",
+			},
+		},
+	}
+	result, err := check.Validate()
+	if err == nil {
+		t.Fatal("expected error when attestation endpoint is missing")
+	}
+	if result.Ready {
+		t.Fatal("expected result.Ready=false when attestation endpoint is missing")
+	}
+	if !containsAnyReadinessCheck(result.Checks, "enterprise_attestation_endpoint", false) {
+		t.Fatalf("expected enterprise_attestation_endpoint failure, got %+v", result.Checks)
+	}
+}
+
+func TestEnterprise_ReadinessFailsWithNilConfig(t *testing.T) {
+	check := &EnterpriseReadinessCheck{OrchestratorConfig: nil}
+	result, err := check.Validate()
+	if err == nil {
+		t.Fatal("expected error when config is nil")
+	}
+	if result.Ready {
+		t.Fatal("expected result.Ready=false when config is nil")
+	}
+}
+
+func TestEnterprise_ReadinessPassesWithAllEndpoints(t *testing.T) {
+	// Note: this test checks config validation only — the endpoints are not
+	// actually reachable. Reachability checks against unreachable localhost
+	// ports would cause this test to fail since EnterpriseReadinessCheck.Validate
+	// probes endpoints. We verify the config-level validation passes and
+	// endpoint reachability fails gracefully.
+	check := &EnterpriseReadinessCheck{
+		OrchestratorConfig: &OrchestratorConfig{
+			EnterpriseMode:          true,
+			DefaultVerificationType: types.VerificationTypeHybrid,
+			RequireBothForHybrid:    true,
+			ProverConfig:            &ezkl.ProverConfig{AllowSimulated: false, ProverEndpoint: "http://127.0.0.1:1/prove"},
+			NitroConfig: &tee.NitroConfig{
+				AllowSimulated:              false,
+				ExecutorEndpoint:            "http://127.0.0.1:2",
+				AttestationVerifierEndpoint: "http://127.0.0.1:3",
+			},
+		},
+	}
+	result, err := check.Validate()
+	// Endpoints are unreachable so Validate returns an error, but the config
+	// validation itself (enterprise_config check) passes.
+	if err == nil {
+		// If somehow the ports are reachable in CI, that's fine too.
+		if !result.Ready {
+			t.Fatal("expected ready=true when Validate returns nil error")
+		}
+		return
+	}
+	// Config check must still pass even though endpoints are unreachable.
+	if !containsAnyReadinessCheck(result.Checks, "enterprise_config", true) {
+		t.Fatalf("expected enterprise_config check to pass, got %+v", result.Checks)
+	}
+}
+
 func containsAnyReadinessCheck(checks []ReadinessCheck, name string, passed bool) bool {
 	for _, c := range checks {
 		if c.Name == name && c.Passed == passed {
