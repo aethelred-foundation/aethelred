@@ -12,7 +12,7 @@
 <p align="center">
  <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
  <a href="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml"><img src="https://github.com/aethelred-foundation/aethelred/actions/workflows/security-scans.yml/badge.svg" alt="Security"></a>
- <img src="https://img.shields.io/badge/status-testnet%20launch-0e8a16?style=flat-square" alt="Status: Testnet Launch">
+ <img src="https://img.shields.io/badge/status-pre--launch-yellow?style=flat-square" alt="Status: Pre-Launch">
  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=flat-square&logo=discord" alt="Discord"></a>
  <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
