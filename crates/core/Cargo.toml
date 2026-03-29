@@ -49,7 +49,7 @@ anyhow = "1.0"
 hex = { version = "0.4", features = ["serde"] }
 base64 = "0.21"
 bs58 = "0.5"
-bech32 = "0.9"
+bech32 = "0.11"
 
 # =============================================================================
 # Classic Cryptography (Layer 0 - Ethereum/Bitcoin Compatibility)
