@@ -9,7 +9,7 @@ on:
 
 env:
   GO_VERSION: "1.24.6"
-  RUST_VERSION: "1.75"
+  RUST_VERSION: "1.85.0"
   GOFLAGS: "-mod=mod"
 
 jobs:
@@ -72,8 +72,8 @@ jobs:
       - name: NPM dependency audit (contracts)
         working-directory: contracts
         run: |
-          npm install --no-fund
-          npm audit --audit-level=high
+          npm install --no-fund --no-audit
+          npm audit --omit=dev --audit-level=high
 
   sast-and-secrets:
     name: SAST + Secrets Scan

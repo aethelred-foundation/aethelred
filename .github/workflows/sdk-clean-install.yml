@@ -150,7 +150,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.75"
+          toolchain: "1.85.0"
       - name: Verify Rust SDK packages correctly
         run: |
           set -euo pipefail
@@ -195,6 +195,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.75"
+          toolchain: "1.85.0"
       - name: Run CLI smoke test
         run: bash scripts/cli-smoke-test.sh

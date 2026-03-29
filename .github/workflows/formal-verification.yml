@@ -34,7 +34,7 @@ on:
         default: true
 
 env:
-  RUST_VERSION: "1.75"
+  RUST_VERSION: "1.85.0"
   SOLC_VERSION: "0.8.20"
 
 jobs:

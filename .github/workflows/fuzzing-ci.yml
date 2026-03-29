@@ -14,7 +14,7 @@ on:
 
 env:
   GO_VERSION: "1.24.6"
-  RUST_VERSION: "1.75"
+  RUST_VERSION: "1.85.0"
   GOFLAGS: "-mod=mod"
   # PR runs use short duration; nightly/manual can use longer
   FUZZ_DURATION: ${{ github.event.inputs.fuzz_duration || (github.event_name == 'schedule' && '5m' || '30s') }}
