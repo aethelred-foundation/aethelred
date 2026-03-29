@@ -90,6 +90,8 @@ lcov.info
 # ── Build Outputs ─────────────────────────────────────────────────────
 build/
 bin/
+!crates/*/src/bin/
+!crates/*/src/bin/*.rs
 
 # ── Solidity / Foundry / Hardhat ──────────────────────────────────────
 contracts/artifacts/
@@ -104,6 +106,8 @@ keyring-test/
 
 # ── Protobuf Generated ───────────────────────────────────────────────
 *.pb.go
+!x/*/types/*.pb.go
+!x/*/types/*_grpc.pb.go
 
 # ── Logs ──────────────────────────────────────────────────────────────
 *.log

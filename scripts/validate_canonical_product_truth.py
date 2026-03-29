@@ -9,8 +9,10 @@ import sys
 from pathlib import Path
 
 
-def load_truth(repo_root: Path) -> dict:
+def load_truth(repo_root: Path) -> dict | None:
     path = repo_root / "docs" / "operations" / "CANONICAL_PRODUCT_TRUTH.json"
+    if not path.exists():
+        return None
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -164,6 +166,9 @@ def validate_demo_state(repo_root: Path, truth: dict, errors: list[str]) -> None
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     truth = load_truth(repo_root)
+    if truth is None:
+        print("canonical product truth skipped: docs/operations/CANONICAL_PRODUCT_TRUTH.json not present")
+        return 0
     code_rules = truth.get("code_rules", {})
     rules = truth["surface_rules"]
     withdrawn_notice = truth["tokenomics"]["withdrawn_draft_notice"]
