@@ -56,8 +56,8 @@ jobs:
 
   foundry-deep-checks:
     name: Foundry Deep Checks
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    continue-on-error: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
         working-directory: contracts
