@@ -1,0 +1,83 @@
+name: README Badge Guard
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "dApps/*/README.md"
+
+jobs:
+  validate-badges:
+    name: Validate README Badges
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check badge references
+        shell: bash
+        run: |
+          set -euo pipefail
+          errors=0
+
+          echo "=== README Badge Guard ==="
+          echo ""
+
+          # 1. Workflow badges must reference files that exist
+          echo "--- Checking workflow badge references ---"
+          for readme in README.md dApps/*/README.md; do
+            [ -f "$readme" ] || continue
+            # Match GitHub native badge SVGs: .../workflows/<file>/badge.svg
+            grep -oP 'workflows/\K[^/]+(?=/badge\.svg)' "$readme" 2>/dev/null | while read -r wf; do
+              if [ ! -f ".github/workflows/$wf" ]; then
+                echo "ERROR: $readme references workflow '$wf' but .github/workflows/$wf does not exist"
+                errors=$((errors + 1))
+              else
+                echo "OK: $readme -> .github/workflows/$wf"
+              fi
+            done
+            # Also match Shields.io workflow badges: workflow/status/.../file.yml
+            grep -oP 'workflow/status/[^/]+/[^/]+/\K[^?]+' "$readme" 2>/dev/null | while read -r wf; do
+              if [ ! -f ".github/workflows/$wf" ]; then
+                echo "ERROR: $readme references workflow '$wf' via Shields but .github/workflows/$wf does not exist"
+                errors=$((errors + 1))
+              else
+                echo "OK: $readme -> .github/workflows/$wf (Shields)"
+              fi
+            done
+          done
+          echo ""
+
+          # 2. No Discord member-count badges (require numeric guild ID, break easily)
+          echo "--- Checking for banned Discord metric badges ---"
+          for readme in README.md dApps/*/README.md; do
+            [ -f "$readme" ] || continue
+            if grep -qP 'img\.shields\.io/discord/' "$readme"; then
+              echo "ERROR: $readme contains a Shields.io Discord member-count badge (banned - use static badge or remove)"
+              errors=$((errors + 1))
+            else
+              echo "OK: $readme has no Discord metric badge"
+            fi
+          done
+          echo ""
+
+          # 3. No Codecov badges unless codecov.yml config exists
+          echo "--- Checking for orphan Codecov badges ---"
+          for readme in README.md dApps/*/README.md; do
+            [ -f "$readme" ] || continue
+            if grep -qP 'codecov\.(io|com)' "$readme"; then
+              if [ ! -f "codecov.yml" ] && [ ! -f ".codecov.yml" ]; then
+                echo "ERROR: $readme has a Codecov badge but no codecov.yml exists in repo root"
+                errors=$((errors + 1))
+              fi
+            else
+              echo "OK: $readme has no Codecov badge"
+            fi
+          done
+          echo ""
+
+          # Summary
+          if [ "$errors" -gt 0 ]; then
+            echo "FAILED: $errors badge validation error(s) found"
+            exit 1
+          fi
+          echo "PASSED: All badge references are valid"
