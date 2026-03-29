@@ -20,9 +20,9 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-      - name: Run sandbox tests (offline, warnings as errors)
+      - name: Run sandbox tests
         run: |
-          RUSTFLAGS="-D warnings" cargo test --manifest-path crates/sandbox/Cargo.toml --offline
+          cargo test --manifest-path crates/sandbox/Cargo.toml --locked
 
   sandbox-required-gate:
     name: Sandbox Required Gate

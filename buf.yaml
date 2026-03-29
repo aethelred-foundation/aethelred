@@ -1,5 +1,10 @@
 version: v1
 
+build:
+  roots:
+    - proto
+    - third_party/proto
+
 lint:
   use:
     - DEFAULT
