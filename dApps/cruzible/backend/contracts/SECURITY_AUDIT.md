@@ -9,7 +9,7 @@ This document provides a comprehensive security audit of the Aethelred Cruzible 
 **Total Attack Scenarios:** 120  
 **Critical Vulnerabilities Found:** 12  
 **High Priority Fixes Required:** 18  
-**Status:** ⚠️ NOT PRODUCTION READY
+**Status:** Warn NOT PRODUCTION READY
 
 ---
 
@@ -17,10 +17,10 @@ This document provides a comprehensive security audit of the Aethelred Cruzible 
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| 🔴 Critical | 12 | Requires immediate fix |
-| 🟠 High | 18 | Must fix before mainnet |
-| 🟡 Medium | 24 | Should fix before launch |
-| 🟢 Low | 15 | Nice to have |
+| Critical: Critical | 12 | Requires immediate fix |
+| High: High | 18 | Must fix before mainnet |
+| Medium: Medium | 24 | Should fix before launch |
+| Low: Low | 15 | Nice to have |
 
 ### Top 5 Critical Issues
 
@@ -34,7 +34,7 @@ This document provides a comprehensive security audit of the Aethelred Cruzible 
 
 ## Section 1: Accounting Attacks Analysis (Attacks #1-15)
 
-### Attack #1 - Phantom Share Mint ⚠️ PARTIALLY MITIGATED
+### Attack #1 - Phantom Share Mint Warn PARTIALLY MITIGATED
 
 **Current Code:**
 ```rust
@@ -64,11 +64,11 @@ let shares = if state.total_shares.is_zero() {
 };
 ```
 
-**Status:** 🟠 High - Min stake exists but zero check missing
+**Status:** High: High - Min stake exists but zero check missing
 
 ---
 
-### Attack #2 - Deposit Front-Run Rewards ⚠️ PARTIALLY MITIGATED
+### Attack #2 - Deposit Front-Run Rewards Warn PARTIALLY MITIGATED
 
 **Current Code:**
 ```rust
@@ -101,11 +101,11 @@ fn execute_stake(...) {
 }
 ```
 
-**Status:** 🟠 High - No reward checkpointing
+**Status:** High: High - No reward checkpointing
 
 ---
 
-### Attack #3 - Reward Double Counting ✅ MITIGATED
+### Attack #3 - Reward Double Counting Pass MITIGATED
 
 **Current Code:**
 ```rust
@@ -119,11 +119,11 @@ fn execute_claim_rewards(...) {
 
 **Analysis:** Rewards are deducted from pool. However, `calculate_rewards` returns zero (not implemented).
 
-**Status:** 🟡 Medium - Implementation incomplete
+**Status:** Medium: Medium - Implementation incomplete
 
 ---
 
-### Attack #4 - Share Price Manipulation via Donation 🔴 CRITICAL
+### Attack #4 - Share Price Manipulation via Donation Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -157,11 +157,11 @@ fn execute_sweep_donations(admin_only) {
 }
 ```
 
-**Status:** 🔴 Critical - Direct donations inflate share price
+**Status:** Critical: Critical - Direct donations inflate share price
 
 ---
 
-### Attack #5 - Rounding Arbitrage 🔴 CRITICAL
+### Attack #5 - Rounding Arbitrage Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -198,11 +198,11 @@ fn calculate_shares_to_burn(amount: Uint128, total_staked: Uint128, total_shares
 const MIN_DEPOSIT: Uint128 = Uint128::from(1_000_000u128); // 1 unit with 6 decimals
 ```
 
-**Status:** 🔴 Critical - Rounding favors attacker
+**Status:** Critical: Critical - Rounding favors attacker
 
 ---
 
-### Attack #7 - Zero Share Mint ✅ MITIGATED
+### Attack #7 - Zero Share Mint Pass MITIGATED
 
 **Current Code:**
 ```rust
@@ -211,11 +211,11 @@ if amount.is_zero() || amount < config.min_stake || amount > config.max_stake {
 }
 ```
 
-**Status:** ✅ Low - Zero amount rejected
+**Status:** Pass Low - Zero amount rejected
 
 ---
 
-### Attack #12 - Mispriced Initial Deposit ⚠️ PARTIALLY MITIGATED
+### Attack #12 - Mispriced Initial Deposit Warn PARTIALLY MITIGATED
 
 **Current Code:**
 ```rust
@@ -243,13 +243,13 @@ fn instantiate(...) {
 }
 ```
 
-**Status:** 🟠 High - Seed initialization recommended
+**Status:** High: High - Seed initialization recommended
 
 ---
 
 ## Section 2: Withdrawal Queue Attacks (Attacks #16-27)
 
-### Attack #16 - Double Withdrawal Claim 🔴 CRITICAL
+### Attack #16 - Double Withdrawal Claim Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -296,11 +296,11 @@ fn execute_claim(...) {
 }
 ```
 
-**Status:** 🔴 Critical - Double claim possible
+**Status:** Critical: Critical - Double claim possible
 
 ---
 
-### Attack #18 - Withdrawal Queue DoS 🟠 HIGH
+### Attack #18 - Withdrawal Queue DoS High: HIGH
 
 **Current Code:**
 ```rust
@@ -327,11 +327,11 @@ fn execute_claim(...) {
 }
 ```
 
-**Status:** 🟠 High - No request limit
+**Status:** High: High - No request limit
 
 ---
 
-### Attack #20 - Cancel Withdraw Exploit 🔴 CRITICAL
+### Attack #20 - Cancel Withdraw Exploit Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -354,11 +354,11 @@ fn execute_cancel_unstake(unbonding_id: u64) {
 }
 ```
 
-**Status:** 🟡 Medium - Function not implemented
+**Status:** Medium: Medium - Function not implemented
 
 ---
 
-### Attack #26 - Queue State Corruption 🟠 HIGH
+### Attack #26 - Queue State Corruption High: HIGH
 
 **Current Code:**
 ```rust
@@ -393,13 +393,13 @@ fn execute_unstake(...) {
 }
 ```
 
-**Status:** 🟡 Medium - Validate before mutate
+**Status:** Medium: Medium - Validate before mutate
 
 ---
 
 ## Section 3: Validator Attacks (Attacks #28-37)
 
-### Attack #28 - Malicious Validator Selection 🟡 MEDIUM
+### Attack #28 - Malicious Validator Selection Medium: MEDIUM
 
 **Current Code:**
 ```rust
@@ -428,11 +428,11 @@ fn execute_stake(...) {
 }
 ```
 
-**Status:** 🟡 Medium - Validator not validated
+**Status:** Medium: Medium - Validator not validated
 
 ---
 
-### Attack #36 - Validator Delegation Overflow 🟠 HIGH
+### Attack #36 - Validator Delegation Overflow High: HIGH
 
 **Current Code:**
 ```rust
@@ -453,13 +453,13 @@ state.total_shares = state.total_shares.checked_add(shares)
     .map_err(|_| ContractError::Overflow)?;
 ```
 
-**Status:** 🟠 High - Overflow checks missing
+**Status:** High: High - Overflow checks missing
 
 ---
 
 ## Section 4: Reentrancy Attacks (Attacks #38-47)
 
-### Attack #38 - Withdrawal Reentrancy 🔴 CRITICAL
+### Attack #38 - Withdrawal Reentrancy Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -477,11 +477,11 @@ fn execute_claim(...) {
 
 **Vulnerability:** In Cosmos, reentrancy via BankMsg::Send is limited, but callbacks possible with CW20.
 
-**Status:** 🟠 High - Check order is correct (state before message)
+**Status:** High: High - Check order is correct (state before message)
 
 ---
 
-### Attack #40 - Reward Claim Reentrancy 🟠 HIGH
+### Attack #40 - Reward Claim Reentrancy High: HIGH
 
 **Current Code:**
 ```rust
@@ -497,13 +497,13 @@ fn execute_claim_rewards(...) {
 
 **Analysis:** State is updated before external call - correct order.
 
-**Status:** ✅ Low - Checks-effects-interactions pattern followed
+**Status:** Pass Low - Checks-effects-interactions pattern followed
 
 ---
 
 ## Section 5: Access Control Attacks (Attacks #56-65)
 
-### Attack #56 - Unauthorized Upgrade 🔴 CRITICAL
+### Attack #56 - Unauthorized Upgrade Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -538,11 +538,11 @@ fn execute_apply_upgrade(...) {
 }
 ```
 
-**Status:** 🟡 Medium - No upgrade mechanism yet
+**Status:** Medium: Medium - No upgrade mechanism yet
 
 ---
 
-### Attack #60 - Role Escalation 🟠 HIGH
+### Attack #60 - Role Escalation High: HIGH
 
 **Current Code:**
 ```rust
@@ -566,11 +566,11 @@ pub struct Config {
 // Or use cw3 multisig for admin functions
 ```
 
-**Status:** 🟠 High - Single admin pattern
+**Status:** High: High - Single admin pattern
 
 ---
 
-### Attack #65 - Fee Parameter Abuse 🟠 HIGH
+### Attack #65 - Fee Parameter Abuse High: HIGH
 
 **Current Code:**
 ```rust
@@ -595,13 +595,13 @@ fn execute_update_config(..., fee_bps: Option<u32>, ...) {
 }
 ```
 
-**Status:** 🟠 High - No fee cap
+**Status:** High: High - No fee cap
 
 ---
 
 ## Section 6: Cross-Contract Attacks (Attacks #101-110)
 
-### Attack #101 - Vault Token Injection 🔴 CRITICAL
+### Attack #101 - Vault Token Injection Critical: CRITICAL
 
 **Current Code:**
 ```rust
@@ -624,7 +624,7 @@ let amount = info.funds.iter()
 ensure!(info.funds.len() == 1, ContractError::InvalidFunds);
 ```
 
-**Status:** 🟡 Medium - Standard CosmWasm pattern
+**Status:** Medium: Medium - Standard CosmWasm pattern
 
 ---
 
@@ -632,31 +632,31 @@ ensure!(info.funds.len() == 1, ContractError::InvalidFunds);
 
 | # | Vulnerability | Status | Priority |
 |---|---------------|--------|----------|
-| 1 | Broken share accounting | 🟠 Partial | Critical |
-| 2 | Reentrancy | ✅ Low | - |
-| 3 | Stale exchange rate | 🟡 Medium | Medium |
-| 4 | Slashing not socialized | 🔴 Missing | Critical |
-| 5 | Withdrawal queue corruption | 🔴 Critical | Critical |
-| 6 | Privileged role drain | 🟠 High | High |
-| 7 | Upgradeability takeover | 🟡 Medium | Medium |
-| 8 | Direct token donation | 🔴 Critical | Critical |
-| 9 | Rounding exploitation | 🔴 Critical | Critical |
-| 10 | Reward double counting | 🟡 Medium | Medium |
-| 11 | Pending withdrawal double count | 🟠 High | High |
-| 12 | Mispriced initial deposit | 🟠 High | High |
-| 13 | Validator concentration | 🟡 Medium | Medium |
-| 14 | Malicious validator manager | 🟡 Medium | Medium |
-| 15 | Flash loan exploit | 🟠 High | High |
-| 16 | Oracle trust failure | 🟡 Medium | Medium |
-| 17 | State machine ambiguity | ✅ Low | - |
-| 18 | Gas-based DoS | 🟠 High | High |
-| 19 | Emergency pause weakness | 🟡 Medium | Medium |
-| 20 | Storage collision | 🟡 Medium | Medium |
-| 21 | Uninitialized contracts | ✅ Low | - |
-| 22 | Monitoring blind spots | 🟡 Medium | Medium |
-| 23 | Unsafe dependencies | 🟡 Medium | Medium |
-| 24 | No bank-run planning | 🟠 High | High |
-| 25 | No invariant culture | 🔴 Missing | Critical |
+| 1 | Broken share accounting | High: Partial | Critical |
+| 2 | Reentrancy | Pass Low | - |
+| 3 | Stale exchange rate | Medium: Medium | Medium |
+| 4 | Slashing not socialized | Critical: Missing | Critical |
+| 5 | Withdrawal queue corruption | Critical: Critical | Critical |
+| 6 | Privileged role drain | High: High | High |
+| 7 | Upgradeability takeover | Medium: Medium | Medium |
+| 8 | Direct token donation | Critical: Critical | Critical |
+| 9 | Rounding exploitation | Critical: Critical | Critical |
+| 10 | Reward double counting | Medium: Medium | Medium |
+| 11 | Pending withdrawal double count | High: High | High |
+| 12 | Mispriced initial deposit | High: High | High |
+| 13 | Validator concentration | Medium: Medium | Medium |
+| 14 | Malicious validator manager | Medium: Medium | Medium |
+| 15 | Flash loan exploit | High: High | High |
+| 16 | Oracle trust failure | Medium: Medium | Medium |
+| 17 | State machine ambiguity | Pass Low | - |
+| 18 | Gas-based DoS | High: High | High |
+| 19 | Emergency pause weakness | Medium: Medium | Medium |
+| 20 | Storage collision | Medium: Medium | Medium |
+| 21 | Uninitialized contracts | Pass Low | - |
+| 22 | Monitoring blind spots | Medium: Medium | Medium |
+| 23 | Unsafe dependencies | Medium: Medium | Medium |
+| 24 | No bank-run planning | High: High | High |
+| 25 | No invariant culture | Critical: Missing | Critical |
 
 ---
 
@@ -681,7 +681,7 @@ fn invariant_share_conservation(deps: &OwnedDeps) -> bool {
 }
 ```
 
-**Status:** 🔴 Not enforced
+**Status:** Critical: Not enforced
 
 ---
 
@@ -698,7 +698,7 @@ pub fn check_solvency(deps: Deps) -> Result<bool, ContractError> {
 }
 ```
 
-**Status:** 🔴 Not enforced
+**Status:** Critical: Not enforced
 
 ---
 
@@ -713,7 +713,7 @@ pub struct UnbondingRequest {
 }
 ```
 
-**Status:** 🔴 Critical fix needed
+**Status:** Critical: Critical fix needed
 
 ---
 
@@ -725,7 +725,7 @@ pub struct UnbondingRequest {
 // Enforced by claimed flag + no reset function
 ```
 
-**Status:** 🟠 Need claimed flag
+**Status:** High: Need claimed flag
 
 ---
 
@@ -741,7 +741,7 @@ pub fn execute_record_slash(...) {
 }
 ```
 
-**Status:** 🔴 Not implemented
+**Status:** Critical: Not implemented
 
 ---
 
@@ -880,7 +880,7 @@ The Cruzible contracts have a solid foundation but require critical security fix
 
 **Recommendation:** Address all Priority 1 (Critical) and Priority 2 (High) issues before launch. Implement comprehensive invariant testing and obtain external audit.
 
-**Current Status: NOT PRODUCTION READY** ⚠️
+**Current Status: NOT PRODUCTION READY** Warn
 
 Estimated time to fix critical issues: 2-3 weeks
 Estimated time for full audit readiness: 4-6 weeks

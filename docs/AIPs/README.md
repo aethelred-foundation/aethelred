@@ -1,6 +1,6 @@
 # Aethelred Improvement Proposals (AIPs)
 
-[![AIP Lint](https://img.shields.io/github/actions/workflow/status/aethelred/AIPs/aip-lint.yml?style=flat-square&label=AIP+Lint)](https://github.com/AethelredFoundation/AIPs/actions)
+[![AIP Lint](https://img.shields.io/github/actions/workflow/status/aethelred/AIPs/aip-lint.yml?style=flat-square&label=AIP+Lint)](https://github.com/aethelred-foundation/AIPs/actions)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 
 AIPs are the primary mechanism for proposing protocol changes, new features, and standards in the Aethelred ecosystem - analogous to [Ethereum EIPs](https://eips.ethereum.org/), [Cosmos ADRs](https://docs.cosmos.network/main/build/architecture), and [Aptos AIPs](https://github.com/aptos-foundation/AIPs).
@@ -64,4 +64,4 @@ created: YYYY-MM-DD
 ## Community
 
 - [Discord `#aip-discussion`](https://discord.gg/aethelred)
-- [GitHub Discussions](https://github.com/AethelredFoundation/AIPs/discussions)
+- [GitHub Discussions](https://github.com/aethelred-foundation/AIPs/discussions)

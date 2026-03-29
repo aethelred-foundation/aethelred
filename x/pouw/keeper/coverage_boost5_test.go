@@ -1095,7 +1095,7 @@ func TestCB5_SafeMulDiv_Normal(t *testing.T) {
 }
 
 func TestCB5_ComputeEmissionScheduleSafe_LongSchedule(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	blockTimeConfig := keeper.DefaultBlockTimeConfig()
 	schedule, err := keeper.ComputeEmissionScheduleSafe(config, 20, blockTimeConfig)
 	require.NoError(t, err)

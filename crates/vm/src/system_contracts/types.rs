@@ -171,7 +171,69 @@ pub enum VerificationMethod {
 
 impl Default for VerificationMethod {
     fn default() -> Self {
-        VerificationMethod::TeeAttestation
+        // SQ01: Enterprise default - Hybrid verification required
+        VerificationMethod::Hybrid
+    }
+}
+
+// =============================================================================
+// ENTERPRISE MODE CONFIGURATION
+// =============================================================================
+
+/// Enterprise-mode verification policy.
+///
+/// When enabled, only `Hybrid` (TEE + ZK) verification is accepted.
+/// TEE-only and ZkProof-only submissions are rejected to ensure the highest
+/// assurance level for all computations.
+///
+/// The zkML-specific guards (`require_registered_circuit`,
+/// `require_domain_binding`) eliminate soft-acceptance paths so that
+/// enterprise deployments always perform real proof verification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnterpriseModeConfig {
+    /// Whether enterprise mode is active
+    pub enabled: bool,
+    /// The only allowed verification method in enterprise mode
+    pub required_method: VerificationMethod,
+    /// Whether zkML fallback is allowed (must be false in enterprise mode)
+    pub allow_zkml_fallback: bool,
+    /// Require that zkML proof circuit hashes (`vk_hash`) are pre-registered.
+    /// When `true`, the proof's `vk_hash` must appear in the registry's set
+    /// of known verifying keys.
+    pub require_registered_circuit: bool,
+    /// Require output-commitment domain binding for zkML proofs.
+    /// When `true`, the job must carry an `output_hash` and the proof's
+    /// third public input must match it, binding the proof to a concrete
+    /// inference result.
+    pub require_domain_binding: bool,
+}
+
+impl Default for EnterpriseModeConfig {
+    fn default() -> Self {
+        EnterpriseModeConfig {
+            enabled: true,
+            required_method: VerificationMethod::Hybrid,
+            allow_zkml_fallback: false,
+            require_registered_circuit: true,
+            require_domain_binding: true,
+        }
+    }
+}
+
+impl EnterpriseModeConfig {
+    /// Validate that a verification method is allowed under enterprise policy.
+    /// Returns an error message if the method is rejected.
+    pub fn validate_method(&self, method: VerificationMethod) -> Result<(), String> {
+        if !self.enabled {
+            return Ok(());
+        }
+        if method != self.required_method {
+            return Err(format!(
+                "enterprise mode requires {:?} verification, got {:?}",
+                self.required_method, method
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -196,6 +258,19 @@ pub struct Proof {
 
     /// Execution metadata
     pub metadata: ProofMetadata,
+}
+
+impl Proof {
+    /// Check if this proof is enterprise-compliant.
+    ///
+    /// Enterprise compliance requires:
+    /// 1. Verification method is `Hybrid`
+    /// 2. Both `tee_attestation` and `zk_proof` are present (not None)
+    pub fn is_enterprise_compliant(&self) -> bool {
+        self.method == VerificationMethod::Hybrid
+            && self.tee_attestation.is_some()
+            && self.zk_proof.is_some()
+    }
 }
 
 /// TEE attestation
@@ -239,6 +314,7 @@ pub enum ZkSystem {
     Plonk,
     Stark,
     Ezkl,
+    Halo2,
 }
 
 /// Proof metadata
@@ -564,5 +640,77 @@ mod tests {
     fn test_stake_role_min_stake() {
         assert!(StakeRole::ComputeNode.min_stake() > StakeRole::Validator.min_stake());
         assert!(StakeRole::Validator.min_stake() > StakeRole::Delegator.min_stake());
+    }
+
+    #[test]
+    fn test_enterprise_default_is_hybrid() {
+        // SQ01: Enterprise default verification method must be Hybrid
+        let default_method = VerificationMethod::default();
+        assert_eq!(
+            default_method,
+            VerificationMethod::Hybrid,
+            "enterprise default verification method must be Hybrid"
+        );
+    }
+
+    #[test]
+    fn test_enterprise_mode_config_defaults() {
+        let config = EnterpriseModeConfig::default();
+        assert!(config.enabled, "enterprise mode must be enabled by default");
+        assert_eq!(
+            config.required_method,
+            VerificationMethod::Hybrid,
+            "enterprise required method must be Hybrid"
+        );
+        assert!(
+            !config.allow_zkml_fallback,
+            "zkML fallback must be disabled in enterprise mode"
+        );
+    }
+
+    #[test]
+    fn test_enterprise_mode_rejects_tee_only() {
+        let config = EnterpriseModeConfig::default();
+        let result = config.validate_method(VerificationMethod::TeeAttestation);
+        assert!(
+            result.is_err(),
+            "enterprise mode must reject TEE-only verification"
+        );
+    }
+
+    #[test]
+    fn test_enterprise_mode_rejects_zkproof_only() {
+        let config = EnterpriseModeConfig::default();
+        let result = config.validate_method(VerificationMethod::ZkProof);
+        assert!(
+            result.is_err(),
+            "enterprise mode must reject ZkProof-only verification"
+        );
+    }
+
+    #[test]
+    fn test_enterprise_mode_accepts_hybrid() {
+        let config = EnterpriseModeConfig::default();
+        let result = config.validate_method(VerificationMethod::Hybrid);
+        assert!(
+            result.is_ok(),
+            "enterprise mode must accept Hybrid verification"
+        );
+    }
+
+    #[test]
+    fn test_enterprise_mode_disabled_allows_all() {
+        let config = EnterpriseModeConfig {
+            enabled: false,
+            ..Default::default()
+        };
+        assert!(config
+            .validate_method(VerificationMethod::TeeAttestation)
+            .is_ok());
+        assert!(config.validate_method(VerificationMethod::ZkProof).is_ok());
+        assert!(config.validate_method(VerificationMethod::Hybrid).is_ok());
+        assert!(config
+            .validate_method(VerificationMethod::ReExecution)
+            .is_ok());
     }
 }

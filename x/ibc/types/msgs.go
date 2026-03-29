@@ -40,6 +40,7 @@ type MsgRelayProof struct {
 func (m *MsgRelayProof) ProtoMessage()             {}
 func (m *MsgRelayProof) Reset()                     { *m = MsgRelayProof{} }
 func (m *MsgRelayProof) String() string              { return fmt.Sprintf("MsgRelayProof{sender=%s}", m.Sender) }
+func (m *MsgRelayProof) XXX_MessageName() string     { return "aethelred.ibc.v1.MsgRelayProof" }
 
 func (m *MsgRelayProof) ValidateBasic() error {
 	if m.Sender == "" {
@@ -73,6 +74,7 @@ type MsgRequestProof struct {
 func (m *MsgRequestProof) ProtoMessage()             {}
 func (m *MsgRequestProof) Reset()                     { *m = MsgRequestProof{} }
 func (m *MsgRequestProof) String() string              { return fmt.Sprintf("MsgRequestProof{sender=%s}", m.Sender) }
+func (m *MsgRequestProof) XXX_MessageName() string     { return "aethelred.ibc.v1.MsgRequestProof" }
 
 func (m *MsgRequestProof) ValidateBasic() error {
 	if m.Sender == "" {
@@ -106,6 +108,7 @@ type MsgSubscribeProofs struct {
 func (m *MsgSubscribeProofs) ProtoMessage()             {}
 func (m *MsgSubscribeProofs) Reset()                     { *m = MsgSubscribeProofs{} }
 func (m *MsgSubscribeProofs) String() string              { return fmt.Sprintf("MsgSubscribeProofs{sender=%s}", m.Sender) }
+func (m *MsgSubscribeProofs) XXX_MessageName() string     { return "aethelred.ibc.v1.MsgSubscribeProofs" }
 
 func (m *MsgSubscribeProofs) ValidateBasic() error {
 	if m.Sender == "" {

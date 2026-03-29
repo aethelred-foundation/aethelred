@@ -210,19 +210,22 @@ impl CoverageCollector {
         let files: Vec<FileCoverage> = data.files.values().cloned().collect();
 
         let total_lines: usize = files.iter().map(|f| f.lines.len()).sum();
-        let covered_lines: usize = files.iter()
+        let covered_lines: usize = files
+            .iter()
             .flat_map(|f| f.lines.values())
             .filter(|l| l.hit_count > 0)
             .count();
 
         let total_functions: usize = files.iter().map(|f| f.functions.len()).sum();
-        let covered_functions: usize = files.iter()
+        let covered_functions: usize = files
+            .iter()
             .flat_map(|f| f.functions.values())
             .filter(|f| f.hit_count > 0)
             .count();
 
         let total_branches: usize = files.iter().map(|f| f.branches.len()).sum();
-        let covered_branches: usize = files.iter()
+        let covered_branches: usize = files
+            .iter()
             .flat_map(|f| f.branches.iter())
             .filter(|b| b.taken)
             .count();
@@ -303,7 +306,12 @@ pub struct CoverageSummary {
 
 impl CoverageReport {
     /// Check if coverage meets threshold
-    pub fn meets_threshold(&self, line_threshold: f64, function_threshold: f64, branch_threshold: f64) -> bool {
+    pub fn meets_threshold(
+        &self,
+        line_threshold: f64,
+        function_threshold: f64,
+        branch_threshold: f64,
+    ) -> bool {
         self.summary.line_coverage >= line_threshold
             && self.summary.function_coverage >= function_threshold
             && self.summary.branch_coverage >= branch_threshold
@@ -311,17 +319,20 @@ impl CoverageReport {
 
     /// Get files below threshold
     pub fn files_below_threshold(&self, threshold: f64) -> Vec<&FileCoverage> {
-        self.files.iter()
+        self.files
+            .iter()
             .filter(|f| f.line_coverage() < threshold)
             .collect()
     }
 
     /// Get uncovered lines for a file
     pub fn uncovered_lines(&self, file: &Path) -> Vec<usize> {
-        self.files.iter()
+        self.files
+            .iter()
             .find(|f| f.path == file)
             .map(|f| {
-                f.lines.iter()
+                f.lines
+                    .iter()
                     .filter(|(_, l)| l.hit_count == 0)
                     .map(|(line, _)| *line)
                     .collect()
@@ -338,9 +349,7 @@ impl CoverageReport {
 
         output.push_str(&format!(
             "Line Coverage:     {:.1}% ({}/{})\n",
-            self.summary.line_coverage,
-            self.summary.covered_lines,
-            self.summary.total_lines
+            self.summary.line_coverage, self.summary.covered_lines, self.summary.total_lines
         ));
         output.push_str(&format!(
             "Function Coverage: {:.1}% ({}/{})\n",
@@ -385,10 +394,7 @@ impl CoverageReport {
             for (name, func) in &file.functions {
                 output.push_str(&format!("FNDA:{},{}\n", func.hit_count, name));
             }
-            output.push_str(&format!(
-                "FNF:{}\n",
-                file.functions.len()
-            ));
+            output.push_str(&format!("FNF:{}\n", file.functions.len()));
             output.push_str(&format!(
                 "FNH:{}\n",
                 file.functions.values().filter(|f| f.hit_count > 0).count()
@@ -432,7 +438,9 @@ impl CoverageReport {
         let mut xml = String::new();
 
         xml.push_str("<?xml version=\"1.0\"?>\n");
-        xml.push_str("<!DOCTYPE coverage SYSTEM \"http://cobertura.sourceforge.net/xml/coverage-04.dtd\">\n");
+        xml.push_str(
+            "<!DOCTYPE coverage SYSTEM \"http://cobertura.sourceforge.net/xml/coverage-04.dtd\">\n",
+        );
         xml.push_str(&format!(
             "<coverage line-rate=\"{:.4}\" branch-rate=\"{:.4}\" version=\"1.0\">\n",
             self.summary.line_coverage / 100.0,
@@ -444,7 +452,9 @@ impl CoverageReport {
         xml.push_str("      <classes>\n");
 
         for file in &self.files {
-            let filename = file.path.file_name()
+            let filename = file
+                .path
+                .file_name()
                 .map(|n| n.to_string_lossy())
                 .unwrap_or_default();
 
@@ -508,7 +518,9 @@ impl CoverageReport {
         // File list
         html.push_str("  <h2>Files</h2>\n");
         html.push_str("  <table>\n");
-        html.push_str("    <tr><th>File</th><th>Lines</th><th>Functions</th><th>Branches</th></tr>\n");
+        html.push_str(
+            "    <tr><th>File</th><th>Lines</th><th>Functions</th><th>Branches</th></tr>\n",
+        );
 
         for file in &self.files {
             let line_class = coverage_class(file.line_coverage());

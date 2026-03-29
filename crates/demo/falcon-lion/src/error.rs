@@ -10,7 +10,6 @@ pub enum FalconLionError {
     // =========================================================================
     // JURISDICTION ERRORS
     // =========================================================================
-
     /// Unsupported jurisdiction
     #[error("Unsupported jurisdiction: {0}")]
     UnsupportedJurisdiction(String),
@@ -22,7 +21,6 @@ pub enum FalconLionError {
     // =========================================================================
     // COMPLIANCE ERRORS
     // =========================================================================
-
     /// Session not found
     #[error("Verification session not found: {0}")]
     SessionNotFound(String),
@@ -54,7 +52,6 @@ pub enum FalconLionError {
     // =========================================================================
     // PROOF ERRORS
     // =========================================================================
-
     /// Proof generation failed
     #[error("Proof generation failed: {0}")]
     ProofGenerationFailed(String),
@@ -74,7 +71,6 @@ pub enum FalconLionError {
     // =========================================================================
     // TRADE DEAL ERRORS
     // =========================================================================
-
     /// Trade deal not found
     #[error("Trade deal not found: {0}")]
     TradeDealNotFound(String),
@@ -94,7 +90,6 @@ pub enum FalconLionError {
     // =========================================================================
     // LETTER OF CREDIT ERRORS
     // =========================================================================
-
     /// LC not found
     #[error("Letter of Credit not found: {0}")]
     LcNotFound(String),
@@ -118,7 +113,6 @@ pub enum FalconLionError {
     // =========================================================================
     // SETTLEMENT ERRORS
     // =========================================================================
-
     /// Settlement failed
     #[error("Settlement failed: {0}")]
     SettlementFailed(String),
@@ -142,7 +136,6 @@ pub enum FalconLionError {
     // =========================================================================
     // VALIDATION ERRORS
     // =========================================================================
-
     /// Invalid amount
     #[error("Invalid amount: {0}")]
     InvalidAmount(String),
@@ -166,7 +159,6 @@ pub enum FalconLionError {
     // =========================================================================
     // SYSTEM ERRORS
     // =========================================================================
-
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
@@ -196,9 +188,9 @@ impl FalconLionError {
     pub fn is_recoverable(&self) -> bool {
         matches!(
             self,
-            FalconLionError::Timeout(_) |
-            FalconLionError::SessionNotFound(_) |
-            FalconLionError::CreditScoreBelowThreshold { .. }
+            FalconLionError::Timeout(_)
+                | FalconLionError::SessionNotFound(_)
+                | FalconLionError::CreditScoreBelowThreshold { .. }
         )
     }
 
@@ -206,9 +198,9 @@ impl FalconLionError {
     pub fn is_blocking(&self) -> bool {
         matches!(
             self,
-            FalconLionError::SanctionsMatch |
-            FalconLionError::ComplianceCheckFailed(_) |
-            FalconLionError::CrossBorderNotAllowed { .. }
+            FalconLionError::SanctionsMatch
+                | FalconLionError::ComplianceCheckFailed(_)
+                | FalconLionError::CrossBorderNotAllowed { .. }
         )
     }
 

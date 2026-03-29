@@ -1,7 +1,0 @@
-./amino.go
-./amino_codec.go
-./codec.go
-./collections.go
-./json.go
-./proto_codec.go
-./yaml.go

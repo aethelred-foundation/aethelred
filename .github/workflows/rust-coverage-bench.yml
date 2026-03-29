@@ -4,10 +4,10 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
 
 env:
-  RUST_VERSION: "1.75"
+  RUST_VERSION: "1.85.0"
 
 jobs:
   rust-coverage:
@@ -57,9 +57,18 @@ jobs:
         run: |
           cargo bench \
             --manifest-path sdk/aethelred-sdk/Cargo.toml \
+            --bench crypto_benchmarks \
             -- --output-format bencher 2>&1 | tee bench-results.txt
 
+      - name: Upload benchmark artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crypto-benchmark-results
+          path: bench-results.txt
+
       - name: Store benchmark results
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: cargo

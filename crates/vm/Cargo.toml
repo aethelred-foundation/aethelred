@@ -121,3 +121,11 @@ test-case = "3.3"
 # [[bench]]
 # name = "precompile_benchmarks"
 # harness = false
+
+[[bench]]
+name = "tee_bench"
+harness = false
+
+[[bench]]
+name = "zkml_precompile_bench"
+harness = false

@@ -1,14 +1,17 @@
 # Aethelred Cosmos Node (Authority Notice)
 
-Status: Canonical chain repository (interim enforced authority designation; final Foundation ratification pending).
+Status: Canonical public chain repository (Foundation ratification pending).
 
-This repository currently overlaps with `aethelred-core` and uses the same Go module path (`github.com/aethelred/aethelred`).
+This repository is the canonical public source of truth for the Aethelred chain
+implementation and uses the Go module path `github.com/aethelred/aethelred`.
 
-Enforced interim controls now in place:
-- Treat this repo as the implementation-focused chain codebase under active development.
-- Confirm release provenance and security patch authority against the published repo authority policy and registry.
-- Do not rely on module-path duplication as evidence of synchronization.
-- `repo-authority.json` and repo-local authority CI guard define and verify this repo's canonical status.
+Controls in place:
+- Confirm release provenance and security patch authority against the published
+  repo authority policy and registries.
+- Treat standalone repos as scoped distribution surfaces, not competing chain
+  authorities.
+- `repo-authority.json`, `repo-role.json`, and repo-local CI define and verify
+  canonical status.
 
 See:
 - `docs/security/threat-model.md`

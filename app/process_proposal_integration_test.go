@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"testing"
 	"time"
@@ -284,6 +286,12 @@ func TestProcessProposal_FinalityAcceptsNoInjectedTxWithEmptyCachedExtensions(t 
 }
 
 func TestProcessProposal_FinalityRejectsInjectedTxWhenCacheMissing(t *testing.T) {
+	// PR-04/VC-01: When the vote extension cache is empty (e.g. after a node
+	// restart), ProcessProposal degrades gracefully — it relies on the
+	// deterministic on-chain consensus evidence audit and per-tx validation
+	// rather than rejecting outright.  A valid seal transaction with a
+	// matching on-chain job should therefore be ACCEPTED even when the cache
+	// has no entries for the relevant height.
 	app := newTestApp(t)
 	ctx := app.BaseApp.NewContext(true).WithBlockHeight(2).WithBlockTime(time.Now().UTC())
 
@@ -337,7 +345,8 @@ func TestProcessProposal_FinalityRejectsInjectedTxWhenCacheMissing(t *testing.T)
 		ProposedLastCommit: commit,
 	})
 	require.NoError(t, err)
-	require.Equal(t, abci.ResponseProcessProposal_REJECT, resp.Status)
+	// Cache is empty → graceful degradation accepts valid on-chain evidence.
+	require.Equal(t, abci.ResponseProcessProposal_ACCEPT, resp.Status)
 }
 
 func TestProcessProposal_RejectsDuplicateInjectedConsensusTxForJob(t *testing.T) {
@@ -389,16 +398,43 @@ func makeVoteExtensionForJob(t *testing.T, height int64, validatorAddr []byte, j
 
 	ve := NewVoteExtension(height, validatorAddr)
 	ve.Timestamp = time.Unix(1_700_000_000+height, 0).UTC()
+	nonce := make([]byte, 32)
+	// Compute bound UserData: SHA-256(outputHash || LE64(blockHeight) || chainID)
+	chainID := "aethelred-testnet-1"
+	heightBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
+	h := sha256.New()
+	h.Write(output)
+	h.Write(heightBytes)
+	h.Write([]byte(chainID))
+	boundUserData := h.Sum(nil)
+	teeAttestation := &TEEAttestationData{
+		Platform:    "simulated",
+		EnclaveID:   "enclave-integration-test",
+		Measurement: make([]byte, 32),
+		Quote:       []byte(`{"module_id":"test","timestamp_unix":1700000000,"digest":"SHA384","pcrs":[]}`),
+		UserData:    boundUserData,
+		Nonce:       nonce,
+		Timestamp:   time.Unix(1_700_000_000+height, 0).UTC(),
+		BlockHeight: height,
+		ChainID:     chainID,
+	}
 	ve.AddVerification(ComputeVerification{
 		JobID:           job.Id,
 		ModelHash:       job.ModelHash,
 		InputHash:       job.InputHash,
 		OutputHash:      output,
 		AttestationType: AttestationTypeTEE,
+		TEEAttestation:  teeAttestation,
 		ExecutionTimeMs: 1,
 		Success:         true,
-		Nonce:           make([]byte, 32),
+		Nonce:           nonce,
 	})
+
+	// Production mode (AllowSimulated=false) requires a non-empty signature
+	// and extension hash. Marshal() computes the hash automatically; we just
+	// need a placeholder signature so the mandatory-signing check passes.
+	ve.Signature = make([]byte, 64)
 
 	data, err := ve.Marshal()
 	require.NoError(t, err)

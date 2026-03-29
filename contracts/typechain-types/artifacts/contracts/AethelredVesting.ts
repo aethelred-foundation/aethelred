@@ -115,10 +115,10 @@ export interface AethelredVestingInterface extends Interface {
       | "createCoreContributorSchedule(address,uint256)"
       | "createCustomSchedule"
       | "createCustomSchedule(address,uint256,uint8,uint8,uint256,uint256,uint256,uint256,bool,bool)"
-      | "createPublicSaleSchedule"
-      | "createPublicSaleSchedule(address,uint256)"
-      | "createStrategicInvestorSchedule"
-      | "createStrategicInvestorSchedule(address,uint256)"
+      | "createPublicSalesSchedule"
+      | "createPublicSalesSchedule(address,uint256)"
+      | "createStrategicSeedSchedule"
+      | "createStrategicSeedSchedule(address,uint256)"
       | "executeTGE"
       | "executeTGE()"
       | "getBeneficiarySchedules"
@@ -374,19 +374,19 @@ export interface AethelredVestingInterface extends Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "createPublicSaleSchedule",
+    functionFragment: "createPublicSalesSchedule",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "createPublicSaleSchedule(address,uint256)",
+    functionFragment: "createPublicSalesSchedule(address,uint256)",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "createStrategicInvestorSchedule",
+    functionFragment: "createStrategicSeedSchedule",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "createStrategicInvestorSchedule(address,uint256)",
+    functionFragment: "createStrategicSeedSchedule(address,uint256)",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -744,19 +744,19 @@ export interface AethelredVestingInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "createPublicSaleSchedule",
+    functionFragment: "createPublicSalesSchedule",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "createPublicSaleSchedule(address,uint256)",
+    functionFragment: "createPublicSalesSchedule(address,uint256)",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "createStrategicInvestorSchedule",
+    functionFragment: "createStrategicSeedSchedule",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "createStrategicInvestorSchedule(address,uint256)",
+    functionFragment: "createStrategicSeedSchedule(address,uint256)",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "executeTGE", data: BytesLike): Result;
@@ -1450,25 +1450,25 @@ export interface AethelredVesting extends BaseContract {
     "nonpayable"
   >;
 
-  createPublicSaleSchedule: TypedContractMethod<
+  createPublicSalesSchedule: TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
 
-  "createPublicSaleSchedule(address,uint256)": TypedContractMethod<
+  "createPublicSalesSchedule(address,uint256)": TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
 
-  createStrategicInvestorSchedule: TypedContractMethod<
+  createStrategicSeedSchedule: TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
 
-  "createStrategicInvestorSchedule(address,uint256)": TypedContractMethod<
+  "createStrategicSeedSchedule(address,uint256)": TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
@@ -2003,28 +2003,28 @@ export interface AethelredVesting extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "createPublicSaleSchedule"
+    nameOrSignature: "createPublicSalesSchedule"
   ): TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "createPublicSaleSchedule(address,uint256)"
+    nameOrSignature: "createPublicSalesSchedule(address,uint256)"
   ): TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "createStrategicInvestorSchedule"
+    nameOrSignature: "createStrategicSeedSchedule"
   ): TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "createStrategicInvestorSchedule(address,uint256)"
+    nameOrSignature: "createStrategicSeedSchedule(address,uint256)"
   ): TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [string],

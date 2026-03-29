@@ -45,9 +45,10 @@ const MainnetChainID = "aethelred-1"
 // MainnetDenom is the staking denomination for the Aethelred mainnet.
 const MainnetDenom = "uaethel"
 
-// MainnetParams returns the locked mainnet parameter set.
-// These values have been validated against BFT safety, performance benchmarks,
-// and security audit requirements.
+// MainnetParams returns the locked operational mainnet parameter set.
+// These values prioritize production safety margins. The higher-throughput
+// 2.8s / 12.5K TPS / 650 jobs/s public benchmark claims are backed by the
+// dedicated ReferenceBenchmarkProfile and ReferenceBenchmarkParams helpers.
 func MainnetParams() *types.Params {
 	return &types.Params{
 		// --- Consensus ---
@@ -63,9 +64,8 @@ func MainnetParams() *types.Params {
 		// Chosen based on load testing: 95th percentile job completion is 12 blocks.
 		JobTimeoutBlocks: 50,
 
-		// 25 jobs per block balances throughput with block time budget.
-		// At 6-second blocks, this is ~4.2 jobs/second sustained throughput.
-		// Performance benchmark confirmed < 200ms EndBlock budget at 25 jobs.
+		// 25 jobs per block is the operational safety profile for mainnet.
+		// Higher benchmark throughput is exposed through ReferenceBenchmarkParams.
 		MaxJobsPerBlock: 25,
 
 		// --- Economics ---
@@ -98,6 +98,81 @@ func MainnetParams() *types.Params {
 		VoteExtensionMaxPastSkewSecs:   600, // 10 minutes
 		VoteExtensionMaxFutureSkewSecs: 60,  // 1 minute
 	}
+}
+
+// ReferenceBenchmarkParams returns the canonical parameter set used by the
+// published benchmark pack and deck performance claims.
+func ReferenceBenchmarkParams() *types.Params {
+	profile := ReferenceBenchmarkProfile()
+
+	return &types.Params{
+		MinValidators:                  int64(profile.MinValidatorsRequired),
+		ConsensusThreshold:             67,
+		JobTimeoutBlocks:               profile.ConsensusTimeoutBlocks,
+		MaxJobsPerBlock:                int64(profile.MaxJobsPerBlock),
+		BaseJobFee:                     "1000uaethel",
+		VerificationReward:             "100uaethel",
+		SlashingPenalty:                "10000uaethel",
+		AllowedProofTypes:              []string{"hybrid"},
+		RequireTeeAttestation:          true,
+		AllowZkmlFallback:              false,
+		AllowSimulated:                 false,
+		VoteExtensionMaxPastSkewSecs:   600,
+		VoteExtensionMaxFutureSkewSecs: 60,
+	}
+}
+
+// EnterpriseParams returns the locked enterprise parameter set.
+// Enterprise mode enforces hybrid-only verification with no fallback.
+// All jobs MUST use Hybrid verification (TEE + zkML).
+func EnterpriseParams() *types.Params {
+	return &types.Params{
+		// --- Consensus (same as mainnet) ---
+		MinValidators:      5,
+		ConsensusThreshold: 67,
+
+		// --- Job lifecycle (same as mainnet) ---
+		JobTimeoutBlocks: 50,
+		MaxJobsPerBlock:  25,
+
+		// --- Economics (same as mainnet) ---
+		BaseJobFee:         "1000uaethel",
+		VerificationReward: "100uaethel",
+		SlashingPenalty:    "10000uaethel",
+
+		// --- SQ01: Enterprise proof types - HYBRID ONLY ---
+		AllowedProofTypes: []string{"hybrid"},
+
+		// --- SQ01: Enterprise security - no fallback ---
+		RequireTeeAttestation: true,
+		AllowZkmlFallback:     false, // SQ01: must be false
+		AllowSimulated:        false,
+
+		// --- Vote extension time bounds ---
+		VoteExtensionMaxPastSkewSecs:   600,
+		VoteExtensionMaxFutureSkewSecs: 60,
+	}
+}
+
+// ValidateEnterpriseParams checks that params conform to enterprise policy.
+// Returns an error if any enterprise constraint is violated.
+func ValidateEnterpriseParams(params *types.Params) error {
+	if params == nil {
+		return fmt.Errorf("enterprise: params cannot be nil")
+	}
+	if params.AllowZkmlFallback {
+		return fmt.Errorf("enterprise: AllowZkmlFallback must be false")
+	}
+	if params.AllowSimulated {
+		return fmt.Errorf("enterprise: AllowSimulated must be false")
+	}
+	if len(params.AllowedProofTypes) != 1 || params.AllowedProofTypes[0] != "hybrid" {
+		return fmt.Errorf("enterprise: AllowedProofTypes must be [\"hybrid\"], got %v", params.AllowedProofTypes)
+	}
+	if !params.RequireTeeAttestation {
+		return fmt.Errorf("enterprise: RequireTeeAttestation must be true")
+	}
+	return nil
 }
 
 // MainnetFeeDistribution returns the locked fee distribution for mainnet.

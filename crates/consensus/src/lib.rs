@@ -124,15 +124,18 @@
 // =============================================================================
 
 pub mod error;
+pub mod metrics;
+pub mod pouw;
+pub mod reputation;
 pub mod traits;
 pub mod types;
 pub mod vrf;
-pub mod pouw;
-pub mod reputation;
-pub mod metrics;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(kani)]
+mod kani_proofs;
 
 // =============================================================================
 // PUBLIC RE-EXPORTS
@@ -143,53 +146,28 @@ pub use error::{ConsensusError, ConsensusResult};
 
 // Traits
 pub use traits::{
-    Consensus,
-    ConsensusState,
-    LeaderElection,
-    BlockValidator,
-    ComputeResult,
-    VerificationMethod,
+    BlockValidator, ComputeResult, Consensus, ConsensusState, LeaderElection, VerificationMethod,
 };
 
 // Core types
 pub use types::{
-    PoUWBlockHeader,
-    ValidatorInfo,
-    SlotTiming,
-    BlockProposal,
-    FinalityVote,
-    Slot,
-    Epoch,
-    EpochSeed,
-    Hash,
-    Address,
-    compute_multiplier,
+    compute_multiplier, Address, BlockProposal, Epoch, EpochSeed, FinalityVote, Hash,
+    PoUWBlockHeader, Slot, SlotTiming, ValidatorInfo,
 };
 
 // VRF
-pub use vrf::{VrfKeys, VrfProof, VrfOutput, VrfEngine};
+pub use vrf::{VrfEngine, VrfKeys, VrfOutput, VrfProof};
 
 // Reputation
 pub use reputation::{
-    ReputationEngine,
-    ReputationConfig,
-    ValidatorReputation,
-    ComputeJobRecord,
-    JobMetadata,
-    ScoreUpdate,
-    ReputationSnapshot,
-    ReputationMetrics,
+    ComputeJobRecord, JobMetadata, ReputationConfig, ReputationEngine, ReputationMetrics,
+    ReputationSnapshot, ScoreUpdate, ValidatorReputation,
 };
 
 // Metrics
 pub use metrics::{
-    ConsensusMetricsCollector,
-    MetricsSnapshot,
-    BlockMetrics,
-    VrfMetrics,
-    ComputeMetrics,
-    TimingMetrics,
-    ValidatorMetrics,
+    BlockMetrics, ComputeMetrics, ConsensusMetricsCollector, MetricsSnapshot, TimingMetrics,
+    ValidatorMetrics, VrfMetrics,
 };
 
 // =============================================================================
@@ -198,49 +176,28 @@ pub use metrics::{
 
 // PoUW Configuration
 pub use pouw::config::{
-    PoUWConfig,
-    UtilityCategory,
-    ComplianceLevel,
-    VerificationMethod as PoUWVerificationMethod,
-    UsefulWorkConfig,
-    VerificationMultipliers,
-    DecayConfig,
-    AntiGamingConfig,
+    AntiGamingConfig, ComplianceLevel, DecayConfig, PoUWConfig, UsefulWorkConfig, UtilityCategory,
+    VerificationMethod as PoUWVerificationMethod, VerificationMultipliers,
 };
 
 // PoUW Election
 pub use pouw::election::{
-    PoUWElection,
-    UsefulWorkScore,
-    ElectionStats as PoUWElectionStats,
-    ElectionStatistics,
+    ElectionStatistics, ElectionStats as PoUWElectionStats, PoUWElection, UsefulWorkScore,
 };
 
 // PoUW Consensus
 pub use pouw::consensus::{
-    PoUWConsensus,
-    PoUWState,
-    UsefulWorkResult,
-    AiProof,
-    PendingUsefulWork,
-    CategoryStats,
-    LeaderCredentials as PoUWLeaderCredentials,
-    UsefulWorkProcessingResult,
-    StateSnapshot as PoUWStateSnapshot,
-    ConsensusMetrics as PoUWMetrics,
+    AiProof, CategoryStats, ConsensusMetrics as PoUWMetrics,
+    LeaderCredentials as PoUWLeaderCredentials, PendingUsefulWork, PoUWConsensus, PoUWState,
+    StateSnapshot as PoUWStateSnapshot, UsefulWorkProcessingResult, UsefulWorkResult,
     VerificationEngine,
 };
 
 // PoUW helper functions
 pub use pouw::{
-    calculate_useful_work_multiplier,
-    calculate_weighted_stake,
-    estimate_leader_probability,
-    POUW_VERSION,
-    MAX_USEFUL_WORK_MULTIPLIER,
-    DEFAULT_MIN_STAKE,
-    DEFAULT_DECAY_FACTOR,
-    DEFAULT_ROLLING_WINDOW_EPOCHS,
+    calculate_useful_work_multiplier, calculate_weighted_stake, estimate_leader_probability,
+    DEFAULT_DECAY_FACTOR, DEFAULT_MIN_STAKE, DEFAULT_ROLLING_WINDOW_EPOCHS,
+    MAX_USEFUL_WORK_MULTIPLIER, POUW_VERSION,
 };
 
 // =============================================================================
@@ -285,41 +242,41 @@ pub const BFT_THRESHOLD: f64 = 1.0 / 3.0;
 /// Common imports for consensus implementations
 pub mod prelude {
     pub use super::{
+        Address,
+
+        BlockValidator,
+
+        // Traits
+        Consensus,
         // Errors
         ConsensusError,
         ConsensusResult,
 
-        // Traits
-        Consensus,
         ConsensusState,
-        LeaderElection,
-        BlockValidator,
-
-        // Types
-        PoUWBlockHeader,
-        ValidatorInfo,
-        Slot,
         Epoch,
         EpochSeed,
         Hash,
-        Address,
-
-        // VRF
-        VrfKeys,
-        VrfProof,
-        VrfOutput,
-
+        LeaderElection,
+        // Types
+        PoUWBlockHeader,
+        PoUWConfig,
         // PoUW (Production)
         PoUWConsensus,
-        PoUWConfig,
-        UtilityCategory,
-        UsefulWorkScore,
-        UsefulWorkResult,
+        ReputationConfig,
 
         // Reputation
         ReputationEngine,
-        ReputationConfig,
+        Slot,
+        UsefulWorkResult,
 
+        UsefulWorkScore,
+        UtilityCategory,
+        ValidatorInfo,
+        // VRF
+        VrfKeys,
+        VrfOutput,
+
+        VrfProof,
         // Constants
         DEFAULT_SLOTS_PER_EPOCH,
         MAX_COMPUTE_MULTIPLIER,

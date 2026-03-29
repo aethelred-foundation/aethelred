@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Aethelred Team"]
 description = "Advanced CLI for Aethelred AI Blockchain"
 license = "Apache-2.0"
-repository = "https://github.com/aethelred/cli"
+repository = "https://github.com/aethelred-foundation/aethelred-cli"
 keywords = ["blockchain", "ai", "cli", "aethelred"]
 categories = ["command-line-utilities", "cryptography::cryptocurrencies"]
 
@@ -53,6 +53,7 @@ url = "2.5"
 base64 = "0.21"
 hex = "0.4"
 sha2 = "0.10"
+home = "=0.5.11"
 
 # HTTP client
 reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
@@ -61,16 +62,10 @@ reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-feature
 rand = "0.8"
 ring = "0.17"
 
-# Build info
-vergen = { version = "8.3", features = ["git", "rustc"] }
-
 [dev-dependencies]
 assert_cmd = "2.0"
 predicates = "3.1"
 tempfile = "3.10"
-
-[build-dependencies]
-vergen = { version = "8.3", features = ["git", "rustc"] }
 
 [profile.release]
 lto = true

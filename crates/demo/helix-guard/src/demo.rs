@@ -55,11 +55,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::discovery::{
-    BlindDiscoveryProtocol, DiscoveryConfig, DiscoveryAuditEntry,
-};
+use crate::discovery::{BlindDiscoveryProtocol, DiscoveryAuditEntry, DiscoveryConfig};
 use crate::error::{HelixGuardError, HelixGuardResult};
-use crate::royalty::{RoyaltyEngine, RoyaltyConfig, RoyaltyCalculationParams};
+use crate::royalty::{RoyaltyCalculationParams, RoyaltyConfig, RoyaltyEngine};
 use crate::types::*;
 
 // =============================================================================
@@ -220,7 +218,9 @@ impl DemoStep {
     /// Get step description
     pub fn description(&self) -> &'static str {
         match self {
-            Self::Initialize => "Setting up M42 sovereign node and registering Emirati Genome Program",
+            Self::Initialize => {
+                "Setting up M42 sovereign node and registering Emirati Genome Program"
+            }
             Self::PartnerOnboarding => "Registering AstraZeneca as pharmaceutical partner",
             Self::DrugSubmission => "Submitting encrypted drug candidates for analysis",
             Self::SessionCreation => "Creating blind discovery session",
@@ -413,42 +413,50 @@ impl HelixGuardDemo {
         // Step 1: Initialize
         self.execute_step(DemoStep::Initialize, || async {
             self.step_initialize().await
-        }).await?;
+        })
+        .await?;
 
         // Step 2: Partner Onboarding
         self.execute_step(DemoStep::PartnerOnboarding, || async {
             self.step_partner_onboarding().await
-        }).await?;
+        })
+        .await?;
 
         // Step 3: Drug Candidate Submission
         self.execute_step(DemoStep::DrugSubmission, || async {
             self.step_drug_submission().await
-        }).await?;
+        })
+        .await?;
 
         // Step 4: Session Creation
         self.execute_step(DemoStep::SessionCreation, || async {
             self.step_session_creation().await
-        }).await?;
+        })
+        .await?;
 
         // Step 5: Approval Flow
         self.execute_step(DemoStep::ApprovalFlow, || async {
             self.step_approval_flow().await
-        }).await?;
+        })
+        .await?;
 
         // Step 6: Blind Compute
         self.execute_step(DemoStep::BlindCompute, || async {
             self.step_blind_compute().await
-        }).await?;
+        })
+        .await?;
 
         // Step 7: Settlement
         self.execute_step(DemoStep::Settlement, || async {
             self.step_settlement().await
-        }).await?;
+        })
+        .await?;
 
         // Step 8: Verification
         self.execute_step(DemoStep::Verification, || async {
             self.step_verification().await
-        }).await?;
+        })
+        .await?;
 
         let total_duration = demo_start.elapsed().as_millis() as u64;
 
@@ -472,7 +480,8 @@ impl HelixGuardDemo {
 
         if self.config.verbose {
             println!("\n╔═══════════════════════════════════════════════════════════════════════╗");
-            println!("║ Step {}: {}",
+            println!(
+                "║ Step {}: {}",
                 match step {
                     DemoStep::Initialize => "1",
                     DemoStep::PartnerOnboarding => "2",
@@ -516,12 +525,16 @@ impl HelixGuardDemo {
 
         // Cohort is already registered by default
         let cohorts = self.protocol.get_cohorts();
-        let cohort = cohorts.iter()
+        let cohort = cohorts
+            .iter()
             .find(|c| c.name == "Emirati Genome Program")
             .ok_or_else(|| HelixGuardError::CohortNotFound("Emirati Genome Program".to_string()))?;
 
         if self.config.verbose {
-            println!("  → Registered: {} ({} genomes)", cohort.name, cohort.population_size);
+            println!(
+                "  → Registered: {} ({} genomes)",
+                cohort.name, cohort.population_size
+            );
             println!("  → Sovereignty: Data NEVER leaves UAE ✓");
             println!("  → Compliance: UAE DoH, HIPAA ✓");
         }
@@ -533,7 +546,8 @@ impl HelixGuardDemo {
     async fn step_partner_onboarding(&self) -> HelixGuardResult<()> {
         // Partner is already registered by default
         let partners = self.protocol.get_partners();
-        let partner = partners.iter()
+        let partner = partners
+            .iter()
             .find(|p| p.name.contains("AstraZeneca"))
             .ok_or_else(|| HelixGuardError::PartnerNotFound("AstraZeneca".to_string()))?;
 
@@ -545,7 +559,11 @@ impl HelixGuardDemo {
 
         if self.config.verbose {
             println!("  → Partner: {} ({})", partner.name, partner.jurisdiction);
-            println!("  → Tier: {:?} ({}x fee multiplier)", partner.tier, partner.tier.fee_multiplier());
+            println!(
+                "  → Tier: {:?} ({}x fee multiplier)",
+                partner.tier,
+                partner.tier.fee_multiplier()
+            );
             println!("  → Research Areas: {:?}", partner.research_areas);
             println!("  → Node: {}", partner.node_id);
         }
@@ -556,17 +574,33 @@ impl HelixGuardDemo {
     /// Step 3: Drug Candidate Submission
     async fn step_drug_submission(&self) -> HelixGuardResult<()> {
         let partners = self.protocol.get_partners();
-        let partner = partners.iter()
+        let partner = partners
+            .iter()
             .find(|p| p.name.contains("AstraZeneca"))
             .ok_or_else(|| HelixGuardError::PartnerNotFound("AstraZeneca".to_string()))?;
 
         let drug_configs = vec![
-            ("AZD-LUNG-001", TherapeuticArea::Oncology, "Non-Small Cell Lung Cancer"),
-            ("AZD-CARDIO-002", TherapeuticArea::Cardiovascular, "Heart Failure"),
-            ("AZD-NEURO-003", TherapeuticArea::Neuroscience, "Alzheimer's Disease"),
+            (
+                "AZD-LUNG-001",
+                TherapeuticArea::Oncology,
+                "Non-Small Cell Lung Cancer",
+            ),
+            (
+                "AZD-CARDIO-002",
+                TherapeuticArea::Cardiovascular,
+                "Heart Failure",
+            ),
+            (
+                "AZD-NEURO-003",
+                TherapeuticArea::Neuroscience,
+                "Alzheimer's Disease",
+            ),
         ];
 
-        for (code_name, area, condition) in drug_configs.iter().take(self.config.drug_candidate_count as usize) {
+        for (code_name, area, condition) in drug_configs
+            .iter()
+            .take(self.config.drug_candidate_count as usize)
+        {
             let candidate = DrugCandidate {
                 id: Uuid::new_v4(),
                 code_name: code_name.to_string(),
@@ -583,14 +617,12 @@ impl HelixGuardDemo {
                     },
                     auth_tag: vec![0u8; 16],
                 },
-                target_markers: vec![
-                    GeneticMarkerQuery {
-                        marker_type: GeneticMarkerType::Pharmacogenomic,
-                        gene_id: "CYP2D6".to_string(),
-                        variant_id: Some("rs1234567".to_string()),
-                        query_type: MarkerQueryType::AlleleFrequency,
-                    },
-                ],
+                target_markers: vec![GeneticMarkerQuery {
+                    marker_type: GeneticMarkerType::Pharmacogenomic,
+                    gene_id: "CYP2D6".to_string(),
+                    variant_id: Some("rs1234567".to_string()),
+                    query_type: MarkerQueryType::AlleleFrequency,
+                }],
                 development_phase: DevelopmentPhase::Phase2,
                 submitting_partner: partner.id,
                 submitted_at: Utc::now(),
@@ -614,11 +646,13 @@ impl HelixGuardDemo {
         let cohorts = self.protocol.get_cohorts();
         let partners = self.protocol.get_partners();
 
-        let cohort = cohorts.iter()
+        let cohort = cohorts
+            .iter()
             .find(|c| c.name == "Emirati Genome Program")
             .ok_or_else(|| HelixGuardError::CohortNotFound("Emirati Genome Program".to_string()))?;
 
-        let partner = partners.iter()
+        let partner = partners
+            .iter()
             .find(|p| p.name.contains("AstraZeneca"))
             .ok_or_else(|| HelixGuardError::PartnerNotFound("AstraZeneca".to_string()))?;
 
@@ -628,7 +662,10 @@ impl HelixGuardDemo {
 
         if self.config.verbose {
             println!("  → Creating Discovery Session...");
-            println!("    Cohort: {} ({} genomes)", cohort.name, cohort.population_size);
+            println!(
+                "    Cohort: {} ({} genomes)",
+                cohort.name, cohort.population_size
+            );
             println!("    Partner: {}", partner.name);
             println!("    Status: Pending Approval");
         }
@@ -648,10 +685,26 @@ impl HelixGuardDemo {
 
         // Simulate approvals
         let approvals = vec![
-            ("Ethics Committee", "Dr. Ahmed Al-Hassan", "Research ethics verified"),
-            ("UAE Dept. of Health", "DoH Official #4521", "Regulatory compliance confirmed"),
-            ("M42 Data Custodian", "Omics Director", "Data access authorized"),
-            ("AstraZeneca Legal", "VP Legal Affairs", "Partner agreement signed"),
+            (
+                "Ethics Committee",
+                "Dr. Ahmed Al-Hassan",
+                "Research ethics verified",
+            ),
+            (
+                "UAE Dept. of Health",
+                "DoH Official #4521",
+                "Regulatory compliance confirmed",
+            ),
+            (
+                "M42 Data Custodian",
+                "Omics Director",
+                "Data access authorized",
+            ),
+            (
+                "AstraZeneca Legal",
+                "VP Legal Affairs",
+                "Partner agreement signed",
+            ),
         ];
 
         for (authority, approver, note) in approvals {
@@ -691,7 +744,10 @@ impl HelixGuardDemo {
             ("AZD-NEURO-003", 74),
         ];
 
-        for (code_name, score) in candidates.iter().take(self.config.drug_candidate_count as usize) {
+        for (code_name, score) in candidates
+            .iter()
+            .take(self.config.drug_candidate_count as usize)
+        {
             if self.config.verbose {
                 println!("  → Processing {}...", code_name);
                 println!("    ├─ Loading encrypted genome data into RAM");
@@ -759,12 +815,22 @@ impl HelixGuardDemo {
             println!("    │                  ROYALTY CALCULATION                     │");
             println!("    ├─────────────────────────────────────────────────────────┤");
             println!("    │ Base Fee:        ${} per analysis", 500);
-            println!("    │ Tier Multiplier: {}x (Strategic)", calc.tier_multiplier);
-            println!("    │ Usage Multiplier: {}x", calc.combined_usage_multiplier);
-            println!("    │ Batch Size:      {} analyses", self.config.drug_candidate_count);
+            println!(
+                "    │ Tier Multiplier: {}x (Strategic)",
+                calc.tier_multiplier
+            );
+            println!(
+                "    │ Usage Multiplier: {}x",
+                calc.combined_usage_multiplier
+            );
+            println!(
+                "    │ Batch Size:      {} analyses",
+                self.config.drug_candidate_count
+            );
             println!("    │ Volume Discount: {}%", calc.volume_discount_percent);
             println!("    ├─────────────────────────────────────────────────────────┤");
-            println!("    │ TOTAL:           ${} ({} AETHEL)",
+            println!(
+                "    │ TOTAL:           ${} ({} AETHEL)",
                 calc.final_usd.round_dp(2),
                 calc.final_aethel / 1_000_000_000_000_000_000
             );
@@ -794,9 +860,15 @@ impl HelixGuardDemo {
             println!("    ┌─────────────────────────────────────────────────────────┐");
             println!("    │                  VERIFICATION REPORT                     │");
             println!("    ├─────────────────────────────────────────────────────────┤");
-            println!("    │ TEE Attestations:      {} VERIFIED ✓", self.config.drug_candidate_count);
+            println!(
+                "    │ TEE Attestations:      {} VERIFIED ✓",
+                self.config.drug_candidate_count
+            );
             if self.config.zkml_enabled {
-                println!("    │ zkML Proofs:           {} VERIFIED ✓", self.config.drug_candidate_count);
+                println!(
+                    "    │ zkML Proofs:           {} VERIFIED ✓",
+                    self.config.drug_candidate_count
+                );
             }
             println!("    │ Data Sovereignty:      UAE COMPLIANT ✓");
             println!("    │ IP Protection:         VERIFIED ✓");
@@ -849,7 +921,10 @@ impl HelixGuardDemo {
                     has_attestation: true,
                     has_zkml_proof: self.config.zkml_enabled,
                 },
-            ].into_iter().take(self.config.drug_candidate_count as usize).collect(),
+            ]
+            .into_iter()
+            .take(self.config.drug_candidate_count as usize)
+            .collect(),
             total_royalty_aethel: 1050_000_000_000_000_000_000, // Simulated
             total_royalty_usd: 1050.0,
             discovery_metrics: DiscoveryMetricsSummary {
@@ -867,15 +942,24 @@ impl HelixGuardDemo {
             },
             royalty_metrics: RoyaltyMetricsSummary {
                 total_royalties_aethel: royalty_metrics.total_royalties_aethel,
-                total_royalties_usd: royalty_metrics.total_royalties_usd.to_string().parse().unwrap_or(0.0),
+                total_royalties_usd: royalty_metrics
+                    .total_royalties_usd
+                    .to_string()
+                    .parse()
+                    .unwrap_or(0.0),
                 total_transactions: royalty_metrics.total_transactions,
-                avg_royalty_per_analysis_usd: royalty_metrics.avg_royalty_per_analysis_usd.to_string().parse().unwrap_or(0.0),
+                avg_royalty_per_analysis_usd: royalty_metrics
+                    .avg_royalty_per_analysis_usd
+                    .to_string()
+                    .parse()
+                    .unwrap_or(0.0),
             },
             step_timings: self.step_timings.clone(),
             total_duration_ms,
             audit_log: self.protocol.get_audit_log(),
             key_insight: "M42's genome data stayed in Abu Dhabi. AstraZeneca's drug formulas \
-                          stayed encrypted. Aethelred only moved the TRUTH, not the DATA.".to_string(),
+                          stayed encrypted. Aethelred only moved the TRUTH, not the DATA."
+                .to_string(),
             sovereignty_verified: true,
             no_data_leaks: true,
         }
@@ -883,7 +967,8 @@ impl HelixGuardDemo {
 
     /// Print demo banner
     fn print_banner(&self) {
-        println!(r#"
+        println!(
+            r#"
 
 ╔═══════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                   ║
@@ -902,35 +987,36 @@ impl HelixGuardDemo {
 ║   Powered by Aethelred: Sovereign AI Verification Infrastructure                  ║
 ║                                                                                   ║
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
-        "#);
+        "#
+        );
     }
 
     /// Print demo summary
     fn print_summary(&self, output: &DemoOutput) {
-        println!(r#"
+        println!(
+            r#"
 
 ╔═══════════════════════════════════════════════════════════════════════════════════╗
 ║                              DEMO COMPLETED SUCCESSFULLY                           ║
 ╠═══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                   ║
 ║   RESULTS SUMMARY                                                                 ║
-║   ───────────────                                                                 ║"#);
+║   ───────────────                                                                 ║"#
+        );
 
         for result in &output.results {
             let bar_len = (result.efficacy_score as usize) / 5;
             let bar = "█".repeat(bar_len.min(20));
             let empty_len = 20usize.saturating_sub(bar_len);
             let empty = "░".repeat(empty_len);
-            println!("║   {} [{}{}] {}% ({})",
-                result.drug_code,
-                bar,
-                empty,
-                result.efficacy_score,
-                result.confidence
+            println!(
+                "║   {} [{}{}] {}% ({})",
+                result.drug_code, bar, empty, result.efficacy_score, result.confidence
             );
         }
 
-        println!(r#"║                                                                                   ║
+        println!(
+            r#"║                                                                                   ║
 ║   KEY METRICS                                                                     ║
 ║   ───────────                                                                     ║
 ║   • Drug Candidates Analyzed: {}                                                  ║
@@ -957,7 +1043,11 @@ impl HelixGuardDemo {
         "#,
             output.results.len(),
             output.results.len(),
-            if self.config.zkml_enabled { output.results.len().to_string() } else { "0".to_string() },
+            if self.config.zkml_enabled {
+                output.results.len().to_string()
+            } else {
+                "0".to_string()
+            },
             output.total_royalty_aethel / 1_000_000_000_000_000_000,
             output.total_royalty_usd,
             output.enclave_metrics.data_leaks_detected,

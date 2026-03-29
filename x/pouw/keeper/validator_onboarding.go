@@ -98,6 +98,22 @@ func ValidateApplication(app OnboardingApplication) error {
 	return nil
 }
 
+// IsEnterpriseCapableValidator checks whether a validator meets enterprise-mode
+// requirements. Enterprise validators must support all three proof types:
+// TEE, ZKML, and Hybrid, ensuring they can handle the full verification pipeline.
+func IsEnterpriseCapableValidator(app OnboardingApplication) error {
+	if !app.SupportsTEE {
+		return fmt.Errorf("enterprise mode requires SupportsTEE=true")
+	}
+	if !app.SupportsZKML {
+		return fmt.Errorf("enterprise mode requires SupportsZKML=true")
+	}
+	if !app.SupportsHybrid {
+		return fmt.Errorf("enterprise mode requires SupportsHybrid=true")
+	}
+	return nil
+}
+
 // ---------------------------------------------------------------------------
 // Section 2: Capability Verification
 // ---------------------------------------------------------------------------

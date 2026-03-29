@@ -147,12 +147,12 @@
 // MODULE DECLARATIONS
 // =============================================================================
 
-pub mod types;
-pub mod error;
-pub mod enclave;
-pub mod discovery;
-pub mod royalty;
 pub mod demo;
+pub mod discovery;
+pub mod enclave;
+pub mod error;
+pub mod royalty;
+pub mod types;
 
 // =============================================================================
 // PUBLIC RE-EXPORTS
@@ -160,169 +160,118 @@ pub mod demo;
 
 // Core types
 pub use types::{
-    // Type aliases
-    Hash,
-    Signature,
-    ProofBytes,
-    Did,
-    TokenAmount,
+    AccessPolicy,
+    AttestationMethod,
+    AuditAction,
+    AuditEntry,
+    AuditLevel,
 
+    BlindComputeJob,
+    Certification,
+    ClinicalRelevance,
+
+    ComplianceStandard,
+    ComputeJobType,
+    ConfidenceInterval,
+    ConfidenceLevel,
+    ContactInfo,
+    // Data custodian & sovereignty
+    DataCustodian,
+    DataQualityMetrics,
+
+    DataResidency,
+    DevelopmentPhase,
+
+    Did,
+    // Drug candidate
+    DrugCandidate,
+    // Results
+    EfficacyResult,
+    EncryptedPayload,
+    EncryptionAlgorithm,
+    ExportControls,
+    Finding,
+    FindingCategory,
+    GeneticMarkerQuery,
+    GeneticMarkerType,
     // Genomics types
     GenomeCohort,
     GenomeDataReference,
-    GeneticMarkerType,
-    DataQualityMetrics,
-
-    // Data custodian & sovereignty
-    DataCustodian,
-    SovereigntyConstraints,
-    DataResidency,
-    ProcessingRestriction,
-    ExportControls,
-    RegulatoryBody,
+    GpuRequirement,
+    // Type aliases
+    Hash,
+    JobStatus,
+    // Common types
+    Jurisdiction,
+    KeyInfo,
+    KeyType,
+    MarkerQueryType,
+    ModelConfig,
+    ModelType,
+    OutputVisibility,
+    PartnerTier,
+    PaymentStatus,
 
     // Pharmaceutical partner
     PharmaPartner,
-    PartnerTier,
-    TherapeuticArea,
-
-    // Drug candidate
-    DrugCandidate,
-    EncryptedPayload,
-    EncryptionAlgorithm,
-    KeyInfo,
-    KeyType,
-    GeneticMarkerQuery,
-    MarkerQueryType,
-    DevelopmentPhase,
-
-    // TEE & computation
-    TeeType,
-    AttestationMethod,
-    BlindComputeJob,
-    ComputeJobType,
-    JobStatus,
-    ModelConfig,
-    ModelType,
-    GpuRequirement,
-    TeeRequirements,
-    ServiceLevelAgreement,
-    PrivacyLevel,
-    OutputVisibility,
-    AuditLevel,
-
-    // Results
-    EfficacyResult,
-    ConfidenceInterval,
-    ConfidenceLevel,
-    PopulationCoverage,
-    Finding,
-    FindingCategory,
-    SignificanceLevel,
-    ClinicalRelevance,
-
-    // Attestation & proof
-    TeeAttestation,
     PlatformInfo,
-    ZkmlProof,
-    ZkProofSystem,
+    PopulationCoverage,
+    PrivacyLevel,
+    ProcessingRestriction,
+    ProofBytes,
+    RegulatoryBody,
 
     // Payment
     RoyaltyPayment,
-    PaymentStatus,
+    ServiceLevelAgreement,
+    Signature,
+    SignificanceLevel,
+    SovereigntyConstraints,
+    // Attestation & proof
+    TeeAttestation,
+    TeeRequirements,
+    // TEE & computation
+    TeeType,
+    TherapeuticArea,
 
-    // Common types
-    Jurisdiction,
-    ComplianceStandard,
-    Certification,
+    TokenAmount,
+
     UseCase,
-    AccessPolicy,
-    ContactInfo,
-    AuditEntry,
-    AuditAction,
+    ZkProofSystem,
+
+    ZkmlProof,
 };
 
 // Error types
-pub use error::{
-    HelixGuardError,
-    HelixGuardResult,
-};
+pub use error::{HelixGuardError, HelixGuardResult};
 
 // Enclave engine
 pub use enclave::{
-    EnclaveEngine,
-    EnclaveConfig,
-    EnclaveInstance,
-    EnclaveStatus,
-    EnclaveMetrics,
-    DEFAULT_ENCLAVE_MEMORY_GB,
-    ATTESTATION_VALIDITY_HOURS,
-    MAX_INFERENCE_TIME_SECS,
+    EnclaveConfig, EnclaveEngine, EnclaveInstance, EnclaveMetrics, EnclaveStatus,
+    ATTESTATION_VALIDITY_HOURS, DEFAULT_ENCLAVE_MEMORY_GB, MAX_INFERENCE_TIME_SECS,
 };
 
 // Discovery protocol
 pub use discovery::{
-    BlindDiscoveryProtocol,
-    DiscoveryConfig,
-    DiscoverySession,
-    SessionStatus,
-    SessionApprovals,
-    SessionTimeline,
-    DiscoveryMetrics,
-    DiscoveryAuditEntry,
-    DiscoveryAuditAction,
-    DiscoverySessionBuilder,
-    MAX_CONCURRENT_SESSIONS,
-    DEFAULT_SESSION_TIMEOUT_HOURS,
-    MAX_JOB_RETRIES,
+    BlindDiscoveryProtocol, DiscoveryAuditAction, DiscoveryAuditEntry, DiscoveryConfig,
+    DiscoveryMetrics, DiscoverySession, DiscoverySessionBuilder, SessionApprovals, SessionStatus,
+    SessionTimeline, DEFAULT_SESSION_TIMEOUT_HOURS, MAX_CONCURRENT_SESSIONS, MAX_JOB_RETRIES,
 };
 
 // Royalty engine
 pub use royalty::{
-    RoyaltyEngine,
-    RoyaltyConfig,
-    EscrowBalance,
-    EscrowStatus,
-    ReleaseCondition,
-    TreasuryAccount,
-    PartnerAccount,
-    VolumeDiscountTier,
-    SettlementTransaction,
-    SettlementTxType,
-    TransactionStatus,
-    RoyaltyMetrics,
-    RoyaltyCalculationParams,
-    RoyaltyCalculation,
-    UsageMultiplier,
-    BASE_ROYALTY_USD,
-    AETHEL_USD_RATE,
-    AETHEL_DECIMALS,
-    MIN_ROYALTY_AETHEL,
+    EscrowBalance, EscrowStatus, PartnerAccount, ReleaseCondition, RoyaltyCalculation,
+    RoyaltyCalculationParams, RoyaltyConfig, RoyaltyEngine, RoyaltyMetrics, SettlementTransaction,
+    SettlementTxType, TransactionStatus, TreasuryAccount, UsageMultiplier, VolumeDiscountTier,
+    AETHEL_DECIMALS, AETHEL_USD_RATE, BASE_ROYALTY_USD, MIN_ROYALTY_AETHEL,
 };
 
 // Demo orchestration
 pub use demo::{
-    HelixGuardDemo,
-    DemoConfig,
-    DemoState,
-    DemoStep,
-    DemoStatus,
-    DemoEvent,
-    DemoEventType,
-    DemoOutput,
-    StepTiming,
-    EfficacyResultSummary,
-    DiscoveryMetricsSummary,
-    EnclaveMetricsSummary,
-    RoyaltyMetricsSummary,
-    new_demo,
-    new_demo_with_config,
-    print_banner,
-    DEMO_PROJECT_NAME,
-    DEMO_SCENARIO,
-    PRIMARY_CUSTODIAN,
-    PRIMARY_PARTNER,
-    DEMO_VALUE_USD,
+    new_demo, new_demo_with_config, print_banner, DemoConfig, DemoEvent, DemoEventType, DemoOutput,
+    DemoState, DemoStatus, DemoStep, DiscoveryMetricsSummary, EfficacyResultSummary,
+    EnclaveMetricsSummary, HelixGuardDemo, RoyaltyMetricsSummary, StepTiming, DEMO_PROJECT_NAME,
+    DEMO_SCENARIO, DEMO_VALUE_USD, PRIMARY_CUSTODIAN, PRIMARY_PARTNER,
 };
 
 // =============================================================================
@@ -345,10 +294,8 @@ pub const DEMO_ORGS: [&str; 2] = ["M42 Health (UAE)", "AstraZeneca (UK)"];
 pub const GENOME_PROGRAM_SIZE: u32 = 100_000;
 
 /// Supported jurisdictions in this demo
-pub const SUPPORTED_JURISDICTIONS: [Jurisdiction; 2] = [
-    Jurisdiction::Uae,
-    Jurisdiction::UnitedKingdom,
-];
+pub const SUPPORTED_JURISDICTIONS: [Jurisdiction; 2] =
+    [Jurisdiction::Uae, Jurisdiction::UnitedKingdom];
 
 // =============================================================================
 // CONVENIENCE FUNCTIONS
@@ -379,37 +326,36 @@ pub fn version_info() -> String {
 /// ```
 pub mod prelude {
     pub use super::{
-        // Demo
-        HelixGuardDemo,
-        DemoConfig,
-        DemoOutput,
-        DemoStatus,
-
-        // Discovery
-        BlindDiscoveryProtocol,
-        DiscoveryConfig,
-        DiscoverySession,
-
-        // Types
-        GenomeCohort,
-        DataCustodian,
-        PharmaPartner,
-        DrugCandidate,
-        EfficacyResult,
-        TeeAttestation,
-
-        // Engines
-        EnclaveEngine,
-        RoyaltyEngine,
-
-        // Results
-        HelixGuardResult,
-        HelixGuardError,
-
         // Convenience
         new_demo,
         print_banner,
         version_info,
+        // Discovery
+        BlindDiscoveryProtocol,
+        DataCustodian,
+        DemoConfig,
+        DemoOutput,
+        DemoStatus,
+
+        DiscoveryConfig,
+        DiscoverySession,
+
+        DrugCandidate,
+        EfficacyResult,
+        // Engines
+        EnclaveEngine,
+        // Types
+        GenomeCohort,
+        // Demo
+        HelixGuardDemo,
+        HelixGuardError,
+
+        // Results
+        HelixGuardResult,
+        PharmaPartner,
+        RoyaltyEngine,
+
+        TeeAttestation,
     };
 }
 

@@ -9,7 +9,7 @@ use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
 
-use crate::{TestResult, SuiteResult, RunResult};
+use crate::{RunResult, SuiteResult, TestResult};
 
 // ============ Reporter Trait ============
 
@@ -64,9 +64,16 @@ struct JUnitTest {
 
 enum JUnitStatus {
     Passed,
-    Failed { message: String, stack_trace: Option<String> },
-    Skipped { message: String },
-    Error { message: String },
+    Failed {
+        message: String,
+        stack_trace: Option<String>,
+    },
+    Skipped {
+        message: String,
+    },
+    Error {
+        message: String,
+    },
 }
 
 impl JUnitReporter {
@@ -101,7 +108,9 @@ impl Reporter for JUnitReporter {
         if let Some(ref mut suite) = self.current_suite {
             let status = match result {
                 TestResult::Passed { .. } => JUnitStatus::Passed,
-                TestResult::Failed { message, location, .. } => JUnitStatus::Failed {
+                TestResult::Failed {
+                    message, location, ..
+                } => JUnitStatus::Failed {
                     message: message.clone(),
                     stack_trace: location.clone(),
                 },
@@ -145,9 +154,21 @@ impl Reporter for JUnitReporter {
 
         for suite in &self.suites {
             let tests = suite.tests.len();
-            let failures = suite.tests.iter().filter(|t| matches!(t.status, JUnitStatus::Failed { .. })).count();
-            let errors = suite.tests.iter().filter(|t| matches!(t.status, JUnitStatus::Error { .. })).count();
-            let skipped = suite.tests.iter().filter(|t| matches!(t.status, JUnitStatus::Skipped { .. })).count();
+            let failures = suite
+                .tests
+                .iter()
+                .filter(|t| matches!(t.status, JUnitStatus::Failed { .. }))
+                .count();
+            let errors = suite
+                .tests
+                .iter()
+                .filter(|t| matches!(t.status, JUnitStatus::Error { .. }))
+                .count();
+            let skipped = suite
+                .tests
+                .iter()
+                .filter(|t| matches!(t.status, JUnitStatus::Skipped { .. }))
+                .count();
 
             xml.push_str(&format!(
                 "  <testsuite name=\"{}\" tests=\"{}\" failures=\"{}\" errors=\"{}\" skipped=\"{}\" time=\"{:.3}\">\n",
@@ -171,12 +192,18 @@ impl Reporter for JUnitReporter {
                     JUnitStatus::Passed => {
                         xml.push_str(" />\n");
                     }
-                    JUnitStatus::Failed { message, stack_trace } => {
+                    JUnitStatus::Failed {
+                        message,
+                        stack_trace,
+                    } => {
                         xml.push_str(">\n");
                         xml.push_str(&format!(
                             "      <failure message=\"{}\">{}</failure>\n",
                             escape_xml(message),
-                            stack_trace.as_ref().map(|s| escape_xml(s)).unwrap_or_default()
+                            stack_trace
+                                .as_ref()
+                                .map(|s| escape_xml(s))
+                                .unwrap_or_default()
                         ));
                         xml.push_str("    </testcase>\n");
                     }
@@ -257,8 +284,13 @@ impl Reporter for TapReporter {
             TestResult::Passed { duration } => {
                 format!("ok {} - {} ({:.2?})", self.test_number, test_name, duration)
             }
-            TestResult::Failed { message, duration, .. } => {
-                let mut line = format!("not ok {} - {} ({:.2?})", self.test_number, test_name, duration);
+            TestResult::Failed {
+                message, duration, ..
+            } => {
+                let mut line = format!(
+                    "not ok {} - {} ({:.2?})",
+                    self.test_number, test_name, duration
+                );
                 line.push_str(&format!("\n  ---\n  message: {}\n  ...", message));
                 line
             }
@@ -266,7 +298,10 @@ impl Reporter for TapReporter {
                 format!("ok {} - {} # SKIP {}", self.test_number, test_name, reason)
             }
             TestResult::TimedOut { timeout } => {
-                format!("not ok {} - {} # TIMEOUT ({:?})", self.test_number, test_name, timeout)
+                format!(
+                    "not ok {} - {} # TIMEOUT ({:?})",
+                    self.test_number, test_name, timeout
+                )
             }
         };
 
@@ -375,18 +410,31 @@ impl Reporter for JsonReporter {
     fn on_test_complete(&mut self, _suite_name: &str, test_name: &str, result: &TestResult) {
         if let Some(suite) = self.data.suites.last_mut() {
             let (status, duration_ms, message, location) = match result {
-                TestResult::Passed { duration } => {
-                    ("passed".to_string(), duration.as_millis() as u64, None, None)
-                }
-                TestResult::Failed { message, location, duration } => {
-                    ("failed".to_string(), duration.as_millis() as u64, Some(message.clone()), location.clone())
-                }
+                TestResult::Passed { duration } => (
+                    "passed".to_string(),
+                    duration.as_millis() as u64,
+                    None,
+                    None,
+                ),
+                TestResult::Failed {
+                    message,
+                    location,
+                    duration,
+                } => (
+                    "failed".to_string(),
+                    duration.as_millis() as u64,
+                    Some(message.clone()),
+                    location.clone(),
+                ),
                 TestResult::Skipped { reason } => {
                     ("skipped".to_string(), 0, Some(reason.clone()), None)
                 }
-                TestResult::TimedOut { timeout } => {
-                    ("timed_out".to_string(), timeout.as_millis() as u64, None, None)
-                }
+                TestResult::TimedOut { timeout } => (
+                    "timed_out".to_string(),
+                    timeout.as_millis() as u64,
+                    None,
+                    None,
+                ),
             };
 
             suite.tests.push(JsonTest {
@@ -500,17 +548,34 @@ impl Reporter for HtmlReporter {
                     suite.passed += 1;
                     ("Passed".to_string(), "passed".to_string(), *duration, None)
                 }
-                TestResult::Failed { message, duration, .. } => {
+                TestResult::Failed {
+                    message, duration, ..
+                } => {
                     suite.failed += 1;
-                    ("Failed".to_string(), "failed".to_string(), *duration, Some(message.clone()))
+                    (
+                        "Failed".to_string(),
+                        "failed".to_string(),
+                        *duration,
+                        Some(message.clone()),
+                    )
                 }
                 TestResult::Skipped { reason } => {
                     suite.skipped += 1;
-                    ("Skipped".to_string(), "skipped".to_string(), Duration::ZERO, Some(reason.clone()))
+                    (
+                        "Skipped".to_string(),
+                        "skipped".to_string(),
+                        Duration::ZERO,
+                        Some(reason.clone()),
+                    )
                 }
                 TestResult::TimedOut { timeout } => {
                     suite.failed += 1;
-                    ("Timed Out".to_string(), "failed".to_string(), *timeout, None)
+                    (
+                        "Timed Out".to_string(),
+                        "failed".to_string(),
+                        *timeout,
+                        None,
+                    )
                 }
             };
 
@@ -545,8 +610,13 @@ impl Reporter for HtmlReporter {
 
         html.push_str("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n");
         html.push_str("  <meta charset=\"UTF-8\">\n");
-        html.push_str("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
-        html.push_str(&format!("  <title>{}</title>\n", escape_html(&self.data.title)));
+        html.push_str(
+            "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n",
+        );
+        html.push_str(&format!(
+            "  <title>{}</title>\n",
+            escape_html(&self.data.title)
+        ));
         html.push_str("  <style>\n");
         html.push_str(CSS_STYLES);
         html.push_str("  </style>\n");
@@ -563,12 +633,30 @@ impl Reporter for HtmlReporter {
         };
 
         html.push_str("  <div class=\"stats\">\n");
-        html.push_str(&format!("    <div class=\"stat\"><span class=\"label\">Total:</span> {}</div>\n", self.data.stats.total));
-        html.push_str(&format!("    <div class=\"stat passed\"><span class=\"label\">Passed:</span> {}</div>\n", self.data.stats.passed));
-        html.push_str(&format!("    <div class=\"stat failed\"><span class=\"label\">Failed:</span> {}</div>\n", self.data.stats.failed));
-        html.push_str(&format!("    <div class=\"stat skipped\"><span class=\"label\">Skipped:</span> {}</div>\n", self.data.stats.skipped));
-        html.push_str(&format!("    <div class=\"stat\"><span class=\"label\">Duration:</span> {:.2?}</div>\n", self.data.duration));
-        html.push_str(&format!("    <div class=\"stat\"><span class=\"label\">Success Rate:</span> {}%</div>\n", success_rate));
+        html.push_str(&format!(
+            "    <div class=\"stat\"><span class=\"label\">Total:</span> {}</div>\n",
+            self.data.stats.total
+        ));
+        html.push_str(&format!(
+            "    <div class=\"stat passed\"><span class=\"label\">Passed:</span> {}</div>\n",
+            self.data.stats.passed
+        ));
+        html.push_str(&format!(
+            "    <div class=\"stat failed\"><span class=\"label\">Failed:</span> {}</div>\n",
+            self.data.stats.failed
+        ));
+        html.push_str(&format!(
+            "    <div class=\"stat skipped\"><span class=\"label\">Skipped:</span> {}</div>\n",
+            self.data.stats.skipped
+        ));
+        html.push_str(&format!(
+            "    <div class=\"stat\"><span class=\"label\">Duration:</span> {:.2?}</div>\n",
+            self.data.duration
+        ));
+        html.push_str(&format!(
+            "    <div class=\"stat\"><span class=\"label\">Success Rate:</span> {}%</div>\n",
+            success_rate
+        ));
         html.push_str("  </div>\n");
 
         // Progress bar
@@ -589,7 +677,9 @@ impl Reporter for HtmlReporter {
                 suite.duration
             ));
             html.push_str("    <table>\n");
-            html.push_str("      <tr><th>Test</th><th>Status</th><th>Duration</th><th>Message</th></tr>\n");
+            html.push_str(
+                "      <tr><th>Test</th><th>Status</th><th>Duration</th><th>Message</th></tr>\n",
+            );
 
             for test in &suite.tests {
                 html.push_str(&format!(
@@ -688,7 +778,9 @@ pub struct MultiReporter {
 
 impl MultiReporter {
     pub fn new() -> Self {
-        MultiReporter { reporters: Vec::new() }
+        MultiReporter {
+            reporters: Vec::new(),
+        }
     }
 
     pub fn add<R: Reporter + 'static>(mut self, reporter: R) -> Self {
@@ -736,7 +828,10 @@ impl Reporter for MultiReporter {
 
     fn generate(&self) -> String {
         // Return first reporter's output
-        self.reporters.first().map(|r| r.generate()).unwrap_or_default()
+        self.reporters
+            .first()
+            .map(|r| r.generate())
+            .unwrap_or_default()
     }
 }
 
@@ -752,7 +847,9 @@ mod tests {
         reporter.on_test_complete(
             "TestSuite",
             "test1",
-            &TestResult::Passed { duration: Duration::from_millis(100) },
+            &TestResult::Passed {
+                duration: Duration::from_millis(100),
+            },
         );
         reporter.on_test_complete(
             "TestSuite",
@@ -778,7 +875,9 @@ mod tests {
         reporter.on_test_complete(
             "Suite",
             "test1",
-            &TestResult::Passed { duration: Duration::from_millis(100) },
+            &TestResult::Passed {
+                duration: Duration::from_millis(100),
+            },
         );
 
         let output = reporter.generate();
@@ -794,7 +893,9 @@ mod tests {
         reporter.on_test_complete(
             "Suite",
             "test1",
-            &TestResult::Passed { duration: Duration::from_millis(100) },
+            &TestResult::Passed {
+                duration: Duration::from_millis(100),
+            },
         );
 
         let json = reporter.generate();

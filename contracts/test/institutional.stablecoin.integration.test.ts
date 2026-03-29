@@ -290,6 +290,7 @@ async function buildFixture() {
     issuer2,
     issuer3,
     issuer4,
+    issuer5,
     foundation,
     auditor,
     attacker,
@@ -389,27 +390,455 @@ describe("InstitutionalStablecoinBridge (TRD V2)", function () {
     expect(await bridge.isEnclaveMeasurementApproved(ethers.id("UNKNOWN_MEASUREMENT"))).to.equal(false);
   });
 
+  /**
+   * Helper: deploys a MockTimelockController, grants it all required roles
+   * (CONFIG_ROLE, DEFAULT_ADMIN_ROLE, UPGRADER_ROLE), and activates it on the bridge.
+   */
+  async function deployAndActivateTimelock(bridge: any, admin: any, delay = 7 * 24 * 60 * 60) {
+    const MockTLFactory = await ethers.getContractFactory("MockTimelockController");
+    const mockTimelock = await MockTLFactory.connect(admin).deploy(delay, admin.address);
+    await mockTimelock.waitForDeployment();
+    const timelockAddr = await mockTimelock.getAddress();
+
+    // Grant required roles to the timelock before activation (deadlock prevention).
+    // Note: PAUSER_ROLE is NOT granted — emergency halt bypasses the timelock.
+    const configRole = await bridge.CONFIG_ROLE();
+    const adminRole = await bridge.DEFAULT_ADMIN_ROLE();
+    const upgraderRole = await bridge.UPGRADER_ROLE();
+    await bridge.connect(admin).grantRole(configRole, timelockAddr);
+    await bridge.connect(admin).grantRole(adminRole, timelockAddr);
+    await bridge.connect(admin).grantRole(upgraderRole, timelockAddr);
+
+    // Activate the timelock.
+    await bridge.connect(admin).configureGovernanceTimelock(timelockAddr, delay);
+
+    return { mockTimelock, timelockAddr };
+  }
+
   it("requires configured governance timelock as admin caller once enabled", async function () {
     const {
       bridge,
       admin,
-      attacker,
       irisAttester,
     } = await buildFixture();
 
-    const configRole = await bridge.CONFIG_ROLE();
-    await bridge.connect(admin).grantRole(configRole, attacker.address);
-    await bridge.connect(admin).configureGovernanceTimelock(
-      attacker.address,
-      7 * 24 * 60 * 60
-    );
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
 
+    // Direct admin calls to governed functions should now be blocked.
     await expect(
       bridge.connect(admin).setIrisAttester(irisAttester.address)
     ).to.be.revertedWithCustomError(bridge, "TimelockRequired");
 
-    await bridge.connect(attacker).setIrisAttester(irisAttester.address);
+    // Calling through the timelock's queue → wait → execute should succeed.
+    const setAttesterData = bridge.interface.encodeFunctionData(
+      "setIrisAttester",
+      [irisAttester.address]
+    );
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(),
+      setAttesterData
+    );
+    await mockTimelock.connect(admin).queueCall(
+      await bridge.getAddress(),
+      setAttesterData
+    );
+
+    // Immediate execution should fail — delay not elapsed.
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWithCustomError(mockTimelock, "OperationNotReady");
+
+    // Advance past the 7-day delay.
+    await time.increase(SEVEN_DAYS + 1);
+
+    // Now execution should succeed.
+    await mockTimelock.connect(admin).executeQueuedCall(opId);
     expect(await bridge.irisAttester()).to.equal(irisAttester.address);
+  });
+
+  it("SBP-001: rejects configureGovernanceTimelock when external delay < requested delay", async function () {
+    const { bridge, admin } = await buildFixture();
+
+    // Deploy a timelock with only 1-day delay (below MIN_GOVERNANCE_ACTION_DELAY of 7 days).
+    const MockTLFactory = await ethers.getContractFactory("MockTimelockController");
+    const weakTimelock = await MockTLFactory.connect(admin).deploy(
+      1 * 24 * 60 * 60, // 1 day — too short
+      admin.address
+    );
+    await weakTimelock.waitForDeployment();
+
+    // Grant roles (would be needed for activation, but delay check comes first).
+    const configRole = await bridge.CONFIG_ROLE();
+    const adminRole = await bridge.DEFAULT_ADMIN_ROLE();
+    const upgraderRole = await bridge.UPGRADER_ROLE();
+    const addr = await weakTimelock.getAddress();
+    await bridge.connect(admin).grantRole(configRole, addr);
+    await bridge.connect(admin).grantRole(adminRole, addr);
+    await bridge.connect(admin).grantRole(upgraderRole, addr);
+
+    // Should revert because external delay (1 day) < requested delay (7 days).
+    await expect(
+      bridge.connect(admin).configureGovernanceTimelock(
+        addr,
+        7 * 24 * 60 * 60
+      )
+    ).to.be.revertedWithCustomError(bridge, "TimelockDelayMismatch");
+  });
+
+  it("SBP-001: accepts configureGovernanceTimelock when external delay >= requested delay", async function () {
+    const { bridge, admin } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { timelockAddr } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    expect(await bridge.governanceTimelock()).to.equal(timelockAddr);
+  });
+
+  it("SBP-001: governed call through timelock reverts before delay elapses", async function () {
+    const { bridge, admin, irisAttester } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    const callData = bridge.interface.encodeFunctionData("setIrisAttester", [irisAttester.address]);
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), callData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), callData);
+
+    // Advance only 3 days — still 4 days short.
+    await time.increase(3 * 24 * 60 * 60);
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWithCustomError(mockTimelock, "OperationNotReady");
+
+    // Advance remaining 4+ days.
+    await time.increase(4 * 24 * 60 * 60 + 1);
+    await mockTimelock.connect(admin).executeQueuedCall(opId);
+    expect(await bridge.irisAttester()).to.equal(irisAttester.address);
+  });
+
+  it("SBP-002: blocks CONFIG_ROLE holders from reconfiguring timelock after initial setup", async function () {
+    const { bridge, admin, attacker } = await buildFixture();
+
+    const configRole = await bridge.CONFIG_ROLE();
+    await bridge.connect(admin).grantRole(configRole, attacker.address);
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Attacker (who has CONFIG_ROLE) tries to repoint timelock to themselves.
+    const MockTLFactory = await ethers.getContractFactory("MockTimelockController");
+    const attackerTimelock = await MockTLFactory.connect(attacker).deploy(
+      SEVEN_DAYS,
+      attacker.address
+    );
+    await attackerTimelock.waitForDeployment();
+
+    // Should be blocked — after timelock is set, only the timelock itself can reconfigure.
+    await expect(
+      bridge.connect(attacker).configureGovernanceTimelock(
+        await attackerTimelock.getAddress(),
+        SEVEN_DAYS
+      )
+    ).to.be.revertedWithCustomError(bridge, "TimelockRequired");
+  });
+
+  it("SBP-004: admin cannot grantRole after timelock is configured", async function () {
+    const { bridge, admin, attacker } = await buildFixture();
+
+    await deployAndActivateTimelock(bridge, admin);
+
+    const configRole = await bridge.CONFIG_ROLE();
+    // Admin still has DEFAULT_ADMIN_ROLE but cannot use grantRole directly.
+    await expect(
+      bridge.connect(admin).grantRole(configRole, attacker.address)
+    ).to.be.revertedWithCustomError(bridge, "TimelockRequired");
+  });
+
+  it("SBP-004: admin cannot revokeRole after timelock is configured", async function () {
+    const { bridge, admin, relayer } = await buildFixture();
+
+    await deployAndActivateTimelock(bridge, admin);
+
+    const relayerRole = await bridge.RELAYER_ROLE();
+    // Admin still has DEFAULT_ADMIN_ROLE but cannot use revokeRole directly.
+    await expect(
+      bridge.connect(admin).revokeRole(relayerRole, relayer.address)
+    ).to.be.revertedWithCustomError(bridge, "TimelockRequired");
+  });
+
+  it("SBP-004: role management works through timelocked path", async function () {
+    const { bridge, admin, attacker } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Queue a grantRole call through the timelock.
+    const minterRole = await bridge.MINTER_ROLE();
+    const grantData = bridge.interface.encodeFunctionData(
+      "grantRole",
+      [minterRole, attacker.address]
+    );
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), grantData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), grantData);
+
+    // Cannot execute before delay.
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWithCustomError(mockTimelock, "OperationNotReady");
+
+    // After delay, grant succeeds through timelock.
+    await time.increase(SEVEN_DAYS + 1);
+    await mockTimelock.connect(admin).executeQueuedCall(opId);
+
+    expect(await bridge.hasRole(minterRole, attacker.address)).to.equal(true);
+  });
+
+  it("SBP-004: configureGovernanceTimelock reverts if timelock lacks required roles", async function () {
+    const { bridge, admin } = await buildFixture();
+
+    const MockTLFactory = await ethers.getContractFactory("MockTimelockController");
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const mockTimelock = await MockTLFactory.connect(admin).deploy(SEVEN_DAYS, admin.address);
+    await mockTimelock.waitForDeployment();
+    const timelockAddr = await mockTimelock.getAddress();
+
+    // Only grant CONFIG_ROLE — missing DEFAULT_ADMIN_ROLE and UPGRADER_ROLE.
+    const configRole = await bridge.CONFIG_ROLE();
+    await bridge.connect(admin).grantRole(configRole, timelockAddr);
+
+    // Should revert due to missing roles (deadlock prevention).
+    await expect(
+      bridge.connect(admin).configureGovernanceTimelock(timelockAddr, SEVEN_DAYS)
+    ).to.be.revertedWithCustomError(bridge, "InvalidConfig");
+  });
+
+  it("SBP-003: relayer offboarding allows full bond withdrawal after cooldown", async function () {
+    const {
+      bridge,
+      admin,
+      relayer,
+      aethel,
+    } = await buildFixture();
+
+    // Relayer has 500k bonded from fixture.
+    const [bondedBefore] = await bridge.getRelayerBondStatus(relayer.address);
+    expect(bondedBefore).to.equal(units(500_000, 18));
+
+    // Revoke RELAYER_ROLE to simulate retirement.
+    const relayerRole = await bridge.RELAYER_ROLE();
+    await bridge.connect(admin).revokeRole(relayerRole, relayer.address);
+
+    // Admin initiates offboarding.
+    await bridge.connect(admin).initiateRelayerOffboard(relayer.address);
+
+    // Cannot complete before cooldown.
+    await expect(
+      bridge.connect(relayer).completeRelayerOffboard(relayer.address)
+    ).to.be.revertedWithCustomError(bridge, "OffboardCooldownNotElapsed");
+
+    // Advance time past 7-day cooldown.
+    await time.increase(7 * 24 * 60 * 60 + 1);
+
+    // Now complete offboarding — full bond returned to self.
+    const balanceBefore = await aethel.balanceOf(relayer.address);
+    await bridge.connect(relayer).completeRelayerOffboard(relayer.address);
+    const balanceAfter = await aethel.balanceOf(relayer.address);
+
+    expect(balanceAfter - balanceBefore).to.equal(units(500_000, 18));
+
+    const [bondedAfter] = await bridge.getRelayerBondStatus(relayer.address);
+    expect(bondedAfter).to.equal(0n);
+  });
+
+  it("SBP-003: front-runner cannot steal offboarded relayer bond", async function () {
+    const {
+      bridge,
+      admin,
+      relayer,
+      attacker,
+    } = await buildFixture();
+
+    // Admin initiates offboarding for relayer.
+    await bridge.connect(admin).initiateRelayerOffboard(relayer.address);
+
+    // Advance past cooldown.
+    await time.increase(7 * 24 * 60 * 60 + 1);
+
+    // Attacker tries to complete offboarding on relayer's behalf — reverts
+    // because completeRelayerOffboard uses msg.sender as the relayer identity.
+    await expect(
+      bridge.connect(attacker).completeRelayerOffboard(attacker.address)
+    ).to.be.revertedWithCustomError(bridge, "OffboardNotInitiated");
+  });
+
+  it("SBP-003: cannot double-initiate offboarding", async function () {
+    const { bridge, admin, relayer } = await buildFixture();
+
+    await bridge.connect(admin).initiateRelayerOffboard(relayer.address);
+
+    await expect(
+      bridge.connect(admin).initiateRelayerOffboard(relayer.address)
+    ).to.be.revertedWithCustomError(bridge, "OffboardAlreadyInitiated");
+  });
+
+  it("SBP-003: offboarding reverts for relayer with no bond", async function () {
+    const { bridge, admin, attacker } = await buildFixture();
+
+    await expect(
+      bridge.connect(admin).initiateRelayerOffboard(attacker.address)
+    ).to.be.revertedWithCustomError(bridge, "RelayerBondNotFound");
+  });
+
+  it("SBP-005: governed calls revert if timelock delay drifts below 7-day floor", async function () {
+    const { bridge, admin, irisAttester } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Timelock owner lowers the delay to 1 second — simulating a drift.
+    await mockTimelock.connect(admin).setMinDelay(1);
+
+    // Queue a governed config call through the now-weakened timelock.
+    const callData = bridge.interface.encodeFunctionData("setIrisAttester", [irisAttester.address]);
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), callData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), callData);
+
+    // Wait the (now 1-second) delay.
+    await time.increase(2);
+
+    // Execution reaches the bridge, but bridge detects the delay has drifted.
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWith("MockTimelockController: call failed");
+  });
+
+  it("SBP-005: grantRole reverts if timelock delay drifts below floor", async function () {
+    const { bridge, admin, attacker } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Lower the delay.
+    await mockTimelock.connect(admin).setMinDelay(1);
+
+    const minterRole = await bridge.MINTER_ROLE();
+    const grantData = bridge.interface.encodeFunctionData("grantRole", [minterRole, attacker.address]);
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), grantData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), grantData);
+
+    await time.increase(2);
+
+    // Bridge rejects because the timelock's live delay has drifted below 7 days.
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWith("MockTimelockController: call failed");
+  });
+
+  it("signer rotation is issuer-sovereign: timelock cannot call setIssuerSignerSet", async function () {
+    const {
+      bridge,
+      admin,
+      issuer1,
+      issuer2,
+      issuer3,
+      issuer4,
+      attacker,
+    } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Timelock attempts to rotate the issuer signer set — this must fail because
+    // setIssuerSignerSet is issuer-exclusive per the TRD, not governed by the timelock.
+    const newSigners = [attacker.address, issuer4.address, issuer3.address, issuer2.address, issuer1.address];
+    const callData = bridge.interface.encodeFunctionData("setIssuerSignerSet", [
+      ASSET_USDU,
+      newSigners,
+      3,
+    ]);
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), callData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), callData);
+
+    await time.increase(SEVEN_DAYS + 1);
+
+    // Bridge rejects: timelock is not the issuerGovernanceKey.
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWith("MockTimelockController: call failed");
+  });
+
+  it("signer rotation works via issuerGovernanceKey even after timelock activation", async function () {
+    const {
+      bridge,
+      admin,
+      issuer1,
+      issuer2,
+      issuer3,
+      issuer5,
+      attacker,
+    } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // The issuer governance key (issuer1 in the fixture) can still rotate signers
+    // post-timelock — this is the issuer-sovereign path per the TRD.
+    // Note: signers must not overlap with foundation/auditor/guardian governance keys.
+    const newSigners = [attacker.address, issuer5.address, issuer3.address, issuer2.address, admin.address];
+    await bridge.connect(issuer1).setIssuerSignerSet(ASSET_USDU, newSigners, 3);
+  });
+
+  it("SBP-005: drift guard enforces configured delay, not just 7-day floor", async function () {
+    const { bridge, admin, irisAttester } = await buildFixture();
+
+    // Activate with a 30-day delay — the bridge records this as the invariant.
+    const THIRTY_DAYS = 30 * 24 * 60 * 60;
+    const { mockTimelock } = await deployAndActivateTimelock(bridge, admin, THIRTY_DAYS);
+
+    // Lower to 8 days — above the hard 7-day floor but below the configured 30 days.
+    const EIGHT_DAYS = 8 * 24 * 60 * 60;
+    await mockTimelock.connect(admin).setMinDelay(EIGHT_DAYS);
+
+    // Queue a governed call through the timelock.
+    const callData = bridge.interface.encodeFunctionData("setIrisAttester", [irisAttester.address]);
+    const opId = await mockTimelock.connect(admin).queueCall.staticCall(
+      await bridge.getAddress(), callData
+    );
+    await mockTimelock.connect(admin).queueCall(await bridge.getAddress(), callData);
+
+    // Wait past the 8-day delay.
+    await time.increase(EIGHT_DAYS + 1);
+
+    // Bridge must reject: live delay (8 days) < configured invariant (30 days).
+    await expect(
+      mockTimelock.connect(admin).executeQueuedCall(opId)
+    ).to.be.revertedWith("MockTimelockController: call failed");
+  });
+
+  it("emergency halt is immediate: pauseFromCircuitBreaker bypasses timelock", async function () {
+    const { bridge, admin } = await buildFixture();
+
+    const SEVEN_DAYS = 7 * 24 * 60 * 60;
+    await deployAndActivateTimelock(bridge, admin, SEVEN_DAYS);
+
+    // Admin still holds PAUSER_ROLE from initialization. Emergency pause must
+    // work immediately without routing through the timelock — no queue/wait/execute.
+    await bridge.connect(admin).pauseFromCircuitBreaker(
+      ASSET_USDU,
+      ethers.id("IMMEDIATE_HALT"),
+    );
+    expect(await bridge.paused()).to.equal(true);
   });
 
   it("enforces issuer-exclusive fixed 3-of-5 signer set management", async function () {

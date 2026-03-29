@@ -3,7 +3,7 @@
 //! This example demonstrates the Capture The Flag mode,
 //! showing how security researchers can compete to find vulnerabilities.
 
-use aethelred_infinity_sandbox::ctf::*;
+use aethelred_sandbox::ctf::*;
 
 fn main() {
     println!("\n🚩 AETHELRED CAPTURE THE FLAG\n");
@@ -43,7 +43,9 @@ fn main() {
 
     // Player 2 gets it right first!
     println!("🔑 ZKMLHacker tries: 'AETHEL{{found_the_route}}'");
-    let result = ctf.submit_flag(&session2, "AETHEL{found_the_route}").unwrap();
+    let result = ctf
+        .submit_flag(&session2, "AETHEL{found_the_route}")
+        .unwrap();
     println!("   Result: {}", result.message);
     println!("   Points earned: {}", result.points_earned);
     if result.first_blood {

@@ -28,7 +28,6 @@ pub struct PoUWBlockHeader {
     // =========================================================================
     // STANDARD CONSENSUS FIELDS
     // =========================================================================
-
     /// Hash of the parent block
     pub parent_hash: Hash,
 
@@ -59,7 +58,6 @@ pub struct PoUWBlockHeader {
     // =========================================================================
     // AETHELRED PROOF-OF-USEFUL-WORK FIELDS
     // =========================================================================
-
     /// VRF proof demonstrating leader eligibility
     ///
     /// Format: [VRF Output (32 bytes)][VRF Proof (~80 bytes)]
@@ -91,7 +89,6 @@ pub struct PoUWBlockHeader {
     // =========================================================================
     // FINALITY FIELDS
     // =========================================================================
-
     /// Hash of the last justified block (for finality gadget)
     pub last_justified_hash: Hash,
 
@@ -101,7 +98,6 @@ pub struct PoUWBlockHeader {
     // =========================================================================
     // SIGNATURE
     // =========================================================================
-
     /// Block signature (ECDSA + Dilithium hybrid in production)
     pub signature: Vec<u8>,
 }
@@ -133,7 +129,7 @@ impl PoUWBlockHeader {
 
     /// Calculate block hash
     pub fn hash(&self) -> Hash {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
 
@@ -268,9 +264,9 @@ impl ValidatorInfo {
 
     /// Check if validator is eligible for election
     pub fn is_eligible(&self, current_slot: Slot) -> bool {
-        self.active &&
-        (self.jailed_until == 0 || current_slot >= self.jailed_until) &&
-        self.stake >= crate::MIN_STAKE_FOR_ELECTION
+        self.active
+            && (self.jailed_until == 0 || current_slot >= self.jailed_until)
+            && self.stake >= crate::MIN_STAKE_FOR_ELECTION
     }
 
     /// Calculate weighted stake
@@ -506,7 +502,10 @@ mod tests {
         header.timestamp = 100;
         header.vrf_proof = vec![0u8; 50]; // too short
         assert!(header.validate_structure().is_err());
-        assert!(header.validate_structure().unwrap_err().contains("VRF proof too short"));
+        assert!(header
+            .validate_structure()
+            .unwrap_err()
+            .contains("VRF proof too short"));
     }
 
     #[test]
@@ -517,7 +516,10 @@ mod tests {
         header.timestamp = 0;
         header.vrf_proof = vec![0u8; 120];
         assert!(header.validate_structure().is_err());
-        assert!(header.validate_structure().unwrap_err().contains("Timestamp"));
+        assert!(header
+            .validate_structure()
+            .unwrap_err()
+            .contains("Timestamp"));
     }
 
     #[test]
@@ -530,7 +532,10 @@ mod tests {
         header.slot = 50;
         header.epoch = 999; // wrong epoch
         assert!(header.validate_structure().is_err());
-        assert!(header.validate_structure().unwrap_err().contains("Epoch mismatch"));
+        assert!(header
+            .validate_structure()
+            .unwrap_err()
+            .contains("Epoch mismatch"));
     }
 
     #[test]

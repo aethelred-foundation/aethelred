@@ -4,9 +4,9 @@
 //! data generators, model fixtures, and environment setup utilities.
 
 use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
-use std::fs;
 
 // ============ Fixture Registry ============
 
@@ -74,7 +74,11 @@ impl TempDirFixture {
     }
 
     pub fn path(&self) -> Option<PathBuf> {
-        self.path.lock().unwrap().as_ref().map(|d| d.path().to_path_buf())
+        self.path
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map(|d| d.path().to_path_buf())
     }
 }
 
@@ -229,17 +233,25 @@ impl DataGenerator {
 
     /// Generate one-hot encoded data
     pub fn one_hot(&self, indices: &[usize], num_classes: usize) -> Vec<Vec<f32>> {
-        indices.iter().map(|&idx| {
-            let mut vec = vec![0.0; num_classes];
-            if idx < num_classes {
-                vec[idx] = 1.0;
-            }
-            vec
-        }).collect()
+        indices
+            .iter()
+            .map(|&idx| {
+                let mut vec = vec![0.0; num_classes];
+                if idx < num_classes {
+                    vec[idx] = 1.0;
+                }
+                vec
+            })
+            .collect()
     }
 
     /// Generate sequential data for RNN testing
-    pub fn sequential_data(&self, batch_size: usize, seq_length: usize, features: usize) -> Vec<f32> {
+    pub fn sequential_data(
+        &self,
+        batch_size: usize,
+        seq_length: usize,
+        features: usize,
+    ) -> Vec<f32> {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size = batch_size * seq_length * features;
@@ -247,7 +259,13 @@ impl DataGenerator {
     }
 
     /// Generate image-like data (NCHW format)
-    pub fn image_data(&self, batch_size: usize, channels: usize, height: usize, width: usize) -> Vec<f32> {
+    pub fn image_data(
+        &self,
+        batch_size: usize,
+        channels: usize,
+        height: usize,
+        width: usize,
+    ) -> Vec<f32> {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size = batch_size * channels * height * width;
@@ -315,7 +333,8 @@ impl ClassificationDataset {
                 .collect();
 
             for _ in 0..samples_per_class {
-                let sample: Vec<f32> = center.iter()
+                let sample: Vec<f32> = center
+                    .iter()
                     .map(|&c| c + rng.gen_range(-0.3..0.3))
                     .collect();
                 features.push(sample);
@@ -339,7 +358,12 @@ impl ClassificationDataset {
         let mut features = Vec::new();
         let mut labels = Vec::new();
 
-        let quadrants = [(0.5, 0.5, 0), (-0.5, 0.5, 1), (-0.5, -0.5, 0), (0.5, -0.5, 1)];
+        let quadrants = [
+            (0.5, 0.5, 0),
+            (-0.5, 0.5, 1),
+            (-0.5, -0.5, 0),
+            (0.5, -0.5, 1),
+        ];
 
         for (cx, cy, label) in quadrants {
             for _ in 0..samples_per_quadrant {
@@ -359,7 +383,11 @@ impl ClassificationDataset {
     }
 
     /// Split dataset into train/test
-    pub fn split(&self, train_ratio: f32, seed: u64) -> (ClassificationDataset, ClassificationDataset) {
+    pub fn split(
+        &self,
+        train_ratio: f32,
+        seed: u64,
+    ) -> (ClassificationDataset, ClassificationDataset) {
         use rand::{seq::SliceRandom, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
@@ -371,7 +399,10 @@ impl ClassificationDataset {
         let (train_idx, test_idx) = indices.split_at(split_idx);
 
         let train = ClassificationDataset {
-            features: train_idx.iter().map(|&i| self.features[i].clone()).collect(),
+            features: train_idx
+                .iter()
+                .map(|&i| self.features[i].clone())
+                .collect(),
             labels: train_idx.iter().map(|&i| self.labels[i]).collect(),
             num_classes: self.num_classes,
         };
@@ -399,17 +430,25 @@ impl RegressionDataset {
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
         // Random coefficients
-        let coefficients: Vec<f32> = (0..num_features).map(|_| rng.gen_range(-2.0..2.0)).collect();
+        let coefficients: Vec<f32> = (0..num_features)
+            .map(|_| rng.gen_range(-2.0..2.0))
+            .collect();
         let bias = rng.gen_range(-1.0..1.0);
 
         let mut features = Vec::new();
         let mut targets = Vec::new();
 
         for _ in 0..num_samples {
-            let x: Vec<f32> = (0..num_features).map(|_| rng.gen_range(-1.0..1.0)).collect();
-            let y: f32 = x.iter().zip(coefficients.iter())
+            let x: Vec<f32> = (0..num_features)
+                .map(|_| rng.gen_range(-1.0..1.0))
+                .collect();
+            let y: f32 = x
+                .iter()
+                .zip(coefficients.iter())
                 .map(|(xi, ci)| xi * ci)
-                .sum::<f32>() + bias + rng.gen_range(-0.1..0.1);
+                .sum::<f32>()
+                + bias
+                + rng.gen_range(-0.1..0.1);
 
             features.push(x);
             targets.push(y);
@@ -430,9 +469,12 @@ impl RegressionDataset {
 
         for _ in 0..num_samples {
             let x: f32 = rng.gen_range(-2.0..2.0);
-            let y: f32 = coefficients.iter().enumerate()
+            let y: f32 = coefficients
+                .iter()
+                .enumerate()
                 .map(|(i, &c)| c * x.powi(i as i32))
-                .sum::<f32>() + rng.gen_range(-0.05..0.05);
+                .sum::<f32>()
+                + rng.gen_range(-0.05..0.05);
 
             features.push(vec![x]);
             targets.push(y);
@@ -533,7 +575,9 @@ impl HttpMockFixture {
     }
 
     pub fn get_mock(&self, method: &str, path: &str) -> Option<&HttpMock> {
-        self.mocks.iter().find(|m| m.method == method && m.path == path)
+        self.mocks
+            .iter()
+            .find(|m| m.method == method && m.path == path)
     }
 }
 
@@ -562,7 +606,9 @@ pub struct FixtureScope {
 
 impl FixtureScope {
     pub fn new() -> Self {
-        FixtureScope { fixtures: Vec::new() }
+        FixtureScope {
+            fixtures: Vec::new(),
+        }
     }
 
     pub fn add<F: Fixture + 'static>(&mut self, fixture: F) -> &mut Self {
@@ -639,7 +685,8 @@ impl FixtureBuilder {
     }
 
     pub fn with_file(mut self, path: impl AsRef<Path>, content: &str) -> Self {
-        self.files.push((path.as_ref().to_path_buf(), content.to_string()));
+        self.files
+            .push((path.as_ref().to_path_buf(), content.to_string()));
         self
     }
 
@@ -693,9 +740,7 @@ mod tests {
             .with_env("TEST_VAR", "test_value")
             .build();
 
-        let result = scope.run(|| {
-            42
-        });
+        let result = scope.run(|| 42);
 
         assert_eq!(result.unwrap(), 42);
     }

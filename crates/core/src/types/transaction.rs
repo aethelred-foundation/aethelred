@@ -369,8 +369,6 @@ impl ComplianceRequirements {
     }
 }
 
-
-
 /// Compliance frameworks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]

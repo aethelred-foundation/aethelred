@@ -29,7 +29,7 @@ Version source of truth:
 Direct install from GitHub subdirectory is supported:
 
 ```bash
-pip install "git+https://github.com/AethelredFoundation/AethelredMVP.git#subdirectory=sdk/python"
+pip install "git+https://github.com/aethelred-foundation/AethelredMVP.git#subdirectory=sdk/python"
 ```
 
 ### TypeScript / JavaScript

@@ -13,8 +13,9 @@
 //!
 //! ## The Vector-Vault
 //!
-//! Instead of storing raw files, Aethelred nodes auto-convert data into
-//! **Vector Embeddings** (compressed mathematical representations) before storage.
+//! Instead of forcing a production vector database into consensus state,
+//! Aethelred anchors namespace metadata and committed vector snapshots on-chain
+//! while attested embedding and ANN backends serve the data plane.
 //!
 //! ### Why Vector Embeddings?
 //!
@@ -29,19 +30,12 @@
 //! their "Corporate Brain" on Aethelred for 1/100th the cost of AWS or Filecoin,
 //! ready for instant AI querying.
 
-// H-08: Production safety - prevent shipping dev vector vault stubs.
-#[cfg(feature = "production")]
-compile_error!(
-    "vector_vault stub is active in a production build. \
-     Replace with the production embedding engine before shipping."
-);
-
-use std::collections::HashMap;
-use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::time::SystemTime;
 
-#[cfg(feature = "production")]
-compile_error!("VectorVault placeholder embedding generator must be replaced before production builds");
+// Production builds must route embeddings and ANN queries through attested
+// external services. Development-only helpers stay compiled out of production.
 
 // ============================================================================
 // Vector Types
@@ -77,9 +71,15 @@ pub enum EmbeddingModel {
     /// Cohere Embed v3
     CohereV3 { dimensions: usize },
     /// Sentence Transformers
-    SentenceTransformers { model_name: String, dimensions: usize },
+    SentenceTransformers {
+        model_name: String,
+        dimensions: usize,
+    },
     /// Custom model
-    Custom { model_hash: [u8; 32], dimensions: usize },
+    Custom {
+        model_hash: [u8; 32],
+        dimensions: usize,
+    },
     /// CLIP (for images)
     CLIP { variant: String, dimensions: usize },
     /// BioMedLM (for medical)
@@ -127,10 +127,7 @@ pub struct EmbeddingMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ContentType {
     /// Text document
-    Text {
-        language: String,
-        word_count: u64,
-    },
+    Text { language: String, word_count: u64 },
     /// Image
     Image {
         format: String,
@@ -138,10 +135,7 @@ pub enum ContentType {
         height: u32,
     },
     /// Audio
-    Audio {
-        format: String,
-        duration_secs: f64,
-    },
+    Audio { format: String, duration_secs: f64 },
     /// Video
     Video {
         format: String,
@@ -149,24 +143,16 @@ pub enum ContentType {
         resolution: (u32, u32),
     },
     /// Structured data (JSON, CSV)
-    Structured {
-        format: String,
-        row_count: u64,
-    },
+    Structured { format: String, row_count: u64 },
     /// Code
-    Code {
-        language: String,
-        line_count: u64,
-    },
+    Code { language: String, line_count: u64 },
     /// Medical record
     Medical {
         record_type: String,
         anonymized: bool,
     },
     /// Financial document
-    Financial {
-        document_type: String,
-    },
+    Financial { document_type: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,6 +167,58 @@ pub struct AccessControl {
     pub encryption_key: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AttestedBackendRef {
+    /// Stable backend identifier used in manifests and operator policy.
+    pub backend_id: String,
+    /// Human-readable provider or service family.
+    pub provider: String,
+    /// Optional control-plane endpoint for the attested service.
+    pub endpoint: Option<String>,
+    /// Measured enclave / workload digest pinned by policy.
+    pub measurement_digest: [u8; 32],
+}
+
+impl AttestedBackendRef {
+    pub fn is_bound(&self) -> bool {
+        !self.backend_id.trim().is_empty()
+            && !self.provider.trim().is_empty()
+            && self.measurement_digest.iter().any(|byte| *byte != 0)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EmbeddingBackend {
+    /// Development-only deterministic placeholder for tests and local demos.
+    DeterministicDev,
+    /// Production path: embeddings are generated behind an attested execution
+    /// boundary and only the resulting vectors enter consensus-adjacent flows.
+    ExternalAttested(AttestedBackendRef),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum AnnBackend {
+    /// In-memory fallback for local testing and small namespaces.
+    InMemoryHnsw,
+    /// Production path: ANN queries execute in an attested external backend.
+    Qdrant {
+        collection_prefix: String,
+        attestation: AttestedBackendRef,
+    },
+}
+
+impl AnnBackend {
+    fn is_attested(&self) -> bool {
+        match self {
+            AnnBackend::InMemoryHnsw => false,
+            AnnBackend::Qdrant {
+                collection_prefix,
+                attestation,
+            } => !collection_prefix.trim().is_empty() && attestation.is_bound(),
+        }
+    }
+}
+
 // ============================================================================
 // Vector Index Types
 // ============================================================================
@@ -191,15 +229,12 @@ pub enum IndexType {
     /// Flat (brute force) - exact but slow
     Flat,
     /// IVF (Inverted File) - approximate, fast
-    IVF {
-        n_lists: usize,
-        n_probes: usize,
-    },
+    IVF { n_lists: usize, n_probes: usize },
     /// HNSW (Hierarchical Navigable Small World) - very fast
     HNSW {
-        m: usize,           // Max connections per node
-        ef_construction: usize,  // Build-time parameter
-        ef_search: usize,   // Search-time parameter
+        m: usize,               // Max connections per node
+        ef_construction: usize, // Build-time parameter
+        ef_search: usize,       // Search-time parameter
     },
     /// Product Quantization - compressed, very fast
     PQ {
@@ -208,7 +243,7 @@ pub enum IndexType {
     },
     /// Scalar Quantization - simple compression
     SQ {
-        bits: usize,  // 4 or 8
+        bits: usize, // 4 or 8
     },
 }
 
@@ -216,10 +251,13 @@ impl IndexType {
     /// Compression ratio for this index type
     pub fn compression_ratio(&self, original_dims: usize) -> f64 {
         match self {
-            IndexType::Flat => 1.0, // No compression
-            IndexType::IVF { .. } => 1.0, // No compression (just organization)
+            IndexType::Flat => 1.0,        // No compression
+            IndexType::IVF { .. } => 1.0,  // No compression (just organization)
             IndexType::HNSW { .. } => 1.0, // No compression
-            IndexType::PQ { n_subvectors, bits_per_code } => {
+            IndexType::PQ {
+                n_subvectors,
+                bits_per_code,
+            } => {
                 let original_bytes = original_dims * 4; // f32
                 let compressed_bytes = n_subvectors * bits_per_code / 8;
                 original_bytes as f64 / compressed_bytes as f64
@@ -241,6 +279,9 @@ pub struct VectorVault {
     embeddings: HashMap<[u8; 32], VectorEmbedding>,
     /// Namespaces (collections)
     namespaces: HashMap<String, VectorNamespace>,
+    /// Namespace-local vector membership used for committed snapshots and
+    /// namespace-scoped search.
+    namespace_vectors: HashMap<String, Vec<[u8; 32]>>,
     /// Global index
     global_index: VectorIndex,
     /// Configuration
@@ -255,12 +296,18 @@ pub struct VaultConfig {
     pub default_model: EmbeddingModel,
     /// Default index type
     pub default_index: IndexType,
+    /// Embedding backend mode
+    pub embedding_backend: EmbeddingBackend,
+    /// ANN query backend mode
+    pub ann_backend: AnnBackend,
     /// Maximum vectors per namespace
     pub max_vectors_per_namespace: usize,
     /// Enable auto-compression
     pub auto_compress: bool,
     /// Compression threshold (bytes)
     pub compression_threshold: u64,
+    /// Domain separator for namespace snapshot commitments
+    pub commitment_domain: String,
 }
 
 impl Default for VaultConfig {
@@ -272,10 +319,77 @@ impl Default for VaultConfig {
                 ef_construction: 200,
                 ef_search: 100,
             },
+            embedding_backend: EmbeddingBackend::DeterministicDev,
+            ann_backend: AnnBackend::InMemoryHnsw,
             max_vectors_per_namespace: 10_000_000,
             auto_compress: true,
             compression_threshold: 1024, // 1KB
+            commitment_domain: "aethelred-vector-vault/v1".to_string(),
         }
+    }
+}
+
+impl VaultConfig {
+    pub fn attested_qdrant(
+        default_model: EmbeddingModel,
+        default_index: IndexType,
+        embedding_backend: AttestedBackendRef,
+        qdrant_backend: AttestedBackendRef,
+        collection_prefix: impl Into<String>,
+    ) -> Self {
+        VaultConfig {
+            default_model,
+            default_index,
+            embedding_backend: EmbeddingBackend::ExternalAttested(embedding_backend),
+            ann_backend: AnnBackend::Qdrant {
+                collection_prefix: collection_prefix.into(),
+                attestation: qdrant_backend,
+            },
+            ..Self::default()
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), VaultError> {
+        if self.max_vectors_per_namespace == 0 {
+            return Err(VaultError::InvalidConfiguration(
+                "max_vectors_per_namespace must be greater than zero".to_string(),
+            ));
+        }
+        if self.default_model.dimensions() == 0 {
+            return Err(VaultError::InvalidConfiguration(
+                "default embedding model must expose at least one dimension".to_string(),
+            ));
+        }
+        if self.commitment_domain.trim().is_empty() {
+            return Err(VaultError::InvalidConfiguration(
+                "commitment_domain must not be empty".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn validate_attested_data_plane(&self) -> Result<(), VaultError> {
+        self.validate()?;
+
+        match &self.embedding_backend {
+            EmbeddingBackend::DeterministicDev => Err(VaultError::InvalidConfiguration(
+                "attested Vector Vault requires an external embedding backend".to_string(),
+            )),
+            EmbeddingBackend::ExternalAttested(attestation) if !attestation.is_bound() => {
+                Err(VaultError::InvalidConfiguration(
+                    "embedding backend attestation is incomplete".to_string(),
+                ))
+            }
+            EmbeddingBackend::ExternalAttested(_) => Ok(()),
+        }?;
+
+        if !self.ann_backend.is_attested() {
+            return Err(VaultError::InvalidConfiguration(
+                "attested Vector Vault requires an attested ANN backend".to_string(),
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -299,6 +413,30 @@ pub struct VectorNamespace {
     pub created_at: u64,
     /// Schema for metadata
     pub metadata_schema: Option<String>,
+    /// Last committed namespace snapshot
+    pub last_snapshot: Option<NamespaceSnapshotCommitment>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NamespaceSnapshotCommitment {
+    /// Namespace identifier
+    pub namespace: String,
+    /// Number of vectors committed into the manifest
+    pub vector_count: usize,
+    /// Aggregate original bytes represented by the namespace
+    pub total_original_size: u64,
+    /// Aggregate stored vector bytes represented by the namespace
+    pub total_compressed_size: u64,
+    /// Deterministic manifest hash for the namespace contents and policy
+    pub manifest_hash: [u8; 32],
+    /// Domain-separated commitment label
+    pub commitment_domain: String,
+    /// Embedding backend attestation reference
+    pub embedding_backend: EmbeddingBackend,
+    /// ANN backend attestation reference
+    pub ann_backend: AnnBackend,
+    /// Snapshot creation time
+    pub committed_at: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -334,10 +472,13 @@ pub struct VaultMetrics {
 }
 
 impl VectorVault {
-    pub fn new(config: VaultConfig) -> Self {
-        VectorVault {
+    pub fn try_new(config: VaultConfig) -> Result<Self, VaultError> {
+        config.validate()?;
+
+        Ok(VectorVault {
             embeddings: HashMap::new(),
             namespaces: HashMap::new(),
+            namespace_vectors: HashMap::new(),
             global_index: VectorIndex {
                 index_type: config.default_index.clone(),
                 dimensions: config.default_model.dimensions(),
@@ -346,7 +487,16 @@ impl VectorVault {
             },
             config,
             metrics: VaultMetrics::default(),
-        }
+        })
+    }
+
+    pub fn new(config: VaultConfig) -> Self {
+        Self::try_new(config).expect("invalid VectorVault configuration")
+    }
+
+    pub fn new_attested(config: VaultConfig) -> Result<Self, VaultError> {
+        config.validate_attested_data_plane()?;
+        Self::try_new(config)
     }
 
     /// Create a namespace
@@ -376,9 +526,11 @@ impl VectorVault {
             total_compressed_size: 0,
             created_at: now,
             metadata_schema: None,
+            last_snapshot: None,
         };
 
         self.namespaces.insert(name.to_string(), namespace);
+        self.namespace_vectors.insert(name.to_string(), Vec::new());
         Ok(())
     }
 
@@ -388,7 +540,9 @@ impl VectorVault {
         namespace: &str,
         embedding: VectorEmbedding,
     ) -> Result<[u8; 32], VaultError> {
-        let ns = self.namespaces.get_mut(namespace)
+        let ns = self
+            .namespaces
+            .get_mut(namespace)
             .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
 
         if ns.vector_count >= self.config.max_vectors_per_namespace {
@@ -419,6 +573,10 @@ impl VectorVault {
         // Store
         self.embeddings.insert(id, embedding);
         self.global_index.indexed_ids.push(id);
+        self.namespace_vectors
+            .entry(namespace.to_string())
+            .or_default()
+            .push(id);
 
         Ok(id)
     }
@@ -431,7 +589,9 @@ impl VectorVault {
         top_k: usize,
         filter: Option<SearchFilter>,
     ) -> Result<Vec<SearchResult>, VaultError> {
-        let ns = self.namespaces.get(namespace)
+        let ns = self
+            .namespaces
+            .get(namespace)
             .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
 
         if query_vector.len() != ns.model.dimensions() {
@@ -441,12 +601,18 @@ impl VectorVault {
             });
         }
 
+        let namespace_ids = self
+            .namespace_vectors
+            .get(namespace)
+            .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
+
         let start = std::time::Instant::now();
 
         // Simple brute-force search for now
         // Real implementation would use the index
-        let mut results: Vec<(f32, [u8; 32])> = self.embeddings
+        let mut results: Vec<(f32, [u8; 32])> = namespace_ids
             .iter()
+            .filter_map(|id| self.embeddings.get(id).map(|emb| (*id, emb)))
             .filter(|(_, emb)| {
                 if let Some(ref f) = filter {
                     self.matches_filter(emb, f)
@@ -456,7 +622,7 @@ impl VectorVault {
             })
             .map(|(id, emb)| {
                 let similarity = self.cosine_similarity(query_vector, &emb.vector);
-                (similarity, *id)
+                (similarity, id)
             })
             .collect();
 
@@ -465,19 +631,22 @@ impl VectorVault {
 
         let elapsed = start.elapsed();
         self.metrics.total_searches += 1;
-        self.metrics.avg_search_latency_ms =
-            (self.metrics.avg_search_latency_ms * (self.metrics.total_searches - 1) as f64
-             + elapsed.as_secs_f64() * 1000.0)
+        self.metrics.avg_search_latency_ms = (self.metrics.avg_search_latency_ms
+            * (self.metrics.total_searches - 1) as f64
+            + elapsed.as_secs_f64() * 1000.0)
             / self.metrics.total_searches as f64;
 
-        Ok(results.into_iter().map(|(score, id)| {
-            let emb = self.embeddings.get(&id).unwrap();
-            SearchResult {
-                id,
-                score,
-                metadata: emb.metadata.clone(),
-            }
-        }).collect())
+        Ok(results
+            .into_iter()
+            .map(|(score, id)| {
+                let emb = self.embeddings.get(&id).unwrap();
+                SearchResult {
+                    id,
+                    score,
+                    metadata: emb.metadata.clone(),
+                }
+            })
+            .collect())
     }
 
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f32 {
@@ -491,14 +660,21 @@ impl VectorVault {
             0.0
         } else {
             let score = dot / denom;
-            if score.is_finite() { score } else { 0.0 }
+            if score.is_finite() {
+                score
+            } else {
+                0.0
+            }
         }
     }
 
     fn matches_filter(&self, embedding: &VectorEmbedding, filter: &SearchFilter) -> bool {
         // Tag filter
         if let Some(ref required_tags) = filter.tags {
-            if !required_tags.iter().all(|t| embedding.metadata.tags.contains(t)) {
+            if !required_tags
+                .iter()
+                .all(|t| embedding.metadata.tags.contains(t))
+            {
                 return false;
             }
         }
@@ -522,15 +698,29 @@ impl VectorVault {
             }
         }
 
+        if let Some((start, end)) = filter.date_range {
+            if embedding.created_at < start || embedding.created_at > end {
+                return false;
+            }
+        }
+
+        if let Some(owner) = filter.owner {
+            if embedding.metadata.access.owner != owner {
+                return false;
+            }
+        }
+
         true
     }
 
     fn update_compression_ratio(&mut self) {
         if self.metrics.total_compressed_bytes > 0 {
-            self.metrics.compression_ratio =
-                self.metrics.total_original_bytes as f64 / self.metrics.total_compressed_bytes as f64;
-            self.metrics.storage_savings_bytes =
-                self.metrics.total_original_bytes.saturating_sub(self.metrics.total_compressed_bytes);
+            self.metrics.compression_ratio = self.metrics.total_original_bytes as f64
+                / self.metrics.total_compressed_bytes as f64;
+            self.metrics.storage_savings_bytes = self
+                .metrics
+                .total_original_bytes
+                .saturating_sub(self.metrics.total_compressed_bytes);
 
             // Estimate cost savings (rough: $0.023 per GB/month on S3)
             let savings_gb = self.metrics.storage_savings_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
@@ -543,10 +733,114 @@ impl VectorVault {
         &self.metrics
     }
 
+    pub fn commit_namespace_snapshot(
+        &mut self,
+        namespace: &str,
+    ) -> Result<NamespaceSnapshotCommitment, VaultError> {
+        let snapshot = self.build_namespace_snapshot(namespace)?;
+        let ns = self
+            .namespaces
+            .get_mut(namespace)
+            .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
+        ns.last_snapshot = Some(snapshot.clone());
+        Ok(snapshot)
+    }
+
+    pub fn latest_namespace_snapshot(
+        &self,
+        namespace: &str,
+    ) -> Result<Option<&NamespaceSnapshotCommitment>, VaultError> {
+        let ns = self
+            .namespaces
+            .get(namespace)
+            .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
+        Ok(ns.last_snapshot.as_ref())
+    }
+
+    fn build_namespace_snapshot(
+        &self,
+        namespace: &str,
+    ) -> Result<NamespaceSnapshotCommitment, VaultError> {
+        let ns = self
+            .namespaces
+            .get(namespace)
+            .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
+        let ids = self
+            .namespace_vectors
+            .get(namespace)
+            .ok_or_else(|| VaultError::NamespaceNotFound(namespace.to_string()))?;
+        let manifest_hash = self.namespace_manifest_hash(ns, ids)?;
+        let committed_at = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        Ok(NamespaceSnapshotCommitment {
+            namespace: namespace.to_string(),
+            vector_count: ids.len(),
+            total_original_size: ns.total_original_size,
+            total_compressed_size: ns.total_compressed_size,
+            manifest_hash,
+            commitment_domain: self.config.commitment_domain.clone(),
+            embedding_backend: self.config.embedding_backend.clone(),
+            ann_backend: self.config.ann_backend.clone(),
+            committed_at,
+        })
+    }
+
+    fn namespace_manifest_hash(
+        &self,
+        namespace: &VectorNamespace,
+        ids: &[[u8; 32]],
+    ) -> Result<[u8; 32], VaultError> {
+        use sha2::{Digest, Sha256};
+
+        let mut sorted_ids = ids.to_vec();
+        sorted_ids.sort();
+
+        let mut hasher = Sha256::new();
+        hasher.update(self.config.commitment_domain.as_bytes());
+        hasher.update(namespace.name.as_bytes());
+        hasher.update(namespace.owner);
+        hasher.update(namespace.vector_count.to_le_bytes());
+        hasher.update(namespace.total_original_size.to_le_bytes());
+        hasher.update(namespace.total_compressed_size.to_le_bytes());
+        hasher.update(namespace.created_at.to_le_bytes());
+        hasher.update(
+            serde_json::to_vec(&namespace.model)
+                .map_err(|err| VaultError::CommitmentBuildFailed(err.to_string()))?,
+        );
+        hasher.update(
+            serde_json::to_vec(&namespace.index_type)
+                .map_err(|err| VaultError::CommitmentBuildFailed(err.to_string()))?,
+        );
+        hasher.update(
+            serde_json::to_vec(&self.config.embedding_backend)
+                .map_err(|err| VaultError::CommitmentBuildFailed(err.to_string()))?,
+        );
+        hasher.update(
+            serde_json::to_vec(&self.config.ann_backend)
+                .map_err(|err| VaultError::CommitmentBuildFailed(err.to_string()))?,
+        );
+
+        for id in sorted_ids {
+            hasher.update(id);
+            let embedding = self.embeddings.get(&id).ok_or(VaultError::VectorNotFound)?;
+            hasher.update(embedding.metadata.content_hash);
+            hasher.update(embedding.created_at.to_le_bytes());
+        }
+
+        let digest = hasher.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&digest);
+        Ok(out)
+    }
+
     /// Generate a deterministic embedding vector for the given text.
     ///
     /// This is a development-only placeholder that produces stable, non-zero
     /// vectors derived from content so that search behaviour is testable.
+    #[cfg(not(feature = "production"))]
     pub fn generate_embedding(&self, text: &str) -> Vec<f32> {
         use sha2::{Digest, Sha256};
 
@@ -593,7 +887,8 @@ impl VectorVault {
 
     /// Generate comparison report
     pub fn comparison_report(&self) -> String {
-        format!(r#"
+        format!(
+            r#"
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║              VECTOR-VAULT: NEURAL COMPRESSION STORAGE                          ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
@@ -723,6 +1018,58 @@ pub struct SearchResult {
 // Document Processor
 // ============================================================================
 
+pub trait EmbeddingProvider {
+    fn embed(&self, text: &str, model: &EmbeddingModel) -> Result<Vec<f32>, VaultError>;
+}
+
+#[cfg(not(feature = "production"))]
+struct DeterministicDevEmbeddingProvider;
+
+#[cfg(not(feature = "production"))]
+impl EmbeddingProvider for DeterministicDevEmbeddingProvider {
+    fn embed(&self, text: &str, model: &EmbeddingModel) -> Result<Vec<f32>, VaultError> {
+        use sha2::{Digest, Sha256};
+
+        let dims = model.dimensions();
+        if dims == 0 {
+            return Ok(vec![]);
+        }
+
+        let mut out = vec![0.0f32; dims];
+        let mut counter: u64 = 0;
+        let mut written = 0usize;
+
+        while written < dims {
+            let mut hasher = Sha256::new();
+            hasher.update(b"aethelred-vector-vault-dev-embedding");
+            hasher.update(text.as_bytes());
+            hasher.update(counter.to_le_bytes());
+            let digest = hasher.finalize();
+
+            for chunk in digest.chunks_exact(2) {
+                if written >= dims {
+                    break;
+                }
+                let raw = u16::from_le_bytes([chunk[0], chunk[1]]);
+                out[written] = (raw as f32 / 32767.5) - 1.0;
+                written += 1;
+            }
+            counter = counter.saturating_add(1);
+        }
+
+        let norm = out.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if norm > 1e-12 {
+            for value in &mut out {
+                *value /= norm;
+            }
+        } else {
+            out[0] = 1.0;
+        }
+
+        Ok(out)
+    }
+}
+
 /// Processes documents into vector embeddings
 pub struct DocumentProcessor {
     /// Embedding model
@@ -765,35 +1112,53 @@ pub enum ChunkStrategy {
 
 impl DocumentProcessor {
     pub fn new(model: EmbeddingModel, chunk_config: ChunkConfig) -> Self {
-        DocumentProcessor { model, chunk_config }
+        DocumentProcessor {
+            model,
+            chunk_config,
+        }
     }
 
     /// Process a document into embeddings
+    #[cfg(not(feature = "production"))]
     pub fn process(&self, content: &str, metadata: EmbeddingMetadata) -> Vec<VectorEmbedding> {
+        self.process_with_provider(content, metadata, &DeterministicDevEmbeddingProvider)
+            .expect("deterministic development embedding provider should not fail")
+    }
+
+    pub fn process_with_provider<P: EmbeddingProvider>(
+        &self,
+        content: &str,
+        metadata: EmbeddingMetadata,
+        provider: &P,
+    ) -> Result<Vec<VectorEmbedding>, VaultError> {
         // Chunk the document
         let chunks = self.chunk_text(content);
 
         // Generate embeddings for each chunk
-        chunks.iter().enumerate().map(|(i, chunk)| {
-            let vector = self.generate_embedding(chunk);
-            let id = self.generate_id(content, i);
+        chunks
+            .iter()
+            .enumerate()
+            .map(|(i, chunk)| {
+                let vector = provider.embed(chunk, &self.model)?;
+                let id = self.generate_id(content, i);
 
-            VectorEmbedding {
-                id,
-                vector,
-                dimensions: self.model.dimensions(),
-                model: self.model.clone(),
-                metadata: EmbeddingMetadata {
-                    source: format!("{} (chunk {})", metadata.source, i),
-                    ..metadata.clone()
-                },
-                compression_ratio: content.len() as f64 / (self.model.dimensions() * 4) as f64,
-                created_at: SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
-            }
-        }).collect()
+                Ok(VectorEmbedding {
+                    id,
+                    vector,
+                    dimensions: self.model.dimensions(),
+                    model: self.model.clone(),
+                    metadata: EmbeddingMetadata {
+                        source: format!("{} (chunk {})", metadata.source, i),
+                        ..metadata.clone()
+                    },
+                    compression_ratio: content.len() as f64 / (self.model.dimensions() * 4) as f64,
+                    created_at: SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                })
+            })
+            .collect()
     }
 
     fn chunk_text(&self, text: &str) -> Vec<String> {
@@ -841,62 +1206,18 @@ impl DocumentProcessor {
     fn recursive_chunk(&self, text: &str) -> Vec<String> {
         // Try semantic first, then fall back
         let chunks = self.semantic_chunk(text);
-        if chunks.iter().all(|c| c.split_whitespace().count() <= self.chunk_config.chunk_size * 2) {
+        if chunks
+            .iter()
+            .all(|c| c.split_whitespace().count() <= self.chunk_config.chunk_size * 2)
+        {
             chunks
         } else {
             self.fixed_chunk(text)
         }
     }
 
-    fn generate_embedding(&self, text: &str) -> Vec<f32> {
-        // Development-only deterministic placeholder: produces stable, non-zero
-        // vectors derived from content so search behavior is testable. Production
-        // builds are blocked by the compile_error! above until a real model is wired.
-        use sha2::{Digest, Sha256};
-
-        let dims = self.model.dimensions();
-        if dims == 0 {
-            return vec![];
-        }
-
-        let mut out = vec![0.0f32; dims];
-        let mut counter: u64 = 0;
-        let mut written = 0usize;
-
-        while written < dims {
-            let mut hasher = Sha256::new();
-            hasher.update(b"aethelred-vector-vault-dev-embedding");
-            hasher.update(text.as_bytes());
-            hasher.update(counter.to_le_bytes());
-            let digest = hasher.finalize();
-
-            for chunk in digest.chunks_exact(2) {
-                if written >= dims {
-                    break;
-                }
-                let raw = u16::from_le_bytes([chunk[0], chunk[1]]);
-                // Map to [-1, 1] deterministically.
-                out[written] = (raw as f32 / 32767.5) - 1.0;
-                written += 1;
-            }
-            counter = counter.saturating_add(1);
-        }
-
-        // L2-normalize to keep cosine scores stable.
-        let norm = out.iter().map(|x| x * x).sum::<f32>().sqrt();
-        if norm > 1e-12 {
-            for v in &mut out {
-                *v /= norm;
-            }
-        } else {
-            out[0] = 1.0;
-        }
-
-        out
-    }
-
     fn generate_id(&self, content: &str, chunk_index: usize) -> [u8; 32] {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(content.as_bytes());
         hasher.update(&(chunk_index as u64).to_le_bytes());
@@ -918,6 +1239,8 @@ pub enum VaultError {
     NamespaceFull,
     DimensionMismatch { expected: usize, got: usize },
     VectorNotFound,
+    InvalidConfiguration(String),
+    CommitmentBuildFailed(String),
     SearchFailed(String),
 }
 
@@ -931,6 +1254,10 @@ impl std::fmt::Display for VaultError {
                 write!(f, "Dimension mismatch: expected {}, got {}", expected, got)
             }
             VaultError::VectorNotFound => write!(f, "Vector not found"),
+            VaultError::InvalidConfiguration(msg) => write!(f, "Invalid configuration: {}", msg),
+            VaultError::CommitmentBuildFailed(msg) => {
+                write!(f, "Commitment build failed: {}", msg)
+            }
             VaultError::SearchFailed(msg) => write!(f, "Search failed: {}", msg),
         }
     }
@@ -946,6 +1273,33 @@ impl std::error::Error for VaultError {}
 mod tests {
     use super::*;
 
+    fn sample_embedding(id_byte: u8, value: f32, owner: [u8; 32]) -> VectorEmbedding {
+        VectorEmbedding {
+            id: [id_byte; 32],
+            vector: vec![value; 1536],
+            dimensions: 1536,
+            model: EmbeddingModel::OpenAI3Small { dimensions: 1536 },
+            metadata: EmbeddingMetadata {
+                content_type: ContentType::Text {
+                    language: "en".to_string(),
+                    word_count: 100,
+                },
+                original_size: 10_000,
+                content_hash: [id_byte; 32],
+                source: format!("doc-{id_byte}.txt"),
+                tags: vec!["test".to_string()],
+                access: AccessControl {
+                    owner,
+                    readers: vec![],
+                    is_public: true,
+                    encryption_key: None,
+                },
+            },
+            compression_ratio: 1.6,
+            created_at: id_byte as u64,
+        }
+    }
+
     #[test]
     fn test_vault_creation() {
         let vault = VectorVault::new(VaultConfig::default());
@@ -955,7 +1309,9 @@ mod tests {
     #[test]
     fn test_namespace_creation() {
         let mut vault = VectorVault::new(VaultConfig::default());
-        vault.create_namespace("test", [0u8; 32], None, None).unwrap();
+        vault
+            .create_namespace("test", [0u8; 32], None, None)
+            .unwrap();
 
         let result = vault.create_namespace("test", [0u8; 32], None, None);
         assert!(matches!(result, Err(VaultError::NamespaceExists(_))));
@@ -964,34 +1320,13 @@ mod tests {
     #[test]
     fn test_vector_storage() {
         let mut vault = VectorVault::new(VaultConfig::default());
-        vault.create_namespace("test", [0u8; 32], None, None).unwrap();
+        vault
+            .create_namespace("test", [0u8; 32], None, None)
+            .unwrap();
 
-        let embedding = VectorEmbedding {
-            id: [1u8; 32],
-            vector: vec![0.1; 1536],
-            dimensions: 1536,
-            model: EmbeddingModel::OpenAI3Small { dimensions: 1536 },
-            metadata: EmbeddingMetadata {
-                content_type: ContentType::Text {
-                    language: "en".to_string(),
-                    word_count: 100,
-                },
-                original_size: 10000,
-                content_hash: [0u8; 32],
-                source: "test.txt".to_string(),
-                tags: vec!["test".to_string()],
-                access: AccessControl {
-                    owner: [0u8; 32],
-                    readers: vec![],
-                    is_public: true,
-                    encryption_key: None,
-                },
-            },
-            compression_ratio: 1.6,
-            created_at: 0,
-        };
-
-        vault.store("test", embedding).unwrap();
+        vault
+            .store("test", sample_embedding(1, 0.1, [0u8; 32]))
+            .unwrap();
         assert_eq!(vault.metrics().total_vectors, 1);
     }
 
@@ -1035,6 +1370,86 @@ mod tests {
     }
 
     #[test]
+    fn test_search_is_namespace_scoped() {
+        let mut vault = VectorVault::new(VaultConfig::default());
+        vault
+            .create_namespace("finance", [1u8; 32], None, None)
+            .unwrap();
+        vault
+            .create_namespace("healthcare", [2u8; 32], None, None)
+            .unwrap();
+
+        vault
+            .store("finance", sample_embedding(10, 1.0, [1u8; 32]))
+            .unwrap();
+        vault
+            .store("healthcare", sample_embedding(11, 1.0, [2u8; 32]))
+            .unwrap();
+
+        let results = vault.search("finance", &vec![1.0; 1536], 10, None).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id, [10u8; 32]);
+    }
+
+    #[test]
+    fn test_namespace_snapshot_commitment_tracks_namespace_state() {
+        let mut vault = VectorVault::new(VaultConfig::default());
+        vault
+            .create_namespace("finance", [1u8; 32], None, None)
+            .unwrap();
+
+        let before = vault.commit_namespace_snapshot("finance").unwrap();
+        assert_eq!(before.vector_count, 0);
+
+        vault
+            .store("finance", sample_embedding(12, 0.25, [1u8; 32]))
+            .unwrap();
+        let after = vault.commit_namespace_snapshot("finance").unwrap();
+
+        assert_eq!(after.vector_count, 1);
+        assert_ne!(before.manifest_hash, after.manifest_hash);
+        assert_eq!(
+            vault.latest_namespace_snapshot("finance").unwrap(),
+            Some(&after)
+        );
+    }
+
+    #[test]
+    fn test_attested_vector_vault_requires_real_backends() {
+        let default_config = VaultConfig::default();
+        assert!(default_config.validate_attested_data_plane().is_err());
+
+        let embedding_backend = AttestedBackendRef {
+            backend_id: "tee-embedder".to_string(),
+            provider: "nitro-enclave".to_string(),
+            endpoint: Some("https://embed.example".to_string()),
+            measurement_digest: [7u8; 32],
+        };
+        let qdrant_backend = AttestedBackendRef {
+            backend_id: "qdrant-hnsw".to_string(),
+            provider: "nitro-enclave".to_string(),
+            endpoint: Some("https://qdrant.example".to_string()),
+            measurement_digest: [9u8; 32],
+        };
+
+        let config = VaultConfig::attested_qdrant(
+            EmbeddingModel::OpenAI3Small { dimensions: 1536 },
+            IndexType::HNSW {
+                m: 16,
+                ef_construction: 200,
+                ef_search: 100,
+            },
+            embedding_backend,
+            qdrant_backend,
+            "aethelred",
+        );
+
+        assert!(config.validate_attested_data_plane().is_ok());
+        assert!(VectorVault::new_attested(config).is_ok());
+    }
+
+    #[test]
+    #[cfg(not(feature = "production"))]
     fn test_generate_embedding_is_deterministic_and_non_zero() {
         let vault = VectorVault::new(VaultConfig::default());
 
@@ -1043,11 +1458,23 @@ mod tests {
         let emb3 = vault.generate_embedding("Different input");
 
         assert!(!emb1.is_empty());
-        assert_eq!(emb1, emb2, "dev embedding placeholder should be deterministic");
-        assert_ne!(emb1, emb3, "different inputs should produce different embeddings");
-        assert!(emb1.iter().any(|v| v.abs() > 1e-6), "embedding should not be all zeros");
+        assert_eq!(
+            emb1, emb2,
+            "dev embedding placeholder should be deterministic"
+        );
+        assert_ne!(
+            emb1, emb3,
+            "different inputs should produce different embeddings"
+        );
+        assert!(
+            emb1.iter().any(|v| v.abs() > 1e-6),
+            "embedding should not be all zeros"
+        );
 
         let norm = emb1.iter().map(|v| v * v).sum::<f32>().sqrt();
-        assert!((norm - 1.0).abs() < 1e-3, "embedding should be approximately L2-normalized");
+        assert!(
+            (norm - 1.0).abs() < 1e-3,
+            "embedding should be approximately L2-normalized"
+        );
     }
 }

@@ -224,7 +224,8 @@ impl RegressionDetector {
 
     /// Analyze all results from a runner
     pub fn analyze_all(&self, runner_result: &RunnerResult) -> Vec<RegressionResult> {
-        runner_result.all_results()
+        runner_result
+            .all_results()
             .into_iter()
             .filter_map(|r| self.analyze(r))
             .collect()
@@ -285,7 +286,9 @@ impl RegressionDetector {
         is_improvement: bool,
         significance: Option<f64>,
     ) -> String {
-        let significant = significance.map(|s| s >= self.config.confidence_level).unwrap_or(false);
+        let significant = significance
+            .map(|s| s >= self.config.confidence_level)
+            .unwrap_or(false);
 
         if is_regression && significant {
             format!(

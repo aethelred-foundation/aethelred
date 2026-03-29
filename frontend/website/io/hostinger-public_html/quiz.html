@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protocol Quiz | Aethelred</title>
+  <meta name="description" content="Test your understanding of Aethelred's Proof-of-Useful-Work, Digital Seals, tokenomics, and launch milestones using questions grounded in the current whitepaper and tokenomics docs.">
+  <meta name="keywords" content="Aethelred quiz, Proof-of-Useful-Work, Digital Seals, tokenomics, Seals program, protocol knowledge check">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/quiz.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/quiz.html">
+  <meta property="og:title" content="Protocol Quiz | Aethelred">
+  <meta property="og:description" content="Current protocol knowledge checks for PoUW, Digital Seals, tokenomics, and launch milestones.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Protocol Quiz social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Protocol Quiz | Aethelred">
+  <meta name="twitter:description" content="Knowledge checks grounded in the current Aethelred whitepaper and tokenomics.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Protocol Quiz social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.aethelred.io/quiz.html#webpage",
+        "name": "Protocol Quiz",
+        "url": "https://www.aethelred.io/quiz.html",
+        "description": "Test your understanding of Aethelred's Proof-of-Useful-Work, Digital Seals, tokenomics, and launch milestones using current protocol references.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/quiz.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Protocol Quiz social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/quiz.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Protocol Quiz",
+            "item": "https://www.aethelred.io/quiz.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-quiz">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link is-active">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="quiz-resources">Resources</button>
+          <div class="dropdown-panel" id="quiz-resources" role="menu">
+            <a href="#tracks" role="menuitem">Quiz Tracks</a>
+            <a href="#quiz-runner" role="menuitem">Knowledge Check</a>
+            <a href="#review" role="menuitem">Review Path</a>
+            <a href="/wallets.html" role="menuitem">Wallets &amp; Signing</a>
+            <a href="/smart-contracts.html" role="menuitem">Smart Contracts</a>
+            <a href="/community.html" role="menuitem">Community Hub</a>
+            <a href="https://www.aethelred.org/token" role="menuitem">Tokenomics</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/community.html" class="btn btn-small btn-primary">Community Hub</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link is-active">Community</a>
+    <details class="mobile-details">
+      <summary>Quiz Sections</summary>
+      <a href="#tracks" class="mobile-link">Quiz Tracks</a>
+      <a href="#quiz-runner" class="mobile-link">Knowledge Check</a>
+      <a href="#review" class="mobile-link">Review Path</a>
+      <a href="/wallets.html" class="mobile-link">Wallets &amp; Signing</a>
+      <a href="/smart-contracts.html" class="mobile-link">Smart Contracts</a>
+      <a href="/community.html" class="mobile-link">Community Hub</a>
+      <a href="https://www.aethelred.org/token" class="mobile-link">Tokenomics</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Community Learning</p>
+          <h1 class="hero-title" id="page-title">Test Your <span class="gradient-word">Knowledge</span></h1>
+          <p class="hero-subtitle">Assess your understanding of Aethelred using knowledge checks grounded in the March 2026 whitepaper and the current tokenomics reference. The question bank covers <a class="body-link" href="/sandbox.html">Infinite Sandbox</a> adjacent workflows, <a class="body-link" href="https://www.aethelred.org/network">Proof-of-Useful-Work</a>, Digital Seals, allocations, and launch milestones without relying on stale protocol language.</p>
+          <div class="hero-tags" aria-label="Quiz coverage">
+            <span class="hero-tag">Proof-of-Useful-Work</span>
+            <span class="hero-tag">Digital Seals</span>
+            <span class="hero-tag">Tokenomics</span>
+            <span class="hero-tag">Launch Milestones</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#tracks" class="btn btn-primary">Choose a Track</a>
+            <a href="/community.html" class="btn btn-secondary">Open Community Hub</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> LOCAL SCORING ONLY</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>4 Current Tracks</h4>
+            <p>Protocol basics, consensus, tokenomics, and roadmap questions built from current source material.</p>
+          </div>
+          <div class="hero-card">
+            <h4>20 Total Questions</h4>
+            <p>Each track contains 5 questions with explanations tied to the whitepaper or tokenomics facts.</p>
+          </div>
+          <div class="hero-card">
+            <h4>No Wallet Claims</h4>
+            <p>This page does not connect a wallet or submit a points claim. It is a knowledge surface, not a rewards endpoint.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="tracks" aria-labelledby="tracks-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Quiz Tracks</p>
+          <h2 class="section-title" id="tracks-title">Pick a current protocol topic</h2>
+          <p class="section-lead">Each track is built from the current Aethelred whitepaper or tokenomics reference. Legacy consensus naming has been removed in favor of the current <span class="mono">Proof-of-Useful-Work</span> model.</p>
+        </div>
+
+        <div class="grid grid-2 quiz-track-grid" role="list" aria-label="Quiz track selection">
+          <article class="card quiz-track-card is-active" data-track="basics" tabindex="0" role="button" aria-pressed="true">
+            <p class="detail-kicker">Track 01</p>
+            <h3>Protocol Basics</h3>
+            <p>Core concepts: PoUW, Digital Seals, block time, cross-chain relay, and the protocol’s central value proposition.</p>
+            <div class="tag-list quiz-track-meta">
+              <span class="tag">5 Questions</span>
+              <span class="tag">3 Minutes</span>
+              <span class="tag">Foundational</span>
+            </div>
+          </article>
+
+          <article class="card quiz-track-card" data-track="consensus" tabindex="0" role="button" aria-pressed="false">
+            <p class="detail-kicker">Track 02</p>
+            <h3>Consensus &amp; Verification</h3>
+            <p>ABCI++, validator agreement, VRF job routing, output matching, and the seal minting threshold.</p>
+            <div class="tag-list quiz-track-meta">
+              <span class="tag">5 Questions</span>
+              <span class="tag">4 Minutes</span>
+              <span class="tag">Intermediate</span>
+            </div>
+          </article>
+
+          <article class="card quiz-track-card" data-track="tokenomics" tabindex="0" role="button" aria-pressed="false">
+            <p class="detail-kicker">Track 03</p>
+            <h3>Tokenomics &amp; Seals</h3>
+            <p>Supply, rewards, ecosystem allocation, Seals program sizing, and fee-level reference values.</p>
+            <div class="tag-list quiz-track-meta">
+              <span class="tag">5 Questions</span>
+              <span class="tag">4 Minutes</span>
+              <span class="tag">Reference</span>
+            </div>
+          </article>
+
+          <article class="card quiz-track-card" data-track="launch" tabindex="0" role="button" aria-pressed="false">
+            <p class="detail-kicker">Track 04</p>
+            <h3>Launch &amp; Devnet</h3>
+            <p>Seals program dates, public testnet timing, and the documented local devnet topology used for rehearsal.</p>
+            <div class="tag-list quiz-track-meta">
+              <span class="tag">5 Questions</span>
+              <span class="tag">3 Minutes</span>
+              <span class="tag">Operational</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Current facts only</h3>
+            <p>This page uses local scoring and current source material. It does not connect a wallet or submit an on-chain or Seals-related claim.</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="start-quiz">Start Selected Track</button>
+        </div>
+
+        <div class="quiz-runner stack-top-16" id="quiz-runner" aria-live="polite">
+          <div class="quiz-empty" id="quiz-empty">
+            <h3>Ready to begin</h3>
+            <p>Select a track and start the knowledge check. Your score stays local to this browser session.</p>
+          </div>
+
+          <div class="quiz-stage" id="quiz-stage" hidden>
+            <div class="quiz-progress">
+              <div class="quiz-progress-bar" aria-hidden="true">
+                <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+              </div>
+              <span class="quiz-progress-text" id="quiz-progress-text">1 / 5</span>
+            </div>
+
+            <div class="quiz-stage-head">
+              <div>
+                <p class="detail-kicker" id="quiz-track-label">Protocol Basics</p>
+                <h3 class="quiz-question-title" id="quiz-question-title">Question title</h3>
+              </div>
+              <span class="tag" id="quiz-question-count">Question 1</span>
+            </div>
+
+            <div class="quiz-options" id="quiz-options"></div>
+
+            <div class="quiz-feedback" id="quiz-feedback">
+              <h4 id="quiz-feedback-title">Correct</h4>
+              <p id="quiz-feedback-text">Explanation</p>
+            </div>
+
+            <div class="quiz-actions">
+              <button type="button" class="btn btn-secondary" id="quiz-prev" disabled>Previous</button>
+              <button type="button" class="btn btn-primary" id="quiz-next" disabled>Next</button>
+            </div>
+          </div>
+
+          <div class="quiz-results" id="quiz-results" hidden>
+            <p class="detail-kicker" id="quiz-results-track">Protocol Basics</p>
+            <h3 id="quiz-results-title">Knowledge check complete</h3>
+            <p class="quiz-results-score" id="quiz-results-score">80%</p>
+            <p class="quiz-results-text" id="quiz-results-text">Strong command of the current protocol surface.</p>
+            <div class="quiz-results-grid">
+              <article class="quiz-results-card">
+                <span class="detail-kicker">Correct</span>
+                <strong id="quiz-correct-count">4</strong>
+              </article>
+              <article class="quiz-results-card">
+                <span class="detail-kicker">Incorrect</span>
+                <strong id="quiz-incorrect-count">1</strong>
+              </article>
+              <article class="quiz-results-card">
+                <span class="detail-kicker">Track</span>
+                <strong id="quiz-results-meta">5 Questions</strong>
+              </article>
+            </div>
+            <div class="quiz-actions">
+              <button type="button" class="btn btn-secondary" id="quiz-restart">Retry Track</button>
+              <button type="button" class="btn btn-primary" id="quiz-change-track">Choose Another Track</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="review" aria-labelledby="review-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Review Path</p>
+          <h2 class="section-title" id="review-title">Study directly from the current source surfaces</h2>
+          <p class="section-lead">Use the quiz as a fast checkpoint, then move into the product, governance, and tokenomics surfaces that back the answers.</p>
+        </div>
+
+        <div class="grid grid-2 review-grid">
+          <article class="card">
+            <h3>Network Research</h3>
+            <p>Review the protocol architecture, consensus framing, and Digital Seal narrative on the foundation network page.</p>
+            <a href="https://www.aethelred.org/network" class="card-link">Open network research &rarr;</a>
+          </article>
+
+          <article class="card">
+            <h3>Tokenomics Reference</h3>
+            <p>Check the fixed-supply model, PoUW rewards, Seals program sizing, and launch schedule on the token page.</p>
+            <a href="https://www.aethelred.org/token" class="card-link">Open tokenomics &rarr;</a>
+          </article>
+
+          <article class="card">
+            <h3>Infinite Sandbox</h3>
+            <p>Rehearse the devnet, compliance, and seal workflows that sit next to the protocol concepts covered in the quiz.</p>
+            <a href="/sandbox.html" class="card-link">Open Infinite Sandbox &rarr;</a>
+          </article>
+
+          <article class="card">
+            <h3>Community Hub</h3>
+            <p>Continue into builder channels, governance, grants, and contribution paths once you are comfortable with the current protocol surface.</p>
+            <a href="/community.html" class="card-link">Open community hub &rarr;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const quizTracks = {
+      basics: {
+        label: 'Protocol Basics',
+        questions: [
+          {
+            question: 'Which consensus mechanism does Aethelred use?',
+            options: ['Proof-of-Work', 'Proof-of-Stake', 'Proof-of-Useful-Work', 'Delegated Proof-of-Authority'],
+            correct: 2,
+            explanation: 'The current whitepaper and tokenomics both define Aethelred consensus as Proof-of-Useful-Work, where validators perform and attest to real AI inference workloads.'
+          },
+          {
+            question: 'What is a Digital Seal?',
+            options: ['A validator license record', 'An immutable, on-chain attestation record for verified AI inference', 'A model-weight encryption scheme', 'A bridge custody receipt'],
+            correct: 1,
+            explanation: 'A Digital Seal is the protocol’s immutable on-chain proof of verified AI inference, minted when validator agreement is reached.'
+          },
+          {
+            question: 'What target block time does the current whitepaper specify for Aethelred?',
+            options: ['1.2 seconds', '2.8 seconds', '5 seconds', '12 seconds'],
+            correct: 1,
+            explanation: 'The March 2026 whitepaper specifies a 2.8-second block time target while combining consensus finality and computation attestation in a single cycle.'
+          },
+          {
+            question: 'Across which IBC port are Digital Seals relayable?',
+            options: ['ibc.transfer', 'aethelred.jobs', 'aethelred.seal', 'seal.bridge.v1'],
+            correct: 2,
+            explanation: 'The whitepaper states that Digital Seals are relayable across IBC-compatible chains via the port aethelred.seal.'
+          },
+          {
+            question: 'What does PoUW replace compared with traditional hash-based mining?',
+            options: ['Useful AI inference is rewarded instead of arbitrary puzzles', 'Validator signatures are removed', 'All jobs are centralized off-chain', 'Transaction fees are eliminated'],
+            correct: 0,
+            explanation: 'PoUW converts security spending into productive AI inference work rather than arbitrary hash computation.'
+          }
+        ]
+      },
+      consensus: {
+        label: 'Consensus & Verification',
+        questions: [
+          {
+            question: 'Which interface does PoUW extend inside the consensus pipeline?',
+            options: ['EVM JSON-RPC', 'CometBFT ABCI++', 'IBC ICS-20', 'GraphQL subscriptions'],
+            correct: 1,
+            explanation: 'The whitepaper explains that PoUW extends CometBFT\'s ABCI++ interface to embed AI inference verification directly into voting.'
+          },
+          {
+            question: 'How is validator compute allocation described in the whitepaper?',
+            options: ['50% AI workloads / 50% consensus overhead', '80% AI workloads / 20% consensus overhead', '20% AI workloads / 80% consensus overhead', '100% AI workloads / 0% consensus overhead'],
+            correct: 1,
+            explanation: 'The current design dedicates approximately 80% of validator compute to AI workloads and 20% to consensus overhead.'
+          },
+          {
+            question: 'When is a Digital Seal minted?',
+            options: ['When any validator finishes a job', 'When the proposer signs the block', 'When a supermajority of validators (>= 2/3 + 1) agrees on the result', 'When the bridge guardian approves a withdrawal'],
+            correct: 2,
+            explanation: 'Both the whitepaper and tokenomics define the minting threshold as a supermajority of validators, meaning at least 2/3 plus 1.'
+          },
+          {
+            question: 'How are jobs assigned to validators in the current protocol description?',
+            options: ['Round-robin allocation', 'Manual assignment by governance', 'Verifiable Random Function selection', 'First validator to claim the job'],
+            correct: 2,
+            explanation: 'The whitepaper states that jobs are assigned using a Verifiable Random Function to keep distribution unpredictable, verifiable, and uniform.'
+          },
+          {
+            question: 'What must agreeing validators produce before a seal can prove consistent execution?',
+            options: ['Identical output hashes', 'Identical wallet balances', 'Identical gas prices', 'Identical bridge proofs'],
+            correct: 0,
+            explanation: 'The seal logic depends on agreeing validators producing identical output hashes for the computation result.'
+          }
+        ]
+      },
+      tokenomics: {
+        label: 'Tokenomics & Seals',
+        questions: [
+          {
+            question: 'What is the fixed supply of the AETHEL token in the current tokenomics?',
+            options: ['1 billion', '5 billion', '10 billion', '12 billion'],
+            correct: 2,
+            explanation: 'The tokenomics fixes supply at 10,000,000,000 AETHEL with no inflation and all tokens minted at genesis.'
+          },
+          {
+            question: 'How large is the PoUW rewards allocation?',
+            options: ['15% / 1.5 billion AETHEL', '25% / 2.5 billion AETHEL', '30% / 3 billion AETHEL', '40% / 4 billion AETHEL'],
+            correct: 2,
+            explanation: 'PoUW rewards are allocated 30% of supply, equal to 3,000,000,000 AETHEL, distributed over a 10-year schedule.'
+          },
+          {
+            question: 'What allocation is reserved for Ecosystem & Grants?',
+            options: ['7% / 700M AETHEL', '10% / 1B AETHEL', '15% / 1.5B AETHEL', '20% / 2B AETHEL'],
+            correct: 2,
+            explanation: 'The tokenomics allocates 15% of total supply, or 1,500,000,000 AETHEL, to ecosystem growth and grants.'
+          },
+          {
+            question: 'What is the size of the Seals airdrop program?',
+            options: ['5% / 500M AETHEL', '7% / 700M AETHEL', '10% / 1B AETHEL', '12.5% / 1.25B AETHEL'],
+            correct: 1,
+            explanation: 'The Seals program is set at 7% of supply, which equals 700,000,000 AETHEL.'
+          },
+          {
+            question: 'What base fee does the tokenomics reference specify?',
+            options: ['0.0001 AETHEL (100 uaeth)', '0.001 AETHEL (1,000 uaeth)', '0.01 AETHEL (10,000 uaeth)', '0.1 AETHEL (100,000 uaeth)'],
+            correct: 1,
+            explanation: 'The tokenomics reference lists the base fee as 0.001 AETHEL, equal to 1,000 uaeth.'
+          }
+        ]
+      },
+      launch: {
+        label: 'Launch & Devnet',
+        questions: [
+          {
+            question: 'According to the Seals program schedule, when do points begin accruing?',
+            options: ['January 2026', 'March 2026', 'May 1, 2026', 'November 2026'],
+            correct: 1,
+            explanation: 'Both the whitepaper and tokenomics state that Seals points accrual begins in March 2026.'
+          },
+          {
+            question: 'What is the documented public testnet launch date?',
+            options: ['April 1, 2026', 'May 1, 2026', 'July 1, 2026', 'November 2026'],
+            correct: 1,
+            explanation: 'The roadmap tables in the whitepaper and tokenomics both place public testnet launch on May 1, 2026.'
+          },
+          {
+            question: 'When does the final Seals points snapshot occur?',
+            options: ['August 2026', 'October 2026', 'November 2026', 'December 2026'],
+            correct: 2,
+            explanation: 'The final Seals snapshot is scheduled for November 2026 before token generation and distribution events.'
+          },
+          {
+            question: 'How many services are documented in the Docker Compose devnet?',
+            options: ['6', '8', '10', '12'],
+            correct: 2,
+            explanation: 'The whitepaper documents a 10-service devnet including validators, prover, data services, explorer, faucet, and monitoring.'
+          },
+          {
+            question: 'How many validators are part of the documented local devnet topology?',
+            options: ['2', '3', '4', '5'],
+            correct: 1,
+            explanation: 'The current devnet description specifies 3 validators running across heterogeneous TEE platforms.'
+          }
+        ]
+      }
+    };
+
+    const trackCards = Array.from(document.querySelectorAll('.quiz-track-card'));
+    const startButton = document.getElementById('start-quiz');
+    const emptyState = document.getElementById('quiz-empty');
+    const stage = document.getElementById('quiz-stage');
+    const results = document.getElementById('quiz-results');
+    const optionsEl = document.getElementById('quiz-options');
+    const feedbackEl = document.getElementById('quiz-feedback');
+    const feedbackTitleEl = document.getElementById('quiz-feedback-title');
+    const feedbackTextEl = document.getElementById('quiz-feedback-text');
+    const prevButton = document.getElementById('quiz-prev');
+    const nextButton = document.getElementById('quiz-next');
+    const restartButton = document.getElementById('quiz-restart');
+    const changeTrackButton = document.getElementById('quiz-change-track');
+
+    const progressFillEl = document.getElementById('quiz-progress-fill');
+    const progressTextEl = document.getElementById('quiz-progress-text');
+    const trackLabelEl = document.getElementById('quiz-track-label');
+    const questionTitleEl = document.getElementById('quiz-question-title');
+    const questionCountEl = document.getElementById('quiz-question-count');
+    const resultsTrackEl = document.getElementById('quiz-results-track');
+    const resultsTitleEl = document.getElementById('quiz-results-title');
+    const resultsScoreEl = document.getElementById('quiz-results-score');
+    const resultsTextEl = document.getElementById('quiz-results-text');
+    const correctCountEl = document.getElementById('quiz-correct-count');
+    const incorrectCountEl = document.getElementById('quiz-incorrect-count');
+    const resultsMetaEl = document.getElementById('quiz-results-meta');
+
+    let activeTrack = 'basics';
+    let currentQuestionIndex = 0;
+    let selectedAnswerIndex = null;
+    let answered = false;
+    let score = 0;
+
+    function setActiveTrack(trackKey) {
+      activeTrack = trackKey;
+      trackCards.forEach((card) => {
+        const isActive = card.dataset.track === trackKey;
+        card.classList.toggle('is-active', isActive);
+        card.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function getCurrentTrack() {
+      return quizTracks[activeTrack];
+    }
+
+    function renderQuestion() {
+      const track = getCurrentTrack();
+      const question = track.questions[currentQuestionIndex];
+      const letters = ['A', 'B', 'C', 'D'];
+
+      trackLabelEl.textContent = track.label;
+      questionTitleEl.textContent = question.question;
+      questionCountEl.textContent = `Question ${currentQuestionIndex + 1}`;
+      progressTextEl.textContent = `${currentQuestionIndex + 1} / ${track.questions.length}`;
+      progressFillEl.style.width = `${((currentQuestionIndex + 1) / track.questions.length) * 100}%`;
+
+      optionsEl.innerHTML = '';
+      question.options.forEach((optionText, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'quiz-option';
+        button.innerHTML = `
+          <span class="quiz-option-letter">${letters[index]}</span>
+          <span class="quiz-option-text">${optionText}</span>
+        `;
+        button.addEventListener('click', () => selectOption(index));
+        optionsEl.appendChild(button);
+      });
+
+      selectedAnswerIndex = null;
+      answered = false;
+      feedbackEl.classList.remove('is-visible', 'is-correct', 'is-incorrect');
+      prevButton.disabled = currentQuestionIndex === 0;
+      nextButton.disabled = true;
+      nextButton.textContent = currentQuestionIndex === track.questions.length - 1 ? 'Finish' : 'Next';
+    }
+
+    function selectOption(index) {
+      if (answered) {
+        return;
+      }
+
+      const track = getCurrentTrack();
+      const question = track.questions[currentQuestionIndex];
+      const optionButtons = Array.from(optionsEl.querySelectorAll('.quiz-option'));
+      const isCorrect = index === question.correct;
+
+      answered = true;
+      selectedAnswerIndex = index;
+      if (isCorrect) {
+        score += 1;
+      }
+
+      optionButtons.forEach((button, buttonIndex) => {
+        button.disabled = true;
+        button.classList.remove('is-correct', 'is-incorrect');
+        if (buttonIndex === question.correct) {
+          button.classList.add('is-correct');
+        } else if (buttonIndex === index) {
+          button.classList.add('is-incorrect');
+        }
+      });
+
+      feedbackEl.classList.add('is-visible', isCorrect ? 'is-correct' : 'is-incorrect');
+      feedbackTitleEl.textContent = isCorrect ? 'Correct' : 'Incorrect';
+      feedbackTextEl.textContent = question.explanation;
+      nextButton.disabled = false;
+    }
+
+    function showResults() {
+      const track = getCurrentTrack();
+      const total = track.questions.length;
+      const percentage = Math.round((score / total) * 100);
+      const incorrect = total - score;
+
+      stage.hidden = true;
+      results.hidden = false;
+      resultsTrackEl.textContent = track.label;
+      resultsScoreEl.textContent = `${percentage}%`;
+      correctCountEl.textContent = String(score);
+      incorrectCountEl.textContent = String(incorrect);
+      resultsMetaEl.textContent = `${total} Questions`;
+
+      if (percentage >= 80) {
+        resultsTitleEl.textContent = 'Current protocol surface: strong';
+        resultsTextEl.textContent = 'You have a strong grasp of the current Aethelred documentation set.';
+      } else if (percentage >= 60) {
+        resultsTitleEl.textContent = 'Solid baseline';
+        resultsTextEl.textContent = 'You are close. Review the linked source surfaces and run the track again.';
+      } else {
+        resultsTitleEl.textContent = 'Review recommended';
+        resultsTextEl.textContent = 'Use the network, tokenomics, and sandbox pages below to refresh the current facts before retrying.';
+      }
+    }
+
+    function startTrack() {
+      currentQuestionIndex = 0;
+      selectedAnswerIndex = null;
+      answered = false;
+      score = 0;
+      emptyState.hidden = true;
+      results.hidden = true;
+      stage.hidden = false;
+      renderQuestion();
+      document.getElementById('quiz-runner').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function moveQuestion(direction) {
+      const track = getCurrentTrack();
+      const nextIndex = currentQuestionIndex + direction;
+      if (nextIndex < 0 || nextIndex >= track.questions.length) {
+        return;
+      }
+      currentQuestionIndex = nextIndex;
+      renderQuestion();
+    }
+
+    trackCards.forEach((card) => {
+      card.addEventListener('click', () => setActiveTrack(card.dataset.track));
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          setActiveTrack(card.dataset.track);
+        }
+      });
+    });
+
+    startButton.addEventListener('click', startTrack);
+    prevButton.addEventListener('click', () => moveQuestion(-1));
+    nextButton.addEventListener('click', () => {
+      const track = getCurrentTrack();
+      if (currentQuestionIndex === track.questions.length - 1) {
+        showResults();
+      } else {
+        moveQuestion(1);
+      }
+    });
+    restartButton.addEventListener('click', startTrack);
+    changeTrackButton.addEventListener('click', () => {
+      results.hidden = true;
+      stage.hidden = true;
+      emptyState.hidden = false;
+      document.getElementById('tracks').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  </script>
+</body>
+</html>

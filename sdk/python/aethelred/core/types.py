@@ -134,7 +134,7 @@ class ComputeJob(BaseModel):
     input_hash: bytes = Field(..., description="SHA-256 hash of input data")
     output_hash: Optional[bytes] = Field(None, description="SHA-256 hash of output")
     status: JobStatus = Field(default=JobStatus.PENDING)
-    proof_type: ProofType = Field(default=ProofType.TEE)
+    proof_type: ProofType = Field(default=ProofType.HYBRID, description="Enterprise default: hybrid (TEE + zkML)")
     priority: int = Field(default=1, ge=1, le=10)
     max_gas: int = Field(default=0)
     timeout_blocks: int = Field(default=100)
@@ -155,10 +155,14 @@ class JobResult(BaseModel):
 
 
 class SubmitJobRequest(BaseModel):
-    """Request to submit a new compute job."""
+    """Request to submit a new compute job.
+
+    Enterprise default: proof_type=HYBRID provides both TEE attestation
+    and zkML mathematical proof for maximum assurance and audit compliance.
+    """
     model_hash: bytes
     input_hash: bytes
-    proof_type: ProofType = ProofType.TEE
+    proof_type: ProofType = ProofType.HYBRID
     priority: int = 1
     max_gas: int = 0
     timeout_blocks: int = 100

@@ -2,9 +2,9 @@ name: Contracts CI
 
 on:
   push:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   workflow_dispatch:
 
 jobs:
@@ -13,16 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: contracts/ethereum
+        working-directory: contracts
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Install dependencies
-        run: npm install --no-fund
+        run: npm ci --no-fund --no-audit
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
       - name: Lint Solidity
         run: npm run lint
       - name: Compile contracts
@@ -37,14 +37,44 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: contracts/ethereum
+        working-directory: contracts
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm ci --no-fund --no-audit
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-      - name: Run Foundry tests
-        run: forge test --profile ci -vv
+      - name: Run Foundry unit and integration tests
+        run: >
+          FOUNDRY_PROFILE=ci forge test -vv
+          --no-match-path 'test/*Invariant.t.sol'
+          --no-match-test '^(testFuzz_|test_Audit_|invariant_)'
+
+  foundry-deep-checks:
+    name: Foundry Deep Checks
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm ci --no-fund --no-audit
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Run Foundry deep invariant and audit suites
+        run: |
+          FOUNDRY_PROFILE=ci forge test -vv --match-path 'test/*Invariant.t.sol'
+          FOUNDRY_PROFILE=ci forge test -vv --match-test '^(testFuzz_|test_Audit_)'
 
   contracts-required-gate:
     name: Contracts Required Gate

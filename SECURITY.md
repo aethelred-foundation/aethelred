@@ -36,7 +36,9 @@ We maintain an active bug bounty program. Rewards are paid in AETHEL tokens.
 
 | Date | Auditor | Scope | Report |
 |---|---|---|---|
-| 2026-02-28 | Internal | Full codebase (27 findings resolved) | [Link](#) |
+| 2026-02-22 | Internal Security Review | Full protocol (Go, Rust, Solidity, SDKs) | [docs/audits/STATUS.md](docs/audits/STATUS.md) |
+| 2026-02-28 | External Consultant | VRF and protocol review | [docs/audits/STATUS.md](docs/audits/STATUS.md) |
+| 2026-03-13 | External mainnet audits | Contracts and consensus-critical paths | [docs/audits/README.md](docs/audits/README.md) |
 
 ## Supported Versions
 
@@ -44,6 +46,12 @@ We maintain an active bug bounty program. Rewards are paid in AETHEL tokens.
 |---|---|
 | `main` | Yes |
 | `v0.x.x` | Yes |
+
+## Audit Evidence And Provenance
+
+- Audit evidence index: [docs/audits/README.md](docs/audits/README.md)
+- Audit status tracker: [docs/audits/STATUS.md](docs/audits/STATUS.md)
+- Release provenance: [docs/security/release-provenance.md](docs/security/release-provenance.md)
 
 ## Security Design Principles
 

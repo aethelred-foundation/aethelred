@@ -288,7 +288,9 @@ impl HybridSignature {
         {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|_| "System clock is before UNIX epoch - cannot verify signature age".to_string())?
+                .map_err(|_| {
+                    "System clock is before UNIX epoch - cannot verify signature age".to_string()
+                })?
                 .as_secs();
 
             if now > sig_timestamp && now - sig_timestamp > max_age {

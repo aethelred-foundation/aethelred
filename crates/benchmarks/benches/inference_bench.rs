@@ -3,8 +3,8 @@
 //! These benchmarks measure the performance of AI/ML inference operations
 //! including latency profiling and batch performance.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use aethelred_benchmarks::inference::{InferenceBenchmark, InferenceConfig};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn inference_latency_bench(c: &mut Criterion) {
     let config = InferenceConfig {
@@ -42,5 +42,9 @@ fn inference_batch_scaling_bench(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, inference_latency_bench, inference_batch_scaling_bench);
+criterion_group!(
+    benches,
+    inference_latency_bench,
+    inference_batch_scaling_bench
+);
 criterion_main!(benches);

@@ -1,8 +1,0 @@
-./alternative_value.go
-./bool.go
-./bytes.go
-./codec.go
-./doc.go
-./int.go
-./string.go
-./uint.go

@@ -117,7 +117,7 @@ export class BlockchainService {
     try {
       const response = await this.tmClient.block(height);
       return this.mapBlockResponse(response);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -212,7 +212,7 @@ export class BlockchainService {
     try {
       const response = await this.tmClient.tx({ hash: Buffer.from(hash, 'hex') });
       return this.mapTransactionResponse(response);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -299,7 +299,7 @@ export class BlockchainService {
         unbondingHeight: Number(v.unbondingHeight),
         unbondingTime: v.unbondingTime?.getTime() || 0,
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }

@@ -1,0 +1,13 @@
+# Temporary default owners until GitHub team slugs are finalized.
+# Replace @ramtamilselvan with Foundation teams before enabling required
+# code-owner review org-wide.
+
+* @ramtamilselvan
+
+/contracts/ @ramtamilselvan
+/sdk/ @ramtamilselvan
+/docs/ @ramtamilselvan
+/dApps/cruzible/ @ramtamilselvan
+/services/tee-worker/ @ramtamilselvan
+/tools/ @ramtamilselvan
+.github/ @ramtamilselvan

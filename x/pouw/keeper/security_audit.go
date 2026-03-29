@@ -41,24 +41,24 @@ type AuditFinding struct {
 	ID          string          // Unique finding identifier
 	CheckName   string          // Name of the check that produced it
 	Severity    FindingSeverity // CRITICAL, HIGH, MEDIUM, LOW, INFO
-	Description string        // What was found
-	Remediation string        // How to fix it (empty if INFO/pass)
-	Passed      bool          // true if the check passed
+	Description string          // What was found
+	Remediation string          // How to fix it (empty if INFO/pass)
+	Passed      bool            // true if the check passed
 }
 
 // AuditReport aggregates all findings from a security audit run.
 type AuditReport struct {
-	ModuleVersion  uint64
-	ChainID        string
-	BlockHeight    int64
-	Findings       []AuditFinding
-	TotalChecks    int
-	PassedChecks   int
-	FailedChecks   int
-	CriticalCount  int
-	HighCount      int
-	MediumCount    int
-	LowCount       int
+	ModuleVersion uint64
+	ChainID       string
+	BlockHeight   int64
+	Findings      []AuditFinding
+	TotalChecks   int
+	PassedChecks  int
+	FailedChecks  int
+	CriticalCount int
+	HighCount     int
+	MediumCount   int
+	LowCount      int
 }
 
 // Summary returns a human-readable summary of the audit report.
@@ -170,63 +170,64 @@ func auditParamsRanges(ctx sdk.Context, k Keeper) []AuditFinding {
 	// MinValidators: must be >= 1
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-02", CheckName: "min_validators_positive",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("MinValidators = %d", params.MinValidators),
-		Passed: params.MinValidators >= 1,
+		Passed:      params.MinValidators >= 1,
 		Remediation: "Set MinValidators >= 1 via governance",
 	})
 
 	// ConsensusThreshold: must be 51-100
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-03", CheckName: "consensus_threshold_range",
-		Severity: FindingCritical,
+		Severity:    FindingCritical,
 		Description: fmt.Sprintf("ConsensusThreshold = %d", params.ConsensusThreshold),
-		Passed: params.ConsensusThreshold >= 51 && params.ConsensusThreshold <= 100,
+		Passed:      params.ConsensusThreshold >= 51 && params.ConsensusThreshold <= 100,
 		Remediation: "ConsensusThreshold must be in [51, 100] for BFT safety",
 	})
 
-	// MaxJobsPerBlock: must be > 0 and <= 1000 (reasonable cap)
+	// MaxJobsPerBlock: must be > 0 and <= 4096 (reasonable cap that still
+	// allows the published reference benchmark profile).
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-04", CheckName: "max_jobs_per_block_range",
-		Severity: FindingMedium,
+		Severity:    FindingMedium,
 		Description: fmt.Sprintf("MaxJobsPerBlock = %d", params.MaxJobsPerBlock),
-		Passed: params.MaxJobsPerBlock > 0 && params.MaxJobsPerBlock <= 1000,
-		Remediation: "MaxJobsPerBlock should be in [1, 1000]",
+		Passed:      params.MaxJobsPerBlock > 0 && params.MaxJobsPerBlock <= 4096,
+		Remediation: "MaxJobsPerBlock should be in [1, 4096]",
 	})
 
 	// JobTimeoutBlocks: must be > 0
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-05", CheckName: "job_timeout_positive",
-		Severity: FindingMedium,
+		Severity:    FindingMedium,
 		Description: fmt.Sprintf("JobTimeoutBlocks = %d", params.JobTimeoutBlocks),
-		Passed: params.JobTimeoutBlocks > 0,
+		Passed:      params.JobTimeoutBlocks > 0,
 		Remediation: "JobTimeoutBlocks must be > 0 for liveness",
 	})
 
 	// BaseJobFee: must be non-empty
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-06", CheckName: "base_job_fee_set",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("BaseJobFee = %q", params.BaseJobFee),
-		Passed: params.BaseJobFee != "",
+		Passed:      params.BaseJobFee != "",
 		Remediation: "BaseJobFee must be set to prevent zero-fee spam",
 	})
 
 	// SlashingPenalty: must be non-empty
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-07", CheckName: "slashing_penalty_set",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("SlashingPenalty = %q", params.SlashingPenalty),
-		Passed: params.SlashingPenalty != "",
+		Passed:      params.SlashingPenalty != "",
 		Remediation: "SlashingPenalty must be set for economic security",
 	})
 
 	// AllowedProofTypes: must have at least one
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-08", CheckName: "allowed_proof_types_set",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("AllowedProofTypes = %v (len=%d)", params.AllowedProofTypes, len(params.AllowedProofTypes)),
-		Passed: len(params.AllowedProofTypes) > 0,
+		Passed:      len(params.AllowedProofTypes) > 0,
 		Remediation: "At least one proof type must be allowed",
 	})
 
@@ -245,18 +246,18 @@ func auditProductionModeSettings(ctx sdk.Context, k Keeper) []AuditFinding {
 	// AllowSimulated should be false for production
 	findings = append(findings, AuditFinding{
 		ID: "PROD-01", CheckName: "allow_simulated_disabled",
-		Severity: FindingCritical,
+		Severity:    FindingCritical,
 		Description: fmt.Sprintf("AllowSimulated = %v", params.AllowSimulated),
-		Passed: !params.AllowSimulated,
+		Passed:      !params.AllowSimulated,
 		Remediation: "AllowSimulated MUST be false on production chains. Set via governance then enforce one-way gate.",
 	})
 
 	// RequireTeeAttestation should be true for production
 	findings = append(findings, AuditFinding{
 		ID: "PROD-02", CheckName: "require_tee_attestation_enabled",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("RequireTeeAttestation = %v", params.RequireTeeAttestation),
-		Passed: params.RequireTeeAttestation,
+		Passed:      params.RequireTeeAttestation,
 		Remediation: "RequireTeeAttestation should be true for production chains",
 	})
 
@@ -275,18 +276,18 @@ func auditConsensusThresholdSafety(ctx sdk.Context, k Keeper) []AuditFinding {
 	// BFT safety: threshold must be > 66 (strict 2/3 majority)
 	findings = append(findings, AuditFinding{
 		ID: "BFT-01", CheckName: "consensus_threshold_bft_safe",
-		Severity: FindingCritical,
+		Severity:    FindingCritical,
 		Description: fmt.Sprintf("ConsensusThreshold=%d (BFT requires >66%%)", params.ConsensusThreshold),
-		Passed: params.ConsensusThreshold > 66,
+		Passed:      params.ConsensusThreshold > 66,
 		Remediation: "ConsensusThreshold must be > 66 for BFT safety (recommend 67)",
 	})
 
 	// MinValidators must provide redundancy
 	findings = append(findings, AuditFinding{
 		ID: "BFT-02", CheckName: "min_validators_redundancy",
-		Severity: FindingMedium,
+		Severity:    FindingMedium,
 		Description: fmt.Sprintf("MinValidators=%d (need >=3 for BFT)", params.MinValidators),
-		Passed: params.MinValidators >= 3,
+		Passed:      params.MinValidators >= 3,
 		Remediation: "MinValidators should be >= 3 for byzantine fault tolerance",
 	})
 
@@ -305,25 +306,25 @@ func auditSlashingDeterrence(_ sdk.Context, _ Keeper) []AuditFinding {
 		Severity: FindingCritical,
 		Description: fmt.Sprintf("Fee BPS sum = %d (validator=%d, treasury=%d, burn=%d, insurance=%d)",
 			bpsSum, config.ValidatorRewardBps, config.TreasuryBps, config.BurnBps, config.InsuranceFundBps),
-		Passed: bpsSum == 10000,
+		Passed:      bpsSum == 10000,
 		Remediation: "Fee distribution BPS must sum to exactly 10000 (100%)",
 	})
 
 	// Verify burn exists (deflationary pressure)
 	findings = append(findings, AuditFinding{
 		ID: "ECON-02", CheckName: "burn_percentage_nonzero",
-		Severity: FindingMedium,
+		Severity:    FindingMedium,
 		Description: fmt.Sprintf("BurnBPS = %d (%0.1f%%)", config.BurnBps, float64(config.BurnBps)/100),
-		Passed: config.BurnBps > 0,
+		Passed:      config.BurnBps > 0,
 		Remediation: "Burn percentage should be > 0 for deflationary pressure",
 	})
 
 	// Verify insurance fund exists
 	findings = append(findings, AuditFinding{
 		ID: "ECON-03", CheckName: "insurance_fund_nonzero",
-		Severity: FindingLow,
+		Severity:    FindingLow,
 		Description: fmt.Sprintf("InsuranceBPS = %d (%0.1f%%)", config.InsuranceFundBps, float64(config.InsuranceFundBps)/100),
-		Passed: config.InsuranceFundBps > 0,
+		Passed:      config.InsuranceFundBps > 0,
 		Remediation: "Insurance fund percentage should be > 0 for protocol safety net",
 	})
 
@@ -363,9 +364,9 @@ func auditFeeDistributionConservation(_ sdk.Context, _ Keeper) []AuditFinding {
 
 		passed := distributed.Equal(fee.Amount)
 		findings = append(findings, AuditFinding{
-			ID: fmt.Sprintf("CONS-%d-%d", tc.amount, tc.validatorCount),
+			ID:        fmt.Sprintf("CONS-%d-%d", tc.amount, tc.validatorCount),
 			CheckName: "fee_conservation",
-			Severity: FindingCritical,
+			Severity:  FindingCritical,
 			Description: fmt.Sprintf("Fee=%d validators=%d: distributed=%s (expected %s)",
 				tc.amount, tc.validatorCount, distributed.String(), fee.Amount.String()),
 			Passed:      passed,
@@ -418,7 +419,7 @@ func auditValidatorStatsBounds(ctx sdk.Context, k Keeper) []AuditFinding {
 
 	findings = append(findings, AuditFinding{
 		ID: "VSTATS-01", CheckName: "validator_stats_bounds",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("Checked %d validators, %d out-of-bounds", total, outOfBounds),
 		Passed:      outOfBounds == 0,
 		Remediation: "Run v1→v2 migration to clamp out-of-bounds values",
@@ -446,7 +447,7 @@ func auditPendingJobConsistency(ctx sdk.Context, k Keeper) []AuditFinding {
 
 	findings = append(findings, AuditFinding{
 		ID: "PEND-01", CheckName: "pending_jobs_consistency",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("Orphaned pending jobs: %d", orphans),
 		Passed:      orphans == 0,
 		Remediation: "Run cleanup migration to remove orphaned pending jobs",
@@ -472,7 +473,7 @@ func auditJobCountIntegrity(ctx sdk.Context, k Keeper) []AuditFinding {
 
 	findings = append(findings, AuditFinding{
 		ID: "JCOUNT-01", CheckName: "job_count_integrity",
-		Severity: FindingMedium,
+		Severity:    FindingMedium,
 		Description: fmt.Sprintf("Stored=%d Actual=%d", storedCount, actualCount),
 		Passed:      storedCount == actualCount,
 		Remediation: "Run reconciliation migration to fix job count",
@@ -488,7 +489,7 @@ func auditCryptographicMinimums(_ sdk.Context, _ Keeper) []AuditFinding {
 	// SHA-256 output length
 	findings = append(findings, AuditFinding{
 		ID: "CRYPTO-01", CheckName: "hash_length_sha256",
-		Severity: FindingCritical,
+		Severity:    FindingCritical,
 		Description: "System uses SHA-256 (32-byte) hashes for model/input/output binding",
 		Passed:      true, // Verified in invariant: model/input hashes must be 32 bytes
 		Remediation: "N/A",
@@ -498,7 +499,7 @@ func auditCryptographicMinimums(_ sdk.Context, _ Keeper) []AuditFinding {
 	const minQuoteSize = 64
 	findings = append(findings, AuditFinding{
 		ID: "CRYPTO-02", CheckName: "tee_quote_min_size",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("TEE quote minimum = %d bytes", minQuoteSize),
 		Passed:      minQuoteSize >= 64,
 		Remediation: "TEE quotes must be >= 64 bytes for any real attestation format",
@@ -508,7 +509,7 @@ func auditCryptographicMinimums(_ sdk.Context, _ Keeper) []AuditFinding {
 	const minZKProofSize = 128
 	findings = append(findings, AuditFinding{
 		ID: "CRYPTO-03", CheckName: "zk_proof_min_size",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("ZK proof minimum = %d bytes", minZKProofSize),
 		Passed:      minZKProofSize >= 128,
 		Remediation: "ZK proofs must be >= 128 bytes for any real proof system",
@@ -518,7 +519,7 @@ func auditCryptographicMinimums(_ sdk.Context, _ Keeper) []AuditFinding {
 	const nonceLength = 32
 	findings = append(findings, AuditFinding{
 		ID: "CRYPTO-04", CheckName: "nonce_length",
-		Severity: FindingHigh,
+		Severity:    FindingHigh,
 		Description: fmt.Sprintf("Replay protection nonce = %d bytes (256-bit)", nonceLength),
 		Passed:      nonceLength >= 16, // 128-bit minimum
 		Remediation: "Nonce must be >= 16 bytes (128-bit) for replay protection",
@@ -545,7 +546,7 @@ func auditGovernanceOneWayGate(ctx sdk.Context, k Keeper) []AuditFinding {
 		// The one-way gate in UpdateParams prevents re-enablement.
 		findings = append(findings, AuditFinding{
 			ID: "GATE-01", CheckName: "one_way_gate_status",
-			Severity: FindingInfo,
+			Severity:    FindingInfo,
 			Description: "AllowSimulated=false (production mode); one-way gate active - UpdateParams handler prevents re-enablement",
 			Passed:      true,
 		})
@@ -553,7 +554,7 @@ func auditGovernanceOneWayGate(ctx sdk.Context, k Keeper) []AuditFinding {
 		// AllowSimulated is still true - not yet locked for production.
 		findings = append(findings, AuditFinding{
 			ID: "GATE-01", CheckName: "one_way_gate_status",
-			Severity: FindingCritical,
+			Severity:    FindingCritical,
 			Description: "AllowSimulated=true - simulation mode is active. Must be disabled before mainnet launch.",
 			Passed:      false,
 			Remediation: "Set AllowSimulated=false via governance before mainnet. Once set, the one-way gate in UpdateParams prevents re-enablement.",

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
 	"cosmossdk.io/log"
@@ -44,6 +45,10 @@ type JobScheduler struct {
 	// Validator capabilities cache
 	validatorCapabilities map[string]*types.ValidatorCapability
 
+	// Execution workers are the attested compute plane, separate from the
+	// settlement validator set.
+	executionWorkers map[string]*ExecutionWorkerCapability
+
 	// Configuration
 	config SchedulerConfig
 
@@ -55,6 +60,14 @@ type JobScheduler struct {
 // runs only on-demand, but the method exists to satisfy shutdown adapters.
 func (s *JobScheduler) Stop() {
 	// Intentionally no-op.
+}
+
+// SetEnterpriseMode enables or disables enterprise mode at runtime.
+// When enabled, only hybrid proof type jobs are accepted and scheduled.
+func (s *JobScheduler) SetEnterpriseMode(enabled bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.config.EnterpriseMode = enabled
 }
 
 // ---------------------------------------------------------------------------
@@ -321,6 +334,18 @@ type SchedulerConfig struct {
 	// MinValidatorsRequired is the minimum validators needed for consensus
 	MinValidatorsRequired int
 
+	// ValidatorsPerJob is the per-job verification committee size. When zero,
+	// the scheduler preserves legacy behavior and reuses MinValidatorsRequired.
+	ValidatorsPerJob int
+
+	// RequireExecutionWorkers enforces assignment to attested execution workers
+	// in addition to settlement validators.
+	RequireExecutionWorkers bool
+
+	// ExecutionWorkersPerJob sets how many execution workers each job needs.
+	// When zero and RequireExecutionWorkers is true, the scheduler uses 1.
+	ExecutionWorkersPerJob int
+
 	// PriorityBoostPerBlock increases priority for waiting jobs
 	PriorityBoostPerBlock int64
 
@@ -345,6 +370,11 @@ type SchedulerConfig struct {
 	// DrandPulseProvider retrieves the latest drand pulse. When configured and
 	// strict mode is enabled, scheduling is blocked if no verifiable pulse is available.
 	DrandPulseProvider DrandPulseProvider
+
+	// EnterpriseMode when true requires all jobs to use hybrid proof type.
+	// This ensures enterprise-grade verification combining TEE attestation
+	// and zkML proofs for maximum security guarantees.
+	EnterpriseMode bool
 }
 
 // DefaultSchedulerConfig returns sensible defaults
@@ -354,6 +384,7 @@ func DefaultSchedulerConfig() SchedulerConfig {
 		MaxJobsPerValidator:        3,
 		JobTimeoutBlocks:           100,
 		MinValidatorsRequired:      3,
+		ValidatorsPerJob:           0,
 		PriorityBoostPerBlock:      1,
 		MaxRetries:                 3,
 		RequireDKGBeacon:           true,
@@ -361,6 +392,26 @@ func DefaultSchedulerConfig() SchedulerConfig {
 		AllowDKGBeaconFallback:     true,
 		AllowLegacyEntropyFallback: true,
 	}
+}
+
+func (c SchedulerConfig) validatorsPerJob() int {
+	if c.ValidatorsPerJob > 0 {
+		return c.ValidatorsPerJob
+	}
+	if c.MinValidatorsRequired > 0 {
+		return c.MinValidatorsRequired
+	}
+	return 1
+}
+
+func (c SchedulerConfig) executionWorkersPerJob() int {
+	if c.ExecutionWorkersPerJob > 0 {
+		return c.ExecutionWorkersPerJob
+	}
+	if c.RequireExecutionWorkers {
+		return 1
+	}
+	return 0
 }
 
 // ScheduledJob wraps a ComputeJob with scheduling metadata
@@ -373,6 +424,8 @@ type ScheduledJob struct {
 	RetryCount        int
 	LastAttemptBlock  int64
 	AssignedTo        []string // Validator addresses assigned to this job
+	ExecutionLane     ExecutionLane
+	AssignedWorkers   []string
 	VRFEntropy        string
 	VRFAssignments    []VRFAssignmentRecord
 	BeaconSource      string
@@ -398,6 +451,8 @@ const (
 	schedulerMetaBeaconRound      = "scheduler.beacon_round"
 	schedulerMetaBeaconRandomness = "scheduler.beacon_randomness"
 	schedulerMetaBeaconSigHash    = "scheduler.beacon_signature_hash"
+	schedulerMetaExecutionLane    = "scheduler.execution_lane"
+	schedulerMetaAssignedWorkers  = "scheduler.execution_workers"
 )
 
 const vrfAssignmentVersion = "pouw-vrf-v1"
@@ -757,6 +812,26 @@ func (s *JobScheduler) persistSchedulingMetadata(ctx context.Context, scheduledJ
 		delete(job.Metadata, schedulerMetaAssignedTo)
 	}
 
+	if scheduledJob.ExecutionLane != "" {
+		job.Metadata[schedulerMetaExecutionLane] = string(scheduledJob.ExecutionLane)
+	} else {
+		delete(job.Metadata, schedulerMetaExecutionLane)
+	}
+
+	if len(scheduledJob.AssignedWorkers) > 0 {
+		assignedWorkers, err := json.Marshal(scheduledJob.AssignedWorkers)
+		if err != nil {
+			s.logger.Warn("Failed to marshal scheduler execution-worker assignment",
+				"job_id", job.Id,
+				"error", err,
+			)
+		} else {
+			job.Metadata[schedulerMetaAssignedWorkers] = string(assignedWorkers)
+		}
+	} else {
+		delete(job.Metadata, schedulerMetaAssignedWorkers)
+	}
+
 	if scheduledJob.VRFEntropy != "" {
 		job.Metadata[schedulerMetaVRFVersion] = vrfAssignmentVersion
 		job.Metadata[schedulerMetaVRFEntropy] = scheduledJob.VRFEntropy
@@ -825,12 +900,14 @@ func (s *JobScheduler) loadSchedulingMetadata(job *types.ComputeJob) (
 	beaconRound uint64,
 	beaconRandomness string,
 	beaconSigHash string,
+	executionLane ExecutionLane,
+	assignedWorkers []string,
 ) {
 	if job == nil {
-		return 0, 0, nil, 0, "", nil, "", "", 0, "", ""
+		return 0, 0, nil, 0, "", nil, "", "", 0, "", "", "", nil
 	}
 	if job.Metadata == nil {
-		return 0, 0, nil, job.BlockHeight, "", nil, "", "", 0, "", ""
+		return 0, 0, nil, job.BlockHeight, "", nil, "", "", 0, "", "", "", nil
 	}
 	retryCount = getMetaIntAsInt(job.Metadata, schedulerMetaRetryCount, 0)
 	lastAttempt = getMetaInt(job.Metadata, schedulerMetaLastAttemptBlock, 0)
@@ -848,10 +925,17 @@ func (s *JobScheduler) loadSchedulingMetadata(job *types.ComputeJob) (
 	}
 	beaconRandomness = job.Metadata[schedulerMetaBeaconRandomness]
 	beaconSigHash = job.Metadata[schedulerMetaBeaconSigHash]
+	if raw := strings.TrimSpace(job.Metadata[schedulerMetaExecutionLane]); raw != "" {
+		if parsed, err := ParseExecutionLane(raw); err == nil {
+			executionLane = parsed
+		}
+	}
+	assignedWorkers = getMetaStringSlice(job.Metadata, schedulerMetaAssignedWorkers)
 	if job.Status != types.JobStatusProcessing {
 		assigned = nil
+		assignedWorkers = nil
 	}
-	return retryCount, lastAttempt, assigned, submittedBlock, vrfEntropy, vrfAssignments, beaconSource, beaconVersion, beaconRound, beaconRandomness, beaconSigHash
+	return retryCount, lastAttempt, assigned, submittedBlock, vrfEntropy, vrfAssignments, beaconSource, beaconVersion, beaconRound, beaconRandomness, beaconSigHash, executionLane, assignedWorkers
 }
 
 // NewJobScheduler creates a new job scheduler
@@ -862,11 +946,25 @@ func NewJobScheduler(logger log.Logger, keeper *Keeper, config SchedulerConfig) 
 		jobQueue:              &JobPriorityQueue{},
 		jobIndex:              make(map[string]*ScheduledJob),
 		validatorCapabilities: make(map[string]*types.ValidatorCapability),
+		executionWorkers:      make(map[string]*ExecutionWorkerCapability),
 		config:                config,
 	}
 
 	heap.Init(s.jobQueue)
 	return s
+}
+
+// IsEnterpriseCompliantJob checks whether a job meets enterprise-mode requirements.
+// In enterprise mode, only hybrid proof type jobs are accepted to ensure both
+// TEE attestation and zkML verification are performed.
+func IsEnterpriseCompliantJob(job *types.ComputeJob) error {
+	if job == nil {
+		return fmt.Errorf("job must not be nil")
+	}
+	if job.ProofType != types.ProofTypeHybrid {
+		return fmt.Errorf("enterprise mode requires hybrid proof type, got %s", job.ProofType)
+	}
+	return nil
 }
 
 // EnqueueJob adds a new job to the scheduler
@@ -876,9 +974,26 @@ func (s *JobScheduler) EnqueueJob(ctx context.Context, job *types.ComputeJob) er
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	// Enterprise mode guard: reject non-hybrid jobs
+	if s.config.EnterpriseMode {
+		if err := IsEnterpriseCompliantJob(job); err != nil {
+			s.logger.Warn("Job rejected by enterprise compliance check",
+				"job_id", job.Id,
+				"proof_type", job.ProofType,
+				"error", err,
+			)
+			return fmt.Errorf("enterprise compliance: %w", err)
+		}
+	}
+
 	// Check if job already exists
 	if _, exists := s.jobIndex[job.Id]; exists {
 		return fmt.Errorf("job already scheduled: %s", job.Id)
+	}
+
+	executionLane, err := ResolveExecutionLane(job)
+	if err != nil {
+		return fmt.Errorf("resolve execution lane: %w", err)
 	}
 
 	// Create scheduled job
@@ -888,6 +1003,8 @@ func (s *JobScheduler) EnqueueJob(ctx context.Context, job *types.ComputeJob) er
 		SubmittedBlock:    sdkCtx.BlockHeight(),
 		RetryCount:        0,
 		AssignedTo:        make([]string, 0),
+		ExecutionLane:     executionLane,
+		AssignedWorkers:   make([]string, 0),
 	}
 
 	// Add to queue and index
@@ -898,6 +1015,7 @@ func (s *JobScheduler) EnqueueJob(ctx context.Context, job *types.ComputeJob) er
 		"job_id", job.Id,
 		"priority", job.Priority,
 		"proof_type", job.ProofType,
+		"execution_lane", executionLane,
 	)
 
 	s.persistSchedulingMetadata(ctx, scheduledJob)
@@ -925,6 +1043,15 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 		s.logger.Warn("Not enough validators available",
 			"available", pool.totalAvailable,
 			"required", s.config.MinValidatorsRequired,
+		)
+		return nil
+	}
+	requiredExecutionWorkers := s.config.executionWorkersPerJob()
+	executionPool := newExecutionWorkerPool(s.executionWorkers)
+	if requiredExecutionWorkers > 0 && executionPool.availableCount() < requiredExecutionWorkers {
+		s.logger.Warn("Not enough execution workers available",
+			"available", executionPool.availableCount(),
+			"required", requiredExecutionWorkers,
 		)
 		return nil
 	}
@@ -971,9 +1098,43 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 			continue
 		}
 
+		// Enterprise mode: skip non-hybrid jobs that somehow made it into the queue.
+		// This is a defense-in-depth check — EnqueueJob also rejects non-hybrid jobs
+		// in enterprise mode, but jobs may have been enqueued before enterprise mode
+		// was enabled or via chain sync.
+		if s.config.EnterpriseMode && scheduledJob.Job.ProofType != types.ProofTypeHybrid {
+			s.logger.Warn("Enterprise mode: skipping non-hybrid job in queue",
+				"job_id", scheduledJob.Job.Id,
+				"proof_type", scheduledJob.Job.ProofType,
+			)
+			tempJobs = append(tempJobs, scheduledJob)
+			continue
+		}
+
 		// Check if job can be assigned to enough validators
-		assignedValidators, assignmentProofs := pool.assign(scheduledJob.Job, s.config.MinValidatorsRequired, entropy)
-		if len(assignedValidators) >= s.config.MinValidatorsRequired {
+		requiredValidatorsPerJob := s.config.validatorsPerJob()
+		assignedValidators, assignmentProofs := pool.assign(scheduledJob.Job, requiredValidatorsPerJob, entropy)
+		if len(assignedValidators) >= requiredValidatorsPerJob {
+			assignedWorkers := executionPool.assign(
+				scheduledJob.Job,
+				scheduledJob.ExecutionLane,
+				requiredExecutionWorkers,
+			)
+			if requiredExecutionWorkers > 0 && len(assignedWorkers) < requiredExecutionWorkers {
+				for _, addr := range assignedValidators {
+					if cap, ok := s.validatorCapabilities[addr]; ok && cap.CurrentJobs > 0 {
+						cap.CurrentJobs--
+					}
+				}
+				s.logger.Warn("Execution-worker assignment unavailable for job",
+					"job_id", scheduledJob.Job.Id,
+					"execution_lane", scheduledJob.ExecutionLane,
+					"required_workers", requiredExecutionWorkers,
+				)
+				tempJobs = append(tempJobs, scheduledJob)
+				continue
+			}
+
 			if err := scheduledJob.Job.MarkProcessing(); err != nil {
 				// State machine rejected the transition - skip this job
 				s.logger.Warn("Failed to transition job to Processing",
@@ -989,6 +1150,7 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 				}
 			} else {
 				scheduledJob.AssignedTo = assignedValidators
+				scheduledJob.AssignedWorkers = assignedWorkers
 				scheduledJob.LastAttemptBlock = blockHeight
 				scheduledJob.VRFEntropy = hex.EncodeToString(entropy)
 				scheduledJob.VRFAssignments = assignmentProofs
@@ -1004,6 +1166,8 @@ func (s *JobScheduler) GetNextJobs(ctx context.Context, blockHeight int64) []*ty
 				s.logger.Info("Job selected for processing",
 					"job_id", scheduledJob.Job.Id,
 					"assigned_validators", len(assignedValidators),
+					"assigned_workers", len(assignedWorkers),
+					"execution_lane", scheduledJob.ExecutionLane,
 					"effective_priority", scheduledJob.EffectivePriority,
 				)
 
@@ -1071,6 +1235,24 @@ func (s *JobScheduler) GetJobsForValidator(ctx context.Context, validatorAddr st
 	return jobs
 }
 
+// GetJobsForExecutionWorker returns jobs assigned to a specific execution worker.
+func (s *JobScheduler) GetJobsForExecutionWorker(_ context.Context, workerID string) []*types.ComputeJob {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var jobs []*types.ComputeJob
+	for _, scheduledJob := range s.jobIndex {
+		for _, assigned := range scheduledJob.AssignedWorkers {
+			if assigned == workerID {
+				jobs = append(jobs, scheduledJob.Job)
+				break
+			}
+		}
+	}
+
+	return jobs
+}
+
 // MarkJobComplete removes a job from the scheduler
 func (s *JobScheduler) MarkJobComplete(jobID string) {
 	s.markJobComplete(nil, jobID)
@@ -1106,6 +1288,11 @@ func (s *JobScheduler) markJobComplete(_ context.Context, jobID string) {
 			cap.CurrentJobs--
 		}
 	}
+	for _, workerID := range scheduledJob.AssignedWorkers {
+		if worker, ok := s.executionWorkers[workerID]; ok && worker.CurrentJobs > 0 {
+			worker.CurrentJobs--
+		}
+	}
 
 	s.logger.Info("Job marked complete", "job_id", jobID)
 }
@@ -1138,6 +1325,12 @@ func (s *JobScheduler) markJobFailed(ctx context.Context, jobID string, errorMsg
 		}
 	}
 	scheduledJob.AssignedTo = nil
+	for _, workerID := range scheduledJob.AssignedWorkers {
+		if worker, ok := s.executionWorkers[workerID]; ok && worker.CurrentJobs > 0 {
+			worker.CurrentJobs--
+		}
+	}
+	scheduledJob.AssignedWorkers = nil
 
 	if scheduledJob.RetryCount >= s.config.MaxRetries {
 		// Max retries exceeded, remove from scheduler
@@ -1187,6 +1380,44 @@ func (s *JobScheduler) RegisterValidator(capability *types.ValidatorCapability) 
 	)
 }
 
+// RegisterExecutionWorker registers or updates an attested execution worker.
+func (s *JobScheduler) RegisterExecutionWorker(worker *ExecutionWorkerCapability) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if worker == nil || worker.ID == "" {
+		return
+	}
+	s.executionWorkers[worker.ID] = worker
+
+	s.logger.Info("Execution worker registered",
+		"id", worker.ID,
+		"lane", worker.Lane,
+		"attested", worker.Attested,
+	)
+}
+
+// GetExecutionWorkers returns a copy of all registered execution workers.
+func (s *JobScheduler) GetExecutionWorkers() map[string]*ExecutionWorkerCapability {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make(map[string]*ExecutionWorkerCapability, len(s.executionWorkers))
+	for id, worker := range s.executionWorkers {
+		result[id] = worker
+	}
+	return result
+}
+
+// UnregisterExecutionWorker removes an execution worker from the scheduler.
+func (s *JobScheduler) UnregisterExecutionWorker(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.executionWorkers, id)
+	s.logger.Info("Execution worker unregistered", "id", id)
+}
+
 // GetValidatorCapabilities returns a copy of all registered validator capabilities.
 // Used by the ValidatorSelector to evaluate candidates for job assignment.
 func (s *JobScheduler) GetValidatorCapabilities() map[string]*types.ValidatorCapability {
@@ -1215,8 +1446,9 @@ func (s *JobScheduler) GetQueueStats() QueueStats {
 	defer s.mu.RUnlock()
 
 	stats := QueueStats{
-		TotalJobs:            s.jobQueue.Len(),
-		RegisteredValidators: len(s.validatorCapabilities),
+		TotalJobs:                  s.jobQueue.Len(),
+		RegisteredValidators:       len(s.validatorCapabilities),
+		RegisteredExecutionWorkers: len(s.executionWorkers),
 	}
 
 	for _, job := range s.jobIndex {
@@ -1242,20 +1474,27 @@ func (s *JobScheduler) GetQueueStats() QueueStats {
 			stats.OnlineValidators++
 		}
 	}
+	for _, worker := range s.executionWorkers {
+		if worker.IsOnline {
+			stats.OnlineExecutionWorkers++
+		}
+	}
 
 	return stats
 }
 
 // QueueStats contains statistics about the job queue
 type QueueStats struct {
-	TotalJobs            int
-	PendingJobs          int
-	ProcessingJobs       int
-	TEEJobs              int
-	ZKMLJobs             int
-	HybridJobs           int
-	RegisteredValidators int
-	OnlineValidators     int
+	TotalJobs                  int
+	PendingJobs                int
+	ProcessingJobs             int
+	TEEJobs                    int
+	ZKMLJobs                   int
+	HybridJobs                 int
+	RegisteredValidators       int
+	OnlineValidators           int
+	RegisteredExecutionWorkers int
+	OnlineExecutionWorkers     int
 }
 
 // updatePriorities updates effective priorities based on wait time
@@ -1319,7 +1558,9 @@ func (s *JobScheduler) SyncFromChain(ctx context.Context) error {
 				beaconVersion,
 				beaconRound,
 				beaconRandomness,
-				beaconSigHash := s.loadSchedulingMetadata(job)
+				beaconSigHash,
+				executionLane,
+				assignedWorkers := s.loadSchedulingMetadata(job)
 			scheduledJob := &ScheduledJob{
 				Job:               job,
 				EffectivePriority: job.Priority,
@@ -1327,6 +1568,8 @@ func (s *JobScheduler) SyncFromChain(ctx context.Context) error {
 				RetryCount:        retryCount,
 				LastAttemptBlock:  lastAttempt,
 				AssignedTo:        assigned,
+				ExecutionLane:     executionLane,
+				AssignedWorkers:   assignedWorkers,
 				VRFEntropy:        vrfEntropy,
 				VRFAssignments:    vrfAssignments,
 				BeaconSource:      beaconSource,

@@ -9,10 +9,7 @@
 //! - Batch verification for efficiency
 //! - Public key to address derivation verification
 
-use super::{
-    Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult,
-    ParsedTransaction,
-};
+use super::{Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult, ParsedTransaction};
 
 /// Signature verification middleware
 pub struct SignatureMiddleware {
@@ -47,12 +44,8 @@ impl SignatureMiddleware {
 
         // Skip tx_len if present (from signed transaction format)
         if tx_bytes.len() > 4 {
-            let len = u32::from_le_bytes([
-                tx_bytes[0],
-                tx_bytes[1],
-                tx_bytes[2],
-                tx_bytes[3],
-            ]) as usize;
+            let len =
+                u32::from_le_bytes([tx_bytes[0], tx_bytes[1], tx_bytes[2], tx_bytes[3]]) as usize;
 
             if len > 0 && len < tx_bytes.len() {
                 offset = 4;
@@ -165,12 +158,8 @@ impl SignatureMiddleware {
             return Err("Transaction too short");
         }
 
-        let tx_len = u32::from_le_bytes([
-            tx_bytes[0],
-            tx_bytes[1],
-            tx_bytes[2],
-            tx_bytes[3],
-        ]) as usize;
+        let tx_len =
+            u32::from_le_bytes([tx_bytes[0], tx_bytes[1], tx_bytes[2], tx_bytes[3]]) as usize;
 
         if tx_bytes.len() < 4 + tx_len + 4 {
             return Err("Invalid transaction format");
@@ -227,8 +216,8 @@ impl SignatureMiddleware {
         // Quantum threat level affects verification
         let valid = match quantum_threat_level {
             0..=2 => has_ecdsa && has_dilithium, // Both required
-            3..=4 => has_dilithium,               // Dilithium required
-            _ => has_dilithium,                   // Q-Day: only quantum
+            3..=4 => has_dilithium,              // Dilithium required
+            _ => has_dilithium,                  // Q-Day: only quantum
         };
 
         // Verify public key matches sender
@@ -262,7 +251,7 @@ impl Middleware for SignatureMiddleware {
             Some(p) => p,
             None => {
                 return Ok(MiddlewareAction::Reject(
-                    "Failed to parse transaction".into()
+                    "Failed to parse transaction".into(),
                 ))
             }
         };
@@ -270,29 +259,25 @@ impl Middleware for SignatureMiddleware {
         // 3. Check blocked addresses
         for blocked in &ctx.config.blocked_addresses {
             if &parsed.sender == blocked {
-                return Ok(MiddlewareAction::Reject(
-                    "Sender address is blocked".into()
-                ));
+                return Ok(MiddlewareAction::Reject("Sender address is blocked".into()));
             }
         }
 
         // 4. Verify signature
-        let signature_valid = match self.verify_signature(
-            &ctx.tx_bytes,
-            ctx.config.quantum_threat_level,
-        ) {
-            Ok(valid) => valid,
-            Err(e) => {
-                return Ok(MiddlewareAction::Reject(format!(
-                    "Signature verification error: {}",
-                    e
-                )))
-            }
-        };
+        let signature_valid =
+            match self.verify_signature(&ctx.tx_bytes, ctx.config.quantum_threat_level) {
+                Ok(valid) => valid,
+                Err(e) => {
+                    return Ok(MiddlewareAction::Reject(format!(
+                        "Signature verification error: {}",
+                        e
+                    )))
+                }
+            };
 
         if !signature_valid {
             return Ok(MiddlewareAction::Reject(
-                "Signature verification failed".into()
+                "Signature verification failed".into(),
             ));
         }
 

@@ -99,11 +99,11 @@ use num_traits::Zero;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 
+use super::config::{PoUWConfig, UtilityCategory, VerificationMethod};
 use crate::error::{ConsensusError, ConsensusResult};
 use crate::traits::LeaderElection;
-use crate::types::{Address, Slot, EpochSeed, ValidatorInfo};
+use crate::types::{Address, EpochSeed, Slot, ValidatorInfo};
 use crate::vrf::{VrfEngine, VrfKeys, VrfOutput, VrfProof};
-use super::config::{PoUWConfig, UtilityCategory, VerificationMethod};
 
 // =============================================================================
 // CONSTANTS
@@ -243,7 +243,8 @@ impl UsefulWorkScore {
         }
 
         // Calculate Gini coefficient for distribution
-        let mut sorted_shares: Vec<f64> = self.uwu_by_category
+        let mut sorted_shares: Vec<f64> = self
+            .uwu_by_category
             .values()
             .map(|&v| v as f64 / total_uwu as f64)
             .collect();
@@ -547,7 +548,8 @@ impl PoUWElection {
 
     /// Get all active validators
     pub fn active_validators(&self, current_slot: Slot) -> Vec<ValidatorInfo> {
-        self.validators.read()
+        self.validators
+            .read()
             .values()
             .filter(|v| v.is_eligible(current_slot))
             .cloned()
@@ -562,7 +564,9 @@ impl PoUWElection {
         vrf_keys: &VrfKeys,
     ) -> ConsensusResult<Option<(VrfOutput, VrfProof)>> {
         // Get validator info
-        let info = self.validators.read()
+        let info = self
+            .validators
+            .read()
             .get(validator)
             .cloned()
             .ok_or_else(|| ConsensusError::ValidatorNotRegistered {
@@ -579,7 +583,9 @@ impl PoUWElection {
 
         // Generate VRF proof
         let epoch_seed = self.epoch_seed();
-        let (output, proof) = self.vrf_engine.prove_for_slot(vrf_keys, &epoch_seed, slot)?;
+        let (output, proof) = self
+            .vrf_engine
+            .prove_for_slot(vrf_keys, &epoch_seed, slot)?;
 
         // Calculate threshold
         let threshold = self.get_or_compute_threshold(validator)?;
@@ -604,7 +610,9 @@ impl PoUWElection {
         vrf_proof: &[u8],
     ) -> ConsensusResult<()> {
         // Get validator info
-        let info = self.validators.read()
+        let info = self
+            .validators
+            .read()
             .get(proposer)
             .cloned()
             .ok_or_else(|| ConsensusError::ValidatorNotRegistered {
@@ -614,7 +622,9 @@ impl PoUWElection {
         // Verify useful work score matches (with tolerance for decay)
         let actual_score = self.get_useful_work_score(proposer);
         let tolerance = actual_score / 100; // 1% tolerance
-        if (claimed_useful_work_score as i128 - actual_score as i128).unsigned_abs() > tolerance as u128 {
+        if (claimed_useful_work_score as i128 - actual_score as i128).unsigned_abs()
+            > tolerance as u128
+        {
             return Err(ConsensusError::UsefulWorkScoreMismatch {
                 address: hex::encode(proposer),
                 claimed: claimed_useful_work_score,
@@ -653,11 +663,8 @@ impl PoUWElection {
         }
 
         // Verify threshold
-        let threshold = self.calculate_threshold(
-            info.stake,
-            actual_score,
-            *self.total_weighted_stake.read(),
-        );
+        let threshold =
+            self.calculate_threshold(info.stake, actual_score, *self.total_weighted_stake.read());
 
         if !self.check_vrf_threshold(vrf_output, &threshold) {
             return Err(ConsensusError::VrfThresholdNotMet {
@@ -694,14 +701,17 @@ impl PoUWElection {
     /// Update weighted stake for a single validator
     fn update_weighted_stake(&self, address: &Address) -> ConsensusResult<()> {
         let validators = self.validators.read();
-        let info = validators.get(address)
-            .ok_or_else(|| ConsensusError::ValidatorNotRegistered {
-                address: hex::encode(address),
-            })?;
+        let info =
+            validators
+                .get(address)
+                .ok_or_else(|| ConsensusError::ValidatorNotRegistered {
+                    address: hex::encode(address),
+                })?;
 
         let old_score = {
             let scores = self.useful_work_scores.read();
-            scores.get(address)
+            scores
+                .get(address)
                 .map(|s| s.calculate_decayed_score(*self.current_epoch.read(), &self.config))
                 .unwrap_or(0)
         };
@@ -712,7 +722,9 @@ impl PoUWElection {
         let new_weighted = self.weighted_stake_internal(info.stake, new_score);
 
         let mut total_weighted = self.total_weighted_stake.write();
-        *total_weighted = total_weighted.saturating_sub(old_weighted).saturating_add(new_weighted);
+        *total_weighted = total_weighted
+            .saturating_sub(old_weighted)
+            .saturating_add(new_weighted);
 
         Ok(())
     }
@@ -731,7 +743,9 @@ impl PoUWElection {
         }
 
         // Get validator info
-        let info = self.validators.read()
+        let info = self
+            .validators
+            .read()
             .get(validator)
             .cloned()
             .ok_or_else(|| ConsensusError::ValidatorNotRegistered {
@@ -749,7 +763,9 @@ impl PoUWElection {
         );
 
         // Cache it
-        self.threshold_cache.write().insert(*validator, threshold.clone());
+        self.threshold_cache
+            .write()
+            .insert(*validator, threshold.clone());
 
         Ok(threshold)
     }
@@ -767,7 +783,8 @@ impl PoUWElection {
 
             // Update average winner score
             let winner_score = score.total_uwu;
-            stats.avg_winner_score = (stats.avg_winner_score * (stats.total_elections - 1) + winner_score)
+            stats.avg_winner_score = (stats.avg_winner_score * (stats.total_elections - 1)
+                + winner_score)
                 / stats.total_elections;
 
             // Track min winning score
@@ -785,14 +802,13 @@ impl PoUWElection {
     /// Get stats (alias for statistics)
     pub fn stats(&self) -> ElectionStats {
         let validators = self.validators.read();
-        let active_count = validators.values()
-            .filter(|v| v.active)
-            .count();
+        let active_count = validators.values().filter(|v| v.active).count();
 
         let total_useful_work: u64 = {
             let scores = self.useful_work_scores.read();
             let current_epoch = *self.current_epoch.read();
-            scores.values()
+            scores
+                .values()
                 .map(|s| s.calculate_decayed_score(current_epoch, &self.config))
                 .sum()
         };
@@ -801,7 +817,8 @@ impl PoUWElection {
             let current_epoch = *self.current_epoch.read();
             let scores = self.useful_work_scores.read();
 
-            validators.values()
+            validators
+                .values()
                 .map(|v| {
                     let score = scores
                         .get(&v.address)
@@ -809,7 +826,8 @@ impl PoUWElection {
                         .unwrap_or(0);
                     self.useful_work_multiplier(score)
                 })
-                .sum::<f64>() / validators.len() as f64
+                .sum::<f64>()
+                / validators.len() as f64
         } else {
             1.0
         };
@@ -925,14 +943,7 @@ mod tests {
     use super::*;
 
     fn create_validator(address: Address, stake: u128) -> ValidatorInfo {
-        ValidatorInfo::new(
-            address,
-            stake,
-            vec![0x02; 33],
-            vec![],
-            1000,
-            0,
-        )
+        ValidatorInfo::new(address, stake, vec![0x02; 33], vec![], 1000, 0)
     }
 
     #[test]
@@ -1022,13 +1033,15 @@ mod tests {
         let old_weighted = election.stats().total_weighted_stake;
 
         // Record useful work
-        election.record_useful_work(
-            &addr,
-            10000,
-            UtilityCategory::Financial,
-            VerificationMethod::Hybrid,
-            5000,
-        ).unwrap();
+        election
+            .record_useful_work(
+                &addr,
+                10000,
+                UtilityCategory::Financial,
+                VerificationMethod::Hybrid,
+                5000,
+            )
+            .unwrap();
 
         let new_weighted = election.stats().total_weighted_stake;
         assert!(new_weighted > old_weighted);
@@ -1081,13 +1094,37 @@ mod tests {
         let mut score = UsefulWorkScore::new();
 
         // Add some work
-        score.add_uwu(1000, UtilityCategory::Financial, VerificationMethod::TeeAttestation, 5000, 0);
-        score.add_uwu(2000, UtilityCategory::Medical, VerificationMethod::Hybrid, 10000, 0);
+        score.add_uwu(
+            1000,
+            UtilityCategory::Financial,
+            VerificationMethod::TeeAttestation,
+            5000,
+            0,
+        );
+        score.add_uwu(
+            2000,
+            UtilityCategory::Medical,
+            VerificationMethod::Hybrid,
+            10000,
+            0,
+        );
 
         assert_eq!(score.total_uwu, 3000);
         assert_eq!(score.total_jobs_verified, 2);
-        assert_eq!(*score.uwu_by_category.get(&UtilityCategory::Financial).unwrap(), 1000);
-        assert_eq!(*score.uwu_by_category.get(&UtilityCategory::Medical).unwrap(), 2000);
+        assert_eq!(
+            *score
+                .uwu_by_category
+                .get(&UtilityCategory::Financial)
+                .unwrap(),
+            1000
+        );
+        assert_eq!(
+            *score
+                .uwu_by_category
+                .get(&UtilityCategory::Medical)
+                .unwrap(),
+            2000
+        );
     }
 
     #[test]
@@ -1099,9 +1136,13 @@ mod tests {
         let low_diversity = score.category_diversity_score();
 
         // Multiple categories = higher diversity
-        score.uwu_by_category.insert(UtilityCategory::Financial, 1000);
+        score
+            .uwu_by_category
+            .insert(UtilityCategory::Financial, 1000);
         score.uwu_by_category.insert(UtilityCategory::Medical, 1000);
-        score.uwu_by_category.insert(UtilityCategory::Scientific, 1000);
+        score
+            .uwu_by_category
+            .insert(UtilityCategory::Scientific, 1000);
         let high_diversity = score.category_diversity_score();
 
         assert!(high_diversity > low_diversity);
@@ -1113,14 +1154,30 @@ mod tests {
         let mut score = UsefulWorkScore::new();
 
         // Normal activity: not suspicious
-        score.add_uwu(1000, UtilityCategory::Financial, VerificationMethod::TeeAttestation, 5000, 0);
-        score.add_uwu(1000, UtilityCategory::Medical, VerificationMethod::Hybrid, 5000, 0);
+        score.add_uwu(
+            1000,
+            UtilityCategory::Financial,
+            VerificationMethod::TeeAttestation,
+            5000,
+            0,
+        );
+        score.add_uwu(
+            1000,
+            UtilityCategory::Medical,
+            VerificationMethod::Hybrid,
+            5000,
+            0,
+        );
         assert!(!score.is_suspicious(&config));
 
         // Single category dominance: suspicious
         let mut suspicious_score = UsefulWorkScore::new();
-        suspicious_score.uwu_by_category.insert(UtilityCategory::General, 99000);
-        suspicious_score.uwu_by_category.insert(UtilityCategory::Financial, 100);
+        suspicious_score
+            .uwu_by_category
+            .insert(UtilityCategory::General, 99000);
+        suspicious_score
+            .uwu_by_category
+            .insert(UtilityCategory::Financial, 100);
         assert!(suspicious_score.is_suspicious(&config));
     }
 
@@ -1143,7 +1200,9 @@ mod tests {
         assert_eq!(stats_before.total_stake, 5_000_000);
 
         // Remove should succeed
-        election.remove_validator(&addr).expect("remove_validator should succeed");
+        election
+            .remove_validator(&addr)
+            .expect("remove_validator should succeed");
 
         // Validator must be gone
         assert!(election.get_validator(&addr).is_none());
@@ -1293,13 +1352,15 @@ mod tests {
         assert_eq!(details.total_uwu, 0);
 
         // Record some work
-        election.record_useful_work(
-            &addr,
-            999,
-            UtilityCategory::Scientific,
-            VerificationMethod::ZkProof,
-            3000,
-        ).unwrap();
+        election
+            .record_useful_work(
+                &addr,
+                999,
+                UtilityCategory::Scientific,
+                VerificationMethod::ZkProof,
+                3000,
+            )
+            .unwrap();
 
         // The clone returned now should show updated total_uwu
         let updated = election.get_useful_work_details(&addr).unwrap();
@@ -1473,13 +1534,15 @@ mod tests {
         election.register_validator(v2).unwrap();
 
         // Record some useful work for v1
-        election.record_useful_work(
-            &addr1,
-            5000,
-            UtilityCategory::Medical,
-            VerificationMethod::Hybrid,
-            10000,
-        ).unwrap();
+        election
+            .record_useful_work(
+                &addr1,
+                5000,
+                UtilityCategory::Medical,
+                VerificationMethod::Hybrid,
+                10000,
+            )
+            .unwrap();
 
         let stats = election.stats();
         assert_eq!(stats.total_validators, 2);
@@ -1516,13 +1579,15 @@ mod tests {
         election.register_validator(validator).unwrap();
 
         // Add very large useful work to maximise probability of winning the VRF lottery
-        election.record_useful_work(
-            &addr,
-            1_000_000_000,
-            UtilityCategory::Medical,
-            VerificationMethod::Hybrid,
-            10_000,
-        ).unwrap();
+        election
+            .record_useful_work(
+                &addr,
+                1_000_000_000,
+                UtilityCategory::Medical,
+                VerificationMethod::Hybrid,
+                10_000,
+            )
+            .unwrap();
 
         // Invoke check_eligibility multiple times across different slots to
         // increase the chance of at least one winning slot in devnet.
@@ -1552,7 +1617,13 @@ mod tests {
         let config = PoUWConfig::devnet(); // devnet: decay_factor = 1.0 (no decay)
         let mut score = UsefulWorkScore::new();
 
-        score.add_uwu(10_000, UtilityCategory::General, VerificationMethod::TeeAttestation, 5000, 0);
+        score.add_uwu(
+            10_000,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            5000,
+            0,
+        );
 
         // At current_epoch == 0 (same epoch as recording), full score is returned
         let decayed = score.calculate_decayed_score(0, &config);
@@ -1566,7 +1637,13 @@ mod tests {
         let mut score = UsefulWorkScore::new();
 
         // Record 10_000 UWU at epoch 0
-        score.add_uwu(10_000, UtilityCategory::General, VerificationMethod::TeeAttestation, 5000, 0);
+        score.add_uwu(
+            10_000,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            5000,
+            0,
+        );
 
         // At epoch 1 (1 epoch later), decayed = 10_000 * 0.95^1 * reputation_factor
         let decayed_epoch1 = score.calculate_decayed_score(1, &config);
@@ -1584,8 +1661,20 @@ mod tests {
         let config = PoUWConfig::devnet(); // no decay
         let mut score = UsefulWorkScore::new();
 
-        score.add_uwu(1_000, UtilityCategory::Financial, VerificationMethod::Hybrid, 1000, 0);
-        score.add_uwu(2_000, UtilityCategory::Medical, VerificationMethod::Hybrid, 1000, 1);
+        score.add_uwu(
+            1_000,
+            UtilityCategory::Financial,
+            VerificationMethod::Hybrid,
+            1000,
+            0,
+        );
+        score.add_uwu(
+            2_000,
+            UtilityCategory::Medical,
+            VerificationMethod::Hybrid,
+            1000,
+            1,
+        );
 
         // At epoch 1, both epoch 0 and epoch 1 contributions are in the window
         let total = score.calculate_decayed_score(1, &config);
@@ -1673,9 +1762,21 @@ mod tests {
         // Add enough jobs so that re-execution dominates (> 90%)
         // 10 jobs: 9 re-execution, 1 other
         for _ in 0..9 {
-            score.add_uwu(100, UtilityCategory::General, VerificationMethod::ReExecution, 1000, 0);
+            score.add_uwu(
+                100,
+                UtilityCategory::General,
+                VerificationMethod::ReExecution,
+                1000,
+                0,
+            );
         }
-        score.add_uwu(100, UtilityCategory::General, VerificationMethod::TeeAttestation, 1000, 0);
+        score.add_uwu(
+            100,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            1000,
+            0,
+        );
 
         assert!(score.is_suspicious(&config));
     }
@@ -1688,8 +1789,20 @@ mod tests {
         // Two flags (threshold is 3)
         score.suspicious_flags = 2;
         // Balanced categories
-        score.add_uwu(500, UtilityCategory::General, VerificationMethod::TeeAttestation, 1000, 0);
-        score.add_uwu(500, UtilityCategory::Financial, VerificationMethod::ZkProof, 1000, 0);
+        score.add_uwu(
+            500,
+            UtilityCategory::General,
+            VerificationMethod::TeeAttestation,
+            1000,
+            0,
+        );
+        score.add_uwu(
+            500,
+            UtilityCategory::Financial,
+            VerificationMethod::ZkProof,
+            1000,
+            0,
+        );
 
         assert!(!score.is_suspicious(&config));
     }
@@ -1767,7 +1880,9 @@ mod tests {
             assert!(
                 (via_trait - internal).abs() < 1e-12,
                 "Mismatch at score {}: trait={} internal={}",
-                s, via_trait, internal
+                s,
+                via_trait,
+                internal
             );
         }
     }

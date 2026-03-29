@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Validate repo auditability baseline registry and local clone expectations
+      - name: Validate repo auditability registry and available checkout baseline
         run: |
           set -euo pipefail
           python3 scripts/validate-repo-auditability.py --write-matrix

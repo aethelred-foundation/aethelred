@@ -41,14 +41,14 @@
 //! └─────────────────────────────────────────────────────────────────────────┘
 //! ```
 
-use std::collections::{HashMap, VecDeque};
-use serde::{Deserialize, Serialize};
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, VecDeque};
 
 use crate::error::{ConsensusError, ConsensusResult};
-use hex::encode;
-use crate::types::{Address, Slot, Hash};
 use crate::traits::VerificationMethod;
+use crate::types::{Address, Hash, Slot};
+use hex::encode;
 
 // =============================================================================
 // CONSTANTS
@@ -157,19 +157,17 @@ impl ReputationConfig {
     pub fn validate(&self) -> ConsensusResult<()> {
         if self.decay_rate <= 0.0 || self.decay_rate > 1.0 {
             return Err(ConsensusError::Config(
-                "Decay rate must be in (0, 1]".into()
+                "Decay rate must be in (0, 1]".into(),
             ));
         }
 
         if self.window_days == 0 {
-            return Err(ConsensusError::Config(
-                "Window days must be > 0".into()
-            ));
+            return Err(ConsensusError::Config("Window days must be > 0".into()));
         }
 
         if self.smoothing_factor < 0.0 || self.smoothing_factor > 1.0 {
             return Err(ConsensusError::Config(
-                "Smoothing factor must be in [0, 1]".into()
+                "Smoothing factor must be in [0, 1]".into(),
             ));
         }
 
@@ -459,9 +457,9 @@ impl ReputationEngine {
         }
 
         let mut validators = self.validators.write();
-        let state = validators.entry(validator).or_insert_with(|| {
-            ValidatorReputation::new(validator)
-        });
+        let state = validators
+            .entry(validator)
+            .or_insert_with(|| ValidatorReputation::new(validator));
 
         // Check daily rate limit
         let current_day = (current_slot / SLOTS_PER_DAY) as u32;
@@ -503,7 +501,9 @@ impl ReputationEngine {
         }
 
         use std::sync::atomic::Ordering;
-        self.metrics.total_jobs_processed.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .total_jobs_processed
+            .fetch_add(1, Ordering::Relaxed);
 
         Ok(ScoreUpdate {
             validator,
@@ -567,14 +567,17 @@ impl ReputationEngine {
         }
 
         use std::sync::atomic::Ordering;
-        self.metrics.score_recalculations.fetch_add(updates.len() as u64, Ordering::Relaxed);
+        self.metrics
+            .score_recalculations
+            .fetch_add(updates.len() as u64, Ordering::Relaxed);
 
         Ok(updates)
     }
 
     /// Get current score for a validator
     pub fn get_score(&self, validator: &Address) -> u64 {
-        self.validators.read()
+        self.validators
+            .read()
             .get(validator)
             .map(|s| s.current_score)
             .unwrap_or(0)
@@ -582,7 +585,8 @@ impl ReputationEngine {
 
     /// Get smoothed score for a validator
     pub fn get_smoothed_score(&self, validator: &Address) -> f64 {
-        self.validators.read()
+        self.validators
+            .read()
             .get(validator)
             .map(|s| s.smoothed_score)
             .unwrap_or(0.0)
@@ -595,7 +599,8 @@ impl ReputationEngine {
 
     /// Get all validator scores
     pub fn get_all_scores(&self) -> HashMap<Address, u64> {
-        self.validators.read()
+        self.validators
+            .read()
             .iter()
             .map(|(addr, state)| (*addr, state.current_score))
             .collect()
@@ -604,7 +609,8 @@ impl ReputationEngine {
     /// Get top validators by score
     pub fn get_top_validators(&self, n: usize) -> Vec<(Address, u64)> {
         let validators = self.validators.read();
-        let mut scores: Vec<_> = validators.iter()
+        let mut scores: Vec<_> = validators
+            .iter()
             .map(|(addr, state)| (*addr, state.current_score))
             .collect();
 
@@ -630,7 +636,8 @@ impl ReputationEngine {
             }
 
             // Get decay factor
-            let decay = self.decay_factors
+            let decay = self
+                .decay_factors
                 .get(age_days as usize)
                 .copied()
                 .unwrap_or(0.0);
@@ -658,9 +665,8 @@ impl ReputationEngine {
 
     /// Prune jobs outside the window
     fn prune_window_jobs(&self, state: &mut ValidatorReputation, current_slot: Slot) {
-        let window_start_slot = current_slot.saturating_sub(
-            self.config.window_days as u64 * SLOTS_PER_DAY
-        );
+        let window_start_slot =
+            current_slot.saturating_sub(self.config.window_days as u64 * SLOTS_PER_DAY);
 
         while let Some(job) = state.window_jobs.front() {
             if job.verified_at_slot < window_start_slot {
@@ -685,7 +691,8 @@ impl ReputationEngine {
 
     /// Get daily job count
     fn get_daily_count(&self, state: &ValidatorReputation, day: u32) -> u32 {
-        state.daily_job_counts
+        state
+            .daily_job_counts
             .iter()
             .find(|(d, _)| *d == day)
             .map(|(_, count)| *count)
@@ -910,8 +917,14 @@ mod tests {
 
         // TEE job
         let tee_job = ComputeJobRecord::new(
-            [1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32],
-            1000, VerificationMethod::TeeAttestation, 100, true,
+            [1u8; 32],
+            [2u8; 32],
+            [3u8; 32],
+            [4u8; 32],
+            1000,
+            VerificationMethod::TeeAttestation,
+            100,
+            true,
         );
         engine.record_job(validator, tee_job).unwrap();
         let tee_score = engine.get_score(&validator);
@@ -921,8 +934,14 @@ mod tests {
 
         // Hybrid job (should give higher score)
         let hybrid_job = ComputeJobRecord::new(
-            [1u8; 32], [2u8; 32], [3u8; 32], [4u8; 32],
-            1000, VerificationMethod::Hybrid, 100, true,
+            [1u8; 32],
+            [2u8; 32],
+            [3u8; 32],
+            [4u8; 32],
+            1000,
+            VerificationMethod::Hybrid,
+            100,
+            true,
         );
         engine.record_job(validator2, hybrid_job).unwrap();
         let hybrid_score = engine.get_score(&validator2);

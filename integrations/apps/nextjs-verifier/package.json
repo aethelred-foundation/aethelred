@@ -8,8 +8,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "@aethelred/sdk": "file:../../sdk/typescript",
-    "next": "^14.2.0",
+    "@aethelred/sdk": "file:../../../sdk/typescript",
+    "next": "^15.5.14",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

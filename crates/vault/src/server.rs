@@ -33,11 +33,11 @@ use tracing::{error, info, warn};
 
 use sha2::{Digest, Sha256};
 
-use crate::attestation::{AttestationGenerator, TEEConfig, TEEPlatform};
 #[cfg(feature = "mock-tee")]
 use crate::attestation::LocalVendorAttester;
 #[cfg(feature = "remote-attestation")]
 use crate::attestation::RemoteVendorAttester;
+use crate::attestation::{AttestationGenerator, TEEConfig, TEEPlatform};
 use crate::mev_protection;
 use crate::reward_calculator;
 use crate::types::*;
@@ -405,7 +405,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
     // Rate-limit middleware — applied when rps > 0.
     if rate_limit_rps > 0 {
         let bucket = Arc::new(Mutex::new(TokenBucket::new(rate_limit_rps)));
-        app = app.layer(middleware::from_fn_with_state(bucket, rate_limit_middleware));
+        app = app.layer(middleware::from_fn_with_state(
+            bucket,
+            rate_limit_middleware,
+        ));
     }
 
     app
@@ -568,7 +571,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                  Bind to 127.0.0.1 / ::1 / localhost for development, \
                  or set CRUZIBLE_AUTH_TOKEN for production.",
                 config.listen_addr
-            ).into());
+            )
+            .into());
         }
 
         // Loopback + Mock is always safe for local dev.
@@ -579,7 +583,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                  Set CRUZIBLE_AUTH_TOKEN to a bearer token, or for local testing \
                  on loopback set CRUZIBLE_INSECURE_NO_AUTH=true (NOT for production).",
                 config.tee_platform
-            ).into());
+            )
+            .into());
         }
 
         if !is_mock && config.insecure_no_auth {
@@ -600,8 +605,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
     // Derive the operator signing key
     let signing_key_bytes: [u8; 32] = match &config.operator_key_hex {
         Some(key_hex) => {
-            let bytes = hex::decode(key_hex)
-                .map_err(|e| format!("invalid operator_key_hex: {}", e))?;
+            let bytes =
+                hex::decode(key_hex).map_err(|e| format!("invalid operator_key_hex: {}", e))?;
             bytes
                 .try_into()
                 .map_err(|_| "operator key must be exactly 32 bytes (64 hex chars)")?
@@ -625,9 +630,10 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
     // Mock platform uses well-known test values if not explicitly configured.
     let enclave_hash: [u8; 32] = match &config.enclave_hash_hex {
         Some(hex_str) => {
-            let bytes = hex::decode(hex_str)
-                .map_err(|e| format!("invalid enclave_hash_hex: {}", e))?;
-            bytes.try_into()
+            let bytes =
+                hex::decode(hex_str).map_err(|e| format!("invalid enclave_hash_hex: {}", e))?;
+            bytes
+                .try_into()
                 .map_err(|_| "enclave_hash_hex must be exactly 32 bytes (64 hex chars)")?
         }
         None if config.tee_platform == TEEPlatform::Mock => {
@@ -645,9 +651,10 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
 
     let signer_hash: [u8; 32] = match &config.signer_hash_hex {
         Some(hex_str) => {
-            let bytes = hex::decode(hex_str)
-                .map_err(|e| format!("invalid signer_hash_hex: {}", e))?;
-            bytes.try_into()
+            let bytes =
+                hex::decode(hex_str).map_err(|e| format!("invalid signer_hash_hex: {}", e))?;
+            bytes
+                .try_into()
                 .map_err(|_| "signer_hash_hex must be exactly 32 bytes (64 hex chars)")?
         }
         None if config.tee_platform == TEEPlatform::Mock => {
@@ -659,16 +666,18 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                 "real TEE platform '{}' requires signer_hash_hex (MRSIGNER / signer measurement). \
                  Set CRUZIBLE_SIGNER_HASH_HEX to the 64-char hex hash of the enclave signer.",
                 config.tee_platform
-            ).into());
+            )
+            .into());
         }
     };
 
     // Application hash — only required for Nitro (PCR2)
     let application_hash: Option<[u8; 32]> = match &config.application_hash_hex {
         Some(hex_str) => {
-            let bytes = hex::decode(hex_str)
-                .map_err(|e| format!("invalid application_hash_hex: {}", e))?;
-            let arr: [u8; 32] = bytes.try_into()
+            let bytes =
+                hex::decode(hex_str).map_err(|e| format!("invalid application_hash_hex: {}", e))?;
+            let arr: [u8; 32] = bytes
+                .try_into()
                 .map_err(|_| "application_hash_hex must be exactly 32 bytes (64 hex chars)")?;
             Some(arr)
         }
@@ -676,7 +685,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
             return Err(format!(
                 "Nitro platform requires application_hash_hex (PCR2 / application measurement). \
                  Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application."
-            ).into());
+            )
+            .into());
         }
         None => None,
     };
@@ -729,8 +739,12 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                  registerAttestationRelay() (not setVendorRootKey) for governance accountability."
             );
             let attester = Box::new(RemoteVendorAttester::new(relay_url.clone()));
-            AttestationGenerator::with_vendor_attester(tee_config, attester)
-                .map_err(|e| format!("failed to initialize attestation generator with remote attester: {}", e))?
+            AttestationGenerator::with_vendor_attester(tee_config, attester).map_err(|e| {
+                format!(
+                    "failed to initialize attestation generator with remote attester: {}",
+                    e
+                )
+            })?
         }
         #[cfg(not(feature = "remote-attestation"))]
         {
@@ -755,7 +769,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                  To use a local vendor key for development, rebuild with: \
                  cargo build --features mock-tee",
                 config.tee_platform
-            ).into());
+            )
+            .into());
         }
 
         // ── Runtime gate (dev builds only): loopback + explicit flag ──
@@ -774,7 +789,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                      • CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true\n  \
                      • Bind to loopback (127.0.0.1 / ::1 / localhost)",
                     config.tee_platform
-                ).into());
+                )
+                .into());
             }
 
             if !is_loopback {
@@ -785,7 +801,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
                      would allow network clients to receive unverified attestations.\n  \
                      Bind to 127.0.0.1 / ::1 / localhost for local development.",
                     config.listen_addr
-                ).into());
+                )
+                .into());
             }
 
             warn!(
@@ -797,12 +814,16 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
             );
             let vendor_key_bytes = hex::decode(vendor_key_hex)
                 .map_err(|e| format!("invalid vendor_attestation_key_hex: {}", e))?;
-            let vendor_key: [u8; 32] = vendor_key_bytes
-                .try_into()
-                .map_err(|_| "vendor_attestation_key_hex must be exactly 32 bytes (64 hex chars)")?;
+            let vendor_key: [u8; 32] = vendor_key_bytes.try_into().map_err(|_| {
+                "vendor_attestation_key_hex must be exactly 32 bytes (64 hex chars)"
+            })?;
             let attester = Box::new(LocalVendorAttester::new(vendor_key));
-            AttestationGenerator::with_vendor_attester(tee_config, attester)
-                .map_err(|e| format!("failed to initialize attestation generator with local attester: {}", e))?
+            AttestationGenerator::with_vendor_attester(tee_config, attester).map_err(|e| {
+                format!(
+                    "failed to initialize attestation generator with local attester: {}",
+                    e
+                )
+            })?
         }
     } else {
         // Neither relay URL nor local vendor key configured for a real platform.
@@ -815,12 +836,15 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
              • CRUZIBLE_INSECURE_LOCAL_VENDOR_KEY=true — acknowledge insecure mode\n  \
              • Bind to loopback (127.0.0.1 / ::1 / localhost)",
             config.tee_platform
-        ).into());
+        )
+        .into());
     };
 
     // Log the operator public key so it can be registered on-chain
     match attestation_gen.operator_pubkey_hex() {
-        Ok(pubkey) => info!(operator_pubkey = %pubkey, "TEE operator public key (register on-chain)"),
+        Ok(pubkey) => {
+            info!(operator_pubkey = %pubkey, "TEE operator public key (register on-chain)")
+        }
         Err(e) => return Err(format!("failed to derive operator pubkey: {}", e).into()),
     }
 
@@ -1352,10 +1376,7 @@ pub fn validate_unique_staker_addresses(stakers: &[StakerStake]) -> Result<(), S
     let mut seen = std::collections::HashSet::with_capacity(stakers.len());
     for staker in stakers {
         if !seen.insert(&staker.address) {
-            return Err(format!(
-                "duplicate staker address: {}",
-                staker.address,
-            ));
+            return Err(format!("duplicate staker address: {}", staker.address,));
         }
     }
     Ok(())
@@ -1501,9 +1522,7 @@ async fn health_handler(State(state): State<Arc<AppState>>) -> Json<HealthRespon
     })
 }
 
-async fn capabilities_handler(
-    State(state): State<Arc<AppState>>,
-) -> Json<CapabilitiesResponse> {
+async fn capabilities_handler(State(state): State<Arc<AppState>>) -> Json<CapabilitiesResponse> {
     Json(CapabilitiesResponse {
         platform: state.config.tee_platform.to_string(),
         supported_operations: vec![
@@ -1583,7 +1602,11 @@ async fn metrics_handler(State(state): State<Arc<AppState>>) -> impl IntoRespons
         auth_fail = auth_fail,
         last_attest = last_attest,
         rps = state.config.rate_limit_rps,
-        auth_en = if state.config.auth_token.is_some() { 1 } else { 0 },
+        auth_en = if state.config.auth_token.is_some() {
+            1
+        } else {
+            0
+        },
     );
 
     (
@@ -1745,7 +1768,10 @@ async fn select_validators_handler(
     // Update stats + metrics
     *state.total_attestations.write().await += 1;
     *state.current_epoch.write().await = request.epoch;
-    state.metrics.validator_selections.fetch_add(1, Ordering::Relaxed);
+    state
+        .metrics
+        .validator_selections
+        .fetch_add(1, Ordering::Relaxed);
     state.metrics.record_attestation_time();
 
     info!(
@@ -1779,10 +1805,7 @@ async fn calculate_rewards_handler(
     );
 
     if request.staker_stakes.len() > state.config.max_stakers {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Too many stakers".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "Too many stakers".to_string()));
     }
 
     // ── Reject duplicate staker addresses ─────────────────────────────
@@ -1790,9 +1813,8 @@ async fn calculate_rewards_handler(
     // The XOR registry root is self-inverse: duplicate entries can cancel
     // out or collapse, allowing a manipulated snapshot to preserve the
     // same root while skewing reward allocations.  Fail-closed.
-    validate_unique_staker_addresses(&request.staker_stakes).map_err(|e| {
-        (StatusCode::BAD_REQUEST, e)
-    })?;
+    validate_unique_staker_addresses(&request.staker_stakes)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
     // ── Validate and recompute stake snapshot hash ─────────────────────
     //
@@ -1865,10 +1887,7 @@ async fn calculate_rewards_handler(
         if decoded.len() != 32 {
             return Err((
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "validator_set_hash must be 32 bytes, got {}",
-                    decoded.len()
-                ),
+                format!("validator_set_hash must be 32 bytes, got {}", decoded.len()),
             ));
         }
         let mut arr = [0u8; 32];
@@ -1890,7 +1909,10 @@ async fn calculate_rewards_handler(
     }
 
     let mut response = reward_calculator::calculate_rewards(&request).map_err(|e| {
-        (StatusCode::BAD_REQUEST, format!("reward calculation failed: {}", e))
+        (
+            StatusCode::BAD_REQUEST,
+            format!("reward calculation failed: {}", e),
+        )
     })?;
 
     // Compute the XOR staker-registry root from the supplied staker set.
@@ -1947,7 +1969,10 @@ async fn calculate_rewards_handler(
     response.validator_set_hash = hex::encode(recomputed_vs_hash);
 
     *state.total_attestations.write().await += 1;
-    state.metrics.reward_calculations.fetch_add(1, Ordering::Relaxed);
+    state
+        .metrics
+        .reward_calculations
+        .fetch_add(1, Ordering::Relaxed);
     state.metrics.record_attestation_time();
 
     info!(
@@ -1985,11 +2010,7 @@ async fn order_transactions_handler(
     if request.reveals.len() > max {
         return Err((
             StatusCode::BAD_REQUEST,
-            format!(
-                "Too many reveals ({}, max {})",
-                request.reveals.len(),
-                max
-            ),
+            format!("Too many reveals ({}, max {})", request.reveals.len(), max),
         ));
     }
 
@@ -2015,21 +2036,18 @@ async fn order_transactions_handler(
 
     // Generate attestation
     let order_data = serde_json::to_vec(&ordered).unwrap_or_default();
-    let attestation = state
-        .attestation_gen
-        .generate(&order_data)
-        .map_err(|e| {
-            state.metrics.total_errors.fetch_add(1, Ordering::Relaxed);
-            error!(
-                epoch = request.epoch,
-                error = %e,
-                "Attestation generation failed for MEV ordering"
-            );
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("attestation generation failed: {}", e),
-            )
-        })?;
+    let attestation = state.attestation_gen.generate(&order_data).map_err(|e| {
+        state.metrics.total_errors.fetch_add(1, Ordering::Relaxed);
+        error!(
+            epoch = request.epoch,
+            error = %e,
+            "Attestation generation failed for MEV ordering"
+        );
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("attestation generation failed: {}", e),
+        )
+    })?;
 
     *state.total_attestations.write().await += 1;
     state.metrics.mev_orderings.fetch_add(1, Ordering::Relaxed);
@@ -2101,16 +2119,12 @@ async fn attest_delegation_handler(
     );
 
     if request.staker_stakes.len() > state.config.max_stakers {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Too many stakers".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "Too many stakers".to_string()));
     }
 
     // ── Reject duplicate staker addresses ─────────────────────────────
-    validate_unique_staker_addresses(&request.staker_stakes).map_err(|e| {
-        (StatusCode::BAD_REQUEST, e)
-    })?;
+    validate_unique_staker_addresses(&request.staker_stakes)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
     // ── Validate and recompute staker registry root ─────────────────────
     //
@@ -2173,11 +2187,8 @@ async fn attest_delegation_handler(
     //   1. epoch             — prevents cross-epoch replay
     //   2. delegationRoot    — the TEE-computed delegation topology
     //   3. stakerRegistryRoot — the staker set it was derived from
-    let canonical_payload = compute_canonical_delegation_payload(
-        request.epoch,
-        &delegation_root,
-        &recomputed_registry,
-    );
+    let canonical_payload =
+        compute_canonical_delegation_payload(request.epoch, &delegation_root, &recomputed_registry);
 
     let attestation = state
         .attestation_gen
@@ -2196,7 +2207,10 @@ async fn attest_delegation_handler(
         })?;
 
     *state.total_attestations.write().await += 1;
-    state.metrics.delegation_attestations.fetch_add(1, Ordering::Relaxed);
+    state
+        .metrics
+        .delegation_attestations
+        .fetch_add(1, Ordering::Relaxed);
     state.metrics.record_attestation_time();
 
     info!(
@@ -2256,7 +2270,16 @@ mod tests {
 
         let reg = [0xEE; 32];
         let del_reg = [0xFF; 32];
-        let payload = compute_canonical_reward_payload(epoch, total_rewards, &merkle_root, protocol_fee, &snapshot_hash, &vs_hash, &reg, &del_reg);
+        let payload = compute_canonical_reward_payload(
+            epoch,
+            total_rewards,
+            &merkle_root,
+            protocol_fee,
+            &snapshot_hash,
+            &vs_hash,
+            &reg,
+            &del_reg,
+        );
 
         // Must be 256 bytes (8 × 32-byte ABI words)
         assert_eq!(payload.len(), 256);
@@ -2321,7 +2344,10 @@ mod tests {
         let reg = [0u8; 32];
         let p1 = compute_canonical_reward_payload(1, 100, &root, 5, &snap1, &vs, &reg, &[0u8; 32]);
         let p2 = compute_canonical_reward_payload(1, 100, &root, 5, &snap2, &vs, &reg, &[0u8; 32]);
-        assert_ne!(p1, p2, "different snapshot hash should produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different snapshot hash should produce different payload"
+        );
     }
 
     #[test]
@@ -2333,7 +2359,10 @@ mod tests {
         let reg = [0u8; 32];
         let p1 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs1, &reg, &[0u8; 32]);
         let p2 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs2, &reg, &[0u8; 32]);
-        assert_ne!(p1, p2, "different validator set hash should produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different validator set hash should produce different payload"
+        );
     }
 
     #[test]
@@ -2345,7 +2374,10 @@ mod tests {
         let reg2 = [0xBB; 32];
         let p1 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs, &reg1, &[0u8; 32]);
         let p2 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs, &reg2, &[0u8; 32]);
-        assert_ne!(p1, p2, "different registry root should produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different registry root should produce different payload"
+        );
     }
 
     #[test]
@@ -2358,18 +2390,23 @@ mod tests {
         let del2 = [0xDD; 32];
         let p1 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs, &reg, &del1);
         let p2 = compute_canonical_reward_payload(1, 100, &root, 5, &snap, &vs, &reg, &del2);
-        assert_ne!(p1, p2, "different delegation root should produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different delegation root should produce different payload"
+        );
     }
 
     #[test]
     fn test_parse_merkle_root() {
         // Standard 0x-prefixed hex
-        let root = parse_merkle_root("0x0000000000000000000000000000000000000000000000000000000000000001");
+        let root =
+            parse_merkle_root("0x0000000000000000000000000000000000000000000000000000000000000001");
         assert_eq!(root[31], 1);
         assert_eq!(root[0..31], [0u8; 31]);
 
         // No prefix
-        let root2 = parse_merkle_root("0000000000000000000000000000000000000000000000000000000000000002");
+        let root2 =
+            parse_merkle_root("0000000000000000000000000000000000000000000000000000000000000002");
         assert_eq!(root2[31], 2);
 
         // Empty/invalid returns zeros
@@ -2423,7 +2460,16 @@ mod tests {
 
         let registry_root = [0u8; 32]; // zero root for test
         let delegation_root = [0u8; 32]; // zero delegation root for test
-        let payload = compute_canonical_reward_payload(epoch, total_rewards, &merkle_root, protocol_fee, &snapshot_hash, &vs_hash, &registry_root, &delegation_root);
+        let payload = compute_canonical_reward_payload(
+            epoch,
+            total_rewards,
+            &merkle_root,
+            protocol_fee,
+            &snapshot_hash,
+            &vs_hash,
+            &registry_root,
+            &delegation_root,
+        );
 
         // Verify the payload is what Solidity's abi.encode would produce:
         // Manually construct abi.encode(uint256(1), uint256(100e18), bytes32(merkleRoot), uint256(5e18), snapshotHash, vsHash, registryRoot, delegationRoot)
@@ -2445,12 +2491,18 @@ mod tests {
         // bytes32(delegationRoot)
         expected[224..256].copy_from_slice(&delegation_root);
 
-        assert_eq!(payload, expected, "canonical payload must match abi.encode output");
+        assert_eq!(
+            payload, expected,
+            "canonical payload must match abi.encode output"
+        );
 
         // Log the keccak256 for cross-language verification
         use sha3::{Digest, Keccak256};
         let hash = Keccak256::digest(&payload);
-        eprintln!("CROSS_LANG_VECTOR reward_payload_keccak256={}", hex::encode(hash));
+        eprintln!(
+            "CROSS_LANG_VECTOR reward_payload_keccak256={}",
+            hex::encode(hash)
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2465,13 +2517,11 @@ mod tests {
 
     #[test]
     fn test_staker_registry_root_skips_zero_shares() {
-        let stakers = vec![
-            StakerStake {
-                address: "0x0000000000000000000000000000000000000001".to_string(),
-                shares: 0,
-                delegated_to: "0x0000000000000000000000000000000000000010".to_string(),
-            },
-        ];
+        let stakers = vec![StakerStake {
+            address: "0x0000000000000000000000000000000000000001".to_string(),
+            shares: 0,
+            delegated_to: "0x0000000000000000000000000000000000000010".to_string(),
+        }];
         let root = compute_staker_registry_root(&stakers);
         assert_eq!(root, [0u8; 32], "zero-share staker should be excluded");
     }
@@ -2524,7 +2574,10 @@ mod tests {
         }];
         let r1 = compute_staker_registry_root(&s1);
         let r2 = compute_staker_registry_root(&s2);
-        assert_eq!(r1, r2, "registry root should not depend on delegation (EVM-visible only)");
+        assert_eq!(
+            r1, r2,
+            "registry root should not depend on delegation (EVM-visible only)"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2539,13 +2592,11 @@ mod tests {
 
     #[test]
     fn test_delegation_registry_root_skips_zero_shares() {
-        let stakers = vec![
-            StakerStake {
-                address: "0x0000000000000000000000000000000000000001".to_string(),
-                shares: 0,
-                delegated_to: "0x0000000000000000000000000000000000000010".to_string(),
-            },
-        ];
+        let stakers = vec![StakerStake {
+            address: "0x0000000000000000000000000000000000000001".to_string(),
+            shares: 0,
+            delegated_to: "0x0000000000000000000000000000000000000010".to_string(),
+        }];
         let root = compute_delegation_registry_root(&stakers);
         assert_eq!(root, [0u8; 32], "zero-share staker should be excluded");
     }
@@ -2581,7 +2632,10 @@ mod tests {
         }];
         let r1 = compute_delegation_registry_root(&s1);
         let r2 = compute_delegation_registry_root(&s2);
-        assert_ne!(r1, r2, "changing delegated_to should change delegation registry root");
+        assert_ne!(
+            r1, r2,
+            "changing delegated_to should change delegation registry root"
+        );
     }
 
     #[test]
@@ -2598,7 +2652,10 @@ mod tests {
         }];
         let r1 = compute_delegation_registry_root(&s1);
         let r2 = compute_delegation_registry_root(&s2);
-        assert_eq!(r1, r2, "delegation root should not depend on share amounts (only address + delegated_to)");
+        assert_eq!(
+            r1, r2,
+            "delegation root should not depend on share amounts (only address + delegated_to)"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2708,7 +2765,11 @@ mod tests {
         attested_payload[0..32].copy_from_slice(&fake_canonical);
         attested_payload[32..64].copy_from_slice(&hash);
         attested_payload[64..96].copy_from_slice(&fake_universe);
-        assert_eq!(attested_payload.len(), 96, "attested payload must be 96 bytes");
+        assert_eq!(
+            attested_payload.len(),
+            96,
+            "attested payload must be 96 bytes"
+        );
         assert_eq!(&attested_payload[0..32], &fake_canonical);
         assert_eq!(&attested_payload[32..64], &hash);
         assert_eq!(&attested_payload[64..96], &fake_universe);
@@ -2787,7 +2848,10 @@ mod tests {
         expected_hasher.update(&[0u8]);
         let expected: [u8; 32] = expected_hasher.finalize().into();
 
-        assert_eq!(hash, expected, "universe hash must match Go keeper algorithm");
+        assert_eq!(
+            hash, expected,
+            "universe hash must match Go keeper algorithm"
+        );
     }
 
     #[test]
@@ -2804,10 +2868,7 @@ mod tests {
         let full_hash_hex = hex::encode(full_hash);
 
         // Truncated list (omits "aethel1charlie")
-        let truncated_addrs = vec![
-            "aethel1alice".to_string(),
-            "aethel1bob".to_string(),
-        ];
+        let truncated_addrs = vec!["aethel1alice".to_string(), "aethel1bob".to_string()];
         let truncated_hash = compute_eligible_universe_hash(&truncated_addrs);
 
         // The hashes must differ — if the TEE only checks the supplied hash
@@ -2831,7 +2892,10 @@ mod tests {
         let hash = compute_eligible_universe_hash(&[]);
         // SHA-256 of empty input
         let expected: [u8; 32] = Sha256::digest(b"").into();
-        assert_eq!(hash, expected, "empty set hash must be SHA-256 of empty input");
+        assert_eq!(
+            hash, expected,
+            "empty set hash must be SHA-256 of empty input"
+        );
     }
 
     #[test]
@@ -2847,7 +2911,10 @@ mod tests {
             "m_validator".to_string(),
             "z_validator".to_string(),
         ]);
-        assert_eq!(hash_a, hash_b, "hash must be order-independent (sorted internally)");
+        assert_eq!(
+            hash_a, hash_b,
+            "hash must be order-independent (sorted internally)"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2901,7 +2968,10 @@ mod tests {
         ];
         let h1 = compute_stake_snapshot_hash(1, &stakers_ab);
         let h2 = compute_stake_snapshot_hash(1, &stakers_ba);
-        assert_eq!(h1, h2, "snapshot hash must be order-independent (sorted internally)");
+        assert_eq!(
+            h1, h2,
+            "snapshot hash must be order-independent (sorted internally)"
+        );
     }
 
     #[test]
@@ -2975,7 +3045,10 @@ mod tests {
 
         let h1 = compute_stake_snapshot_hash(1, &honest);
         let h2 = compute_stake_snapshot_hash(1, &skewed);
-        assert_ne!(h1, h2, "skewing a staker's balance must change the snapshot hash");
+        assert_ne!(
+            h1, h2,
+            "skewing a staker's balance must change the snapshot hash"
+        );
     }
 
     #[test]
@@ -3037,7 +3110,10 @@ mod tests {
         let reg_root = [0x22; 32];
         let p1 = compute_canonical_delegation_payload(1, &[0xAA; 32], &reg_root);
         let p2 = compute_canonical_delegation_payload(1, &[0xBB; 32], &reg_root);
-        assert_ne!(p1, p2, "different delegation root must produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different delegation root must produce different payload"
+        );
     }
 
     #[test]
@@ -3045,7 +3121,10 @@ mod tests {
         let del_root = [0x11; 32];
         let p1 = compute_canonical_delegation_payload(1, &del_root, &[0xAA; 32]);
         let p2 = compute_canonical_delegation_payload(1, &del_root, &[0xBB; 32]);
-        assert_ne!(p1, p2, "different registry root must produce different payload");
+        assert_ne!(
+            p1, p2,
+            "different registry root must produce different payload"
+        );
     }
 
     /// Cross-language test vector: verify the 96-byte delegation payload
@@ -3081,8 +3160,16 @@ mod tests {
     #[test]
     fn test_validate_unique_stakers_accepts_unique() {
         let stakers = vec![
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
-            StakerStake { address: "0xBob".into(), shares: 200, delegated_to: "0xV1".into() },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
+            StakerStake {
+                address: "0xBob".into(),
+                shares: 200,
+                delegated_to: "0xV1".into(),
+            },
         ];
         assert!(validate_unique_staker_addresses(&stakers).is_ok());
     }
@@ -3090,12 +3177,27 @@ mod tests {
     #[test]
     fn test_validate_unique_stakers_rejects_duplicate() {
         let stakers = vec![
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
-            StakerStake { address: "0xBob".into(), shares: 200, delegated_to: "0xV1".into() },
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
+            StakerStake {
+                address: "0xBob".into(),
+                shares: 200,
+                delegated_to: "0xV1".into(),
+            },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
         ];
         let err = validate_unique_staker_addresses(&stakers).unwrap_err();
-        assert!(err.contains("0xAlice"), "error should name the duplicate address");
+        assert!(
+            err.contains("0xAlice"),
+            "error should name the duplicate address"
+        );
     }
 
     #[test]
@@ -3103,9 +3205,21 @@ mod tests {
         // XOR attack: 3 copies of Alice produce the same XOR root as 1 copy,
         // but the staker count and snapshot hash differ.
         let stakers = vec![
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
-            StakerStake { address: "0xAlice".into(), shares: 100, delegated_to: "0xV1".into() },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
+            StakerStake {
+                address: "0xAlice".into(),
+                shares: 100,
+                delegated_to: "0xV1".into(),
+            },
         ];
         assert!(
             validate_unique_staker_addresses(&stakers).is_err(),

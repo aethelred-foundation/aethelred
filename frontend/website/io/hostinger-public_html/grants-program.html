@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grants Program | Aethelred</title>
+  <meta name="description" content="Current Aethelred grants program structure covering ecosystem allocation, governance controls, funding tracks, review criteria, and current pre-award status.">
+  <meta name="keywords" content="Aethelred grants, ecosystem fund, builder grants, tokenomics, governance, developer funding">
+  <meta name="author" content="Aethelred Foundation">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#9f0a24">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="canonical" href="https://www.aethelred.io/grants-program.html">
+  <link rel="icon" type="image/png" href="/aethelred-mark.png">
+  <link rel="apple-touch-icon" href="/aethelred-mark.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.aethelred.io/grants-program.html">
+  <meta property="og:title" content="Grants Program | Aethelred">
+  <meta property="og:description" content="Review the current Aethelred grants framework, ecosystem allocation, milestone-gated release controls, and current pre-award status.">
+  <meta property="og:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta property="og:image:alt" content="Grants Program social preview image">
+  <meta property="og:site_name" content="Aethelred">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AethelredL1">
+  <meta name="twitter:title" content="Grants Program | Aethelred">
+  <meta name="twitter:description" content="Current builder grants structure for Aethelred with allocation, controls, focus areas, and pre-award program status.">
+  <meta name="twitter:image" content="https://www.aethelred.io/og-image.jpg">
+  <meta name="twitter:image:alt" content="Grants Program social preview image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aethelred.io#organization",
+        "name": "Aethelred Foundation",
+        "url": "https://www.aethelred.io",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/aethelred-mark.png"
+        },
+        "sameAs": [
+          "https://github.com/aethelred-foundation",
+          "https://twitter.com/AethelredL1"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aethelred.io#website",
+        "name": "Aethelred",
+        "url": "https://www.aethelred.io",
+        "description": "Sovereign Layer 1 blockchain for verifiable AI inference.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": "https://www.aethelred.io#organization"
+        }
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.aethelred.io/grants-program.html#webpage",
+        "name": "Grants Program",
+        "url": "https://www.aethelred.io/grants-program.html",
+        "description": "Current Aethelred grants program structure covering ecosystem allocation, governance controls, funding tracks, review criteria, and current pre-award status.",
+        "isPartOf": {
+          "@id": "https://www.aethelred.io#website"
+        },
+        "about": {
+          "@id": "https://www.aethelred.io#organization"
+        },
+        "inLanguage": "en-US",
+        "breadcrumb": {
+          "@id": "https://www.aethelred.io/grants-program.html#breadcrumb"
+        },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://www.aethelred.io/og-image.jpg",
+          "caption": "Grants Program social preview"
+        },
+        "dateModified": "2026-03-11"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.aethelred.io/grants-program.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Developer Portal",
+            "item": "https://www.aethelred.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Grants Program",
+            "item": "https://www.aethelred.io/grants-program.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body class="page-grants">
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="scroll-progress" data-scroll-progress></div>
+
+  <header class="site-header" data-site-header>
+    <div class="header-shell">
+      <a href="/" class="brand" aria-label="Aethelred home">
+        <img src="/aethelred-mark.png" alt="Aethelred logo" width="48" height="48" decoding="async">
+        <span class="brand-word">AETHELRED</span>
+      </a>
+
+      <nav class="nav-primary" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Platform</a>
+        <a href="/developers.html" class="nav-link">Developers</a>
+        <a href="/tools.html" class="nav-link">Tools</a>
+        <a href="/testnet.html" class="nav-link">Testnet</a>
+        <a href="/community.html" class="nav-link is-active">Community</a>
+        <div class="nav-item" data-dropdown>
+          <button class="nav-button" data-dropdown-toggle aria-expanded="false" aria-controls="grants-resources">Resources</button>
+          <div class="dropdown-panel" id="grants-resources" role="menu">
+            <a href="#overview" role="menuitem">Overview</a>
+            <a href="#tracks" role="menuitem">Funding Tracks</a>
+            <a href="#process" role="menuitem">Review Process</a>
+            <a href="#criteria" role="menuitem">Criteria</a>
+            <a href="#status" role="menuitem">Program Status</a>
+            <a href="#faq" role="menuitem">FAQ</a>
+            <a href="/community.html" role="menuitem">Community Hub</a>
+            <a href="/sandbox.html" role="menuitem">Infinite Sandbox</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://www.aethelred.org/" class="btn btn-small btn-outline">Foundation</a>
+        <a href="/community.html" class="btn btn-small btn-primary">Community Hub</a>
+        <button class="menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-panel" data-mobile-panel>
+    <a href="/" class="mobile-link">Platform</a>
+    <a href="/developers.html" class="mobile-link">Developers</a>
+    <a href="/tools.html" class="mobile-link">Tools</a>
+    <a href="/testnet.html" class="mobile-link">Testnet</a>
+    <a href="/community.html" class="mobile-link is-active">Community</a>
+    <details class="mobile-details">
+      <summary>Grant Sections</summary>
+      <a href="#overview" class="mobile-link">Overview</a>
+      <a href="#tracks" class="mobile-link">Funding Tracks</a>
+      <a href="#process" class="mobile-link">Review Process</a>
+      <a href="#criteria" class="mobile-link">Criteria</a>
+      <a href="#status" class="mobile-link">Program Status</a>
+      <a href="#faq" class="mobile-link">FAQ</a>
+      <a href="/community.html" class="mobile-link">Community Hub</a>
+      <a href="/sandbox.html" class="mobile-link">Infinite Sandbox</a>
+    </details>
+  </div>
+
+  <main id="main-content">
+    <section class="hero" data-scroll-cinematic aria-labelledby="page-title">
+      <div class="container hero-grid">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> Ecosystem Capital Framework</p>
+          <h1 class="hero-title" id="page-title">Grants <span class="gradient-word">Program</span></h1>
+          <p class="hero-subtitle">Aethelred reserves <span class="mono">15%</span> of total supply, or <span class="mono">1,500,000,000 AETHEL</span>, for ecosystem growth, grants, and partnerships. This page replaces the older standalone grants mock with the current program picture from the tokenomics and whitepaper: milestone-gated awards, governance-controlled disbursement, on-chain transparency, and a public status that is still pre-award as of <span class="mono">March 11, 2026</span>. Use it alongside the <a class="body-link" href="/community.html">community hub</a>, <a class="body-link" href="/sandbox.html">Infinite Sandbox</a>, <a class="body-link" href="/tools.html">developer tools</a>, and the <a class="body-link" href="https://www.aethelred.org/governance">foundation governance surface</a>.</p>
+          <div class="hero-tags" aria-label="Grant program properties">
+            <span class="hero-tag">1.5B AETHEL Allocation</span>
+            <span class="hero-tag">Milestone-Gated Awards</span>
+            <span class="hero-tag">4-of-7 Multisig</span>
+            <span class="hero-tag">No Public Awards Yet</span>
+          </div>
+          <div class="hero-actions">
+            <a href="#tracks" class="btn btn-primary">Explore Funding Tracks</a>
+            <a href="#status" class="btn btn-secondary">Review Program Status</a>
+          </div>
+          <div class="status-pill stack-top-16"><span class="dot"></span> NO PUBLIC AWARDS ANNOUNCED</div>
+        </div>
+
+        <div class="hero-stack" data-reveal data-scroll-layer data-scroll-depth="0.08">
+          <div class="hero-card">
+            <h4>Documented funding envelope</h4>
+            <p>The published tokenomics allocates ecosystem capital for grants, developer adoption, partnerships, and broader network growth rather than one-off discretionary spending.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Governance before disbursement</h4>
+            <p>Release is meant to flow through treasury controls, milestone review, and a governance path with multisig approval and timelock protection.</p>
+          </div>
+          <div class="hero-card">
+            <h4>Pre-award public status</h4>
+            <p>The structure is public, but no public grantees, cohorts, or published disbursements are listed on the current site yet.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-pill">
+              <strong>15%</strong>
+              <span>Total supply reserved for ecosystem and grants</span>
+            </div>
+            <div class="metric-pill">
+              <strong>30M AETHEL</strong>
+              <span>Initial unlocked capacity at 2% of the grant pool</span>
+            </div>
+            <div class="metric-pill">
+              <strong>48 Hours</strong>
+              <span>Timelock around ecosystem fund disbursements</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview" aria-labelledby="overview-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Overview</p>
+          <h2 class="section-title" id="overview-title">Program structure grounded in the current tokenomics</h2>
+          <p class="section-lead">The grants program is published as a controlled ecosystem capital layer, not an unbounded marketing budget. The public references describe a defined allocation, a conservative initial release posture, and treasury controls intended to keep awards accountable to measurable outcomes.</p>
+        </div>
+
+        <div class="grid grid-4 grants-stat-grid">
+          <article class="card kpi">
+            <span class="kpi-label">Allocation</span>
+            <strong class="kpi-value">1.5B AETHEL</strong>
+            <p>Reserved for ecosystem growth, grants, and partnerships.</p>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Share of Supply</span>
+            <strong class="kpi-value">15%</strong>
+            <p>One of the largest dedicated protocol growth buckets in the token plan.</p>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Initial Unlock</span>
+            <strong class="kpi-value">2%</strong>
+            <p>Equivalent to 30,000,000 AETHEL available at token generation for early ecosystem bootstrapping.</p>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Treasury Control</span>
+            <strong class="kpi-value">4-of-7</strong>
+            <p>Multi-signature approval sits in front of ecosystem fund disbursements.</p>
+          </article>
+        </div>
+
+        <div class="grid grid-2 stack-top-16">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">POOL</span>
+                <div>
+                  <p class="detail-kicker">Funding Basis</p>
+                  <h3>Capital is allocated for growth, but release is deliberately metered</h3>
+                </div>
+              </div>
+            </div>
+            <p>The current tokenomics describes the grants pool as developer adoption capital: builder grants, ecosystem expansion, hackathons, and partnerships. It also avoids an aggressive early release profile. The published structure uses a <span class="mono">2%</span> initial unlock and a <span class="mono">6-month</span> cliff before scheduled releases, which is materially more conservative than treating the full allocation as immediately spendable.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Published Use Cases</span>
+                <p>Developer grants, ecosystem growth, partnerships, tooling expansion, and network bootstrapping.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Release Posture</span>
+                <p>Initial capital exists for early activation, but downstream disbursement is expected to track milestones rather than flat one-time awards.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>Transparency</span>
+                <strong>Grant proposals and disbursements are intended to be recorded on-chain.</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">CTRL</span>
+                <div>
+                  <p class="detail-kicker">Governance Controls</p>
+                  <h3>Ecosystem fund release is bounded by treasury and oversight rules</h3>
+                </div>
+              </div>
+            </div>
+            <p>The whitepaper and tokenomics both frame ecosystem spending as a governed process. The public references call out a <span class="mono">4-of-7</span> multisig for ecosystem fund disbursements, a <span class="mono">48-hour</span> timelock, and milestone-oriented control over releases. That matters because a credible grants program is defined by its approval path, not just by a headline allocation.</p>
+            <div class="detail-blocks">
+              <div class="detail-block">
+                <span class="detail-label">Approval Boundary</span>
+                <p>Multi-signature treasury governance rather than unilateral operator discretion.</p>
+              </div>
+              <div class="detail-block">
+                <span class="detail-label">Operational Guardrail</span>
+                <p>Timelocked disbursements create an auditable review window before capital moves.</p>
+              </div>
+            </div>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span>What this means</span>
+                <strong>Future awards should be deliverable-based, reviewable, and publicly inspectable.</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="tracks" aria-labelledby="tracks-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Funding Tracks</p>
+          <h2 class="section-title" id="tracks-title">Work streams that fit the current Aethelred surface</h2>
+          <p class="section-lead">The most credible grant targets are the ones that strengthen the protocol surfaces already documented across the site. That means work that improves Proof-of-Useful-Work operations, Digital Seals, developer adoption, verification quality, and operational readiness.</p>
+        </div>
+
+        <div class="grid grid-2 grants-track-grid">
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">APP</span>
+                <div>
+                  <p class="detail-kicker">Track 01</p>
+                  <h3>Verifiable AI applications</h3>
+                </div>
+              </div>
+            </div>
+            <p>Applications that make the protocol legible to end users: agent systems, regulated inference workflows, Digital Seal consumption layers, provenance-heavy enterprise tooling, and vertical products that need verifiable execution rather than generic smart contract hosting.</p>
+            <div class="tag-list">
+              <span class="tag">Proof-of-Useful-Work</span>
+              <span class="tag">Digital Seals</span>
+              <span class="tag">Inference Apps</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SDK</span>
+                <div>
+                  <p class="detail-kicker">Track 02</p>
+                  <h3>Developer tooling and integrations</h3>
+                </div>
+              </div>
+            </div>
+            <p>Libraries, framework bindings, deployment surfaces, explorers, verifiers, wallet flows, and CI automation that make it faster to build on Aethelred without introducing unsafe or undocumented shortcuts.</p>
+            <div class="tag-list">
+              <span class="tag">SDKs</span>
+              <span class="tag">Framework Integrations</span>
+              <span class="tag">DevX</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">SEC</span>
+                <div>
+                  <p class="detail-kicker">Track 03</p>
+                  <h3>Security, verification, and research</h3>
+                </div>
+              </div>
+            </div>
+            <p>Audits, formal methods, verifier hardening, zkML proof tooling, TEE attestation research, key management improvements, and protocol research that reduces risk for builders and validators before the network scales.</p>
+            <div class="tag-list">
+              <span class="tag">ZK Proofs</span>
+              <span class="tag">TEE</span>
+              <span class="tag">Security Research</span>
+            </div>
+          </article>
+
+          <article class="card detail-card">
+            <div class="detail-card-head">
+              <div class="detail-brand">
+                <span class="icon-chip">OPS</span>
+                <div>
+                  <p class="detail-kicker">Track 04</p>
+                  <h3>Infrastructure and ecosystem enablement</h3>
+                </div>
+              </div>
+            </div>
+            <p>Operational systems that improve network readiness: testnet services, local devnet automation, indexing, observability, validator-facing utilities, and production support layers for ecosystem teams moving from rehearsal into public rollout.</p>
+            <div class="tag-list">
+              <span class="tag">Testnet</span>
+              <span class="tag">Devnet</span>
+              <span class="tag">Observability</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="process" aria-labelledby="process-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Review Process</p>
+          <h2 class="section-title" id="process-title">A serious grants program is a review system, not a form fill</h2>
+          <p class="section-lead">The old reference page implied a simple funnel. The current documentation suggests a stricter path: technical fit, milestone definition, governance-controlled approval, and transparent release. That is the framework reflected here.</p>
+        </div>
+
+        <div class="grid grid-2 grants-process-grid">
+          <article class="step-card">
+            <span class="step-index">STEP 01</span>
+            <h3>Submit an interest brief</h3>
+            <p>Start with the problem, why it needs Aethelred specifically, the target protocol surface, and what exists today as code, research, or working prototype material.</p>
+            <div class="tag-list">
+              <span class="tag">Memo</span>
+              <span class="tag">Repository</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 02</span>
+            <h3>Run technical fit review</h3>
+            <p>Projects should map clearly to documented needs such as tooling, verification, wallets, security, infrastructure, or verifiable AI application delivery.</p>
+            <div class="tag-list">
+              <span class="tag">Protocol Fit</span>
+              <span class="tag">Aethelred-Specific</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 03</span>
+            <h3>Define milestones and reporting</h3>
+            <p>Before capital is committed, the work needs clear deliverables, release conditions, and an observable reporting path that can be checked by the foundation and the community.</p>
+            <div class="tag-list">
+              <span class="tag">Deliverables</span>
+              <span class="tag">Reporting</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 04</span>
+            <h3>Move through treasury controls</h3>
+            <p>Any disbursement path should respect multisig approval and the timelock boundary described in the current whitepaper and tokenomics materials.</p>
+            <div class="tag-list">
+              <span class="tag">4-of-7</span>
+              <span class="tag">48h Timelock</span>
+            </div>
+          </article>
+          <article class="step-card">
+            <span class="step-index">STEP 05</span>
+            <h3>Publish progress and releases</h3>
+            <p>The public program direction is transparency. That means funded work should resolve into visible milestones, disclosed grantees, and auditable disbursement records rather than private ecosystem spending.</p>
+            <div class="tag-list">
+              <span class="tag">On-Chain Record</span>
+              <span class="tag">Public Updates</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="criteria" aria-labelledby="criteria-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Evaluation Criteria</p>
+          <h2 class="section-title" id="criteria-title">What makes a proposal credible</h2>
+          <p class="section-lead">The bar should be technical and operational. Good grants do not just sound aligned; they improve the network in ways that can be measured, shipped, and maintained.</p>
+        </div>
+
+        <div class="grid grid-4 grants-criteria-grid">
+          <article class="card">
+            <h3>Protocol relevance</h3>
+            <p>The work should strengthen a real Aethelred surface rather than being chain-agnostic marketing dressed up as infrastructure.</p>
+          </article>
+          <article class="card">
+            <h3>Delivery credibility</h3>
+            <p>Teams need a realistic build plan, owners, milestones, and enough evidence that the work can actually ship.</p>
+          </article>
+          <article class="card">
+            <h3>Ecosystem leverage</h3>
+            <p>Priority should go to work that multiple builders or operators can reuse, extend, or audit rather than closed one-off integrations.</p>
+          </article>
+          <article class="card">
+            <h3>Security and compliance posture</h3>
+            <p>Projects touching verification, custody, regulated data, or validator operations need to show that they understand the risk boundary from the start.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="status" aria-labelledby="status-title">
+      <div class="container section-shell" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">Program Status</p>
+          <h2 class="section-title" id="status-title">No public awards, cohorts, or grantees have been announced yet</h2>
+          <p class="section-lead">This is the section that needed the biggest correction from the old reference page. As of <span class="mono">March 11, 2026</span>, the current site does not publish any funded projects or past grant recipients, so this page reflects that directly instead of inventing portfolio history.</p>
+        </div>
+
+        <div class="grants-status-panel">
+          <div class="status-pill"><span class="dot"></span> PRE-AWARD PUBLIC STATE</div>
+          <h3>Program framework is visible; public disbursement history is not.</h3>
+          <p>The ecosystem allocation and governance controls are documented, but the public website does not list any awarded teams, completed cohorts, or published on-chain grant disbursements yet. That means interested builders should treat this as a program framework and readiness page, not as a record of existing portfolio activity.</p>
+
+          <div class="grid grid-3 grants-status-grid">
+            <article class="card grants-status-card">
+              <span class="detail-kicker">Public Cohort</span>
+              <h4>Not announced</h4>
+              <p>No named grant batch or seasonal intake is published on the current site.</p>
+            </article>
+            <article class="card grants-status-card">
+              <span class="detail-kicker">Public Grantees</span>
+              <h4>None listed</h4>
+              <p>There are no project cards, award amounts, or recipient profiles currently disclosed.</p>
+            </article>
+            <article class="card grants-status-card">
+              <span class="detail-kicker">Disbursement Record</span>
+              <h4>Not published yet</h4>
+              <p>No public grant disbursement ledger or awards archive is surfaced on the site at this time.</p>
+            </article>
+          </div>
+
+          <div class="detail-blocks stack-top-16">
+            <div class="detail-block">
+              <span class="detail-label">What to prepare now</span>
+              <p>Share an architecture summary, repository or demo, milestone plan, team context, and why the work depends on Aethelred rather than a generic L1 or middleware stack.</p>
+            </div>
+            <div class="detail-block">
+              <span class="detail-label">What happens later</span>
+              <p>Once a public cohort exists, awards should resolve into named grantees, milestone schedules, and disbursement records that can be audited against the published control framework.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout stack-top-16">
+          <div>
+            <h3>Want to be considered once the first public cohort is formed?</h3>
+            <p>Use the current pre-award period to harden the proposal. Teams that show protocol fit, working artifacts, and clear milestones are materially easier to evaluate than teams that lead with broad ecosystem language and no delivery surface.</p>
+          </div>
+          <a href="mailto:grants@aethelred.org?subject=Aethelred%20Grants%20Program%20Interest" class="btn btn-primary">Register Interest</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-tone" id="faq" aria-labelledby="faq-title">
+      <div class="container" data-reveal>
+        <div class="section-head">
+          <p class="eyebrow">FAQ</p>
+          <h2 class="section-title" id="faq-title">Common questions about the current grants framework</h2>
+          <p class="section-lead">These answers are aligned to the current public docs and the present state of the site rather than the older mock page.</p>
+        </div>
+
+        <div class="grants-faq">
+          <details class="faq-card" open>
+            <summary>Is the grants program already funding public projects?</summary>
+            <p>No public awards are listed on the site as of March 11, 2026. The allocation and controls are documented, but the public portfolio history has not been announced yet.</p>
+          </details>
+          <details class="faq-card">
+            <summary>How much capital is reserved for ecosystem and grants?</summary>
+            <p>The tokenomics assigns <span class="mono">15%</span> of total supply to ecosystem and grants, which equals <span class="mono">1,500,000,000 AETHEL</span>. The published initial unlock for that pool is <span class="mono">2%</span>, or <span class="mono">30,000,000 AETHEL</span>.</p>
+          </details>
+          <details class="faq-card">
+            <summary>How are grant disbursements supposed to be controlled?</summary>
+            <p>The current references describe a <span class="mono">4-of-7</span> multi-signature approval requirement with a <span class="mono">48-hour</span> timelock around ecosystem fund disbursements, plus on-chain recording of proposals and disbursements.</p>
+          </details>
+          <details class="faq-card">
+            <summary>What kinds of projects are the best fit?</summary>
+            <p>The strongest fit is work that improves real Aethelred surfaces: verifiable AI applications, developer tooling, wallets and signing, security research, zk and TEE verification, indexers, explorer layers, and operational infrastructure.</p>
+          </details>
+          <details class="faq-card">
+            <summary>What should a serious initial outreach include?</summary>
+            <p>Include the problem statement, protocol fit, repository or demo, milestone breakdown, delivery owners, expected open-source footprint, and any security or compliance assumptions that matter to the work.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="next-step-title">
+      <div class="container" data-reveal>
+        <div class="callout">
+          <div>
+            <h2 class="visually-hidden" id="next-step-title">Next step</h2>
+            <h3>Prepare the proposal before the cohort exists.</h3>
+            <p>Use the <a class="body-link" href="/sandbox.html">Infinite Sandbox</a> to prove the workflow, the <a class="body-link" href="/tools.html">toolchain stack</a> to show implementation quality, and the <a class="body-link" href="/community.html">community hub</a> to make the work visible before formal awards are announced.</p>
+          </div>
+          <a href="/community.html" class="btn btn-primary">Open Community Hub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="brand footer-brand" aria-label="Aethelred footer brand">
+            <img src="/aethelred-mark.png" alt="Aethelred logo" width="44" height="44" loading="lazy" decoding="async">
+            <span class="brand-word">AETHELRED</span>
+          </div>
+          <p>A sovereign Layer 1 for verifiable AI inference, proof-backed compute, and programmable compliance.</p>
+        </div>
+
+        <div>
+          <p class="footer-title">Developers</p>
+          <div class="footer-links">
+            <a href="/documentation.html">Documentation Hub</a>
+            <a href="/developers.html">Quick Start</a>
+            <a href="/tools.html">SDK &amp; Tools</a>
+            <a href="/developers.html#api">API Reference</a>
+            <a href="/smart-contracts.html">Smart Contracts</a>
+            <a href="/sandbox.html">Infinite Sandbox</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Protocol</p>
+          <div class="footer-links">
+            <a href="/testnet.html">Testnet</a>
+            <a href="/digital-seal.html">Digital Seals</a>
+            <a href="/stablecoin-infrastructure.html">Stablecoin Infrastructure</a>
+            <a href="/zk-proofs.html">ZK Proofs</a>
+            <a href="/tee.html">TEE Attestation</a>
+            <a href="/wallets.html">Wallets &amp; Signing</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Community</p>
+          <div class="footer-links">
+            <a href="/community.html">Community Hub</a>
+            <a href="/quiz.html">Knowledge Quiz</a>
+            <a href="/grants-program.html">Grants Program</a>
+            <a href="https://discord.gg/aethelred" target="_blank" rel="noopener noreferrer">Discord</a>
+            <a href="https://github.com/aethelred-foundation" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://twitter.com/AethelredL1" target="_blank" rel="noopener noreferrer">Twitter / X</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-title">Foundation</p>
+          <div class="footer-links">
+            <a href="https://www.aethelred.org/">About</a>
+            <a href="https://www.aethelred.org/network">Research</a>
+            <a href="https://www.aethelred.org/governance">Governance</a>
+            <a href="https://www.aethelred.org/token">AETHEL Token</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> AETHELRED. OPERATED BY THE AETHELRED FOUNDATION. ALL RIGHTS RESERVED.</p>
+        <p>
+          <a href="https://www.aethelred.org/privacy">PRIVACY POLICY</a>
+          &middot;
+          <a href="https://www.aethelred.org/terms">TERMS OF SERVICE</a>
+          &middot;
+          <a href="https://www.aethelred.org/cookies">COOKIE SETTINGS</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

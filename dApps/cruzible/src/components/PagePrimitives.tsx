@@ -9,17 +9,22 @@ import { copyToClipboard, formatFullNumber } from '@/lib/utils';
 // GlassCard — Shared glass-morphism card container
 // ============================================================
 
-interface GlassCardProps {
-  children: React.ReactNode;
+interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   hover?: boolean;
-  onClick?: () => void;
 }
 
-export function GlassCard({ children, className = '', hover = true, onClick }: GlassCardProps) {
+export function GlassCard({
+  children,
+  className = '',
+  hover = true,
+  onClick,
+  ...props
+}: GlassCardProps) {
   return (
     <div
       onClick={onClick}
+      {...props}
       className={`bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl ${
         hover ? 'hover:border-slate-600/60 hover:bg-slate-900/70 transition-all duration-300' : ''
       } ${onClick ? 'cursor-pointer' : ''} ${className}`}

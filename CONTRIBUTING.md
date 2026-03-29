@@ -22,10 +22,10 @@ We follow the [Contributor Covenant](CODE_OF_CONDUCT.md). Be kind, constructive,
 
 ## Ways to Contribute
 
-- **Bug reports**: [Open an issue](https://github.com/AethelredFoundation/aethelred/issues/new?template=bug_report.md)
-- **Feature proposals**: [Open a feature request](https://github.com/AethelredFoundation/aethelred/issues/new?template=feature_request.md) or [write an AIP](https://github.com/AethelredFoundation/AIPs)
+- **Bug reports**: [Open an issue](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.md)
+- **Feature proposals**: [Open a feature request](https://github.com/aethelred-foundation/aethelred/issues/new?template=feature_request.md) or [write an AIP](https://github.com/aethelred-foundation/AIPs)
 - **Code**: Fork → branch → PR
-- **Documentation**: PRs to [aethelred-docs](https://github.com/AethelredFoundation/aethelred-docs)
+- **Documentation**: PRs to [aethelred-docs](https://github.com/aethelred-foundation/aethelred-docs)
 - **Discussion**: [Discord](https://discord.gg/aethelred)
 
 ---
@@ -36,7 +36,7 @@ We follow the [Contributor Covenant](CODE_OF_CONDUCT.md). Be kind, constructive,
 
 ```bash
 # Clone
-git clone https://github.com/AethelredFoundation/aethelred.git
+git clone https://github.com/aethelred-foundation/aethelred.git
 cd aethelred
 
 # Install Go tools

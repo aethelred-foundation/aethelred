@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="360" viewBox="0 0 1440 360" role="img" aria-labelledby="title desc">
+  <title id="title">Aethelred GitHub banner</title>
+  <desc id="desc">Dark theme banner for the Aethelred GitHub organization profile.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#101520"/>
+      <stop offset="55%" stop-color="#182133"/>
+      <stop offset="100%" stop-color="#0d1424"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="360" fill="url(#bg)"/>
+  <circle cx="1220" cy="85" r="120" fill="#ff8e47" opacity="0.3"/>
+  <circle cx="1325" cy="248" r="152" fill="#3c6ef0" opacity="0.25"/>
+  <circle cx="165" cy="72" r="92" fill="#ffae69" opacity="0.18"/>
+  <text x="110" y="155" fill="#fff1df" font-family="Georgia, Times New Roman, serif" font-size="54" font-weight="700">Aethelred</text>
+  <text x="112" y="208" fill="#e2d2c1" font-family="Verdana, Geneva, sans-serif" font-size="24">Canonical Layer 1 source, governance, and release provenance for verifiable AI.</text>
+  <text x="112" y="252" fill="#a7b8d6" font-family="Verdana, Geneva, sans-serif" font-size="19">Proof-of-Useful-Work | Zero-knowledge verification | TEE-backed attestation</text>
+</svg>

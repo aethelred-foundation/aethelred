@@ -34,8 +34,9 @@ import (
 func TestDefaultEmissionConfig(t *testing.T) {
 	config := keeper.DefaultEmissionConfig()
 	require.NoError(t, keeper.ValidateEmissionConfig(config))
-	require.Equal(t, int64(800), config.InitialInflationBps)
-	require.Equal(t, int64(200), config.TargetInflationBps)
+	require.Equal(t, int64(0), config.InitialInflationBps)
+	require.Equal(t, int64(0), config.TargetInflationBps)
+	require.Equal(t, keeper.InitialSupplyUAETHEL, config.MaxSupplyCap)
 	require.Equal(t, keeper.EmissionExponentialDecay, config.DecayModel)
 }
 
@@ -46,10 +47,12 @@ func TestEmissionConfig_ValidationBounds(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid default", func(c *keeper.EmissionConfig) {}, false},
-		{"inflation too low", func(c *keeper.EmissionConfig) { c.InitialInflationBps = 50 }, true},
+		{"fixed supply default", func(c *keeper.EmissionConfig) {}, false},
 		{"inflation too high", func(c *keeper.EmissionConfig) { c.InitialInflationBps = 3000 }, true},
 		{"target > initial", func(c *keeper.EmissionConfig) { c.TargetInflationBps = 900 }, true},
-		{"target too low", func(c *keeper.EmissionConfig) { c.TargetInflationBps = 10 }, true},
+		{"half-fixed invalid", func(c *keeper.EmissionConfig) { c.TargetInflationBps = 10 }, true},
+		{"fixed supply needs hard cap", func(c *keeper.EmissionConfig) { c.MaxSupplyCap = 0 }, true},
+		{"fixed supply needs zero security floor", func(c *keeper.EmissionConfig) { c.SecurityBudgetFloorBps = 1 }, true},
 		{"invalid decay model", func(c *keeper.EmissionConfig) { c.DecayModel = "unknown" }, true},
 		{"decay period too short", func(c *keeper.EmissionConfig) { c.DecayPeriodYears = 1 }, true},
 		{"staking target too low", func(c *keeper.EmissionConfig) { c.StakingTargetBps = 1000 }, true},
@@ -70,7 +73,7 @@ func TestEmissionConfig_ValidationBounds(t *testing.T) {
 }
 
 func TestEmissionSchedule_ExponentialDecay(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	schedule := keeper.ComputeEmissionSchedule(config, 10)
 
 	require.Len(t, schedule, 10)
@@ -91,7 +94,7 @@ func TestEmissionSchedule_ExponentialDecay(t *testing.T) {
 }
 
 func TestEmissionSchedule_LinearDecay(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionLinearDecay
 	schedule := keeper.ComputeEmissionSchedule(config, 10)
 
@@ -105,7 +108,7 @@ func TestEmissionSchedule_LinearDecay(t *testing.T) {
 }
 
 func TestEmissionSchedule_StepDecay(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.DecayModel = keeper.EmissionStepDecay
 	schedule := keeper.ComputeEmissionSchedule(config, 10)
 
@@ -117,7 +120,7 @@ func TestEmissionSchedule_StepDecay(t *testing.T) {
 }
 
 func TestEmissionSchedule_SupplyGrowsBounded(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	schedule := keeper.ComputeEmissionSchedule(config, 20)
 
 	require.Len(t, schedule, 20)
@@ -133,19 +136,31 @@ func TestEmissionSchedule_StakingYieldPositive(t *testing.T) {
 	schedule := keeper.ComputeEmissionSchedule(config, 5)
 
 	for _, entry := range schedule {
-		require.GreaterOrEqual(t, entry.StakingYield, 0.0,
-			"staking yield should be non-negative")
+		require.GreaterOrEqual(t, entry.StakingYield, 0.0, "staking yield should be non-negative")
+		require.Equal(t, int64(keeper.InitialSupplyUAETHEL), entry.CumulativeSupply)
 	}
 }
 
 func TestEmissionSchedule_MaxSupplyCap(t *testing.T) {
-	config := keeper.DefaultEmissionConfig()
+	config := keeper.InflationarySimulationConfig()
 	config.MaxSupplyCap = keeper.InitialSupplyUAETHEL + 50_000_000_000_000 // +50M AETHEL
 	schedule := keeper.ComputeEmissionSchedule(config, 20)
 
 	for _, entry := range schedule {
 		require.LessOrEqual(t, entry.CumulativeSupply, config.MaxSupplyCap,
 			"supply should not exceed cap")
+	}
+}
+
+func TestEmissionSchedule_FixedSupplyDefault(t *testing.T) {
+	config := keeper.DefaultEmissionConfig()
+	schedule := keeper.ComputeEmissionSchedule(config, 5)
+
+	require.Len(t, schedule, 5)
+	for _, entry := range schedule {
+		require.Equal(t, int64(0), entry.InflationBps)
+		require.Equal(t, int64(0), entry.AnnualEmission)
+		require.Equal(t, keeper.InitialSupplyUAETHEL, entry.CumulativeSupply)
 	}
 }
 
@@ -418,7 +433,7 @@ func TestTreasuryConfig_ValidationBounds(t *testing.T) {
 
 func TestTreasuryProjection_GrowsOverTime(t *testing.T) {
 	projections := keeper.ProjectTreasuryGrowth(
-		keeper.DefaultEmissionConfig(),
+		keeper.InflationarySimulationConfig(),
 		keeper.DefaultTreasuryConfig(),
 		10,
 	)
@@ -438,7 +453,7 @@ func TestTreasuryProjection_GrowsOverTime(t *testing.T) {
 
 func TestTreasuryProjection_InsuranceReservePositive(t *testing.T) {
 	projections := keeper.ProjectTreasuryGrowth(
-		keeper.DefaultEmissionConfig(),
+		keeper.InflationarySimulationConfig(),
 		keeper.DefaultTreasuryConfig(),
 		5,
 	)
@@ -456,7 +471,7 @@ func TestTreasuryProjection_InsuranceReservePositive(t *testing.T) {
 func TestDefaultVestingSchedules(t *testing.T) {
 	schedules := keeper.DefaultVestingSchedules()
 	require.NoError(t, keeper.ValidateVestingSchedules(schedules))
-	require.Len(t, schedules, 9)
+	require.Len(t, schedules, 8)
 }
 
 func TestVestingSchedules_TotalAllocated(t *testing.T) {
@@ -510,7 +525,7 @@ func TestVestedAmount_BeforeCliff_WithTGEUnlock(t *testing.T) {
 
 	// Before cliff: only TGE portion available.
 	vested := keeper.VestedAmount(schedule, 1)
-	expectedTGE := int64(1_500_000_000 * 200 / 10000) // 2% = 30M
+	expectedTGE := int64(1_500_000_000 * 500 / 10000) // 5% = 75M
 	require.Equal(t, expectedTGE, vested, "only TGE unlock before cliff")
 
 	// Still before cliff (month 3).
@@ -692,16 +707,16 @@ func TestSimulation_EmissionSchedule(t *testing.T) {
 	result := keeper.RunDefaultSimulation()
 
 	require.Len(t, result.EmissionSchedule, 10)
-	require.Greater(t, result.Year10Supply, keeper.InitialSupplyUAETHEL,
-		"year 10 supply should exceed initial")
+	require.Equal(t, keeper.InitialSupplyUAETHEL, result.Year10Supply,
+		"year 10 supply should remain fixed under the canonical emission model")
 }
 
 func TestSimulation_TreasuryProjection(t *testing.T) {
 	result := keeper.RunDefaultSimulation()
 
 	require.Len(t, result.TreasuryProjection, 10)
-	require.Greater(t, result.Year10Treasury, int64(0),
-		"year 10 treasury should be positive")
+	require.Equal(t, int64(0), result.Year10Treasury,
+		"year 10 treasury should remain zero when emission-based issuance is disabled")
 }
 
 func TestSimulation_DeterrencePositive(t *testing.T) {

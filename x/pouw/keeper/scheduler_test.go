@@ -59,9 +59,46 @@ func makeValidator(addr string, teePlatforms []string, zkmlSystems []string, max
 	}
 }
 
+func makeExecutionWorker(id string, lane keeper.ExecutionLane, teePlatforms []string, zkmlSystems []string, maxJobs int) *keeper.ExecutionWorkerCapability {
+	return &keeper.ExecutionWorkerCapability{
+		ID:                id,
+		Lane:              lane,
+		TeePlatforms:      teePlatforms,
+		ZKMLSystems:       zkmlSystems,
+		MaxConcurrentJobs: maxJobs,
+		IsOnline:          true,
+		Attested:          true,
+	}
+}
+
 // =============================================================================
 // ENQUEUE
 // =============================================================================
+
+func TestResolveExecutionLane_ExplicitMetadata(t *testing.T) {
+	job := makeJob("job-lane", 10, types.ProofTypeHybrid)
+	job.Metadata["scheduler.execution_lane"] = string(keeper.ExecutionLaneHeavyProofLargeModel)
+
+	lane, err := keeper.ResolveExecutionLane(job)
+	if err != nil {
+		t.Fatalf("expected explicit lane to parse, got error: %v", err)
+	}
+	if lane != keeper.ExecutionLaneHeavyProofLargeModel {
+		t.Fatalf("expected heavy lane, got %s", lane)
+	}
+}
+
+func TestResolveExecutionLane_HeuristicPurpose(t *testing.T) {
+	job := makeJob("job-medium", 10, types.ProofTypeHybrid)
+
+	lane, err := keeper.ResolveExecutionLane(job)
+	if err != nil {
+		t.Fatalf("expected heuristic lane resolution, got error: %v", err)
+	}
+	if lane != keeper.ExecutionLaneMediumEnterprise {
+		t.Fatalf("expected medium enterprise lane for credit_scoring, got %s", lane)
+	}
+}
 
 func TestScheduler_EnqueueJob(t *testing.T) {
 	s := testScheduler()
@@ -154,6 +191,26 @@ func TestScheduler_RegisterValidator_Update(t *testing.T) {
 	}
 	if len(caps["val1"].TeePlatforms) != 2 {
 		t.Fatalf("expected 2 TEE platforms, got %d", len(caps["val1"].TeePlatforms))
+	}
+}
+
+func TestScheduler_RegisterExecutionWorker(t *testing.T) {
+	s := testScheduler()
+	worker := makeExecutionWorker(
+		"worker-fast-1",
+		keeper.ExecutionLaneFastSmallModel,
+		[]string{"aws-nitro"},
+		[]string{"ezkl"},
+		4,
+	)
+	s.RegisterExecutionWorker(worker)
+
+	workers := s.GetExecutionWorkers()
+	if len(workers) != 1 {
+		t.Fatalf("expected 1 execution worker, got %d", len(workers))
+	}
+	if _, ok := workers["worker-fast-1"]; !ok {
+		t.Fatal("execution worker not found")
 	}
 }
 
@@ -313,6 +370,78 @@ func TestScheduler_GetNextJobs_HybridAssignedToFullValidator(t *testing.T) {
 	}
 }
 
+func TestScheduler_GetNextJobs_RequireExecutionWorkers(t *testing.T) {
+	cfg := keeper.DefaultSchedulerConfig()
+	cfg.MinValidatorsRequired = 1
+	cfg.RequireExecutionWorkers = true
+	s := testSchedulerWithConfig(cfg)
+	ctx := sdkCtxForHeight(100)
+
+	s.RegisterValidator(makeValidator("val1", []string{"aws-nitro"}, []string{"ezkl"}, 10))
+	_ = s.EnqueueJob(ctx, makeJob("job-1", 10, types.ProofTypeHybrid))
+
+	jobs := s.GetNextJobs(ctx, 100)
+	if len(jobs) != 0 {
+		t.Fatalf("expected 0 jobs without execution workers, got %d", len(jobs))
+	}
+}
+
+func TestScheduler_GetNextJobs_AssignsExecutionWorkerByLane(t *testing.T) {
+	cfg := keeper.DefaultSchedulerConfig()
+	cfg.MinValidatorsRequired = 1
+	cfg.RequireExecutionWorkers = true
+	s := testSchedulerWithConfig(cfg)
+	ctx := sdkCtxForHeight(100)
+
+	s.RegisterValidator(makeValidator("val1", []string{"aws-nitro"}, []string{"ezkl"}, 10))
+	s.RegisterExecutionWorker(makeExecutionWorker(
+		"worker-medium-1",
+		keeper.ExecutionLaneMediumEnterprise,
+		[]string{"aws-nitro"},
+		[]string{"ezkl"},
+		2,
+	))
+
+	job := makeJob("job-1", 10, types.ProofTypeHybrid)
+	_ = s.EnqueueJob(ctx, job)
+
+	jobs := s.GetNextJobs(ctx, 100)
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job with matching execution worker, got %d", len(jobs))
+	}
+
+	workerJobs := s.GetJobsForExecutionWorker(ctx, "worker-medium-1")
+	if len(workerJobs) != 1 || workerJobs[0].Id != "job-1" {
+		t.Fatalf("expected worker-medium-1 to own job-1, got %+v", workerJobs)
+	}
+}
+
+func TestScheduler_GetNextJobs_HeavyJobDoesNotUseFastLaneWorker(t *testing.T) {
+	cfg := keeper.DefaultSchedulerConfig()
+	cfg.MinValidatorsRequired = 1
+	cfg.RequireExecutionWorkers = true
+	s := testSchedulerWithConfig(cfg)
+	ctx := sdkCtxForHeight(100)
+
+	s.RegisterValidator(makeValidator("val1", []string{"aws-nitro"}, []string{"ezkl"}, 10))
+	s.RegisterExecutionWorker(makeExecutionWorker(
+		"worker-fast-1",
+		keeper.ExecutionLaneFastSmallModel,
+		[]string{"aws-nitro"},
+		[]string{"ezkl"},
+		2,
+	))
+
+	job := makeJob("job-heavy", 10, types.ProofTypeHybrid)
+	job.Metadata["scheduler.execution_lane"] = string(keeper.ExecutionLaneHeavyProofLargeModel)
+	_ = s.EnqueueJob(ctx, job)
+
+	jobs := s.GetNextJobs(ctx, 100)
+	if len(jobs) != 0 {
+		t.Fatalf("expected heavy lane job to wait for heavy worker, got %d jobs", len(jobs))
+	}
+}
+
 // =============================================================================
 // JOB COMPLETION
 // =============================================================================
@@ -371,6 +500,43 @@ func TestScheduler_MarkJobComplete_ReleasesValidatorSlots(t *testing.T) {
 	stats := s.GetQueueStats()
 	if stats.TotalJobs >= 2 {
 		t.Fatalf("expected fewer than 2 jobs after completion, got %d", stats.TotalJobs)
+	}
+}
+
+func TestScheduler_MarkJobComplete_ReleasesExecutionWorkerSlots(t *testing.T) {
+	cfg := keeper.DefaultSchedulerConfig()
+	cfg.MinValidatorsRequired = 1
+	cfg.RequireExecutionWorkers = true
+	s := testSchedulerWithConfig(cfg)
+	ctx := sdkCtxForHeight(100)
+
+	s.RegisterValidator(makeValidator("val1", []string{"aws-nitro"}, []string{"ezkl"}, 10))
+	s.RegisterExecutionWorker(makeExecutionWorker(
+		"worker-medium-1",
+		keeper.ExecutionLaneMediumEnterprise,
+		[]string{"aws-nitro"},
+		[]string{"ezkl"},
+		1,
+	))
+
+	job := makeJob("job-1", 10, types.ProofTypeHybrid)
+	_ = s.EnqueueJob(ctx, job)
+
+	jobs := s.GetNextJobs(ctx, 100)
+	if len(jobs) != 1 {
+		t.Fatalf("expected job to be scheduled, got %d", len(jobs))
+	}
+
+	workers := s.GetExecutionWorkers()
+	if workers["worker-medium-1"].CurrentJobs != 1 {
+		t.Fatalf("expected worker slot to be consumed, got %d", workers["worker-medium-1"].CurrentJobs)
+	}
+
+	s.MarkJobComplete("job-1")
+
+	workers = s.GetExecutionWorkers()
+	if workers["worker-medium-1"].CurrentJobs != 0 {
+		t.Fatalf("expected worker slot to be released, got %d", workers["worker-medium-1"].CurrentJobs)
 	}
 }
 
@@ -589,6 +755,9 @@ func TestScheduler_QueueStats(t *testing.T) {
 	}
 	if stats.OnlineValidators != 1 {
 		t.Fatalf("expected 1 online validator, got %d", stats.OnlineValidators)
+	}
+	if stats.RegisteredExecutionWorkers != 0 {
+		t.Fatalf("expected 0 registered execution workers, got %d", stats.RegisteredExecutionWorkers)
 	}
 }
 

@@ -24,6 +24,7 @@
 //! | 0x0303 | EZKL_VERIFY | EZKL zkML proof verification |
 //! | 0x0304 | HALO2_VERIFY | Halo2 proof verification |
 //! | 0x0305 | BATCH_GROTH16_VERIFY | Batch Groth16 verification (amortized) |
+//! | 0x0306 | STARK_VERIFY | STARK (FRI-based) proof verification |
 //! | 0x0400 | TEE_VERIFY | Unified TEE attestation verification (auto-routes) |
 //! | 0x0401 | TEE_VERIFY_NITRO | AWS Nitro attestation verification |
 //! | 0x0402 | TEE_VERIFY_SGX | Intel SGX attestation verification |
@@ -150,6 +151,7 @@ pub mod addresses {
     pub const EZKL_VERIFY: u64 = 0x0303;
     pub const HALO2_VERIFY: u64 = 0x0304;
     pub const BATCH_GROTH16_VERIFY: u64 = 0x0305;
+    pub const STARK_VERIFY: u64 = 0x0306;
 
     // TEE attestation verification precompiles (0x0400 range)
     // 0x0400 is the unified entry point; 0x0401+ are platform-specific
@@ -296,6 +298,7 @@ impl PrecompileRegistry {
         let plonk = Arc::new(zkp::PlonkVerifyPrecompile::new());
         let ezkl = Arc::new(zkp::EzklVerifyPrecompile::new());
         let halo2 = Arc::new(zkp::Halo2VerifyPrecompile::new());
+        let stark = Arc::new(zkp::StarkVerifyPrecompile::new());
 
         // Register unified ZKP precompile at primary 0x0300 address
         self.register(Arc::new(zkp::UnifiedZkpVerifyPrecompile::new(
@@ -303,6 +306,7 @@ impl PrecompileRegistry {
             plonk.clone(),
             ezkl.clone(),
             halo2.clone(),
+            stark.clone(),
         )));
 
         // Register proof-system-specific precompiles at 0x0301+
@@ -310,6 +314,7 @@ impl PrecompileRegistry {
         self.register(plonk);
         self.register(ezkl);
         self.register(halo2);
+        self.register(stark);
 
         // Batch Groth16 verification at 0x0305
         self.register(Arc::new(zkp::BatchGroth16VerifyPrecompile::new()));
@@ -338,9 +343,7 @@ impl PrecompileRegistry {
             config.clone(),
             registry.clone(),
         )));
-        self.register(Arc::new(tee::SevSnpVerifyPrecompile::new(
-            config, registry,
-        )));
+        self.register(Arc::new(tee::SevSnpVerifyPrecompile::new(config, registry)));
     }
 }
 
@@ -397,6 +400,9 @@ pub mod gas_costs {
     pub const BATCH_GROTH16_BASE: u64 = 100_000;
     pub const BATCH_GROTH16_PER_PROOF: u64 = 80_000;
     pub const BATCH_GROTH16_PER_PUBLIC_INPUT: u64 = 12_000;
+
+    /// STARK verification gas (FRI-based proofs are larger)
+    pub const STARK_BASE: u64 = 300_000;
 
     /// Unified ZKP routing overhead (added on top of proof-system-specific cost)
     pub const ZKP_UNIFIED_OVERHEAD: u64 = 5_000;

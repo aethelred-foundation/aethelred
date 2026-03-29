@@ -3,7 +3,7 @@
 //! This example demonstrates the UAE-Singapore trade settlement scenario
 //! using the Infinity Sandbox.
 
-use aethelred_infinity_sandbox::*;
+use aethelred_sandbox::*;
 
 fn main() {
     println!("{}", InfinitySandbox::welcome_message());

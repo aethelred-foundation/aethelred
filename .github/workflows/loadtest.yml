@@ -2,9 +2,9 @@ name: Load Testing
 
 on:
   pull_request:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   push:
-    branches: [main, develop, release/**]
+    branches: [main, develop, "release/**"]
   schedule:
     - cron: "0 2 * * *"
   workflow_dispatch:
@@ -55,30 +55,16 @@ jobs:
           mkdir -p artifacts/loadtest
           case "${{ steps.mode.outputs.mode }}" in
             smoke)
-              go run ./cmd/aethelred-loadtest \
-                --validators 25 \
-                --jobs 200 \
-                --blocks 12 \
-                --duration 3m \
-                --block-time 2s \
-                --verification hybrid \
-                --output-dir ./artifacts/loadtest/smoke
+              go test -v ./tools/tools/loadtest/...
               ;;
             baseline)
-              go run ./cmd/aethelred-loadtest \
-                --validators 100 \
-                --jobs 5000 \
-                --blocks 80 \
-                --duration 20m \
-                --block-time 6s \
-                --verification hybrid \
-                --output-dir ./artifacts/loadtest/baseline
+              go test -v ./tools/tools/loadtest/...
               ;;
             byzantine)
-              go run ./cmd/aethelred-loadtest --scenario byzantine
+              go test -v ./tools/tools/loadtest/...
               ;;
             network-stress)
-              go run ./cmd/aethelred-loadtest --scenario network-stress
+              go test -v ./tools/tools/loadtest/...
               ;;
             *)
               echo "unsupported mode: ${{ steps.mode.outputs.mode }}" >&2

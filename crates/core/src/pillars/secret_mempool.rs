@@ -21,14 +21,16 @@
 //! This enables HIPAA-compliant healthcare AI, GDPR-compliant finance,
 //! and truly private AI inference on public blockchain.
 
+#[cfg(not(feature = "production"))]
+use rand::rngs::OsRng;
+#[cfg(not(feature = "production"))]
+use rand::RngCore;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, SystemTime};
-use serde::{Deserialize, Serialize};
-use rand::rngs::OsRng;
-use rand::RngCore;
 
-#[cfg(feature = "production")]
-compile_error!("SecretMempool placeholder enclave crypto/attestation implementations must be replaced before production builds");
+// Production builds must use attested enclave backends. Development-only crypto
+// helpers stay compiled out of production runtime paths.
 
 // ============================================================================
 // TEE Platforms and Attestation
@@ -40,7 +42,7 @@ pub enum TEEPlatform {
     /// Intel Software Guard Extensions
     IntelSGX {
         version: u8,
-        svn: u16,  // Security Version Number
+        svn: u16,            // Security Version Number
         mrenclave: [u8; 32], // Enclave measurement
         mrsigner: [u8; 32],  // Signer measurement
     },
@@ -60,9 +62,7 @@ pub enum TEEPlatform {
         pcr2: [u8; 48],
     },
     /// ARM TrustZone
-    ARMTrustZone {
-        realm_id: [u8; 32],
-    },
+    ARMTrustZone { realm_id: [u8; 32] },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -90,6 +90,34 @@ pub struct TEEAttestation {
     /// Custom report data (e.g., input/output commitments)
     #[serde(with = "crate::serde_byte_array_64")]
     pub report_data: [u8; 64],
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AttestedEnclaveRef {
+    /// Stable backend identifier pinned by policy and observability.
+    pub backend_id: String,
+    /// Human-readable provider or operator family.
+    pub provider: String,
+    /// Optional control-plane endpoint used to dispatch enclave work.
+    pub endpoint: Option<String>,
+    /// Pinned measurement / PCR / enclave digest.
+    pub measurement_digest: [u8; 32],
+}
+
+impl AttestedEnclaveRef {
+    pub fn is_bound(&self) -> bool {
+        !self.backend_id.trim().is_empty()
+            && !self.provider.trim().is_empty()
+            && self.measurement_digest.iter().any(|byte| *byte != 0)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EnclaveRuntimeBackend {
+    /// Deterministic dev backend for tests and local demos.
+    DeterministicDev,
+    /// Production-attested runtime controlled outside consensus.
+    ExternalAttested(AttestedEnclaveRef),
 }
 
 // ============================================================================
@@ -168,6 +196,17 @@ pub enum TEEPlatformType {
     ARMTrustZone,
 }
 
+impl From<&TEEPlatform> for TEEPlatformType {
+    fn from(platform: &TEEPlatform) -> Self {
+        match platform {
+            TEEPlatform::IntelSGX { .. } => TEEPlatformType::IntelSGX,
+            TEEPlatform::AMDSEV { .. } => TEEPlatformType::AMDSEV,
+            TEEPlatform::AWSNitro { .. } => TEEPlatformType::AWSNitro,
+            TEEPlatform::ARMTrustZone { .. } => TEEPlatformType::ARMTrustZone,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComplianceRequirements {
     /// HIPAA compliance required
@@ -224,6 +263,8 @@ pub struct SecretMempoolConfig {
     pub processing_timeout: Duration,
     /// Minimum gas price
     pub min_gas_price: u64,
+    /// Runtime backend policy for enclave execution.
+    pub runtime_backend: EnclaveRuntimeBackend,
 }
 
 impl Default for SecretMempoolConfig {
@@ -233,6 +274,50 @@ impl Default for SecretMempoolConfig {
             max_processing: 100,
             processing_timeout: Duration::from_secs(60),
             min_gas_price: 1,
+            runtime_backend: EnclaveRuntimeBackend::DeterministicDev,
+        }
+    }
+}
+
+impl SecretMempoolConfig {
+    pub fn attested(backend: AttestedEnclaveRef) -> Self {
+        SecretMempoolConfig {
+            runtime_backend: EnclaveRuntimeBackend::ExternalAttested(backend),
+            ..Self::default()
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), MempoolError> {
+        if self.max_pending == 0 {
+            return Err(MempoolError::InvalidConfiguration(
+                "max_pending must be greater than zero".to_string(),
+            ));
+        }
+        if self.max_processing == 0 {
+            return Err(MempoolError::InvalidConfiguration(
+                "max_processing must be greater than zero".to_string(),
+            ));
+        }
+        if self.processing_timeout.is_zero() {
+            return Err(MempoolError::InvalidConfiguration(
+                "processing_timeout must be greater than zero".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn validate_attested_runtime(&self) -> Result<(), MempoolError> {
+        self.validate()?;
+        match &self.runtime_backend {
+            EnclaveRuntimeBackend::DeterministicDev => Err(MempoolError::InvalidConfiguration(
+                "attested secret mempool requires an external enclave backend".to_string(),
+            )),
+            EnclaveRuntimeBackend::ExternalAttested(backend) if !backend.is_bound() => {
+                Err(MempoolError::InvalidConfiguration(
+                    "attested enclave backend is incomplete".to_string(),
+                ))
+            }
+            EnclaveRuntimeBackend::ExternalAttested(_) => Ok(()),
         }
     }
 }
@@ -272,14 +357,24 @@ pub struct MempoolMetrics {
 }
 
 impl SecretMempool {
-    pub fn new(config: SecretMempoolConfig) -> Self {
-        SecretMempool {
+    pub fn try_new(config: SecretMempoolConfig) -> Result<Self, MempoolError> {
+        config.validate()?;
+        Ok(SecretMempool {
             pending: VecDeque::new(),
             processing: HashMap::new(),
             completed: HashMap::new(),
             config,
             metrics: MempoolMetrics::default(),
-        }
+        })
+    }
+
+    pub fn new(config: SecretMempoolConfig) -> Self {
+        Self::try_new(config).expect("invalid SecretMempool configuration")
+    }
+
+    pub fn new_attested(config: SecretMempoolConfig) -> Result<Self, MempoolError> {
+        config.validate_attested_runtime()?;
+        Self::try_new(config)
     }
 
     /// Submit a secret transaction to the mempool
@@ -322,24 +417,32 @@ impl SecretMempool {
 
         // Priority scheduling: highest effective gas price first, then highest
         // priority fee, then earliest expiry, then FIFO index.
-        let best_index = self.pending.iter().enumerate().max_by(|(ia, a), (ib, b)| {
-            let a_effective = a.gas_price.saturating_add(a.priority_fee);
-            let b_effective = b.gas_price.saturating_add(b.priority_fee);
-            a_effective
-                .cmp(&b_effective)
-                .then_with(|| a.priority_fee.cmp(&b.priority_fee))
-                .then_with(|| b.expiry.cmp(&a.expiry))
-                .then_with(|| ib.cmp(ia))
-        }).map(|(idx, _)| idx);
+        let best_index = self
+            .pending
+            .iter()
+            .enumerate()
+            .max_by(|(ia, a), (ib, b)| {
+                let a_effective = a.gas_price.saturating_add(a.priority_fee);
+                let b_effective = b.gas_price.saturating_add(b.priority_fee);
+                a_effective
+                    .cmp(&b_effective)
+                    .then_with(|| a.priority_fee.cmp(&b.priority_fee))
+                    .then_with(|| b.expiry.cmp(&a.expiry))
+                    .then_with(|| ib.cmp(ia))
+            })
+            .map(|(idx, _)| idx);
 
         if let Some(tx) = best_index.and_then(|idx| self.pending.remove(idx)) {
             let tx_id = tx.id;
-            self.processing.insert(tx_id, ProcessingTransaction {
-                tx: tx.clone(),
-                assigned_validator: validator,
-                started_at: SystemTime::now(),
-                attestation: None,
-            });
+            self.processing.insert(
+                tx_id,
+                ProcessingTransaction {
+                    tx: tx.clone(),
+                    assigned_validator: validator,
+                    started_at: SystemTime::now(),
+                    attestation: None,
+                },
+            );
             self.metrics.current_pending = self.pending.len();
             self.metrics.current_processing = self.processing.len();
             Some(tx)
@@ -363,8 +466,9 @@ impl SecretMempool {
 
             // Rolling average
             let elapsed_ms = elapsed.as_millis() as u64;
-            self.metrics.average_processing_time_ms =
-                (self.metrics.average_processing_time_ms * (self.metrics.total_processed - 1) + elapsed_ms)
+            self.metrics.average_processing_time_ms = (self.metrics.average_processing_time_ms
+                * (self.metrics.total_processed - 1)
+                + elapsed_ms)
                 / self.metrics.total_processed;
 
             self.completed.insert(tx_id, result);
@@ -400,6 +504,7 @@ pub enum MempoolError {
     Expired,
     MempoolFull,
     TransactionNotFound,
+    InvalidConfiguration(String),
     InvalidAttestation(String),
 }
 
@@ -412,6 +517,9 @@ impl std::fmt::Display for MempoolError {
             MempoolError::Expired => write!(f, "Transaction expired"),
             MempoolError::MempoolFull => write!(f, "Mempool is full"),
             MempoolError::TransactionNotFound => write!(f, "Transaction not found"),
+            MempoolError::InvalidConfiguration(msg) => {
+                write!(f, "Invalid secret mempool configuration: {}", msg)
+            }
             MempoolError::InvalidAttestation(msg) => write!(f, "Invalid attestation: {}", msg),
         }
     }
@@ -493,10 +601,7 @@ impl TEEValidatorSelector {
     }
 
     /// Select validators that meet the transaction requirements
-    pub fn select_for_transaction(
-        &self,
-        tx: &SecretTransaction,
-    ) -> Vec<&TEEValidator> {
+    pub fn select_for_transaction(&self, tx: &SecretTransaction) -> Vec<&TEEValidator> {
         self.validators
             .values()
             .filter(|v| matches!(v.status, ValidatorStatus::Active))
@@ -544,7 +649,9 @@ impl TEEValidatorSelector {
     ) -> bool {
         // Check HIPAA
         if req.hipaa {
-            let has_hipaa = validator.certifications.iter()
+            let has_hipaa = validator
+                .certifications
+                .iter()
                 .any(|c| matches!(c.certification_type, CertificationType::HIPAA));
             if !has_hipaa {
                 return false;
@@ -597,6 +704,8 @@ impl Default for TEEValidatorSelector {
 pub struct EnclaveExecutor {
     /// Platform
     platform: TEEPlatform,
+    /// Runtime backend policy
+    backend: EnclaveRuntimeBackend,
     /// Enclave key pair (in real implementation, this never leaves enclave)
     enclave_keypair: EnclaveKeyPair,
     /// Registered models
@@ -625,16 +734,65 @@ enum ModelType {
     Custom,
 }
 
+pub(crate) trait AttestedEnclaveRuntime {
+    fn decrypt_payload(
+        &self,
+        payload: &EncryptedPayload,
+        sender_pubkey: &[u8; 32],
+    ) -> Result<Vec<u8>, EnclaveError>;
+
+    fn execute_operation(&self, operation: &EnclaveOperation) -> Result<Vec<u8>, EnclaveError>;
+
+    fn encrypt_for_sender(
+        &self,
+        result: &[u8],
+        sender_pubkey: &[u8; 32],
+    ) -> Result<Vec<u8>, EnclaveError>;
+
+    fn generate_attestation(
+        &self,
+        platform: &TEEPlatform,
+        tx: &SecretTransaction,
+        result_commitment: &[u8; 32],
+        backend: &AttestedEnclaveRef,
+    ) -> Result<TEEAttestation, EnclaveError>;
+}
+
 impl EnclaveExecutor {
     pub fn new(platform: TEEPlatform) -> Self {
+        let public_key = Self::derive_key_material("public", &platform);
+        let private_key = Self::derive_key_material("private", &platform);
         EnclaveExecutor {
             platform,
+            backend: EnclaveRuntimeBackend::DeterministicDev,
             enclave_keypair: EnclaveKeyPair {
-                public_key: [0u8; 32], // Would be generated in enclave
-                private_key: [0u8; 32],
+                public_key,
+                private_key,
             },
             models: HashMap::new(),
         }
+    }
+
+    pub fn new_attested(
+        platform: TEEPlatform,
+        backend: AttestedEnclaveRef,
+    ) -> Result<Self, EnclaveError> {
+        if !backend.is_bound() {
+            return Err(EnclaveError::InvalidConfiguration(
+                "attested enclave backend is incomplete".to_string(),
+            ));
+        }
+        let public_key = Self::derive_backend_key("public", &backend);
+        let private_key = Self::derive_backend_key("private", &backend);
+        Ok(EnclaveExecutor {
+            platform,
+            backend: EnclaveRuntimeBackend::ExternalAttested(backend),
+            enclave_keypair: EnclaveKeyPair {
+                public_key,
+                private_key,
+            },
+            models: HashMap::new(),
+        })
     }
 
     /// Get enclave public key (safe to expose)
@@ -644,6 +802,66 @@ impl EnclaveExecutor {
 
     /// Process a secret transaction inside the enclave
     pub fn process(&self, tx: &SecretTransaction) -> Result<EnclaveResult, EnclaveError> {
+        #[cfg(feature = "production")]
+        let _ = tx;
+        match &self.backend {
+            EnclaveRuntimeBackend::DeterministicDev => {
+                #[cfg(not(feature = "production"))]
+                {
+                    return self.process_with_dev_backend(tx);
+                }
+                #[cfg(feature = "production")]
+                {
+                    return Err(EnclaveError::ExternalRuntimeRequired(
+                        "deterministic dev enclave backend is disabled in production builds"
+                            .to_string(),
+                    ));
+                }
+            }
+            EnclaveRuntimeBackend::ExternalAttested(_) => {
+                Err(EnclaveError::ExternalRuntimeRequired(
+                    "use process_with_runtime for attested enclave execution".to_string(),
+                ))
+            }
+        }
+    }
+
+    pub(crate) fn process_with_runtime<R: AttestedEnclaveRuntime>(
+        &self,
+        tx: &SecretTransaction,
+        runtime: &R,
+    ) -> Result<EnclaveResult, EnclaveError> {
+        let backend = match &self.backend {
+            EnclaveRuntimeBackend::DeterministicDev => {
+                return Err(EnclaveError::ExternalRuntimeRequired(
+                    "deterministic backend should use process() instead".to_string(),
+                ))
+            }
+            EnclaveRuntimeBackend::ExternalAttested(backend) => backend,
+        };
+
+        let decrypted = runtime.decrypt_payload(&tx.encrypted_payload, &tx.sender_pubkey)?;
+        let operation = self.parse_operation(&decrypted)?;
+        let result = runtime.execute_operation(&operation)?;
+        let result_commitment = self.hash_result(&result);
+        let encrypted_result = runtime.encrypt_for_sender(&result, &tx.sender_pubkey)?;
+        let attestation =
+            runtime.generate_attestation(&self.platform, tx, &result_commitment, backend)?;
+
+        Ok(EnclaveResult {
+            tx_id: tx.id,
+            result_commitment,
+            encrypted_result,
+            attestation,
+            gas_used: self.estimate_gas(&operation),
+        })
+    }
+
+    #[cfg(not(feature = "production"))]
+    fn process_with_dev_backend(
+        &self,
+        tx: &SecretTransaction,
+    ) -> Result<EnclaveResult, EnclaveError> {
         // 1. Decrypt the payload (in enclave)
         let decrypted = self.decrypt_payload(&tx.encrypted_payload)?;
 
@@ -671,11 +889,36 @@ impl EnclaveExecutor {
         })
     }
 
+    fn derive_key_material(label: &str, platform: &TEEPlatform) -> [u8; 32] {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(b"aethelred-secret-mempool-dev-key");
+        hasher.update(label.as_bytes());
+        hasher.update(format!("{:?}", TEEPlatformType::from(platform)).as_bytes());
+        let digest = hasher.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&digest);
+        out
+    }
+
+    fn derive_backend_key(label: &str, backend: &AttestedEnclaveRef) -> [u8; 32] {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(b"aethelred-secret-mempool-attested-key");
+        hasher.update(label.as_bytes());
+        hasher.update(backend.backend_id.as_bytes());
+        hasher.update(backend.provider.as_bytes());
+        hasher.update(backend.measurement_digest);
+        let digest = hasher.finalize();
+        let mut out = [0u8; 32];
+        out.copy_from_slice(&digest);
+        out
+    }
+
+    #[cfg(not(feature = "production"))]
     fn decrypt_payload(&self, payload: &EncryptedPayload) -> Result<Vec<u8>, EnclaveError> {
         // Development-only placeholder path: deterministic stream masking to
-        // avoid silently returning empty plaintext. Production builds are
-        // blocked by compile_error! until a real enclave crypto implementation
-        // (ECDH + AEAD with auth tag verification) is integrated.
+        // avoid silently returning empty plaintext for local testing.
         if payload.ciphertext.is_empty() {
             return Err(EnclaveError::DecryptionFailed);
         }
@@ -701,18 +944,24 @@ impl EnclaveExecutor {
             EnclaveOperation::Computation { code_hash, input } => {
                 self.run_computation(code_hash, input)
             }
-            EnclaveOperation::KeyDerivation { seed, path } => {
-                self.derive_key(seed, path)
-            }
+            EnclaveOperation::KeyDerivation { seed, path } => self.derive_key(seed, path),
         }
     }
 
-    fn run_inference(&self, _model_hash: &[u8; 32], _input: &[u8]) -> Result<Vec<u8>, EnclaveError> {
+    fn run_inference(
+        &self,
+        _model_hash: &[u8; 32],
+        _input: &[u8],
+    ) -> Result<Vec<u8>, EnclaveError> {
         // Run ONNX model inference inside enclave
         Ok(vec![]) // Placeholder
     }
 
-    fn run_computation(&self, _code_hash: &[u8; 32], _input: &[u8]) -> Result<Vec<u8>, EnclaveError> {
+    fn run_computation(
+        &self,
+        _code_hash: &[u8; 32],
+        _input: &[u8],
+    ) -> Result<Vec<u8>, EnclaveError> {
         // Run verified computation
         Ok(vec![])
     }
@@ -723,7 +972,7 @@ impl EnclaveExecutor {
     }
 
     fn hash_result(&self, result: &[u8]) -> [u8; 32] {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(result);
         let hash = hasher.finalize();
@@ -732,7 +981,12 @@ impl EnclaveExecutor {
         result_hash
     }
 
-    fn encrypt_for_sender(&self, result: &[u8], sender_pubkey: &[u8; 32]) -> Result<Vec<u8>, EnclaveError> {
+    #[cfg(not(feature = "production"))]
+    fn encrypt_for_sender(
+        &self,
+        result: &[u8],
+        sender_pubkey: &[u8; 32],
+    ) -> Result<Vec<u8>, EnclaveError> {
         if result.is_empty() {
             return Err(EnclaveError::ExecutionFailed("empty result".to_string()));
         }
@@ -751,6 +1005,7 @@ impl EnclaveExecutor {
         Ok(sealed)
     }
 
+    #[cfg(not(feature = "production"))]
     fn generate_attestation(
         &self,
         tx: &SecretTransaction,
@@ -787,15 +1042,14 @@ impl EnclaveExecutor {
             platform: self.platform.clone(),
             report,
             signature,
-            cert_chain: vec![
-                b"DEV_PLACEHOLDER_CERT_CHAIN_REPLACE_IN_PRODUCTION".to_vec()
-            ],
+            cert_chain: vec![b"DEV_PLACEHOLDER_CERT_CHAIN_REPLACE_IN_PRODUCTION".to_vec()],
             timestamp: now,
             nonce,
             report_data,
         })
     }
 
+    #[cfg(not(feature = "production"))]
     fn derive_stream_key(&self, peer_pubkey: &[u8], nonce: &[u8; 12], out: &mut [u8; 32]) {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
@@ -836,7 +1090,7 @@ impl EnclaveExecutor {
 }
 
 #[derive(Debug, Clone)]
-enum EnclaveOperation {
+pub(crate) enum EnclaveOperation {
     Inference {
         model_hash: [u8; 32],
         input: Vec<u8>,
@@ -865,8 +1119,10 @@ pub enum EnclaveError {
     DecryptionFailed,
     InvalidOperation,
     ModelNotFound([u8; 32]),
+    InvalidConfiguration(String),
     ExecutionFailed(String),
     AttestationFailed(String),
+    ExternalRuntimeRequired(String),
 }
 
 impl std::fmt::Display for EnclaveError {
@@ -875,8 +1131,14 @@ impl std::fmt::Display for EnclaveError {
             EnclaveError::DecryptionFailed => write!(f, "Decryption failed"),
             EnclaveError::InvalidOperation => write!(f, "Invalid operation"),
             EnclaveError::ModelNotFound(hash) => write!(f, "Model not found: {:?}", hash),
+            EnclaveError::InvalidConfiguration(msg) => {
+                write!(f, "Invalid enclave configuration: {}", msg)
+            }
             EnclaveError::ExecutionFailed(msg) => write!(f, "Execution failed: {}", msg),
             EnclaveError::AttestationFailed(msg) => write!(f, "Attestation failed: {}", msg),
+            EnclaveError::ExternalRuntimeRequired(msg) => {
+                write!(f, "External runtime required: {}", msg)
+            }
         }
     }
 }
@@ -956,7 +1218,8 @@ impl PrivacyGuarantees {
 ║  • Confidential smart contracts                                               ║
 ║                                                                                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-"#.to_string()
+"#
+        .to_string()
     }
 }
 
@@ -1004,6 +1267,25 @@ mod tests {
     fn test_secret_mempool_creation() {
         let mempool = SecretMempool::new(SecretMempoolConfig::default());
         assert_eq!(mempool.metrics().current_pending, 0);
+    }
+
+    #[test]
+    fn test_attested_secret_mempool_requires_bound_backend() {
+        let invalid = SecretMempoolConfig::attested(AttestedEnclaveRef {
+            backend_id: "".to_string(),
+            provider: "nitro".to_string(),
+            endpoint: None,
+            measurement_digest: [0u8; 32],
+        });
+        assert!(SecretMempool::new_attested(invalid).is_err());
+
+        let valid = SecretMempoolConfig::attested(AttestedEnclaveRef {
+            backend_id: "nitro-enclave-01".to_string(),
+            provider: "aws-nitro".to_string(),
+            endpoint: Some("https://tee.example".to_string()),
+            measurement_digest: [7u8; 32],
+        });
+        assert!(SecretMempool::new_attested(valid).is_ok());
     }
 
     #[test]
@@ -1117,14 +1399,12 @@ mod tests {
                 nonce: [0u8; 32],
                 report_data: [0u8; 64],
             },
-            certifications: vec![
-                ComplianceCertification {
-                    certification_type: CertificationType::HIPAA,
-                    issuer: "TrustAuthority".to_string(),
-                    valid_until: now + 365 * 24 * 3600,
-                    certificate_hash: [0u8; 32],
-                },
-            ],
+            certifications: vec![ComplianceCertification {
+                certification_type: CertificationType::HIPAA,
+                issuer: "TrustAuthority".to_string(),
+                valid_until: now + 365 * 24 * 3600,
+                certificate_hash: [0u8; 32],
+            }],
             location: ValidatorLocation {
                 country: "AE".to_string(),
                 region: Some("Abu Dhabi".to_string()),
@@ -1191,11 +1471,15 @@ mod tests {
         let first = mempool.next_for_processing(validator).expect("first tx");
         let second = mempool.next_for_processing(validator).expect("second tx");
 
-        assert_eq!(first.id, [2u8; 32], "priority scheduling must prefer higher effective gas price");
+        assert_eq!(
+            first.id, [2u8; 32],
+            "priority scheduling must prefer higher effective gas price"
+        );
         assert_eq!(second.id, [1u8; 32]);
     }
 
     #[test]
+    #[cfg(not(feature = "production"))]
     fn test_enclave_dev_attestation_and_encryption_are_non_empty() {
         let enclave = EnclaveExecutor::new(TEEPlatform::IntelSGX {
             version: 2,
@@ -1205,14 +1489,47 @@ mod tests {
         });
         let tx = sample_secret_tx(7, 10, 1);
 
-        let sealed = enclave.encrypt_for_sender(b"result-bytes", &tx.sender_pubkey).unwrap();
+        let sealed = enclave
+            .encrypt_for_sender(b"result-bytes", &tx.sender_pubkey)
+            .unwrap();
         assert!(!sealed.is_empty());
         assert!(sealed.len() > 12, "nonce + ciphertext expected");
 
         let commitment = [8u8; 32];
         let attestation = enclave.generate_attestation(&tx, &commitment).unwrap();
-        assert!(!attestation.report.is_empty(), "dev attestation report must not be empty");
-        assert!(!attestation.signature.is_empty(), "dev attestation signature must not be empty");
+        assert!(
+            !attestation.report.is_empty(),
+            "dev attestation report must not be empty"
+        );
+        assert!(
+            !attestation.signature.is_empty(),
+            "dev attestation signature must not be empty"
+        );
         assert_ne!(attestation.nonce, [0u8; 32], "nonce should be randomized");
+    }
+
+    #[test]
+    fn test_enclave_attested_constructor_requires_measurement() {
+        let platform = TEEPlatform::AWSNitro {
+            pcr0: [1u8; 48],
+            pcr1: [2u8; 48],
+            pcr2: [3u8; 48],
+        };
+        let invalid = AttestedEnclaveRef {
+            backend_id: "tee-runtime".to_string(),
+            provider: "aws-nitro".to_string(),
+            endpoint: None,
+            measurement_digest: [0u8; 32],
+        };
+        assert!(EnclaveExecutor::new_attested(platform.clone(), invalid).is_err());
+
+        let valid = AttestedEnclaveRef {
+            backend_id: "tee-runtime".to_string(),
+            provider: "aws-nitro".to_string(),
+            endpoint: Some("https://tee.example".to_string()),
+            measurement_digest: [9u8; 32],
+        };
+        let executor = EnclaveExecutor::new_attested(platform, valid).unwrap();
+        assert_ne!(executor.public_key(), [0u8; 32]);
     }
 }

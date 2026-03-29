@@ -1,0 +1,366 @@
+{
+  "board": "testnet-launch-gate-board",
+  "version": "3.0.0",
+  "generated_at": "2026-03-27T18:00:00Z",
+  "deployment_mode": "IMMEDIATE_ALL_SQUADS",
+  "release_branch": "release/testnet-v1.0",
+  "genesis_time": "2026-04-01T14:00:00Z",
+  "chain_id": "aethelred-testnet-1",
+  "summary": {
+    "total": 33,
+    "pass": 17,
+    "fail": 0,
+    "pending": 16,
+    "blockers": 3,
+    "high": 5,
+    "medium": 8
+  },
+  "gates": [
+    {
+      "id": "go_build",
+      "name": "Go Build",
+      "status": "PASS",
+      "owner_squad": "SQ03",
+      "artifact_path": "build/aethelredd",
+      "updated_at": "2026-03-27",
+      "notes": "go build ./cmd/aethelredd passes from clean checkout",
+      "release_branch_verified": false
+    },
+    {
+      "id": "go_test",
+      "name": "Go Test Suite",
+      "status": "PASS",
+      "owner_squad": "SQ03",
+      "artifact_path": "test-results/go-test-full-20260327.txt",
+      "updated_at": "2026-03-27",
+      "notes": "go test ./... all packages pass",
+      "release_branch_verified": false
+    },
+    {
+      "id": "rust_compile",
+      "name": "Rust Workspace Compile",
+      "status": "PASS",
+      "owner_squad": "SQ08",
+      "artifact_path": "crates/target/",
+      "updated_at": "2026-03-27",
+      "notes": "cargo test --workspace --no-run compiles all 16 test binaries",
+      "release_branch_verified": false
+    },
+    {
+      "id": "ibc_keeper",
+      "name": "IBC Keeper Tests",
+      "status": "PASS",
+      "owner_squad": "SQ04",
+      "artifact_path": "test-results/go-test-full-20260327.txt",
+      "updated_at": "2026-03-27",
+      "notes": "go test ./x/ibc/keeper/... passes",
+      "release_branch_verified": false
+    },
+    {
+      "id": "pouw_e2e",
+      "name": "PoUW End-to-End Tests",
+      "status": "PASS",
+      "owner_squad": "SQ03",
+      "artifact_path": "test-results/go-test-full-20260327.txt",
+      "updated_at": "2026-03-27",
+      "notes": "go test -run TestEndToEnd ./x/pouw/keeper/... passes in 1.074s",
+      "release_branch_verified": false
+    },
+    {
+      "id": "local_testnet_doctor",
+      "name": "Local Testnet Doctor",
+      "status": "PASS",
+      "owner_squad": "SQ06",
+      "artifact_path": "test-results/testnet-launch-doctor-20260325.txt",
+      "updated_at": "2026-03-27",
+      "notes": "4/4 services healthy",
+      "release_branch_verified": false
+    },
+    {
+      "id": "local_testnet_smoke",
+      "name": "Local Testnet CLI Smoke Test",
+      "status": "PASS",
+      "owner_squad": "SQ06",
+      "artifact_path": "test-results/testnet-launch-cli-smoke-20260325.txt",
+      "updated_at": "2026-03-27",
+      "notes": "CLI status, diagnostics, seal verify all pass",
+      "release_branch_verified": false
+    },
+    {
+      "id": "real_node_e2e",
+      "name": "Real Node E2E Tests",
+      "status": "PASS",
+      "owner_squad": "SQ06",
+      "artifact_path": "test-results/testnet-launch-real-node-e2e-20260325.txt",
+      "updated_at": "2026-03-27",
+      "notes": "RPC health, FastAPI health, block progression all pass",
+      "release_branch_verified": false
+    },
+    {
+      "id": "exploit_sim",
+      "name": "Exploit Simulation",
+      "status": "PASS",
+      "owner_squad": "SQ07",
+      "artifact_path": "test-results/dynamic-exploit-simulations.json",
+      "updated_at": "2026-03-27",
+      "notes": "7/7 scenarios pass with A+ grades",
+      "release_branch_verified": false
+    },
+    {
+      "id": "fuzz_compile",
+      "name": "Fuzz Target Compile Check",
+      "status": "PASS",
+      "owner_squad": "SQ17",
+      "artifact_path": "test-results/fuzz-compile.txt",
+      "updated_at": "2026-03-27",
+      "notes": "All 4 fuzz crates (10 targets) compile cleanly",
+      "release_branch_verified": false
+    },
+    {
+      "id": "sdk_package",
+      "name": "SDK Package Build",
+      "status": "PASS",
+      "owner_squad": "SQ12",
+      "artifact_path": "test-results/sdk-package.txt",
+      "updated_at": "2026-03-27",
+      "notes": "4/4 SDKs package",
+      "release_branch_verified": false
+    },
+    {
+      "id": "validator_runbook",
+      "name": "Validator Runbook",
+      "status": "PASS",
+      "owner_squad": "SQ15",
+      "artifact_path": "docs/VALIDATOR_RUNBOOK.md",
+      "updated_at": "2026-03-27",
+      "notes": "v1.2 with April 2026 values",
+      "release_branch_verified": false
+    },
+    {
+      "id": "genesis_artifact",
+      "name": "Genesis Parameters and Identity",
+      "status": "PASS",
+      "owner_squad": "SQ02",
+      "artifact_path": "config/testnet-genesis-params.md",
+      "updated_at": "2026-03-27",
+      "notes": "Chain ID, genesis params, peer list, parameter delta",
+      "release_branch_verified": false
+    },
+    {
+      "id": "contracts_controls",
+      "name": "Contracts Control Matrix",
+      "status": "PASS",
+      "owner_squad": "SQ10",
+      "artifact_path": "contracts/CONTROL_MATRIX.md",
+      "updated_at": "2026-03-27",
+      "notes": "8 contract families documented",
+      "release_branch_verified": false
+    },
+    {
+      "id": "observability",
+      "name": "Observability SLOs and On-Call",
+      "status": "PASS",
+      "owner_squad": "SQ19",
+      "artifact_path": "docs/security/MONITORING.md",
+      "updated_at": "2026-03-27",
+      "notes": "5 SLOs, 5 dashboards, 4-tier alert routing",
+      "release_branch_verified": false
+    },
+    {
+      "id": "chaos_drill_design",
+      "name": "Chaos Drill Design",
+      "status": "PASS",
+      "owner_squad": "SQ20",
+      "artifact_path": "test-results/chaos-drill-report.md",
+      "updated_at": "2026-03-27",
+      "notes": "7 drills DESIGNED, 4 recovery playbooks documented",
+      "release_branch_verified": false
+    },
+    {
+      "id": "security_verification",
+      "name": "Security Disposition",
+      "status": "PASS",
+      "owner_squad": "SQ16",
+      "artifact_path": "test-results/vulnerability-disposition-20260327.md",
+      "updated_at": "2026-03-27",
+      "notes": "All critical/high findings closed",
+      "release_branch_verified": false
+    },
+    {
+      "id": "release_branch_signoff",
+      "name": "Release Branch Evidence Signoff",
+      "status": "PENDING",
+      "severity": "BLOCKER",
+      "owner_squad": "SQ01",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-01: All evidence currently on feature branch. Must re-run on release/testnet-v1.0",
+      "checklist_ref": "A.2"
+    },
+    {
+      "id": "chaos_drill_execution",
+      "name": "Chaos Drill Execution (DR-01 to DR-07)",
+      "status": "PENDING",
+      "severity": "BLOCKER",
+      "owner_squad": "SQ20",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-02: Drills designed but not yet executed on live testnet",
+      "checklist_ref": "E.7"
+    },
+    {
+      "id": "soak_test_24h",
+      "name": "24-Hour Soak Test",
+      "status": "PENDING",
+      "severity": "BLOCKER",
+      "owner_squad": "SQ07",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-03: 24h soak test has not been run",
+      "checklist_ref": "E.6"
+    },
+    {
+      "id": "live_testnet_loadtest",
+      "name": "Load Test on Live Testnet",
+      "status": "PENDING",
+      "severity": "HIGH",
+      "owner_squad": "SQ07",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-04: Load test not yet run against live testnet topology",
+      "checklist_ref": "E.4"
+    },
+    {
+      "id": "bridge_audit_signoff",
+      "name": "External Audit Signoff for Bridge Contracts",
+      "status": "PENDING",
+      "severity": "HIGH",
+      "owner_squad": "SQ11",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-05: External audit signoff pending",
+      "checklist_ref": "F.7"
+    },
+    {
+      "id": "kani_proofs_active",
+      "name": "Kani Proofs Activated in CI",
+      "status": "PENDING",
+      "severity": "HIGH",
+      "owner_squad": "SQ18",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-06: Kani harnesses scaffolded but not running in CI. Run locally until GitHub Actions unlocked.",
+      "checklist_ref": "I.7"
+    },
+    {
+      "id": "prod_dashboards",
+      "name": "Production Observability Dashboards Live",
+      "status": "PENDING",
+      "severity": "HIGH",
+      "owner_squad": "SQ19",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-07: Dashboard specs exist but not stood up in production",
+      "checklist_ref": "J.1"
+    },
+    {
+      "id": "custody_hsm_rehearsal",
+      "name": "Custody/Signer/Multisig/HSM Flow Rehearsal",
+      "status": "PENDING",
+      "severity": "HIGH",
+      "owner_squad": "SQ10",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-16: TGE readiness requires rehearsed custody flows",
+      "checklist_ref": "M.3"
+    },
+    {
+      "id": "external_validator_onboard",
+      "name": "External Validator Onboarding Test",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ15",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-08: Runbook exists but no external validator has joined using it",
+      "checklist_ref": "K.1"
+    },
+    {
+      "id": "threat_model_current",
+      "name": "Threat Model Currency",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ16",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-09: Threat model not verified as current for 2026 launch",
+      "checklist_ref": "I.1"
+    },
+    {
+      "id": "bug_bounty_active",
+      "name": "Bug Bounty Scope and Triage Active",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ16",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-10: Bug bounty scope and triage process not confirmed active",
+      "checklist_ref": "I.3"
+    },
+    {
+      "id": "status_page_ready",
+      "name": "Status Page Ready",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ19",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-11",
+      "checklist_ref": "J.5"
+    },
+    {
+      "id": "war_room_bridge",
+      "name": "War Room Bridge Established",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ19",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-12",
+      "checklist_ref": "J.6"
+    },
+    {
+      "id": "oncall_rota_final",
+      "name": "On-Call Rota Finalized with Names",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ19",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-13: Template exists but no names assigned",
+      "checklist_ref": "J.7"
+    },
+    {
+      "id": "tokenomics_frozen",
+      "name": "Tokenomics Parameters Frozen and Approved",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ02",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-14",
+      "checklist_ref": "M.1"
+    },
+    {
+      "id": "tge_dependency_separation",
+      "name": "TGE Dependencies Separated Eng/Non-Eng",
+      "status": "PENDING",
+      "severity": "MEDIUM",
+      "owner_squad": "SQ01",
+      "artifact_path": null,
+      "updated_at": "2026-03-27",
+      "notes": "GAP-15",
+      "checklist_ref": "M.6"
+    }
+  ]
+}

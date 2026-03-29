@@ -13,7 +13,7 @@ categories = ["blockchain", "cryptography"]
 default = ["std"]
 std = []
 # Enable real VRF implementation using arkworks
-vrf = ["dep:vrf", "dep:ark-ec", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std"]
+vrf = ["dep:ark-ec", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std"]
 # Alternative VRF using schnorrkel (Substrate-compatible)
 schnorrkel-vrf = ["schnorrkel"]
 # Testing/development mode with deterministic VRF
@@ -61,8 +61,6 @@ ark-ec = { version = "0.4", optional = true }
 ark-ff = { version = "0.4", optional = true }
 ark-serialize = { version = "0.4", optional = true }
 ark-std = { version = "0.4", optional = true }
-# VRF implementation using arkworks curves
-vrf = { version = "0.1", optional = true }
 schnorrkel = { version = "0.11", optional = true }
 
 # =============================================================================
