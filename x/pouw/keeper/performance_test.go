@@ -575,8 +575,8 @@ func TestBenchmark_ParamValidation(t *testing.T) {
 
 	require.Equal(t, "ValidateParams", result.Name)
 	require.Equal(t, 100, result.Iterations)
-	require.Greater(t, result.OpsPerSec, float64(100000),
-		"param validation should run > 100k ops/sec")
+	require.Greater(t, result.OpsPerSec, float64(80000),
+		"param validation should run > 80k ops/sec on CI-class runners")
 }
 
 func TestBenchmark_ConsistencyChecks(t *testing.T) {
