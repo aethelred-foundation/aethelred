@@ -18,7 +18,6 @@ jobs:
   zeroid-backend:
     name: ZeroID Backend
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/zeroid/backend/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/zeroid/backend
@@ -48,7 +47,6 @@ jobs:
   zeroid-frontend:
     name: ZeroID Frontend
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/zeroid/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/zeroid
@@ -78,7 +76,6 @@ jobs:
   cruzible:
     name: Cruzible
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/cruzible/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/cruzible
@@ -102,7 +99,6 @@ jobs:
   noblepay:
     name: NoblePay
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/noblepay/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/noblepay
@@ -126,7 +122,6 @@ jobs:
   shiora:
     name: Shiora
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/shiora/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/shiora
@@ -156,7 +151,6 @@ jobs:
   terraqura:
     name: TerraQura
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
     defaults:
       run:
         working-directory: dApps/terraqura
@@ -166,16 +160,22 @@ jobs:
         with:
           node-version: "20"
       - name: Install pnpm
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: corepack enable && corepack prepare pnpm@9 --activate
       - name: Install dependencies
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: pnpm install --frozen-lockfile
       - name: Lint
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: pnpm lint
       - name: Type-check
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: pnpm typecheck
       - name: Run tests
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: pnpm test
       - name: Build
+        if: ${{ hashFiles('dApps/terraqura/package.json') != '' }}
         run: pnpm build
 
   # ---------------------------------------------------------------------------
