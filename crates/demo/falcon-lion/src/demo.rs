@@ -545,7 +545,7 @@ impl FalconLionDemo {
         if let Some(ref proof) = result.proof {
             println!(
                 "   Proof Hash:  {}...",
-                &hex::encode(&proof.proof_hash)[..16]
+                &hex::encode(proof.proof_hash)[..16]
             );
         }
         println!("{}", "═".repeat(70));
@@ -650,7 +650,7 @@ impl FalconLionDemo {
         if let Some(ref proof) = result.proof {
             println!(
                 "   Proof Hash:   {}...",
-                &hex::encode(&proof.proof_hash)[..16]
+                &hex::encode(proof.proof_hash)[..16]
             );
         }
         println!("{}", "═".repeat(70));

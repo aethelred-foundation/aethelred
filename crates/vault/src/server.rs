@@ -682,10 +682,8 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
             Some(arr)
         }
         None if config.tee_platform == TEEPlatform::AWSNitro => {
-            return Err(format!(
-                "Nitro platform requires application_hash_hex (PCR2 / application measurement). \
-                 Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application."
-            )
+            return Err("Nitro platform requires application_hash_hex (PCR2 / application measurement). \
+                 Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application.".to_string()
             .into());
         }
         None => None,
@@ -1097,7 +1095,7 @@ pub fn compute_eligible_universe_hash(addresses: &[String]) -> [u8; 32] {
     let mut h = Sha256::new();
     for addr in &sorted {
         h.update(addr.as_bytes());
-        h.update(&[0u8]); // null separator for domain separation
+        h.update([0u8]); // null separator for domain separation
     }
 
     let mut result = [0u8; 32];
@@ -1249,7 +1247,7 @@ pub fn compute_staker_registry_root(stakers: &[StakerStake]) -> [u8; 32] {
         // keccak256(abi.encodePacked(address, shares))
         let mut hasher = Keccak256::new();
         hasher.update(&addr_bytes);
-        hasher.update(&shares_be);
+        hasher.update(shares_be);
         let hash: [u8; 32] = hasher.finalize().into();
 
         // XOR into accumulator

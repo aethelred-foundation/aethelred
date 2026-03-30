@@ -4,7 +4,6 @@
 //! Provides line, branch, and function coverage analysis.
 
 use std::collections::{HashMap, HashSet};
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 

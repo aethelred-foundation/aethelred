@@ -56,3 +56,6 @@ sgx = []
 nitro = ["dep:ciborium", "dep:libc"]
 sev = ["dep:libc"]
 remote-attestation = ["dep:reqwest"]
+
+[lints]
+workspace = true

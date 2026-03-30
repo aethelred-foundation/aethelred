@@ -648,14 +648,14 @@ impl HardwareAttestationProvider for MockHardwareProvider {
         // Simulate hardware report generation
         let mut hasher = Sha256::new();
         hasher.update(b"MOCK_HW_REPORT_V1");
-        hasher.update(&self.enclave_hash);
-        hasher.update(&self.signer_hash);
+        hasher.update(self.enclave_hash);
+        hasher.update(self.signer_hash);
         hasher.update(report_data);
         let mock_report = hasher.finalize();
 
         // Hash the mock report to get the commitment
         let mut report_hash_hasher = Sha256::new();
-        report_hash_hasher.update(&mock_report);
+        report_hash_hasher.update(mock_report);
         let mut report_hash = [0u8; 32];
         report_hash.copy_from_slice(&report_hash_hasher.finalize());
 
@@ -702,8 +702,8 @@ impl HardwareAttestationProvider for MockHardwareProvider {
 
         // Sign the attestation message: SHA-256(pkX || pkY || platformId)
         let mut hasher = Sha256::new();
-        hasher.update(&pk_x);
-        hasher.update(&pk_y);
+        hasher.update(pk_x);
+        hasher.update(pk_y);
         hasher.update([platform_id]);
         let msg_hash = {
             let result = hasher.finalize();

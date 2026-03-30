@@ -1070,13 +1070,12 @@ impl JobRegistry {
         // -----------------------------------------------------------------
         // Enterprise guard: require_registered_circuit
         // -----------------------------------------------------------------
-        if ent.enabled && ent.require_registered_circuit {
-            if !self.registered_circuits.contains(&zk_proof.vk_hash) {
+        if ent.enabled && ent.require_registered_circuit
+            && !self.registered_circuits.contains(&zk_proof.vk_hash) {
                 return Err(SystemContractError::ZkVerificationFailed {
                     reason: "Enterprise mode: circuit vk_hash is not registered".into(),
                 });
             }
-        }
 
         // -----------------------------------------------------------------
         // Enterprise guard: require_domain_binding
@@ -1117,7 +1116,7 @@ impl JobRegistry {
             | ZkSystem::Ezkl
             | ZkSystem::Halo2
             | ZkSystem::Stark => {
-                return self.verify_zk_proof_via_precompile(zk_proof, job);
+                self.verify_zk_proof_via_precompile(zk_proof, job)
             }
         }
     }

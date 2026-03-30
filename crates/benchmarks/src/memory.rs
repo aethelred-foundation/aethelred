@@ -5,11 +5,9 @@
 //! and fragmentation analysis.
 
 use std::alloc::{GlobalAlloc, Layout, System};
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
-use crate::BenchmarkResult;
 
 // ============ Memory Tracker ============
 
@@ -21,6 +19,12 @@ pub struct TrackingAllocator {
     total_allocated: AtomicUsize,
     total_freed: AtomicUsize,
     allocation_count: AtomicUsize,
+}
+
+impl Default for TrackingAllocator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TrackingAllocator {

@@ -565,7 +565,7 @@ func (c *NitroEnclaveClient) Close() error {
 // generateEnclaveID generates a unique enclave identifier
 func generateEnclaveID() string {
 	b := make([]byte, 8)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return fmt.Sprintf("enclave-%s", hex.EncodeToString(b))
 }
 
@@ -635,7 +635,7 @@ func (m *MockTEEClient) Execute(ctx context.Context, request *TEEExecutionReques
 	outputHash := h.Sum(nil)
 
 	nonce := make([]byte, 32)
-	rand.Read(nonce)
+	_, _ = rand.Read(nonce)
 
 	return &TEEExecutionResult{
 		JobID:      request.JobID,

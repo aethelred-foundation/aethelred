@@ -3,10 +3,9 @@
 //! Comprehensive benchmarks for AI/ML inference operations including
 //! latency profiling, batch performance, and model-specific tests.
 
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{black_box, Benchmark, BenchmarkConfig, BenchmarkResult};
+use crate::{black_box, BenchmarkResult};
 
 // ============ Inference Benchmark ============
 

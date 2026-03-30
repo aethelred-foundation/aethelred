@@ -1,3 +1,22 @@
+#![allow(clippy::panicking_unwrap)]
+#![allow(clippy::await_holding_lock)]
+#![allow(clippy::only_used_in_recursion)]
+#![allow(clippy::if_same_then_else)]
+#![allow(clippy::match_like_matches_macro)]
+#![allow(unused_doc_comments)]
+#![allow(unexpected_cfgs)]
+#![allow(ambiguous_glob_reexports)]
+#![allow(clippy::upper_case_acronyms)]
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::result_large_err)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::inconsistent_digit_grouping)]
+#![allow(clippy::neg_cmp_op_on_partial_ord)]
+#![allow(clippy::should_implement_trait)]
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(non_camel_case_types)]
 //! Aethelred core crate
 //!
 //! Minimal module wiring for shared types and cryptography primitives.

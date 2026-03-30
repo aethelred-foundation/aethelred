@@ -892,9 +892,7 @@ impl SgxDcapVerifyPrecompile {
         // Extract signature data
         let sig_data_offset = sig_len_offset + 4;
         if quote_bytes.len() < sig_data_offset + signature_len as usize {
-            return Err(PrecompileError::InvalidInputFormat(format!(
-                "Quote truncated: signature data incomplete"
-            )));
+            return Err(PrecompileError::InvalidInputFormat("Quote truncated: signature data incomplete".to_string()));
         }
 
         let signature_data =
@@ -1601,7 +1599,7 @@ impl Precompile for NitroVerifyPrecompile {
         // Verify user data
         if let Some(ref user_data) = attestation.user_data {
             let hash = Sha256::digest(user_data);
-            if &hash[..] != user_data_hash {
+            if hash[..] != user_data_hash {
                 return Ok(ExecutionResult::success(
                     self.build_output(false, VerificationStatus::ReportDataMismatch, &pcr0),
                     gas,
@@ -2084,7 +2082,7 @@ impl Precompile for UniversalTeeVerifyPrecompile {
         }
 
         // Skip platform byte if present
-        let data = if matches!(input[0], 0x01 | 0x02 | 0x03 | 0x04) {
+        let data = if matches!(input[0], 0x01..=0x04) {
             &input[1..]
         } else {
             input

@@ -455,7 +455,7 @@ impl PoUWElection {
         // Initialize useful work score if not exists
         {
             let mut scores = self.useful_work_scores.write();
-            scores.entry(address).or_insert_with(UsefulWorkScore::new);
+            scores.entry(address).or_default();
         }
 
         // Clear threshold cache
@@ -501,7 +501,7 @@ impl PoUWElection {
 
         // Get or create score
         let mut scores = self.useful_work_scores.write();
-        let score = scores.entry(*address).or_insert_with(UsefulWorkScore::new);
+        let score = scores.entry(*address).or_default();
 
         // Anti-gaming check
         if score.is_suspicious(&self.config) {

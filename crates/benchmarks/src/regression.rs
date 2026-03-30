@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::{BenchmarkResult, RunnerResult, SuiteResult};
+use crate::{BenchmarkResult, RunnerResult};
 
 // ============ Baseline Storage ============
 
@@ -393,7 +393,7 @@ impl RegressionReport {
         }
 
         // Summary
-        s.push_str(&format!("\nSummary:\n"));
+        s.push_str("\nSummary:\n");
         s.push_str(&format!("  Total benchmarks: {}\n", self.results.len()));
         s.push_str(&format!("  Regressions: {}\n", num_regressions));
         s.push_str(&format!("  Improvements: {}\n", num_improvements));
@@ -452,7 +452,7 @@ impl RegressionReport {
                     Duration::from_nanos(result.current.mean_ns)
                 ));
             }
-            md.push_str("\n");
+            md.push('\n');
         }
 
         if !improvements.is_empty() {
@@ -466,7 +466,7 @@ impl RegressionReport {
                     result.benchmark_name, result.change_percent
                 ));
             }
-            md.push_str("\n");
+            md.push('\n');
         }
 
         if regressions.is_empty() && improvements.is_empty() {

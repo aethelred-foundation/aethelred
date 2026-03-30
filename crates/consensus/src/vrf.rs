@@ -114,9 +114,9 @@ impl VrfKeys {
         use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
-        hasher.update(&self.secret_key);
+        hasher.update(self.secret_key);
         hasher.update(b"epoch_derive");
-        hasher.update(&epoch.to_le_bytes());
+        hasher.update(epoch.to_le_bytes());
 
         let derived_seed: [u8; 32] = hasher.finalize().into();
         Self::from_seed(&derived_seed)

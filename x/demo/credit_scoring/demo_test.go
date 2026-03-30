@@ -160,7 +160,7 @@ func TestExcellentCreditScore(t *testing.T) {
 		"test",
 	)
 
-	pipeline.SubmitApplication(ctx, app)
+	_ = pipeline.SubmitApplication(ctx, app)
 	result, err := pipeline.ProcessApplication(ctx, app.ApplicationID)
 	if err != nil {
 		t.Fatalf("Failed to process: %v", err)
@@ -227,7 +227,7 @@ func TestPoorCreditScore(t *testing.T) {
 		"test",
 	)
 
-	pipeline.SubmitApplication(ctx, app)
+	_ = pipeline.SubmitApplication(ctx, app)
 	result, err := pipeline.ProcessApplication(ctx, app.ApplicationID)
 	if err != nil {
 		t.Fatalf("Failed to process: %v", err)
@@ -299,7 +299,7 @@ func TestRiskFactorAnalysis(t *testing.T) {
 		"test",
 	)
 
-	pipeline.SubmitApplication(ctx, app)
+	_ = pipeline.SubmitApplication(ctx, app)
 	result, err := pipeline.ProcessApplication(ctx, app.ApplicationID)
 	if err != nil {
 		t.Fatalf("Failed to process: %v", err)
@@ -519,7 +519,7 @@ func TestDemoScenarios(t *testing.T) {
 				"test",
 			)
 
-			pipeline.SubmitApplication(ctx, app)
+			_ = pipeline.SubmitApplication(ctx, app)
 			result, err := pipeline.ProcessApplication(ctx, app.ApplicationID)
 			if err != nil {
 				t.Fatalf("Failed to process scenario %s: %v", scenario.ID, err)
@@ -559,7 +559,7 @@ func TestMetrics(t *testing.T) {
 			"test",
 		)
 
-		pipeline.SubmitApplication(ctx, app)
+		_ = pipeline.SubmitApplication(ctx, app)
 		pipeline.ProcessApplication(ctx, app.ApplicationID)
 	}
 

@@ -358,7 +358,7 @@ impl SettlementEngine {
         let mut hasher = Keccak256::new();
         hasher.update(b"TradeSettlement");
         hasher.update(CONTRACT_VERSION.as_bytes());
-        hasher.update(&[0x01]); // Deployment nonce
+        hasher.update([0x01]); // Deployment nonce
         let hash = hasher.finalize();
         let mut address = [0u8; 20];
         address.copy_from_slice(&hash[12..32]);
@@ -562,9 +562,9 @@ impl SettlementEngine {
     ) -> Hash {
         let mut hasher = Sha256::new();
         hasher.update(deal.id.as_bytes());
-        hasher.update(&exporter_proof.proof_hash);
-        hasher.update(&importer_proof.proof_hash);
-        hasher.update(&Utc::now().timestamp().to_le_bytes());
+        hasher.update(exporter_proof.proof_hash);
+        hasher.update(importer_proof.proof_hash);
+        hasher.update(Utc::now().timestamp().to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);
@@ -736,7 +736,7 @@ impl SettlementEngine {
     fn generate_tx_hash(&self, data: &[u8]) -> TxHash {
         let mut hasher = Keccak256::new();
         hasher.update(data);
-        hasher.update(&Utc::now().timestamp_nanos_opt().unwrap_or(0).to_le_bytes());
+        hasher.update(Utc::now().timestamp_nanos_opt().unwrap_or(0).to_le_bytes());
         let hash = hasher.finalize();
         let mut tx_hash = [0u8; 32];
         tx_hash.copy_from_slice(&hash);

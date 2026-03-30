@@ -4,10 +4,9 @@
 //! including latency, throughput, connection pooling, and API performance.
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use crate::{black_box, BenchmarkResult};
+use crate::BenchmarkResult;
 
 // ============ Network Benchmark Config ============
 

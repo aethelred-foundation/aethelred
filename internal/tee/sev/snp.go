@@ -241,8 +241,8 @@ func (vm *SNPVM) initialize(config *SNPVMConfig) error {
 	// Calculate launch digest
 	h.Reset()
 	h.Write(vm.measurement[:])
-	binary.Write(h, binary.LittleEndian, config.Policy.ABIMajor)
-	binary.Write(h, binary.LittleEndian, config.Policy.ABIMinor)
+	_ = binary.Write(h, binary.LittleEndian, config.Policy.ABIMajor)
+	_ = binary.Write(h, binary.LittleEndian, config.Policy.ABIMinor)
 	copy(vm.launchDigest[:], h.Sum(nil))
 
 	vm.running = true
@@ -505,7 +505,7 @@ func (v *SNPReportVerifier) verifyPolicy(policy GuestPolicy) error {
 func DeriveVMPLKey(rootKey []byte, vmpl uint32, context string) []byte {
 	h := sha256.New()
 	h.Write(rootKey)
-	binary.Write(h, binary.LittleEndian, vmpl)
+	_ = binary.Write(h, binary.LittleEndian, vmpl)
 	h.Write([]byte(context))
 	return h.Sum(nil)
 }

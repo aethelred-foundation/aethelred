@@ -534,7 +534,7 @@ impl TensorExecutor {
         inputs: &[Tensor],
         params: &HashMap<String, LayerParam>,
     ) -> Result<Vec<Tensor>, ExecutorError> {
-        if inputs.len() < 1 {
+        if inputs.is_empty() {
             return Err(ExecutorError::InvalidInputCount {
                 expected: 1,
                 got: inputs.len(),

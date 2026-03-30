@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 // ============ Snapshot Storage ============
 
@@ -77,7 +77,7 @@ impl SnapshotStorage for FileStorage {
         {
             let entry = entry.map_err(|e| SnapshotError::IoError(e.to_string()))?;
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "snap") {
+            if path.extension().is_some_and(|ext| ext == "snap") {
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                     names.push(stem.to_string());
                 }
@@ -502,14 +502,14 @@ pub fn tensor_to_string(shape: &[usize], data: &[f32], precision: usize) -> Stri
 
     if shape.len() == 1 {
         // 1D tensor
-        result.push_str("[");
+        result.push('[');
         for (i, v) in data.iter().enumerate() {
             if i > 0 {
                 result.push_str(", ");
             }
             result.push_str(&format!("{:.prec$}", v, prec = precision));
         }
-        result.push_str("]");
+        result.push(']');
     } else if shape.len() == 2 {
         // 2D tensor (matrix)
         let rows = shape[0];
@@ -525,7 +525,7 @@ pub fn tensor_to_string(shape: &[usize], data: &[f32], precision: usize) -> Stri
             }
             result.push_str("],\n");
         }
-        result.push_str("]");
+        result.push(']');
     } else {
         // Higher-dimensional: just show summary
         result.push_str(&format!("data: {:?}", &data[..data.len().min(10)]));

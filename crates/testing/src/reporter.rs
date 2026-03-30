@@ -3,7 +3,6 @@
 //! Multiple output formats for test results including
 //! JUnit XML, TAP, JSON, HTML, and custom reporters.
 
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -269,7 +268,7 @@ impl Reporter for TapReporter {
     fn on_run_start(&mut self, _total_suites: usize, total_tests: usize) {
         self.lines.clear();
         self.test_number = 0;
-        self.lines.push(format!("TAP version 14"));
+        self.lines.push("TAP version 14".to_string());
         self.lines.push(format!("1..{}", total_tests));
     }
 

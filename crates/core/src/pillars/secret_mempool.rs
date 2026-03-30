@@ -808,7 +808,7 @@ impl EnclaveExecutor {
             EnclaveRuntimeBackend::DeterministicDev => {
                 #[cfg(not(feature = "production"))]
                 {
-                    return self.process_with_dev_backend(tx);
+                    self.process_with_dev_backend(tx)
                 }
                 #[cfg(feature = "production")]
                 {

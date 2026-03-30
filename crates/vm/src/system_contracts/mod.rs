@@ -356,7 +356,7 @@ impl SystemKernel {
                 let result =
                     self.job_registry
                         .write()
-                        .submit_job(params, &ctx, &mut *self.bank.write())?;
+                        .submit_job(params, &ctx, &mut self.bank.write())?;
                 Ok(SystemCallResult::JobSubmitted(result))
             }
 
@@ -369,8 +369,8 @@ impl SystemKernel {
                 let result = self.job_registry.write().submit_proof(
                     params,
                     &ctx,
-                    &mut *self.staking.write(),
-                    &mut *self.bank.write(),
+                    &mut self.staking.write(),
+                    &mut self.bank.write(),
                 )?;
                 Ok(SystemCallResult::ProofSubmitted(result))
             }
@@ -380,7 +380,7 @@ impl SystemKernel {
                     job_id,
                     requester,
                     &ctx,
-                    &mut *self.bank.write(),
+                    &mut self.bank.write(),
                 )?;
                 Ok(SystemCallResult::JobCancelled(result))
             }
@@ -389,7 +389,7 @@ impl SystemKernel {
             SystemCall::Stake(staker, amount, role) => {
                 self.staking
                     .write()
-                    .stake(staker, amount, role, &mut *self.bank.write())?;
+                    .stake(staker, amount, role, &mut self.bank.write())?;
                 Ok(SystemCallResult::Staked { staker, amount })
             }
 
@@ -402,7 +402,7 @@ impl SystemKernel {
                 let amount =
                     self.staking
                         .write()
-                        .withdraw(staker, &ctx, &mut *self.bank.write())?;
+                        .withdraw(staker, &ctx, &mut self.bank.write())?;
                 Ok(SystemCallResult::Withdrawn { staker, amount })
             }
 

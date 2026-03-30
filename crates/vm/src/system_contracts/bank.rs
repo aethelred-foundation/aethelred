@@ -47,6 +47,7 @@ impl Default for BankConfig {
 
 /// Account balance and state
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct AccountState {
     /// Available balance
     pub balance: TokenAmount,
@@ -58,16 +59,6 @@ pub struct AccountState {
     pub locked_until: u64,
 }
 
-impl Default for AccountState {
-    fn default() -> Self {
-        Self {
-            balance: 0,
-            locked: 0,
-            nonce: 0,
-            locked_until: 0,
-        }
-    }
-}
 
 impl AccountState {
     /// Get available (unlocked) balance
@@ -302,7 +293,7 @@ impl Bank {
 
     /// Lock tokens in an account (for staking, escrow, etc.)
     pub fn lock(&mut self, address: &Address, amount: TokenAmount) -> SystemContractResult<()> {
-        let account = self.accounts.get_mut(address).ok_or_else(|| {
+        let account = self.accounts.get_mut(address).ok_or({
             SystemContractError::InsufficientBalance {
                 required: amount,
                 available: 0,

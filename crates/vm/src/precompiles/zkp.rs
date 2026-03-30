@@ -402,7 +402,7 @@ impl Precompile for BatchGroth16VerifyPrecompile {
                 Ok(true) => { /* Valid, continue to next proof */ }
                 Ok(false) => {
                     tracing::warn!("Batch Groth16: proof {} is invalid", i);
-                    let mut output = vec![0u8; 32];
+                    let output = vec![0u8; 32];
                     // Return 0 = at least one proof invalid
                     return Ok(ExecutionResult::success(output, gas));
                 }

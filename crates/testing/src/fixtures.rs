@@ -4,7 +4,6 @@
 //! data generators, model fixtures, and environment setup utilities.
 
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -20,6 +19,12 @@ fn get_registry() -> &'static RwLock<FixtureRegistry> {
 /// Registry for named fixtures
 pub struct FixtureRegistry {
     fixtures: HashMap<String, Arc<dyn Fixture>>,
+}
+
+impl Default for FixtureRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FixtureRegistry {

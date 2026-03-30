@@ -134,23 +134,23 @@ impl PoUWBlockHeader {
         let mut hasher = Sha256::new();
 
         // Hash all fields except signature
-        hasher.update(&self.parent_hash);
-        hasher.update(&self.height.to_le_bytes());
-        hasher.update(&self.slot.to_le_bytes());
-        hasher.update(&self.epoch.to_le_bytes());
-        hasher.update(&self.proposer_address);
-        hasher.update(&self.state_root);
-        hasher.update(&self.transactions_root);
-        hasher.update(&self.receipts_root);
-        hasher.update(&self.timestamp.to_le_bytes());
+        hasher.update(self.parent_hash);
+        hasher.update(self.height.to_le_bytes());
+        hasher.update(self.slot.to_le_bytes());
+        hasher.update(self.epoch.to_le_bytes());
+        hasher.update(self.proposer_address);
+        hasher.update(self.state_root);
+        hasher.update(self.transactions_root);
+        hasher.update(self.receipts_root);
+        hasher.update(self.timestamp.to_le_bytes());
         hasher.update(&self.vrf_proof);
-        hasher.update(&self.compute_results_root);
-        hasher.update(&self.compute_job_count.to_le_bytes());
-        hasher.update(&self.compute_complexity.to_le_bytes());
-        hasher.update(&self.proposer_useful_work_score.to_le_bytes());
-        hasher.update(&self.proposer_stake.to_le_bytes());
-        hasher.update(&self.last_justified_hash);
-        hasher.update(&self.last_finalized_slot.to_le_bytes());
+        hasher.update(self.compute_results_root);
+        hasher.update(self.compute_job_count.to_le_bytes());
+        hasher.update(self.compute_complexity.to_le_bytes());
+        hasher.update(self.proposer_useful_work_score.to_le_bytes());
+        hasher.update(self.proposer_stake.to_le_bytes());
+        hasher.update(self.last_justified_hash);
+        hasher.update(self.last_finalized_slot.to_le_bytes());
 
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
@@ -346,7 +346,7 @@ impl SlotTiming {
 
     /// Check if slot is the first of an epoch
     pub fn is_epoch_boundary(&self, slot: Slot) -> bool {
-        slot % self.slots_per_epoch == 0
+        slot.is_multiple_of(self.slots_per_epoch)
     }
 }
 

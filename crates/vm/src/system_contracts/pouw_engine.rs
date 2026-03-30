@@ -517,7 +517,7 @@ impl NodeComputeStats {
 
         // Scale: log10(1M) = 6 → +60% bonus, log10(1T) = 12 → +120% bonus
         // Cap at 150% bonus (2.5x total)
-        let bonus_bps = (log_value as u32 * 100).min(1500);
+        let bonus_bps = (log_value * 100).min(1500);
 
         1000 + bonus_bps as u16 // 1.0x + bonus
     }
@@ -1359,7 +1359,7 @@ impl PoUWEngine {
         // Store bond
         self.compliance_bonds
             .entry(node)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(bond);
         self.bond_lookup.insert(bond_id, node);
 
@@ -1419,12 +1419,12 @@ impl PoUWEngine {
         let bonds = self
             .compliance_bonds
             .get_mut(&node)
-            .ok_or_else(|| SystemContractError::NoBondFound)?;
+            .ok_or(SystemContractError::NoBondFound)?;
 
         let bond_idx = bonds
             .iter()
             .position(|b| b.bond_id == bond_id)
-            .ok_or_else(|| SystemContractError::NoBondFound)?;
+            .ok_or(SystemContractError::NoBondFound)?;
 
         let bond = bonds.remove(bond_idx);
         self.bond_lookup.remove(&bond_id);
@@ -1757,7 +1757,7 @@ impl PoUWEngine {
         hasher.update(b"pouw-op-v1:");
         hasher.update(node);
         hasher.update(job_id);
-        hasher.update(&timestamp.to_le_bytes());
+        hasher.update(timestamp.to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);
@@ -1774,8 +1774,8 @@ impl PoUWEngine {
         let mut hasher = Sha256::new();
         hasher.update(b"pouw-bond-v1:");
         hasher.update(node);
-        hasher.update(&[bond_type as u8]);
-        hasher.update(&timestamp.to_le_bytes());
+        hasher.update([bond_type as u8]);
+        hasher.update(timestamp.to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);
@@ -1788,7 +1788,7 @@ impl PoUWEngine {
         hasher.update(b"pouw-liq-v1:");
         hasher.update(node);
         hasher.update(bond_id);
-        hasher.update(&timestamp.to_le_bytes());
+        hasher.update(timestamp.to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);
@@ -1801,7 +1801,7 @@ impl PoUWEngine {
         hasher.update(b"pouw-oracle-v1:");
         hasher.update(requester);
         hasher.update(provider);
-        hasher.update(&timestamp.to_le_bytes());
+        hasher.update(timestamp.to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);

@@ -502,10 +502,10 @@ func (r *Runner) generateJobs() {
 // createJob creates a simulated job
 func (r *Runner) createJob(id int) *SimulatedJob {
 	modelHash := make([]byte, r.config.ModelHashSize)
-	rand.Read(modelHash)
+	_, _ = rand.Read(modelHash)
 
 	inputHash := make([]byte, r.config.ModelHashSize)
-	rand.Read(inputHash)
+	_, _ = rand.Read(inputHash)
 
 	return &SimulatedJob{
 		ID:          fmt.Sprintf("job-%d-%s", id, hex.EncodeToString(modelHash[:4])),
@@ -955,7 +955,7 @@ func (r *Runner) saveReport(report *Report) error {
 
 func randFloat() float64 {
 	b := make([]byte, 8)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return float64(b[0]) / 255.0
 }
 

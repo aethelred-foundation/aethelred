@@ -3,10 +3,9 @@
 //! Comprehensive hardware performance benchmarks including
 //! CPU, GPU, memory, and storage performance testing.
 
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use crate::{black_box, BenchmarkResult};
+use crate::black_box;
 
 // ============ Hardware Detection ============
 
@@ -84,7 +83,7 @@ impl HardwareInfo {
     }
 
     fn detect_cpu_features() -> Vec<String> {
-        let mut features = Vec::new();
+        let features = Vec::new();
 
         #[cfg(target_arch = "x86_64")]
         {
@@ -201,7 +200,9 @@ impl CpuBenchmark {
 
     /// Run all CPU benchmarks
     pub fn run_all(&self) -> CpuResults {
-        let mut results = CpuResults {
+        
+
+        CpuResults {
             single_thread: self.benchmark_single_thread(),
             multi_thread: if self.config.multithreaded {
                 Some(self.benchmark_multi_thread())
@@ -215,9 +216,7 @@ impl CpuBenchmark {
             },
             matrix_ops: self.benchmark_matrix_ops(),
             tensor_ops: self.benchmark_tensor_ops(),
-        };
-
-        results
+        }
     }
 
     /// Benchmark single-threaded performance

@@ -541,13 +541,13 @@ func testJobCompletion(t *testing.T) {
 
 func randomHash() []byte {
 	hash := make([]byte, 32)
-	rand.Read(hash)
+	_, _ = rand.Read(hash)
 	return hash
 }
 
 func randomBytes(n int) []byte {
 	b := make([]byte, n)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return b
 }
 

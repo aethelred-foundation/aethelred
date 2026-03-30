@@ -81,7 +81,7 @@ func TestSGXEnclave_Execute(t *testing.T) {
 func TestSGXEnclave_Execute_NotInitialized(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Destroy()
+	_ = enclave.Destroy()
 	_, err := enclave.Execute("hash", []byte("data"))
 	if err == nil {
 		t.Error("expected error when enclave not initialized")
@@ -112,7 +112,7 @@ func TestSGXEnclave_GetQuote(t *testing.T) {
 func TestSGXEnclave_GetQuote_NotInitialized(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Destroy()
+	_ = enclave.Destroy()
 	_, err := enclave.GetQuote([ReportDataSize]byte{})
 	if err == nil {
 		t.Error("expected error when not initialized")
@@ -158,7 +158,7 @@ func TestSGXEnclave_UnsealData_ValidStructure(t *testing.T) {
 func TestSGXEnclave_SealData_NotInitialized(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Destroy()
+	_ = enclave.Destroy()
 	_, err := enclave.SealData("label", []byte("data"))
 	if err == nil {
 		t.Error("expected error")
@@ -168,7 +168,7 @@ func TestSGXEnclave_SealData_NotInitialized(t *testing.T) {
 func TestSGXEnclave_UnsealData_NotInitialized(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Destroy()
+	_ = enclave.Destroy()
 	_, err := enclave.UnsealData("label", make([]byte, 100))
 	if err == nil {
 		t.Error("expected error")
@@ -235,8 +235,8 @@ func TestSGXEnclave_GetMRSigner(t *testing.T) {
 func TestSGXEnclave_GetExecutionLog(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Execute("hash", []byte("data1"))
-	enclave.Execute("verify", []byte("data2"))
+	_, _ = enclave.Execute("hash", []byte("data1"))
+	_, _ = enclave.Execute("verify", []byte("data2"))
 
 	log := enclave.GetExecutionLog()
 	if len(log) != 2 {
@@ -490,7 +490,7 @@ func TestSGXEnclave_GetIdentity_Fields(t *testing.T) {
 func TestSGXEnclave_Destroy_TwiceNoError(t *testing.T) {
 	t.Parallel()
 	enclave, _ := NewSGXEnclave(nil)
-	enclave.Destroy()
+	_ = enclave.Destroy()
 	// Destroying again should not panic
 	err := enclave.Destroy()
 	if err != nil {

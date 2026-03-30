@@ -4,7 +4,6 @@
 //! Provides tensor-aware assertions, floating point comparisons,
 //! and domain-specific validation functions.
 
-use std::collections::HashMap;
 use std::fmt::Debug;
 
 // ============ Tensor Assertions ============
