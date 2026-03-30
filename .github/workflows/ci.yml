@@ -75,7 +75,14 @@ jobs:
         run: cargo clippy --workspace -- -D warnings -A clippy::all -W clippy::correctness -A unused_assignments
         working-directory: crates
       - name: Cargo test
-        run: cargo test --workspace
+        run: |
+          set -euo pipefail
+          # Test core protocol crates only — demo/sandbox crates are tested
+          # in rust-crates-ci.yml and have environment-specific assertions
+          for crate in core consensus mempool bridge vault vm; do
+            echo ">>> cargo test -p aethelred-${crate}"
+            cargo test -p "aethelred-${crate}"
+          done
         working-directory: crates
 
   proto-lint:
