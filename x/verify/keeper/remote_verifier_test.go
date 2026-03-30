@@ -121,7 +121,7 @@ func TestCallRemoteZKVerifier_Success(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -138,7 +138,7 @@ func TestCallRemoteZKVerifier_Success(t *testing.T) {
 func TestCallRemoteZKVerifier_FailedVerification(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{
+		_ = json.NewEncoder(w).Encode(verifierResponse{
 			Verified: false,
 			Error:    "invalid proof",
 		})
@@ -161,7 +161,7 @@ func TestCallRemoteZKVerifier_FailedVerification(t *testing.T) {
 func TestCallRemoteZKVerifier_ServerError500(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		_, _ = w.Write([]byte("internal server error"))
 	}))
 	defer server.Close()
 
@@ -183,7 +183,7 @@ func TestCallRemoteZKVerifier_MalformedJSON(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{not valid json"))
+		_, _ = w.Write([]byte("{not valid json"))
 	}))
 	defer server.Close()
 
@@ -205,7 +205,7 @@ func TestCallRemoteZKVerifier_Timeout(t *testing.T) {
 		// Simulate a slow server that takes longer than the context deadline.
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -231,7 +231,7 @@ func TestCallRemoteZKVerifier_VerifiedTrueWithErrorField(t *testing.T) {
 	// When verified=true, the error field is ignored.
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{
+		_ = json.NewEncoder(w).Encode(verifierResponse{
 			Verified: true,
 			Error:    "some warning, but proof is valid",
 		})
@@ -254,7 +254,7 @@ func TestCallRemoteZKVerifier_VerifiedFalseNoError(t *testing.T) {
 	// is not met because Error is empty).
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: false})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: false})
 	}))
 	defer server.Close()
 
@@ -297,7 +297,7 @@ func TestCallRemoteZKVerifier_RequestPayloadFormat(t *testing.T) {
 			t.Fatalf("failed to read body: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -344,7 +344,7 @@ func TestCallRemoteAttestationVerifier_Success(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -361,7 +361,7 @@ func TestCallRemoteAttestationVerifier_Success(t *testing.T) {
 func TestCallRemoteAttestationVerifier_FailedVerification(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{
+		_ = json.NewEncoder(w).Encode(verifierResponse{
 			Verified: false,
 			Error:    "attestation signature invalid",
 		})
@@ -384,7 +384,7 @@ func TestCallRemoteAttestationVerifier_FailedVerification(t *testing.T) {
 func TestCallRemoteAttestationVerifier_ServerError(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte("bad gateway"))
+		_, _ = w.Write([]byte("bad gateway"))
 	}))
 	defer server.Close()
 
@@ -405,7 +405,7 @@ func TestCallRemoteAttestationVerifier_MalformedJSON(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("<<<not json>>>"))
+		_, _ = w.Write([]byte("<<<not json>>>"))
 	}))
 	defer server.Close()
 
@@ -446,7 +446,7 @@ func TestCallRemoteAttestationVerifier_VerifiedTrueWithErrorField(t *testing.T) 
 	// if result.Error != "" && !result.Verified => return error.
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{
+		_ = json.NewEncoder(w).Encode(verifierResponse{
 			Verified: true,
 			Error:    "non-critical warning",
 		})
@@ -467,7 +467,7 @@ func TestCallRemoteAttestationVerifier_Timeout(t *testing.T) {
 	server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -512,7 +512,7 @@ func TestCallRemoteAttestationVerifier_RequestPayloadContainsAttestation(t *test
 			t.Fatalf("failed to read body: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -541,7 +541,7 @@ func TestCallRemoteZKVerifier_EndpointTrailingSlash(t *testing.T) {
 			t.Errorf("expected path /verify, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -562,7 +562,7 @@ func TestCallRemoteAttestationVerifier_EndpointTrailingSlash(t *testing.T) {
 			t.Errorf("expected path /verify, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(verifierResponse{Verified: true})
+		_ = json.NewEncoder(w).Encode(verifierResponse{Verified: true})
 	}))
 	defer server.Close()
 
@@ -596,7 +596,7 @@ func TestCallRemoteZKVerifier_StatusCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
-				w.Write([]byte("error response"))
+				_, _ = w.Write([]byte("error response"))
 			}))
 			defer server.Close()
 
@@ -628,7 +628,7 @@ func TestCallRemoteAttestationVerifier_StatusCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := newLocalTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
-				w.Write([]byte("error response"))
+				_, _ = w.Write([]byte("error response"))
 			}))
 			defer server.Close()
 
