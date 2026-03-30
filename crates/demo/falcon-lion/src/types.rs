@@ -353,7 +353,25 @@ impl MonetaryAmount {
 
     /// Format with currency symbol
     pub fn formatted(&self) -> String {
-        format!("{} {:.2}", self.currency.symbol(), self.amount)
+        let whole = self.amount.trunc().abs().to_string();
+        let frac = ((self.amount.fract().abs()) * Decimal::from(100))
+            .round()
+            .to_string();
+        // Format with thousands separators
+        let mut result = String::new();
+        for (i, c) in whole.chars().rev().enumerate() {
+            if i > 0 && i % 3 == 0 {
+                result.push(',');
+            }
+            result.push(c);
+        }
+        let whole_formatted: String = result.chars().rev().collect();
+        format!(
+            "{} {}.{:0>2}",
+            self.currency.symbol(),
+            whole_formatted,
+            frac
+        )
     }
 }
 
