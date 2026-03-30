@@ -97,7 +97,11 @@ jobs:
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         uses: securego/gosec@master
         with:
-          args: -severity medium -confidence medium -exclude=G104 ./...
+          # G104: unchecked errors (handled by errcheck linter in CI)
+          # G115: integer overflow conversions — high false-positive rate on Cosmos SDK
+          #       chains where proto int64 ↔ Go uint64 casts are ubiquitous and safe
+          #       in context (block heights are always positive, byte encoding is intentional)
+          args: -severity medium -confidence medium -exclude=G104,G115 ./...
 
       - name: Trivy filesystem scan
         continue-on-error: ${{ github.event_name == 'pull_request' }}
