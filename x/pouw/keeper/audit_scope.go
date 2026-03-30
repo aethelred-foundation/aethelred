@@ -562,7 +562,7 @@ func (s *AuditScope) RenderScopeDocument() string {
 		// Parse duration for total estimate
 		if strings.HasSuffix(p.Duration, " days") || strings.HasSuffix(p.Duration, " day") {
 			var d int
-			fmt.Sscanf(p.Duration, "%d", &d)
+			_, _ = fmt.Sscanf(p.Duration, "%d", &d)
 			totalDuration += d
 		}
 	}

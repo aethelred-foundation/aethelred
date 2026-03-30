@@ -671,10 +671,9 @@ func (ch *ConsensusHandler) validateTEEAttestationWireWithCtx(ctxPtr *sdk.Contex
 		if attestation.Timestamp.Before(blockTime.Add(-maxAttestationAge)) {
 			return fmt.Errorf("TEE attestation is stale (>10 minutes old by block time)")
 		}
-	} else {
-		// No block context: skip freshness enforcement to avoid non-deterministic
-		// wall-clock checks in shared validation paths.
 	}
+	// else: No block context: skip freshness enforcement to avoid non-deterministic
+	// wall-clock checks in shared validation paths.
 
 	return nil
 }

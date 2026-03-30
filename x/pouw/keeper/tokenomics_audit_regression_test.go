@@ -739,8 +739,7 @@ func TestEmissionSchedule_CumulativeSupply_AlwaysIncreasing(t *testing.T) {
 
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
-			config := keeper.DefaultEmissionConfig()
-			config = keeper.InflationarySimulationConfig()
+			config := keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 30)
@@ -761,8 +760,7 @@ func TestEmissionSchedule_InflationBps_AlwaysPositive(t *testing.T) {
 
 	for _, model := range models {
 		t.Run(string(model), func(t *testing.T) {
-			config := keeper.DefaultEmissionConfig()
-			config = keeper.InflationarySimulationConfig()
+			config := keeper.InflationarySimulationConfig()
 			config.DecayModel = model
 
 			schedule := keeper.ComputeEmissionSchedule(config, 50)

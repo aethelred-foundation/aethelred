@@ -382,7 +382,7 @@ func (c *NitroEnclaveClient) Execute(ctx context.Context, request *TEEExecutionR
 	nonce := request.Nonce
 	if len(nonce) == 0 {
 		nonce = make([]byte, 32)
-		rand.Read(nonce)
+		_, _ = rand.Read(nonce)
 	}
 
 	// In production, this would:

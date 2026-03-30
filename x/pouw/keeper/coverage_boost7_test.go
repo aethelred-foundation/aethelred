@@ -4,6 +4,7 @@ package keeper_test
 // All test names are prefixed with TestCB7_.
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -1256,7 +1257,7 @@ func TestCB7_NoDuplicateValidatorCapabilitiesInvariant(t *testing.T) {
 
 func TestCB7_DrandPulseProvider_NilProvider(t *testing.T) {
 	var p *keeper.HTTPDrandPulseProvider
-	_, err := p.LatestPulse(nil)
+	_, err := p.LatestPulse(context.TODO())
 	require.Error(t, err)
 }
 

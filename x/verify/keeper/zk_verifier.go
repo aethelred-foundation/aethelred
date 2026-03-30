@@ -410,10 +410,11 @@ func (v *ZKVerifier) verifyEZKLProof(proof *ZKProof, circuit *RegisteredCircuit)
 
 	// EZKL proofs use a specific header format
 	// First 4 bytes: magic number "EZKL"
+	// EZKL proofs: validate magic header (allow zero header for compatibility)
 	if len(proof.Proof) >= 4 {
 		magic := string(proof.Proof[:4])
 		if magic != "EZKL" && !bytes.HasPrefix(proof.Proof, []byte{0x00, 0x00, 0x00, 0x00}) {
-			// Allow zero header for compatibility
+			return false, errors.New("EZKL proof has invalid magic header")
 		}
 	}
 

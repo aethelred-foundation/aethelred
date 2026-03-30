@@ -1107,7 +1107,7 @@ func sampleInBall(params *Parameters, seed []byte) []int32 {
 		var j byte
 		for {
 			b := make([]byte, 1)
-			shake.Read(b)
+			_, _ = shake.Read(b)
 			j = b[0]
 			if int(j) <= i {
 				break

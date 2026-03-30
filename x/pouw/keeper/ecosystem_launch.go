@@ -388,24 +388,32 @@ func runSecurityCriteria(ctx sdk.Context, k Keeper) []LaunchCriterion {
 
 	// L-04: ConsensusThreshold ≥ 67 (BFT safety)
 	bftSafe := params != nil && params.ConsensusThreshold >= 67
+	thresholdDetail := "threshold=<nil>"
+	if params != nil {
+		thresholdDetail = fmt.Sprintf("threshold=%d", params.ConsensusThreshold)
+	}
 	criteria = append(criteria, LaunchCriterion{
 		ID:          "L-04",
 		Category:    "security",
 		Description: "Consensus threshold meets BFT safety (≥67%)",
 		Passed:      bftSafe,
-		Details:     fmt.Sprintf("threshold=%d", params.ConsensusThreshold),
+		Details:     thresholdDetail,
 		Blocking:    true,
 		Evidence:    "mainnet_params.go::MainnetParams",
 	})
 
 	// L-05: TEE attestation required
 	teeReq := params != nil && params.RequireTeeAttestation
+	teeDetail := "RequireTeeAttestation=<nil>"
+	if params != nil {
+		teeDetail = fmt.Sprintf("RequireTeeAttestation=%v", params.RequireTeeAttestation)
+	}
 	criteria = append(criteria, LaunchCriterion{
 		ID:          "L-05",
 		Category:    "security",
 		Description: "TEE attestation is required",
 		Passed:      teeReq,
-		Details:     fmt.Sprintf("RequireTeeAttestation=%v", params != nil && params.RequireTeeAttestation),
+		Details:     teeDetail,
 		Blocking:    true,
 		Evidence:    "mainnet_params.go::MainnetParams",
 	})
@@ -1114,7 +1122,7 @@ func RenderLaunchReviewReport(r *LaunchReviewResult) string {
 	sb.WriteString(fmt.Sprintf("  Operations:   %3d/100  (weight: 15%%)\n", r.OperationsScore))
 	sb.WriteString(fmt.Sprintf("  Ecosystem:    %3d/100  (weight: 10%%)\n", r.EcosystemScore))
 	sb.WriteString(fmt.Sprintf("  Governance:   %3d/100  (weight: 10%%)\n", r.GovernanceScore))
-	sb.WriteString(fmt.Sprintf("  ────────────────────────\n"))
+	sb.WriteString("  ────────────────────────\n")
 	sb.WriteString(fmt.Sprintf("  OVERALL:      %3d/100\n\n", r.OverallScore))
 
 	// All criteria

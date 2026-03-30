@@ -906,7 +906,7 @@ func TestCB5_Scheduler_EnqueueAndGetJobs(t *testing.T) {
 			Priority:  int64(i),
 		}
 		require.NoError(t, k.Jobs.Set(ctx, job.Id, *job))
-		sched.EnqueueJob(ctx, job)
+		_ = sched.EnqueueJob(ctx, job)
 	}
 
 	// GetNextJobs may return nil if no validators registered

@@ -43,7 +43,7 @@ func TestCB3_Scheduler_Stop(t *testing.T) {
 
 func TestCB3_Scheduler_EnqueueAndGetNext_MultipleJobs(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), nil, keeper.DefaultSchedulerConfig())
-	ctx := sdk.WrapSDKContext(cb3SDKCtx())
+	ctx := cb3SDKCtx()
 
 	// Enqueue multiple jobs with different priorities
 	for i := 0; i < 5; i++ {
@@ -89,7 +89,7 @@ func TestCB3_Scheduler_RegisterUnregisterMultiple(t *testing.T) {
 
 func TestCB3_Scheduler_GetJobsForValidator_NoJobs(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), nil, keeper.DefaultSchedulerConfig())
-	ctx := sdk.WrapSDKContext(cb3SDKCtx())
+	ctx := cb3SDKCtx()
 	jobs := sched.GetJobsForValidator(ctx, "val-none")
 	require.Empty(t, jobs)
 }
@@ -138,7 +138,7 @@ func TestCB3_ValidateSealTransaction_ValidJSON_MissingFields(t *testing.T) {
 
 func TestCB3_ProcessSealTransaction_InvalidJSON(t *testing.T) {
 	ch := newTestConsensusHandler()
-	ctx := sdk.WrapSDKContext(cb3SDKCtx())
+	ctx := cb3SDKCtx()
 
 	err := ch.ProcessSealTransaction(ctx, []byte("not-json"))
 	require.Error(t, err)

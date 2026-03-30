@@ -188,7 +188,6 @@ type DCAPVerifier struct {
 	// Metrics
 	metrics *DCAPMetrics
 
-	mu sync.RWMutex
 }
 
 // DCAPConfig contains configuration for DCAP verification
@@ -943,7 +942,7 @@ func (v *DCAPVerifier) checkRevocation(collateral *Collateral) error {
 	// If we have a CRL, check each certificate against it
 	if collateral.PCKCrl != nil {
 		for _, cert := range collateral.PCKCertChain {
-			for _, revoked := range collateral.PCKCrl.RevokedCertificates {
+			for _, revoked := range collateral.PCKCrl.RevokedCertificateEntries {
 				if cert.SerialNumber.Cmp(revoked.SerialNumber) == 0 {
 					return fmt.Errorf("certificate with serial %s is revoked", cert.SerialNumber.String())
 				}
@@ -966,7 +965,7 @@ func (v *DCAPVerifier) checkRevocation(collateral *Collateral) error {
 				}
 
 				// Check if this certificate is revoked
-				for _, revoked := range crl.RevokedCertificates {
+				for _, revoked := range crl.RevokedCertificateEntries {
 					if cert.SerialNumber.Cmp(revoked.SerialNumber) == 0 {
 						return fmt.Errorf("certificate with serial %s is revoked (fetched CRL)", cert.SerialNumber.String())
 					}
@@ -978,7 +977,7 @@ func (v *DCAPVerifier) checkRevocation(collateral *Collateral) error {
 	// Also check Root CA CRL if available
 	if collateral.RootCACrl != nil {
 		for _, cert := range collateral.PCKCertChain {
-			for _, revoked := range collateral.RootCACrl.RevokedCertificates {
+			for _, revoked := range collateral.RootCACrl.RevokedCertificateEntries {
 				if cert.SerialNumber.Cmp(revoked.SerialNumber) == 0 {
 					return fmt.Errorf("certificate with serial %s is revoked by Root CA", cert.SerialNumber.String())
 				}
@@ -1125,7 +1124,7 @@ func (v *DCAPVerifier) fetchCRLFromIntel(url string) (*x509.RevocationList, erro
 
 	v.logger.Info("Successfully fetched CRL from Intel",
 		"url", url,
-		"revoked_count", len(crl.RevokedCertificates),
+		"revoked_count", len(crl.RevokedCertificateEntries),
 		"next_update", crl.NextUpdate,
 	)
 

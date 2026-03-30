@@ -979,13 +979,13 @@ func TestStress_MemoryUsage(t *testing.T) {
 	queryStart := time.Now()
 
 	jobCount := 0
-	k.Jobs.Walk(ctx, nil, func(_ string, _ types.ComputeJob) (bool, error) {
+	_ = k.Jobs.Walk(ctx, nil, func(_ string, _ types.ComputeJob) (bool, error) {
 		jobCount++
 		return false, nil
 	})
 
 	valCount := 0
-	k.ValidatorCapabilities.Walk(ctx, nil, func(_ string, _ types.ValidatorCapability) (bool, error) {
+	_ = k.ValidatorCapabilities.Walk(ctx, nil, func(_ string, _ types.ValidatorCapability) (bool, error) {
 		valCount++
 		return false, nil
 	})
@@ -1106,7 +1106,7 @@ func TestStress_BlockProcessingUnderLoad(t *testing.T) {
 					InputHash:   randomHash(),
 					ProofType:   types.ProofTypeTEE,
 				}
-				k.Jobs.Set(ctx, job.Id, job)
+				_ = k.Jobs.Set(ctx, job.Id, job)
 			})
 			totalJobs++
 		}
