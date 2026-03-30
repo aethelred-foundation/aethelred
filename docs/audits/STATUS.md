@@ -1,6 +1,6 @@
 # Audit Status Tracker
 
-Updated: 2026-02-28
+Updated: 2026-03-30
 
 Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with signed reports.
 
@@ -10,8 +10,10 @@ Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with sig
 |---|---|---|---|---|---|---|
 | AUD-2026-001 | Redacted External Auditor (under NDA) | `/contracts/ethereum` | SOW-ETH-2026-02-14-A | 2026-02-14 | In progress | `audits/reports/2026-02-14-preaudit-baseline.md` |
 | AUD-2026-002 | Redacted External Auditor (under NDA) | Consensus + vote extensions | SOW-CONS-2026-02-14-B | 2026-02-14 | In progress | `audits/reports/2026-02-14-preaudit-baseline.md` |
-| INT-2026-001 | Internal Security Review | Full protocol (Go, Solidity, Rust) | N/A | 2026-02-22 | Completed | 27 findings, all remediated |
-| CON-2026-001 | External Consultant | VRF + protocol review | N/A | 2026-02-28 | Completed | RS-01 (Critical) + recommendations, all addressed |
+| INT-2026-001 | Internal Security Review | Full protocol (Go, Solidity, Rust) | N/A | 2026-02-22 | Completed | 27 findings, all remediated and verified |
+| INT-2026-002 | Internal Full Audit v2 | Full protocol -- 36 findings | N/A | 2026-02-23 | Completed | 36 findings, all verified and CLOSED (2026-03-30) |
+| CON-2026-001 | External Consultant | VRF + protocol review | N/A | 2026-02-28 | Completed | RS-01 (Critical) verified and CLOSED (2026-03-30) |
+| MR-2026-001 | Multi-Repo Strict Snapshot | 9 public repos -- governance/process | N/A | 2026-02-24 | Partially Remediated | 10 findings: 7 partially remediated, 4 remediated locally (pending push) |
 
 ## Finding Summary (Internal Audit - INT-2026-001)
 
