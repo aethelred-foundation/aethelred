@@ -83,7 +83,7 @@ impl HardwareInfo {
     }
 
     fn detect_cpu_features() -> Vec<String> {
-        let features = Vec::new();
+        let mut features = Vec::new();
 
         #[cfg(target_arch = "x86_64")]
         {
