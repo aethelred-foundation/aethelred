@@ -46,8 +46,7 @@ impl Default for BankConfig {
 // =============================================================================
 
 /// Account balance and state
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountState {
     /// Available balance
     pub balance: TokenAmount,
@@ -58,7 +57,6 @@ pub struct AccountState {
     /// Account locked until (0 = not locked)
     pub locked_until: u64,
 }
-
 
 impl AccountState {
     /// Get available (unlocked) balance

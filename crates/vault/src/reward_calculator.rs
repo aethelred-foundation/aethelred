@@ -435,7 +435,11 @@ fn generate_proof(layers: &[Vec<[u8; 32]>], mut index: usize) -> Vec<[u8; 32]> {
     let mut proof = Vec::new();
 
     for layer in &layers[..layers.len().saturating_sub(1)] {
-        let sibling_index = if index.is_multiple_of(2) { index + 1 } else { index - 1 };
+        let sibling_index = if index.is_multiple_of(2) {
+            index + 1
+        } else {
+            index - 1
+        };
         if sibling_index < layer.len() {
             proof.push(layer[sibling_index]);
         }

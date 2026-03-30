@@ -579,7 +579,8 @@ impl HelixGuardDemo {
             .find(|p| p.name.contains("AstraZeneca"))
             .ok_or_else(|| HelixGuardError::PartnerNotFound("AstraZeneca".to_string()))?;
 
-        let drug_configs = [(
+        let drug_configs = [
+            (
                 "AZD-LUNG-001",
                 TherapeuticArea::Oncology,
                 "Non-Small Cell Lung Cancer",
@@ -593,7 +594,8 @@ impl HelixGuardDemo {
                 "AZD-NEURO-003",
                 TherapeuticArea::Neuroscience,
                 "Alzheimer's Disease",
-            )];
+            ),
+        ];
 
         for (code_name, area, condition) in drug_configs
             .iter()
@@ -736,9 +738,11 @@ impl HelixGuardDemo {
             println!();
         }
 
-        let candidates = [("AZD-LUNG-001", 87),
+        let candidates = [
+            ("AZD-LUNG-001", 87),
             ("AZD-CARDIO-002", 92),
-            ("AZD-NEURO-003", 74)];
+            ("AZD-NEURO-003", 74),
+        ];
 
         for (code_name, score) in candidates
             .iter()

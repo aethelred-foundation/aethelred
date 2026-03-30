@@ -201,8 +201,7 @@ pub enum SessionStatus {
 }
 
 /// Session approvals tracking
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SessionApprovals {
     /// Ethics approval granted
     pub ethics_approved: bool,
@@ -225,7 +224,6 @@ pub struct SessionApprovals {
     /// Partner agreement timestamp
     pub partner_agreement_at: Option<DateTime<Utc>>,
 }
-
 
 /// Session timeline
 #[derive(Debug, Clone, Serialize, Deserialize)]

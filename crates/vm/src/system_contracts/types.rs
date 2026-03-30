@@ -129,7 +129,6 @@ pub enum JobPriority {
     Urgent = 3,
 }
 
-
 impl JobPriority {
     /// Get the fee multiplier for this priority
     pub fn fee_multiplier(&self) -> f64 {
@@ -167,7 +166,6 @@ pub enum VerificationMethod {
     /// Multiple validators re-execute
     ReExecution = 3,
 }
-
 
 // =============================================================================
 // ENTERPRISE MODE CONFIGURATION

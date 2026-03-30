@@ -167,7 +167,6 @@ impl UtilityCategory {
     }
 }
 
-
 impl std::fmt::Display for UtilityCategory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -820,8 +819,7 @@ impl PoUWConfig {
 }
 
 /// Verification method for AI computations
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum VerificationMethod {
     /// TEE attestation only
     #[default]
@@ -835,7 +833,6 @@ pub enum VerificationMethod {
     /// AI-based proof verification
     AiProof,
 }
-
 
 // =============================================================================
 // TESTS

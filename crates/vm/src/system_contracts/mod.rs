@@ -399,10 +399,10 @@ impl SystemKernel {
             }
 
             SystemCall::WithdrawStake(staker) => {
-                let amount =
-                    self.staking
-                        .write()
-                        .withdraw(staker, &ctx, &mut self.bank.write())?;
+                let amount = self
+                    .staking
+                    .write()
+                    .withdraw(staker, &ctx, &mut self.bank.write())?;
                 Ok(SystemCallResult::Withdrawn { staker, amount })
             }
 
