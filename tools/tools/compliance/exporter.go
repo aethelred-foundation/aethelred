@@ -314,7 +314,7 @@ func (al *AuditLogger) exportAndRotate() {
 
 	encoder := json.NewEncoder(file)
 	for _, entry := range entries {
-		encoder.Encode(entry)
+		_ = encoder.Encode(entry) // best-effort export; file errors are handled at close
 	}
 
 	if al.onExport != nil {
@@ -1232,7 +1232,7 @@ func generateSampleEntries(logger *AuditLogger) {
 
 	for i := 0; i < 100; i++ {
 		e := events[i%len(events)]
-		logger.Log(&AuditEntry{
+		_ = logger.Log(&AuditEntry{
 			EventType:    e.eventType,
 			Category:     e.category,
 			Severity:     "INFO",

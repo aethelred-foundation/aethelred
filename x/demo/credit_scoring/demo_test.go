@@ -560,7 +560,7 @@ func TestMetrics(t *testing.T) {
 		)
 
 		_, _ = pipeline.SubmitApplication(ctx, app)
-		pipeline.ProcessApplication(ctx, app.ApplicationID)
+		_, _ = pipeline.ProcessApplication(ctx, app.ApplicationID)
 	}
 
 	metrics := pipeline.GetMetrics()

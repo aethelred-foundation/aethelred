@@ -306,7 +306,7 @@ func testEnclaveExecution(t *testing.T) {
 	nitroService := tee.NewNitroEnclaveService(logger, nitroConfig)
 
 	ctx := context.Background()
-	nitroService.Initialize(ctx)
+	_ = nitroService.Initialize(ctx)
 
 	req := &tee.EnclaveExecutionRequest{
 		RequestID:           "test-exec-1",
@@ -344,7 +344,7 @@ func testAttestationVerification(t *testing.T) {
 	nitroService := tee.NewNitroEnclaveService(logger, nitroConfig)
 
 	ctx := context.Background()
-	nitroService.Initialize(ctx)
+	_ = nitroService.Initialize(ctx)
 
 	// Execute to get attestation
 	req := &tee.EnclaveExecutionRequest{

@@ -38,11 +38,6 @@ func scenarioSeed() int64 {
 	return int64(binary.LittleEndian.Uint64(buf[:]))
 }
 
-// deterministicFloat returns a float64 in [0, 1) from the provided *mrand.Rand.
-func deterministicFloat(rng *mrand.Rand) float64 {
-	return rng.Float64()
-}
-
 // ============================================================================
 // Network Partition Simulation
 // ============================================================================
@@ -491,8 +486,6 @@ type EclipseSimulator struct {
 
 // EclipseMetrics tracks eclipse attack metrics
 type EclipseMetrics struct {
-	mu sync.RWMutex
-
 	// Attack events
 	EclipseEvents    int64
 	EclipseEndEvents int64
@@ -713,7 +706,6 @@ type NetworkScenarioRunner struct {
 	validators   []*SimulatedValidator
 	baseRunner   *Runner
 
-	mu           sync.RWMutex
 	results      *NetworkScenarioResult
 }
 

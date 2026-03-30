@@ -422,8 +422,8 @@ func (k Keeper) CompleteJob(ctx context.Context, jobID string, outputHash []byte
 	}
 
 	// Add verification results
-	for _, result := range verificationResults {
-		job.AddVerificationResult(result)
+	for i := range verificationResults {
+		job.AddVerificationResult(&verificationResults[i])
 	}
 
 	// Create Digital Seal

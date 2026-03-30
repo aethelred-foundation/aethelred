@@ -291,7 +291,7 @@ func (m *ValidatorHSMManager) RotateAllKeys(ctx context.Context) (KeyRotationRes
 }
 
 // Status returns the current HSM status
-func (m *ValidatorHSMManager) Status() HSMStatus {
+func (m *ValidatorHSMManager) Status() *HSMStatus {
 	m.failoverMu.RLock()
 	defer m.failoverMu.RUnlock()
 
@@ -322,7 +322,7 @@ func (m *ValidatorHSMManager) Status() HSMStatus {
 		status.ActiveKeyVersion = m.activeHSM.ActiveKeyVersion()
 	}
 
-	return status
+	return &status
 }
 
 // HSMStatus represents the current status of HSM infrastructure
@@ -333,8 +333,8 @@ type HSMStatus struct {
 	ActiveKeyVersion uint32     `json:"active_key_version,omitempty"`
 	PrimaryConnected bool       `json:"primary_connected"`
 	BackupConnected  bool       `json:"backup_connected"`
-	PrimaryMetrics   HSMMetrics `json:"primary_metrics"`
-	BackupMetrics    HSMMetrics `json:"backup_metrics"`
+	PrimaryMetrics   *HSMMetrics `json:"primary_metrics"`
+	BackupMetrics    *HSMMetrics `json:"backup_metrics"`
 }
 
 // Close gracefully closes HSM connections and zeroes sensitive data

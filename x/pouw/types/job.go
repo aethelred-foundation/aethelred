@@ -144,15 +144,15 @@ func (j *ComputeJob) Validate() error {
 
 // AddVerificationResult adds a verification result from a validator.
 // Uses wall-clock time for UpdatedAt (informational, not consensus-critical).
-func (j *ComputeJob) AddVerificationResult(result VerificationResult) {
-	j.VerificationResults = append(j.VerificationResults, &result)
+func (j *ComputeJob) AddVerificationResult(result *VerificationResult) {
+	j.VerificationResults = append(j.VerificationResults, result)
 	j.UpdatedAt = timestamppb.Now()
 }
 
 // AddVerificationResultAt adds a verification result using the given block time.
 // This is the deterministic version for consensus-critical paths.
-func (j *ComputeJob) AddVerificationResultAt(result VerificationResult, blockTime time.Time) {
-	j.VerificationResults = append(j.VerificationResults, &result)
+func (j *ComputeJob) AddVerificationResultAt(result *VerificationResult, blockTime time.Time) {
+	j.VerificationResults = append(j.VerificationResults, result)
 	j.UpdatedAt = timestamppb.New(blockTime)
 }
 

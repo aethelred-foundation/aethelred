@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -31,48 +30,7 @@ import (
 
 // =============================================================================
 // WEEK 21-26: DevEx, Load Tests, Upgrade Readiness & Validator Onboarding
-//
-// These tests cover:
-//   1.  Query server (9 tests)
-//   2.  Upgrade & migration (10 tests)
-//   3.  Genesis round-trip (5 tests)
-//   4.  Load & stress tests (6 tests)
-//   5.  Benchmarks for critical paths (6 benchmarks)
-//
-// Total: 30 tests + 6 benchmarks
 // =============================================================================
-
-// ---------------------------------------------------------------------------
-// Test keeper factory (creates a real keeper with in-memory state)
-// ---------------------------------------------------------------------------
-
-// mockBankKeeper is a minimal no-op bank keeper for testing query and
-// upgrade paths that don't exercise economic operations.
-type mockBankKeeper struct{}
-
-func (m mockBankKeeper) SendCoinsFromModuleToAccount(_ context.Context, _ string, _ sdk.AccAddress, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) SendCoinsFromAccountToModule(_ context.Context, _ sdk.AccAddress, _ string, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) SendCoinsFromModuleToModule(_ context.Context, _, _ string, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error { return nil }
-func (m mockBankKeeper) SpendableCoins(_ context.Context, _ sdk.AccAddress) sdk.Coins {
-	return sdk.NewCoins(sdk.NewInt64Coin("uaethel", 1000000))
-}
-
-// mockStakingKeeper is a minimal staking keeper stub.
-type mockStakingKeeper struct{}
-
-func (m mockStakingKeeper) GetAllValidators(_ context.Context) ([]interface{}, error) {
-	return nil, nil
-}
-func (m mockStakingKeeper) GetValidator(_ context.Context, _ sdk.ValAddress) (interface{}, error) {
-	return nil, nil
-}
 
 // newTestKeeper creates a Keeper with in-memory stores suitable for testing
 // query, upgrade, and genesis operations.

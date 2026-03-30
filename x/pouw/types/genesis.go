@@ -91,7 +91,7 @@ func IsEnterpriseProofType(proofType string) bool {
 }
 
 // Validate performs basic genesis state validation
-func (gs GenesisState) Validate() error {
+func (gs *GenesisState) Validate() error {
 	// Validate each job
 	for i, job := range gs.Jobs {
 		if job == nil {

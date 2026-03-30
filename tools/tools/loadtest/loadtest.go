@@ -262,7 +262,6 @@ type SimulatedValidator struct {
 	mu             sync.Mutex
 	jobsProcessed  int64
 	votesGenerated int64
-	errors         int64
 }
 
 // SimulatedBlock represents a block for testing

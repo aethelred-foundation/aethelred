@@ -747,7 +747,10 @@ func TestApplyValidatorSelection_UnregisteredOperator(t *testing.T) {
 	require.NoError(t, err)
 
 	validators := testValidators()
-	att := signAttestation(t, rogueKey, validators, time.Now(), uniqueNonce("rogue"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, rogueKey, validators, blockTime, uniqueNonce("rogue"), 1)
 
 	err = k.ApplyValidatorSelection(ctx, validators, att, 1)
 	require.Error(t, err)
@@ -784,6 +787,9 @@ func TestApplyValidatorSelection_WrongEnclaveBinding(t *testing.T) {
 
 	// Build attestation claiming enclave v2 hashes but signed by operator bound to v1
 	validators := testValidators()
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
 	canonicalHash := computeValidatorSetHash(1, validators)
 	policyHash := testPolicyHash()
 	var payload [64]byte
@@ -793,7 +799,7 @@ func TestApplyValidatorSelection_WrongEnclaveBinding(t *testing.T) {
 
 	att := types.TEEAttestation{
 		Platform:    types.PlatformSGX,
-		Timestamp:   time.Now().Unix(),
+		Timestamp:   blockTime.Unix(),
 		Nonce:       uniqueNonce("wrong-enclave"),
 		EnclaveHash: hex.EncodeToString(enclave2Hash[:]),
 		SignerHash:  hex.EncodeToString(signer2Hash[:]),
@@ -865,14 +871,17 @@ func TestApplyValidatorSelection_ReplayedNonce(t *testing.T) {
 
 	validators := testValidators()
 	nonce := uniqueNonce("replay")
-	att := signAttestation(t, privKey, validators, time.Now(), nonce, 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, nonce, 1)
 
 	// First call succeeds
 	err = k.ApplyValidatorSelection(ctx, validators, att, 1)
 	require.NoError(t, err)
 
 	// Second call with the same nonce fails (replay)
-	att2 := signAttestation(t, privKey, validators, time.Now(), nonce, 1)
+	att2 := signAttestation(t, privKey, validators, blockTime, nonce, 1)
 	err = k.ApplyValidatorSelection(ctx, validators, att2, 1)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nonce already used")
@@ -887,7 +896,10 @@ func TestApplyValidatorSelection_PayloadMismatch(t *testing.T) {
 
 	// Sign attestation for validator set A
 	validatorsA := testValidators()
-	att := signAttestation(t, privKey, validatorsA, time.Now(), uniqueNonce("mismatch"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validatorsA, blockTime, uniqueNonce("mismatch"), 1)
 
 	// Try to apply with a DIFFERENT validator set B
 	validatorsB := []types.ValidatorRecord{
@@ -911,7 +923,10 @@ func TestApplyValidatorSelection_RevokedOperator(t *testing.T) {
 	require.NoError(t, k.RevokeOperator(ctx, pubKeyHex))
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("revoked"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("revoked"), 1)
 
 	err = k.ApplyValidatorSelection(ctx, validators, att, 1)
 	require.Error(t, err)
@@ -929,7 +944,10 @@ func TestApplyValidatorSelection_RevokedEnclave(t *testing.T) {
 	require.NoError(t, k.RevokeEnclave(ctx, enclaveID))
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("revoked-enc"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("revoked-enc"), 1)
 
 	err = k.ApplyValidatorSelection(ctx, validators, att, 1)
 	require.Error(t, err)
@@ -975,7 +993,10 @@ func TestApplyValidatorSelection_MissingEvidence(t *testing.T) {
 	registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("no-evidence"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("no-evidence"), 1)
 
 	// Clear the evidence
 	att.PlatformEvidence = ""
@@ -993,7 +1014,10 @@ func TestApplyValidatorSelection_WrongEvidenceBinding(t *testing.T) {
 	registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("wrong-binding"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("wrong-binding"), 1)
 
 	// Tamper with evidence: change reportData to wrong digest
 	evidenceBytes, _ := hex.DecodeString(att.PlatformEvidence)
@@ -1017,7 +1041,10 @@ func TestApplyValidatorSelection_BadP256Signature(t *testing.T) {
 	registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("bad-p256"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("bad-p256"), 1)
 
 	// Corrupt the P-256 signature (last 64 bytes of 256-byte evidence: [192:256])
 	evidenceBytes, _ := hex.DecodeString(att.PlatformEvidence)
@@ -1190,7 +1217,10 @@ func TestApplyValidatorSelection_ZeroHwReportHashRejected(t *testing.T) {
 	registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	validators := testValidators()
-	att := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("zero-hw"), 1)
+	blockTime := time.Now()
+	ctx = setBlockTime(ctx, blockTime)
+
+	att := signAttestation(t, privKey, validators, blockTime, uniqueNonce("zero-hw"), 1)
 
 	// Zero out the rawReportHash at [160:192] in the 256-byte evidence
 	evidenceBytes, _ := hex.DecodeString(att.PlatformEvidence)
@@ -1214,8 +1244,10 @@ func TestApplyValidatorSelection_FreshHwReportPerAttestation(t *testing.T) {
 	registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	validators := testValidators()
-	att1 := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("fresh-hw-1"), 1)
-	att2 := signAttestation(t, privKey, validators, time.Now(), uniqueNonce("fresh-hw-2"), 1)
+	blockTime := time.Now()
+
+	att1 := signAttestation(t, privKey, validators, blockTime, uniqueNonce("fresh-hw-1"), 1)
+	att2 := signAttestation(t, privKey, validators, blockTime, uniqueNonce("fresh-hw-2"), 1)
 
 	ev1, _ := hex.DecodeString(att1.PlatformEvidence)
 	ev2, _ := hex.DecodeString(att2.PlatformEvidence)

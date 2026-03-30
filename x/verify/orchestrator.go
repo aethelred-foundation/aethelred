@@ -662,7 +662,7 @@ func (vo *VerificationOrchestrator) CircuitBreakers() []*circuitbreaker.Breaker 
 // Shutdown gracefully shuts down the orchestrator
 func (vo *VerificationOrchestrator) Shutdown() {
 	vo.proverService.Shutdown()
-	vo.nitroService.Shutdown()
+	_ = vo.nitroService.Shutdown() // best-effort shutdown; errors are logged internally
 	vo.logger.Info("Verification orchestrator shut down")
 }
 

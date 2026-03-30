@@ -20,7 +20,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: golangci-lint
-        continue-on-error: true  # Relaxed: 169 pre-existing errcheck violations being addressed incrementally
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
@@ -38,7 +37,6 @@ jobs:
       - name: Download dependencies
         run: go mod download
       - name: Run tests
-        continue-on-error: true  # Relaxed: performance benchmark thresholds too aggressive for CI runners
         run: go test -v -coverprofile=coverage.out ./...
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -74,11 +72,9 @@ jobs:
         run: cargo fmt --all -- --check
         working-directory: crates
       - name: Cargo clippy
-        continue-on-error: true  # Relaxed: pre-existing issues being addressed incrementally
         run: cargo clippy --workspace -- -D warnings -A clippy::all -W clippy::correctness -A unused_assignments
         working-directory: crates
       - name: Cargo test
-        continue-on-error: true  # Relaxed: some integration tests require environment setup
         run: cargo test --workspace
         working-directory: crates
 

@@ -207,9 +207,6 @@ type AethelredApp struct {
 	// Module configurator
 	configurator module.Configurator
 
-	// simulation manager
-	sm *module.SimulationManager
-
 	// readinessChecked tracks whether the one-time production readiness
 	// check has been performed. It runs on the first BeginBlock.
 	readinessChecked bool
@@ -354,7 +351,9 @@ func New(
 	// Create module manager with all modules
 	app.setupModuleManager()
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
-	app.ModuleManager.RegisterServices(app.configurator)
+	if err := app.ModuleManager.RegisterServices(app.configurator); err != nil {
+		panic(fmt.Errorf("failed to register module services: %w", err))
+	}
 	app.RegisterUpgradeHandlers()
 	app.UpgradeKeeper.SetInitVersionMap(app.ModuleManager.GetVersionMap())
 
@@ -609,8 +608,8 @@ func (app *AethelredApp) setupModuleManager() {
 		params.NewAppModule(app.ParamsKeeper),
 		consensus.NewAppModule(app.appCodec, app.ConsensusParamsKeeper),
 		// Aethelred custom modules
-		seal.NewAppModule(app.appCodec, app.SealKeeper),
-		pouw.NewAppModule(app.appCodec, app.PouwKeeper),
+		seal.NewAppModule(app.appCodec, &app.SealKeeper),
+		pouw.NewAppModule(app.appCodec, &app.PouwKeeper),
 		verify.NewAppModule(app.appCodec, app.VerifyKeeper),
 		ibcmodule.NewAppModule(app.appCodec, app.IBCKeeper),
 	)

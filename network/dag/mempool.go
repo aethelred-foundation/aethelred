@@ -221,9 +221,7 @@ func (d *DAGMempool) CreateVertex(ctx context.Context) (*Vertex, error) {
 
 	// Get transactions for this vertex
 	txs := d.takePendingTxs()
-	if len(txs) == 0 {
-		// Create empty vertex if no transactions (still needed for DAG progress)
-	}
+	// An empty vertex is valid and still needed for DAG progress.
 
 	// Get strong links to previous round
 	strongLinks := d.getStrongLinks()

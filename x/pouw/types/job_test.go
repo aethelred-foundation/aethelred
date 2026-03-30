@@ -578,7 +578,7 @@ func TestAddVerificationResultAt_DeterministicTimestamp(t *testing.T) {
 		OutputHash:       make([]byte, 32),
 	}
 
-	job.AddVerificationResultAt(result, bt)
+	job.AddVerificationResultAt(&result, bt)
 
 	if len(job.VerificationResults) != 1 {
 		t.Fatalf("expected 1 result, got %d", len(job.VerificationResults))
@@ -604,7 +604,7 @@ func TestGetConsensusOutput_NoResults(t *testing.T) {
 func TestGetConsensusOutput_InsufficientVotes(t *testing.T) {
 	job := makeTestJob(types.JobStatusProcessing)
 	outputHash := sha256.Sum256([]byte("output"))
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val1",
 		Success:          true,
 		OutputHash:       outputHash[:],
@@ -620,7 +620,7 @@ func TestGetConsensusOutput_ConsensusReached(t *testing.T) {
 	job := makeTestJob(types.JobStatusProcessing)
 	outputHash := sha256.Sum256([]byte("output"))
 	for i := 0; i < 3; i++ {
-		job.AddVerificationResult(types.VerificationResult{
+		job.AddVerificationResult(&types.VerificationResult{
 			ValidatorAddress: "val" + string(rune('1'+i)),
 			Success:          true,
 			OutputHash:       outputHash[:],
@@ -641,13 +641,13 @@ func TestGetConsensusOutput_Disagreement(t *testing.T) {
 	output1 := sha256.Sum256([]byte("output1"))
 	output2 := sha256.Sum256([]byte("output2"))
 
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val1", Success: true, OutputHash: output1[:],
 	})
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val2", Success: true, OutputHash: output2[:],
 	})
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val3", Success: true, OutputHash: output1[:],
 	})
 
@@ -661,13 +661,13 @@ func TestGetConsensusOutput_SkipsFailures(t *testing.T) {
 	job := makeTestJob(types.JobStatusProcessing)
 	outputHash := sha256.Sum256([]byte("output"))
 
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val1", Success: true, OutputHash: outputHash[:],
 	})
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val2", Success: false, OutputHash: nil,
 	})
-	job.AddVerificationResult(types.VerificationResult{
+	job.AddVerificationResult(&types.VerificationResult{
 		ValidatorAddress: "val3", Success: true, OutputHash: outputHash[:],
 	})
 

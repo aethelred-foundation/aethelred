@@ -115,7 +115,7 @@ func DefaultEncryptedBridgeConfig() *EncryptedBridgeConfig {
 
 // EncryptedBridgeMetrics tracks bridge operation metrics.
 type EncryptedBridgeMetrics struct {
-	mu                     sync.Mutex
+	mu                     *sync.Mutex
 	TotalEncryptedTxs      int64
 	TotalDecryptedTxs      int64
 	DecryptionFailures     int64
@@ -134,7 +134,7 @@ func NewEncryptedMempoolBridge(
 		enclaveKeys:      make(map[string]*EnclaveKeyInfo),
 		decryptionClient: client,
 		config:           config,
-		metrics:          &EncryptedBridgeMetrics{},
+		metrics:          &EncryptedBridgeMetrics{mu: &sync.Mutex{}},
 	}
 }
 
