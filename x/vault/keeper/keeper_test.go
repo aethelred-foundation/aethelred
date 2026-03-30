@@ -2830,7 +2830,7 @@ func TestRevokeRelay(t *testing.T) {
 
 	// Vendor root key should be zeroed — new enclave registration should fail
 	// because the zero key is not a valid P-256 point on the curve for verification.
-	_, err = k.getVendorRootKey(ctx, types.PlatformSGX)
+	_, _ = k.getVendorRootKey(ctx, types.PlatformSGX)
 	// The zero point is technically loadable but won't verify any signature,
 	// so vendor key attestation will fail during RegisterEnclave.
 

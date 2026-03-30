@@ -760,7 +760,7 @@ impl PoUWConfig {
 
     /// Check if slot is an epoch boundary
     pub fn is_epoch_boundary(&self, slot: u64) -> bool {
-        slot.is_multiple_of(self.slots_per_epoch)
+        self.slots_per_epoch != 0 && slot % self.slots_per_epoch == 0
     }
 
     /// Get category multiplier (basis points)

@@ -346,7 +346,7 @@ impl SlotTiming {
 
     /// Check if slot is the first of an epoch
     pub fn is_epoch_boundary(&self, slot: Slot) -> bool {
-        slot.is_multiple_of(self.slots_per_epoch)
+        self.slots_per_epoch != 0 && slot % self.slots_per_epoch == 0
     }
 }
 
