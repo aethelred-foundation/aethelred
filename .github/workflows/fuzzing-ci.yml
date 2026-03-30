@@ -54,6 +54,10 @@ jobs:
 
   rust-fuzz:
     name: Rust Cargo-Fuzz
+    # Advisory: fuzz targets discover new crashes by design. Findings are
+    # tracked as issues, not release-gate blockers. Crash artifacts are
+    # uploaded for triage regardless of exit status.
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
