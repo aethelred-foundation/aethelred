@@ -129,3 +129,6 @@ harness = false
 [[bench]]
 name = "zkml_precompile_bench"
 harness = false
+
+[lints]
+workspace = true

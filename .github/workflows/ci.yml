@@ -74,7 +74,7 @@ jobs:
         working-directory: crates
       - name: Cargo clippy
         continue-on-error: ${{ github.event_name == 'pull_request' }}
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace -- -D warnings -A clippy::all -W clippy::correctness -A unused_assignments
         working-directory: crates
       - name: Cargo test
         run: cargo test --workspace

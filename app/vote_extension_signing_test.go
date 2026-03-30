@@ -83,7 +83,7 @@ func TestVoteExtensionSigner_SignAndVerify(t *testing.T) {
 			},
 		},
 	}
-	rand.Read(ext.Nonce)
+	_, _ = rand.Read(ext.Nonce)
 
 	// Sign the extension
 	sig, err := signer.SignVoteExtension(ext, 100, 0)
@@ -133,7 +133,7 @@ func TestVoteExtensionSigner_VerifyTamperedExtension(t *testing.T) {
 			},
 		},
 	}
-	rand.Read(ext.Nonce)
+	_, _ = rand.Read(ext.Nonce)
 
 	sig, err := signer.SignVoteExtension(ext, 100, 0)
 	if err != nil {
@@ -170,7 +170,7 @@ func TestVoteExtensionSigner_WrongHeight(t *testing.T) {
 		Timestamp:        time.Now().UTC(),
 		Nonce:            make([]byte, 32),
 	}
-	rand.Read(ext.Nonce)
+	_, _ = rand.Read(ext.Nonce)
 
 	// Sign at height 100
 	sig, err := signer.SignVoteExtension(ext, 100, 0)
@@ -262,8 +262,8 @@ func TestMarshalUnmarshalSignature(t *testing.T) {
 		Version:   1,
 		Timestamp: time.Now().UTC().Truncate(time.Nanosecond),
 	}
-	rand.Read(sig.Signature)
-	rand.Read(sig.PublicKey)
+	_, _ = rand.Read(sig.Signature)
+	_, _ = rand.Read(sig.PublicKey)
 
 	// Marshal
 	data, err := marshalSignature(sig)
@@ -314,8 +314,8 @@ func TestMarshalUnmarshalNilSignature(t *testing.T) {
 func TestComputeKeyID(t *testing.T) {
 	pubKey1 := make([]byte, ed25519.PublicKeySize)
 	pubKey2 := make([]byte, ed25519.PublicKeySize)
-	rand.Read(pubKey1)
-	rand.Read(pubKey2)
+	_, _ = rand.Read(pubKey1)
+	_, _ = rand.Read(pubKey2)
 
 	id1 := computeKeyID(pubKey1)
 	id2 := computeKeyID(pubKey2)
@@ -333,7 +333,7 @@ func TestComputeKeyID(t *testing.T) {
 
 func TestComputeAddress(t *testing.T) {
 	pubKey := make([]byte, ed25519.PublicKeySize)
-	rand.Read(pubKey)
+	_, _ = rand.Read(pubKey)
 
 	addr := computeAddress(pubKey)
 	if len(addr) != 20 {

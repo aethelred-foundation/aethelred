@@ -3,17 +3,16 @@
 //! Advanced test runner with parallel execution, filtering,
 //! test discovery, and detailed reporting.
 
-use std::collections::HashMap;
 use std::panic::{self, AssertUnwindSafe};
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::sync::{
-    atomic::{AtomicBool, AtomicUsize, Ordering},
+    atomic::{AtomicBool, Ordering},
     Arc, Mutex,
 };
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::{OutputFormat, SuiteResult, TestCase, TestConfig, TestResult, TestSuite};
+use crate::{SuiteResult, TestCase, TestConfig, TestResult, TestSuite};
 
 // ============ Test Discovery ============
 
@@ -42,11 +41,7 @@ impl TestDiscovery {
         self.discover()
             .into_iter()
             .map(|mut suite| {
-                suite.tests = suite
-                    .tests
-                    .into_iter()
-                    .filter(|t| filter.matches(t))
-                    .collect();
+                suite.tests.retain(|t| filter.matches(t));
                 suite
             })
             .filter(|suite| !suite.tests.is_empty())
@@ -134,11 +129,10 @@ impl TestFilter {
 
     pub fn matches(&self, test: &TestCase) -> bool {
         // Check specific tests
-        if !self.specific_tests.is_empty() {
-            if !self.specific_tests.contains(&test.name) {
+        if !self.specific_tests.is_empty()
+            && !self.specific_tests.contains(&test.name) {
                 return false;
             }
-        }
 
         // Check name pattern
         if let Some(ref pattern) = self.name_pattern {
@@ -187,12 +181,10 @@ impl TestFilter {
                     if !remaining.ends_with(part) {
                         return false;
                     }
+                } else if let Some(pos) = remaining.find(part) {
+                    remaining = &remaining[pos + part.len()..];
                 } else {
-                    if let Some(pos) = remaining.find(part) {
-                        remaining = &remaining[pos + part.len()..];
-                    } else {
-                        return false;
-                    }
+                    return false;
                 }
             }
             true
@@ -473,13 +465,13 @@ impl TestExecutor {
         let start = Instant::now();
 
         // Run with timeout
-        let result = if timeout > Duration::ZERO {
+        
+
+        if timeout > Duration::ZERO {
             self.run_with_timeout(test, timeout)
         } else {
             test.run()
-        };
-
-        result
+        }
     }
 
     fn run_with_timeout(&self, test: &TestCase, timeout: Duration) -> TestResult {

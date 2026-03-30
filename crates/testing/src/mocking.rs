@@ -101,7 +101,7 @@ impl<T> MockBuilder<T> {
     }
 
     /// Set a return value for a method
-    pub fn when_called(mut self, method: &str) -> ExpectationBuilder<T> {
+    pub fn when_called(self, method: &str) -> ExpectationBuilder<T> {
         ExpectationBuilder {
             mock_builder: self,
             method: method.to_string(),
@@ -313,7 +313,7 @@ impl<T> Mock<T> {
         let mut values = self.return_values.write().unwrap();
         values
             .entry(method.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(Box::new(value));
     }
 
@@ -725,7 +725,7 @@ impl Default for MockHttpClient {
 
 /// Matchers for verifying arguments
 pub mod matchers {
-    use std::any::Any;
+    
 
     pub fn any<T>() -> Box<dyn Fn(&T) -> bool + Send + Sync> {
         Box::new(|_| true)

@@ -559,8 +559,7 @@ impl QuantumTimeMachine {
             .as_ref()
             .expect("Results should exist when Q-Day active");
 
-        let mut report = format!(
-            r#"
+        let mut report = r#"
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
 ║   ██████╗        ██████╗  █████╗ ██╗   ██╗                                   ║
@@ -580,8 +579,7 @@ impl QuantumTimeMachine {
 ╠═══════════════════════════════════════════════════════════════════════════════╣
 ║  ALGORITHM STATUS                                                             ║
 ╠═══════════════════════════════════════════════════════════════════════════════╣
-"#
-        );
+"#.to_string();
 
         // Algorithm breakdown
         let mut sorted_algos: Vec<_> = results.algorithm_breakdown.values().collect();

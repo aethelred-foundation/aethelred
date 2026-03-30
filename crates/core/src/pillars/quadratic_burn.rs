@@ -603,7 +603,7 @@ impl QuadraticBurnEngine {
 
     /// Get burn schedule preview
     pub fn burn_schedule_preview(&self) -> BurnSchedulePreview {
-        let loads = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+        let loads = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
         let rates: Vec<_> = loads
             .iter()
             .map(|&load| (load, self.calculate_burn_rate(load)))
@@ -791,14 +791,12 @@ impl FeeCalculator {
             } else {
                 2
             }
+        } else if priority_fee > self.base_fee / 5 {
+            1
+        } else if priority_fee > self.base_fee / 10 {
+            3
         } else {
-            if priority_fee > self.base_fee / 5 {
-                1
-            } else if priority_fee > self.base_fee / 10 {
-                3
-            } else {
-                5
-            }
+            5
         }
     }
 

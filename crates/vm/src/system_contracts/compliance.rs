@@ -991,7 +991,7 @@ impl ComplianceModule {
 
         // Update storage first in a limited scope to avoid borrow conflicts with event emission.
         {
-            let certs = self.certifications.entry(entity).or_insert_with(Vec::new);
+            let certs = self.certifications.entry(entity).or_default();
 
             // Check max certifications
             if certs.len() >= MAX_CERTIFICATIONS_PER_ENTITY {
@@ -1134,7 +1134,7 @@ impl ComplianceModule {
         let consents = self
             .consents
             .entry(consent.data_subject)
-            .or_insert_with(Vec::new);
+            .or_default();
 
         // Check if there's existing consent for same controller
         if let Some(existing) = consents
@@ -1225,7 +1225,7 @@ impl ComplianceModule {
             ));
         }
 
-        let associates = self.baas.entry(covered_entity).or_insert_with(HashSet::new);
+        let associates = self.baas.entry(covered_entity).or_default();
         associates.insert(business_associate);
 
         let event = ComplianceEvent::BaaRegistered {
@@ -1464,8 +1464,8 @@ impl ComplianceModule {
 
         let mut hasher = Sha256::new();
         hasher.update(b"compliance-check:");
-        hasher.update(&self.current_time.to_le_bytes());
-        hasher.update(&self.check_counter.to_le_bytes());
+        hasher.update(self.current_time.to_le_bytes());
+        hasher.update(self.check_counter.to_le_bytes());
 
         let result = hasher.finalize();
         let mut hash = [0u8; 32];

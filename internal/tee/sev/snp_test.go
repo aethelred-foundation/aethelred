@@ -88,7 +88,7 @@ func TestSNPVM_Execute(t *testing.T) {
 func TestSNPVM_Execute_NotRunning(t *testing.T) {
 	t.Parallel()
 	vm, _ := NewSNPVM(nil)
-	vm.Stop()
+	_ = vm.Stop()
 	_, err := vm.Execute("hash", []byte("data"))
 	if err == nil {
 		t.Error("expected error when VM not running")
@@ -119,7 +119,7 @@ func TestSNPVM_GetAttestationReport(t *testing.T) {
 func TestSNPVM_GetAttestationReport_NotRunning(t *testing.T) {
 	t.Parallel()
 	vm, _ := NewSNPVM(nil)
-	vm.Stop()
+	_ = vm.Stop()
 	_, err := vm.GetAttestationReport([SNPReportDataSize]byte{})
 	if err == nil {
 		t.Error("expected error when VM not running")
@@ -142,8 +142,8 @@ func TestSNPVM_GetMeasurement(t *testing.T) {
 func TestSNPVM_GetExecutionLog(t *testing.T) {
 	t.Parallel()
 	vm, _ := NewSNPVM(nil)
-	vm.Execute("hash", []byte("data1"))
-	vm.Execute("verify", []byte("data2"))
+	_, _ = vm.Execute("hash", []byte("data1"))
+	_, _ = vm.Execute("verify", []byte("data2"))
 
 	log := vm.GetExecutionLog()
 	if len(log) != 2 {
@@ -169,7 +169,7 @@ func TestSNPVM_Stop(t *testing.T) {
 func TestSNPVM_Destroy(t *testing.T) {
 	t.Parallel()
 	vm, _ := NewSNPVM(nil)
-	vm.Execute("hash", []byte("data"))
+	_, _ = vm.Execute("hash", []byte("data"))
 	err := vm.Destroy()
 	if err != nil {
 		t.Fatalf("Destroy() error: %v", err)

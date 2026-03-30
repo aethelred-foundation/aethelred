@@ -19,3 +19,18 @@ exclude = [
     "vm/fuzz",
 ]
 resolver = "2"
+
+[workspace.lints.clippy]
+# Allowed: style/design choices that are not bugs
+type_complexity = "warn"
+too_many_arguments = "warn"
+result_large_err = "warn"
+manual_non_exhaustive = "warn"
+needless_doctest_main = "warn"
+inconsistent_digit_grouping = "warn"
+neg_cmp_op_on_partial_ord = "warn"
+should_implement_trait = "warn"
+
+[workspace.lints.rust]
+dead_code = "warn"
+unused_variables = "warn"

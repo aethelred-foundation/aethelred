@@ -27,3 +27,6 @@ tokio-test = "0.4"
 tempfile = "3.9"
 test-case = "3.3"
 proptest = "1.4"
+
+[lints]
+workspace = true

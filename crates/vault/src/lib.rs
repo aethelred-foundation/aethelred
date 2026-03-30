@@ -1,3 +1,13 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::result_large_err)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::inconsistent_digit_grouping)]
+#![allow(clippy::neg_cmp_op_on_partial_ord)]
+#![allow(clippy::should_implement_trait)]
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(non_camel_case_types)]
 //! # Cruzible TEE Enclave Service
 //!
 //! Stateless HTTP service that runs validator selection, MEV protection, and

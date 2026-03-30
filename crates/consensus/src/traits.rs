@@ -226,8 +226,10 @@ impl ComputeResult {
 /// Verification method for compute results
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum VerificationMethod {
     /// TEE attestation only (SGX, Nitro, SEV-SNP)
+    #[default]
     TeeAttestation = 0,
 
     /// zkML proof only (EZKL, etc.)
@@ -273,11 +275,6 @@ impl VerificationMethod {
     }
 }
 
-impl Default for VerificationMethod {
-    fn default() -> Self {
-        VerificationMethod::TeeAttestation
-    }
-}
 
 // =============================================================================
 // EPOCH HANDLER TRAIT

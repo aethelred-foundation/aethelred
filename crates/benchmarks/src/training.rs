@@ -4,7 +4,6 @@
 //! forward/backward pass, optimizer steps, distributed training,
 //! and gradient accumulation.
 
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use crate::{black_box, BenchmarkResult};

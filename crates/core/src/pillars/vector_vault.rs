@@ -1197,7 +1197,7 @@ impl DocumentProcessor {
 
     fn sentence_chunk(&self, text: &str) -> Vec<String> {
         // Simple sentence splitting
-        text.split(|c| c == '.' || c == '!' || c == '?')
+        text.split(['.', '!', '?'])
             .filter(|s| !s.trim().is_empty())
             .map(|s| s.trim().to_string())
             .collect()
@@ -1220,7 +1220,7 @@ impl DocumentProcessor {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(content.as_bytes());
-        hasher.update(&(chunk_index as u64).to_le_bytes());
+        hasher.update((chunk_index as u64).to_le_bytes());
         let result = hasher.finalize();
         let mut id = [0u8; 32];
         id.copy_from_slice(&result);

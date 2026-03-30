@@ -37,8 +37,10 @@ use std::collections::HashMap;
 /// prioritize high-impact computations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum UtilityCategory {
     /// General computation (baseline)
+    #[default]
     General = 0,
 
     /// Financial services (credit scoring, risk assessment, fraud detection)
@@ -165,11 +167,6 @@ impl UtilityCategory {
     }
 }
 
-impl Default for UtilityCategory {
-    fn default() -> Self {
-        UtilityCategory::General
-    }
-}
 
 impl std::fmt::Display for UtilityCategory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -764,7 +761,7 @@ impl PoUWConfig {
 
     /// Check if slot is an epoch boundary
     pub fn is_epoch_boundary(&self, slot: u64) -> bool {
-        slot % self.slots_per_epoch == 0
+        slot.is_multiple_of(self.slots_per_epoch)
     }
 
     /// Get category multiplier (basis points)
@@ -824,8 +821,10 @@ impl PoUWConfig {
 
 /// Verification method for AI computations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum VerificationMethod {
     /// TEE attestation only
+    #[default]
     TeeAttestation,
     /// Zero-knowledge proof
     ZkProof,
@@ -837,11 +836,6 @@ pub enum VerificationMethod {
     AiProof,
 }
 
-impl Default for VerificationMethod {
-    fn default() -> Self {
-        VerificationMethod::TeeAttestation
-    }
-}
 
 // =============================================================================
 // TESTS

@@ -162,16 +162,16 @@ impl UsefulWorkResult {
         use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
-        hasher.update(&self.job_id);
-        hasher.update(&self.model_hash);
-        hasher.update(&self.input_hash);
-        hasher.update(&self.output_hash);
-        hasher.update(&self.useful_work_units.to_le_bytes());
-        hasher.update(&self.work_difficulty.to_le_bytes());
-        hasher.update(&[self.category as u8]);
-        hasher.update(&[self.verification_method as u8]);
-        hasher.update(&self.validator);
-        hasher.update(&self.requester);
+        hasher.update(self.job_id);
+        hasher.update(self.model_hash);
+        hasher.update(self.input_hash);
+        hasher.update(self.output_hash);
+        hasher.update(self.useful_work_units.to_le_bytes());
+        hasher.update(self.work_difficulty.to_le_bytes());
+        hasher.update([self.category as u8]);
+        hasher.update([self.verification_method as u8]);
+        hasher.update(self.validator);
+        hasher.update(self.requester);
 
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
@@ -418,7 +418,7 @@ impl PoUWState {
         let validator = self
             .validators
             .get_mut(address)
-            .ok_or_else(|| ConsensusError::ValidatorNotFound(*address))?;
+            .ok_or(ConsensusError::ValidatorNotFound(*address))?;
 
         let current_score = self.useful_work_scores.entry(*address).or_insert(0);
 
@@ -469,7 +469,7 @@ impl PoUWState {
             (stats.avg_completion_time * old_total_jobs + completion_time) / stats.total_jobs;
 
         // Update SLA compliance rate
-        let old_compliance_count = (stats.sla_compliance_bps as u64 * old_total_jobs) / 10000;
+        let old_compliance_count = (stats.sla_compliance_bps * old_total_jobs) / 10000;
         let new_compliance_count = old_compliance_count + if sla_met { 1 } else { 0 };
         stats.sla_compliance_bps = (new_compliance_count * 10000) / stats.total_jobs;
     }
@@ -939,7 +939,7 @@ impl PoUWConsensus {
     fn derive_address_from_keys(&self, keys: &VrfKeys) -> Address {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
-        hasher.update(&keys.public_key_bytes());
+        hasher.update(keys.public_key_bytes());
         let hash = hasher.finalize();
         let mut address = [0u8; 32];
         address.copy_from_slice(&hash);
@@ -1130,7 +1130,7 @@ impl BlockValidator for PoUWConsensus {
         // 1. Basic structure validation
         header
             .validate_structure()
-            .map_err(|e| ConsensusError::BlockValidation(e))?;
+            .map_err(ConsensusError::BlockValidation)?;
 
         // 2. Parent link validation
         let parent_hash = parent.hash();
@@ -1160,11 +1160,7 @@ impl BlockValidator for PoUWConsensus {
 
         // 5. Timestamp validation
         let expected_timestamp = self.timing.timestamp_for_slot(header.slot);
-        let drift = if header.timestamp > expected_timestamp {
-            header.timestamp - expected_timestamp
-        } else {
-            expected_timestamp - header.timestamp
-        };
+        let drift = header.timestamp.abs_diff(expected_timestamp);
 
         if drift > self.config.max_clock_drift_secs {
             return Err(ConsensusError::TimestampValidation(format!(
@@ -1365,10 +1361,10 @@ impl PoUWConsensus {
             .iter()
             .map(|r| {
                 let mut hasher = Sha256::new();
-                hasher.update(&r.job_id);
-                hasher.update(&r.output_hash);
-                hasher.update(&r.complexity.to_le_bytes());
-                hasher.update(&[r.verification_method as u8]);
+                hasher.update(r.job_id);
+                hasher.update(r.output_hash);
+                hasher.update(r.complexity.to_le_bytes());
+                hasher.update([r.verification_method as u8]);
                 let result = hasher.finalize();
                 let mut hash = [0u8; 32];
                 hash.copy_from_slice(&result);
@@ -1381,11 +1377,11 @@ impl PoUWConsensus {
             let mut next_level = Vec::new();
             for pair in hashes.chunks(2) {
                 let mut hasher = Sha256::new();
-                hasher.update(&pair[0]);
+                hasher.update(pair[0]);
                 if pair.len() > 1 {
-                    hasher.update(&pair[1]);
+                    hasher.update(pair[1]);
                 } else {
-                    hasher.update(&pair[0]); // Duplicate for odd count
+                    hasher.update(pair[0]); // Duplicate for odd count
                 }
                 let result = hasher.finalize();
                 let mut hash = [0u8; 32];

@@ -127,3 +127,6 @@ proptest = "1.4"
 [[bench]]
 name = "consensus_benchmarks"
 harness = false
+
+[lints]
+workspace = true

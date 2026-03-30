@@ -79,13 +79,9 @@ use uuid::Uuid;
 /// 32-byte cryptographic hash (serde-compatible via serde_arrays feature)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
+#[derive(Default)]
 pub struct Hash(#[serde(with = "serde_arrays")] pub [u8; 32]);
 
-impl Default for Hash {
-    fn default() -> Self {
-        Self([0u8; 32])
-    }
-}
 
 impl std::ops::Deref for Hash {
     type Target = [u8; 32];
@@ -255,7 +251,7 @@ impl GenomeCohort {
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(self.did.as_bytes());
-        hasher.update(&self.population_size.to_le_bytes());
+        hasher.update(self.population_size.to_le_bytes());
         hasher.update(self.custodian.node_id.as_bytes());
         let result = hasher.finalize();
         let mut hash = Hash::default();

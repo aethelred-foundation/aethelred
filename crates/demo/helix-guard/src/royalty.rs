@@ -892,7 +892,7 @@ impl RoyaltyEngine {
     fn generate_tx_hash(&self, seed: &Uuid) -> Hash {
         let mut hasher = Sha256::new();
         hasher.update(seed.as_bytes());
-        hasher.update(&Utc::now().timestamp().to_le_bytes());
+        hasher.update(Utc::now().timestamp().to_le_bytes());
         hasher.update(b"helix-guard-settlement");
         let result = hasher.finalize();
         let mut hash = Hash::default();

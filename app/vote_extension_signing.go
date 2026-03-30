@@ -591,21 +591,21 @@ func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
 
 	// ChainID (length-prefixed)
 	chainBytes := []byte(data.ChainID)
-	binary.Write(&buf, binary.BigEndian, uint16(len(chainBytes)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(chainBytes)))
 	buf.Write(chainBytes)
 
 	// Height
-	binary.Write(&buf, binary.BigEndian, data.Height)
+	_ = binary.Write(&buf, binary.BigEndian, data.Height)
 
 	// Round
-	binary.Write(&buf, binary.BigEndian, data.Round)
+	_ = binary.Write(&buf, binary.BigEndian, data.Round)
 
 	// ValidatorAddress (length-prefixed)
-	binary.Write(&buf, binary.BigEndian, uint16(len(data.ValidatorAddress)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(data.ValidatorAddress)))
 	buf.Write(data.ValidatorAddress)
 
 	// Timestamp (Unix nano)
-	binary.Write(&buf, binary.BigEndian, data.Timestamp.UnixNano())
+	_ = binary.Write(&buf, binary.BigEndian, data.Timestamp.UnixNano())
 
 	// ExtensionHash
 	buf.Write(data.ExtensionHash[:])
@@ -614,7 +614,7 @@ func serializeSignatureData(data *VoteExtensionSignatureData) []byte {
 	buf.Write(data.VerificationsMerkleRoot[:])
 
 	// Nonce (length-prefixed)
-	binary.Write(&buf, binary.BigEndian, uint16(len(data.Nonce)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(data.Nonce)))
 	buf.Write(data.Nonce)
 
 	return buf.Bytes()
@@ -693,20 +693,20 @@ func marshalSignature(sig *VoteExtensionSignature) ([]byte, error) {
 	buf.WriteByte(sig.Version)
 
 	// Signature
-	binary.Write(&buf, binary.BigEndian, uint16(len(sig.Signature)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(sig.Signature)))
 	buf.Write(sig.Signature)
 
 	// PublicKey
-	binary.Write(&buf, binary.BigEndian, uint16(len(sig.PublicKey)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(sig.PublicKey)))
 	buf.Write(sig.PublicKey)
 
 	// KeyID
 	keyIDBytes := []byte(sig.KeyID)
-	binary.Write(&buf, binary.BigEndian, uint16(len(keyIDBytes)))
+	_ = binary.Write(&buf, binary.BigEndian, uint16(len(keyIDBytes)))
 	buf.Write(keyIDBytes)
 
 	// Timestamp
-	binary.Write(&buf, binary.BigEndian, sig.Timestamp.UnixNano())
+	_ = binary.Write(&buf, binary.BigEndian, sig.Timestamp.UnixNano())
 
 	return buf.Bytes(), nil
 }

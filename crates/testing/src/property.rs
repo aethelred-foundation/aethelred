@@ -5,9 +5,7 @@
 
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use std::collections::HashMap;
 use std::fmt::Debug;
-use std::hash::Hash;
 
 // ============ Property Test Configuration ============
 

@@ -29,7 +29,7 @@
 //! a "crypto mob," while still allowing decentralized economic growth.
 
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
 // ============================================================================

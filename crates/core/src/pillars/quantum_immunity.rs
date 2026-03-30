@@ -210,7 +210,7 @@ impl AethelredAddress {
 
         // Hash both public keys together
         let mut hasher = Sha256::new();
-        hasher.update(&[0x01]); // Version prefix
+        hasher.update([0x01]); // Version prefix
         hasher.update(classical_pk);
         hasher.update(pq_pk);
         let hash = hasher.finalize();
@@ -739,15 +739,15 @@ impl QuantumImmuneTransaction {
         use sha2::{Digest, Sha256};
 
         let mut hasher = Sha256::new();
-        hasher.update(&[self.version]);
-        hasher.update(&self.from.bytes);
-        hasher.update(&self.to.bytes);
-        hasher.update(&self.amount.to_le_bytes());
-        hasher.update(&self.gas_price.to_le_bytes());
-        hasher.update(&self.gas_limit.to_le_bytes());
-        hasher.update(&self.nonce.to_le_bytes());
+        hasher.update([self.version]);
+        hasher.update(self.from.bytes);
+        hasher.update(self.to.bytes);
+        hasher.update(self.amount.to_le_bytes());
+        hasher.update(self.gas_price.to_le_bytes());
+        hasher.update(self.gas_limit.to_le_bytes());
+        hasher.update(self.nonce.to_le_bytes());
         hasher.update(&self.data);
-        hasher.update(&self.timestamp.to_le_bytes());
+        hasher.update(self.timestamp.to_le_bytes());
 
         let result = hasher.finalize();
         let mut hash = [0u8; 32];

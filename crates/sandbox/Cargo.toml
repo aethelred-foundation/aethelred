@@ -40,3 +40,6 @@ path = "examples/q_day_simulation.rs"
 [[example]]
 name = "ctf_challenge"
 path = "examples/ctf_challenge.rs"
+
+[lints]
+workspace = true

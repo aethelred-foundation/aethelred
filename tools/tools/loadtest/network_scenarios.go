@@ -34,7 +34,7 @@ func scenarioSeed() int64 {
 	}
 	// Fall back to crypto/rand for non-deterministic runs.
 	var buf [8]byte
-	rand.Read(buf[:])
+	_, _ = rand.Read(buf[:])
 	return int64(binary.LittleEndian.Uint64(buf[:]))
 }
 

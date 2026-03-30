@@ -106,7 +106,7 @@ func TestLoadBitstream_NoDevice(t *testing.T) {
 		PreloadKernels:      nil,
 	})
 	// Load first bitstream to make device unavailable
-	acc.LoadBitstream(MSMBitstream)
+	_ = acc.LoadBitstream(MSMBitstream)
 	// Second load should fail
 	err := acc.LoadBitstream(NTTBitstream)
 	if err == nil {
@@ -121,7 +121,7 @@ func TestUnloadBitstream(t *testing.T) {
 		DynamicKernelSwitch: false,
 		PreloadKernels:      nil,
 	})
-	acc.LoadBitstream(MSMBitstream)
+	_ = acc.LoadBitstream(MSMBitstream)
 	err := acc.UnloadBitstream(MSMBitstream)
 	if err != nil {
 		t.Fatalf("UnloadBitstream() error: %v", err)
@@ -219,7 +219,7 @@ func TestGetStats(t *testing.T) {
 	}
 
 	// Execute an operation and check stats again
-	acc.ExecuteMSM(context.Background(), [][]byte{{1}}, [][]byte{{2}})
+	_, _ = acc.ExecuteMSM(context.Background(), [][]byte{{1}}, [][]byte{{2}})
 	stats = acc.GetStats()
 	if stats.TotalOperations == 0 {
 		t.Error("expected non-zero operations after execution")
@@ -233,7 +233,7 @@ func TestClose(t *testing.T) {
 		DynamicKernelSwitch: true,
 		PreloadKernels:      nil,
 	})
-	acc.LoadBitstream(MSMBitstream)
+	_ = acc.LoadBitstream(MSMBitstream)
 	err := acc.Close()
 	if err != nil {
 		t.Fatalf("Close() error: %v", err)
@@ -393,8 +393,8 @@ func TestGetStats_AfterMultipleOps(t *testing.T) {
 	})
 
 	// Perform multiple operations
-	acc.ExecuteMSM(context.Background(), [][]byte{{1}}, [][]byte{{2}})
-	acc.ExecuteMSM(context.Background(), [][]byte{{3}}, [][]byte{{4}})
+	_, _ = acc.ExecuteMSM(context.Background(), [][]byte{{1}}, [][]byte{{2}})
+	_, _ = acc.ExecuteMSM(context.Background(), [][]byte{{3}}, [][]byte{{4}})
 
 	stats := acc.GetStats()
 	if stats.TotalOperations < 2 {

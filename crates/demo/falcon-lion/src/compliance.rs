@@ -407,6 +407,12 @@ pub struct SanctionsDatabase {
     last_update: RwLock<DateTime<Utc>>,
 }
 
+impl Default for SanctionsDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SanctionsDatabase {
     /// Create new sanctions database
     pub fn new() -> Self {
@@ -960,14 +966,14 @@ impl ComplianceEngine {
     fn generate_proof_bytes(&self, session: &VerificationSession) -> ProofBytes {
         let mut hasher = Sha256::new();
         hasher.update(session.id.as_bytes());
-        hasher.update(&session.audit_hash);
+        hasher.update(session.audit_hash);
         hasher.update(session.started_at.to_rfc3339().as_bytes());
 
         for check in &session.checks_performed {
-            hasher.update(&[check.check_type as u8]);
-            hasher.update(&[check.status as u8]);
+            hasher.update([check.check_type as u8]);
+            hasher.update([check.status as u8]);
             if let Some(score) = check.risk_score {
-                hasher.update(&[score]);
+                hasher.update([score]);
             }
         }
 
@@ -995,7 +1001,7 @@ impl ComplianceEngine {
         let mut hasher = Sha256::new();
         hasher.update(session_id.as_bytes());
         hasher.update(participant_id.as_bytes());
-        hasher.update(&Utc::now().timestamp().to_le_bytes());
+        hasher.update(Utc::now().timestamp().to_le_bytes());
         let result = hasher.finalize();
         let mut hash = [0u8; 32];
         hash.copy_from_slice(&result);
@@ -1072,7 +1078,7 @@ impl ComplianceEngine {
         if proof.proof_bytes.len() < 36 {
             return Ok(false);
         }
-        if &proof.proof_bytes[32..36] != &[0x02, 0x00, 0x54, 0x45] {
+        if proof.proof_bytes[32..36] != [0x02, 0x00, 0x54, 0x45] {
             return Ok(false);
         }
 

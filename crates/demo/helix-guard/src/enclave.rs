@@ -641,7 +641,7 @@ impl EnclaveEngine {
         let mut proof_bytes = vec![0u8; 512];
         let mut hasher = Sha256::new();
         hasher.update(job.id.as_bytes());
-        hasher.update(&[result.efficacy_score]);
+        hasher.update([result.efficacy_score]);
         let hash = hasher.finalize();
         proof_bytes[..32].copy_from_slice(&hash);
 
@@ -688,7 +688,7 @@ impl EnclaveEngine {
     fn generate_enclave_measurement(&self, enclave_id: &Uuid, tee_type: TeeType) -> Hash {
         let mut hasher = Sha256::new();
         hasher.update(enclave_id.as_bytes());
-        hasher.update(&[tee_type as u8]);
+        hasher.update([tee_type as u8]);
         hasher.update(b"helix-guard-enclave-v1.0");
         let result = hasher.finalize();
         let mut hash = Hash::default();
@@ -716,7 +716,7 @@ impl EnclaveEngine {
         };
 
         // Adjust based on efficacy extremes
-        if efficacy > 90 || efficacy < 30 {
+        if !(30..=90).contains(&efficacy) {
             base_confidence - 5
         } else {
             base_confidence

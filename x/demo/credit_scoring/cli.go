@@ -326,7 +326,7 @@ func QuickDemo() {
 	cli := NewCLI(logger)
 	defer cli.Close()
 
-	cli.RunDemo(true)
+	_ = cli.RunDemo(true)
 }
 
 // DemoCommand represents the demo command for the CLI

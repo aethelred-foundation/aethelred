@@ -200,8 +200,8 @@ func TestRuntime_GetLoadedModules(t *testing.T) {
 	r := NewRuntime(WasmerRuntime, nil)
 	bytecode1 := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
 	bytecode2 := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x01}
-	r.LoadModule(bytecode1)
-	r.LoadModule(bytecode2)
+	_, _ = r.LoadModule(bytecode1)
+	_, _ = r.LoadModule(bytecode2)
 
 	modules := r.GetLoadedModules()
 	if len(modules) != 2 {

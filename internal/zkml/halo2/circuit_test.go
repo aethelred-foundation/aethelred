@@ -211,7 +211,7 @@ func TestProver_Prove(t *testing.T) {
 	circuit, _ := b.Build()
 
 	p := NewProver(&KZGSetup{})
-	p.LoadCircuit(circuit)
+	_ = p.LoadCircuit(circuit)
 
 	witness := []Field{NewField(1), NewField(2)}
 	publicInputs := []Field{NewField(3)}
@@ -265,7 +265,7 @@ func TestVerifier_Verify_Valid(t *testing.T) {
 	t.Parallel()
 	v := NewVerifier(&KZGSetup{})
 	vk := &VerifyingKey{CircuitID: "test"}
-	v.LoadVerifyingKey(vk)
+	_ = v.LoadVerifyingKey(vk)
 
 	proof := &Proof{
 		CircuitID:    "test",
@@ -295,7 +295,7 @@ func TestVerifier_Verify_MissingVK(t *testing.T) {
 func TestVerifier_Verify_ShortProof(t *testing.T) {
 	t.Parallel()
 	v := NewVerifier(&KZGSetup{})
-	v.LoadVerifyingKey(&VerifyingKey{CircuitID: "test"})
+	_ = v.LoadVerifyingKey(&VerifyingKey{CircuitID: "test"})
 	proof := &Proof{
 		CircuitID:    "test",
 		ProofData:    make([]byte, 10), // too short
@@ -313,7 +313,7 @@ func TestVerifier_Verify_ShortProof(t *testing.T) {
 func TestVerifier_Verify_NoPublicInputs(t *testing.T) {
 	t.Parallel()
 	v := NewVerifier(&KZGSetup{})
-	v.LoadVerifyingKey(&VerifyingKey{CircuitID: "test"})
+	_ = v.LoadVerifyingKey(&VerifyingKey{CircuitID: "test"})
 	proof := &Proof{
 		CircuitID:    "test",
 		ProofData:    make([]byte, 192),

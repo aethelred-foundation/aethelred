@@ -415,7 +415,7 @@ pub mod gas_costs {
 
 /// Helper to calculate word-based gas costs
 pub fn word_gas_cost(base: u64, per_word: u64, data_len: usize) -> u64 {
-    let words = (data_len + 31) / 32;
+    let words = data_len.div_ceil(32);
     base + (words as u64) * per_word
 }
 

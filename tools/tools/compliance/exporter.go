@@ -946,7 +946,7 @@ func NewDSARHandler(logger *AuditLogger, config DSARConfig) *DSARHandler {
 // ProcessAccessRequest processes a data subject access request
 func (h *DSARHandler) ProcessAccessRequest(ctx context.Context, request *DSARRequest) (*DSARResponse, error) {
 	// Log the request
-	h.logger.LogEvent(
+	_ = h.logger.LogEvent(
 		EventDataExported,
 		CategoryPrivacy,
 		"dsar_handler",
@@ -1049,7 +1049,9 @@ func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename s
 		"ID", "Timestamp", "Event Type", "Category", "Severity",
 		"Actor ID", "Resource ID", "Action", "Result", "Description",
 	}
-	writer.Write(header)
+	if err := writer.Write(header); err != nil {
+		return err
+	}
 
 	// Write entries
 	for _, entry := range entries {
@@ -1065,7 +1067,9 @@ func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename s
 			entry.ActionResult,
 			entry.Description,
 		}
-		writer.Write(row)
+		if err := writer.Write(row); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1095,7 +1099,9 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 		return err
 	}
 	jsonBytes, _ := json.MarshalIndent(entries, "", "  ")
-	jsonWriter.Write(jsonBytes)
+	if _, err := jsonWriter.Write(jsonBytes); err != nil {
+		return err
+	}
 
 	// Add CSV export
 	csvWriter, err := zipWriter.Create("audit_log.csv")
@@ -1105,13 +1111,19 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 	csvBuf := &bytes.Buffer{}
 	csvW := csv.NewWriter(csvBuf)
 	header := []string{"ID", "Timestamp", "Event Type", "Category", "Severity", "Actor ID", "Resource ID", "Action", "Result"}
-	csvW.Write(header)
+	if err := csvW.Write(header); err != nil {
+		return err
+	}
 	for _, entry := range entries {
 		row := []string{entry.ID, entry.TimestampUTC, string(entry.EventType), string(entry.Category), entry.Severity, entry.ActorID, entry.ResourceID, entry.Action, entry.ActionResult}
-		csvW.Write(row)
+		if err := csvW.Write(row); err != nil {
+			return err
+		}
 	}
 	csvW.Flush()
-	csvWriter.Write(csvBuf.Bytes())
+	if _, err := csvWriter.Write(csvBuf.Bytes()); err != nil {
+		return err
+	}
 
 	// Add manifest
 	manifestWriter, err := zipWriter.Create("MANIFEST.json")
@@ -1124,7 +1136,9 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 		"files":         []string{"audit_log.json", "audit_log.csv"},
 	}
 	manifestBytes, _ := json.MarshalIndent(manifest, "", "  ")
-	manifestWriter.Write(manifestBytes)
+	if _, err := manifestWriter.Write(manifestBytes); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -1135,7 +1149,7 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 
 func generateAuditID() string {
 	b := make([]byte, 16)
-	cryptorand.Read(b)
+	_, _ = cryptorand.Read(b)
 	return fmt.Sprintf("AUD-%s", hex.EncodeToString(b[:8]))
 }
 

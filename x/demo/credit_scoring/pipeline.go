@@ -101,7 +101,7 @@ func NewCreditScoringPipeline(logger log.Logger, config PipelineConfig) *CreditS
 
 	// Register default model
 	defaultModel := demotypes.DefaultCreditScoringModel()
-	pipeline.RegisterModel(defaultModel)
+	_ = pipeline.RegisterModel(defaultModel)
 
 	return pipeline
 }

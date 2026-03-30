@@ -240,7 +240,7 @@ func GenerateKeyFromSeed(set ParameterSet, seed []byte) (*PrivateKey, error) {
 	shake.Write(seed)
 
 	expanded := make([]byte, 128)
-	shake.Read(expanded)
+	_, _ = shake.Read(expanded)
 
 	var rho [32]byte
 	var rhoPrime [64]byte
@@ -306,7 +306,7 @@ func GenerateKeyFromSeed(set ParameterSet, seed []byte) (*PrivateKey, error) {
 	shake = sha3.NewShake256()
 	shake.Write(pkBytes)
 	var tr [64]byte
-	shake.Read(tr[:])
+	_, _ = shake.Read(tr[:])
 
 	// Step 8: Create private key
 	sk := &PrivateKey{
@@ -350,7 +350,7 @@ func (sk *PrivateKey) SignWithReader(message []byte, reader io.Reader) ([]byte, 
 	shake.Write(sk.tr[:])
 	shake.Write(message)
 	mu := make([]byte, 64)
-	shake.Read(mu)
+	_, _ = shake.Read(mu)
 
 	// Step 3: Compute ρ′′ = H(K || rnd || μ)
 	shake = sha3.NewShake256()
@@ -358,7 +358,7 @@ func (sk *PrivateKey) SignWithReader(message []byte, reader io.Reader) ([]byte, 
 	shake.Write(rnd)
 	shake.Write(mu)
 	rhoPrimePrime := make([]byte, 64)
-	shake.Read(rhoPrimePrime)
+	_, _ = shake.Read(rhoPrimePrime)
 
 	// Step 4: Expand matrix A from rho
 	A := expandA(params, sk.rho[:])
@@ -576,14 +576,14 @@ func (pk *PublicKey) Verify(message, sig []byte) bool {
 	shake := sha3.NewShake256()
 	shake.Write(pkBytes)
 	tr := make([]byte, 64)
-	shake.Read(tr)
+	_, _ = shake.Read(tr)
 
 	// Step 5: Compute μ = H(tr || M)
 	shake = sha3.NewShake256()
 	shake.Write(tr)
 	shake.Write(message)
 	mu := make([]byte, 64)
-	shake.Read(mu)
+	_, _ = shake.Read(mu)
 
 	// Step 6: Expand matrix A from rho
 	A := expandA(params, pk.rho[:])
@@ -645,7 +645,7 @@ func (pk *PublicKey) Verify(message, sig []byte) bool {
 	shake.Write(mu)
 	shake.Write(w1Bytes)
 	cTildePrime := make([]byte, params.CTilde)
-	shake.Read(cTildePrime)
+	_, _ = shake.Read(cTildePrime)
 
 	// Step 12: Check c̃ = c̃'
 	return subtle.ConstantTimeCompare(cTilde, cTildePrime) == 1
@@ -1099,7 +1099,7 @@ func sampleInBall(params *Parameters, seed []byte) []int32 {
 
 	c := make([]int32, params.N)
 	signs := make([]byte, 8)
-	shake.Read(signs)
+	_, _ = shake.Read(signs)
 	signBits := binary.LittleEndian.Uint64(signs)
 
 	k := 256 - params.Tau

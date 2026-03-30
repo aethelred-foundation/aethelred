@@ -6,9 +6,8 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::time::Duration;
 
-use crate::{BenchmarkResult, RunnerResult, SuiteResult};
+use crate::{RunnerResult, SuiteResult};
 
 // ============ Report Configuration ============
 
@@ -116,7 +115,7 @@ impl ReportGenerator {
     fn generate_suite_html(&self, suite: &SuiteResult) -> String {
         let mut html = String::new();
 
-        html.push_str(&format!("  <section class=\"suite\">\n"));
+        html.push_str("  <section class=\"suite\">\n");
         html.push_str(&format!("    <h2>{}</h2>\n", suite.name));
         html.push_str(&format!("    <p>Duration: {:.2?}</p>\n", suite.duration));
 
@@ -340,7 +339,7 @@ impl ReportGenerator {
                 ));
             }
 
-            md.push_str("\n");
+            md.push('\n');
         }
 
         md

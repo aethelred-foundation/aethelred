@@ -63,3 +63,6 @@ default = ["demo-mode"]
 demo-mode = []
 production = []
 stress-test = []
+
+[lints]
+workspace = true

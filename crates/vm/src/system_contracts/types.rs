@@ -116,10 +116,12 @@ impl fmt::Display for JobStatus {
 /// Job priority level
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum JobPriority {
     /// Low priority (default)
     Low = 0,
     /// Normal priority
+    #[default]
     Normal = 1,
     /// High priority (costs more)
     High = 2,
@@ -127,11 +129,6 @@ pub enum JobPriority {
     Urgent = 3,
 }
 
-impl Default for JobPriority {
-    fn default() -> Self {
-        JobPriority::Normal
-    }
-}
 
 impl JobPriority {
     /// Get the fee multiplier for this priority
@@ -158,23 +155,19 @@ impl JobPriority {
 /// Verification method for job proof
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u8)]
+#[derive(Default)]
 pub enum VerificationMethod {
     /// TEE attestation (SGX, Nitro, SEV)
     TeeAttestation = 0,
     /// Zero-knowledge proof (zkML)
     ZkProof = 1,
     /// Both TEE and ZK (highest assurance)
+    #[default]
     Hybrid = 2,
     /// Multiple validators re-execute
     ReExecution = 3,
 }
 
-impl Default for VerificationMethod {
-    fn default() -> Self {
-        // SQ01: Enterprise default - Hybrid verification required
-        VerificationMethod::Hybrid
-    }
-}
 
 // =============================================================================
 // ENTERPRISE MODE CONFIGURATION
@@ -574,7 +567,7 @@ pub fn generate_job_id(
     hasher.update(requester);
     hasher.update(model_hash);
     hasher.update(input_hash);
-    hasher.update(&nonce.to_le_bytes());
+    hasher.update(nonce.to_le_bytes());
 
     let result = hasher.finalize();
     let mut job_id = [0u8; 32];

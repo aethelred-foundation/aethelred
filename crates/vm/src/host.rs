@@ -262,14 +262,13 @@ impl HostFunctions {
         {
             Ok(result) if result.success => {
                 // Check measurement matches if provided
-                if !expected_measurement.is_empty() {
-                    if result.output.len() >= 32 {
+                if !expected_measurement.is_empty()
+                    && result.output.len() >= 32 {
                         let measurement = &result.output[0..32];
                         if measurement != expected_measurement {
                             return HostResult::Error(2, "Measurement mismatch".into());
                         }
                     }
-                }
                 HostResult::Success(result.output)
             }
             Ok(_) => HostResult::Error(3, "Attestation verification failed".into()),

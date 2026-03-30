@@ -202,6 +202,7 @@ pub enum SessionStatus {
 
 /// Session approvals tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct SessionApprovals {
     /// Ethics approval granted
     pub ethics_approved: bool,
@@ -225,22 +226,6 @@ pub struct SessionApprovals {
     pub partner_agreement_at: Option<DateTime<Utc>>,
 }
 
-impl Default for SessionApprovals {
-    fn default() -> Self {
-        Self {
-            ethics_approved: false,
-            ethics_approval_at: None,
-            ethics_approver: None,
-            doh_approved: false,
-            doh_approval_at: None,
-            doh_approver: None,
-            custodian_approved: false,
-            custodian_approval_at: None,
-            partner_agreement_signed: false,
-            partner_agreement_at: None,
-        }
-    }
-}
 
 /// Session timeline
 #[derive(Debug, Clone, Serialize, Deserialize)]
