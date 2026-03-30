@@ -66,6 +66,10 @@ pub const SLOTS_PER_DAY: u64 = 14400;
 /// Maximum score to prevent overflow
 pub const MAX_SCORE: u64 = u64::MAX / 100;
 
+/// Maximum complexity per job (prevents f64 precision issues in scoring)
+/// Real PoUW complexity is bounded by hardware capabilities; this is a safety cap.
+pub const MAX_COMPLEXITY: u64 = 1_000_000_000_000; // 1 trillion FLOPS
+
 /// Method multipliers for different verification types
 pub const MULTIPLIER_TEE: f64 = 1.0;
 pub const MULTIPLIER_ZK: f64 = 1.5;
@@ -263,7 +267,7 @@ impl ComputeJobRecord {
 
     /// Calculate weighted score contribution
     pub fn weighted_score(&self) -> f64 {
-        let base = self.complexity as f64;
+        let base = self.complexity.min(MAX_COMPLEXITY) as f64;
         let multiplier = self.method_multiplier();
 
         if self.success {
@@ -456,6 +460,11 @@ impl ReputationEngine {
             });
         }
 
+        // Clamp complexity to MAX_COMPLEXITY to prevent f64 precision issues
+        // in scoring calculations. Real PoUW complexity is bounded by hardware.
+        let mut job = job;
+        job.complexity = job.complexity.min(MAX_COMPLEXITY);
+
         let mut validators = self.validators.write();
         let state = validators
             .entry(validator)
@@ -509,7 +518,7 @@ impl ReputationEngine {
             validator,
             old_score,
             new_score,
-            delta: new_score as i64 - old_score as i64,
+            delta: (new_score as i64).saturating_sub(old_score as i64),
             job_id: job.job_id,
         })
     }
@@ -560,7 +569,7 @@ impl ReputationEngine {
                     validator: *address,
                     old_score,
                     new_score,
-                    delta: new_score as i64 - old_score as i64,
+                    delta: (new_score as i64).saturating_sub(old_score as i64),
                     job_id: [0u8; 32], // No specific job
                 });
             }
