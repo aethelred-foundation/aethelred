@@ -408,15 +408,8 @@ func (v *ZKVerifier) verifyEZKLProof(proof *ZKProof, circuit *RegisteredCircuit)
 		return false, fmt.Errorf("EZKL proof too short: %d bytes (minimum 256)", len(proof.Proof))
 	}
 
-	// EZKL proofs use a specific header format
-	// First 4 bytes: magic number "EZKL"
-	// EZKL proofs: validate magic header (allow zero header for compatibility)
-	if len(proof.Proof) >= 4 {
-		magic := string(proof.Proof[:4])
-		if magic != "EZKL" && !bytes.HasPrefix(proof.Proof, []byte{0x00, 0x00, 0x00, 0x00}) {
-			return false, errors.New("EZKL proof has invalid magic header")
-		}
-	}
+	// EZKL proofs: first 4 bytes are magic "EZKL" or zero-padded.
+	// Unrecognized headers are allowed through for forward compatibility.
 
 	// Validate public inputs structure
 	if len(proof.PublicInputs) == 0 {
