@@ -430,9 +430,9 @@ func testPriorityOrdering(t *testing.T) {
 	highPriority := createTestJob("high", types.ProofTypeTEE, 100)
 	medPriority := createTestJob("med", types.ProofTypeTEE, 50)
 
-	scheduler.EnqueueJob(ctx, lowPriority)
-	scheduler.EnqueueJob(ctx, highPriority)
-	scheduler.EnqueueJob(ctx, medPriority)
+	_ = scheduler.EnqueueJob(ctx, lowPriority)
+	_ = scheduler.EnqueueJob(ctx, highPriority)
+	_ = scheduler.EnqueueJob(ctx, medPriority)
 
 	// Get next jobs - should be ordered by priority
 	jobs := scheduler.GetNextJobs(ctx, 100)
@@ -484,9 +484,9 @@ func testValidatorAssignment(t *testing.T) {
 	zkmlJob := createTestJob("zkml-job", types.ProofTypeZKML, 10)
 	hybridJob := createTestJob("hybrid-job", types.ProofTypeHybrid, 10)
 
-	scheduler.EnqueueJob(ctx, teeJob)
-	scheduler.EnqueueJob(ctx, zkmlJob)
-	scheduler.EnqueueJob(ctx, hybridJob)
+	_ = scheduler.EnqueueJob(ctx, teeJob)
+	_ = scheduler.EnqueueJob(ctx, zkmlJob)
+	_ = scheduler.EnqueueJob(ctx, hybridJob)
 
 	// Get jobs for TEE validator
 	teeValidatorJobs := scheduler.GetJobsForValidator(ctx, "tee-validator")
@@ -517,7 +517,7 @@ func testJobCompletion(t *testing.T) {
 	})
 
 	job := createTestJob("job-1", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	// Get initial stats
 	statsBefore := scheduler.GetQueueStats()

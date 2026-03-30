@@ -71,7 +71,7 @@ func TestMsgAndQueryServers(t *testing.T) {
 	k, ctx := createSealKeeperWithStore(t)
 	msgServer := NewMsgServerImpl(k)
 	queryServer := NewQueryServerImpl(k)
-	wrappedCtx := sdk.WrapSDKContext(ctx)
+	wrappedCtx := ctx
 
 	msg := &types.MsgCreateSeal{
 		Creator:          sdk.AccAddress(bytes.Repeat([]byte{0xAA}, 20)).String(),

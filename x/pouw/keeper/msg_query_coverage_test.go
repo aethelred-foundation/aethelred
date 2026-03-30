@@ -19,7 +19,7 @@ func testAddr(seed byte) string {
 func TestMsgServerSubmitRegisterCancelCapabilityAndPCR0(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	msgServer := keeper.NewMsgServerImpl(k)
-	wrapped := sdk.WrapSDKContext(ctx)
+	wrapped := ctx
 
 	modelHash := bytes.Repeat([]byte{0x01}, 32)
 	registerResp, err := msgServer.RegisterModel(wrapped, &types.MsgRegisterModel{
@@ -100,7 +100,7 @@ func TestMsgServerSubmitRegisterCancelCapabilityAndPCR0(t *testing.T) {
 func TestQueryModelModuleStatusAndKeeperAccessors(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	queryServer := keeper.NewQueryServerImpl(k)
-	wrapped := sdk.WrapSDKContext(ctx)
+	wrapped := ctx
 
 	modelHash := bytes.Repeat([]byte{0x10}, 32)
 	require.NoError(t, k.RegisterModel(ctx, &types.RegisteredModel{
@@ -156,7 +156,7 @@ func TestQueryModelModuleStatusAndKeeperAccessors(t *testing.T) {
 func TestQueryValidatorPCR0AndRegistryStatus(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	queryServer := keeper.NewQueryServerImpl(k)
-	wrapped := sdk.WrapSDKContext(ctx)
+	wrapped := ctx
 
 	_, err := queryServer.ValidatorPCR0(wrapped, nil)
 	require.ErrorContains(t, err, "request cannot be nil")

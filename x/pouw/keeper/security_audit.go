@@ -64,7 +64,7 @@ type AuditReport struct {
 // Summary returns a human-readable summary of the audit report.
 func (r *AuditReport) Summary() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("=== SECURITY AUDIT REPORT ===\n"))
+	sb.WriteString("=== SECURITY AUDIT REPORT ===\n")
 	sb.WriteString(fmt.Sprintf("Chain: %s | Block: %d | Module Version: %d\n",
 		r.ChainID, r.BlockHeight, r.ModuleVersion))
 	sb.WriteString(fmt.Sprintf("Checks: %d total | %d passed | %d failed\n",

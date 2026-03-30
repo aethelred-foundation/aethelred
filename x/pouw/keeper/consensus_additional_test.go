@@ -154,7 +154,7 @@ func TestConsensusSealTransactionBranches(t *testing.T) {
 	require.NoError(t, err)
 	require.ErrorContains(t, ch.ValidateSealTransaction(ctx, badOutputHash), "invalid output hash length")
 
-	require.ErrorContains(t, ch.ProcessSealTransaction(sdk.WrapSDKContext(ctx), []byte("{bad-json")), "unmarshal")
+	require.ErrorContains(t, ch.ProcessSealTransaction(ctx, []byte("{bad-json")), "unmarshal")
 
 	require.True(t, IsSealTransaction(txs[0]))
 	require.False(t, IsSealTransaction([]byte("{bad-json")))

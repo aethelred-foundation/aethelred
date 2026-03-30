@@ -161,7 +161,7 @@ func TestConsensusWithByzantineValidators(t *testing.T) {
 		Priority:    10,
 	}
 
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	// Correct output (what honest validators report)
 	correctOutput := computeCorrectOutput(modelHash, inputHash)
@@ -249,7 +249,7 @@ func TestConsensusFailure(t *testing.T) {
 		Priority:    10,
 	}
 
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	// Each validator reports a different output (no consensus possible)
 	var voteExtensions []*keeper.VoteExtensionWire
@@ -307,7 +307,7 @@ func TestJobPriorityProcessing(t *testing.T) {
 	}
 
 	for _, job := range jobs {
-		scheduler.EnqueueJob(ctx, job)
+		_ = scheduler.EnqueueJob(ctx, job)
 	}
 
 	// Get next jobs - should be highest priority first
@@ -575,7 +575,7 @@ func submitTestJobs(ctx context.Context, scheduler *keeper.JobScheduler) []*type
 	}
 
 	for _, job := range jobs {
-		scheduler.EnqueueJob(ctx, job)
+		_ = scheduler.EnqueueJob(ctx, job)
 	}
 
 	return jobs
@@ -1158,7 +1158,7 @@ func TestEndToEnd_DoubleVoteDetection(t *testing.T) {
 	}
 
 	job := createTestJob("double-vote-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	correctOutput := computeCorrectOutput(job.ModelHash, job.InputHash)
 	conflictingOutput := randomHash()
@@ -1225,7 +1225,7 @@ func TestEndToEnd_ReplayAttackVoteExtensions(t *testing.T) {
 	}
 
 	job := createTestJob("replay-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 	correctOutput := computeCorrectOutput(job.ModelHash, job.InputHash)
 
 	currentHeight := int64(200)
@@ -1285,7 +1285,7 @@ func TestEndToEnd_MalformedVoteExtension(t *testing.T) {
 	}
 
 	job := createTestJob("malformed-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 	correctOutput := computeCorrectOutput(job.ModelHash, job.InputHash)
 
 	// 2 valid vote extensions
@@ -1355,7 +1355,7 @@ func TestEndToEnd_OversizedPayloadRejection(t *testing.T) {
 	}
 
 	job := createTestJob("oversized-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 	correctOutput := computeCorrectOutput(job.ModelHash, job.InputHash)
 
 	// 2 valid votes
@@ -1514,7 +1514,7 @@ func BenchmarkSchedulerEnqueue(b *testing.B) {
 			Priority:    int64(i % 100),
 		}
 
-		scheduler.EnqueueJob(ctx, job)
+		_ = scheduler.EnqueueJob(ctx, job)
 	}
 }
 
@@ -1636,7 +1636,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 			Status:      types.JobStatusPending,
 			Priority:    int64(50 + i),
 		}
-		scheduler.EnqueueJob(ctx, job)
+		_ = scheduler.EnqueueJob(ctx, job)
 	}
 
 	// Schedule jobs across validators

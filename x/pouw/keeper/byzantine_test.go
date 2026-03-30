@@ -898,7 +898,7 @@ func TestByzantine_RetryExhaustionLeadsToFailure(t *testing.T) {
 
 	ctx := sdkTestContext()
 	job := createTestJob("retry-exhaust-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	// Select the job
 	scheduler.GetNextJobs(ctx, 100)

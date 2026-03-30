@@ -383,7 +383,7 @@ func testOrchestratorTEE(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, testOrchestratorConfig())
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	req := &verify.VerificationRequest{
 		RequestID:          "orch-tee-1",
@@ -415,7 +415,7 @@ func testOrchestratorZKML(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, testOrchestratorConfig())
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	req := &verify.VerificationRequest{
 		RequestID:          "orch-zkml-1",
@@ -462,7 +462,7 @@ func testOrchestratorHybrid(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, config)
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	modelHash := randomHash()
 	inputHash := randomHash()
@@ -505,7 +505,7 @@ func testOrchestratorCaching(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, config)
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	req := &verify.VerificationRequest{
 		RequestID:          "orch-cache-1",
@@ -662,7 +662,7 @@ func TestEndToEndVerification(t *testing.T) {
 
 	// Setup orchestrator
 	orchestrator := verify.NewVerificationOrchestrator(logger, testOrchestratorConfig())
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	// Step 1: Register a model
 	t.Log("Step 1: Registering model...")

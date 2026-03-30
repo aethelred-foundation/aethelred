@@ -531,7 +531,7 @@ func BuildAuditChecklist(ctx sdk.Context, k Keeper) *AuditChecklist {
 		Category:    "economics",
 		Description: "Fee distribution BPS sum = 10000 (conservation)",
 		Verified:    bpsOk,
-		Evidence:    fmt.Sprintf("BPS sum verified"),
+		Evidence:    "BPS sum verified",
 		Owner:       "EL",
 		Blocking:    true,
 	})

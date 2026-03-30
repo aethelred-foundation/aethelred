@@ -580,7 +580,7 @@ func RenderRoadmapSummary(summary *RoadmapSummary) string {
 		summary.Phase2Progress, progressBar(summary.Phase2Progress)))
 	sb.WriteString(fmt.Sprintf("  Phase 3 (Ecosystem):  %3d%%  (%s)\n",
 		summary.Phase3Progress, progressBar(summary.Phase3Progress)))
-	sb.WriteString(fmt.Sprintf("  ────────────────────\n"))
+	sb.WriteString("  ────────────────────\n")
 	sb.WriteString(fmt.Sprintf("  OVERALL:              %3d%%  (%s)\n\n",
 		summary.OverallProgress, progressBar(summary.OverallProgress)))
 
