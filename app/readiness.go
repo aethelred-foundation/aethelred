@@ -139,9 +139,7 @@ func (app *AethelredApp) RunProductionReadinessChecks(ctx sdk.Context) verify.Re
 	if orchConfig != nil && orchConfig.EnterpriseMode {
 		erc := &verify.EnterpriseReadinessCheck{OrchestratorConfig: orchConfig}
 		entResult, entErr := erc.Validate()
-		for _, c := range entResult.Checks {
-			report.Checks = append(report.Checks, c)
-		}
+		report.Checks = append(report.Checks, entResult.Checks...)
 		if entErr != nil {
 			report.Ready = false
 			msg := fmt.Sprintf("FATAL: Enterprise readiness check failed: %v\n%s", entErr, entResult.String())

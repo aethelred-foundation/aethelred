@@ -593,7 +593,7 @@ func (k *Keeper) GetAllSeals(ctx context.Context) []*types.DigitalSeal {
 		return seals
 	}
 
-	k.Seals.Walk(ctx, nil, func(id string, seal types.DigitalSeal) (bool, error) {
+	_ = k.Seals.Walk(ctx, nil, func(id string, seal types.DigitalSeal) (bool, error) {
 		sealCopy := seal
 		seals = append(seals, &sealCopy)
 		return false, nil

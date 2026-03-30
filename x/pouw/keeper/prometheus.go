@@ -100,7 +100,7 @@ func (pe *PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	// Export custom metrics
 	pe.exportCustomMetrics(&sb)
 
-	w.Write([]byte(sb.String()))
+	_, _ = w.Write([]byte(sb.String()))
 }
 
 // Render returns the Prometheus exposition text for the current metrics snapshot.

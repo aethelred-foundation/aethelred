@@ -487,7 +487,7 @@ func (p *CreditScoringPipeline) calculateCreditLimit(features *demotypes.CreditF
 	baseLimit := features.AnnualIncome * 0.10 // 10% of annual income
 
 	// Adjust based on score
-	scoreMultiplier := 1.0
+	var scoreMultiplier float64
 	switch {
 	case score >= 800:
 		scoreMultiplier = 2.0

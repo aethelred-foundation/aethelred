@@ -112,9 +112,7 @@ func validateListenAddress(field, addr string) error {
 		return nil
 	}
 
-	if strings.HasPrefix(trimmed, "tcp://") {
-		trimmed = strings.TrimPrefix(trimmed, "tcp://")
-	}
+	trimmed = strings.TrimPrefix(trimmed, "tcp://")
 
 	host, port, err := net.SplitHostPort(trimmed)
 	if err != nil {

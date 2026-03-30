@@ -1571,7 +1571,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 				} `json:"header"`
 			} `json:"block"`
 		}
-		json.NewDecoder(resp1.Body).Decode(&block1)
+		_ = json.NewDecoder(resp1.Body).Decode(&block1)
 		resp1.Body.Close()
 
 		time.Sleep(200 * time.Millisecond)
@@ -1587,7 +1587,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 				} `json:"header"`
 			} `json:"block"`
 		}
-		json.NewDecoder(resp2.Body).Decode(&block2)
+		_ = json.NewDecoder(resp2.Body).Decode(&block2)
 		resp2.Body.Close()
 
 		if block1.Block.Header.Height == block2.Block.Header.Height {

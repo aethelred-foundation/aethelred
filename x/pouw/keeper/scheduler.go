@@ -1255,7 +1255,7 @@ func (s *JobScheduler) GetJobsForExecutionWorker(_ context.Context, workerID str
 
 // MarkJobComplete removes a job from the scheduler
 func (s *JobScheduler) MarkJobComplete(jobID string) {
-	s.markJobComplete(nil, jobID)
+	s.markJobComplete(context.TODO(), jobID)
 }
 
 // MarkJobCompleteWithContext removes a job from the scheduler with a context.
@@ -1299,7 +1299,7 @@ func (s *JobScheduler) markJobComplete(_ context.Context, jobID string) {
 
 // MarkJobFailed handles a failed job, potentially requeueing it
 func (s *JobScheduler) MarkJobFailed(jobID string, errorMsg string) {
-	s.markJobFailed(nil, jobID, errorMsg)
+	s.markJobFailed(context.TODO(), jobID, errorMsg)
 }
 
 // MarkJobFailedWithContext handles a failed job with a context for persistence.

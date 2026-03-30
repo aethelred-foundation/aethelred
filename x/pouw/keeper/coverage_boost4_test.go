@@ -1132,7 +1132,7 @@ func TestCB4_ProcessEndBlockEvidence_NoEvidence(t *testing.T) {
 	}, false, log.NewNopLogger())
 
 	// Process with no pending evidence
-	ec.ProcessEndBlockEvidence(ctx)
+	_ = ec.ProcessEndBlockEvidence(ctx)
 }
 
 // =============================================================================
@@ -1360,7 +1360,7 @@ func TestCB4_Scheduler_EnqueueAndProcess(t *testing.T) {
 			Status:      types.JobStatusPending,
 			Priority:    int64(i),
 		}
-		sched.EnqueueJob(ctx, job)
+		_ = sched.EnqueueJob(ctx, job)
 	}
 
 	// Get next batch (highest priority)

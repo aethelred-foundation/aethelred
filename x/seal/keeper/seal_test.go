@@ -593,7 +593,7 @@ func TestSealExporter(t *testing.T) {
 
 	// Test compact export
 	options.Format = keeper.ExportFormatCompact
-	exported, err = exporter.Export(ctx, seal.Id, options)
+	_, err = exporter.Export(ctx, seal.Id, options)
 	if err != nil {
 		t.Errorf("Compact export failed: %v", err)
 	}

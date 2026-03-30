@@ -229,7 +229,7 @@ func TestNegative_Orchestrator_HybridMismatch_Parallel(t *testing.T) {
 func TestNegative_Orchestrator_NilRequest(t *testing.T) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	_, err := orchestrator.Verify(context.Background(), nil)
 	if err == nil {
@@ -240,7 +240,7 @@ func TestNegative_Orchestrator_NilRequest(t *testing.T) {
 func TestNegative_Orchestrator_EmptyModelHash(t *testing.T) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	req := &verify.VerificationRequest{
 		RequestID:        "neg-empty-model",
@@ -270,7 +270,7 @@ func TestNegative_Orchestrator_EmptyModelHash(t *testing.T) {
 func TestNegative_Orchestrator_UnknownVerificationType(t *testing.T) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	req := &verify.VerificationRequest{
 		RequestID:        "neg-unknown-type",

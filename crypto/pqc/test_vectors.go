@@ -568,7 +568,7 @@ func PrintTestResults(results *PQCTestSuiteResult) string {
 		}
 	}
 
-	output += fmt.Sprintf("\n=== Summary ===\n")
+	output += "\n=== Summary ===\n"
 	output += fmt.Sprintf("Total: %d, Passed: %d, Failed: %d\n",
 		results.TotalTests, results.PassedTests, results.FailedTests)
 

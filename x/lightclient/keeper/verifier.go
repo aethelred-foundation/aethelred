@@ -254,8 +254,7 @@ func (v *LightClientVerifier) verifyBLSAggregate(header *LightClientHeader) erro
 	// Compute the signed power from trusted validators
 	signedPower := int64(0)
 	for _, pkBytes := range header.BLSSignerPubKeys {
-		pkStr := string(pkBytes)
-		if power, ok := v.trustedValidators[pkStr]; ok {
+		if power, ok := v.trustedValidators[string(pkBytes)]; ok {
 			signedPower += power
 		}
 	}
@@ -343,8 +342,8 @@ func GenerateComputeResultProof(results []ComputeResultLeaf, targetIndex int) (*
 			if i+1 < len(hashes) {
 				if i == idx || i+1 == idx {
 					// This pair contains our target - record sibling
-					siblingIdx := i
-					isRight := true
+					var siblingIdx int
+					var isRight bool
 					if i == idx {
 						siblingIdx = i + 1
 						isRight = true

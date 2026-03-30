@@ -1118,7 +1118,7 @@ func RunParamValidationBenchmark(iterations int) BenchmarkResult {
 
 	for i := 0; i < iterations; i++ {
 		start := time.Now()
-		ValidateParams(params)
+		_ = ValidateParams(params)
 		durations[i] = time.Since(start)
 	}
 
@@ -1161,7 +1161,7 @@ func RunPerformanceScoreBenchmark(iterations int) BenchmarkResult {
 
 	for i := 0; i < iterations; i++ {
 		start := time.Now()
-		PerformanceScore(metrics)
+		_ = PerformanceScore(metrics)
 		durations[i] = time.Since(start)
 	}
 
@@ -1297,7 +1297,7 @@ func RunPerformanceTuningReport(ctx sdk.Context, k Keeper) *PerformanceReport {
 	budget.RunTask("param_validation", func() {
 		params, _ := k.GetParams(ctx)
 		if params != nil {
-			ValidateParams(params)
+			_ = ValidateParams(params)
 		}
 	})
 

@@ -643,7 +643,7 @@ func TestByzantine_DoubleProcessingPrevented(t *testing.T) {
 
 	ctx := sdkTestContext()
 	job := createTestJob("double-proc-job", types.ProofTypeTEE, 10)
-	scheduler.EnqueueJob(ctx, job)
+	_ = scheduler.EnqueueJob(ctx, job)
 
 	// First selection: should transition to Processing
 	jobs := scheduler.GetNextJobs(ctx, 100)
@@ -680,8 +680,8 @@ func TestByzantine_ExhaustedValidatorNotOverloaded(t *testing.T) {
 	})
 
 	ctx := sdkTestContext()
-	scheduler.EnqueueJob(ctx, createTestJob("job-1", types.ProofTypeTEE, 10))
-	scheduler.EnqueueJob(ctx, createTestJob("job-2", types.ProofTypeTEE, 10))
+	_ = scheduler.EnqueueJob(ctx, createTestJob("job-1", types.ProofTypeTEE, 10))
+	_ = scheduler.EnqueueJob(ctx, createTestJob("job-2", types.ProofTypeTEE, 10))
 
 	// First block: should only select 1 job (validator maxed out)
 	jobs := scheduler.GetNextJobs(ctx, 100)

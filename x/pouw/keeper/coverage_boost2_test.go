@@ -45,7 +45,7 @@ func newTestSDKCtx() sdk.Context {
 }
 
 func newTestWrappedCtx() context.Context {
-	return sdk.WrapSDKContext(newTestSDKCtx())
+	return newTestSDKCtx()
 }
 
 func testCap(addr string, online bool, reputation int64, maxJobs, currentJobs int64, teePlatforms, zkmlSystems []string) *types.ValidatorCapability {
@@ -1289,7 +1289,7 @@ func TestCB2_EvidenceCollector_ProcessEndBlockEvidence(t *testing.T) {
 	ctx := newTestSDKCtx()
 
 	// ProcessEndBlockEvidence with nil keeper should still exercise paths
-	ec.ProcessEndBlockEvidence(ctx)
+	_ = ec.ProcessEndBlockEvidence(ctx)
 }
 
 func TestCB2_MissedBlockTracker_FullCoverage(t *testing.T) {

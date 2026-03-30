@@ -1244,7 +1244,7 @@ func TestPolicy_StrictMode_RequiredRejections(t *testing.T) {
 		{"simulated_tee", func(ve *app.VoteExtension) {
 			ve.Verifications[0].TEEAttestation.Platform = "simulated"
 			_, privKey, _ := ed25519.GenerateKey(rand.Reader)
-			app.SignVoteExtension(ve, privKey)
+			_ = app.SignVoteExtension(ve, privKey)
 		}},
 	}
 

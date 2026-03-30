@@ -141,14 +141,12 @@ func setupBenchKeeper(b *testing.B) (keeper.Keeper, sdk.Context) {
 func BenchmarkSubmitJob(b *testing.B) {
 	k, ctx := setupBenchKeeper(b)
 	msgServer := keeper.NewMsgServerImpl(k)
-	wrapped := sdk.WrapSDKContext(ctx)
-
 	modelHash := sha256.Sum256([]byte("bench-model"))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		inputHash := sha256.Sum256([]byte(fmt.Sprintf("bench-input-%d", i)))
-		_, _ = msgServer.SubmitJob(wrapped, &types.MsgSubmitJob{
+		_, _ = msgServer.SubmitJob(ctx, &types.MsgSubmitJob{
 			Creator:   sdk.AccAddress(bytes.Repeat([]byte{0x01}, 20)).String(),
 			ModelHash: modelHash[:],
 			InputHash: inputHash[:],

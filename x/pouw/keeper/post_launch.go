@@ -121,16 +121,18 @@ func RunChainHealthCheck(ctx sdk.Context, k Keeper) *ChainHealthReport {
 	if !paramValid {
 		paramStatus = HealthRed
 	}
+	paramMetrics := map[string]string{}
+	if params != nil {
+		paramMetrics["consensus_threshold"] = fmt.Sprintf("%d", params.ConsensusThreshold)
+		paramMetrics["allow_simulated"] = fmt.Sprintf("%v", params.AllowSimulated)
+		paramMetrics["require_tee_attestation"] = fmt.Sprintf("%v", params.RequireTeeAttestation)
+	}
 	report.Subsystems = append(report.Subsystems, SubsystemHealth{
 		Name:        "parameters",
 		Status:      paramStatus,
 		Details:     fmt.Sprintf("valid=%v", paramValid),
 		LastChecked: now,
-		Metrics: map[string]string{
-			"consensus_threshold":    fmt.Sprintf("%d", params.ConsensusThreshold),
-			"allow_simulated":        fmt.Sprintf("%v", params.AllowSimulated),
-			"require_tee_attestation": fmt.Sprintf("%v", params.RequireTeeAttestation),
-		},
+		Metrics:     paramMetrics,
 	})
 
 	// --- Subsystem: Invariants ---
@@ -940,7 +942,7 @@ func RenderMaturityAssessment(a *MaturityAssessment) string {
 	sb.WriteString(fmt.Sprintf("  Stability:          %3d/100\n", a.StabilityScore))
 	sb.WriteString(fmt.Sprintf("  Decentralization:   %3d/100\n", a.DecentralizationScore))
 	sb.WriteString(fmt.Sprintf("  Activity:           %3d/100\n", a.ActivityScore))
-	sb.WriteString(fmt.Sprintf("  ────────────────────\n"))
+	sb.WriteString("  ────────────────────\n")
 	sb.WriteString(fmt.Sprintf("  OVERALL MATURITY:   %3d/100\n\n", a.OverallMaturity))
 
 	sb.WriteString("─── GRADUATION CRITERIA ────────────────────────────────────────\n")
