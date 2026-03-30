@@ -859,6 +859,11 @@ mod tests {
                 duration: Duration::from_millis(50),
             },
         );
+        reporter.on_suite_complete(&crate::SuiteResult {
+            name: "TestSuite".to_string(),
+            results: vec![],
+            duration: Duration::from_millis(150),
+        });
 
         let xml = reporter.generate();
         assert!(xml.contains("<testsuite"));
