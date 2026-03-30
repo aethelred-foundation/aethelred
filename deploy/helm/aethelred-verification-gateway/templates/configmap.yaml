@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aethelred-verification-gateway.fullname" . }}-config
+  labels:
+    {{- include "aethelred-verification-gateway.labels" . | nindent 4 }}
+data:
+  AETHELRED_RPC_URL: {{ .Values.verification.rpcUrl | quote }}
+  AETHELRED_HEADER_PREFIX: {{ .Values.verification.headerPrefix | quote }}
+  AETHELRED_VERIFY_MODE: {{ .Values.verification.mode | quote }}
+  AETHELRED_APP_RUNTIME: {{ .Values.application.runtime | quote }}

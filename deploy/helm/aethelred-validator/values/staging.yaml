@@ -1,0 +1,13 @@
+replicaCount: 3
+network:
+  chainID: aethelred-staging-1
+validator:
+  image:
+    tag: staging
+  env:
+    logLevel: debug
+service:
+  rpc:
+    type: ClusterIP
+serviceMonitor:
+  enabled: true

@@ -1,0 +1,15 @@
+replicaCount: 1
+validator:
+  image:
+    tag: canary
+  env:
+    logLevel: info
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    partition: 0
+service:
+  rpc:
+    type: ClusterIP
+podDisruptionBudget:
+  minAvailable: 1

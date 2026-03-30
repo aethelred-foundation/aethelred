@@ -3,12 +3,33 @@
 # ============================================================================
 # Routes alerts from Prometheus to appropriate notification channels.
 #
-# Teams must configure actual webhook URLs before production deployment:
-#   - critical-receiver: PagerDuty / OpsGenie integration
-#   - warning-receiver:  Slack webhook
-#   - default-receiver:  Catch-all webhook
-#
 # Ref: infrastructure/monitoring/prometheus-rules.yml for alert definitions
+#
+# ---------------------------------------------------------------------------
+# OPERATOR CONFIGURATION REQUIRED
+# ---------------------------------------------------------------------------
+# Before deploying to production, operators MUST provide real notification
+# endpoints via environment variables or Kubernetes secrets.
+#
+# Required environment variables (or mount via K8s secret "alertmanager-notify"):
+#
+#   PAGERDUTY_SERVICE_KEY   - PagerDuty Events API v2 integration key
+#                             (used for critical alerts)
+#   SLACK_WEBHOOK_URL       - Slack incoming-webhook URL
+#                             (used for warning-level alerts)
+#   OPSGENIE_API_KEY        - OpsGenie API key (optional, for critical alerts)
+#   DEFAULT_WEBHOOK_URL     - Catch-all webhook endpoint for all other alerts
+#
+# Example Kubernetes secret:
+#
+#   kubectl create secret generic alertmanager-notify \
+#     --from-literal=PAGERDUTY_SERVICE_KEY='<your-key>' \
+#     --from-literal=SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...' \
+#     --from-literal=OPSGENIE_API_KEY='<your-key>' \
+#     --from-literal=DEFAULT_WEBHOOK_URL='https://your-webhook.example.com/alerts'
+#
+# If deploying via Helm, set the values under alertmanager.notifications
+# in the validator values.yaml instead.
 # ============================================================================
 
 global:
@@ -32,18 +53,25 @@ route:
 receivers:
   - name: 'default-receiver'
     webhook_configs:
-      - url: 'http://localhost:9095/alerts'  # TODO: Replace with actual webhook
+      - url: '${DEFAULT_WEBHOOK_URL}'
         send_resolved: true
 
   - name: 'critical-receiver'
-    webhook_configs:
-      - url: 'http://localhost:9095/alerts/critical'  # TODO: Replace with PagerDuty/OpsGenie
-        send_resolved: true
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: critical
+        description: '{{ .CommonAnnotations.summary }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
 
   - name: 'warning-receiver'
-    webhook_configs:
-      - url: 'http://localhost:9095/alerts/warning'  # TODO: Replace with Slack webhook
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#aethelred-alerts'
         send_resolved: true
+        title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
 
 inhibit_rules:
   - source_match:

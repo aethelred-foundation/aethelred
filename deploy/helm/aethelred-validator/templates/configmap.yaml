@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aethelred-validator.fullname" . }}-network
+  namespace: {{ include "aethelred-validator.namespace" . }}
+  labels:
+    {{- include "aethelred-validator.labels" . | nindent 4 }}
+data:
+  chain_id: {{ .Values.network.chainID | quote }}
+  persistent_peers: {{ .Values.network.persistentPeers | quote }}
+  min_gas_price: {{ .Values.validator.env.minGasPrice | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aethelred-validator.fullname" . }}-validator-config
+  namespace: {{ include "aethelred-validator.namespace" . }}
+  labels:
+    {{- include "aethelred-validator.labels" . | nindent 4 }}
+data:
+  app.toml: |
+{{ .Values.configFiles.appToml | indent 4 }}
+  config.toml: |
+{{ .Values.configFiles.configToml | indent 4 }}

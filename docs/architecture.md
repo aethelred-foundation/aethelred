@@ -216,14 +216,42 @@ Common node types:
 - **TEE worker**: isolated enclave-backed service.
 - **zkML prover/verifier**: GPU/CPU service with circuit cache.
 
-## 11. Planned or Referenced Components (Not Yet Implemented)
+## 11. ZK Proof System Support
+
+The `x/verify` module supports multiple ZK proof systems through the `ZKVerifier` in
+`x/verify/keeper/zk_verifier.go`. Each system has a dedicated verification method
+that performs structural validation (minimum proof size, required fields) before
+delegating to `cryptographicVerify()`.
+
+| Proof System | Constant            | Min Proof Size | Status                          |
+|-------------|---------------------|----------------|---------------------------------|
+| EZKL        | `ProofSystemEZKL`   | 128 bytes      | Testnet (structural validation) |
+| Groth16     | `ProofSystemGroth16`| 192 bytes      | Testnet (structural validation) |
+| RISC0       | `ProofSystemRISC0`  | 512 bytes      | Testnet (structural validation) |
+| Plonky2     | `ProofSystemPlonky2`| 256 bytes      | Testnet (structural validation) |
+| Halo2       | `ProofSystemHalo2`  | 384 bytes      | Testnet (structural validation) |
+
+**Testnet behavior**: All proof systems currently use structural validation only.
+The `cryptographicVerify()` path checks for a registered system-specific verifier
+and, if none is found, falls back to structural checks when `AllowSimulated` is
+enabled. In production mode (`AllowSimulated=false`), the verifier fails closed
+(ZK-09 security control).
+
+**RISC0 scope note**: RISC0 (RISC Zero zkVM) is fully wired into the verification
+pipeline -- including vote extensions, proof routing, gas estimation (4x multiplier),
+genesis params, and the TEE client -- but does not yet have a production-grade
+cryptographic verifier registered. Full RISC0 receipt verification (seal + claim
+validation against an image ID) is scoped for post-testnet / mainnet readiness.
+The same applies to all other proof systems listed above.
+
+## 12. Planned or Referenced Components (Not Yet Implemented)
 
 The README references additional layers (e.g., compliance module, expanded VM/precompiles, PQC features). These are **planned** but not fully represented in this codebase. When they land, this document should be updated with:
 - Module ownership and storage layout.
 - State transitions and invariants.
 - API surface and operational dependencies.
 
-## 12. Code Map
+## 13. Code Map
 
 - Application wiring: `app/`
 - PoUW module: `x/pouw/`
@@ -234,7 +262,7 @@ The README references additional layers (e.g., compliance module, expanded VM/pr
 - Rust services: `crates/`
 - SDKs: `sdk/`
 
-## 13. References
+## 14. References
 
 - `README.md`
 - `docs/VALIDATOR_RUNBOOK.md`

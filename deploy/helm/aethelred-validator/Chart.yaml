@@ -1,0 +1,18 @@
+apiVersion: v2
+name: aethelred-validator
+description: Production-grade Helm chart for Aethelred validator, TEE, and zkML services
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - blockchain
+  - cosmos-sdk
+  - validator
+  - tee
+  - zkml
+home: https://github.com/aethelred/aethelred
+sources:
+  - https://github.com/aethelred/aethelred
+maintainers:
+  - name: Aethelred Platform Team
+    email: infra@aethelred.io

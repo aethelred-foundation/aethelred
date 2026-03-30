@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aethelred-verification-gateway.fullname" . }}
+  labels:
+    {{- include "aethelred-verification-gateway.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aethelred-verification-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aethelred-verification-gateway.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "aethelred-verification-gateway.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: app
+          image: "{{ .Values.application.image.repository }}:{{ .Values.application.image.tag }}"
+          imagePullPolicy: {{ .Values.application.image.pullPolicy }}
+          {{- with .Values.application.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.application.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.application.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "aethelred-verification-gateway.fullname" . }}-config
+          {{- with .Values.application.env.extra }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.application.resources | nindent 12 }}
+          {{- if .Values.application.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.application.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.application.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.application.livenessProbe.periodSeconds }}
+          {{- end }}
+          {{- if .Values.application.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.application.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.application.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.application.readinessProbe.periodSeconds }}
+          {{- end }}
+        {{- if .Values.verification.sidecar.enabled }}
+        - name: verification-proxy
+          image: "{{ .Values.verification.sidecar.image.repository }}:{{ .Values.verification.sidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.verification.sidecar.image.pullPolicy }}
+          ports:
+            - name: verifier
+              containerPort: {{ .Values.verification.sidecar.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "aethelred-verification-gateway.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.verification.sidecar.resources | nindent 12 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

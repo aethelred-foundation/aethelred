@@ -1,0 +1,18 @@
+apiVersion: v2
+name: aethelred-verification-gateway
+description: Helm chart for FastAPI / Next.js services with Aethelred verification headers and envelope hooks
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - ai
+  - verification
+  - fastapi
+  - nextjs
+  - sdk
+home: https://github.com/aethelred/aethelred
+sources:
+  - https://github.com/aethelred/aethelred
+maintainers:
+  - name: Aethelred Platform Team
+    email: infra@aethelred.io

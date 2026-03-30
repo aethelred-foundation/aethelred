@@ -1,0 +1,252 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "aethelred-validator.fullname" . }}
+  namespace: {{ include "aethelred-validator.namespace" . }}
+  labels:
+    {{- include "aethelred-validator.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "aethelred-validator.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+    {{- if eq .Values.updateStrategy.type "RollingUpdate" }}
+    rollingUpdate:
+      partition: {{ .Values.updateStrategy.rollingUpdate.partition }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "aethelred-validator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "aethelred-validator.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "aethelred-validator.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+        runAsUser: {{ .Values.podSecurityContext.runAsUser }}
+        runAsNonRoot: {{ .Values.podSecurityContext.runAsNonRoot }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: init-config
+          image: "{{ .Values.validator.image.repository }}:{{ .Values.validator.image.tag }}"
+          imagePullPolicy: {{ .Values.validator.image.pullPolicy }}
+          command: ["aethelredd", "init", "--home=/data"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "aethelred-validator.fullname" . }}-network
+                  key: chain_id
+      containers:
+        - name: validator
+          image: "{{ .Values.validator.image.repository }}:{{ .Values.validator.image.tag }}"
+          imagePullPolicy: {{ .Values.validator.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.validator.command | nindent 12 }}
+          ports:
+            - name: p2p
+              containerPort: 26656
+              protocol: TCP
+            - name: rpc
+              containerPort: 26657
+              protocol: TCP
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+            - name: api
+              containerPort: 1317
+              protocol: TCP
+            - name: metrics
+              containerPort: 26660
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.validator.resources.requests.cpu | quote }}
+              memory: {{ .Values.validator.resources.requests.memory | quote }}
+              ephemeral-storage: {{ .Values.validator.resources.requests.ephemeralStorage | quote }}
+            limits:
+              cpu: {{ .Values.validator.resources.limits.cpu | quote }}
+              memory: {{ .Values.validator.resources.limits.memory | quote }}
+              ephemeral-storage: {{ .Values.validator.resources.limits.ephemeralStorage | quote }}
+          env:
+            - name: CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "aethelred-validator.fullname" . }}-network
+                  key: chain_id
+            - name: VALIDATOR_MONIKER
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: PERSISTENT_PEERS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "aethelred-validator.fullname" . }}-network
+                  key: persistent_peers
+            - name: LOG_LEVEL
+              value: {{ .Values.validator.env.logLevel | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+            {{- if .Values.secretProviderClass.enabled }}
+            - name: external-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.validator.livenessProbe.path }}
+              port: {{ .Values.validator.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.validator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.validator.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.validator.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.validator.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.validator.readinessProbe.path }}
+              port: {{ .Values.validator.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.validator.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.validator.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.validator.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.validator.readinessProbe.failureThreshold }}
+
+        {{- if .Values.teeWorker.enabled }}
+        - name: tee-worker
+          image: "{{ .Values.teeWorker.image.repository }}:{{ .Values.teeWorker.image.tag }}"
+          imagePullPolicy: {{ .Values.teeWorker.image.pullPolicy }}
+          securityContext:
+            privileged: {{ .Values.teeWorker.privileged }}
+          command:
+            {{- toYaml .Values.teeWorker.command | nindent 12 }}
+          ports:
+            - name: tee-grpc
+              containerPort: 9091
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.teeWorker.resources.requests.cpu | quote }}
+              memory: {{ .Values.teeWorker.resources.requests.memory | quote }}
+              sgx.intel.com/epc: {{ .Values.teeWorker.resources.requests.sgxEpc | quote }}
+            limits:
+              cpu: {{ .Values.teeWorker.resources.limits.cpu | quote }}
+              memory: {{ .Values.teeWorker.resources.limits.memory | quote }}
+              sgx.intel.com/epc: {{ .Values.teeWorker.resources.limits.sgxEpc | quote }}
+          volumeMounts:
+            - name: tee-secrets
+              mountPath: /tee/secrets
+              readOnly: true
+            - name: sgx-provision
+              mountPath: /dev/sgx_provision
+            - name: sgx-enclave
+              mountPath: /dev/sgx_enclave
+        {{- end }}
+
+        {{- if .Values.zkmlProver.enabled }}
+        - name: zkml-prover
+          image: "{{ .Values.zkmlProver.image.repository }}:{{ .Values.zkmlProver.image.tag }}"
+          imagePullPolicy: {{ .Values.zkmlProver.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.zkmlProver.command | nindent 12 }}
+          ports:
+            - name: zkml-grpc
+              containerPort: 9092
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.zkmlProver.resources.requests.cpu | quote }}
+              memory: {{ .Values.zkmlProver.resources.requests.memory | quote }}
+              nvidia.com/gpu: {{ .Values.zkmlProver.resources.requests.gpu | quote }}
+            limits:
+              cpu: {{ .Values.zkmlProver.resources.limits.cpu | quote }}
+              memory: {{ .Values.zkmlProver.resources.limits.memory | quote }}
+              nvidia.com/gpu: {{ .Values.zkmlProver.resources.limits.gpu | quote }}
+          volumeMounts:
+            - name: zkml-models
+              mountPath: /models
+              readOnly: true
+        {{- end }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "aethelred-validator.fullname" . }}-validator-config
+        - name: secrets
+          secret:
+            secretName: {{ .Values.secrets.validatorKeysSecretName }}
+        - name: tee-secrets
+          secret:
+            secretName: {{ .Values.secrets.teeKeysSecretName }}
+        - name: zkml-models
+          persistentVolumeClaim:
+            claimName: {{ .Values.zkmlModels.existingClaim }}
+        - name: sgx-provision
+          hostPath:
+            path: /dev/sgx_provision
+            type: CharDevice
+        - name: sgx-enclave
+          hostPath:
+            path: /dev/sgx_enclave
+            type: CharDevice
+        {{- if .Values.secretProviderClass.enabled }}
+        - name: external-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secretProviderClass.name }}
+        {{- end }}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "aethelred-validator.labels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
