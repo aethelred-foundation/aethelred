@@ -725,7 +725,6 @@ impl Default for MockHttpClient {
 
 /// Matchers for verifying arguments
 pub mod matchers {
-    
 
     pub fn any<T>() -> Box<dyn Fn(&T) -> bool + Send + Sync> {
         Box::new(|_| true)

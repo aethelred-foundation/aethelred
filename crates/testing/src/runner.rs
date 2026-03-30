@@ -129,10 +129,9 @@ impl TestFilter {
 
     pub fn matches(&self, test: &TestCase) -> bool {
         // Check specific tests
-        if !self.specific_tests.is_empty()
-            && !self.specific_tests.contains(&test.name) {
-                return false;
-            }
+        if !self.specific_tests.is_empty() && !self.specific_tests.contains(&test.name) {
+            return false;
+        }
 
         // Check name pattern
         if let Some(ref pattern) = self.name_pattern {
@@ -465,7 +464,6 @@ impl TestExecutor {
         let start = Instant::now();
 
         // Run with timeout
-        
 
         if timeout > Duration::ZERO {
             self.run_with_timeout(test, timeout)

@@ -682,9 +682,12 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
             Some(arr)
         }
         None if config.tee_platform == TEEPlatform::AWSNitro => {
-            return Err("Nitro platform requires application_hash_hex (PCR2 / application measurement). \
-                 Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application.".to_string()
-            .into());
+            return Err(
+                "Nitro platform requires application_hash_hex (PCR2 / application measurement). \
+                 Set CRUZIBLE_APPLICATION_HASH_HEX to the 64-char hex hash of the application."
+                    .to_string()
+                    .into(),
+            );
         }
         None => None,
     };

@@ -1131,10 +1131,7 @@ impl ComplianceModule {
 
     /// Record consent from a data subject
     pub fn record_consent(&mut self, consent: ConsentRecord) -> Result<()> {
-        let consents = self
-            .consents
-            .entry(consent.data_subject)
-            .or_default();
+        let consents = self.consents.entry(consent.data_subject).or_default();
 
         // Check if there's existing consent for same controller
         if let Some(existing) = consents

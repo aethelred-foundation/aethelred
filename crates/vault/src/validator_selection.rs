@@ -187,7 +187,6 @@ fn reputation_score(v: &ValidatorInput) -> u32 {
     let reliability = if v.total_jobs_completed == 0 {
         0.5 // Neutral for new validators
     } else {
-        
         v.total_jobs_completed as f64 / (v.total_jobs_completed as f64 + v.slash_count as f64)
     };
     let track_score = (reliability * 3000.0) as u32;

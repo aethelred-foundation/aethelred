@@ -200,8 +200,6 @@ impl CpuBenchmark {
 
     /// Run all CPU benchmarks
     pub fn run_all(&self) -> CpuResults {
-        
-
         CpuResults {
             single_thread: self.benchmark_single_thread(),
             multi_thread: if self.config.multithreaded {

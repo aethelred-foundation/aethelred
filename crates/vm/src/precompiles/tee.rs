@@ -892,7 +892,9 @@ impl SgxDcapVerifyPrecompile {
         // Extract signature data
         let sig_data_offset = sig_len_offset + 4;
         if quote_bytes.len() < sig_data_offset + signature_len as usize {
-            return Err(PrecompileError::InvalidInputFormat("Quote truncated: signature data incomplete".to_string()));
+            return Err(PrecompileError::InvalidInputFormat(
+                "Quote truncated: signature data incomplete".to_string(),
+            ));
         }
 
         let signature_data =

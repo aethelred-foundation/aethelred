@@ -82,7 +82,6 @@ use uuid::Uuid;
 #[derive(Default)]
 pub struct Hash(#[serde(with = "serde_arrays")] pub [u8; 32]);
 
-
 impl std::ops::Deref for Hash {
     type Target = [u8; 32];
     fn deref(&self) -> &Self::Target {

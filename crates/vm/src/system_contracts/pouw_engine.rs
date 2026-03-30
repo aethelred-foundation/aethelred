@@ -1357,10 +1357,7 @@ impl PoUWEngine {
         );
 
         // Store bond
-        self.compliance_bonds
-            .entry(node)
-            .or_default()
-            .push(bond);
+        self.compliance_bonds.entry(node).or_default().push(bond);
         self.bond_lookup.insert(bond_id, node);
 
         // Emit event
