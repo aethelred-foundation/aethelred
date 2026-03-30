@@ -430,7 +430,7 @@ func (sk *PrivateKey) SignWithReader(message []byte, reader io.Reader) ([]byte, 
 		shake.Write(mu)
 		shake.Write(w1Bytes)
 		cTilde := make([]byte, params.CTilde)
-		shake.Read(cTilde)
+		_, _ = shake.Read(cTilde) // shake.Read on a valid SHAKE hasher cannot fail
 
 		// Step 5.5: Compute challenge polynomial c
 		c := sampleInBall(params, cTilde)
@@ -987,7 +987,7 @@ func expandPoly(params *Parameters, rho []byte, i, j byte) []int32 {
 	k := 0
 
 	for k < params.N {
-		shake.Read(buf)
+		_, _ = shake.Read(buf) // shake.Read on a valid SHAKE hasher cannot fail
 		d := int32(buf[0]) | (int32(buf[1]) << 8) | (int32(buf[2]&0x7f) << 16)
 		if d < params.Q {
 			poly[k] = d
@@ -1019,7 +1019,7 @@ func expandEta(params *Parameters, seed []byte, nonce uint16, eta int) []int32 {
 
 	if eta == 2 {
 		buf := make([]byte, params.N*3/8)
-		shake.Read(buf)
+		_, _ = shake.Read(buf) // shake.Read on a valid SHAKE hasher cannot fail
 		for i := 0; i < params.N/8; i++ {
 			for j := 0; j < 8; j++ {
 				t := (buf[i*3+j/8] >> (j % 8)) & 0x07
@@ -1032,7 +1032,7 @@ func expandEta(params *Parameters, seed []byte, nonce uint16, eta int) []int32 {
 		}
 	} else if eta == 4 {
 		buf := make([]byte, params.N/2)
-		shake.Read(buf)
+		_, _ = shake.Read(buf) // shake.Read on a valid SHAKE hasher cannot fail
 		for i := 0; i < params.N/2; i++ {
 			poly[2*i] = int32(4 - (int32(buf[i]) & 0x0f))
 			poly[2*i+1] = int32(4 - (int32(buf[i]) >> 4))
@@ -1063,7 +1063,7 @@ func expandGamma1(params *Parameters, seed []byte, nonce uint16) []int32 {
 
 	if params.Gamma1 == 1<<17 {
 		buf := make([]byte, params.N*18/8)
-		shake.Read(buf)
+		_, _ = shake.Read(buf) // shake.Read on a valid SHAKE hasher cannot fail
 		for i := 0; i < params.N/4; i++ {
 			poly[4*i+0] = int32(buf[9*i+0]) | (int32(buf[9*i+1]&0x03) << 8)
 			poly[4*i+1] = int32(buf[9*i+1]>>2) | (int32(buf[9*i+2]&0x0f) << 6)
@@ -1076,7 +1076,7 @@ func expandGamma1(params *Parameters, seed []byte, nonce uint16) []int32 {
 		}
 	} else if params.Gamma1 == 1<<19 {
 		buf := make([]byte, params.N*20/8)
-		shake.Read(buf)
+		_, _ = shake.Read(buf) // shake.Read on a valid SHAKE hasher cannot fail
 		for i := 0; i < params.N/4; i++ {
 			poly[4*i+0] = int32(buf[5*i+0]) | (int32(buf[5*i+1]&0x0f) << 8)
 			poly[4*i+1] = int32(buf[5*i+1]>>4) | (int32(buf[5*i+2]) << 4)

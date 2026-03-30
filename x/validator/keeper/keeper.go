@@ -13,6 +13,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/aethelred/aethelred/x/validator/types"
@@ -145,22 +146,21 @@ func (k Keeper) RegisterHardwareCapability(ctx context.Context, capability *type
 		return err
 	}
 
-	previousCap, hadPrevious := types.HardwareCapability{}, false
+	var previousCap *types.HardwareCapability
 	if existingCap, getErr := k.HardwareCapabilities.Get(ctx, capability.ValidatorAddress); getErr == nil {
-		previousCap = existingCap
-		hadPrevious = true
+		previousCap = proto.Clone(&existingCap).(*types.HardwareCapability)
 	}
 
 	// Store capability
-	if err := k.HardwareCapabilities.Set(ctx, capability.ValidatorAddress, *capability); err != nil {
+	if err := k.HardwareCapabilities.Set(ctx, capability.ValidatorAddress, *capability); err != nil { //nolint:govet // cosmos SDK collections API requires value types for protobuf
 		return err
 	}
 	if err := k.validateActiveValidatorSetInvariants(ctx); err != nil {
 		// Roll back the local mutation defensively. The surrounding tx should also
 		// revert, but restoring state here avoids partial state if the caller wraps
 		// and suppresses the error.
-		if hadPrevious {
-			_ = k.HardwareCapabilities.Set(ctx, capability.ValidatorAddress, previousCap)
+		if previousCap != nil {
+			_ = k.HardwareCapabilities.Set(ctx, capability.ValidatorAddress, *previousCap) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 		} else {
 			_ = k.HardwareCapabilities.Remove(ctx, capability.ValidatorAddress)
 		}
@@ -251,7 +251,7 @@ func (k Keeper) enforceValidatorSetConstraints(ctx context.Context, capability *
 func (k Keeper) countActiveValidatorsByRegion(ctx context.Context, excludeAddr string) (int, map[string]int) {
 	totalActive := 0
 	regionActive := make(map[string]int)
-	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) {
+	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
 		if addr == excludeAddr || cap.Status == nil || !cap.Status.Online {
 			return false, nil
 		}
@@ -295,12 +295,11 @@ func (k Keeper) validateActiveValidatorSetInvariants(ctx context.Context) error 
 
 // GetHardwareCapability retrieves a validator's hardware capabilities
 func (k Keeper) GetHardwareCapability(ctx context.Context, validatorAddr string) (*types.HardwareCapability, error) {
-	capability, err := k.HardwareCapabilities.Get(ctx, validatorAddr)
+	capability, err := k.HardwareCapabilities.Get(ctx, validatorAddr) //nolint:govet // cosmos SDK collections Get returns protobuf value type
 	if err != nil {
 		return nil, fmt.Errorf("hardware capability not found for %s", validatorAddr)
 	}
-	capCopy := capability
-	return &capCopy, nil
+	return proto.Clone(&capability).(*types.HardwareCapability), nil
 }
 
 // UpdateValidatorStatus updates a validator's online status
@@ -312,7 +311,7 @@ func (k Keeper) UpdateValidatorStatus(ctx context.Context, validatorAddr string,
 
 	capability.UpdateStatus(online, currentJobs)
 
-	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability)
+	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 }
 
 // RecordHeartbeat records a heartbeat from a validator
@@ -329,17 +328,16 @@ func (k Keeper) RecordHeartbeat(ctx context.Context, validatorAddr string) error
 	capability.Status.LastHeartbeat = timestamppb.Now()
 	capability.Status.Online = true
 
-	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability)
+	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 }
 
 // GetOnlineValidators returns all online validators with their capabilities
 func (k Keeper) GetOnlineValidators(ctx context.Context) []*types.HardwareCapability {
 	var validators []*types.HardwareCapability
 
-	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) {
+	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
 		if cap.IsAvailable() {
-			capCopy := cap
-			validators = append(validators, &capCopy)
+			validators = append(validators, proto.Clone(&cap).(*types.HardwareCapability))
 		}
 		return false, nil
 	})
@@ -351,7 +349,7 @@ func (k Keeper) GetOnlineValidators(ctx context.Context) []*types.HardwareCapabi
 func (k Keeper) GetValidatorsForProofType(ctx context.Context, proofType string) []*types.HardwareCapability {
 	var validators []*types.HardwareCapability
 
-	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) {
+	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
 		if !cap.IsAvailable() {
 			return false, nil
 		}
@@ -359,18 +357,15 @@ func (k Keeper) GetValidatorsForProofType(ctx context.Context, proofType string)
 		switch proofType {
 		case "tee":
 			if cap.CanHandleTEE() {
-				capCopy := cap
-				validators = append(validators, &capCopy)
+				validators = append(validators, proto.Clone(&cap).(*types.HardwareCapability))
 			}
 		case "zkml":
 			if cap.CanHandleZKML() {
-				capCopy := cap
-				validators = append(validators, &capCopy)
+				validators = append(validators, proto.Clone(&cap).(*types.HardwareCapability))
 			}
 		case "hybrid":
 			if cap.CanHandleHybrid() {
-				capCopy := cap
-				validators = append(validators, &capCopy)
+				validators = append(validators, proto.Clone(&cap).(*types.HardwareCapability))
 			}
 		}
 
@@ -405,7 +400,7 @@ func (k Keeper) RecordJobCompletion(ctx context.Context, validatorAddr string, s
 
 	capability.RecordJobCompletion(success, latencyMs)
 
-	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability)
+	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 }
 
 // GetValidatorStats returns statistics for a validator
@@ -433,14 +428,14 @@ func (k Keeper) MarkValidatorOffline(ctx context.Context, validatorAddr string) 
 	capability.Status.Online = false
 	capability.UpdatedAt = timestamppb.Now()
 
-	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability)
+	return k.HardwareCapabilities.Set(ctx, validatorAddr, *capability) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 }
 
 // CheckInactiveValidators marks validators as offline if they haven't sent a heartbeat
 func (k Keeper) CheckInactiveValidators(ctx context.Context, timeout time.Duration) {
 	now := time.Now().UTC()
 
-	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) {
+	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
 		if cap.Status == nil {
 			return false, nil
 		}
@@ -451,7 +446,7 @@ func (k Keeper) CheckInactiveValidators(ctx context.Context, timeout time.Durati
 		if cap.Status.Online && !lastHeartbeat.IsZero() && now.Sub(lastHeartbeat) > timeout {
 			cap.Status.Online = false
 			cap.UpdatedAt = timestamppb.Now()
-			_ = k.HardwareCapabilities.Set(ctx, addr, cap)
+			_ = k.HardwareCapabilities.Set(ctx, addr, cap) //nolint:govet // cosmos SDK collections API requires value types for protobuf
 
 			k.logger.Info("Validator marked offline due to inactivity",
 				"validator", addr,
@@ -466,9 +461,8 @@ func (k Keeper) CheckInactiveValidators(ctx context.Context, timeout time.Durati
 func (k Keeper) GetAllHardwareCapabilities(ctx context.Context) []*types.HardwareCapability {
 	var capabilities []*types.HardwareCapability
 
-	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) {
-		capCopy := cap
-		capabilities = append(capabilities, &capCopy)
+	_ = k.HardwareCapabilities.Walk(ctx, nil, func(addr string, cap types.HardwareCapability) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
+		capabilities = append(capabilities, proto.Clone(&cap).(*types.HardwareCapability))
 		return false, nil
 	})
 
@@ -482,7 +476,7 @@ func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	if params == nil {
 		params = types.DefaultParams()
 	}
-	if err := k.Params.Set(ctx, *params); err != nil {
+	if err := k.Params.Set(ctx, *params); err != nil { //nolint:govet // cosmos SDK collections API requires value types for protobuf
 		return err
 	}
 
@@ -491,7 +485,7 @@ func (k Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 		if cap == nil {
 			return fmt.Errorf("nil hardware capability in genesis")
 		}
-		if err := k.HardwareCapabilities.Set(ctx, cap.ValidatorAddress, *cap); err != nil {
+		if err := k.HardwareCapabilities.Set(ctx, cap.ValidatorAddress, *cap); err != nil { //nolint:govet // cosmos SDK collections API requires value types for protobuf
 			return err
 		}
 	}
@@ -508,9 +502,9 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 
 	capabilities := k.GetAllHardwareCapabilities(ctx)
 
-	paramsCopy := params
+	paramsClone := proto.Clone(&params).(*types.Params) //nolint:govet // cosmos SDK collections Get returns protobuf value type
 	return &types.GenesisState{
-		Params:               &paramsCopy,
+		Params:               paramsClone,
 		HardwareCapabilities: capabilities,
 	}, nil
 }

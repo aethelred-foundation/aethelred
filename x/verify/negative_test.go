@@ -151,7 +151,7 @@ func TestNegative_Orchestrator_HybridMismatch_Sequential(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, config)
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	modelHash := randomHash()
 	inputHash := randomHash()
@@ -188,7 +188,7 @@ func TestNegative_Orchestrator_HybridMismatch_Parallel(t *testing.T) {
 	orchestrator := verify.NewVerificationOrchestrator(logger, config)
 
 	ctx := context.Background()
-	orchestrator.Initialize(ctx)
+	_ = orchestrator.Initialize(ctx)
 
 	modelHash := randomHash()
 	inputHash := randomHash()
@@ -514,7 +514,7 @@ func TestNegative_Orchestrator_MetricsTrackFailures(t *testing.T) {
 			InputData:        []byte("test"),
 			VerificationType: types.VerificationTypeTEE,
 		}
-		orchestrator.Verify(ctx, req)
+		_, _ = orchestrator.Verify(ctx, req)
 	}
 
 	metrics := orchestrator.GetMetrics()

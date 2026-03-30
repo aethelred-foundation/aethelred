@@ -238,53 +238,6 @@ func (g *StakingValidatorPubKeyGetter) GetValidatorPubKey(ctx sdk.Context, consA
 }
 
 // =============================================================================
-// Enhanced processEndBlockEvidence with Integrated Slashing
-// =============================================================================
-
-// processEndBlockEvidenceIntegrated processes evidence with full slashing integration
-func (app *AethelredApp) processEndBlockEvidenceIntegrated(ctx sdk.Context) {
-	// Use integrated processor if available
-	if app.integratedEvidenceProcessor != nil {
-		result := app.integratedEvidenceProcessor.ProcessEndBlockEvidence(ctx)
-		if result == nil {
-			return
-		}
-
-		if len(result.DowntimeSlashes) > 0 || len(result.DoubleSignSlashes) > 0 {
-			app.Logger().Warn("Integrated evidence processing applied slashing",
-				"height", result.BlockHeight,
-				"downtime_slashes", len(result.DowntimeSlashes),
-				"double_sign_slashes", len(result.DoubleSignSlashes),
-				"total_slashed", result.TotalSlashed().String(),
-			)
-
-			// Update metrics
-			if metrics := app.PouwKeeper.Metrics(); metrics != nil {
-				metrics.SlashingPenaltiesApplied.Add(int64(len(result.DowntimeSlashes)))
-				metrics.SlashingPenaltiesApplied.Add(int64(len(result.DoubleSignSlashes)))
-			}
-		}
-		return
-	}
-
-	// Fall back to basic evidence processor
-	if app.evidenceProcessor != nil {
-		result := app.evidenceProcessor.ProcessEndBlockEvidence(ctx)
-		if result == nil {
-			return
-		}
-
-		if len(result.DowntimePenalties) > 0 || len(result.EquivocationSlashes) > 0 {
-			app.Logger().Warn("Evidence processing applied penalties",
-				"height", result.BlockHeight,
-				"downtime_penalties", len(result.DowntimePenalties),
-				"equivocation_slashes", len(result.EquivocationSlashes),
-			)
-		}
-	}
-}
-
-// =============================================================================
 // Application Fields Extension
 // =============================================================================
 

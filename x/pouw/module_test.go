@@ -1,7 +1,6 @@
 package pouw_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -25,35 +24,8 @@ import (
 	"github.com/aethelred/aethelred/x/pouw/types"
 )
 
-// Mock helpers from keeper_test to avoid circular imports
-
-type mockBankKeeper struct{}
-
-func (m mockBankKeeper) SendCoinsFromModuleToAccount(_ context.Context, _ string, _ sdk.AccAddress, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) SendCoinsFromAccountToModule(_ context.Context, _ sdk.AccAddress, _ string, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) SendCoinsFromModuleToModule(_ context.Context, _, _ string, _ sdk.Coins) error {
-	return nil
-}
-func (m mockBankKeeper) BurnCoins(_ context.Context, _ string, _ sdk.Coins) error { return nil }
-func (m mockBankKeeper) SpendableCoins(_ context.Context, _ sdk.AccAddress) sdk.Coins {
-	return sdk.NewCoins()
-}
-
-type mockStakingKeeper struct{}
-
-func (m mockStakingKeeper) GetAllValidators(ctx context.Context) ([]interface{}, error) {
-	return nil, nil
-}
-func (m mockStakingKeeper) GetValidator(ctx context.Context, addr sdk.ValAddress) (interface{}, error) {
-	return nil, nil
-}
-
 // setupAppModule creates a test AppModule with in-memory keeper
-func setupAppModule(t *testing.T) (pouw.AppModule, sdk.Context, codec.Codec) {
+func setupAppModule(t *testing.T) (*pouw.AppModule, sdk.Context, codec.Codec) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
@@ -92,7 +64,7 @@ func setupAppModule(t *testing.T) (pouw.AppModule, sdk.Context, codec.Codec) {
 		Params:                collections.NewItem(sb, collections.NewPrefix(types.ParamsKey), "params", codec.CollValue[types.Params](cdc)),
 	}
 
-	appModule := pouw.NewAppModule(cdc, k)
+	appModule := pouw.NewAppModule(cdc, &k)
 
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))

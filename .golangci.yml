@@ -1,0 +1,8 @@
+issues:
+  exclude-rules:
+    # Proto-generated types embed protoimpl.MessageState which contains sync.Mutex.
+    # Passing proto messages by value is required by several APIs (collections.Set,
+    # index closure callbacks, etc.) and cannot be avoided without modifying
+    # generated code. This exclusion is standard across Cosmos SDK chains.
+    - text: "protoimpl\\.MessageState"
+      linter: govet

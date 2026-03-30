@@ -24,7 +24,7 @@ import (
 )
 
 // setupAppModule creates a test AppModule with in-memory keeper
-func setupAppModule(t *testing.T) (seal.AppModule, sdk.Context, codec.Codec) {
+func setupAppModule(t *testing.T) (*seal.AppModule, sdk.Context, codec.Codec) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
@@ -50,7 +50,7 @@ func setupAppModule(t *testing.T) (seal.AppModule, sdk.Context, codec.Codec) {
 	// Create keeper with store service
 	k := keeper.NewKeeper(cdc, storeService, "authority")
 
-	appModule := seal.NewAppModule(cdc, k)
+	appModule := seal.NewAppModule(cdc, &k)
 
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))

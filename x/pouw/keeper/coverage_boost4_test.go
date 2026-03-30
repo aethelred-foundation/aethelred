@@ -7,7 +7,6 @@ package keeper_test
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -1404,14 +1403,6 @@ func TestCB4_QueryServer_Params(t *testing.T) {
 // =============================================================================
 // Helpers
 // =============================================================================
-
-func mustMarshalJSON(v interface{}) []byte {
-	b, err := json.Marshal(v)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
 
 // newTestConsensusHandler is already defined in coverage_boost2_test.go
 // but we need a wrapper that uses a real keeper

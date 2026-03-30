@@ -187,8 +187,6 @@ type DCAPVerifier struct {
 
 	// Metrics
 	metrics *DCAPMetrics
-
-	mu sync.RWMutex
 }
 
 // DCAPConfig contains configuration for DCAP verification

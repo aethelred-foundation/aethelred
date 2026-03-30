@@ -7,8 +7,6 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	pouwtypes "github.com/aethelred/aethelred/x/pouw/types"
 )
 
 // NOTE: All vote extension types (VoteExtension, ComputeVerification,
@@ -634,97 +632,6 @@ func voteExtensionEvidencePower(votes []abci.ExtendedVoteInfo) (evidencePower in
 	return evidencePower, totalPower
 }
 
-// executeComputeVerification performs the actual verification of a compute job.
-// In production, this executes the model in a TEE and/or generates a zkML proof.
-func (app *AethelredApp) executeComputeVerification(ctx sdk.Context, job pouwtypes.ComputeJob) ComputeVerification {
-	startTime := time.Now()
-
-	verification := ComputeVerification{
-		JobID:           job.Id,
-		ModelHash:       job.ModelHash,
-		InputHash:       job.InputHash,
-		AttestationType: AttestationTypeTEE, // Default to TEE
-		Success:         false,
-	}
-
-	// Generate nonce for replay protection
-	nonce, err := generateNonce()
-	if err != nil {
-		verification.ErrorCode = ErrorCodeInternalError
-		verification.ErrorMessage = "failed to generate nonce"
-		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
-		return verification
-	}
-	verification.Nonce = nonce
-
-	// Check if the model is registered
-	if !app.PouwKeeper.IsModelRegistered(ctx, job.ModelHash) {
-		verification.ErrorCode = ErrorCodeModelNotFound
-		verification.ErrorMessage = "model not registered"
-		verification.AttestationType = AttestationTypeNone
-		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
-		return verification
-	}
-
-	// Execute in TEE client
-	teeResult, err := app.executeTEE(ctx, job, nonce)
-	if err != nil {
-		verification.ErrorCode = ErrorCodeTEEFailure
-		verification.ErrorMessage = err.Error()
-		verification.AttestationType = AttestationTypeNone
-		verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
-		return verification
-	}
-
-	verification.OutputHash = teeResult.OutputHash
-	verification.TEEAttestation = teeResult.Attestation
-	verification.Success = true
-	verification.ExecutionTimeMs = time.Since(startTime).Milliseconds()
-
-	// Include zkML proof if available
-	if teeResult.ZKProof != nil {
-		verification.ZKProof = teeResult.ZKProof
-		verification.AttestationType = AttestationTypeHybrid
-	}
-
-	app.Logger().Info("Compute verification completed",
-		"job_id", job.Id,
-		"success", verification.Success,
-		"execution_time_ms", verification.ExecutionTimeMs,
-		"attestation_type", verification.AttestationType,
-	)
-
-	return verification
-}
-
-// executeTEE executes a compute job in the TEE client.
-// This uses the TEEClient interface, which can be either a real Nitro Enclave
-// or a simulated client depending on configuration.
-func (app *AethelredApp) executeTEE(ctx sdk.Context, job pouwtypes.ComputeJob, nonce []byte) (*TEEExecutionResult, error) {
-	if app.teeClient == nil {
-		return nil, fmt.Errorf("TEE client not configured - set aethelred.tee.mode and endpoint")
-	}
-
-	request := &TEEExecutionRequest{
-		JobID:     job.Id,
-		ModelHash: job.ModelHash,
-		InputHash: job.InputHash,
-		Nonce:     nonce,
-		Timeout:   30 * time.Second,
-	}
-
-	result, err := app.teeClient.Execute(ctx, request)
-	if err != nil {
-		return nil, fmt.Errorf("TEE execution failed: %w", err)
-	}
-
-	if !result.Success {
-		return nil, fmt.Errorf("TEE execution failed: %s", result.ErrorMessage)
-	}
-
-	return result, nil
-}
-
 // validateInjectedTx validates an injected vote extension transaction
 func (app *AethelredApp) validateInjectedTx(ctx sdk.Context, tx *InjectedVoteExtensionTx) error {
 	if err := validateInjectedConsensusTxFormat(tx); err != nil {
@@ -796,9 +703,7 @@ func (app *AethelredApp) verifyAllowSimulated(ctx sdk.Context) bool {
 	}
 
 	defer func() {
-		if recover() != nil {
-			// Fail closed.
-		}
+		_ = recover() // Fail closed on panic.
 	}()
 
 	params, err := app.VerifyKeeper.GetParams(ctx)

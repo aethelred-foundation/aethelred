@@ -32,9 +32,6 @@ var (
 	// BN254 scalar field modulus (r) - same as curveOrder
 	bn254R = curveOrder
 
-	// Generator points for G1 and G2
-	g1GenX = big.NewInt(1)
-	g1GenY = big.NewInt(2)
 )
 
 // =============================================================================

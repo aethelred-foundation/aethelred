@@ -116,7 +116,7 @@ func (r *deterministicReader) Read(p []byte) (n int, err error) {
 	for i := range p {
 		h := sha256.New()
 		h.Write(r.seed)
-		binary.Write(h, binary.BigEndian, int64(r.counter))
+		_ = binary.Write(h, binary.BigEndian, int64(r.counter)) // writing to hash.Hash cannot fail
 		sum := h.Sum(nil)
 		p[i] = sum[0]
 		r.counter++
@@ -128,7 +128,7 @@ func (r *deterministicReader) Read(p []byte) (n int, err error) {
 func deriveWalletAddress(ecdsaPub ecdsa.PublicKey, dilithiumPub []byte) []byte {
 	h := sha256.New()
 	h.Write([]byte("aethelred-dual-wallet"))
-	h.Write(elliptic.Marshal(ecdsaPub.Curve, ecdsaPub.X, ecdsaPub.Y))
+	h.Write(elliptic.Marshal(ecdsaPub.Curve, ecdsaPub.X, ecdsaPub.Y)) //nolint:staticcheck // elliptic.Marshal is the only way to serialize ecdsa.PublicKey; ecdh migration requires API changes
 	h.Write(dilithiumPub)
 	return h.Sum(nil)[:20] // 20-byte address (160 bits)
 }
@@ -287,7 +287,7 @@ func (w *DualKeyWallet) GetAddressHex() string {
 
 // GetECDSAPublicKeyBytes returns the ECDSA public key bytes
 func (w *DualKeyWallet) GetECDSAPublicKeyBytes() []byte {
-	return elliptic.Marshal(w.ECDSAPublicKey.Curve, w.ECDSAPublicKey.X, w.ECDSAPublicKey.Y)
+	return elliptic.Marshal(w.ECDSAPublicKey.Curve, w.ECDSAPublicKey.X, w.ECDSAPublicKey.Y) //nolint:staticcheck // elliptic.Marshal is the only way to serialize ecdsa.PublicKey; ecdh migration requires API changes
 }
 
 // GetDilithiumPublicKeyBytes returns the Dilithium public key bytes
@@ -367,7 +367,7 @@ func VerifyTransactionSignature(
 	}
 
 	// Verify ECDSA with canonical S enforcement
-	if sig.ECDSASignature != nil && len(sig.ECDSASignature) == 64 {
+	if len(sig.ECDSASignature) == 64 {
 		r := new(big.Int).SetBytes(sig.ECDSASignature[:32])
 		s := new(big.Int).SetBytes(sig.ECDSASignature[32:])
 

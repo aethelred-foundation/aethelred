@@ -36,10 +36,6 @@ func newSDKCtx() sdk.Context {
 	return sdk.NewContext(nil, header, false, log.NewNopLogger())
 }
 
-func wrappedContext() context.Context {
-	return sdk.WrapSDKContext(newSDKCtx())
-}
-
 // =============================================================================
 // PROMETHEUS EXPORTER - 0% → 100%
 // =============================================================================
@@ -1407,9 +1403,3 @@ func TestCB_CanonicalizePlatform(t *testing.T) {
 	}
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

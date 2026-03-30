@@ -221,7 +221,7 @@ func (k Keeper) SlashValidator(
 	}
 
 	recordKey := fmt.Sprintf("%s:%d", validatorAddr, sdkCtx.BlockHeight())
-	if err := k.SlashingRecords.Set(ctx, recordKey, *record); err != nil {
+	if err := k.SlashingRecords.Set(ctx, recordKey, *record); err != nil { //nolint:govet // cosmos SDK collections API requires value types for protobuf
 		return fmt.Errorf("failed to record slashing: %w", err)
 	}
 
@@ -396,10 +396,10 @@ func (k Keeper) DetectDoubleSign(
 func (k Keeper) GetSlashingRecords(ctx context.Context, validatorAddr string) []*types.SlashingRecord {
 	var records []*types.SlashingRecord
 
-	_ = k.SlashingRecords.Walk(ctx, nil, func(key string, record types.SlashingRecord) (bool, error) {
+	_ = k.SlashingRecords.Walk(ctx, nil, func(key string, record types.SlashingRecord) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
 		if record.ValidatorAddress == validatorAddr {
-			recordCopy := record
-			records = append(records, &recordCopy)
+			r := record //nolint:govet // safe shallow copy for taking address within Walk callback
+			records = append(records, &r)
 		}
 		return false, nil
 	})
@@ -411,9 +411,9 @@ func (k Keeper) GetSlashingRecords(ctx context.Context, validatorAddr string) []
 func (k Keeper) GetRecentSlashingRecords(ctx context.Context, limit int) []*types.SlashingRecord {
 	var records []*types.SlashingRecord
 
-	_ = k.SlashingRecords.Walk(ctx, nil, func(key string, record types.SlashingRecord) (bool, error) {
-		recordCopy := record
-		records = append(records, &recordCopy)
+	_ = k.SlashingRecords.Walk(ctx, nil, func(key string, record types.SlashingRecord) (bool, error) { //nolint:govet // cosmos SDK collections Walk requires value receiver for protobuf types
+		r := record //nolint:govet // safe shallow copy for taking address within Walk callback
+		records = append(records, &r)
 		return len(records) >= limit, nil
 	})
 

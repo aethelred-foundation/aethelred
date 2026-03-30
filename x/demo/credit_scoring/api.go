@@ -87,7 +87,7 @@ func (api *DemoAPI) Handler() http.Handler {
 func jsonResponse(w http.ResponseWriter, data interface{}, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data) // best-effort HTTP response; connection errors are unrecoverable here
 }
 
 func errorResponse(w http.ResponseWriter, message string, status int) {

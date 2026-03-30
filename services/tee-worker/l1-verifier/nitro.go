@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -28,9 +27,6 @@ type NitroEnclaveService struct {
 
 	// Connection to the enclave
 	vsockConn net.Conn
-
-	// Root certificate for attestation verification
-	rootCert *x509.Certificate
 
 	// Enclave state
 	enclaveMutex sync.RWMutex

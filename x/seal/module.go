@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
+	_ module.AppModule      = (*AppModule)(nil)
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -77,24 +77,24 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper keeper.Keeper
+	keeper *keeper.Keeper
 }
 
 // NewAppModule creates a new AppModule object.
-func NewAppModule(cdc codec.Codec, keeper keeper.Keeper) AppModule {
-	return AppModule{
+func NewAppModule(cdc codec.Codec, k *keeper.Keeper) *AppModule {
+	return &AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		keeper:         keeper,
+		keeper:         k,
 	}
 }
 
 // Name returns the module's name.
-func (am AppModule) Name() string {
+func (am *AppModule) Name() string {
 	return types.ModuleName
 }
 
 // RegisterServices registers module services.
-func (am AppModule) RegisterServices(cfg module.Configurator) {
+func (am *AppModule) RegisterServices(cfg module.Configurator) {
 	// Register msg server
 	// types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
 
@@ -103,10 +103,10 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 }
 
 // RegisterInvariants registers the module's invariants.
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (am *AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // InitGenesis performs the module's genesis initialization.
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
+func (am *AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	cdc.MustUnmarshalJSON(gs, &genesisState)
 
@@ -118,7 +118,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 }
 
 // ExportGenesis returns the module's exported genesis state.
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
+func (am *AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
 	gs, err := am.keeper.ExportGenesis(ctx)
 	if err != nil {
 		panic(err)
@@ -127,23 +127,23 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 1 }
+func (am *AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock executes all ABCI BeginBlock logic.
-func (am AppModule) BeginBlock(_ context.Context) error {
+func (am *AppModule) BeginBlock(_ context.Context) error {
 	return nil
 }
 
 // EndBlock executes all ABCI EndBlock logic.
-func (am AppModule) EndBlock(_ context.Context) error {
+func (am *AppModule) EndBlock(_ context.Context) error {
 	return nil
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
-func (am AppModule) IsOnePerModuleType() {}
+func (am *AppModule) IsOnePerModuleType() {}
 
 // IsAppModule implements the appmodule.AppModule interface.
-func (am AppModule) IsAppModule() {}
+func (am *AppModule) IsAppModule() {}
 
 // GetTxCmd returns the transaction commands for the module
 func GetTxCmd() *cobra.Command {

@@ -344,7 +344,6 @@ type HSMSigner struct {
 	// State
 	mu        sync.RWMutex
 	connected bool
-	lastError error
 
 	// Audit log
 	auditLog *AuditLogger
@@ -767,10 +766,8 @@ func (h *HSMSigner) GetAuditLog() []AuditEntry {
 }
 
 // GetMetrics returns HSM metrics
-func (h *HSMSigner) GetMetrics() HSMMetrics {
-	h.metrics.mu.Lock()
-	defer h.metrics.mu.Unlock()
-	return *h.metrics
+func (h *HSMSigner) GetMetrics() *HSMMetrics {
+	return h.metrics
 }
 
 // Close gracefully closes the HSM connection

@@ -8,9 +8,6 @@ package app
 // It provides the same symbols as allow_simulated_prod.go but
 // with development-mode defaults.
 
-// productionMode is false in dev/test builds.
-var productionMode bool
-
 // IsProductionBuild returns false in dev/test builds.
 func IsProductionBuild() bool {
 	return false

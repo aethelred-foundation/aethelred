@@ -447,6 +447,8 @@ const REPORT_CSS: &str = r#"
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::BenchmarkResult;
+    use std::time::Duration;
 
     #[test]
     fn test_html_generation() {

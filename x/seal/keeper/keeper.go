@@ -45,7 +45,7 @@ type Keeper struct {
 
 	// In-memory storage for testing
 	memSeals    map[string]*types.DigitalSeal
-	memMutex    sync.RWMutex
+	memMutex    *sync.RWMutex
 	useMemStore bool
 }
 
@@ -62,6 +62,7 @@ func NewKeeper(
 			authority:   authority,
 			logger:      log.NewNopLogger(),
 			memSeals:    make(map[string]*types.DigitalSeal),
+			memMutex:    &sync.RWMutex{},
 			useMemStore: true,
 		}
 	}
@@ -96,6 +97,7 @@ func NewKeeper(
 		authority:    authority,
 		logger:       log.NewNopLogger(),
 		memSeals:     make(map[string]*types.DigitalSeal),
+		memMutex:     &sync.RWMutex{},
 		useMemStore:  false,
 		Seals: collections.NewIndexedMap(
 			sb,

@@ -515,6 +515,3 @@ func (app *AethelredApp) InitRateLimiter() {
 	)
 }
 
-// rateLimiter is the application's rate limiter instance
-// This will be added to the AethelredApp struct
-var globalRateLimiter *RateLimiter
