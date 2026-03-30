@@ -1,0 +1,16 @@
+application:
+  runtime: nextjs
+  image:
+    repository: ghcr.io/aethelred/nextjs-api
+    tag: latest
+  port: 3000
+  livenessProbe:
+    path: /api/health
+  readinessProbe:
+    path: /api/health
+
+service:
+  port: 80
+
+verification:
+  mode: seal-envelope

@@ -133,7 +133,7 @@ zkmlModels:
   existingClaim: zkml-models-pvc
 
 network:
-  chainID: aethelred-mainnet-1
+  chainID: aethelred-testnet-1
   persistentPeers: ""
 
 secrets:
@@ -157,22 +157,6 @@ networkPolicy:
   enabled: true
   allowIngressCIDRs:
     - 10.0.0.0/8
-
-# ---------------------------------------------------------------------------
-# Alertmanager Notification Channels
-# ---------------------------------------------------------------------------
-# Provide webhook URLs / API keys for alert routing. These values are injected
-# into the Alertmanager config as environment variables on the alertmanager pod.
-# Alternatively, reference an existing K8s secret with alertmanager.existingSecret.
-alertmanager:
-  enabled: false
-  existingSecret: ""           # Set to e.g. "alertmanager-notify" to use a pre-created secret
-  notifications:
-    pagerdutyServiceKey: ""    # PagerDuty Events API v2 integration key (critical alerts)
-    slackWebhookUrl: ""        # Slack incoming-webhook URL (warning alerts)
-    opsgenieApiKey: ""         # OpsGenie API key (optional, critical alerts)
-    defaultWebhookUrl: ""      # Catch-all webhook for remaining alerts
-    slackChannel: "#aethelred-alerts"
 
 serviceMonitor:
   enabled: false
@@ -210,7 +194,7 @@ configFiles:
     [telemetry]
     enabled = true
     prometheus-retention-time = 60
-    global-labels = [["chain_id", "aethelred-mainnet-1"]]
+    global-labels = [["chain_id", "aethelred-testnet-1"]]
 
     [api]
     enable = true

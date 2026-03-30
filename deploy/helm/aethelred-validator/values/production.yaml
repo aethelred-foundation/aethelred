@@ -1,0 +1,27 @@
+replicaCount: 5
+serviceAccount:
+  name: aethelred-validator
+network:
+  chainID: aethelred-mainnet-1
+validator:
+  image:
+    tag: stable
+  env:
+    logLevel: info
+serviceMonitor:
+  enabled: true
+networkPolicy:
+  enabled: true
+podDisruptionBudget:
+  minAvailable: 3
+secretProviderClass:
+  enabled: true
+  provider: aws
+  name: aethelred-validator-spc
+  parameters:
+    region: me-central-1
+    objects: |
+      - objectName: /aethelred/mainnet/validator
+        objectType: secretsmanager
+      - objectName: /aethelred/mainnet/tee
+        objectType: secretsmanager
