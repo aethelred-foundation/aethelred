@@ -21,7 +21,7 @@ func enterpriseSDKContext() context.Context {
 		Height:  200,
 	}
 	sdkCtx := sdk.NewContext(nil, header, false, log.NewNopLogger())
-	return sdk.WrapSDKContext(sdkCtx)
+	return sdkCtx
 }
 
 // newHybridSealForTest creates a seal with both TEE attestation and zkML proof

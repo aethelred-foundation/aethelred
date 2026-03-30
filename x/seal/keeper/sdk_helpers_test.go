@@ -44,19 +44,19 @@ func TestComputeHashes(t *testing.T) {
 func TestVerifyFromBase64Errors(t *testing.T) {
 	helper := &SDKHelper{}
 
-	if _, err := helper.VerifyFromBase64(nil, "***"); err == nil {
+	if _, err := helper.VerifyFromBase64(context.TODO(), "***"); err == nil {
 		t.Fatalf("expected error for invalid base64")
 	}
 
 	invalidJSON := base64.StdEncoding.EncodeToString([]byte("not-json"))
-	if _, err := helper.VerifyFromBase64(nil, invalidJSON); err == nil {
+	if _, err := helper.VerifyFromBase64(context.TODO(), invalidJSON); err == nil {
 		t.Fatalf("expected error for invalid json")
 	}
 
 	exported := ExportedSeal{Seal: map[string]interface{}{"foo": "bar"}}
 	payload, _ := json.Marshal(exported)
 	encoded := base64.StdEncoding.EncodeToString(payload)
-	if _, err := helper.VerifyFromBase64(nil, encoded); err == nil {
+	if _, err := helper.VerifyFromBase64(context.TODO(), encoded); err == nil {
 		t.Fatalf("expected error for missing seal id")
 	}
 }

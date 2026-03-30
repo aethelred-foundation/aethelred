@@ -21,7 +21,7 @@ func newSDKContext() context.Context {
 		Time:    time.Now().UTC(),
 	}
 	sdkCtx := sdk.NewContext(nil, header, false, log.NewNopLogger())
-	return sdk.WrapSDKContext(sdkCtx)
+	return sdkCtx
 }
 
 func TestSealExporterExportJSON(t *testing.T) {

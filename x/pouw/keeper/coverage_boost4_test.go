@@ -1347,7 +1347,7 @@ func TestCB4_ProductionVerificationMode_WithKeeper(t *testing.T) {
 
 func TestCB4_Scheduler_EnqueueAndProcess(t *testing.T) {
 	sched := keeper.NewJobScheduler(log.NewNopLogger(), nil, keeper.DefaultSchedulerConfig())
-	ctx := sdk.WrapSDKContext(cb3SDKCtx())
+	ctx := cb3SDKCtx()
 
 	// Enqueue multiple
 	for i := 0; i < 5; i++ {

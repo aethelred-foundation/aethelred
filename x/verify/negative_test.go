@@ -501,7 +501,7 @@ func TestPolicy_DefaultParamsAreProductionSafe(t *testing.T) {
 func TestNegative_Orchestrator_MetricsTrackFailures(t *testing.T) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	ctx := context.Background()
 
