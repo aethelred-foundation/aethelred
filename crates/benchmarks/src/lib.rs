@@ -762,7 +762,11 @@ mod tests {
 
         let result = BenchmarkResult::new("test", samples);
 
-        assert_eq!(result.p50().as_millis(), 50);
+        // Percentile uses nearest-rank with rounding: index = round(p/100 * 99)
+        // p50: round(0.50*99)=50 → samples[50]=51ms
+        // p95: round(0.95*99)=94 → samples[94]=95ms
+        // p99: round(0.99*99)=98 → samples[98]=99ms
+        assert_eq!(result.p50().as_millis(), 51);
         assert_eq!(result.p95().as_millis(), 95);
         assert_eq!(result.p99().as_millis(), 99);
     }
