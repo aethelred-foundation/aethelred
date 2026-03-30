@@ -632,7 +632,7 @@ func testModelListing(t *testing.T) {
 			Owner:      "cosmos1test",
 			ModelType:  "test",
 		}
-		registry.RegisterModel(ctx, req)
+		_, _ = registry.RegisterModel(ctx, req)
 	}
 
 	models := registry.ListModels()
@@ -881,7 +881,7 @@ func createSimulatedONNXModelWithSeed(seed int) []byte {
 func BenchmarkTEEVerification(b *testing.B) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testOrchestratorConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	ctx := context.Background()
 
@@ -894,14 +894,14 @@ func BenchmarkTEEVerification(b *testing.B) {
 			InputData:        []byte("test"),
 			VerificationType: types.VerificationTypeTEE,
 		}
-		orchestrator.Verify(ctx, req)
+		_, _ = orchestrator.Verify(ctx, req)
 	}
 }
 
 func BenchmarkZKMLVerification(b *testing.B) {
 	logger := log.NewNopLogger()
 	orchestrator := verify.NewVerificationOrchestrator(logger, testOrchestratorConfig())
-	orchestrator.Initialize(context.Background())
+	_ = orchestrator.Initialize(context.Background())
 
 	ctx := context.Background()
 
@@ -916,6 +916,6 @@ func BenchmarkZKMLVerification(b *testing.B) {
 			CircuitHash:        randomHash(),
 			VerifyingKeyHash:   randomHash(),
 		}
-		orchestrator.Verify(ctx, req)
+		_, _ = orchestrator.Verify(ctx, req)
 	}
 }
