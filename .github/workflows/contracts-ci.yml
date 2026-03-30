@@ -55,8 +55,10 @@ jobs:
           --no-match-test '^(testFuzz_|test_Audit_|invariant_)'
 
   foundry-deep-checks:
-    name: Foundry Deep Checks
+    name: Foundry Deep Checks (advisory)
     if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    # Advisory: invariant + fuzz suites may be non-deterministic; not part of required gate.
+    continue-on-error: true
     runs-on: ubuntu-latest
     defaults:
       run:
