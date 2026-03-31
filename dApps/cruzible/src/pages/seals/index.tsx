@@ -2,12 +2,21 @@
  * Aethelred Dashboard - Seals Explorer Page
  */
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, RefreshCw, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Shield,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
+import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.org';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.mainnet.aethelred.org";
 
 interface Seal {
   id: string;
@@ -22,32 +31,53 @@ interface Seal {
   expiresAt: string | null;
 }
 
-async function fetchSeals(page: number, status?: string): Promise<{ seals: Seal[]; total: number }> {
+async function fetchSeals(
+  page: number,
+  status?: string,
+): Promise<{ seals: Seal[]; total: number }> {
   const params = new URLSearchParams({
-    limit: '20',
+    limit: "20",
     offset: String((page - 1) * 20),
-    sort: 'created_at:desc',
+    sort: "created_at:desc",
   });
-  if (status) params.set('status', status);
+  if (status) params.set("status", status);
 
   const response = await fetch(`${API_URL}/v1/seals?${params}`);
-  if (!response.ok) throw new Error('Failed to fetch seals');
+  if (!response.ok) throw new Error("Failed to fetch seals");
   return response.json();
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
-    active: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3" /> },
-    revoked: { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3" /> },
-    expired: { color: 'bg-gray-100 text-gray-800', icon: <Clock className="w-3 h-3" /> },
-    superseded: { color: 'bg-yellow-100 text-yellow-800', icon: <Shield className="w-3 h-3" /> },
+  const statusConfig: Record<string, { color: string; icon: React.ReactNode }> =
+    {
+      active: {
+        color: "bg-green-100 text-green-800",
+        icon: <CheckCircle className="w-3 h-3" />,
+      },
+      revoked: {
+        color: "bg-red-100 text-red-800",
+        icon: <XCircle className="w-3 h-3" />,
+      },
+      expired: {
+        color: "bg-gray-100 text-gray-800",
+        icon: <Clock className="w-3 h-3" />,
+      },
+      superseded: {
+        color: "bg-yellow-100 text-yellow-800",
+        icon: <Shield className="w-3 h-3" />,
+      },
+    };
+
+  const normalizedStatus = status.toLowerCase().replace("seal_status_", "");
+  const config = statusConfig[normalizedStatus] || {
+    color: "bg-gray-100 text-gray-800",
+    icon: null,
   };
 
-  const normalizedStatus = status.toLowerCase().replace('seal_status_', '');
-  const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800', icon: null };
-
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config.color}`}
+    >
       {config.icon}
       {normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)}
     </span>
@@ -56,16 +86,16 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function SealsPage() {
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['seals', page, statusFilter],
+    queryKey: ["seals", page, statusFilter],
     queryFn: () => fetchSeals(page, statusFilter),
   });
 
   const truncateHash = (hash: string) => {
-    if (!hash || hash.length <= 16) return hash || '-';
+    if (!hash || hash.length <= 16) return hash || "-";
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
   };
 
@@ -73,11 +103,13 @@ export default function SealsPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  const filteredSeals = data?.seals?.filter(seal =>
-    !searchQuery ||
-    seal.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    seal.jobId.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredSeals =
+    data?.seals?.filter(
+      (seal) =>
+        !searchQuery ||
+        seal.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        seal.jobId.toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -89,7 +121,9 @@ export default function SealsPage() {
               <Link href="/" className="text-indigo-600 hover:text-indigo-700">
                 ← Back
               </Link>
-              <h1 className="text-xl font-bold text-gray-900">Digital Seals Explorer</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Digital Seals Explorer
+              </h1>
             </div>
             <button
               onClick={() => refetch()}
@@ -163,7 +197,9 @@ export default function SealsPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Job:</span>
-                    <span className="font-mono text-gray-700">{truncateHash(seal.jobId)}</span>
+                    <span className="font-mono text-gray-700">
+                      {truncateHash(seal.jobId)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Validators:</span>
@@ -171,13 +207,17 @@ export default function SealsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Created:</span>
-                    <span className="text-gray-700">{new Date(seal.createdAt).toLocaleDateString()}</span>
+                    <span className="text-gray-700">
+                      {new Date(seal.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="text-xs text-gray-500">
-                    <div className="mb-1">Model: {truncateHash(seal.modelCommitment)}</div>
+                    <div className="mb-1">
+                      Model: {truncateHash(seal.modelCommitment)}
+                    </div>
                     <div>Output: {truncateHash(seal.outputCommitment)}</div>
                   </div>
                 </div>
@@ -197,7 +237,7 @@ export default function SealsPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
             >
@@ -205,7 +245,7 @@ export default function SealsPage() {
             </button>
             <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
             <button
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
               disabled={!data?.seals || data.seals.length < 20}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
             >

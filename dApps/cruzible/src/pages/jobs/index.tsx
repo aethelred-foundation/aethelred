@@ -2,12 +2,21 @@
  * Aethelred Dashboard - Jobs Explorer Page
  */
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, RefreshCw, Cpu, Clock, CheckCircle, XCircle } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  Cpu,
+  Clock,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.org';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.mainnet.aethelred.org";
 
 interface Job {
   id: string;
@@ -23,32 +32,53 @@ interface Job {
   validatorAddress: string | null;
 }
 
-async function fetchJobs(page: number, status?: string): Promise<{ jobs: Job[]; total: number }> {
+async function fetchJobs(
+  page: number,
+  status?: string,
+): Promise<{ jobs: Job[]; total: number }> {
   const params = new URLSearchParams({
-    limit: '20',
+    limit: "20",
     offset: String((page - 1) * 20),
-    sort: 'created_at:desc',
+    sort: "created_at:desc",
   });
-  if (status) params.set('status', status);
+  if (status) params.set("status", status);
 
   const response = await fetch(`${API_URL}/v1/jobs?${params}`);
-  if (!response.ok) throw new Error('Failed to fetch jobs');
+  if (!response.ok) throw new Error("Failed to fetch jobs");
   return response.json();
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
-    completed: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3" /> },
-    pending: { color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3 h-3" /> },
-    computing: { color: 'bg-blue-100 text-blue-800', icon: <Cpu className="w-3 h-3" /> },
-    failed: { color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3" /> },
+  const statusConfig: Record<string, { color: string; icon: React.ReactNode }> =
+    {
+      completed: {
+        color: "bg-green-100 text-green-800",
+        icon: <CheckCircle className="w-3 h-3" />,
+      },
+      pending: {
+        color: "bg-yellow-100 text-yellow-800",
+        icon: <Clock className="w-3 h-3" />,
+      },
+      computing: {
+        color: "bg-blue-100 text-blue-800",
+        icon: <Cpu className="w-3 h-3" />,
+      },
+      failed: {
+        color: "bg-red-100 text-red-800",
+        icon: <XCircle className="w-3 h-3" />,
+      },
+    };
+
+  const normalizedStatus = status.toLowerCase().replace("job_status_", "");
+  const config = statusConfig[normalizedStatus] || {
+    color: "bg-gray-100 text-gray-800",
+    icon: null,
   };
 
-  const normalizedStatus = status.toLowerCase().replace('job_status_', '');
-  const config = statusConfig[normalizedStatus] || { color: 'bg-gray-100 text-gray-800', icon: null };
-
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config.color}`}
+    >
       {config.icon}
       {normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)}
     </span>
@@ -57,16 +87,16 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function JobsPage() {
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['jobs', page, statusFilter],
+    queryKey: ["jobs", page, statusFilter],
     queryFn: () => fetchJobs(page, statusFilter),
   });
 
   const truncateHash = (hash: string) => {
-    if (!hash || hash.length <= 16) return hash || '-';
+    if (!hash || hash.length <= 16) return hash || "-";
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
   };
 
@@ -74,11 +104,13 @@ export default function JobsPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  const filteredJobs = data?.jobs?.filter(job =>
-    !searchQuery ||
-    job.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.creator.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredJobs =
+    data?.jobs?.filter(
+      (job) =>
+        !searchQuery ||
+        job.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.creator.toLowerCase().includes(searchQuery.toLowerCase()),
+    ) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,7 +200,10 @@ export default function JobsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
                       Loading jobs...
                     </td>
                   </tr>
@@ -187,7 +222,7 @@ export default function JobsPage() {
                         <StatusBadge status={job.status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {job.proofType.replace('PROOF_TYPE_', '')}
+                        {job.proofType.replace("PROOF_TYPE_", "")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link
@@ -207,7 +242,10 @@ export default function JobsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
                       No jobs found
                     </td>
                   </tr>
@@ -223,15 +261,17 @@ export default function JobsPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
               >
                 Previous
               </button>
-              <span className="px-3 py-1 text-sm text-gray-600">Page {page}</span>
+              <span className="px-3 py-1 text-sm text-gray-600">
+                Page {page}
+              </span>
               <button
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p) => p + 1)}
                 disabled={!data?.jobs || data.jobs.length < 20}
                 className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
               >

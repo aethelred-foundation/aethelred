@@ -2,12 +2,21 @@
  * Aethelred Dashboard - Models Registry Page
  */
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, RefreshCw, Box, CheckCircle, Clock, Activity, FileCode } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  RefreshCw,
+  Box,
+  CheckCircle,
+  Clock,
+  Activity,
+  FileCode,
+} from "lucide-react";
+import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.org';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.mainnet.aethelred.org";
 
 interface Model {
   modelHash: string;
@@ -26,23 +35,24 @@ interface Model {
 
 async function fetchModels(): Promise<{ models: Model[]; total: number }> {
   const response = await fetch(`${API_URL}/v1/models?limit=50`);
-  if (!response.ok) throw new Error('Failed to fetch models');
+  if (!response.ok) throw new Error("Failed to fetch models");
   return response.json();
 }
 
 function CategoryBadge({ category }: { category: string }) {
   const categoryColors: Record<string, string> = {
-    'MEDICAL': 'bg-red-100 text-red-800',
-    'SCIENTIFIC': 'bg-blue-100 text-blue-800',
-    'FINANCIAL': 'bg-green-100 text-green-800',
-    'LEGAL': 'bg-purple-100 text-purple-800',
-    'EDUCATIONAL': 'bg-yellow-100 text-yellow-800',
-    'ENVIRONMENTAL': 'bg-teal-100 text-teal-800',
-    'GENERAL': 'bg-gray-100 text-gray-800',
+    MEDICAL: "bg-red-100 text-red-800",
+    SCIENTIFIC: "bg-blue-100 text-blue-800",
+    FINANCIAL: "bg-green-100 text-green-800",
+    LEGAL: "bg-purple-100 text-purple-800",
+    EDUCATIONAL: "bg-yellow-100 text-yellow-800",
+    ENVIRONMENTAL: "bg-teal-100 text-teal-800",
+    GENERAL: "bg-gray-100 text-gray-800",
   };
 
-  const normalizedCategory = category.replace('UTILITY_CATEGORY_', '');
-  const color = categoryColors[normalizedCategory] || 'bg-gray-100 text-gray-800';
+  const normalizedCategory = category.replace("UTILITY_CATEGORY_", "");
+  const color =
+    categoryColors[normalizedCategory] || "bg-gray-100 text-gray-800";
 
   return (
     <span className={`px-2 py-1 text-xs font-medium rounded-full ${color}`}>
@@ -52,17 +62,17 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function ModelsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['models'],
+    queryKey: ["models"],
     queryFn: fetchModels,
     refetchInterval: 60000,
   });
 
   const truncateHash = (hash: string) => {
-    if (!hash || hash.length <= 16) return hash || '-';
+    if (!hash || hash.length <= 16) return hash || "-";
     return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
   };
 
@@ -70,14 +80,24 @@ export default function ModelsPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const categories = ['MEDICAL', 'SCIENTIFIC', 'FINANCIAL', 'LEGAL', 'EDUCATIONAL', 'ENVIRONMENTAL', 'GENERAL'];
+  const categories = [
+    "MEDICAL",
+    "SCIENTIFIC",
+    "FINANCIAL",
+    "LEGAL",
+    "EDUCATIONAL",
+    "ENVIRONMENTAL",
+    "GENERAL",
+  ];
 
-  const filteredModels = data?.models?.filter(model =>
-    (!searchQuery ||
-      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      model.modelHash.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (!categoryFilter || model.category.includes(categoryFilter))
-  ) || [];
+  const filteredModels =
+    data?.models?.filter(
+      (model) =>
+        (!searchQuery ||
+          model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          model.modelHash.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        (!categoryFilter || model.category.includes(categoryFilter)),
+    ) || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -89,7 +109,9 @@ export default function ModelsPage() {
               <Link href="/" className="text-indigo-600 hover:text-indigo-700">
                 ← Back
               </Link>
-              <h1 className="text-xl font-bold text-gray-900">Model Registry</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Model Registry
+              </h1>
             </div>
             <button
               onClick={() => refetch()}
@@ -120,7 +142,7 @@ export default function ModelsPage() {
               <div>
                 <p className="text-sm text-gray-500">Verified Models</p>
                 <p className="text-2xl font-bold">
-                  {data?.models?.filter(m => m.verified).length || 0}
+                  {data?.models?.filter((m) => m.verified).length || 0}
                 </p>
               </div>
             </div>
@@ -131,7 +153,9 @@ export default function ModelsPage() {
               <div>
                 <p className="text-sm text-gray-500">Total Jobs Run</p>
                 <p className="text-2xl font-bold">
-                  {data?.models?.reduce((sum, m) => sum + m.totalJobs, 0).toLocaleString() || 0}
+                  {data?.models
+                    ?.reduce((sum, m) => sum + m.totalJobs, 0)
+                    .toLocaleString() || 0}
                 </p>
               </div>
             </div>
@@ -142,7 +166,7 @@ export default function ModelsPage() {
               <div>
                 <p className="text-sm text-gray-500">Architectures</p>
                 <p className="text-2xl font-bold">
-                  {new Set(data?.models?.map(m => m.architecture) || []).size}
+                  {new Set(data?.models?.map((m) => m.architecture) || []).size}
                 </p>
               </div>
             </div>
@@ -173,7 +197,7 @@ export default function ModelsPage() {
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">All Categories</option>
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat.charAt(0) + cat.slice(1).toLowerCase()}
                   </option>
@@ -206,8 +230,12 @@ export default function ModelsPage() {
                   <CategoryBadge category={model.category} />
                 </div>
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{model.name}</h3>
-                <p className="text-xs text-gray-500 font-mono mb-3">{truncateHash(model.modelHash)}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {model.name}
+                </h3>
+                <p className="text-xs text-gray-500 font-mono mb-3">
+                  {truncateHash(model.modelHash)}
+                </p>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -220,7 +248,9 @@ export default function ModelsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Total Jobs:</span>
-                    <span className="text-gray-700 font-semibold">{model.totalJobs.toLocaleString()}</span>
+                    <span className="text-gray-700 font-semibold">
+                      {model.totalJobs.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 

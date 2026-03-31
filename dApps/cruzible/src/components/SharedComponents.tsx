@@ -11,10 +11,10 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { WalletButton } from '@/components/WalletButton';
+} from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { WalletButton } from "@/components/WalletButton";
 import {
   Search,
   X,
@@ -32,15 +32,15 @@ import {
   ArrowRight,
   Github,
   Twitter,
-} from 'lucide-react';
-import { useApp } from '@/contexts/AppContext';
+} from "lucide-react";
+import { useApp } from "@/contexts/AppContext";
 
 // ============================================================================
 // Utility
 // ============================================================================
 
 function formatNumber(n: number): string {
-  return n.toLocaleString('en-US');
+  return n.toLocaleString("en-US");
 }
 
 function truncateAddress(addr: string, start = 10, end = 4): string {
@@ -53,31 +53,36 @@ function truncateAddress(addr: string, start = 10, end = 4): string {
 // ============================================================================
 
 export interface LiveDotProps {
-  color?: 'green' | 'red' | 'yellow';
-  size?: 'sm' | 'md';
+  color?: "green" | "red" | "yellow";
+  size?: "sm" | "md";
 }
 
-export function LiveDot({ color = 'green', size = 'sm' }: LiveDotProps) {
+export function LiveDot({ color = "green", size = "sm" }: LiveDotProps) {
   const colorMap = {
-    green: 'bg-emerald-500',
-    red: 'bg-red-500',
-    yellow: 'bg-yellow-500',
+    green: "bg-emerald-500",
+    red: "bg-red-500",
+    yellow: "bg-yellow-500",
   };
   const ringMap = {
-    green: 'bg-emerald-500/40',
-    red: 'bg-red-500/40',
-    yellow: 'bg-yellow-500/40',
+    green: "bg-emerald-500/40",
+    red: "bg-red-500/40",
+    yellow: "bg-yellow-500/40",
   };
-  const px = size === 'sm' ? 'h-2 w-2' : 'h-3 w-3';
-  const ringPx = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+  const px = size === "sm" ? "h-2 w-2" : "h-3 w-3";
+  const ringPx = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
   return (
-    <span aria-hidden="true" className="relative inline-flex items-center justify-center">
+    <span
+      aria-hidden="true"
+      className="relative inline-flex items-center justify-center"
+    >
       <span
         className={`absolute inline-flex rounded-full ${ringMap[color]} ${ringPx}`}
-        style={{ animation: 'live-dot 2s ease-in-out infinite' }}
+        style={{ animation: "live-dot 2s ease-in-out infinite" }}
       />
-      <span className={`relative inline-flex rounded-full ${colorMap[color]} ${px}`} />
+      <span
+        className={`relative inline-flex rounded-full ${colorMap[color]} ${px}`}
+      />
     </span>
   );
 }
@@ -87,18 +92,18 @@ export function LiveDot({ color = 'green', size = 'sm' }: LiveDotProps) {
 // ============================================================================
 
 export interface BadgeProps {
-  variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'brand';
+  variant: "success" | "warning" | "error" | "info" | "neutral" | "brand";
   children: React.ReactNode;
 }
 
 export function Badge({ variant, children }: BadgeProps) {
   const styles: Record<string, string> = {
-    success: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-    warning: 'bg-yellow-500/10 text-yellow-400 ring-yellow-500/20',
-    error: 'bg-red-500/10 text-red-400 ring-red-500/20',
-    info: 'bg-blue-500/10 text-blue-400 ring-blue-500/20',
-    neutral: 'bg-slate-500/10 text-slate-400 ring-slate-500/20',
-    brand: 'bg-brand-600/10 text-brand-400 ring-brand-600/20',
+    success: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
+    warning: "bg-yellow-500/10 text-yellow-400 ring-yellow-500/20",
+    error: "bg-red-500/10 text-red-400 ring-red-500/20",
+    info: "bg-blue-500/10 text-blue-400 ring-blue-500/20",
+    neutral: "bg-slate-500/10 text-slate-400 ring-slate-500/20",
+    brand: "bg-brand-600/10 text-brand-400 ring-brand-600/20",
   };
 
   return (
@@ -125,7 +130,7 @@ export function ProgressRing({
   percentage,
   size = 48,
   strokeWidth = 4,
-  color = '#dc2626',
+  color = "#dc2626",
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -159,7 +164,7 @@ export function ProgressRing({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+        style={{ transition: "stroke-dashoffset 0.8s ease-in-out" }}
       />
     </svg>
   );
@@ -179,8 +184,8 @@ export interface AnimatedNumberProps {
 
 export function AnimatedNumber({
   value,
-  prefix = '',
-  suffix = '',
+  prefix = "",
+  suffix = "",
   decimals = 0,
   duration = 1000,
 }: AnimatedNumberProps) {
@@ -217,13 +222,16 @@ export function AnimatedNumber({
     };
   }, [value, duration]);
 
-  const formatted = displayValue.toLocaleString('en-US', {
+  const formatted = displayValue.toLocaleString("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
 
   return (
-    <span className="tabular-nums" style={{ animation: 'countUp 0.4s ease-out' }}>
+    <span
+      className="tabular-nums"
+      style={{ animation: "countUp 0.4s ease-out" }}
+    >
       {prefix}
       {formatted}
       {suffix}
@@ -256,8 +264,8 @@ export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
           onClick={() => onChange(tab.id)}
           className={`relative flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === tab.id
-              ? 'bg-slate-700 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white'
+              ? "bg-slate-700 text-white shadow-sm"
+              : "text-slate-400 hover:text-white"
           }`}
         >
           {tab.label}
@@ -265,8 +273,8 @@ export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
             <span
               className={`rounded-full px-1.5 py-0.5 text-xs ${
                 activeTab === tab.id
-                  ? 'bg-brand-600/20 text-brand-400'
-                  : 'bg-slate-700 text-slate-500'
+                  ? "bg-brand-600/20 text-brand-400"
+                  : "bg-slate-700 text-slate-500"
               }`}
             >
               {tab.count}
@@ -286,22 +294,22 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
   children: React.ReactNode;
 }
 
 const MODAL_SIZES: Record<string, string> = {
-  sm: 'max-w-[28rem]',
-  md: 'max-w-[36rem]',
-  lg: 'max-w-[48rem]',
-  xl: 'max-w-[64rem]',
+  sm: "max-w-[28rem]",
+  md: "max-w-[36rem]",
+  lg: "max-w-[48rem]",
+  xl: "max-w-[64rem]",
 };
 
 export function Modal({
   isOpen,
   onClose,
   title,
-  size = 'md',
+  size = "md",
   children,
 }: ModalProps) {
   const [closing, setClosing] = useState(false);
@@ -318,19 +326,19 @@ export function Modal({
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      if (e.key === "Escape") handleClose();
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [isOpen, handleClose]);
 
   // Prevent body scroll
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -343,8 +351,8 @@ export function Modal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         style={{
           animation: closing
-            ? 'modal-overlay-out 0.2s ease-in forwards'
-            : 'modal-overlay-in 0.2s ease-out forwards',
+            ? "modal-overlay-out 0.2s ease-in forwards"
+            : "modal-overlay-in 0.2s ease-out forwards",
         }}
         onClick={handleClose}
       />
@@ -356,8 +364,8 @@ export function Modal({
         className={`relative w-full ${MODAL_SIZES[size]} rounded-2xl border border-slate-700/50 bg-slate-900 shadow-2xl`}
         style={{
           animation: closing
-            ? 'modal-content-out 0.2s ease-in forwards'
-            : 'modal-content-in 0.25s ease-out forwards',
+            ? "modal-content-out 0.2s ease-in forwards"
+            : "modal-content-in 0.25s ease-out forwards",
         }}
       >
         {/* Header */}
@@ -389,7 +397,7 @@ export interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmText?: string;
-  variant?: 'danger' | 'default';
+  variant?: "danger" | "default";
 }
 
 export function ConfirmDialog({
@@ -398,14 +406,14 @@ export function ConfirmDialog({
   onCancel,
   title,
   message,
-  confirmText = 'Confirm',
-  variant = 'default',
+  confirmText = "Confirm",
+  variant = "default",
 }: ConfirmDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title} size="sm">
       <div className="space-y-4">
         <div className="flex items-start gap-3">
-          {variant === 'danger' && (
+          {variant === "danger" && (
             <div className="mt-0.5 rounded-full bg-red-500/10 p-2">
               <AlertTriangle size={20} className="text-red-400" />
             </div>
@@ -422,9 +430,9 @@ export function ConfirmDialog({
           <button
             onClick={onConfirm}
             className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
-              variant === 'danger'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-brand-600 hover:bg-brand-700'
+              variant === "danger"
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-brand-600 hover:bg-brand-700"
             }`}
           >
             {confirmText}
@@ -452,7 +460,7 @@ export function Drawer({
   onClose,
   title,
   children,
-  width = 'max-w-lg',
+  width = "max-w-lg",
 }: DrawerProps) {
   const [closing, setClosing] = useState(false);
 
@@ -467,30 +475,34 @@ export function Drawer({
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      if (e.key === "Escape") handleClose();
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [isOpen, handleClose]);
 
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = 'hidden';
+    if (isOpen) document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   if (!isOpen && !closing) return null;
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex justify-end">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[60] flex justify-end"
+    >
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         style={{
           animation: closing
-            ? 'modal-overlay-out 0.25s ease-in forwards'
-            : 'modal-overlay-in 0.2s ease-out forwards',
+            ? "modal-overlay-out 0.25s ease-in forwards"
+            : "modal-overlay-in 0.2s ease-out forwards",
         }}
         onClick={handleClose}
       />
@@ -500,8 +512,8 @@ export function Drawer({
         className={`relative ${width} w-full border-l border-slate-700/50 bg-slate-900`}
         style={{
           animation: closing
-            ? 'drawer-out 0.25s ease-in forwards'
-            : 'drawer-in 0.25s ease-out forwards',
+            ? "drawer-out 0.25s ease-in forwards"
+            : "drawer-in 0.25s ease-out forwards",
         }}
       >
         {/* Header */}
@@ -536,10 +548,10 @@ const TOAST_ICON: Record<string, React.ReactNode> = {
 };
 
 const TOAST_BORDER: Record<string, string> = {
-  success: 'border-l-emerald-500',
-  error: 'border-l-red-500',
-  warning: 'border-l-yellow-500',
-  info: 'border-l-blue-500',
+  success: "border-l-emerald-500",
+  error: "border-l-red-500",
+  warning: "border-l-yellow-500",
+  info: "border-l-blue-500",
 };
 
 export function ToastContainer() {
@@ -548,12 +560,16 @@ export function ToastContainer() {
   if (notifications.length === 0) return null;
 
   return (
-    <div role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] flex flex-col gap-3">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed right-4 top-20 z-[70] flex flex-col gap-3"
+    >
       {notifications.map((n) => (
         <div
           key={n.id}
           className={`w-80 rounded-lg border border-slate-700/50 border-l-4 ${TOAST_BORDER[n.type]} bg-slate-900/95 p-4 shadow-xl backdrop-blur-sm`}
-          style={{ animation: 'toast-in 0.3s ease-out forwards' }}
+          style={{ animation: "toast-in 0.3s ease-out forwards" }}
         >
           <div className="flex items-start gap-3">
             <div className="mt-0.5 shrink-0">{TOAST_ICON[n.type]}</div>
@@ -585,14 +601,14 @@ interface SearchResult {
 }
 
 const MOCK_VALIDATORS = [
-  'Aethelred Foundation',
-  'Paradigm Stake',
-  'Polychain Capital',
-  'Coinbase Cloud',
-  'a16z Validator',
-  'Figment Networks',
-  'Chorus One',
-  'Everstake',
+  "Aethelred Foundation",
+  "Paradigm Stake",
+  "Polychain Capital",
+  "Coinbase Cloud",
+  "a16z Validator",
+  "Figment Networks",
+  "Chorus One",
+  "Everstake",
 ];
 
 function buildSearchResults(query: string): SearchResult[] {
@@ -601,31 +617,31 @@ function buildSearchResults(query: string): SearchResult[] {
   const results: SearchResult[] = [];
 
   // Blocks
-  if (/^\d+$/.test(q) || q.startsWith('block') || q.startsWith('#')) {
-    const blockNum = q.replace(/\D/g, '') || '2847391';
+  if (/^\d+$/.test(q) || q.startsWith("block") || q.startsWith("#")) {
+    const blockNum = q.replace(/\D/g, "") || "2847391";
     results.push({
-      category: 'Blocks',
+      category: "Blocks",
       icon: <Blocks size={14} className="text-slate-500" />,
       items: [
-        { label: `Block #${Number(blockNum).toLocaleString()}`, href: '/' },
+        { label: `Block #${Number(blockNum).toLocaleString()}`, href: "/" },
         {
           label: `Block #${(Number(blockNum) + 1).toLocaleString()}`,
-          href: '/',
+          href: "/",
         },
       ],
     });
   }
 
   // Transactions
-  if (q.startsWith('0x') || q.includes('tx')) {
-    const hash = q.startsWith('0x') ? q : '0x' + q.replace(/\s/g, '');
+  if (q.startsWith("0x") || q.includes("tx")) {
+    const hash = q.startsWith("0x") ? q : "0x" + q.replace(/\s/g, "");
     results.push({
-      category: 'Transactions',
+      category: "Transactions",
       icon: <ArrowRight size={14} className="text-slate-500" />,
       items: [
         {
-          label: `${hash.slice(0, 10)}...${hash.slice(-6).padEnd(6, '0')}`,
-          href: '/',
+          label: `${hash.slice(0, 10)}...${hash.slice(-6).padEnd(6, "0")}`,
+          href: "/",
         },
       ],
     });
@@ -637,25 +653,25 @@ function buildSearchResults(query: string): SearchResult[] {
   );
   if (matchedValidators.length > 0) {
     results.push({
-      category: 'Validators',
+      category: "Validators",
       icon: <UserCheck size={14} className="text-slate-500" />,
       items: matchedValidators.slice(0, 4).map((v) => ({
         label: v,
-        href: '/validators',
+        href: "/validators",
       })),
     });
   }
 
   // Addresses
-  if (q.startsWith('aeth') || q.length > 8) {
-    const addr = q.startsWith('aeth') ? q : `aeth1${q}`;
+  if (q.startsWith("aeth") || q.length > 8) {
+    const addr = q.startsWith("aeth") ? q : `aeth1${q}`;
     results.push({
-      category: 'Addresses',
+      category: "Addresses",
       icon: <Wallet size={14} className="text-slate-500" />,
       items: [
         {
-          label: `${addr.slice(0, 12)}...${addr.slice(-6).padEnd(6, '0')}`,
-          href: '/',
+          label: `${addr.slice(0, 12)}...${addr.slice(-6).padEnd(6, "0")}`,
+          href: "/",
         },
       ],
     });
@@ -663,16 +679,14 @@ function buildSearchResults(query: string): SearchResult[] {
 
   // Fallback: search everywhere
   if (results.length === 0) {
-    const matched = MOCK_VALIDATORS.filter((v) =>
-      v.toLowerCase().includes(q),
-    );
+    const matched = MOCK_VALIDATORS.filter((v) => v.toLowerCase().includes(q));
     if (matched.length > 0) {
       results.push({
-        category: 'Validators',
+        category: "Validators",
         icon: <UserCheck size={14} className="text-slate-500" />,
         items: matched.slice(0, 4).map((v) => ({
           label: v,
-          href: '/validators',
+          href: "/validators",
         })),
       });
     }
@@ -685,12 +699,12 @@ export function SearchOverlay() {
   const { searchOpen, setSearchOpen } = useApp();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [recentSearches] = useState<string[]>([
-    'Block #2847390',
-    'aeth1qz7x...9n2',
-    'Aethelred Foundation',
+    "Block #2847390",
+    "aeth1qz7x...9n2",
+    "Aethelred Foundation",
   ]);
 
   const results = useMemo(() => buildSearchResults(query), [query]);
@@ -703,7 +717,7 @@ export function SearchOverlay() {
   // Focus input on open
   useEffect(() => {
     if (searchOpen) {
-      setQuery('');
+      setQuery("");
       setActiveIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -713,28 +727,28 @@ export function SearchOverlay() {
   useEffect(() => {
     if (!searchOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setSearchOpen(false);
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter' && flatItems[activeIndex]) {
+      } else if (e.key === "Enter" && flatItems[activeIndex]) {
         setSearchOpen(false);
         router.push(flatItems[activeIndex].href);
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [searchOpen, setSearchOpen, flatItems, activeIndex, router]);
 
   // Prevent body scroll
   useEffect(() => {
-    if (searchOpen) document.body.style.overflow = 'hidden';
+    if (searchOpen) document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [searchOpen]);
 
@@ -743,18 +757,22 @@ export function SearchOverlay() {
   let flatIdx = -1;
 
   return (
-    <div role="search" aria-label="Site search" className="fixed inset-0 z-[80] flex items-start justify-center pt-[10vh]">
+    <div
+      role="search"
+      aria-label="Site search"
+      className="fixed inset-0 z-[80] flex items-start justify-center pt-[10vh]"
+    >
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        style={{ animation: 'modal-overlay-in 0.15s ease-out forwards' }}
+        style={{ animation: "modal-overlay-in 0.15s ease-out forwards" }}
         onClick={() => setSearchOpen(false)}
       />
 
       {/* Search panel */}
       <div
         className="relative w-full max-w-2xl rounded-2xl border border-slate-700/50 bg-slate-900 shadow-2xl"
-        style={{ animation: 'modal-content-in 0.2s ease-out forwards' }}
+        style={{ animation: "modal-content-in 0.2s ease-out forwards" }}
       >
         {/* Input */}
         <div className="flex items-center gap-3 border-b border-slate-700/50 px-5 py-4">
@@ -796,8 +814,8 @@ export function SearchOverlay() {
                       }}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                         idx === activeIndex
-                          ? 'bg-slate-800 text-white'
-                          : 'text-slate-300 hover:bg-slate-800/50'
+                          ? "bg-slate-800 text-white"
+                          : "text-slate-300 hover:bg-slate-800/50"
                       }`}
                     >
                       <span className="flex-1 truncate text-left font-mono text-sm">
@@ -857,10 +875,10 @@ export function SearchOverlay() {
             </span>
           </div>
           <p className="text-xs text-slate-600">
-            Press{' '}
+            Press{" "}
             <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-slate-500">
               &#8984;K
-            </kbd>{' '}
+            </kbd>{" "}
             to search
           </p>
         </div>
@@ -874,29 +892,49 @@ export function SearchOverlay() {
 // ============================================================================
 
 export interface TopNavProps {
-  activePage: 'explorer' | 'vault' | 'stablecoins' | 'validators' | 'governance' | 'reconciliation';
+  activePage:
+    | "explorer"
+    | "vault"
+    | "stablecoins"
+    | "validators"
+    | "governance"
+    | "reconciliation";
 }
 
-const NAV_LINKS: { id: TopNavProps['activePage']; label: string; href: string }[] = [
-  { id: 'explorer', label: 'EXPLORER', href: '/' },
-  { id: 'vault', label: 'VAULT', href: '/vault' },
-  { id: 'stablecoins', label: 'STABLECOINS', href: '/stablecoins' },
-  { id: 'validators', label: 'VALIDATORS', href: '/validators' },
-  { id: 'governance', label: 'GOVERNANCE', href: '/governance' },
-  { id: 'reconciliation', label: 'RECONCILIATION', href: '/reconciliation' },
+const NAV_LINKS: {
+  id: TopNavProps["activePage"];
+  label: string;
+  href: string;
+}[] = [
+  { id: "explorer", label: "EXPLORER", href: "/" },
+  { id: "vault", label: "VAULT", href: "/vault" },
+  { id: "stablecoins", label: "STABLECOINS", href: "/stablecoins" },
+  { id: "validators", label: "VALIDATORS", href: "/validators" },
+  { id: "governance", label: "GOVERNANCE", href: "/governance" },
+  { id: "reconciliation", label: "RECONCILIATION", href: "/reconciliation" },
 ];
 
 export function TopNav({ activePage }: TopNavProps) {
   const { realTime, setSearchOpen } = useApp();
 
   return (
-    <nav aria-label="Main navigation" className="sticky top-0 z-50 border-b border-slate-800/50 bg-slate-950/95 backdrop-blur-xl">
+    <nav
+      aria-label="Main navigation"
+      className="sticky top-0 z-50 border-b border-slate-800/50 bg-slate-950/95 backdrop-blur-xl"
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left — Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1e1b5e] shadow-lg shadow-indigo-900/25 p-1.5">
             <svg viewBox="0 0 100 100" className="w-full h-full">
-              <path d="M 62 83 L 25 79 L 25 21 L 68 21 L 46 48" stroke="white" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <path
+                d="M 62 83 L 25 79 L 25 21 L 68 21 L 46 48"
+                stroke="white"
+                strokeWidth="14"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             </svg>
           </div>
           <span className="hidden text-base font-bold tracking-[0.25em] text-white sm:inline-block">
@@ -912,8 +950,8 @@ export function TopNav({ activePage }: TopNavProps) {
               href={link.href}
               className={`relative px-4 py-2 text-sm font-medium tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
                 activePage === link.id
-                  ? 'text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? "text-white"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               {link.label}
@@ -959,8 +997,8 @@ export function TopNav({ activePage }: TopNavProps) {
             href={link.href}
             className={`flex-1 py-3 text-center text-xs font-medium tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
               activePage === link.id
-                ? 'border-b-2 border-brand-600 text-white'
-                : 'text-slate-500'
+                ? "border-b-2 border-brand-600 text-white"
+                : "text-slate-500"
             }`}
           >
             {link.label}
@@ -977,34 +1015,37 @@ export function TopNav({ activePage }: TopNavProps) {
 
 const FOOTER_LINKS = {
   Resources: [
-    { label: 'Documentation', href: '#' },
-    { label: 'Whitepaper', href: '#' },
-    { label: 'GitHub', href: '#' },
-    { label: 'Block Explorer', href: '#' },
+    { label: "Documentation", href: "#" },
+    { label: "Whitepaper", href: "#" },
+    { label: "GitHub", href: "#" },
+    { label: "Block Explorer", href: "#" },
   ],
   Developers: [
-    { label: 'API Reference', href: '#' },
-    { label: 'SDK', href: '#' },
-    { label: 'Smart Contracts', href: '#' },
-    { label: 'Faucet', href: '#' },
+    { label: "API Reference", href: "#" },
+    { label: "SDK", href: "#" },
+    { label: "Smart Contracts", href: "#" },
+    { label: "Faucet", href: "#" },
   ],
   Community: [
-    { label: 'Discord', href: '#' },
-    { label: 'Twitter', href: '#' },
-    { label: 'Telegram', href: '#' },
-    { label: 'Forum', href: '#' },
+    { label: "Discord", href: "#" },
+    { label: "Twitter", href: "#" },
+    { label: "Telegram", href: "#" },
+    { label: "Forum", href: "#" },
   ],
   Legal: [
-    { label: 'Terms', href: '#' },
-    { label: 'Privacy', href: '#' },
-    { label: 'Security', href: '#' },
-    { label: 'Bug Bounty', href: '#' },
+    { label: "Terms", href: "#" },
+    { label: "Privacy", href: "#" },
+    { label: "Security", href: "#" },
+    { label: "Bug Bounty", href: "#" },
   ],
 };
 
 export function Footer() {
   return (
-    <footer aria-label="Site footer" className="border-t border-slate-800/50 bg-slate-950">
+    <footer
+      aria-label="Site footer"
+      className="border-t border-slate-800/50 bg-slate-950"
+    >
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Columns */}
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
@@ -1034,7 +1075,14 @@ export function Footer() {
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#1e1b5e] p-1.5">
               <svg viewBox="0 0 100 100" className="w-full h-full">
-                <path d="M 62 83 L 25 79 L 25 21 L 68 21 L 46 48" stroke="white" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <path
+                  d="M 62 83 L 25 79 L 25 21 L 68 21 L 46 48"
+                  stroke="white"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
               </svg>
             </div>
             <p className="text-sm text-slate-500">
