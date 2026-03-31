@@ -317,12 +317,13 @@ async function verifyResourceAccess(
         (verification.verifierId === identityId || verification.subjectId === identityId);
     }
 
-    default:
+    default: {
       // For attestation, session, government_verification: check audit log ownership
       const log = await prisma.auditLog.findFirst({
         where: { resourceType, resourceId, identityId },
       });
       return log !== null;
+    }
   }
 }
 

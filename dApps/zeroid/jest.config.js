@@ -5,6 +5,7 @@ const createJestConfig = nextJest({ dir: './' });
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'jsdom',
+  roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['<rootDir>/src/mocks/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -31,7 +32,13 @@ const config = {
       statements: 85,
     },
   },
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/.next/',
+    '<rootDir>/backend/',
+    '<rootDir>/lib/',
+  ],
+  modulePathIgnorePatterns: ['<rootDir>/backend/', '<rootDir>/lib/', '<rootDir>/.next/'],
   transformIgnorePatterns: ['/node_modules/(?!(snarkjs|circomlib|@rainbow-me|@wagmi|wagmi|viem|@tanstack)/)'],
   reporters: ['default', 'jest-junit'],
 };

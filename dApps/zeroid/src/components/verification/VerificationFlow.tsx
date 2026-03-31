@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
   ArrowRight,
@@ -18,20 +18,24 @@ import {
   Send,
   RotateCcw,
   Sparkles,
-} from 'lucide-react';
-import SelectiveDisclosureBuilder from './SelectiveDisclosureBuilder';
-import ProofGenerator from '@/components/zkp/ProofGenerator';
-import { useVerification } from '@/hooks/useVerification';
-import { useProof } from '@/hooks/useProof';
+} from "lucide-react";
+import SelectiveDisclosureBuilder from "./SelectiveDisclosureBuilder";
+import ProofGenerator from "@/components/zkp/ProofGenerator";
+import { useVerification } from "@/hooks/useVerification";
+import { useProof } from "@/hooks/useProof";
 import type {
   VerificationRequest,
   DisclosureSelection,
   ZKProof,
   VerificationResult,
   CredentialAttribute,
-} from '@/types';
+} from "@/types";
 
-type FlowStep = 'select-attributes' | 'generate-proof' | 'submit-proof' | 'result';
+type FlowStep =
+  | "select-attributes"
+  | "generate-proof"
+  | "submit-proof"
+  | "result";
 
 interface VerificationFlowProps {
   request?: VerificationRequest;
@@ -40,21 +44,27 @@ interface VerificationFlowProps {
 }
 
 const stepLabels: Record<FlowStep, string> = {
-  'select-attributes': 'Select Attributes',
-  'generate-proof': 'Generate Proof',
-  'submit-proof': 'Submit',
-  result: 'Result',
+  "select-attributes": "Select Attributes",
+  "generate-proof": "Generate Proof",
+  "submit-proof": "Submit",
+  result: "Result",
 };
 
-const FLOW_STEPS: FlowStep[] = ['select-attributes', 'generate-proof', 'submit-proof', 'result'];
+const FLOW_STEPS: FlowStep[] = [
+  "select-attributes",
+  "generate-proof",
+  "submit-proof",
+  "result",
+];
 
 export default function VerificationFlow({
   request,
   onComplete,
   onCancel,
 }: VerificationFlowProps) {
-  const [currentStep, setCurrentStep] = useState<FlowStep>('select-attributes');
-  const [disclosureSelection, setDisclosureSelection] = useState<DisclosureSelection | null>(null);
+  const [currentStep, setCurrentStep] = useState<FlowStep>("select-attributes");
+  const [disclosureSelection, setDisclosureSelection] =
+    useState<DisclosureSelection | null>(null);
   const [generatedProof, setGeneratedProof] = useState<ZKProof | null>(null);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,18 +72,23 @@ export default function VerificationFlow({
 
   const { submitProof, isVerifying } = useVerification();
   const { generateProof, proofStatus } = useProof();
+  const disclosedAttributes = disclosureSelection?.disclosed ?? [];
+  const zkProvedAttributes = disclosureSelection?.zkProved ?? [];
 
   const currentStepIndex = FLOW_STEPS.indexOf(currentStep);
 
-  const handleDisclosureComplete = useCallback((selection: DisclosureSelection) => {
-    setDisclosureSelection(selection);
-    setCurrentStep('generate-proof');
-    setError(null);
-  }, []);
+  const handleDisclosureComplete = useCallback(
+    (selection: DisclosureSelection) => {
+      setDisclosureSelection(selection);
+      setCurrentStep("generate-proof");
+      setError(null);
+    },
+    [],
+  );
 
   const handleProofGenerated = useCallback((proof: ZKProof) => {
     setGeneratedProof(proof);
-    setCurrentStep('submit-proof');
+    setCurrentStep("submit-proof");
     setError(null);
   }, []);
 
@@ -85,20 +100,20 @@ export default function VerificationFlow({
       const verificationResult = await submitProof({
         proof: generatedProof,
         requestId: request.id,
-        disclosedAttributes: disclosureSelection!.disclosed,
+        disclosedAttributes: disclosureSelection?.disclosed ?? [],
       });
       setResult(verificationResult);
-      setCurrentStep('result');
+      setCurrentStep("result");
       onComplete?.(verificationResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Proof submission failed');
+      setError(err instanceof Error ? err.message : "Proof submission failed");
     } finally {
       setIsSubmitting(false);
     }
   }, [generatedProof, request, disclosureSelection, submitProof, onComplete]);
 
   const handleReset = useCallback(() => {
-    setCurrentStep('select-attributes');
+    setCurrentStep("select-attributes");
     setDisclosureSelection(null);
     setGeneratedProof(null);
     setResult(null);
@@ -121,11 +136,13 @@ export default function VerificationFlow({
           <Fingerprint className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">Identity Verification</h2>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">
+            Identity Verification
+          </h2>
           <p className="text-sm text-[var(--text-secondary)]">
             {request?.verifierName
               ? `Requested by ${request.verifierName}`
-              : 'Generate a zero-knowledge proof of your credentials'}
+              : "Generate a zero-knowledge proof of your credentials"}
           </p>
         </div>
       </div>
@@ -141,11 +158,12 @@ export default function VerificationFlow({
                 <div
                   className={`
                     w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
-                    ${isCompleted
-                      ? 'bg-status-verified text-white'
-                      : isCurrent
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-[var(--text-tertiary)]'
+                    ${
+                      isCompleted
+                        ? "bg-status-verified text-white"
+                        : isCurrent
+                          ? "bg-brand-500 text-white"
+                          : "bg-[var(--surface-tertiary)] text-[var(--text-tertiary)]"
                     }
                   `}
                 >
@@ -154,7 +172,9 @@ export default function VerificationFlow({
                 {idx < FLOW_STEPS.length - 1 && (
                   <div
                     className={`hidden sm:block w-16 md:w-24 h-0.5 mx-2 transition-colors ${
-                      isCompleted ? 'bg-status-verified' : 'bg-[var(--border-primary)]'
+                      isCompleted
+                        ? "bg-status-verified"
+                        : "bg-[var(--border-primary)]"
                     }`}
                   />
                 )}
@@ -168,8 +188,8 @@ export default function VerificationFlow({
               key={step}
               className={`text-xs ${
                 step === currentStep
-                  ? 'text-brand-500 font-medium'
-                  : 'text-[var(--text-tertiary)]'
+                  ? "text-brand-500 font-medium"
+                  : "text-[var(--text-tertiary)]"
               }`}
             >
               {stepLabels[step]}
@@ -197,7 +217,7 @@ export default function VerificationFlow({
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
           {/* Step 1: Selective Disclosure */}
-          {currentStep === 'select-attributes' && (
+          {currentStep === "select-attributes" && (
             <motion.div
               key="select"
               initial={{ opacity: 0, x: 50 }}
@@ -213,7 +233,7 @@ export default function VerificationFlow({
           )}
 
           {/* Step 2: Proof Generation */}
-          {currentStep === 'generate-proof' && disclosureSelection && (
+          {currentStep === "generate-proof" && disclosureSelection && (
             <motion.div
               key="generate"
               initial={{ opacity: 0, x: 50 }}
@@ -230,7 +250,7 @@ export default function VerificationFlow({
           )}
 
           {/* Step 3: Submit Proof */}
-          {currentStep === 'submit-proof' && generatedProof && (
+          {currentStep === "submit-proof" && generatedProof && (
             <motion.div
               key="submit"
               initial={{ opacity: 0, x: 50 }}
@@ -251,18 +271,24 @@ export default function VerificationFlow({
                     Disclosed Attributes
                   </p>
                   <div className="space-y-1.5">
-                    {disclosureSelection?.disclosed.map((attr: CredentialAttribute) => (
+                    {disclosedAttributes.map((attr: CredentialAttribute) => (
                       <div
                         key={attr.key}
                         className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-secondary)] text-sm"
                       >
                         <Eye className="w-3.5 h-3.5 text-status-verified" />
-                        <span className="text-[var(--text-secondary)]">{attr.key}:</span>
-                        <span className="font-mono text-[var(--text-primary)]">{attr.value}</span>
+                        <span className="text-[var(--text-secondary)]">
+                          {attr.key}:
+                        </span>
+                        <span className="font-mono text-[var(--text-primary)]">
+                          {attr.value}
+                        </span>
                       </div>
                     ))}
-                    {(!disclosureSelection?.disclosed || disclosureSelection.disclosed.length === 0) && (
-                      <p className="text-sm text-[var(--text-tertiary)]">No attributes directly disclosed</p>
+                    {disclosedAttributes.length === 0 && (
+                      <p className="text-sm text-[var(--text-tertiary)]">
+                        No attributes directly disclosed
+                      </p>
                     )}
                   </div>
                 </div>
@@ -273,14 +299,18 @@ export default function VerificationFlow({
                     ZK-Proved (Hidden)
                   </p>
                   <div className="space-y-1.5">
-                    {disclosureSelection?.zkProved.map((attr: CredentialAttribute) => (
+                    {zkProvedAttributes.map((attr: CredentialAttribute) => (
                       <div
                         key={attr.key}
                         className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-secondary)] text-sm"
                       >
                         <EyeOff className="w-3.5 h-3.5 text-brand-500" />
-                        <span className="text-[var(--text-secondary)]">{attr.key}:</span>
-                        <span className="font-mono text-[var(--text-tertiary)]">*****</span>
+                        <span className="text-[var(--text-secondary)]">
+                          {attr.key}:
+                        </span>
+                        <span className="font-mono text-[var(--text-tertiary)]">
+                          *****
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -288,7 +318,9 @@ export default function VerificationFlow({
 
                 {/* Proof hash */}
                 <div className="p-3 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-primary)]">
-                  <p className="text-xs text-[var(--text-tertiary)] mb-1">Proof Hash</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mb-1">
+                    Proof Hash
+                  </p>
                   <p className="font-mono text-xs text-[var(--text-primary)] break-all">
                     {generatedProof.hash}
                   </p>
@@ -306,12 +338,20 @@ export default function VerificationFlow({
                   <motion.div
                     className="absolute inset-0 rounded-full border-2 border-brand-500/30"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                    transition={{
+                      duration: 8,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                   />
                   <motion.div
                     className="absolute inset-2 rounded-full border-2 border-identity-chrome/30"
                     animate={{ rotate: -360 }}
-                    transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                    transition={{
+                      duration: 6,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Zap className="w-6 h-6 text-brand-500" />
@@ -340,7 +380,7 @@ export default function VerificationFlow({
           )}
 
           {/* Step 4: Result */}
-          {currentStep === 'result' && result && (
+          {currentStep === "result" && result && (
             <motion.div
               key="result"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -354,7 +394,7 @@ export default function VerificationFlow({
                     className="w-20 h-20 mx-auto mb-6 rounded-full bg-status-verified/10 flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+                    transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
                   >
                     <CheckCircle2 className="w-10 h-10 text-status-verified" />
                   </motion.div>
@@ -372,8 +412,9 @@ export default function VerificationFlow({
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
                   >
-                    Your zero-knowledge proof has been verified. The verifier has received
-                    confirmation without accessing your private data.
+                    Your zero-knowledge proof has been verified. The verifier
+                    has received confirmation without accessing your private
+                    data.
                   </motion.p>
 
                   {/* Verified sparkle animation */}
@@ -407,7 +448,7 @@ export default function VerificationFlow({
                     className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200 }}
+                    transition={{ type: "spring", stiffness: 200 }}
                   >
                     <XCircle className="w-10 h-10 text-red-400" />
                   </motion.div>
@@ -415,7 +456,8 @@ export default function VerificationFlow({
                     Verification Failed
                   </h3>
                   <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
-                    {result.reason ?? 'The proof could not be verified. Please try again.'}
+                    {result.reason ??
+                      "The proof could not be verified. Please try again."}
                   </p>
                 </>
               )}
@@ -423,7 +465,9 @@ export default function VerificationFlow({
               {/* Result details */}
               {result.transactionHash && (
                 <div className="card p-4 max-w-md mx-auto mb-6">
-                  <p className="text-xs text-[var(--text-tertiary)] mb-1">Transaction Hash</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mb-1">
+                    Transaction Hash
+                  </p>
                   <p className="font-mono text-xs text-[var(--text-primary)] break-all">
                     {result.transactionHash}
                   </p>
@@ -447,14 +491,14 @@ export default function VerificationFlow({
       </div>
 
       {/* Navigation */}
-      {currentStep !== 'result' && (
+      {currentStep !== "result" && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--border-primary)]">
           <button
             onClick={currentStepIndex === 0 ? onCancel : goBack}
             className="btn-ghost"
           >
             <ArrowLeft className="w-4 h-4" />
-            {currentStepIndex === 0 ? 'Cancel' : 'Back'}
+            {currentStepIndex === 0 ? "Cancel" : "Back"}
           </button>
           <p className="text-xs text-[var(--text-tertiary)]">
             Step {currentStepIndex + 1} of {FLOW_STEPS.length}

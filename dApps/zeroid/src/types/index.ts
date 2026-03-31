@@ -42,7 +42,7 @@ export interface DID {
   /** Keccak-256 hash of the DID stored on-chain */
   hash: Bytes32;
   /** Network the DID is registered on */
-  network: 'mainnet' | 'testnet' | 'devnet';
+  network: "mainnet" | "testnet" | "devnet";
 }
 
 /** On-chain identity status — mirrors Solidity `IdentityStatus` enum */
@@ -59,7 +59,7 @@ export enum IdentityStatus {
  */
 export interface IdentityProfile {
   /** The user's DID */
-  did: DID;
+  did: DID | string;
   /** EVM address that controls this identity */
   controller: Address;
   /** On-chain status */
@@ -71,13 +71,22 @@ export interface IdentityProfile {
   /** Anti-replay nonce */
   nonce: number;
   /** When the identity was registered (Unix seconds) */
-  createdAt: UnixTimestamp;
+  createdAt: UnixTimestamp | string;
   /** When the identity was last updated (Unix seconds) */
-  updatedAt: UnixTimestamp;
+  updatedAt: UnixTimestamp | string;
   /** Optional display name (client-side only, not stored on-chain) */
   displayName?: string;
   /** Optional avatar URI (client-side only) */
   avatarUri?: string;
+  /** Legacy UI compatibility fields */
+  verificationStatus?:
+    | "verified"
+    | "pending"
+    | "revoked"
+    | "expired"
+    | "unverified";
+  verificationCount?: number;
+  didHash?: Bytes32 | string;
 }
 
 /**
@@ -100,10 +109,10 @@ export interface BiometricHash {
 
 /** Supported biometric modalities */
 export enum BiometricType {
-  Fingerprint = 'fingerprint',
-  FaceRecognition = 'face_recognition',
-  IrisScan = 'iris_scan',
-  VoicePrint = 'voice_print',
+  Fingerprint = "fingerprint",
+  FaceRecognition = "face_recognition",
+  IrisScan = "iris_scan",
+  VoicePrint = "voice_print",
 }
 
 // ============================================================================
@@ -126,20 +135,38 @@ export enum CredentialStatus {
 export interface Credential {
   /** Unique credential identifier (keccak-256) */
   hash: Bytes32;
+  /** Legacy identifier used by older UI flows */
+  id: string;
   /** Schema this credential conforms to */
   schemaHash: Bytes32;
+  /** Legacy schema discriminator used by older UI flows */
+  schemaType?: string;
   /** DID of the issuer */
   issuerDid: DID;
+  /** Human-readable issuer label for older UI surfaces */
+  issuer?: string;
   /** DID of the credential subject */
   subjectDid: DID;
+  /** Human-readable credential title */
+  name?: string;
   /** When the credential was issued (Unix seconds) */
   issuedAt: UnixTimestamp;
   /** When the credential expires (Unix seconds) */
   expiresAt: UnixTimestamp;
+  /** Legacy revocation timestamp used by older revocation flows */
+  revokedAt?: UnixTimestamp | string;
   /** Current lifecycle status */
-  status: CredentialStatus;
+  status:
+    | CredentialStatus
+    | "verified"
+    | "pending"
+    | "revoked"
+    | "expired"
+    | "unverified";
   /** Merkle root of the credential's attribute tree */
   merkleRoot: Bytes32;
+  /** Off-chain content hash used by detail views */
+  contentHash?: Bytes32 | string;
   /** Human-readable name of the schema */
   schemaName?: string;
   /** Decoded attributes (available client-side when user decrypts) */
@@ -185,7 +212,7 @@ export interface SchemaAttribute {
   /** Attribute key name */
   key: string;
   /** Expected value type */
-  valueType: 'string' | 'number' | 'boolean' | 'date' | 'bytes32';
+  valueType: "string" | "number" | "boolean" | "date" | "bytes32";
   /** Whether this attribute is required in the credential */
   required: boolean;
   /** Human-readable description */
@@ -215,9 +242,9 @@ export interface AttributeProof {
 
 /** Supported ZK proof systems */
 export enum ProofSystem {
-  Groth16 = 'groth16',
-  PLONK = 'plonk',
-  FFLONK = 'fflonk',
+  Groth16 = "groth16",
+  PLONK = "plonk",
+  FFLONK = "fflonk",
 }
 
 /**
@@ -258,6 +285,17 @@ export interface ZKProof {
   validityDuration: number;
   /** Keccak-256 hash of the serialised proof */
   proofHash: Bytes32;
+  /** Legacy proof hash alias */
+  hash?: Bytes32 | string;
+  /** Legacy circuit label used by older components */
+  circuitType?: string;
+  /** Legacy public signal alias */
+  publicSignals?: string[];
+  /** Older visualisation metadata */
+  protocol?: string;
+  curve?: string;
+  createdAt?: UnixTimestamp;
+  publicInputCount?: number;
 }
 
 /**
@@ -318,11 +356,11 @@ export enum TEEPlatform {
 /** Attestation type for TEE verification */
 export enum AttestationType {
   /** Remote attestation via Intel IAS or DCAP */
-  Remote = 'remote',
+  Remote = "remote",
   /** Local attestation within the same platform */
-  Local = 'local',
+  Local = "local",
   /** Self-attestation (development only) */
-  Self = 'self',
+  Self = "self",
 }
 
 /**
@@ -394,11 +432,11 @@ export enum ProposalState {
 
 /** Types of governance proposals */
 export enum ProposalType {
-  SchemaApproval = 'schema_approval',
-  SchemaRevocation = 'schema_revocation',
-  IssuerApproval = 'issuer_approval',
-  IssuerRemoval = 'issuer_removal',
-  ParameterChange = 'parameter_change',
+  SchemaApproval = "schema_approval",
+  SchemaRevocation = "schema_revocation",
+  IssuerApproval = "issuer_approval",
+  IssuerRemoval = "issuer_removal",
+  ParameterChange = "parameter_change",
 }
 
 /**
@@ -406,7 +444,7 @@ export enum ProposalType {
  */
 export interface Proposal {
   /** On-chain proposal ID */
-  id: number;
+  id: number | string;
   /** Type of proposal */
   type: ProposalType;
   /** Current state */
@@ -433,6 +471,13 @@ export interface Proposal {
   createdAt: UnixTimestamp;
   /** When the proposal was executed (Unix seconds, 0 if not executed) */
   executedAt?: UnixTimestamp;
+  /** Legacy UI compatibility fields */
+  status?: ProposalStatus;
+  votesFor?: number;
+  votesAgainst?: number;
+  votesAbstain?: number;
+  quorum?: number;
+  endTime?: UnixTimestamp | string;
 }
 
 /**
@@ -471,11 +516,11 @@ export interface SchemaProposal extends Proposal {
 
 /** Status of a verification request */
 export enum VerificationStatus {
-  Pending = 'pending',
-  Processing = 'processing',
-  Completed = 'completed',
-  Failed = 'failed',
-  Expired = 'expired',
+  Pending = "pending",
+  Processing = "processing",
+  Completed = "completed",
+  Failed = "failed",
+  Expired = "expired",
 }
 
 /**
@@ -505,6 +550,11 @@ export interface VerificationRequest {
   purpose: string;
   /** Whether the user has consented to this verification */
   userConsent: boolean;
+  /** Legacy verifier display label */
+  verifierName?: string;
+  /** Legacy credential filter aliases used by older flows */
+  requiredCredentials?: string[];
+  requiredAttributes?: CredentialAttribute[] | string[];
 }
 
 /**
@@ -523,8 +573,12 @@ export interface VerificationResult {
   verifiedAt: UnixTimestamp;
   /** On-chain transaction hash (if submitted on-chain) */
   txHash?: HexString;
+  /** Legacy transaction hash alias */
+  transactionHash?: HexString;
   /** Error message if verification failed */
   error?: string;
+  /** Legacy rejection reason */
+  reason?: string;
 }
 
 /** Result for a single attribute within a verification */
@@ -570,17 +624,17 @@ export interface ProvenAttribute {
 /** Types of attribute proofs */
 export enum AttributeProofType {
   /** Prove attribute >= threshold */
-  RangeGte = 'range_gte',
+  RangeGte = "range_gte",
   /** Prove attribute <= threshold */
-  RangeLte = 'range_lte',
+  RangeLte = "range_lte",
   /** Prove attribute == value (without revealing attribute) */
-  Equality = 'equality',
+  Equality = "equality",
   /** Prove attribute is in a set */
-  SetMembership = 'set_membership',
+  SetMembership = "set_membership",
   /** Prove attribute is NOT in a set */
-  SetNonMembership = 'set_non_membership',
+  SetNonMembership = "set_non_membership",
   /** Prove attribute exists in the credential */
-  Existence = 'existence',
+  Existence = "existence",
 }
 
 // ============================================================================
@@ -631,7 +685,7 @@ export interface PaginatedResponse<T> {
 /** Health check response from the backend */
 export interface HealthResponse {
   /** Service status */
-  status: 'healthy' | 'degraded' | 'down';
+  status: "healthy" | "degraded" | "down";
   /** Service version */
   version: string;
   /** Individual component health */
@@ -723,8 +777,12 @@ export interface CircuitMeta {
 // AI Agent Identity Types
 // ============================================================================
 
-export type AgentType = 'llm' | 'autonomous' | 'bot' | 'iot' | 'mpc';
-export type AgentStatus = 'active' | 'suspended' | 'revoked' | 'pending_approval';
+export type AgentType = "llm" | "autonomous" | "bot" | "iot" | "mpc";
+export type AgentStatus =
+  | "active"
+  | "suspended"
+  | "revoked"
+  | "pending_approval";
 
 export interface AIAgent {
   id: string;
@@ -780,8 +838,8 @@ export interface AgentAction {
 // AI Risk & Compliance Types
 // ============================================================================
 
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
-export type RiskDecision = 'approve' | 'review' | 'reject' | 'escalate';
+export type RiskLevel = "low" | "medium" | "high" | "critical";
+export type RiskDecision = "approve" | "review" | "reject" | "escalate";
 
 export interface RiskAssessment {
   id: string;
@@ -808,7 +866,7 @@ export interface RiskFactor {
   score: number;
   weight: number;
   description: string;
-  impact: 'positive' | 'negative' | 'neutral';
+  impact: "positive" | "negative" | "neutral";
 }
 
 export interface ComplianceAlert {
@@ -827,9 +885,9 @@ export interface ComplianceAlert {
 
 export interface ComplianceCopilotMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
-  messageType: 'text' | 'alert' | 'action' | 'report';
+  messageType: "text" | "alert" | "action" | "report";
   actions?: CopilotAction[];
   citations?: CopilotCitation[];
   timestamp: ISODateString;
@@ -847,7 +905,12 @@ export interface CopilotCitation {
   url?: string;
 }
 
-export type ScreeningResult = 'clear' | 'potential_match' | 'confirmed_match' | 'false_positive' | 'under_review';
+export type ScreeningResult =
+  | "clear"
+  | "potential_match"
+  | "confirmed_match"
+  | "false_positive"
+  | "under_review";
 
 export interface SanctionsScreening {
   id: string;
@@ -899,7 +962,7 @@ export interface JurisdictionCompliance {
 
 export interface CredentialGap {
   credentialType: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  priority: "critical" | "high" | "medium" | "low";
   estimatedTimeToObtain?: string;
   suggestedIssuers?: string[];
 }
@@ -924,7 +987,7 @@ export interface APIKey {
   name: string;
   keyPrefix: string;
   scopes: string[];
-  environment: 'sandbox' | 'production';
+  environment: "sandbox" | "production";
   rateLimitPerMinute: number;
   ipAllowlist: string[];
   lastUsedAt?: ISODateString;
@@ -937,7 +1000,7 @@ export interface WebhookConfig {
   id: string;
   url: string;
   events: string[];
-  status: 'active' | 'paused' | 'failing' | 'disabled';
+  status: "active" | "paused" | "failing" | "disabled";
   failureCount: number;
   lastDeliveredAt?: ISODateString;
   lastStatusCode?: number;
@@ -991,7 +1054,14 @@ export interface UsageMetrics {
 // Cross-Chain Bridge Types
 // ============================================================================
 
-export type BridgeStatus = 'initiated' | 'source_confirmed' | 'relaying' | 'destination_confirmed' | 'completed' | 'failed' | 'rolled_back';
+export type BridgeStatus =
+  | "initiated"
+  | "source_confirmed"
+  | "relaying"
+  | "destination_confirmed"
+  | "completed"
+  | "failed"
+  | "rolled_back";
 
 export interface BridgeTransaction {
   id: string;
@@ -1070,7 +1140,7 @@ export interface PrivacyRecommendation {
   category: string;
   title: string;
   description: string;
-  impact: 'high' | 'medium' | 'low';
+  impact: "high" | "medium" | "low";
   actionType: string;
 }
 
@@ -1080,20 +1150,25 @@ export interface DataExposureEvent {
   verifier: string;
   attributesDisclosed: string[];
   attributesZKProved: string[];
-  method: 'full_disclosure' | 'selective_disclosure' | 'zk_proof';
+  method: "full_disclosure" | "selective_disclosure" | "zk_proof";
 }
 
 // ============================================================================
 // Organization & RBAC Types
 // ============================================================================
 
-export type OrgRole = 'viewer' | 'operator' | 'admin' | 'compliance_officer' | 'auditor';
+export type OrgRole =
+  | "viewer"
+  | "operator"
+  | "admin"
+  | "compliance_officer"
+  | "auditor";
 
 export interface Organization {
   id: string;
   name: string;
   domain?: string;
-  plan: 'starter' | 'growth' | 'enterprise';
+  plan: "starter" | "growth" | "enterprise";
   jurisdictions: string[];
   memberCount: number;
   createdAt: ISODateString;
@@ -1114,8 +1189,8 @@ export interface OrganizationMember {
 
 export interface BiometricSession {
   id: string;
-  type: 'face' | 'fingerprint' | 'keystroke' | 'mouse';
-  status: 'capturing' | 'processing' | 'verified' | 'failed';
+  type: "face" | "fingerprint" | "keystroke" | "mouse";
+  status: "capturing" | "processing" | "verified" | "failed";
   confidenceScore?: number;
   livenessScore?: number;
   antiSpoofingPassed?: boolean;
@@ -1130,8 +1205,8 @@ export interface BiometricSession {
 export interface TEENodeStatus {
   id: string;
   type: string;
-  status: 'active' | 'degraded' | 'offline';
-  health?: 'healthy' | 'degraded' | 'unhealthy';
+  status: "active" | "degraded" | "offline";
+  health?: "healthy" | "degraded" | "unhealthy" | "offline";
   uptime: number;
   region: string;
   name?: string;
@@ -1143,4 +1218,231 @@ export interface AttestationInfo {
   lastVerified: string;
   expiresAt: string;
   enclaveHash: string;
+  status?: "verified" | "expired" | "pending" | "invalid";
+  enclaveId?: string;
 }
+
+// ============================================================================
+// Compatibility Types
+// ============================================================================
+
+export type ProposalStatus =
+  | "pending"
+  | "active"
+  | "passed"
+  | "rejected"
+  | "executed";
+export type VoteType = 0 | 1 | 2;
+export type CredentialSchemaType = string;
+
+export interface DIDDocument {
+  [key: string]: unknown;
+}
+
+export interface DelegateRecord {
+  delegate?: Address;
+  address: Address;
+  expiry?: bigint | number;
+  permissions: string[];
+}
+
+export interface CreateIdentityParams {
+  didDocumentHash: Bytes32;
+  recoveryAddress: Address;
+  didDocument: DIDDocument;
+  publicKeys?: unknown[];
+}
+
+export interface UpdateProfileParams extends Partial<IdentityProfile> {}
+
+export interface VotingPower {
+  votingPower: bigint;
+  delegatee?: Address;
+  isLoading: boolean;
+  hasPower: boolean;
+}
+
+export interface CreateProposalParams {
+  targets: Address[];
+  values: bigint[];
+  calldatas: HexString[];
+  description: string;
+  title: string;
+  summary?: string;
+  discussionUrl?: string;
+}
+
+export interface DocumentUpload {
+  id?: string;
+  name?: string;
+  url?: string;
+  type?: string;
+  size?: number;
+  documentType?: string;
+  fileName?: string;
+  file?: File;
+  uploadedAt?: UnixTimestamp | string;
+}
+
+export interface CredentialRequest {
+  issuerDid: string;
+  schemaId: string;
+  claims: Record<string, unknown>;
+  proofOfEligibility?: unknown;
+}
+
+export interface CredentialDetails extends Credential {
+  contentHash?: Bytes32 | string;
+}
+
+export type DisclosureAttribute = CredentialAttribute;
+
+export interface DisclosurePolicy {
+  purpose?: string;
+  expiresAt?: UnixTimestamp | string;
+  [key: string]: unknown;
+}
+
+export interface DisclosureRequest {
+  id: string;
+  requestedAttributes: DisclosureAttribute[];
+  policy?: DisclosurePolicy;
+  [key: string]: unknown;
+}
+
+export interface DisclosureResponse {
+  requestId?: string;
+  selectedAttributes?: DisclosureAttribute[];
+  [key: string]: unknown;
+}
+
+export interface DisclosureHistoryEntry {
+  id: string;
+  createdAt?: UnixTimestamp | string;
+  [key: string]: unknown;
+}
+
+export interface DisclosureSelection {
+  credentialHash?: Bytes32 | string;
+  revealedAttributes: string[];
+  selectedAttributes?: CredentialAttribute[];
+  provenAttributes?: string[];
+  disclosed?: CredentialAttribute[];
+  zkProved?: CredentialAttribute[];
+  hidden?: CredentialAttribute[];
+}
+
+export type AttestationStatus = "verified" | "expired" | "pending" | "invalid";
+export type AttestationReport = TEEAttestation;
+
+export interface TEENodeHealth extends TEENodeStatus {
+  [key: string]: unknown;
+}
+
+export interface VerifyAttestationParams {
+  quote: string;
+  expectedMrEnclave?: string;
+  expectedMrSigner?: string;
+  nonce?: string;
+}
+
+export type VerificationResponse = VerificationResult;
+
+export interface VerificationHistory extends VerificationResult {
+  id?: string;
+  proofType?: string;
+  verifier?: string;
+  status?:
+    | VerificationStatus
+    | "verified"
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "expired"
+    | "rejected"
+    | "revoked";
+  timestamp?: UnixTimestamp | string;
+  createdAt?: UnixTimestamp | string;
+}
+
+export interface AttributeSelection {
+  key: string;
+  value?: string;
+}
+
+export interface CreateVerificationParams {
+  verifierDid?: string;
+  subjectDid?: string;
+  credentialHash?: Bytes32 | string;
+  requestedAttributes: AttributeSelection[] | string[];
+  purpose?: string;
+  requiredCredentials?: string[];
+  requiredAttributes?: CredentialAttribute[] | string[];
+  [key: string]: unknown;
+}
+
+export type ZKCircuitType = string;
+export type ZKProofInput = Record<string, unknown>;
+export type ProofHistoryEntry = ZKProof;
+
+export interface ProofProgress {
+  stage: string;
+  percent: number;
+}
+
+export type AuditEventType = string;
+
+export interface AuditEvent {
+  id: string;
+  type: AuditEventType;
+  actor?: string;
+  description?: string;
+  timestamp?: UnixTimestamp | string;
+  transactionHash?: HexString | string;
+  [key: string]: unknown;
+}
+
+export interface AuditFilter {
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AuditLogEntry extends AuditEvent {
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+}
+
+export interface CredentialAuditEntry extends AuditLogEntry {
+  credentialId?: string;
+  credentialHash?: Bytes32 | string;
+}
+
+export interface VerificationAuditEntry extends AuditLogEntry {
+  verificationId?: string;
+  requestId?: string;
+}
+
+export type AuditExport = {
+  entries?: AuditLogEntry[];
+  total?: number;
+  [key: string]: unknown;
+};
+
+export type IdentityCreationStep =
+  | "wallet"
+  | "profile"
+  | "biometrics"
+  | "review"
+  | "complete"
+  | "connect-wallet"
+  | "uae-pass"
+  | "biometric"
+  | "generate-did"
+  | "on-chain";

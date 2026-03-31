@@ -1,0 +1,16 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "ignorePatterns": ["lib/openzeppelin-contracts/**"],
+  "rules": {
+    "react/no-unescaped-entities": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*", "**/*.test.*", "src/mocks/setup.ts"],
+      "rules": {
+        "no-console": "off",
+        "react/display-name": "off"
+      }
+    }
+  ]
+}

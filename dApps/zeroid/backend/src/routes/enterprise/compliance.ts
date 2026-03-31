@@ -161,10 +161,11 @@ router.post('/report', async (req: Request, res: Response): Promise<void> => {
           req.body.dateRange ?? { start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), end: new Date().toISOString() },
         );
         break;
-      case 'DASHBOARD':
+      case 'DASHBOARD': {
         const dashboard = regulatoryReportingService.getDashboardData();
         res.status(200).json({ data: dashboard });
         return;
+      }
       default:
         res.status(400).json({ error: 'Unsupported report type', code: 'UNSUPPORTED_REPORT_TYPE' });
         return;
