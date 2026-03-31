@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Fingerprint,
   Eye,
@@ -17,19 +17,22 @@ import {
   FileCheck,
   Zap,
   History,
-} from 'lucide-react';
-import AppLayout from '@/components/layout/AppLayout';
-import VerificationFlow from '@/components/verification/VerificationFlow';
-import SelectiveDisclosureBuilder from '@/components/verification/SelectiveDisclosureBuilder';
-import ProofVisualization from '@/components/zkp/ProofVisualization';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { useVerification } from '@/hooks/useVerification';
-import { useZKProof } from '@/hooks/useZKProof';
+} from "lucide-react";
+import AppLayout from "@/components/layout/AppLayout";
+import VerificationFlow from "@/components/verification/VerificationFlow";
+import SelectiveDisclosureBuilder from "@/components/verification/SelectiveDisclosureBuilder";
+import ProofVisualization from "@/components/zkp/ProofVisualization";
+import {
+  StatusBadge,
+  type CredentialStatus as BadgeStatus,
+} from "@/components/ui/StatusBadge";
+import { useVerification } from "@/hooks/useVerification";
+import { useZKProof } from "@/hooks/useZKProof";
 
-type VerificationMode = 'generate' | 'respond' | 'history';
+type VerificationMode = "generate" | "respond" | "history";
 
 export default function VerificationPage() {
-  const [mode, setMode] = useState<VerificationMode>('generate');
+  const [mode, setMode] = useState<VerificationMode>("generate");
   const { verificationHistory, pendingRequests } = useVerification();
   const { proofHistory } = useZKProof();
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
@@ -49,7 +52,8 @@ export default function VerificationPage() {
             <div className="flex items-center gap-2 px-4 py-2 bg-status-pending/10 border border-status-pending/20 rounded-xl">
               <Clock className="w-4 h-4 text-status-pending" />
               <span className="text-sm font-medium text-status-pending">
-                {pendingRequests.length} pending request{pendingRequests.length > 1 ? 's' : ''}
+                {pendingRequests.length} pending request
+                {pendingRequests.length > 1 ? "s" : ""}
               </span>
             </div>
           )}
@@ -58,17 +62,21 @@ export default function VerificationPage() {
         {/* Mode Tabs */}
         <div className="flex items-center gap-1 p-1 bg-[var(--surface-secondary)] rounded-xl w-fit">
           {[
-            { id: 'generate' as const, label: 'Generate Proof', icon: Fingerprint },
-            { id: 'respond' as const, label: 'Respond to Request', icon: Send },
-            { id: 'history' as const, label: 'History', icon: History },
+            {
+              id: "generate" as const,
+              label: "Generate Proof",
+              icon: Fingerprint,
+            },
+            { id: "respond" as const, label: "Respond to Request", icon: Send },
+            { id: "history" as const, label: "History", icon: History },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setMode(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 mode === tab.id
-                  ? 'bg-[var(--surface-elevated)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? "bg-[var(--surface-elevated)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -78,7 +86,7 @@ export default function VerificationPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {mode === 'generate' && (
+          {mode === "generate" && (
             <motion.div
               key="generate"
               initial={{ opacity: 0, y: 10 }}
@@ -95,31 +103,33 @@ export default function VerificationPage() {
               <div className="col-span-12 lg:col-span-4 space-y-4">
                 {/* How it works */}
                 <div className="card p-6">
-                  <h3 className="text-sm font-semibold mb-4">How ZK Proofs Work</h3>
+                  <h3 className="text-sm font-semibold mb-4">
+                    How ZK Proofs Work
+                  </h3>
                   <div className="space-y-4">
                     {[
                       {
-                        step: '1',
-                        title: 'Select Attributes',
-                        desc: 'Choose what you want to prove',
+                        step: "1",
+                        title: "Select Attributes",
+                        desc: "Choose what you want to prove",
                         icon: Eye,
                       },
                       {
-                        step: '2',
-                        title: 'Build Circuit',
-                        desc: 'Private inputs stay local',
+                        step: "2",
+                        title: "Build Circuit",
+                        desc: "Private inputs stay local",
                         icon: Zap,
                       },
                       {
-                        step: '3',
-                        title: 'Generate Proof',
-                        desc: 'Computed in your browser',
+                        step: "3",
+                        title: "Generate Proof",
+                        desc: "Computed in your browser",
                         icon: Fingerprint,
                       },
                       {
-                        step: '4',
-                        title: 'Verify On-chain',
-                        desc: 'Proof verified, data stays private',
+                        step: "4",
+                        title: "Verify On-chain",
+                        desc: "Proof verified, data stays private",
                         icon: ShieldCheck,
                       },
                     ].map((step, i) => (
@@ -128,7 +138,9 @@ export default function VerificationPage() {
                           {step.step}
                         </div>
                         <div>
-                          <div className="text-sm font-medium">{step.title}</div>
+                          <div className="text-sm font-medium">
+                            {step.title}
+                          </div>
                           <div className="text-xs text-[var(--text-tertiary)]">
                             {step.desc}
                           </div>
@@ -147,9 +159,9 @@ export default function VerificationPage() {
                         Zero Knowledge Guarantee
                       </div>
                       <div className="text-xs text-[var(--text-secondary)] mt-1">
-                        The verifier learns only the truth of your claim, never the
-                        underlying data. Your age, score, and nationality remain
-                        private.
+                        The verifier learns only the truth of your claim, never
+                        the underlying data. Your age, score, and nationality
+                        remain private.
                       </div>
                     </div>
                   </div>
@@ -157,14 +169,19 @@ export default function VerificationPage() {
 
                 {/* Supported proof types */}
                 <div className="card p-6">
-                  <h3 className="text-sm font-semibold mb-3">Supported Proofs</h3>
+                  <h3 className="text-sm font-semibold mb-3">
+                    Supported Proofs
+                  </h3>
                   <div className="space-y-2">
                     {[
-                      { label: 'Age >= Threshold', circuit: 'age_proof' },
-                      { label: 'Residency Region', circuit: 'residency_proof' },
-                      { label: 'Credit Tier >=', circuit: 'credit_tier_proof' },
-                      { label: 'Nationality Set', circuit: 'nationality_proof' },
-                      { label: 'Composite', circuit: 'composite_proof' },
+                      { label: "Age >= Threshold", circuit: "age_proof" },
+                      { label: "Residency Region", circuit: "residency_proof" },
+                      { label: "Credit Tier >=", circuit: "credit_tier_proof" },
+                      {
+                        label: "Nationality Set",
+                        circuit: "nationality_proof",
+                      },
+                      { label: "Composite", circuit: "composite_proof" },
                     ].map((proof) => (
                       <div
                         key={proof.circuit}
@@ -182,7 +199,7 @@ export default function VerificationPage() {
             </motion.div>
           )}
 
-          {mode === 'respond' && (
+          {mode === "respond" && (
             <motion.div
               key="respond"
               initial={{ opacity: 0, y: 10 }}
@@ -193,7 +210,7 @@ export default function VerificationPage() {
             </motion.div>
           )}
 
-          {mode === 'history' && (
+          {mode === "history" && (
             <motion.div
               key="history"
               initial={{ opacity: 0, y: 10 }}
@@ -202,44 +219,75 @@ export default function VerificationPage() {
             >
               <div className="card">
                 <div className="p-6 border-b border-[var(--border-primary)]">
-                  <h2 className="text-lg font-semibold">Verification History</h2>
+                  <h2 className="text-lg font-semibold">
+                    Verification History
+                  </h2>
                 </div>
                 <div className="divide-y divide-[var(--border-secondary)]">
                   {(verificationHistory ?? []).length > 0 ? (
-                    verificationHistory?.map((verification, i) => (
-                      <div
-                        key={verification.id}
-                        className="p-4 flex items-center gap-4 hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer"
-                        onClick={() => setSelectedProof(verification.id)}
-                      >
+                    verificationHistory?.map((verification) => {
+                      const proofId = verification.id ?? verification.requestId;
+                      const proofType =
+                        verification.proofType ??
+                        verification.proof?.circuitName ??
+                        "Verification";
+                      const verifier =
+                        verification.verifier ?? "Unknown verifier";
+                      const status =
+                        verification.status ??
+                        (verification.verified ? "verified" : "pending");
+                      const timestamp =
+                        verification.timestamp ??
+                        verification.createdAt ??
+                        verification.verifiedAt;
+                      const badgeStatus: BadgeStatus =
+                        status === "completed" || status === "verified"
+                          ? "verified"
+                          : status === "expired"
+                            ? "expired"
+                            : status === "failed" ||
+                                status === "rejected" ||
+                                status === "revoked"
+                              ? "revoked"
+                              : "pending";
+
+                      return (
                         <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            verification.status === 'verified'
-                              ? 'bg-status-verified/10 text-status-verified'
-                              : verification.status === 'pending'
-                              ? 'bg-status-pending/10 text-status-pending'
-                              : 'bg-status-revoked/10 text-status-revoked'
-                          }`}
+                          key={proofId}
+                          className="p-4 flex items-center gap-4 hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer"
+                          onClick={() => setSelectedProof(proofId)}
                         >
-                          <Fingerprint className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">
-                            {verification.proofType} Proof
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                              badgeStatus === "verified"
+                                ? "bg-status-verified/10 text-status-verified"
+                                : badgeStatus === "pending"
+                                  ? "bg-status-pending/10 text-status-pending"
+                                  : "bg-status-revoked/10 text-status-revoked"
+                            }`}
+                          >
+                            <Fingerprint className="w-5 h-5" />
                           </div>
-                          <div className="text-xs text-[var(--text-tertiary)]">
-                            Requested by {verification.verifier}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm">
+                              {proofType} Proof
+                            </div>
+                            <div className="text-xs text-[var(--text-tertiary)]">
+                              Requested by {verifier}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <StatusBadge status={badgeStatus} />
+                            <span className="text-xs text-[var(--text-tertiary)]">
+                              {timestamp
+                                ? new Date(timestamp).toLocaleDateString()
+                                : "Unknown date"}
+                            </span>
+                            <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)]" />
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <StatusBadge status={verification.status} />
-                          <span className="text-xs text-[var(--text-tertiary)]">
-                            {new Date(verification.timestamp).toLocaleDateString()}
-                          </span>
-                          <ArrowRight className="w-4 h-4 text-[var(--text-tertiary)]" />
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="p-12 text-center">
                       <History className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)]" />

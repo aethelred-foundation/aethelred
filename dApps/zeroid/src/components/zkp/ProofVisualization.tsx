@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -9,24 +9,53 @@ import {
   Copy,
   Clock,
   Fingerprint,
-} from 'lucide-react';
-import type { ZKProof } from '@/types';
+} from "lucide-react";
+import { ProofSystem, type ZKProof } from "@/types";
 
 interface ProofVisualizationProps {
-  proof: ZKProof;
+  proof?: ZKProof;
+  proofId?: string;
   isVerifying?: boolean;
   isVerified?: boolean;
   showDetails?: boolean;
+  onClose?: () => void;
 }
 
 export default function ProofVisualization({
   proof,
+  proofId,
   isVerifying = false,
   isVerified = false,
   showDetails = true,
 }: ProofVisualizationProps) {
   const [copied, setCopied] = useState(false);
   const [ringProgress, setRingProgress] = useState(0);
+  const resolvedProof: ZKProof = proof ?? {
+    id: proofId ?? "unknown-proof",
+    circuitId:
+      "0x0000000000000000000000000000000000000000000000000000000000000000",
+    circuitName: "Proof",
+    proofSystem: ProofSystem.Groth16,
+    proof: {
+      a: ["0", "0"],
+      b: [
+        ["0", "0"],
+        ["0", "0"],
+      ],
+      c: ["0", "0"],
+    },
+    publicInputs: [],
+    publicOutputs: [],
+    generatedAt: 0,
+    validityDuration: 0,
+    proofHash:
+      "0x0000000000000000000000000000000000000000000000000000000000000000",
+    hash: proofId,
+    protocol: "Groth16",
+    curve: "BN254",
+    createdAt: 0,
+    publicInputCount: 0,
+  };
 
   useEffect(() => {
     if (isVerifying) {
@@ -43,7 +72,9 @@ export default function ProofVisualization({
 
   const handleCopyHash = async () => {
     try {
-      await navigator.clipboard.writeText(proof.hash);
+      await navigator.clipboard.writeText(
+        resolvedProof.hash ?? resolvedProof.proofHash,
+      );
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -75,7 +106,7 @@ export default function ProofVisualization({
               cy="50"
               r="45"
               fill="none"
-              stroke={isVerified ? '#10b981' : '#4263eb'}
+              stroke={isVerified ? "#10b981" : "#4263eb"}
               strokeWidth="3"
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -92,7 +123,7 @@ export default function ProofVisualization({
                   key="verified"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
+                  transition={{ type: "spring", stiffness: 200 }}
                 >
                   <CheckCircle2 className="w-10 h-10 text-status-verified" />
                 </motion.div>
@@ -100,7 +131,7 @@ export default function ProofVisualization({
                 <motion.div
                   key="verifying"
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 >
                   <ShieldCheck className="w-10 h-10 text-brand-500" />
                 </motion.div>
@@ -123,7 +154,7 @@ export default function ProofVisualization({
                 <motion.div
                   key={i}
                   className="absolute w-2 h-2 rounded-full bg-brand-500"
-                  style={{ top: '50%', left: '50%' }}
+                  style={{ top: "50%", left: "50%" }}
                   animate={{
                     x: [0, 50 * Math.cos((i * 2 * Math.PI) / 3), 0],
                     y: [0, 50 * Math.sin((i * 2 * Math.PI) / 3), 0],
@@ -133,7 +164,7 @@ export default function ProofVisualization({
                     duration: 2,
                     repeat: Infinity,
                     delay: i * 0.3,
-                    ease: 'easeInOut',
+                    ease: "easeInOut",
                   }}
                 />
               ))}
@@ -147,7 +178,7 @@ export default function ProofVisualization({
                 className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-status-verified flex items-center justify-center shadow-lg"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 300, delay: 0.5 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.5 }}
               >
                 <CheckCircle2 className="w-4 h-4 text-white" />
               </motion.div>
@@ -161,16 +192,21 @@ export default function ProofVisualization({
         <p
           className={`text-sm font-semibold ${
             isVerified
-              ? 'text-status-verified'
+              ? "text-status-verified"
               : isVerifying
-                ? 'text-brand-500'
-                : 'text-[var(--text-primary)]'
+                ? "text-brand-500"
+                : "text-[var(--text-primary)]"
           }`}
         >
-          {isVerified ? 'Proof Verified' : isVerifying ? 'Verifying Proof...' : 'ZK Proof'}
+          {isVerified
+            ? "Proof Verified"
+            : isVerifying
+              ? "Verifying Proof..."
+              : "ZK Proof"}
         </p>
         <p className="text-xs text-[var(--text-tertiary)] mt-1">
-          {proof.protocol ?? 'Groth16'} | {proof.curve ?? 'BN254'}
+          {resolvedProof.protocol ?? "Groth16"} |{" "}
+          {resolvedProof.curve ?? "BN254"}
         </p>
       </div>
 
@@ -196,25 +232,29 @@ export default function ProofVisualization({
               </button>
             </div>
             <p className="font-mono text-xs text-[var(--text-primary)] break-all leading-relaxed">
-              {proof.hash}
+              {resolvedProof.hash ?? resolvedProof.proofHash}
             </p>
           </div>
 
           {/* Metadata */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-[var(--surface-secondary)]">
-              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Created</p>
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
+                Created
+              </p>
               <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {proof.createdAt
-                  ? new Date(proof.createdAt).toLocaleTimeString()
-                  : '--'}
+                {resolvedProof.createdAt
+                  ? new Date(resolvedProof.createdAt).toLocaleTimeString()
+                  : "--"}
               </p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--surface-secondary)]">
-              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Public Inputs</p>
+              <p className="text-xs text-[var(--text-tertiary)] mb-0.5">
+                Public Inputs
+              </p>
               <p className="text-sm font-medium text-[var(--text-primary)]">
-                {proof.publicInputCount ?? 0}
+                {resolvedProof.publicInputCount ?? 0}
               </p>
             </div>
           </div>

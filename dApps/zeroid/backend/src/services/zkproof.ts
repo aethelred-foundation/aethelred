@@ -360,7 +360,6 @@ export class ZKProofService {
     if (typeof value === 'number') return BigInt(value);
     if (typeof value === 'bigint') return value;
     if (typeof value === 'string') {
-      const crypto = require('crypto');
       const hash = crypto.createHash('sha256').update(value).digest('hex');
       return BigInt('0x' + hash) % BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
     }
@@ -385,3 +384,4 @@ export class ZKProofError extends Error {
 }
 
 export const zkProofService = new ZKProofService();
+import crypto from 'crypto';

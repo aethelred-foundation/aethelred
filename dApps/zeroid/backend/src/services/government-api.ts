@@ -397,7 +397,6 @@ export class GovernmentAPIService {
   }
 
   private hashSensitiveData(data: string): string {
-    const crypto = require('crypto');
     return crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
   }
 }
@@ -418,3 +417,4 @@ export class GovernmentAPIError extends Error {
 }
 
 export const governmentAPIService = new GovernmentAPIService();
+import crypto from 'crypto';

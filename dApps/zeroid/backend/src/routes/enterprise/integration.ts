@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { createLogger, format, transports } from 'winston';
 import { webhookSystem, WebhookRegistrationSchema, WebhookUpdateSchema } from '../../services/enterprise/webhook-system';
-import { apiGateway, CreateAPIKeySchema, OAuth2ClientCredentialsSchema as _OAuth2ClientCredentialsSchema } from '../../services/enterprise/api-gateway';
+import { apiGateway, CreateAPIKeySchema } from '../../services/enterprise/api-gateway';
 import { oidcBridge, OIDCClientRegistrationSchema } from '../../services/enterprise/oidc-bridge';
 import { slaMonitor, SLADefinitionSchema } from '../../services/enterprise/sla-monitor';
 import { AuthenticatedRequest } from '../../middleware/auth';

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Filter,
@@ -13,49 +13,64 @@ import {
   AlertTriangle,
   Loader2,
   FolderOpen,
-} from 'lucide-react';
-import CredentialCard from './CredentialCard';
-import { useCredentials } from '@/hooks/useCredentials';
-import type { Credential, VerificationStatus, CredentialSchemaType } from '@/types';
+} from "lucide-react";
+import CredentialCard from "./CredentialCard";
+import { useCredentials } from "@/hooks/useCredentials";
+import type { Credential, CredentialSchemaType } from "@/types";
 
-type ViewMode = 'grid' | 'list';
+type ViewMode = "grid" | "list";
+type CredentialFilterStatus = "verified" | "pending" | "revoked" | "expired";
 
-const STATUS_FILTERS: { value: VerificationStatus | 'all'; label: string; icon: typeof ShieldCheck }[] = [
-  { value: 'all', label: 'All', icon: Filter },
-  { value: 'verified', label: 'Verified', icon: ShieldCheck },
-  { value: 'pending', label: 'Pending', icon: Clock },
-  { value: 'revoked', label: 'Revoked', icon: ShieldAlert },
-  { value: 'expired', label: 'Expired', icon: AlertTriangle },
+const STATUS_FILTERS: {
+  value: CredentialFilterStatus | "all";
+  label: string;
+  icon: typeof ShieldCheck;
+}[] = [
+  { value: "all", label: "All", icon: Filter },
+  { value: "verified", label: "Verified", icon: ShieldCheck },
+  { value: "pending", label: "Pending", icon: Clock },
+  { value: "revoked", label: "Revoked", icon: ShieldAlert },
+  { value: "expired", label: "Expired", icon: AlertTriangle },
 ];
 
-const SCHEMA_FILTERS: { value: CredentialSchemaType | 'all'; label: string }[] = [
-  { value: 'all', label: 'All Types' },
-  { value: 'identity', label: 'Identity' },
-  { value: 'accreditation', label: 'Accreditation' },
-  { value: 'kyc', label: 'KYC' },
-  { value: 'education', label: 'Education' },
-  { value: 'employment', label: 'Employment' },
-];
+const SCHEMA_FILTERS: { value: CredentialSchemaType | "all"; label: string }[] =
+  [
+    { value: "all", label: "All Types" },
+    { value: "identity", label: "Identity" },
+    { value: "accreditation", label: "Accreditation" },
+    { value: "kyc", label: "KYC" },
+    { value: "education", label: "Education" },
+    { value: "employment", label: "Employment" },
+  ];
 
 export default function CredentialList() {
-  const { credentials, isLoading, error, revokeCredential, verifyCredential } = useCredentials();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<VerificationStatus | 'all'>('all');
-  const [schemaFilter, setSchemaFilter] = useState<CredentialSchemaType | 'all'>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const { credentials, isLoading, error, revokeCredential, verifyCredential } =
+    useCredentials();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    CredentialFilterStatus | "all"
+  >("all");
+  const [schemaFilter, setSchemaFilter] = useState<
+    CredentialSchemaType | "all"
+  >("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const filteredCredentials = useMemo(() => {
     if (!credentials) return [];
 
     return credentials.filter((cred: Credential) => {
-      if (statusFilter !== 'all' && cred.status !== statusFilter) return false;
-      if (schemaFilter !== 'all' && cred.schemaType !== schemaFilter) return false;
+      if (statusFilter !== "all" && cred.status !== statusFilter) return false;
+      if (schemaFilter !== "all" && cred.schemaType !== schemaFilter)
+        return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
+        const name = cred.name ?? cred.schemaName ?? "";
+        const issuer = cred.issuer ?? cred.issuerDid?.uri ?? "";
+        const schemaType = cred.schemaType ?? "";
         return (
-          cred.name.toLowerCase().includes(q) ||
-          cred.issuer.toLowerCase().includes(q) ||
-          cred.schemaType.toLowerCase().includes(q)
+          name.toLowerCase().includes(q) ||
+          issuer.toLowerCase().includes(q) ||
+          schemaType.toLowerCase().includes(q)
         );
       }
       return true;
@@ -66,7 +81,9 @@ export default function CredentialList() {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
-        <span className="ml-3 text-[var(--text-secondary)]">Loading credentials...</span>
+        <span className="ml-3 text-[var(--text-secondary)]">
+          Loading credentials...
+        </span>
       </div>
     );
   }
@@ -75,7 +92,9 @@ export default function CredentialList() {
     return (
       <div className="card p-8 text-center">
         <ShieldAlert className="w-8 h-8 text-red-400 mx-auto mb-3" />
-        <p className="text-sm text-red-400">Failed to load credentials: {error.message}</p>
+        <p className="text-sm text-red-400">
+          Failed to load credentials: {error.message}
+        </p>
       </div>
     );
   }
@@ -97,7 +116,9 @@ export default function CredentialList() {
         <div className="flex items-center gap-2">
           <select
             value={schemaFilter}
-            onChange={(e) => setSchemaFilter(e.target.value as CredentialSchemaType | 'all')}
+            onChange={(e) =>
+              setSchemaFilter(e.target.value as CredentialSchemaType | "all")
+            }
             className="input w-auto"
           >
             {SCHEMA_FILTERS.map((f) => (
@@ -108,22 +129,22 @@ export default function CredentialList() {
           </select>
           <div className="flex items-center border border-[var(--border-primary)] rounded-xl overflow-hidden">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => setViewMode("grid")}
               className={`p-2 transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-brand-500/10 text-brand-500'
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                viewMode === "grid"
+                  ? "bg-brand-500/10 text-brand-500"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
               aria-label="Grid view"
             >
               <Grid3X3 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode("list")}
               className={`p-2 transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-brand-500/10 text-brand-500'
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+                viewMode === "list"
+                  ? "bg-brand-500/10 text-brand-500"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
               aria-label="List view"
             >
@@ -144,8 +165,8 @@ export default function CredentialList() {
               onClick={() => setStatusFilter(filter.value)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'bg-[var(--surface-elevated)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+                  ? "bg-[var(--surface-elevated)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -157,7 +178,8 @@ export default function CredentialList() {
 
       {/* Results count */}
       <p className="text-xs text-[var(--text-tertiary)]">
-        {filteredCredentials.length} credential{filteredCredentials.length !== 1 ? 's' : ''} found
+        {filteredCredentials.length} credential
+        {filteredCredentials.length !== 1 ? "s" : ""} found
       </p>
 
       {/* Credential list */}
@@ -170,16 +192,16 @@ export default function CredentialList() {
           <FolderOpen className="w-10 h-10 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] text-sm">
             {credentials && credentials.length > 0
-              ? 'No credentials match your filters.'
-              : 'No credentials yet. Request your first credential to get started.'}
+              ? "No credentials match your filters."
+              : "No credentials yet. Request your first credential to get started."}
           </p>
         </motion.div>
       ) : (
         <motion.div
           className={
-            viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 gap-4'
-              : 'space-y-3'
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+              : "space-y-3"
           }
           layout
         >

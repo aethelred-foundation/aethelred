@@ -413,7 +413,7 @@ export class BehavioralBiometricsService {
     const touchAnalysis = this.analyzeTouchBehavior(session.touchEvents);
 
     // Get or create template for this identity
-    let template = this.templates.get(session.identityId);
+    const template = this.templates.get(session.identityId);
     const details: string[] = [];
 
     let keystrokeScore = 0.5;

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { identityService } from '../services/identity';
 import { governmentAPIService } from '../services/government-api';
 import { authMiddleware, AuthenticatedRequest, optionalAuthMiddleware } from '../middleware/auth';
-import { validate, registerIdentitySchema, didSchema, uuidSchema as _uuidSchema } from '../middleware/validation';
+import { validate, registerIdentitySchema, didSchema } from '../middleware/validation';
 import { authRateLimiter } from '../middleware/rateLimit';
 import { logger } from '../index';
 import { z } from 'zod';

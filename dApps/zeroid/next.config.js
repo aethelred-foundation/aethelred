@@ -52,6 +52,12 @@ const nextConfig = {
 
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@react-native-async-storage/async-storage': false,
+        'pino-pretty': false,
+      };
+
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -62,6 +68,13 @@ const nextConfig = {
         path: false,
         os: false,
       };
+
+      const webpack = require('webpack');
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
+          resource.request = resource.request.replace(/^node:/, '');
+        }),
+      );
     }
 
     // WASM support for ZK proof verification
