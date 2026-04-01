@@ -1,0 +1,76 @@
+name: AIP Proposal Intake
+description: Intake form for protocol or governance proposals before formal AIP drafting
+title: "[AIP] "
+labels: ["aip", "governance", "needs-triage"]
+body:
+  - type: input
+    id: provisional_id
+    attributes:
+      label: Provisional AIP ID
+      placeholder: "e.g. AIP-00X (leave blank if unknown)"
+
+  - type: input
+    id: title
+    attributes:
+      label: Proposal Title
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change needed? What problem does it solve for the protocol?
+    validations:
+      required: true
+
+  - type: textarea
+    id: specification
+    attributes:
+      label: High-Level Specification
+      description: Describe the proposed change at a technical level
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Technical / Governance Impact
+      description: |
+        Which areas are affected?
+        - Consensus (PoUW, VRF, vote extensions)?
+        - APIs (gRPC, REST, SDK)?
+        - Economics (fees, rewards, slashing)?
+        - Validator/operator operations?
+        - Smart contracts?
+        - Migration or state changes required?
+
+  - type: dropdown
+    id: release
+    attributes:
+      label: Target Release
+      options:
+        - Testnet
+        - Mainnet
+        - Post-mainnet
+        - Undecided
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Related repos, modules, AIPs, or external systems
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security Considerations
+      description: What new attack vectors or risks does this introduce?
+
+  - type: textarea
+    id: backwards_compat
+    attributes:
+      label: Backwards Compatibility
+      description: Is this backward-compatible? If not, what migration path is proposed?

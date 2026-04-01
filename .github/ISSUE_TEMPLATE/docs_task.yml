@@ -1,0 +1,57 @@
+name: Documentation Task
+description: Request or track a documentation task
+title: "[DOCS] "
+labels: ["docs", "needs-triage"]
+body:
+  - type: dropdown
+    id: docs_area
+    attributes:
+      label: Documentation Area
+      options:
+        - Getting started / quickstart
+        - Protocol architecture
+        - Consensus (PoUW)
+        - Contracts (bridge, ERC20)
+        - CLI reference
+        - SDK — TypeScript
+        - SDK — Python
+        - SDK — Go
+        - SDK — Rust
+        - Validator / operator guide
+        - Governance / AIPs
+        - API reference (gRPC / REST)
+        - Release notes
+        - Security documentation
+        - Contributing / community
+    validations:
+      required: true
+
+  - type: textarea
+    id: gap
+    attributes:
+      label: Documentation Gap
+      description: What is missing, incorrect, or outdated?
+    validations:
+      required: true
+
+  - type: textarea
+    id: audience
+    attributes:
+      label: Intended Audience
+      placeholder: "e.g. validator operator, dApp developer, protocol engineer, auditor, partner, new contributor"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 — Blocking users / operators
+        - P1 — High
+        - P2 — Medium
+        - P3 — Low
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: What must be true for this docs task to be complete?
