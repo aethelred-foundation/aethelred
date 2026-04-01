@@ -1,0 +1,49 @@
+name: Sync Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/sync-labels.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync Labels
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        repo:
+          - aethelred
+          - AIPs
+          - aethelred-contracts
+          - aethelred-cli
+          - aethelred-docs
+          - aethelred-sdk-ts
+          - aethelred-sdk-py
+          - aethelred-sdk-rs
+          - aethelred-sdk-go
+          - vscode-aethelred
+          - shiora
+          - noblepay
+          - zeroid
+          - cruzible
+          - terraqura
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: micnncim/action-label-syncer@v1
+        with:
+          repository: AethelredFoundation/${{ matrix.repo }}
+          token: ${{ secrets.ORG_ADMIN_TOKEN }}
+          manifest: .github/labels.yml
+          prune: false

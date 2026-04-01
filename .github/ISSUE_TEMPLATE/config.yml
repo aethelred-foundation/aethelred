@@ -9,3 +9,6 @@ contact_links:
   - name: Community support
     url: https://discord.gg/aethelred
     about: Ask questions and get routed to the right maintainer or repo.
+  - name: Aethelred Improvement Proposals
+    url: https://github.com/aethelred-foundation/AIPs
+    about: For formal protocol or governance proposals.

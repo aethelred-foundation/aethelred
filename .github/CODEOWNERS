@@ -1,0 +1,74 @@
+# Aethelred Foundation — CODEOWNERS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Teams referenced below must exist in the AethelredFoundation GitHub org
+# and have at least read access to this repository.
+#
+# Order matters: last match wins. More specific paths override broader ones.
+
+# ── Global fallback ───────────────────────────
+*                                       @AethelredFoundation/core-admins
+
+# ── Core protocol (Go) ───────────────────────
+/app/                                   @AethelredFoundation/protocol
+/cmd/                                   @AethelredFoundation/protocol
+/x/                                     @AethelredFoundation/protocol
+/proto/                                 @AethelredFoundation/protocol
+/tests/                                 @AethelredFoundation/protocol @AethelredFoundation/qa
+
+# ── Rust crates ───────────────────────────────
+/crates/                                @AethelredFoundation/protocol @AethelredFoundation/security
+/crates/core/                           @AethelredFoundation/protocol @AethelredFoundation/security
+/crates/consensus/                      @AethelredFoundation/protocol
+/crates/vm/                             @AethelredFoundation/protocol
+/crates/bridge/                         @AethelredFoundation/protocol @AethelredFoundation/contracts
+
+# ── Smart contracts ───────────────────────────
+/contracts/                             @AethelredFoundation/contracts @AethelredFoundation/security
+
+# ── SDKs ──────────────────────────────────────
+/sdk/                                   @AethelredFoundation/sdk
+/sdk/typescript/                        @AethelredFoundation/sdk
+/sdk/aethelred-py/                      @AethelredFoundation/sdk
+/sdk/go/                                @AethelredFoundation/sdk
+/sdk/rust/                              @AethelredFoundation/sdk
+/sdk/aethelred-sdk/                     @AethelredFoundation/sdk
+
+# ── dApps ─────────────────────────────────────
+/dApps/                                 @AethelredFoundation/sdk
+/dApps/zeroid/                          @AethelredFoundation/sdk @AethelredFoundation/security
+/dApps/noblepay/                        @AethelredFoundation/sdk @AethelredFoundation/security
+/dApps/cruzible/                        @AethelredFoundation/sdk
+/dApps/shiora/                          @AethelredFoundation/sdk
+
+# ── Frontend / tooling ────────────────────────
+/frontend/                              @AethelredFoundation/sdk @AethelredFoundation/docs
+
+# ── Documentation ─────────────────────────────
+/docs/                                  @AethelredFoundation/docs
+/README.md                              @AethelredFoundation/docs
+/CHANGELOG.md                           @AethelredFoundation/docs
+/CONTRIBUTING.md                        @AethelredFoundation/core-admins
+/SECURITY.md                            @AethelredFoundation/security
+
+# ── Infrastructure ────────────────────────────
+/infrastructure/                        @AethelredFoundation/devops
+/deploy/                                @AethelredFoundation/devops
+/config/                                @AethelredFoundation/protocol @AethelredFoundation/devops
+/scripts/                               @AethelredFoundation/protocol @AethelredFoundation/devops
+/Dockerfile                             @AethelredFoundation/devops @AethelredFoundation/security
+/docker/                                @AethelredFoundation/devops @AethelredFoundation/security
+/Makefile                               @AethelredFoundation/protocol @AethelredFoundation/devops
+
+# ── CI/CD & repo controls ────────────────────
+/.github/                               @AethelredFoundation/core-admins @AethelredFoundation/devops
+/.github/workflows/                     @AethelredFoundation/core-admins @AethelredFoundation/devops
+/.github/CODEOWNERS                     @AethelredFoundation/core-admins
+
+# ── Security-critical dependency files ────────
+/go.mod                                 @AethelredFoundation/protocol @AethelredFoundation/security
+/go.sum                                 @AethelredFoundation/protocol @AethelredFoundation/security
+/crates/Cargo.toml                      @AethelredFoundation/protocol @AethelredFoundation/security
+/crates/Cargo.lock                      @AethelredFoundation/protocol @AethelredFoundation/security
+/contracts/package.json                 @AethelredFoundation/contracts @AethelredFoundation/security
+/contracts/package-lock.json            @AethelredFoundation/contracts @AethelredFoundation/security

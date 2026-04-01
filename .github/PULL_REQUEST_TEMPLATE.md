@@ -4,13 +4,44 @@
 
 Closes #
 
+## Related AIP / Issue / Project
+
+- AIP: <!-- e.g. AIP-003, or N/A -->
+- Issue: <!-- e.g. #123 -->
+- Project: <!-- e.g. Core Protocol, SDK, Ecosystem Apps -->
+- Target Release: <!-- e.g. Testnet, Mainnet v1.1, N/A -->
+
 ## Type of Change
 
 - [ ] Bug fix (non-breaking)
 - [ ] New feature (non-breaking)
 - [ ] Breaking change (consensus / API / storage)
+- [ ] Performance improvement
+- [ ] Security hardening
 - [ ] Documentation
 - [ ] Refactor / chore
+- [ ] Release preparation
+
+## Scope
+
+<!-- Which area(s) does this PR affect? -->
+- [ ] Protocol (consensus, ABCI++, modules)
+- [ ] Contracts (Solidity, bridge)
+- [ ] CLI
+- [ ] SDK (TS / Python / Go / Rust)
+- [ ] VS Code Extension
+- [ ] Docs
+- [ ] DevOps / CI
+- [ ] Infrastructure (Helm / Terraform / Docker)
+- [ ] Ecosystem App (Shiora / NoblePay / ZeroID / Cruzible / TerraQura)
+
+## Risk Level
+
+<!-- What is the risk if this change has a defect? -->
+- [ ] Low (cosmetic, internal tooling, tests)
+- [ ] Medium (non-consensus feature, single SDK)
+- [ ] High (cross-module, multi-SDK, operator-facing)
+- [ ] Critical (consensus, state transitions, bridge, key management)
 
 ## Testing
 
@@ -37,6 +68,16 @@ Closes #
 - [ ] In-code comments updated
 - [ ] Public API / ABI changes reflected in `proto/` or type definitions
 - [ ] Docs site updated (if user-facing change)
+
+## Breaking Change Assessment
+
+- [ ] No breaking change
+- [ ] Breaking change to consensus (requires AIP + governance vote)
+- [ ] Breaking change to API / SDK (requires major version bump)
+- [ ] Breaking change to contract interfaces
+- [ ] Migration required
+
+<!-- If breaking, describe the migration path: -->
 
 ## Reviewer Notes
 

@@ -1,0 +1,118 @@
+name: Bug Report
+description: Report a bug in the Aethelred node, SDK, contracts, or tooling
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which component is affected?
+      options:
+        - Go node (cmd/aethelredd)
+        - x/pouw module
+        - x/seal module
+        - x/verify module
+        - x/ibc module
+        - ABCI++ handlers
+        - Ethereum bridge
+        - Rust crates (core/consensus/vm/mempool/bridge/vault)
+        - Smart contracts (Solidity)
+        - SDK — TypeScript
+        - SDK — Python
+        - SDK — Go
+        - SDK — Rust
+        - CLI
+        - VS Code extension
+        - Documentation
+        - CI/CD
+        - Infrastructure (Helm/Terraform/Docker)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / Commit / Tag
+      placeholder: "e.g. v0.2.1, commit abc1234, or testnet-v1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear one-line description of the bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Run `aethelredd start --chain-id aethelred-testnet-1`
+        2. Submit tx with `aethel tx pouw submit-job ...`
+        3. Observe error in logs
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: Include error messages, logs, or stack traces
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (consensus halt, funds at risk, double-spend)
+        - High (TEE bypass, ZK proof forgery, governance attack)
+        - Medium (DoS, data integrity, degraded functionality)
+        - Low (cosmetic, non-exploitable misconfig, minor UX)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      options:
+        - Mainnet
+        - Testnet
+        - Local devnet
+        - Not applicable
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS: macOS 15 / Ubuntu 24.04
+        Go: 1.24.6
+        Rust: 1.85.0
+        Node: aethelred-testnet-1
+        Aethelred version: v0.x.x or commit SHA
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Traces / Screenshots
+      render: shell
+
+  - type: markdown
+    attributes:
+      value: |
+        > **Security Notice**: If this bug has **security implications** (consensus, funds, keys, TEE bypass), do NOT file a public issue. Email **security@aethelred.io** or follow [SECURITY.md](../../SECURITY.md).

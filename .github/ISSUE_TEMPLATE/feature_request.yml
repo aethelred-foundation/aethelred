@@ -1,0 +1,91 @@
+name: Feature Request
+description: Propose a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Protocol / consensus
+        - Contracts (Solidity)
+        - CLI
+        - SDK — TypeScript
+        - SDK — Python
+        - SDK — Go
+        - SDK — Rust
+        - VS Code extension
+        - Documentation
+        - Developer experience
+        - Infrastructure / DevOps
+        - Ecosystem app
+        - Governance
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What pain point does this solve? Who is affected?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: High-level design. Link to relevant AIPs, research, or prior art.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Implementation Complexity
+      options:
+        - Small (< 1 week)
+        - Medium (1–4 weeks)
+        - Large (> 1 month — should probably be an AIP)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 — Critical / blocking
+        - P1 — High
+        - P2 — Medium
+        - P3 — Low / nice to have
+
+  - type: dropdown
+    id: breaking_change
+    attributes:
+      label: Breaking Change?
+      options:
+        - No breaking changes
+        - Breaking change to consensus (requires AIP + governance vote)
+        - Breaking change to API/SDK (requires major version bump)
+        - Breaking change to contract interfaces
+    validations:
+      required: true
+
+  - type: textarea
+    id: success
+    attributes:
+      label: Success Criteria
+      description: What must be true for this to be considered done?
+
+  - type: markdown
+    attributes:
+      value: |
+        > For major protocol changes, please open an [Aethelred Improvement Proposal](https://github.com/aethelred-foundation/AIPs) instead.

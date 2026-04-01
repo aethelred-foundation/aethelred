@@ -1,0 +1,91 @@
+name: Release Checklist
+description: Track a release from candidate to publication
+title: "[RELEASE] "
+labels: ["release"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "e.g. v0.3.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: release_type
+    attributes:
+      label: Release Type
+      options:
+        - Patch (bug fixes, docs, hardening)
+        - Minor (additive features, backward-compatible)
+        - Major (breaking changes, migrations, protocol impact)
+        - Hotfix (urgent fix for production issue)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target Network
+      options:
+        - Testnet
+        - Mainnet
+        - Both
+        - Not network-specific
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included in this release?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: quality
+    attributes:
+      label: Quality Gates
+      options:
+        - label: All required PRs merged
+        - label: CI checks passing on release branch
+        - label: CODEOWNERS approvals complete
+        - label: Security review completed (where needed)
+        - label: Changelog updated
+        - label: Documentation updated
+        - label: Migration notes prepared (if breaking)
+        - label: Version bump prepared
+        - label: Release notes drafted
+
+  - type: checkboxes
+    id: artifacts
+    attributes:
+      label: Artifacts
+      options:
+        - label: Git tag created
+        - label: GitHub Release created
+        - label: Binaries attached (if applicable)
+        - label: Package published (npm/PyPI/crates.io)
+        - label: Container image published (GHCR)
+        - label: Checksums attached
+        - label: ABI artifacts published (if contracts)
+
+  - type: checkboxes
+    id: operator_readiness
+    attributes:
+      label: Operator / Validator Readiness
+      options:
+        - label: Operator upgrade notes published
+        - label: Config changes documented
+        - label: State migration tested (if applicable)
+        - label: Rollback procedure documented
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback Plan
+      description: What is the rollback or hotfix plan if this release fails?
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
