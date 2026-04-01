@@ -6,7 +6,7 @@
 
 <p align="center">
  <strong>The Sovereign Layer 1 for Verifiable AI</strong><br/>
- Proof-of-Useful-Work consensus · Quantum-safe cryptography · On-chain zkML & TEE verification
+ Proof-of-Useful-Work consensus · ML-DSA-65 + ECDSA hybrid · On-chain zkML &amp; TEE verification
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
  <img src="https://img.shields.io/badge/Solidity-0.8.20-363636?style=flat-square&logo=solidity&logoColor=white" alt="Solidity">
  <img src="https://img.shields.io/badge/Cosmos_SDK-v0.50-2E3148?style=flat-square" alt="Cosmos SDK">
  <img src="https://img.shields.io/badge/CometBFT-v0.38-blue?style=flat-square" alt="CometBFT">
- <img src="https://img.shields.io/badge/PQC-Kyber+Dilithium-purple?style=flat-square" alt="PQC">
+ <img src="https://img.shields.io/badge/PQC-ML--KEM--768+ML--DSA--65-purple?style=flat-square" alt="PQC">
 </p>
 <p align="center">
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
@@ -35,7 +35,7 @@
 
 ## What is Aethelred?
 
-Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** - running AI inference jobs inside **Intel SGX / AWS Nitro TEEs** and generating **zero-knowledge ML proofs** (EZKL, RISC Zero, Groth16, Halo2, Plonky2) that are verified on-chain in every block.
+Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** — running AI inference jobs inside **Intel SGX · AMD SEV-SNP · AWS Nitro · Azure Confidential VMs · Google Confidential VMs · NVIDIA H100 CC** TEEs and generating **zero-knowledge ML proofs** (Groth16, PLONK, EZKL, Halo2, STARK) that are verified on-chain in every block.
 
 ```
 AI Job Submitted → VRF Scheduler → Validator TEE Execution
@@ -50,8 +50,8 @@ AI Job Submitted → VRF Scheduler → Validator TEE Execution
 | Feature | Aethelred | Ethereum L2s | Centralized APIs |
 |---|---|---|---|
 | **Verifiable AI** | On-chain TEE + zkML | Off-chain only | Trust-based |
-| **Quantum-Safe** | Dilithium3 + ECDSA | ECDSA only | No |
-| **Decentralized** | 100+ validators | Partial | No |
+| **Quantum-Safe** | ML-DSA-65 + ECDSA | ECDSA only | No |
+| **Decentralized** | Up to 100 institutional validators | Partial | No |
 | **Compliance** | GDPR/HIPAA/OFAC native | No | Partial |
 | **IBC Ready** | Yes | Partial | No |
 
@@ -137,6 +137,8 @@ aethel tx pouw submit-job \
 
 ## Ecosystem Repos
 
+### Core Infrastructure & SDKs
+
 | Repo | Description |
 |---|---|
 | [contracts](https://github.com/aethelred-foundation/contracts) | Solidity bridge + staking contracts |
@@ -148,6 +150,16 @@ aethel tx pouw submit-job \
 | [vscode-aethelred](https://github.com/aethelred-foundation/vscode-aethelred) | VSCode extension |
 | [aethelred-docs](https://github.com/aethelred-foundation/aethelred-docs) | Documentation site |
 | [AIPs](https://github.com/aethelred-foundation/AIPs) | Aethelred Improvement Proposals |
+
+### Flagship dApps
+
+| dApp | Description |
+|---|---|
+| [cruzible](https://github.com/aethelred-foundation/cruzible) | Liquid staking — stake AETHEL and receive liquid staking tokens |
+| [zeroid](https://github.com/aethelred-foundation/zeroid) | Decentralized identity — ZK-backed self-sovereign identity on-chain |
+| [noblepay](https://github.com/aethelred-foundation/noblepay) | Cross-border payments — TEE-verified stablecoin settlement |
+| [terraqura](https://github.com/aethelred-foundation/terraqura) | Carbon credits — verifiable carbon credit issuance and retirement |
+| [shiora](https://github.com/aethelred-foundation/shiora) | Health data platform — sovereign, jurisdiction-bound health data compute |
 
 ---
 
@@ -167,15 +179,59 @@ cargo test --workspace # Test all Rust crates
 
 ---
 
+## Validator Network
+
+Aethelred operates a **dual-tier validator architecture**:
+
+| Node Type | Role | Revenue Share | TEE Required | Min Stake |
+|---|---|---|---|---|
+| **Standard Validator** | Consensus, block proposal, light verification | 30% of fees | Optional | 100,000 AETHEL |
+| **Compute Prover** | AI inference, zkML proof generation, heavy TEE workloads | 70% of fees | **Mandatory** | 250,000 AETHEL |
+
+**Compute Prover minimum hardware:** NVIDIA A100/H100 80GB GPU · Xilinx Alveo U280 FPGA · 64-core AMD EPYC · 256 GB ECC RAM · Intel SGX or AMD SEV-SNP TEE
+
+Operators may run both node types on the same machine. See [Hardware Requirements](docs/validator/HARDWARE_REQUIREMENTS.md) for full specs and reference architectures.
+
+---
+
+## Cross-Chain Bridge
+
+Aethelred bridges to Ethereum via **Circle CCTP V2** (native USDC — no wrapped tokens, no AMM/LP custody):
+
+1. Source-chain USDC is burned via Circle `TokenMessengerV2`
+2. Cross-domain attestation validated by Circle infrastructure
+3. Destination-chain USDC natively minted after message validation
+
+Additional sovereign stablecoins (USDU, DDSC) are supported through separate institutional asset controls. The Security Council can freeze bridge transfers immediately via emergency halt.
+
+---
+
+## Roadmap
+
+| Date | Milestone |
+|---|---|
+| Mar 2026 | Seals Points Program launch · Seed Round closes |
+| **May 2026** | **Testnet infrastructure live — points begin accruing** |
+| Jun–Jul 2026 | Echo Community Round ($150M FDV) |
+| Aug 2026 | Trail of Bits audit complete |
+| Sep 2026 | Binance strategic allocation signed |
+| Oct–Nov 2026 | Binance Prime Sale ($300M FDV) |
+| Nov 2026 | Airdrop snapshot taken |
+| **Dec 7–10, 2026** | **TGE @ Abu Dhabi FinTech Week (ADFW) · $3B FDV** |
+| 2027 | Phase 2: Jurisdiction-specific shards (UAE, EU, US) via IBC |
+| 2028 | Phase 3: Dedicated DA layer for model weights (petabyte-scale) |
+
+---
+
 ## Security
 
 Aethelred has been security-audited with **27 findings remediated** (2026-02-28).
 
-- Post-Quantum Cryptography: Ed25519 + Dilithium3 dual-key
-- TEE Platforms: Intel SGX, AWS Nitro Enclaves, AMD SEV-SNP
+- Post-Quantum Cryptography: ML-DSA-65 (Dilithium3, FIPS 204) + ECDSA hybrid signatures; ML-KEM-768 (FIPS 203) for key exchange
+- TEE Platforms: Intel SGX (DCAP), AMD SEV-SNP, AWS Nitro Enclaves, Azure Confidential VMs, Google Confidential VMs, NVIDIA H100 CC
 - Circuit Breaker: Automatic halt on anomaly detection
 - Encrypted Mempool: Threshold encryption against front-running
-- Compliance: GDPR, HIPAA, OFAC, CCPA native enforcement
+- Compliance: GDPR, HIPAA, OFAC, CCPA native enforcement (certification pending)
 
 Found a vulnerability? See [SECURITY.md](SECURITY.md).
 
@@ -187,7 +243,7 @@ We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 - [Aethelred Improvement Proposals](https://github.com/aethelred-foundation/AIPs)
 - [Discord](https://discord.gg/aethelred)
-- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.md)
+- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.yml)
 
 ---
 
