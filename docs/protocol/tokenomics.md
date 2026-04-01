@@ -53,6 +53,7 @@
 │  │  Decimals:       18                                                   │  │
 │  │  Chain ID:       8821                                                 │  │
 │  │  Standard:       Native Token (not ERC-20)                            │  │
+│  │  TGE Date:       Dec 7–10, 2026 @ ADFW, Abu Dhabi                   │  │
 │  │                                                                        │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │                                                                              │
@@ -361,6 +362,7 @@ impl TokenModule {
 - **Community float** (**14.5%**) - Public Sales (7.5%) + Airdrop/Seals (7%), broad participation with 20% / 25% TGE
 - **Insurance + Contingency** (**9%**) - institutional trust, risk buffer, 10% insurance TGE for launch readiness
 - **TGE circulating supply**: ~6.3% (630M tokens) - float for price discovery at $63M market cap ($0.10/token)
+- **TGE date**: Dec 7–10, 2026 @ Abu Dhabi FinTech Week (ADFW)
 
 ### 3.4 Clarification of Final Model
 
@@ -1041,7 +1043,7 @@ impl StakingModule {
 
 | Emission Source | Allocation | Release Model |
 |-----------------|------------|---------------|
-| Compute / PoUW Rewards | 3,000,000,000 | 15-year algorithmic decay, contribution-gated |
+| Compute / PoUW Rewards | 3,000,000,000 | 10-year linear release (120 months, ~25M/month), contribution-gated |
 | Core Contributors | 2,000,000,000 | 6m cliff + 42m linear |
 | Strategic/Seed | 550,000,000 | 12m cliff + 24m linear |
 | Public Sales | 750,000,000 | 20% TGE + 80% over 18 months |
@@ -1202,7 +1204,7 @@ impl SupplyProjection {
 │  │              │                                   │                    │  │
 │  │              ▼                                   ▼                    │  │
 │  │   ┌─────────────────────┐           ┌─────────────────────┐          │  │
-│  │   │  HOUSE OF TOKENS    │           │ HOUSE OF SOVEREIGNS │          │  │
+│  │   │  HOUSE OF TOKENS    │           │ HOUSE OF VALIDATORS │          │  │
 │  │   │                     │           │                     │          │  │
 │  │   │  • 1 AETHEL = 1 vote│           │  • 1 validator = 1  │          │  │
 │  │   │  • Token-weighted   │           │    vote             │          │  │
@@ -1226,7 +1228,7 @@ impl SupplyProjection {
 │  PROPOSAL TYPES                                                             │
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  Type           │ Token House │ Sovereign House │ Quorum    │ Pass │    │
+│  │  Type           │ Token House │ Validator House │ Quorum    │ Pass │    │
 │  │  ─────────────────────────────────────────────────────────────────  │    │
 │  │  Parameter      │ Required    │ Required        │ 20%       │ 50%  │    │
 │  │  Treasury       │ Required    │ Required        │ 30%       │ 66%  │    │
