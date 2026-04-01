@@ -59,7 +59,23 @@ __all__ = [
 
 _MIN_EXPORT_PASSWORD_LENGTH = 12
 
-import ecdsa as ecdsa_lib
+from cryptography.hazmat.primitives.asymmetric.ec import (
+    generate_private_key as _ec_generate_private_key,
+    derive_private_key as _ec_derive_private_key,
+    EllipticCurvePublicKey as _EllipticCurvePublicKey,
+    SECP256K1 as _SECP256K1,
+    ECDSA as _ECDSA,
+)
+from cryptography.hazmat.primitives import hashes as _crypto_hashes
+from cryptography.hazmat.primitives.asymmetric.utils import (
+    decode_dss_signature as _decode_dss_sig,
+    encode_dss_signature as _encode_dss_sig,
+)
+from cryptography.hazmat.primitives.serialization import (
+    Encoding as _Encoding,
+    PublicFormat as _PublicFormat,
+)
+from cryptography.exceptions import InvalidSignature as _InvalidSignature
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -250,11 +266,11 @@ class ECDSASigner:
     """
     ECDSA signer for secp256k1 curve.
 
-    Uses the ``ecdsa`` library for real elliptic-curve operations:
+    Uses the ``cryptography`` library for FIPS-compliant elliptic-curve operations:
 
-    - Key generation via ``ecdsa.SigningKey.generate(curve=SECP256k1)``
-    - Deterministic signing via RFC 6979 (``sign_deterministic``)
-    - Verification via ``VerifyingKey.verify``
+    - Key generation via ``ec.generate_private_key(SECP256K1())``
+    - Deterministic signing via RFC 6979 (default in cryptography)
+    - Verification via ``EllipticCurvePublicKey.verify``
     """
 
     def __init__(
@@ -270,19 +286,16 @@ class ECDSASigner:
         if private_key is not None:
             if len(private_key) != 32:
                 raise ValueError("ECDSA private key must be 32 bytes")
-            self._signing_key = ecdsa_lib.SigningKey.from_string(
-                private_key, curve=ecdsa_lib.SECP256k1
-            )
+            private_value = int.from_bytes(private_key, "big")
+            self._signing_key = _ec_derive_private_key(private_value, _SECP256K1())
         else:
-            self._signing_key = ecdsa_lib.SigningKey.generate(
-                curve=ecdsa_lib.SECP256k1
-            )
+            self._signing_key = _ec_generate_private_key(_SECP256K1())
 
-        self._verifying_key = self._signing_key.get_verifying_key()
+        self._verifying_key = self._signing_key.public_key()
 
     def _derive_public_key(self) -> bytes:
         """Return compressed public key (33 bytes)."""
-        return self._verifying_key.to_string("compressed")
+        return self._verifying_key.public_bytes(_Encoding.X962, _PublicFormat.CompressedPoint)
 
     def sign(self, message: bytes) -> bytes:
         """
@@ -294,22 +307,19 @@ class ECDSASigner:
         Returns:
             64-byte signature (r || s)
         """
-        return self._signing_key.sign_deterministic(
-            message,
-            hashfunc=hashlib.sha256,
-            sigencode=ecdsa_lib.util.sigencode_string,
-        )
+        der_sig = self._signing_key.sign(message, _ECDSA(_crypto_hashes.SHA256()))
+        r, s = _decode_dss_sig(der_sig)
+        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
 
     def verify(self, message: bytes, signature: bytes) -> bool:
-        """Verify an ECDSA signature."""
+        """Verify an ECDSA signature (64-byte r||s)."""
         try:
-            return self._verifying_key.verify(
-                signature,
-                message,
-                hashfunc=hashlib.sha256,
-                sigdecode=ecdsa_lib.util.sigdecode_string,
-            )
-        except ecdsa_lib.BadSignatureError:
+            r = int.from_bytes(signature[:32], "big")
+            s = int.from_bytes(signature[32:], "big")
+            der_sig = _encode_dss_sig(r, s)
+            self._verifying_key.verify(der_sig, message, _ECDSA(_crypto_hashes.SHA256()))
+            return True
+        except (_InvalidSignature, Exception):
             return False
 
     @staticmethod
@@ -318,18 +328,15 @@ class ECDSASigner:
         signature: bytes,
         public_key: bytes,
     ) -> bool:
-        """Verify an ECDSA signature using only a public key."""
+        """Verify an ECDSA signature using only a compressed public key (33 bytes)."""
         try:
-            vk = ecdsa_lib.VerifyingKey.from_string(
-                public_key, curve=ecdsa_lib.SECP256k1
-            )
-            return vk.verify(
-                signature,
-                message,
-                hashfunc=hashlib.sha256,
-                sigdecode=ecdsa_lib.util.sigdecode_string,
-            )
-        except (ecdsa_lib.BadSignatureError, Exception):
+            vk = _EllipticCurvePublicKey.from_encoded_point(_SECP256K1(), public_key)
+            r = int.from_bytes(signature[:32], "big")
+            s = int.from_bytes(signature[32:], "big")
+            der_sig = _encode_dss_sig(r, s)
+            vk.verify(der_sig, message, _ECDSA(_crypto_hashes.SHA256()))
+            return True
+        except Exception:
             return False
 
     @property
@@ -338,7 +345,8 @@ class ECDSASigner:
 
     @property
     def private_key(self) -> bytes:
-        return self._signing_key.to_string()
+        """Return 32-byte raw private key."""
+        return self._signing_key.private_numbers().private_value.to_bytes(32, "big")
 
 
 # =============================================================================
@@ -422,14 +430,15 @@ class DualKeyWallet:
         compiler cannot optimize away, unlike ``bytearray[i] = 0``.
         """
         try:
-            # Zeroize ECDSA private key
+            # Zeroize ECDSA private key (cryptography EllipticCurvePrivateKey)
             if hasattr(classical_signer, '_signing_key'):
                 sk = classical_signer._signing_key
-                if hasattr(sk, 'to_string'):
-                    raw = sk.to_string()
-                    if isinstance(raw, (bytes, bytearray)):
-                        buf = (ctypes.c_char * len(raw)).from_buffer_copy(raw)
-                        ctypes.memset(buf, 0, len(raw))
+                try:
+                    raw = sk.private_numbers().private_value.to_bytes(32, "big")
+                    buf = (ctypes.c_char * len(raw)).from_buffer_copy(raw)
+                    ctypes.memset(buf, 0, len(raw))
+                except Exception:
+                    pass
 
             # Zeroize Dilithium secret key
             if hasattr(quantum_signer, '_secret_key'):
