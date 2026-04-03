@@ -5,6 +5,9 @@
   <em>Version 2.0.0 | February 2026</em>
 </p>
 
+> **Classification: Internal / Technical Design Reference**
+> This document is not a canonical public disclosure source. It is maintained for internal engineering use and may contain design-stage parameters, targets, and assumptions that have not been approved for public disclosure. For public-facing protocol information, refer to the canonical whitepaper (`docs/WHITEPAPER.md`).
+
 ---
 
 ## Table of Contents

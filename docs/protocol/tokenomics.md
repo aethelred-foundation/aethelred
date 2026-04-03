@@ -13,10 +13,14 @@
 |-----------|-------|
 | **Version** | 2.0.0 |
 | **Status** | Approved for Engineering Implementation |
-| **Classification** | Confidential - Authorized Personnel Only |
+| **Classification** | Internal Engineering Reference — Not Approved for Public Distribution |
 | **Effective Date** | February 2026 |
 | **Document Owner** | Aethelred Protocol Foundation |
 | **Economic Review** | Gauntlet Network (Q4 2025) |
+
+---
+
+> **Regulatory Disclosure:** This document describes design-stage token economics for internal engineering reference only. It does not constitute an offer, solicitation, or recommendation to purchase, sell, or hold any token or digital asset. All numeric parameters, thresholds, and percentages are **design targets** subject to change. The Aethelred Protocol Foundation is not registered with ADGM or any securities regulator. ADGM DLT Foundation registration is **in preparation**. Nothing in this document should be construed as legal, financial, or investment advice.
 
 ---
 
@@ -80,19 +84,13 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Value Accrual Thesis
+### 1.2 Fee Flow Model (Design Posture)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        VALUE ACCRUAL MECHANISM                               │
+│                         FEE FLOW MODEL (DESIGN)                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│                          ┌───────────────────┐                              │
-│                          │  ENTERPRISE AI    │                              │
-│                          │    ADOPTION       │                              │
-│                          └─────────┬─────────┘                              │
-│                                    │                                         │
-│                                    ▼                                         │
 │                          ┌───────────────────┐                              │
 │                          │  COMPUTE JOBS     │                              │
 │                          │  (Paid in AETHEL) │                              │
@@ -104,27 +102,19 @@
 │           ┌──────────────┐ ┌──────────────┐ ┌──────────────┐               │
 │           │   VALIDATOR  │ │    FEE       │ │   TREASURY   │               │
 │           │   REWARDS    │ │    BURN      │ │   ALLOCATION │               │
-│           │    (70%)     │ │    (25%)     │ │     (5%)     │               │
+│           │  (target 70%)│ │ (target 25%) │ │  (target 5%) │               │
 │           └──────────────┘ └──────────────┘ └──────────────┘               │
 │                    │               │               │                        │
 │                    ▼               ▼               ▼                        │
 │           ┌──────────────┐ ┌──────────────┐ ┌──────────────┐               │
-│           │   STAKING    │ │  DEFLATION   │ │  ECOSYSTEM   │               │
-│           │   INCENTIVE  │ │  PRESSURE    │ │   GROWTH     │               │
+│           │   STAKING    │ │  SUPPLY      │ │  ECOSYSTEM   │               │
+│           │   INCENTIVE  │ │  REDUCTION   │ │   FUNDING    │               │
 │           └──────────────┘ └──────────────┘ └──────────────┘               │
-│                    │               │               │                        │
-│                    └───────────────┼───────────────┘                        │
-│                                    │                                         │
-│                                    ▼                                         │
-│                          ┌───────────────────┐                              │
-│                          │  TOKEN VALUE      │                              │
-│                          │  APPRECIATION     │                              │
-│                          └───────────────────┘                              │
 │                                                                              │
-│  FLYWHEEL EFFECT:                                                           │
-│  More adoption → More compute jobs → More fees → More burn → Less supply   │
-│  Less supply → Higher price → More validator incentive → Better service    │
-│  Better service → More adoption → (cycle repeats)                          │
+│  NOTE: This section describes protocol-level fee mechanics only.            │
+│  It does not describe, predict, or imply any market price behavior          │
+│  for the AETHEL token. All percentages are design targets subject           │
+│  to governance and legal review.                                            │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -295,9 +285,9 @@ impl TokenModule {
 | PoUW Rewards | 30% | 3,000,000,000 | Validator incentives (10-year program) |
 | Core Contributors | 20% | 2,000,000,000 | Team alignment |
 | Ecosystem & Grants | 15% | 1,500,000,000 | Developer adoption & dApp grants |
-| Public Sales | 7.5% | 750,000,000 | Echo + Exchange sales |
+| Public Sales | 7.5% | 750,000,000 | Distribution channels subject to disclosure controls |
 | Airdrop (Seals) | 7% | 700,000,000 | Community incentives |
-| Treasury & MM | 6% | 600,000,000 | Operational runway + Market Maker loans |
+| Treasury & MM | 6% | 600,000,000 | Operational runway + market-maker arrangements |
 | Strategic / Seed | 5.5% | 550,000,000 | Seed + Strategic investors |
 | Insurance Fund | 5% | 500,000,000 | Slashing appeals & hack indemnification |
 | Contingency Reserve | 4% | 400,000,000 | Unknown unknowns; strategic pivots |
@@ -324,12 +314,12 @@ impl TokenModule {
 **Treasury & MM (6% - 600M tokens)**
 - No cliff, 25% TGE unlock (150M tokens)
 - 3-year total vest (36 months), linear (~12.5M/month)
-- Operational runway + Market Maker loans (Wintermute, GSR)
+- Operational runway + market-maker arrangements (counterparty names subject to disclosure controls)
 
 **Public Sales (7.5% - 750M tokens)**
 - 20% TGE unlock (150M tokens)
 - No cliff, 18 months linear (~29.2M/month)
-- Echo + Exchange sales; 80% locked
+- Distribution channel details subject to disclosure controls; 80% locked
 
 **Airdrop / Seals (7% - 700M tokens)**
 - 25% TGE unlock (175M tokens)
@@ -352,7 +342,7 @@ impl TokenModule {
 - Reserved for unforeseen circumstances, emergency funding, strategic pivots
 
 **TGE Unlock Summary: 6.3% of total supply (630M tokens)**
-- TGE market cap: $63M at $0.10/token
+- TGE circulating supply target: 6.3% of total supply (630M tokens). Pricing details are subject to legal review and will be disclosed through the approved disclosure process.
 
 ### 3.3 Strategic Characteristics
 
@@ -361,7 +351,7 @@ impl TokenModule {
 - **Ecosystem + Treasury** (**21%**) - growth and venture multiplier with staggered cliff schedules
 - **Community float** (**14.5%**) - Public Sales (7.5%) + Airdrop/Seals (7%), broad participation with 20% / 25% TGE
 - **Insurance + Contingency** (**9%**) - institutional trust, risk buffer, 10% insurance TGE for launch readiness
-- **TGE circulating supply**: ~6.3% (630M tokens) - float for price discovery at $63M market cap ($0.10/token)
+- **TGE circulating supply**: ~6.3% (630M tokens) — pricing and market-cap projections are not public and will be disclosed through the approved process
 - **TGE date**: Dec 7–10, 2026 @ Abu Dhabi FinTech Week (ADFW)
 
 ### 3.4 Clarification of Final Model
@@ -1490,10 +1480,10 @@ impl GovernanceModule {
 │  │  Requirements:                                                         │  │
 │  │  • Control 1/3 of staked tokens                                       │  │
 │  │  • At 60% staked: 2.0B AETHEL (20% of supply)                         │  │
-│  │  • At $10/token: $20,000,000,000 (20 billion USD)                     │  │
+│  │  • Cost scales linearly with token market price (illustrative only)   │  │
 │  │                                                                        │  │
 │  │  Result: Network halts (no blocks produced)                           │  │
-│  │  Attacker Cost: Stake value crashes, losing most investment           │  │
+│  │  Attacker Cost: Stake slashed, economic loss proportional to stake    │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │                                                                              │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
@@ -1502,7 +1492,7 @@ impl GovernanceModule {
 │  │  Requirements:                                                         │  │
 │  │  • Control 2/3 of staked tokens                                       │  │
 │  │  • At 60% staked: 4.0B AETHEL (40% of supply)                         │  │
-│  │  • At $10/token: $40,000,000,000 (40 billion USD)                     │  │
+│  │  • Cost scales linearly with token market price (illustrative only)   │  │
 │  │                                                                        │  │
 │  │  Result: Can censor transactions, produce invalid blocks              │  │
 │  │  Detection: Obvious to network, leads to social fork                  │  │
@@ -1541,13 +1531,13 @@ impl GovernanceModule {
 │  │                                                                      │    │
 │  │  Total Supply (Cap):  10B AETHEL                                    │    │
 │  │  Staked:              60% = 6B AETHEL                               │    │
-│  │  Token Price:         $10 (assumption)                              │    │
-│  │  Staked Value:        $60B                                          │    │
+│  │  Token Price:         [not projected — market-determined]            │    │
+│  │  Staked Value:        Function of market price (not projected)      │    │
 │  │                                                                      │    │
 │  │  Security Budget:     Scheduled emissions + fee revenue             │    │
 │  │                       (no uncapped inflation tail)                  │    │
 │  │                                                                      │    │
-│  │  Attack Cost (66%):   $40B + hardware + opportunity cost            │    │
+│  │  Attack Cost (66%):   4B AETHEL + hardware + opportunity cost       │    │
 │  │  Attack Profit:       Near zero (stake slashed, price crashes)      │    │
 │  │  Net Attack ROI:      Massively negative                            │    │
 │  │                                                                      │    │
@@ -1639,9 +1629,9 @@ impl GovernanceModule {
 │  │     • Attestation infrastructure is hard to replicate                │  │
 │  │                                                                        │  │
 │  │  3. Regulatory Relationships                                          │  │
-│  │     • Early compliance certifications                                │  │
-│  │     • Trusted by UAE/GCC regulators                                  │  │
-│  │     • Compliance reputation compounds                                │  │
+│  │     • Regulatory engagement in preparation (ADGM DLT Foundation)    │  │
+│  │     • Proactive compliance posture with GCC-region regulators       │  │
+│  │     • Compliance reputation compounds over time                     │  │
 │  │                                                                        │  │
 │  │  4. Data Gravity                                                      │  │
 │  │     • Enterprises store verified model results                       │  │
@@ -1683,7 +1673,7 @@ Reference TRD: `docs/protocol/institutional-stablecoin-integration-trd-v2.md`
 
 ### 11.3 DDSC Integration Context
 
-**DDSC (Dirham Digital Stablecoin)** is documented as a UAE Central Bank-approved, 1:1 Dirham-backed stablecoin launched in **February 2026** by **IHC**, **Sirius International Holding**, and **First Abu Dhabi Bank (FAB)**. It operates on the **ADI Chain** (a sovereign, compliance-ready Layer-2 blockchain) and targets institutional payments and trade finance use cases.
+**DDSC (Dirham Digital Stablecoin)** is documented by its issuers as a 1:1 Dirham-backed stablecoin launched in **February 2026** by **IHC**, **Sirius International Holding**, and **First Abu Dhabi Bank (FAB)** on the **ADI Chain**. *Aethelred makes no independent representation regarding DDSC's regulatory status, approvals, or backing claims. Integrators should conduct their own due diligence on DDSC's regulatory standing.*
 
 Given this profile, DDSC integration should include:
 
@@ -1720,3 +1710,7 @@ Given this profile, DDSC integration should include:
 <p align="center">
   <em>© 2026 Aethelred Protocol Foundation. All Rights Reserved.</em>
 </p>
+
+---
+
+> **Disclaimer:** This document is prepared for internal engineering purposes only and does not constitute legal, financial, or investment advice. It is not an offer to sell or a solicitation of an offer to buy any token, security, or financial instrument. All parameters described herein are design targets subject to change without notice. Readers should not rely on this document for any investment or regulatory decision. ADGM DLT Foundation registration is in preparation; no regulatory approval has been obtained. Consult qualified legal and financial advisors before making any decisions based on information in this document.

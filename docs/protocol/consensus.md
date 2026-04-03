@@ -13,7 +13,7 @@
 |-----------|-------|
 | **Version** | 2.0.0 |
 | **Status** | Approved for Engineering Implementation |
-| **Classification** | Confidential - Authorized Personnel Only |
+| **Classification** | Internal / Technical Design Reference — Not a Canonical Public Disclosure Source |
 | **Effective Date** | February 2026 |
 | **Document Owner** | Aethelred Protocol Foundation |
 | **Last Updated** | 2026-02-08 |
