@@ -27,15 +27,21 @@
 </p>
 <p align="center">
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
- <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
+ <a href="https://www.aethelred.org"><img src="https://img.shields.io/badge/website-aethelred.org-111827?style=flat-square" alt="Website"></a>
+ <a href="https://www.aethelred.io"><img src="https://img.shields.io/badge/protocol-aethelred.io-f97316?style=flat-square" alt="Protocol"></a>
+ <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-docs.aethelred.io-orange?style=flat-square" alt="Docs"></a>
  <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
+ <a href="docs/WHITEPAPER.md"><img src="https://img.shields.io/badge/whitepaper-public%20draft-0f766e?style=flat-square" alt="Whitepaper"></a>
+ <a href="docs/TOKENOMICS.md"><img src="https://img.shields.io/badge/tokenomics-public%20draft-14532d?style=flat-square" alt="Tokenomics"></a>
 </p>
 
 ---
 
 ## What is Aethelred?
 
-Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** — running AI inference jobs inside **Intel SGX · AMD SEV-SNP · AWS Nitro · Azure Confidential VMs · Google Confidential VMs · NVIDIA H100 CC** TEEs and generating **zero-knowledge ML proofs** (Groth16, PLONK, EZKL, Halo2, STARK) that are verified on-chain in every block.
+Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 built for **regulated and high-assurance AI workloads**. It combines deterministic settlement, **Proof-of-Useful-Work (PoUW)**, confidential execution in approved **TEE backends**, **zkML verification**, and **Digital Seals** so enterprises, operators, and auditors can verify what ran, where it ran, and how the result was anchored on-chain.
+
+The public-facing protocol posture is governed by the canonical draft [whitepaper](docs/WHITEPAPER.md), public [tokenomics paper](docs/TOKENOMICS.md), and the official sites at [aethelred.org](https://www.aethelred.org) and [aethelred.io](https://www.aethelred.io). Launch, valuation, float, and counterparty claims are intentionally withheld from this overview until approved for public disclosure.
 
 ```
 AI Job Submitted → VRF Scheduler → Validator TEE Execution
@@ -45,15 +51,28 @@ AI Job Submitted → VRF Scheduler → Validator TEE Execution
  2/3 Consensus → Digital Seal Minted → Job Settled
 ```
 
+### Protocol Snapshot
+
+| Metric | Current Public Posture |
+|---|---|
+| **Native token** | `AETHEL` |
+| **Total supply** | `10,000,000,000 AETHEL` fixed at genesis |
+| **Post-genesis inflation** | `0%` |
+| **Core token utility** | Staking, fees, slashing collateral, governance, verified-compute settlement |
+| **Verification surface** | Digital Seals, TEE attestation, zkML proof verification |
+| **Supported proof systems** | Groth16, PLONK, EZKL, Halo2, STARK |
+| **Confidential compute posture** | Intel SGX, AMD SEV-SNP, AWS Nitro, Azure Confidential VMs, Google Confidential VMs, NVIDIA confidential-computing paths |
+| **Public disclosure rule** | Performance, launch, float, valuation, and counterparty claims publish only after canonical approval |
+
 ### Why Aethelred?
 
 | Feature | Aethelred | Ethereum L2s | Centralized APIs |
 |---|---|---|---|
-| **Verifiable AI** | On-chain TEE + zkML | Off-chain only | Trust-based |
-| **Quantum-Safe** | ML-DSA-65 + ECDSA | ECDSA only | No |
-| **Decentralized** | Up to 100 institutional validators | Partial | No |
-| **Compliance** | GDPR/HIPAA/OFAC native | No | Partial |
-| **IBC Ready** | Yes | Partial | No |
+| **Verifiable AI** | TEE + zkML + Digital Seals | Mostly off-chain | Trust-based |
+| **Confidential compute** | Policy-aware confidential execution | Limited / app-specific | Vendor-controlled |
+| **Post-quantum posture** | ML-DSA-65 + ML-KEM-768 hybrid design | Classical-first | Rare |
+| **Evidence portability** | Portable seal + proof artifact model | Fragmented | Fragmented |
+| **Governed disclosure** | Claims, readiness, and launch posture tracked in-repo | Rare | Opaque |
 
 ---
 
@@ -111,7 +130,7 @@ aethelred/
 
 ## Quick Start
 
-**Requirements**: Go 1.24+, Rust 1.75+, Docker
+**Requirements**: Go 1.24+, Rust 1.85+, Docker
 
 ```bash
 # 1. Clone
@@ -179,18 +198,19 @@ cargo test --workspace # Test all Rust crates
 
 ---
 
-## Validator Network
+## Operator Model
 
-Aethelred operates a **dual-tier validator architecture**:
+Aethelred separates **consensus participation** from **compute-heavy verification responsibilities** so the network can support both standard validator operations and higher-assurance confidential-compute paths.
 
-| Node Type | Role | Revenue Share | TEE Required | Min Stake |
-|---|---|---|---|---|
-| **Standard Validator** | Consensus, block proposal, light verification | 30% of fees | Optional | 100,000 AETHEL |
-| **Compute Prover** | AI inference, zkML proof generation, heavy TEE workloads | 70% of fees | **Mandatory** | 250,000 AETHEL |
+- **Consensus validators** handle block proposal, settlement, and protocol state transitions.
+- **Compute-capable operators** add TEE-backed execution, proof generation, and heavier verification workloads.
+- **Operator truth source** is the release bundle and runbooks, not this overview page.
 
-**Compute Prover minimum hardware:** NVIDIA A100/H100 80GB GPU · Xilinx Alveo U280 FPGA · 64-core AMD EPYC · 256 GB ECC RAM · Intel SGX or AMD SEV-SNP TEE
+For current operator guidance, use:
 
-Operators may run both node types on the same machine. See [Hardware Requirements](docs/validator/HARDWARE_REQUIREMENTS.md) for full specs and reference architectures.
+- [Testnet Validator Runbook](docs/TESTNET_VALIDATOR_RUNBOOK.md)
+- [Mainnet Validator Runbook](docs/VALIDATOR_RUNBOOK.md)
+- [Hardware Requirements](docs/validator/HARDWARE_REQUIREMENTS.md)
 
 ---
 
@@ -206,34 +226,44 @@ Additional sovereign stablecoins (USDU, DDSC) are supported through separate ins
 
 ---
 
-## Roadmap
+## Current Public Delivery Posture
 
-| Date | Milestone |
-|---|---|
-| Mar 2026 | Seals Points Program launch · Seed Round closes |
-| **May 2026** | **Testnet infrastructure live — points begin accruing** |
-| Jun–Jul 2026 | Echo Community Round ($150M FDV) |
-| Aug 2026 | Trail of Bits audit complete |
-| Sep 2026 | Binance strategic allocation signed |
-| Oct–Nov 2026 | Binance Prime Sale ($300M FDV) |
-| Nov 2026 | Airdrop snapshot taken |
-| **Dec 7–10, 2026** | **TGE @ Abu Dhabi FinTech Week (ADFW) · $3B FDV** |
-| 2027 | Phase 2: Jurisdiction-specific shards (UAE, EU, US) via IBC |
-| 2028 | Phase 3: Dedicated DA layer for model weights (petabyte-scale) |
+This repository follows the same disclosure posture as the public whitepaper and tokenomics paper:
+
+- **Architecture, token design, and operator surfaces** are public.
+- **Fixed supply and zero post-genesis inflation** are public.
+- **Launch timing, float, valuation, fundraising, and named commercial counterparties** are not asserted here unless approved for public disclosure.
+- **Testnet readiness** is treated as an operational program backed by release bundles, runbooks, CI evidence, and hosted topology checks.
+- **Mainnet and TGE communications** remain gated by technical readiness, legal review, and disclosure approval.
+
+Canonical public references:
+
+- [Whitepaper](docs/WHITEPAPER.md)
+- [Tokenomics](docs/TOKENOMICS.md)
+- [Protocol Overview](docs/protocol/overview.md)
+- [Official site](https://www.aethelred.org)
+- [Protocol site](https://www.aethelred.io)
 
 ---
 
 ## Security
 
-Aethelred has been security-audited with **27 findings remediated** (2026-02-28).
+Aethelred's public security posture is tracked in-repo and backed by evidence:
 
 - Post-Quantum Cryptography: ML-DSA-65 (Dilithium3, FIPS 204) + ECDSA hybrid signatures; ML-KEM-768 (FIPS 203) for key exchange
 - TEE Platforms: Intel SGX (DCAP), AMD SEV-SNP, AWS Nitro Enclaves, Azure Confidential VMs, Google Confidential VMs, NVIDIA H100 CC
 - Circuit Breaker: Automatic halt on anomaly detection
 - Encrypted Mempool: Threshold encryption against front-running
-- Compliance: GDPR, HIPAA, OFAC, CCPA native enforcement (certification pending)
+- Internal Security Review: **27 findings remediated and verified**
+- Internal Full Audit v2: **36 findings closed**
+- External audit scopes: **in progress**
 
-Found a vulnerability? See [SECURITY.md](SECURITY.md).
+See:
+
+- [Audit Status Tracker](docs/audits/STATUS.md)
+- [Security Policy](SECURITY.md)
+- [Threat Model](docs/security/threat-model.md)
+- [Release Provenance](docs/security/release-provenance.md)
 
 ---
 
