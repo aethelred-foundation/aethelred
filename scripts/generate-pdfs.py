@@ -7,6 +7,7 @@ Follows international whitepaper / tokenomics document standards.
 from fpdf import FPDF
 import os
 import re
+import shutil
 
 # ── Brand palette ────────────────────────────────────────────────────────────
 CR  = (159, 10, 36)     # crimson
@@ -352,6 +353,12 @@ def clean(text):
     return text.encode('latin-1', errors='replace').decode('latin-1').strip()
 
 
+def mirror_download(base, src_path):
+    hostinger_dir = os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html', 'downloads')
+    os.makedirs(hostinger_dir, exist_ok=True)
+    shutil.copy2(src_path, os.path.join(hostinger_dir, os.path.basename(src_path)))
+
+
 def is_table_sep(line):
     cells = [c.strip() for c in line.strip().strip('|').split('|')]
     return bool(cells) and all(c and set(c) <= set('-:') for c in cells)
@@ -567,6 +574,7 @@ def gen_whitepaper(base, dl, logo):
 
     out = os.path.join(dl, 'aethelred-whitepaper.pdf')
     pdf2.output(out)
+    mirror_download(base, out)
     print(f'Whitepaper: {out} ({os.path.getsize(out)//1024} KB, {pdf2.page_no()} pages)')
 
 
@@ -727,6 +735,7 @@ def gen_tokenomics(base, dl, logo):
 
     out = os.path.join(dl, 'aethelred-tokenomics-paper.pdf')
     pdf2.output(out)
+    mirror_download(base, out)
     print(f'Tokenomics: {out} ({os.path.getsize(out)//1024} KB, {pdf2.page_no()} pages)')
 
 
