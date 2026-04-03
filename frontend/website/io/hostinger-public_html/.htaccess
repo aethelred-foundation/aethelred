@@ -4,6 +4,8 @@ DirectoryIndex index.html
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+RewriteRule ^downloads/(aethelred-whitepaper\.pdf|aethelred-tokenomics-paper\.pdf)$ $1 [L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{DOCUMENT_ROOT}/$1.html -f
