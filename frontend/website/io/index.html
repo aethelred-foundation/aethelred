@@ -1389,28 +1389,34 @@ body.page-home::after { display: none !important; }
             <a href="developers.html" class="btn btn-primary">Start Building &rarr;</a>
             <a href="testnet.html" class="btn btn-secondary">Access Testnet Details</a>
           </div>
+          <p class="hero-subtitle">Download the current <a class="body-link" href="aethelred-whitepaper.pdf" download>whitepaper PDF</a> and <a class="body-link" href="aethelred-tokenomics-paper.pdf" download>tokenomics PDF</a>. These documents describe design posture and are subject to legal review.</p>
         </div>
 
         <div class="hero-stats-row">
           <div class="hero-stat">
-            <div class="hero-stat-value" data-count>Sub-2s</div>
-            <div class="hero-stat-label">Deterministic Finality</div>
+            <div class="hero-stat-value">4</div>
+            <div class="hero-stat-label">Official SDKs</div>
           </div>
           <div class="hero-stat">
-            <div class="hero-stat-value" data-count>400 PFLOPS</div>
-            <div class="hero-stat-label">TEE Compute Target</div>
+            <div class="hero-stat-value">5</div>
+            <div class="hero-stat-label">Proof Systems</div>
           </div>
           <div class="hero-stat">
-            <div class="hero-stat-value" data-count>50K+ IPS</div>
-            <div class="hero-stat-label">Inference Throughput</div>
+            <div class="hero-stat-value">2</div>
+            <div class="hero-stat-label">Verification Lanes</div>
           </div>
           <div class="hero-stat">
             <div class="hero-stat-value" data-count>10B</div>
-            <div class="hero-stat-label">AETHEL Supply</div>
+            <div class="hero-stat-label">AETHEL Supply Cap (Design)</div>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- ========== DEVELOPER PREVIEW DISCLAIMER ========== -->
+    <div style="max-width:900px;margin:0 auto 2rem;padding:1rem 1.5rem;border:1px solid rgba(159,10,36,0.3);border-radius:8px;background:rgba(159,10,36,0.05);font-size:0.85rem;line-height:1.5;color:#6b7280;">
+      <strong style="color:#9f0a24;">Developer Preview Notice:</strong> Aethelred is pre-launch. All features, parameters, and applications described on this site are <strong>design targets</strong>, not yet operational. The AETHEL token has not been issued. No content on this site constitutes an offer, solicitation, or recommendation to purchase any token or digital asset. ADGM DLT Foundation registration is <strong>in preparation</strong> &mdash; no regulatory approval has been obtained.
+    </div>
 
     <!-- ========== MARQUEE — Scrolling tech strip ========== -->
     <section class="marquee-section" aria-label="Technology stack">
@@ -1552,16 +1558,16 @@ console.<span class="tk-fn">log</span>(<span class="tk-str">`seal valid: <span c
 
         <div class="code-metrics">
           <div class="metric-pill">
-            <strong>Sub-2s</strong>
-            <span>Deterministic finality</span>
+            <strong>4 SDKs</strong>
+            <span>Python, TypeScript, Rust, and Go integration paths</span>
           </div>
           <div class="metric-pill">
-            <strong>400 PFLOPS</strong>
-            <span>TEE compute target</span>
+            <strong>5 proof systems</strong>
+            <span>Groth16, PLONK, EZKL, Halo2, and STARK in one verifier surface</span>
           </div>
           <div class="metric-pill">
-            <strong>50K+ IPS</strong>
-            <span>Inference throughput</span>
+            <strong>2 verification lanes</strong>
+            <span>TEE attestation plus zkML proof settlement</span>
           </div>
         </div>
       </div>
@@ -1593,9 +1599,9 @@ console.<span class="tk-fn">log</span>(<span class="tk-str">`seal valid: <span c
             <p>ML-DSA-65 + ECDSA hybrid signatures ship by default for long-term cryptographic resilience.</p>
           </article>
           <article class="card">
-            <span class="icon-chip">&lt;2s</span>
-            <h3>Instant Finality</h3>
-            <p>Sub-2-second block times and deterministic CometBFT finality remove reorg uncertainty from critical AI workflows.</p>
+            <span class="icon-chip">BFT</span>
+            <h3>Deterministic Finality</h3>
+            <p>Deterministic CometBFT finality removes reorg uncertainty from critical AI workflows. External finality numbers publish only from VERIFIED benchmark packs and are withheld from this page until review completes.</p>
           </article>
           <article class="card">
             <span class="icon-chip">AI</span>
@@ -1686,18 +1692,18 @@ console.<span class="tk-fn">log</span>(<span class="tk-str">`seal valid: <span c
       <div class="container" data-reveal>
         <div class="section-head">
           <p class="eyebrow">Ecosystem</p>
-          <h2 class="section-title" id="ecosystem-title">Production dApps built on the protocol</h2>
-          <p class="section-lead">Five flagship applications spanning liquid staking, identity, payments, carbon markets, and sovereign health &mdash; each leveraging TEE attestation, zero-knowledge proofs, and on-chain settlement.</p>
+          <h2 class="section-title" id="ecosystem-title">Reference dApps (Design Stage)</h2>
+          <p class="section-lead">Five reference applications spanning staking, identity, settlement, carbon markets, and sovereign health &mdash; each designed around TEE attestation, zero-knowledge proofs, and on-chain verification. All applications are in design stage and not yet operational.</p>
         </div>
 
         <div class="grid grid-3 ecosystem-grid">
           <div class="card ecosystem-card">
             <span class="icon-chip">LSV</span>
-            <h3>Cruzible</h3>
-            <p class="ecosystem-tagline">TEE-verified liquid staking vault</p>
-            <p>Stake AETHEL, receive stAETHEL liquid receipt tokens, and submit TEE-attested AI inference jobs. Full block explorer, validator monitoring, and governance preview with zero unbonding lockup.</p>
+            <h3>Cruzible <span style="font-size:0.7em;color:#6b7280;">(design stage)</span></h3>
+            <p class="ecosystem-tagline">TEE-verified staking interface</p>
+            <p>Reference staking application with TEE-attested AI inference job submission, block explorer, validator monitoring, and governance preview.</p>
             <ul class="list-clean">
-              <li>Liquid staking with stAETHEL receipt tokens</li>
+              <li>Staking interface design with receipt-token architecture</li>
               <li>TEE-attested inference job submission</li>
               <li>Real-time block tracking via WebSocket</li>
               <li>CosmWasm contracts on Tendermint HotStuff BFT</li>
@@ -1719,26 +1725,26 @@ console.<span class="tk-fn">log</span>(<span class="tk-str">`seal valid: <span c
 
           <div class="card ecosystem-card">
             <span class="icon-chip">PAY</span>
-            <h3>NoblePay</h3>
-            <p class="ecosystem-tagline">Enterprise cross-border payments</p>
-            <p>TEE-attested on-chain settlement for global payments with real-time FX, streaming payments, invoice financing, and Travel Rule enforcement. Go + Rust microservices with gRPC gateway.</p>
+            <h3>NoblePay <span style="font-size:0.7em;color:#6b7280;">(design stage)</span></h3>
+            <p class="ecosystem-tagline">Enterprise settlement reference application</p>
+            <p>TEE-attested on-chain settlement design for enterprise use cases with Travel Rule awareness. Go + Rust microservices with gRPC gateway. All features are architectural targets subject to regulatory review.</p>
             <ul class="list-clean">
-              <li>Multi-currency settlement with FX hedging vaults</li>
-              <li>ML-powered AML/sanctions screening</li>
-              <li>Streaming payments and invoice collateralization</li>
-              <li>12 Solidity contracts, Go gateway, Rust compliance</li>
+              <li>Multi-currency settlement architecture (design target)</li>
+              <li>Compliance screening integration points (design target)</li>
+              <li>Streaming payment and invoice workflows (design target)</li>
+              <li>12 Solidity contracts, Go gateway, Rust compliance module</li>
             </ul>
           </div>
 
           <div class="card ecosystem-card">
             <span class="icon-chip">MRV</span>
-            <h3>TerraQura</h3>
+            <h3>TerraQura <span style="font-size:0.7em;color:#6b7280;">(design stage)</span></h3>
             <p class="ecosystem-tagline">Carbon credits with Proof-of-Physics</p>
-            <p>Institutional-grade carbon credit lifecycle from IoT-verified direct air capture through ERC-1155 tokenization, P2P trading with AMM liquidity, and on-chain retirement with ITMO registry integration.</p>
+            <p>Carbon credit lifecycle design from IoT-verified direct air capture through ERC-1155 tokenization and on-chain retirement, designed toward ITMO registry alignment.</p>
             <ul class="list-clean">
               <li>Proof-of-Physics 3-phase verification pipeline</li>
               <li>Native IoT oracle for DAC telemetry</li>
-              <li>ADGM / ITMO / Article 6 compliance</li>
+              <li>Designed toward ITMO / Article 6 alignment (subject to legal review)</li>
               <li>25 smart contracts, 881+ tests</li>
             </ul>
           </div>
@@ -1883,16 +1889,16 @@ aeth wallet create --name mykey</code></pre>
             <p class="kpi-value">PoUW</p>
           </article>
           <article class="kpi">
-            <p class="kpi-label">Finality</p>
-            <p class="kpi-value">Sub-2s</p>
+            <p class="kpi-label">Verification</p>
+            <p class="kpi-value">Hybrid</p>
           </article>
           <article class="kpi">
-            <p class="kpi-label">Compute</p>
-            <p class="kpi-value">400 PFLOPS</p>
+            <p class="kpi-label">Proof Systems</p>
+            <p class="kpi-value">5</p>
           </article>
           <article class="kpi">
-            <p class="kpi-label">Inference</p>
-            <p class="kpi-value">50K+ IPS</p>
+            <p class="kpi-label">SDKs</p>
+            <p class="kpi-value">4</p>
           </article>
           <article class="kpi">
             <p class="kpi-label">Supply</p>

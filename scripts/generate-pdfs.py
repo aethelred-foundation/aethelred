@@ -354,9 +354,18 @@ def clean(text):
 
 
 def mirror_download(base, src_path):
-    hostinger_dir = os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html', 'downloads')
-    os.makedirs(hostinger_dir, exist_ok=True)
-    shutil.copy2(src_path, os.path.join(hostinger_dir, os.path.basename(src_path)))
+    targets = [
+        os.path.join(base, 'frontend', 'website', 'io', 'downloads'),
+        os.path.join(base, 'frontend', 'website', 'io'),
+        os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html', 'downloads'),
+        os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html'),
+    ]
+    for target_dir in targets:
+        os.makedirs(target_dir, exist_ok=True)
+        dst_path = os.path.join(target_dir, os.path.basename(src_path))
+        if os.path.abspath(src_path) == os.path.abspath(dst_path):
+            continue
+        shutil.copy2(src_path, dst_path)
 
 
 def is_table_sep(line):
