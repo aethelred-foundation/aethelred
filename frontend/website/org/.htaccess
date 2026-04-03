@@ -12,6 +12,9 @@
   # Prevent direct access to captured lead data files.
   RewriteRule ^data/ - [F,L]
 
+  # Keep legacy document links working after moving PDFs to the site root.
+  RewriteRule ^downloads/(aethelred-whitepaper\.pdf|aethelred-tokenomics-paper\.pdf)$ $1 [L]
+
   # Serve root as index.html.
   RewriteRule ^$ index.html [L]
 
@@ -41,6 +44,7 @@ Options -Indexes
 
 <IfModule mod_expires.c>
   ExpiresActive On
+  ExpiresByType application/pdf "access plus 30 days"
   ExpiresByType text/css "access plus 7 days"
   ExpiresByType application/javascript "access plus 7 days"
   ExpiresByType application/manifest+json "access plus 7 days"
@@ -49,6 +53,10 @@ Options -Indexes
   ExpiresByType image/webp "access plus 30 days"
   ExpiresByType image/svg+xml "access plus 30 days"
   ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/pdf .pdf
 </IfModule>
 
 <IfModule mod_deflate.c>

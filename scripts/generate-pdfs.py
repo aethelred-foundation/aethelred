@@ -359,6 +359,8 @@ def mirror_download(base, src_path):
         os.path.join(base, 'frontend', 'website', 'io'),
         os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html', 'downloads'),
         os.path.join(base, 'frontend', 'website', 'io', 'hostinger-public_html'),
+        os.path.join(base, 'frontend', 'website', 'org', 'downloads'),
+        os.path.join(base, 'frontend', 'website', 'org'),
     ]
     for target_dir in targets:
         os.makedirs(target_dir, exist_ok=True)
