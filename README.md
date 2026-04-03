@@ -37,6 +37,10 @@
 
 ---
 
+> **Classification: Public Reference** — This README is a public-facing project overview. For canonical disclosure documents, see `docs/WHITEPAPER.md` and `docs/TOKENOMICS.md`. ADGM DLT Foundation registration is in preparation. No content in this repository constitutes an offer of securities or regulated financial products.
+
+---
+
 ## What is Aethelred?
 
 Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 built for **regulated and high-assurance AI workloads**. It combines deterministic settlement, **Proof-of-Useful-Work (PoUW)**, confidential execution in approved **TEE backends**, **zkML verification**, and **Digital Seals** so enterprises, operators, and auditors can verify what ran, where it ran, and how the result was anchored on-chain.
