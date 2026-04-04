@@ -36,7 +36,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.working-directory }}
-        run: npm ci
+        run: npm install --no-fund --no-audit
 
       - name: Build
         working-directory: ${{ matrix.working-directory }}
@@ -59,6 +59,7 @@ jobs:
 
   terraqura-lighthouse:
     name: Lighthouse - TerraQura
+    if: ${{ hashFiles('dApps/terraqura/**') != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

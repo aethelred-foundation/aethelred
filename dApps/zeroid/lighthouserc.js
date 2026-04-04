@@ -1,7 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npm run start',
+      startServerCommand: 'npm --prefix dApps/zeroid run start',
       startServerReadyPattern: 'ready on',
       url: [
         'http://localhost:3003/',
