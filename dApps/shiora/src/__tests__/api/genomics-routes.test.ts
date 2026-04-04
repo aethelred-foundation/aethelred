@@ -24,6 +24,13 @@ jest.mock('@/lib/constants', () => ({
   },
 }));
 
+const actualResponses = jest.requireActual('@/lib/api/responses');
+const mockSuccessResponse = jest.fn(actualResponses.successResponse);
+jest.mock('@/lib/api/responses', () => ({
+  ...jest.requireActual('@/lib/api/responses'),
+  successResponse: (...args: unknown[]) => mockSuccessResponse(...args),
+}));
+
 import { GET as getGenomics } from '@/app/api/genomics/route';
 import { GET as getBiomarkers } from '@/app/api/genomics/biomarkers/route';
 import { GET as getReports, POST as postReport } from '@/app/api/genomics/reports/route';
@@ -32,6 +39,7 @@ afterEach(() => {
   mockRunMiddleware.mockReturnValue(null);
   mockSeededRandom.mockImplementation(actualUtils.seededRandom);
   mockGenomicRiskCategories.mockImplementation(() => actualConstants.GENOMIC_RISK_CATEGORIES);
+  mockSuccessResponse.mockImplementation(actualResponses.successResponse);
 });
 
 describe('/api/genomics', () => {
@@ -82,18 +90,18 @@ describe('/api/genomics', () => {
     let callCount = 0;
     // Return values that alternate to produce all 4 risk levels
     const returnValues = [
-      1.0,   // i=0 score: round(1.0*60+20)=80 -> high
-      0.5,   // i=0 percentile
-      0.7,   // i=1 score: round(0.7*60+20)=62 -> elevated
-      0.5,   // i=1 percentile
-      0.4,   // i=2 score: round(0.4*60+20)=44 -> average
-      0.5,   // i=2 percentile
-      0.1,   // i=3 score: round(0.1*60+20)=26 -> low
-      0.5,   // i=3 percentile
-      0.5,   // i=4 score: round(0.5*60+20)=50 -> average
-      0.5,   // i=4 percentile
-      0.9,   // i=5 score: round(0.9*60+20)=74 -> elevated
-      0.5,   // i=5 percentile
+      1.0, // i=0 score: round(1.0*60+20)=80 -> high
+      0.5, // i=0 percentile
+      0.7, // i=1 score: round(0.7*60+20)=62 -> elevated
+      0.5, // i=1 percentile
+      0.4, // i=2 score: round(0.4*60+20)=44 -> average
+      0.5, // i=2 percentile
+      0.1, // i=3 score: round(0.1*60+20)=26 -> low
+      0.5, // i=3 percentile
+      0.5, // i=4 score: round(0.5*60+20)=50 -> average
+      0.5, // i=4 percentile
+      0.9, // i=5 score: round(0.9*60+20)=74 -> elevated
+      0.5, // i=5 percentile
     ];
     mockSeededRandom.mockImplementation(() => {
       const val = returnValues[callCount % returnValues.length] ?? 0.5;
@@ -142,9 +150,7 @@ describe('/api/genomics', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getGenomics(new NextRequest('http://localhost:3000/api/genomics'));
     expect(res.status).toBe(429);
   });
@@ -152,7 +158,9 @@ describe('/api/genomics', () => {
 
 describe('/api/genomics/biomarkers', () => {
   it('GET returns all biomarkers', async () => {
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -161,7 +169,9 @@ describe('/api/genomics/biomarkers', () => {
   });
 
   it('GET returns a single biomarker by marker id', async () => {
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=hba1c'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=hba1c'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -175,7 +185,9 @@ describe('/api/genomics/biomarkers', () => {
     // Force seededRandom to return extreme values so currentValue falls outside refRange * 1.1
     // LDL: low=0, high=100, range=100. value = 0 + 30 + 0.99*90 = 119 > 110 (high*1.1) -> abnormal
     mockSeededRandom.mockReturnValue(0.99);
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=ldl'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=ldl'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -186,7 +198,9 @@ describe('/api/genomics/biomarkers', () => {
     // HbA1c: low=4.0, high=5.6, range=1.6. value = 4.0 + 0.48 + 0.85*1.44 = 5.704 -> 5.7
     // high*1.1 = 6.16, low*0.9 = 3.6 -> not abnormal. But 5.7 > 5.6 -> borderline
     mockSeededRandom.mockReturnValue(0.85);
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=hba1c'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=hba1c'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -197,7 +211,9 @@ describe('/api/genomics/biomarkers', () => {
     // Force seededRandom to return -30/90 so that for LDL (low=0, range=100):
     // baseValue = 0 + 100*0.3 + (-0.3333)*100*0.9 = 30 - 30 = 0 -> prevValue = 0
     mockSeededRandom.mockReturnValue(-30 / 90);
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=ldl'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=ldl'),
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -206,7 +222,9 @@ describe('/api/genomics/biomarkers', () => {
   });
 
   it('GET returns 400 for unknown marker id', async () => {
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=nonexistent'));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers?marker=nonexistent'),
+    );
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe('INVALID_MARKER');
@@ -214,10 +232,10 @@ describe('/api/genomics/biomarkers', () => {
 
   it('GET returns blocked when middleware blocks', async () => {
     const { NextResponse } = require('next/server');
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
+    const res = await getBiomarkers(
+      new NextRequest('http://localhost:3000/api/genomics/biomarkers'),
     );
-    const res = await getBiomarkers(new NextRequest('http://localhost:3000/api/genomics/biomarkers'));
     expect(res.status).toBe(429);
   });
 });
@@ -232,11 +250,19 @@ describe('/api/genomics/reports', () => {
   });
 
   it('GET returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await getReports(new NextRequest('http://localhost:3000/api/genomics/reports'));
     expect(res.status).toBe(429);
+  });
+
+  it('GET returns 500 when report fetching throws', async () => {
+    mockSuccessResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const res = await getReports(new NextRequest('http://localhost:3000/api/genomics/reports'));
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error.code).toBe('INTERNAL_ERROR');
   });
 
   it('POST creates a new genomic report with category', async () => {
@@ -281,9 +307,7 @@ describe('/api/genomics/reports', () => {
   });
 
   it('POST returns blocked response when middleware blocks', async () => {
-    mockRunMiddleware.mockReturnValueOnce(
-      NextResponse.json({ error: 'blocked' }, { status: 429 }),
-    );
+    mockRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 429 }));
     const res = await postReport(
       new NextRequest('http://localhost:3000/api/genomics/reports', {
         method: 'POST',
@@ -292,5 +316,21 @@ describe('/api/genomics/reports', () => {
       }),
     );
     expect(res.status).toBe(429);
+  });
+
+  it('POST returns 500 when report creation throws', async () => {
+    mockSuccessResponse.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const res = await postReport(
+      new NextRequest('http://localhost:3000/api/genomics/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: 'Pharmacogenomics' }),
+      }),
+    );
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error.code).toBe('INTERNAL_ERROR');
   });
 });

@@ -83,7 +83,8 @@
     "prettier": "^3.2.0",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "undici": "^6.24.1"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -93,7 +94,6 @@
     "handlebars": "^4.7.9",
     "flatted": "^3.4.2",
     "serialize-javascript": "^7.0.5",
-    "undici": "^6.24.0",
     "fast-xml-parser": "^5.5.7",
     "picomatch": "^2.3.2",
     "immutable": "^4.3.8",
@@ -105,7 +105,6 @@
     "brace-expansion": "^2.0.3",
     "@tootallnate/once": "^3.0.1",
     "esbuild": "^0.25.0",
-    "postcss": "^8.4.31",
-    "minimatch": "^9.0.7"
+    "postcss": "^8.4.33"
   }
 }

@@ -294,15 +294,9 @@ describe('logRequest non-test behavior', () => {
         },
       });
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[API]'),
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('req-abc-123'),
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('192.168.1.100'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[API]'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('req-abc-123'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('192.168.1.100'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -336,9 +330,7 @@ describe('logRequest non-test behavior', () => {
         headers: { 'x-real-ip': '10.0.0.5' },
       });
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -369,9 +361,7 @@ describe('logRequest non-test behavior', () => {
       const { logRequest: logReqDev } = require('@/lib/api/middleware');
       const req = new NextRequest('http://localhost:3000/api/test');
       logReqDev(req);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -406,9 +396,7 @@ describe('logRequest non-test behavior', () => {
       });
       logReqDev(req);
       // The first element of split(',') is empty string, trim() -> '', so || 'unknown'
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('unknown'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
     } finally {
       consoleSpy.mockRestore();
       jest.resetModules();
@@ -467,13 +455,14 @@ describe('runMiddlewareWithOptions rate limiting', () => {
     const ip = `middleware-rl-${Date.now()}`;
     // Exhaust the rate limit
     for (let i = 0; i < 3; i++) {
-      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), { maxRequests: 3 });
+      runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), {
+        maxRequests: 3,
+      });
     }
     // Next request should be rate limited
-    const result = runMiddlewareWithOptions(
-      makeReq('http://localhost:3000/api/test', { ip }),
-      { maxRequests: 3 },
-    );
+    const result = runMiddlewareWithOptions(makeReq('http://localhost:3000/api/test', { ip }), {
+      maxRequests: 3,
+    });
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
   });

@@ -27,8 +27,8 @@ const parsedEnv = RuntimeEnvSchema.parse({
 
 const allowedOrigins = parsedEnv.SHIORA_ALLOWED_ORIGINS
   ? parsedEnv.SHIORA_ALLOWED_ORIGINS.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean)
+      .map((origin) => origin.trim())
+      .filter(Boolean)
   : [...DEFAULT_ALLOWED_ORIGINS];
 
 // Lazy session-secret accessor: in production, the first call will throw
@@ -45,19 +45,20 @@ export const serverEnv = {
   get sessionSecret(): string {
     if (!parsedEnv.SHIORA_SESSION_SECRET && parsedEnv.NODE_ENV === 'production') {
       throw new Error(
-        'SHIORA_SESSION_SECRET must be set in production. '
-        + 'Generate one with: openssl rand -base64 48',
+        'SHIORA_SESSION_SECRET must be set in production. ' +
+          'Generate one with: openssl rand -base64 48',
       );
     }
-    return parsedEnv.SHIORA_SESSION_SECRET
-      ?? 'shiora-dev-session-secret-change-me-before-production';
+    return (
+      parsedEnv.SHIORA_SESSION_SECRET ?? 'shiora-dev-session-secret-change-me-before-production'
+    );
   },
   sessionTtlHours: parsedEnv.SHIORA_SESSION_TTL_HOURS,
   enableHsts: parsedEnv.SHIORA_ENABLE_HSTS === 'true',
   allowInsecureWalletHeader:
-    parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === 'true'
-    || parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === undefined
-    && parsedEnv.NODE_ENV !== 'production',
+    parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === 'true' ||
+    (parsedEnv.SHIORA_ALLOW_INSECURE_WALLET_HEADER === undefined &&
+      parsedEnv.NODE_ENV !== 'production'),
 };
 
 export type ServerEnv = typeof serverEnv;

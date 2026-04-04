@@ -33,7 +33,7 @@
     "cli": {
       "package": "aethelred-cli",
       "version": "2.0.0",
-      "path": "cli/Cargo.toml",
+      "path": "tools/cli/Cargo.toml",
       "published": false
     },
     "native_rust": {

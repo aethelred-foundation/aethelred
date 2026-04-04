@@ -8,12 +8,7 @@
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 import { RecordUpdateSchema } from '@/lib/api/validation';
-import {
-  successResponse,
-  notFoundResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse, validationError, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import { getRecord, softDeleteRecord, updateRecord } from '@/lib/api/store';
 
@@ -136,7 +131,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       id: deletedRecord.id,
       deleted: true,
       deletedAt: Date.now(),
-      message: 'Record marked for deletion. IPFS content will be unpinned after the retention period.',
+      message:
+        'Record marked for deletion. IPFS content will be unpinned after the retention period.',
     },
     HTTP.OK,
   );

@@ -34,8 +34,43 @@ on:
       - ".github/workflows/developer-tools-ci.yml"
 
 jobs:
+  changes:
+    name: Detect developer tools changes
+    runs-on: ubuntu-latest
+    outputs:
+      cli: ${{ steps.filter.outputs.cli }}
+      vscode-extension: ${{ steps.filter.outputs.vscode_extension }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
+      local-testnet: ${{ steps.filter.outputs.local_testnet }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            cli:
+              - 'tools/cli/**'
+              - 'sdk/typescript/**'
+            vscode_extension:
+              - 'tools/tools/vscode-extension/**'
+            dashboard:
+              - 'frontend/dashboard/**'
+            local_testnet:
+              - 'integrations/apps/fastapi-verifier/**'
+              - 'integrations/apps/nextjs-verifier/**'
+              - 'integrations/deploy/docker/docker-compose.local-testnet.yml'
+              - 'integrations/deploy/docker/Dockerfile.fastapi-verifier'
+              - 'integrations/deploy/docker/Dockerfile.nextjs-api'
+              - 'integrations/deploy/docker/mock-rpc-server.py'
+              - 'scripts/devtools-cli-smoke.sh'
+              - 'tools/cli/aethel/**'
+              - 'tools/cli/seal-verifier/**'
+              - 'sdk/typescript/**'
+
   cli-builds:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.cli == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +104,8 @@ jobs:
 
   vscode-extension:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.vscode-extension == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -99,6 +136,8 @@ jobs:
 
   dashboard-build:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.dashboard == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -118,6 +157,8 @@ jobs:
 
   local-testnet-compose-validate:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.local-testnet == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate local testnet compose config
@@ -127,6 +168,8 @@ jobs:
 
   local-testnet-cli-smoke:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.local-testnet == 'true' }}
     steps:
       - uses: actions/checkout@v4
 

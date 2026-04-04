@@ -453,7 +453,31 @@ describe('File persistence and serialization internals', () => {
 
     // Simulate a persisted state file
     const serialized = JSON.stringify({
-      recordsByOwner: { 'aeth1test': [{ id: 'r1', type: 'vitals', label: 'Test', description: '', date: 1, uploadDate: 1, encrypted: true, encryption: 'AES-256-GCM', cid: 'Qm', txHash: '0x', attestation: '0x', size: 1, provider: 'P', status: 'Verified', ipfsNodes: 1, tags: ['a'], deleted: false, ownerAddress: 'aeth1test', blockHeight: 1 }] },
+      recordsByOwner: {
+        aeth1test: [
+          {
+            id: 'r1',
+            type: 'vitals',
+            label: 'Test',
+            description: '',
+            date: 1,
+            uploadDate: 1,
+            encrypted: true,
+            encryption: 'AES-256-GCM',
+            cid: 'Qm',
+            txHash: '0x',
+            attestation: '0x',
+            size: 1,
+            provider: 'P',
+            status: 'Verified',
+            ipfsNodes: 1,
+            tags: ['a'],
+            deleted: false,
+            ownerAddress: 'aeth1test',
+            blockHeight: 1,
+          },
+        ],
+      },
       grantsByOwner: {},
       consentsByPatient: {},
       marketplace: [],
@@ -632,7 +656,9 @@ describe('File persistence and serialization internals', () => {
       return existsSyncOriginal(p);
     });
     fs.mkdirSync = jest.fn();
-    fs.writeFileSync = jest.fn(() => { throw new Error('write failed'); });
+    fs.writeFileSync = jest.fn(() => {
+      throw new Error('write failed');
+    });
 
     process.env.NODE_ENV = 'development';
 
@@ -695,7 +721,9 @@ describe('File persistence and serialization internals', () => {
       if (p.includes('.shiora-data')) return false; // directory doesn't exist
       return existsSyncOriginal(p);
     });
-    fs.mkdirSync = jest.fn(() => { mkdirCalled = true; });
+    fs.mkdirSync = jest.fn(() => {
+      mkdirCalled = true;
+    });
     fs.writeFileSync = jest.fn();
 
     process.env.NODE_ENV = 'development';
@@ -754,7 +782,9 @@ describe('File persistence and serialization internals', () => {
       if (p.includes('.shiora-data')) return false;
       return existsSyncOriginal(p);
     });
-    fs.mkdirSync = jest.fn(() => { throw new Error('permission denied'); });
+    fs.mkdirSync = jest.fn(() => {
+      throw new Error('permission denied');
+    });
     fs.writeFileSync = jest.fn();
 
     process.env.NODE_ENV = 'development';
@@ -905,7 +935,9 @@ describe('File persistence and serialization internals', () => {
     let writeCount = 0;
     fs.existsSync = jest.fn(() => true);
     fs.mkdirSync = jest.fn();
-    fs.writeFileSync = jest.fn(() => { writeCount++; });
+    fs.writeFileSync = jest.fn(() => {
+      writeCount++;
+    });
 
     process.env.NODE_ENV = 'development';
 

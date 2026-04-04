@@ -1,7 +1,7 @@
 {
   "name": "@aethelred/shiora",
   "version": "1.0.0",
-  "description": "Shiora Health AI \u2014 Women's Health Platform on Aethelred",
+  "description": "Shiora Health AI — Women's Health Platform on Aethelred",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
@@ -51,7 +51,6 @@
     "handlebars": "^4.7.9",
     "flatted": "^3.4.2",
     "serialize-javascript": "^7.0.5",
-    "undici": "^6.24.0",
     "fast-xml-parser": "^5.5.7",
     "picomatch": "^2.3.2",
     "immutable": "^4.3.8",
@@ -63,7 +62,6 @@
     "brace-expansion": "^2.0.3",
     "@tootallnate/once": "^3.0.1",
     "esbuild": "^0.25.0",
-    "postcss": "^8.4.31",
-    "minimatch": "^9.0.7"
+    "postcss": "^8.4.33"
   }
 }

@@ -6,17 +6,8 @@
 
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import {
-  GrantCreateSchema,
-  GrantListQuerySchema,
-  parseSearchParams,
-} from '@/lib/api/validation';
-import {
-  successResponse,
-  paginatedResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { GrantCreateSchema, GrantListQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { successResponse, paginatedResponse, validationError, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import type { MockAccessGrant } from '@/lib/api/mock-data';
 import { createAccessGrant, listAccessGrants } from '@/lib/api/store';
@@ -34,10 +25,7 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      GrantListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(GrantListQuerySchema, request.nextUrl.searchParams);
 
     const allGrants = listAccessGrants(auth.walletAddress!);
     let grants = [...allGrants];

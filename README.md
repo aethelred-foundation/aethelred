@@ -37,7 +37,7 @@
 
 ---
 
-> **Classification: Public Reference** — This README is a public-facing project overview. For canonical disclosure documents, see `docs/WHITEPAPER.md` and `docs/TOKENOMICS.md`. ADGM DLT Foundation registration is in preparation. No content in this repository constitutes an offer of securities or regulated financial products.
+> **Classification: Public Reference** — This README is a public-facing project overview. This repository is the canonical authority and release source of truth for the Aethelred protocol monorepo. For canonical disclosure documents, see `docs/WHITEPAPER.md` and `docs/TOKENOMICS.md`. ADGM DLT Foundation registration is in preparation. No content in this repository constitutes an offer of securities or regulated financial products.
 
 ---
 

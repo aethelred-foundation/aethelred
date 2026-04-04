@@ -24,26 +24,25 @@ jobs:
 
           # 1. Workflow badges must reference files that exist
           echo "--- Checking workflow badge references ---"
+          check_workflow_refs() {
+            local readme="$1"
+            local pattern="$2"
+            local label="$3"
+            while IFS= read -r wf; do
+              [[ -n "$wf" ]] || continue
+              if [ ! -f ".github/workflows/$wf" ]; then
+                echo "ERROR: $readme references workflow '$wf'$label but .github/workflows/$wf does not exist"
+                errors=$((errors + 1))
+              else
+                echo "OK: $readme -> .github/workflows/$wf$label"
+              fi
+            done < <(grep -oP "$pattern" "$readme" 2>/dev/null || true)
+          }
+
           for readme in README.md dApps/*/README.md; do
             [ -f "$readme" ] || continue
-            # Match GitHub native badge SVGs: .../workflows/<file>/badge.svg
-            grep -oP 'workflows/\K[^/]+(?=/badge\.svg)' "$readme" 2>/dev/null | while read -r wf; do
-              if [ ! -f ".github/workflows/$wf" ]; then
-                echo "ERROR: $readme references workflow '$wf' but .github/workflows/$wf does not exist"
-                errors=$((errors + 1))
-              else
-                echo "OK: $readme -> .github/workflows/$wf"
-              fi
-            done
-            # Also match Shields.io workflow badges: workflow/status/.../file.yml
-            grep -oP 'workflow/status/[^/]+/[^/]+/\K[^?]+' "$readme" 2>/dev/null | while read -r wf; do
-              if [ ! -f ".github/workflows/$wf" ]; then
-                echo "ERROR: $readme references workflow '$wf' via Shields but .github/workflows/$wf does not exist"
-                errors=$((errors + 1))
-              else
-                echo "OK: $readme -> .github/workflows/$wf (Shields)"
-              fi
-            done
+            check_workflow_refs "$readme" 'workflows/\K[^/]+(?=/badge\.svg)' ""
+            check_workflow_refs "$readme" 'workflow/status/[^/]+/[^/]+/\K[^?]+' " (Shields)"
           done
           echo ""
 
