@@ -40,7 +40,14 @@ impl GasMeter {
     /// Consume gas
     pub fn consume(&self, amount: u64) -> Result<(), GasExhausted> {
         let current = self.used.fetch_add(amount, Ordering::SeqCst);
-        let new_total = current + amount;
+        let Some(new_total) = current.checked_add(amount) else {
+            self.used.fetch_sub(amount, Ordering::SeqCst);
+            return Err(GasExhausted {
+                used: current,
+                limit: self.limit,
+                attempted: amount,
+            });
+        };
 
         if new_total > self.limit {
             // Rollback
@@ -571,5 +578,18 @@ mod tests {
         cloned.consume(200).unwrap();
         assert_eq!(meter.used(), 300);
         assert_eq!(cloned.used(), 500);
+    }
+
+    #[test]
+    fn test_gas_meter_overflow_reject_preserves_state() {
+        let meter = GasMeter::with_limit(u64::MAX);
+        meter.consume(u64::MAX).unwrap();
+        assert_eq!(meter.used(), u64::MAX);
+
+        let err = meter.consume(1).unwrap_err();
+        assert_eq!(err.used, u64::MAX);
+        assert_eq!(err.limit, u64::MAX);
+        assert_eq!(err.attempted, 1);
+        assert_eq!(meter.used(), u64::MAX);
     }
 }
