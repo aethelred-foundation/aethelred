@@ -1,6 +1,12 @@
 version: "2"
 
 linters:
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -QF*
+        - -ST*
   exclusions:
     rules:
       # Proto-generated types embed protoimpl.MessageState which contains sync.Mutex.

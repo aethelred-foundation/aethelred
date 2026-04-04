@@ -202,7 +202,9 @@ func (c *RemoteTEEClient) Execute(ctx context.Context, request *TEEExecutionRequ
 		}
 		return nil, fmt.Errorf("TEE request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if c.breaker != nil {
@@ -258,7 +260,9 @@ func (c *RemoteTEEClient) GetCapabilities() *TEECapabilities {
 		c.logger.Warn("Failed to fetch capabilities", "error", err)
 		return &TEECapabilities{Platform: "remote"}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if c.breaker != nil {
@@ -302,7 +306,9 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		}
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	if resp.StatusCode == http.StatusOK {
 		if c.breaker != nil {
 			c.breaker.RecordSuccess()

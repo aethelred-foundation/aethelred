@@ -118,7 +118,9 @@ func (p *HTTPDrandPulseProvider) latestPulseVerified(ctx context.Context) (Drand
 		_ = httpClient.Close()
 		return DrandPulse{}, fmt.Errorf("build verifying drand client: %w", err)
 	}
-	defer verifiedClient.Close()
+	defer func() {
+		_ = verifiedClient.Close()
+	}()
 
 	result, err := verifiedClient.Get(ctx, 0)
 	if err != nil {

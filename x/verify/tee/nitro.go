@@ -602,7 +602,9 @@ func (nes *NitroEnclaveService) Shutdown() error {
 	defer nes.enclaveMutex.Unlock()
 
 	if nes.vsockConn != nil {
-		nes.vsockConn.Close()
+		if err := nes.vsockConn.Close(); err != nil {
+			nes.logger.Error("failed to close vsock connection", "error", err)
+		}
 	}
 
 	nes.enclaveReady = false

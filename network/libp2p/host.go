@@ -25,57 +25,57 @@ import (
 
 const (
 	// Protocol IDs for Aethelred
-	ProtocolIDConsensus    = protocol.ID("/aethelred/consensus/1.0.0")
-	ProtocolIDSync         = protocol.ID("/aethelred/sync/1.0.0")
-	ProtocolIDCompute      = protocol.ID("/aethelred/compute/1.0.0")
-	ProtocolIDAttestation  = protocol.ID("/aethelred/attestation/1.0.0")
-	ProtocolIDDAG          = protocol.ID("/aethelred/dag/1.0.0")
+	ProtocolIDConsensus   = protocol.ID("/aethelred/consensus/1.0.0")
+	ProtocolIDSync        = protocol.ID("/aethelred/sync/1.0.0")
+	ProtocolIDCompute     = protocol.ID("/aethelred/compute/1.0.0")
+	ProtocolIDAttestation = protocol.ID("/aethelred/attestation/1.0.0")
+	ProtocolIDDAG         = protocol.ID("/aethelred/dag/1.0.0")
 
 	// GossipSub topic names
-	TopicConsensusVotes    = "aethelred/consensus/votes"
-	TopicComputeJobs       = "aethelred/compute/jobs"
-	TopicAttestations      = "aethelred/attestations"
-	TopicDAGVertices       = "aethelred/dag/vertices"
-	TopicSealBroadcast     = "aethelred/seals"
+	TopicConsensusVotes = "aethelred/consensus/votes"
+	TopicComputeJobs    = "aethelred/compute/jobs"
+	TopicAttestations   = "aethelred/attestations"
+	TopicDAGVertices    = "aethelred/dag/vertices"
+	TopicSealBroadcast  = "aethelred/seals"
 
 	// Discovery service tag
 	MDNSServiceTag = "aethelred-discovery"
 
 	// Connection limits
-	MaxPeers        = 100
-	MinPeers        = 10
-	TargetPeers     = 50
+	MaxPeers    = 100
+	MinPeers    = 10
+	TargetPeers = 50
 )
 
 // AethelredHost wraps libp2p host with Aethelred-specific functionality
 type AethelredHost struct {
 	host.Host
-	ctx         context.Context
-	cancel      context.CancelFunc
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	// Kademlia DHT for peer discovery
-	dht         *dht.IpfsDHT
+	dht *dht.IpfsDHT
 
 	// GossipSub pubsub system
-	pubsub      *pubsub.PubSub
+	pubsub *pubsub.PubSub
 
 	// Subscribed topics
-	topics      map[string]*pubsub.Topic
-	subs        map[string]*pubsub.Subscription
-	topicsMu    sync.RWMutex
+	topics   map[string]*pubsub.Topic
+	subs     map[string]*pubsub.Subscription
+	topicsMu sync.RWMutex
 
 	// Message handlers
-	handlers    map[string]MessageHandler
-	handlersMu  sync.RWMutex
+	handlers   map[string]MessageHandler
+	handlersMu sync.RWMutex
 
 	// Peer management
-	peerStore   *PeerStore
+	peerStore *PeerStore
 
 	// Metrics
-	metrics     *NetworkMetrics
+	metrics *NetworkMetrics
 
 	// Logger
-	logger      Logger
+	logger Logger
 }
 
 // Logger interface for network logging
@@ -91,25 +91,25 @@ type MessageHandler func(ctx context.Context, msg *pubsub.Message) error
 // HostConfig configures the Aethelred network host
 type HostConfig struct {
 	// Network identity
-	PrivateKey    crypto.PrivKey
-	ListenAddrs   []multiaddr.Multiaddr
+	PrivateKey  crypto.PrivKey
+	ListenAddrs []multiaddr.Multiaddr
 
 	// Bootstrap peers for initial discovery
 	BootstrapPeers []peer.AddrInfo
 
 	// Enable mDNS for local discovery (development)
-	EnableMDNS     bool
+	EnableMDNS bool
 
 	// Connection manager settings
-	LowWatermark   int
-	HighWatermark  int
-	GracePeriod    time.Duration
+	LowWatermark  int
+	HighWatermark int
+	GracePeriod   time.Duration
 
 	// GossipSub settings
 	GossipSubParams *pubsub.GossipSubParams
 
 	// Logger
-	Logger         Logger
+	Logger Logger
 }
 
 // DefaultConfig returns a default host configuration
@@ -174,7 +174,7 @@ func NewHost(ctx context.Context, cfg *HostConfig) (*AethelredHost, error) {
 	// Create Kademlia DHT
 	kadDHT, err := dht.New(ctx, h, dht.Mode(dht.ModeAutoServer))
 	if err != nil {
-		h.Close()
+		_ = h.Close()
 		cancel()
 		return nil, fmt.Errorf("failed to create DHT: %w", err)
 	}
@@ -186,11 +186,11 @@ func NewHost(ctx context.Context, cfg *HostConfig) (*AethelredHost, error) {
 	}
 
 	// Configure GossipSub for Aethelred's requirements
-	gsParams.D = 8                  // Desired outbound degree
-	gsParams.Dlo = 6                // Lower bound for outbound degree
-	gsParams.Dhi = 12               // Upper bound for outbound degree
-	gsParams.Dscore = 6             // Outbound degree for scoring
-	gsParams.Dout = 2               // Outbound quota for GossipSub
+	gsParams.D = 8      // Desired outbound degree
+	gsParams.Dlo = 6    // Lower bound for outbound degree
+	gsParams.Dhi = 12   // Upper bound for outbound degree
+	gsParams.Dscore = 6 // Outbound degree for scoring
+	gsParams.Dout = 2   // Outbound quota for GossipSub
 	gsParams.HeartbeatInterval = 700 * time.Millisecond
 	gsParams.SlowHeartbeatWarning = 0.1
 
@@ -201,8 +201,8 @@ func NewHost(ctx context.Context, cfg *HostConfig) (*AethelredHost, error) {
 		pubsub.WithFloodPublish(true),
 	)
 	if err != nil {
-		kadDHT.Close()
-		h.Close()
+		_ = kadDHT.Close()
+		_ = h.Close()
 		cancel()
 		return nil, fmt.Errorf("failed to create GossipSub: %w", err)
 	}
@@ -226,7 +226,7 @@ func NewHost(ctx context.Context, cfg *HostConfig) (*AethelredHost, error) {
 
 	// Bootstrap DHT
 	if err := kadDHT.Bootstrap(ctx); err != nil {
-		ah.Close()
+		_ = ah.Close()
 		return nil, fmt.Errorf("failed to bootstrap DHT: %w", err)
 	}
 
@@ -397,7 +397,7 @@ func (h *AethelredHost) Close() error {
 		sub.Cancel()
 	}
 	for _, topic := range h.topics {
-		topic.Close()
+		_ = topic.Close()
 	}
 	h.topicsMu.Unlock()
 

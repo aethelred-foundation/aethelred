@@ -1298,10 +1298,10 @@ func TestEndToEnd_MalformedVoteExtension(t *testing.T) {
 
 	// Inject malformed vote extensions: truncated JSON, empty, and random bytes
 	malformedPayloads := [][]byte{
-		[]byte(`{"version":1,"height":100,"validatorAddress`),  // truncated JSON
-		{},                                                       // empty
-		{0xff, 0xfe, 0xfd, 0x00, 0x01, 0x02},                  // random bytes
-		[]byte(`null`),                                           // JSON null
+		[]byte(`{"version":1,"height":100,"validatorAddress`), // truncated JSON
+		{},                                   // empty
+		{0xff, 0xfe, 0xfd, 0x00, 0x01, 0x02}, // random bytes
+		[]byte(`null`),                       // JSON null
 	}
 	for _, payload := range malformedPayloads {
 		abciVotes = append(abciVotes, abci.ExtendedVoteInfo{VoteExtension: payload})
@@ -1572,7 +1572,9 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 			} `json:"block"`
 		}
 		_ = json.NewDecoder(resp1.Body).Decode(&block1)
-		resp1.Body.Close()
+		if err := resp1.Body.Close(); err != nil {
+			t.Fatalf("close first block response body: %v", err)
+		}
 
 		time.Sleep(200 * time.Millisecond)
 
@@ -1588,7 +1590,9 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 			} `json:"block"`
 		}
 		_ = json.NewDecoder(resp2.Body).Decode(&block2)
-		resp2.Body.Close()
+		if err := resp2.Body.Close(); err != nil {
+			t.Fatalf("close second block response body: %v", err)
+		}
 
 		if block1.Block.Header.Height == block2.Block.Header.Height {
 			t.Fatal("block height did not advance between calls - mock may be static")
