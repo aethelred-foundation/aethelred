@@ -6,7 +6,8 @@ const mockRunMiddleware = jest.fn<NextResponse | null, [NextRequest, ...unknown[
 
 jest.mock('@/lib/api/middleware', () => ({
   ...jest.requireActual('@/lib/api/middleware'),
-  runMiddleware: (...args: unknown[]) => mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
+  runMiddleware: (...args: unknown[]) =>
+    mockRunMiddleware(args[0] as NextRequest, ...args.slice(1)),
 }));
 
 import { GET as getFhir } from '@/app/api/fhir/route';

@@ -22,7 +22,7 @@ const rateLimitStore = new Map<string, RateLimitEntry>();
 let lastRateLimitCleanupAt = 0;
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100;  // per window
+const RATE_LIMIT_MAX_REQUESTS = 100; // per window
 
 /**
  * Simple in-memory rate limiter keyed by IP address.
@@ -100,9 +100,7 @@ export function logRequest(request: NextRequest): void {
   const userAgent = request.headers.get('user-agent')?.slice(0, 80) ?? 'unknown';
 
   // eslint-disable-next-line no-console
-  console.log(
-    `[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`,
-  );
+  console.log(`[API] ${requestId} ${method} ${url} — IP: ${ip} — UA: ${userAgent}`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -184,8 +182,8 @@ export function requireAuth(request: NextRequest): NextResponse | AuthContext {
   if (!auth.isAuthenticated) {
     return errorResponse(
       'UNAUTHORIZED',
-      auth.invalidReason
-        ?? 'Authentication required. Connect a wallet and present a valid signed session.',
+      auth.invalidReason ??
+        'Authentication required. Connect a wallet and present a valid signed session.',
       HTTP.UNAUTHORIZED,
     );
   }
@@ -229,11 +227,7 @@ export function runMiddlewareWithOptions(
     );
   }
 
-  const rateLimited = checkRateLimit(
-    request,
-    options.maxRequests,
-    options.windowMs,
-  );
+  const rateLimited = checkRateLimit(request, options.maxRequests, options.windowMs);
   if (rateLimited) return rateLimited;
 
   if (options.requireAuth) {

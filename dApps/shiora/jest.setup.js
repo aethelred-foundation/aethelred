@@ -43,7 +43,10 @@ jest.mock('recharts', () => {
 
   // Special Tooltip mock that renders the `content` prop with simulated data
   // so that ChartTooltip formatValue callbacks get exercised for coverage.
-  const MockTooltip = React.forwardRef(function MockTooltip({ children, content, formatter, ...props }, ref) {
+  const MockTooltip = React.forwardRef(function MockTooltip(
+    { children, content, formatter, ...props },
+    ref,
+  ) {
     const safeProps = {};
     for (const key of Object.keys(props)) {
       const val = props[key];
@@ -53,8 +56,20 @@ jest.mock('recharts', () => {
     }
     // Call formatter prop to exercise inline formatters for coverage (positive + negative values)
     if (typeof formatter === 'function') {
-      try { formatter(42, 'value', { name: 'value', value: 42, color: '#000' }, 0, [{ name: 'value', value: 42, color: '#000' }]); } catch (_e) { /* ignore */ }
-      try { formatter(-5, 'value', { name: 'value', value: -5, color: '#000' }, 0, [{ name: 'value', value: -5, color: '#000' }]); } catch (_e) { /* ignore */ }
+      try {
+        formatter(42, 'value', { name: 'value', value: 42, color: '#000' }, 0, [
+          { name: 'value', value: 42, color: '#000' },
+        ]);
+      } catch (_e) {
+        /* ignore */
+      }
+      try {
+        formatter(-5, 'value', { name: 'value', value: -5, color: '#000' }, 0, [
+          { name: 'value', value: -5, color: '#000' },
+        ]);
+      } catch (_e) {
+        /* ignore */
+      }
     }
     return React.createElement(
       'div',
@@ -65,16 +80,22 @@ jest.mock('recharts', () => {
       React.isValidElement(content)
         ? React.cloneElement(content, {
             active: true,
-            payload: [{ name: 'positive', value: 42, color: '#000' }, { name: 'negative', value: -5, color: '#888' }],
+            payload: [
+              { name: 'positive', value: 42, color: '#000' },
+              { name: 'negative', value: -5, color: '#888' },
+            ],
             label: 'test',
           })
         : typeof content === 'function'
-        ? content({
-            active: true,
-            payload: [{ name: 'positive', value: 42, color: '#000' }, { name: 'negative', value: -5, color: '#888' }],
-            label: 'test',
-          })
-        : null,
+          ? content({
+              active: true,
+              payload: [
+                { name: 'positive', value: 42, color: '#000' },
+                { name: 'negative', value: -5, color: '#888' },
+              ],
+              label: 'test',
+            })
+          : null,
     );
   });
 
@@ -103,7 +124,11 @@ jest.mock('recharts', () => {
           safeProps[key] = val;
         }
       }
-      return React.createElement('div', { 'data-testid': 'mock-y-axis', ref, ...safeProps }, children);
+      return React.createElement(
+        'div',
+        { 'data-testid': 'mock-y-axis', ref, ...safeProps },
+        children,
+      );
     }),
     Tooltip: MockTooltip,
     CartesianGrid: createMockComponent('cartesian-grid'),
@@ -202,8 +227,7 @@ const originalWarn = console.warn;
 console.warn = (...args) => {
   if (
     typeof args[0] === 'string' &&
-    (args[0].includes('React does not recognize') ||
-      args[0].includes('Warning: An update to'))
+    (args[0].includes('React does not recognize') || args[0].includes('Warning: An update to'))
   ) {
     return;
   }

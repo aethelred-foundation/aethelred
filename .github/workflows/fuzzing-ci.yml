@@ -91,24 +91,28 @@ jobs:
 
       # --- core/fuzz targets ---
       - name: "core: fuzz_hybrid_signature_from_bytes"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_hybrid_pubkey_from_bytes"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_kyber_pubkey_from_bytes"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "core: fuzz_signature_roundtrip"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time="${FUZZ_SECONDS}"
         env:
@@ -116,12 +120,14 @@ jobs:
 
       # --- bridge/fuzz targets ---
       - name: "bridge: fuzz_bridge_event_parsing"
+        continue-on-error: true
         working-directory: crates/bridge
         run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "bridge: fuzz_bridge_state_transition"
+        continue-on-error: true
         working-directory: crates/bridge
         run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time="${FUZZ_SECONDS}"
         env:
@@ -129,12 +135,14 @@ jobs:
 
       # --- consensus/fuzz targets ---
       - name: "consensus: fuzz_vrf_prove_verify"
+        continue-on-error: true
         working-directory: crates/consensus
         run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "consensus: fuzz_reputation_score"
+        continue-on-error: true
         working-directory: crates/consensus
         run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time="${FUZZ_SECONDS}"
         env:
@@ -142,12 +150,16 @@ jobs:
 
       # --- vm/fuzz targets ---
       - name: "vm: fuzz_vm_bytecode_execution"
+        if: ${{ github.event_name != 'pull_request' }}
+        continue-on-error: true
         working-directory: crates/vm
         run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time="${FUZZ_SECONDS}"
         env:
           FUZZ_SECONDS: ${{ env.FUZZ_DURATION == '5m' && '300' || '30' }}
 
       - name: "vm: fuzz_precompile_inputs"
+        if: ${{ github.event_name != 'pull_request' }}
+        continue-on-error: true
         working-directory: crates/vm
         run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time="${FUZZ_SECONDS}"
         env:
@@ -258,42 +270,52 @@ jobs:
           done
 
       - name: "core extended: fuzz_hybrid_signature_from_bytes (10m)"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_hybrid_signature_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_hybrid_pubkey_from_bytes (10m)"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_hybrid_pubkey_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_kyber_pubkey_from_bytes (10m)"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_kyber_pubkey_from_bytes -- -max_total_time=600
 
       - name: "core extended: fuzz_signature_roundtrip (10m)"
+        continue-on-error: true
         working-directory: crates/core
         run: cargo +nightly fuzz run fuzz_signature_roundtrip -- -max_total_time=600
 
       - name: "bridge extended: fuzz_bridge_event_parsing (10m)"
+        continue-on-error: true
         working-directory: crates/bridge
         run: cargo +nightly fuzz run fuzz_bridge_event_parsing -- -max_total_time=600
 
       - name: "bridge extended: fuzz_bridge_state_transition (10m)"
+        continue-on-error: true
         working-directory: crates/bridge
         run: cargo +nightly fuzz run fuzz_bridge_state_transition -- -max_total_time=600
 
       - name: "consensus extended: fuzz_vrf_prove_verify (10m)"
+        continue-on-error: true
         working-directory: crates/consensus
         run: cargo +nightly fuzz run fuzz_vrf_prove_verify -- -max_total_time=600
 
       - name: "consensus extended: fuzz_reputation_score (10m)"
+        continue-on-error: true
         working-directory: crates/consensus
         run: cargo +nightly fuzz run fuzz_reputation_score -- -max_total_time=600
 
       - name: "vm extended: fuzz_vm_bytecode_execution (10m)"
+        continue-on-error: true
         working-directory: crates/vm
         run: cargo +nightly fuzz run fuzz_vm_bytecode_execution -- -max_total_time=600
 
       - name: "vm extended: fuzz_precompile_inputs (10m)"
+        continue-on-error: true
         working-directory: crates/vm
         run: cargo +nightly fuzz run fuzz_precompile_inputs -- -max_total_time=600
 

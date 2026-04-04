@@ -6,21 +6,18 @@
 
 import { NextRequest } from 'next/server';
 import { ZodError } from 'zod';
-import {
-  RecordCreateSchema,
-  RecordListQuerySchema,
-  parseSearchParams,
-} from '@/lib/api/validation';
-import {
-  successResponse,
-  paginatedResponse,
-  validationError,
-  HTTP,
-} from '@/lib/api/responses';
+import { RecordCreateSchema, RecordListQuerySchema, parseSearchParams } from '@/lib/api/validation';
+import { successResponse, paginatedResponse, validationError, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import type { MockHealthRecord } from '@/lib/api/mock-data';
 import { createRecord, listRecords } from '@/lib/api/store';
-import { generateCID, generateTxHash, generateAttestation, seededHex, seededInt } from '@/lib/utils';
+import {
+  generateCID,
+  generateTxHash,
+  generateAttestation,
+  seededHex,
+  seededInt,
+} from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // GET /api/records
@@ -34,10 +31,7 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      RecordListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(RecordListQuerySchema, request.nextUrl.searchParams);
 
     let records = listRecords(auth.walletAddress!);
 
@@ -106,7 +100,8 @@ export async function POST(request: NextRequest) {
       id: `rec-${seededHex(seed, 12)}`,
       type: validated.type,
       label: validated.label,
-      description: validated.description ?? `Encrypted health record uploaded at ${new Date().toISOString()}`,
+      description:
+        validated.description ?? `Encrypted health record uploaded at ${new Date().toISOString()}`,
       date: Date.now(),
       uploadDate: Date.now(),
       encrypted: true,

@@ -1,8 +1,8 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: "npm run start",
-      startServerReadyPattern: "ready on",
+      startServerCommand: "npm --prefix dApps/cruzible run start",
+      startServerReadyPattern: "Ready",
       url: [
         "http://localhost:3000/",
         "http://localhost:3000/validators",

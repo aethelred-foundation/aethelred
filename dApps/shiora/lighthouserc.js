@@ -1,12 +1,12 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npm run start',
+      startServerCommand: 'npm --prefix dApps/shiora run start',
       startServerReadyPattern: 'ready on',
       url: [
         'http://localhost:3001/',
-        'http://localhost:3001/dashboard',
-        'http://localhost:3001/health-records',
+        'http://localhost:3001/insights',
+        'http://localhost:3001/records',
       ],
       numberOfRuns: 3,
       settings: {

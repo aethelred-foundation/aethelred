@@ -270,6 +270,10 @@ export default function CrossChainPage() {
   const [destChain, setDestChain] = useState<ChainId>('ethereum');
   const [transferToken, setTransferToken] = useState<Token>('USDC');
   const [transferAmount, setTransferAmount] = useState('');
+  const sourceChainId = 'cross-chain-source';
+  const destChainId = 'cross-chain-destination';
+  const transferTokenId = 'cross-chain-token';
+  const transferAmountId = 'cross-chain-amount';
   useEffect(() => setMounted(true), []);
 
   const chainStatuses = useMemo(() => generateChainStatuses(), []);
@@ -297,7 +301,7 @@ export default function CrossChainPage() {
       <div className="min-h-screen bg-[#0f172a] text-slate-100">
         <TopNav activePage="/cross-chain" />
 
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
           {/* HEADER */}
           <div className="mb-8">
@@ -333,11 +337,11 @@ export default function CrossChainPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Block Height</span>
+                    <span className="text-slate-400">Block Height</span>
                     <span className="text-white font-mono">{chain.blockHeight.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Avg Latency</span>
+                    <span className="text-slate-400">Avg Latency</span>
                     <span className={`font-medium ${chain.avgLatency < 300 ? 'text-emerald-400' : chain.avgLatency < 600 ? 'text-amber-400' : 'text-red-400'}`}>
                       {chain.avgLatency}ms
                     </span>
@@ -512,10 +516,12 @@ export default function CrossChainPage() {
       <Modal open={showTransferForm} onClose={() => setShowTransferForm(false)} title="New Cross-Chain Transfer" maxWidth="max-w-lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Source Chain</label>
+            <label htmlFor={sourceChainId} className="block text-xs font-medium text-slate-400 mb-1.5">Source Chain</label>
             <select
+              id={sourceChainId}
               value={sourceChain}
               onChange={e => setSourceChain(e.target.value as ChainId)}
+              aria-label="Source chain"
               className="w-full rounded-lg bg-slate-800/50 border border-slate-700/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500/50"
             >
               {CHAINS.map(c => (
@@ -524,10 +530,12 @@ export default function CrossChainPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Destination Chain</label>
+            <label htmlFor={destChainId} className="block text-xs font-medium text-slate-400 mb-1.5">Destination Chain</label>
             <select
+              id={destChainId}
               value={destChain}
               onChange={e => setDestChain(e.target.value as ChainId)}
+              aria-label="Destination chain"
               className="w-full rounded-lg bg-slate-800/50 border border-slate-700/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500/50"
             >
               {CHAINS.filter(c => c.id !== sourceChain).map(c => (
@@ -537,10 +545,12 @@ export default function CrossChainPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Token</label>
+              <label htmlFor={transferTokenId} className="block text-xs font-medium text-slate-400 mb-1.5">Token</label>
               <select
+                id={transferTokenId}
                 value={transferToken}
                 onChange={e => setTransferToken(e.target.value as Token)}
+                aria-label="Transfer token"
                 className="w-full rounded-lg bg-slate-800/50 border border-slate-700/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-red-500/50"
               >
                 {TOKENS.map(t => (
@@ -549,12 +559,14 @@ export default function CrossChainPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Amount</label>
+              <label htmlFor={transferAmountId} className="block text-xs font-medium text-slate-400 mb-1.5">Amount</label>
               <input
+                id={transferAmountId}
                 type="number"
                 value={transferAmount}
                 onChange={e => setTransferAmount(e.target.value)}
                 placeholder="100,000"
+                aria-label="Transfer amount"
                 className="w-full rounded-lg bg-slate-800/50 border border-slate-700/50 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500/50"
               />
             </div>

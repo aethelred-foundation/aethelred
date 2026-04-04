@@ -2,7 +2,10 @@
 
 jest.mock('@/lib/api/middleware', () => {
   const actual = jest.requireActual('@/lib/api/middleware');
-  return { ...actual, runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)) };
+  return {
+    ...actual,
+    runMiddleware: jest.fn((...args: unknown[]) => actual.runMiddleware(...args)),
+  };
 });
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,7 +23,9 @@ afterEach(() => {
 
 describe('/api/health', () => {
   it('returns middleware error when blocked', async () => {
-    mockedRunMiddleware.mockReturnValueOnce(NextResponse.json({ error: 'blocked' }, { status: 403 }));
+    mockedRunMiddleware.mockReturnValueOnce(
+      NextResponse.json({ error: 'blocked' }, { status: 403 }),
+    );
     const req = new NextRequest('http://localhost:3000/api/health', { method: 'GET' });
     const res = await GET(req);
     expect(res.status).toBe(403);

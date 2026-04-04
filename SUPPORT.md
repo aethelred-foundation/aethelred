@@ -20,6 +20,16 @@ Do not open public issues for vulnerabilities.
 - Security reporting: [security@aethelred.io](mailto:security@aethelred.io)
 - Security policy: [SECURITY.md](SECURITY.md)
 
+## SDK-Specific Help
+
+| SDK | Repository |
+|-----|-----------|
+| TypeScript | [aethelred-sdk-ts](https://github.com/aethelred-foundation/aethelred-sdk-ts) |
+| Python | [aethelred-sdk-py](https://github.com/aethelred-foundation/aethelred-sdk-py) |
+| Go | [aethelred-sdk-go](https://github.com/aethelred-foundation/aethelred-sdk-go) |
+| Rust | [aethelred-sdk-rs](https://github.com/aethelred-foundation/aethelred-sdk-rs) |
+| VS Code | [vscode-aethelred](https://github.com/aethelred-foundation/vscode-aethelred) |
+
 ## Commercial / Partner Inquiries
 
 - Foundation contact: [foundation@aethelred.io](mailto:foundation@aethelred.io)

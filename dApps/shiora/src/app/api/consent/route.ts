@@ -8,17 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
-import type {
-  ConsentGrant,
-  PaginatedResponse,
-  ApiResponse,
-} from '@/types';
-import {
-  seededHex,
-  seededAddress,
-  generateTxHash,
-  generateAttestation,
-} from '@/lib/utils';
+import type { ConsentGrant, PaginatedResponse, ApiResponse } from '@/types';
+import { seededHex, seededAddress, generateTxHash, generateAttestation } from '@/lib/utils';
 import {
   ConsentCreateSchema,
   ConsentListQuerySchema,
@@ -39,10 +30,7 @@ export async function GET(request: NextRequest) {
     const auth = requireAuth(request);
     if ('status' in auth) return auth;
 
-    const query = parseSearchParams(
-      ConsentListQuerySchema,
-      request.nextUrl.searchParams,
-    );
+    const query = parseSearchParams(ConsentListQuerySchema, request.nextUrl.searchParams);
 
     let filtered = listConsents(auth.walletAddress!);
 
@@ -59,8 +47,8 @@ export async function GET(request: NextRequest) {
       const q = query.search.toLowerCase();
       filtered = filtered.filter(
         (consent) =>
-          consent.providerName.toLowerCase().includes(q)
-          || consent.providerAddress.toLowerCase().includes(q),
+          consent.providerName.toLowerCase().includes(q) ||
+          consent.providerAddress.toLowerCase().includes(q),
       );
     }
 

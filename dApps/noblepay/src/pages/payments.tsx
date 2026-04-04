@@ -435,7 +435,11 @@ function PaymentDetailDrawer({ payment, open, onClose }: {
             <h3 className="text-lg font-semibold text-white">Payment Details</h3>
             <code className="text-xs text-slate-500 font-mono">{truncateAddress(payment.id, 12, 8)}</code>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white">
+          <button
+            onClick={onClose}
+            aria-label="Close payment details"
+            className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -458,7 +462,11 @@ function PaymentDetailDrawer({ payment, open, onClose }: {
               <p className="text-sm font-medium text-white">{payment.senderName}</p>
               <div className="flex items-center gap-1 mt-1">
                 <code className="text-xs text-slate-500 font-mono">{truncateAddress(payment.sender, 12, 6)}</code>
-                <button onClick={() => handleCopy(payment.sender, 'sender')} className="p-0.5 rounded hover:bg-slate-700/50">
+                <button
+                  onClick={() => handleCopy(payment.sender, 'sender')}
+                  aria-label="Copy sender address"
+                  className="p-0.5 rounded hover:bg-slate-700/50"
+                >
                   {copiedField === 'sender' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-600" />}
                 </button>
               </div>
@@ -470,7 +478,11 @@ function PaymentDetailDrawer({ payment, open, onClose }: {
               <p className="text-sm font-medium text-white">{payment.recipientName}</p>
               <div className="flex items-center gap-1 mt-1">
                 <code className="text-xs text-slate-500 font-mono">{truncateAddress(payment.recipient, 12, 6)}</code>
-                <button onClick={() => handleCopy(payment.recipient, 'recipient')} className="p-0.5 rounded hover:bg-slate-700/50">
+                <button
+                  onClick={() => handleCopy(payment.recipient, 'recipient')}
+                  aria-label="Copy recipient address"
+                  className="p-0.5 rounded hover:bg-slate-700/50"
+                >
                   {copiedField === 'recipient' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-600" />}
                 </button>
               </div>
@@ -529,7 +541,11 @@ function PaymentDetailDrawer({ payment, open, onClose }: {
             </div>
             <div className="flex items-center gap-1">
               <code className="text-xs text-slate-500 font-mono break-all">{truncateAddress(payment.teeAttestation, 24, 12)}</code>
-              <button onClick={() => handleCopy(payment.teeAttestation, 'tee')} className="p-0.5 rounded hover:bg-slate-700/50 flex-shrink-0">
+              <button
+                onClick={() => handleCopy(payment.teeAttestation, 'tee')}
+                aria-label="Copy TEE attestation hash"
+                className="p-0.5 rounded hover:bg-slate-700/50 flex-shrink-0"
+              >
                 {copiedField === 'tee' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-600" />}
               </button>
             </div>
@@ -553,7 +569,11 @@ function PaymentDetailDrawer({ payment, open, onClose }: {
               </div>
               <div className="flex items-center gap-1">
                 <code className="text-xs text-slate-500 font-mono">{truncateAddress(payment.settlementTxHash, 16, 8)}</code>
-                <button onClick={() => handleCopy(payment.settlementTxHash!, 'stx')} className="p-0.5 rounded hover:bg-slate-700/50 flex-shrink-0">
+                <button
+                  onClick={() => handleCopy(payment.settlementTxHash!, 'stx')}
+                  aria-label="Copy settlement transaction hash"
+                  className="p-0.5 rounded hover:bg-slate-700/50 flex-shrink-0"
+                >
                   {copiedField === 'stx' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-600" />}
                 </button>
               </div>
@@ -593,6 +613,10 @@ function NewPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
   const [currency, setCurrency] = useState<Currency>('USDC');
   const [purposeCode, setPurposeCode] = useState(PURPOSE_CODES[0]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const recipientAddressId = 'new-payment-recipient-address';
+  const amountId = 'new-payment-amount';
+  const currencyId = 'new-payment-currency';
+  const purposeCodeId = 'new-payment-purpose';
 
   useEffect(() => {
     if (open) {
@@ -638,7 +662,11 @@ function NewPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
               <Send className="w-5 h-5 text-red-400" />
               <h3 className="text-lg font-semibold text-white">New Payment</h3>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white">
+            <button
+              onClick={onClose}
+              aria-label="Close new payment dialog"
+              className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -649,12 +677,14 @@ function NewPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
               <>
                 {/* Recipient */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Recipient Address</label>
+                  <label htmlFor={recipientAddressId} className="block text-sm font-medium text-slate-300 mb-1.5">Recipient Address</label>
                   <input
+                    id={recipientAddressId}
                     type="text"
                     value={recipientAddress}
                     onChange={(e) => setRecipientAddress(e.target.value)}
                     placeholder="aeth1..."
+                    aria-label="Recipient address"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-600 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500/50 outline-none transition-colors"
                   />
                 </div>
@@ -662,22 +692,26 @@ function NewPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
                 {/* Amount + Currency */}
                 <div className="grid grid-cols-[1fr_auto] gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Amount</label>
+                    <label htmlFor={amountId} className="block text-sm font-medium text-slate-300 mb-1.5">Amount</label>
                     <input
+                      id={amountId}
                       type="number"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
                       min="0"
                       step="0.01"
+                      aria-label="Payment amount"
                       className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-600 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500/50 outline-none transition-colors tabular-nums"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Currency</label>
+                    <label htmlFor={currencyId} className="block text-sm font-medium text-slate-300 mb-1.5">Currency</label>
                     <select
+                      id={currencyId}
                       value={currency}
                       onChange={(e) => setCurrency(e.target.value as Currency)}
+                      aria-label="Payment currency"
                       className="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:border-red-500 outline-none appearance-none cursor-pointer min-w-[90px]"
                     >
                       {ALL_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -687,10 +721,12 @@ function NewPaymentModal({ open, onClose }: { open: boolean; onClose: () => void
 
                 {/* Purpose Code */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Purpose Code</label>
+                  <label htmlFor={purposeCodeId} className="block text-sm font-medium text-slate-300 mb-1.5">Purpose Code</label>
                   <select
+                    id={purposeCodeId}
                     value={purposeCode}
                     onChange={(e) => setPurposeCode(e.target.value)}
+                    aria-label="Payment purpose code"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:border-red-500 outline-none appearance-none cursor-pointer"
                   >
                     {PURPOSE_CODES.map(code => <option key={code} value={code}>{code}</option>)}
@@ -820,6 +856,9 @@ export default function PaymentsPage() {
 
   // Show/hide filter bar
   const [showFilters, setShowFilters] = useState(true);
+  const paymentsSearchId = 'payments-filter-search';
+  const paymentsAmountMinId = 'payments-filter-amount-min';
+  const paymentsAmountMaxId = 'payments-filter-amount-max';
 
   // Filter payments
   const filteredPayments = useMemo(() => {
@@ -937,7 +976,7 @@ export default function PaymentsPage() {
       <div className="min-h-screen bg-[#0f172a] text-slate-100">
         <TopNav activePage="/payments" />
 
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
           {/* ============================================================ */}
           {/* HEADER WITH ACTIONS                                          */}
@@ -981,7 +1020,7 @@ export default function PaymentsPage() {
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
               >
                 {showFilters ? 'Hide' : 'Show'}
               </button>
@@ -991,7 +1030,7 @@ export default function PaymentsPage() {
               <div className="space-y-4">
                 {/* Row 1: Status */}
                 <div>
-                  <p className="text-xs text-slate-500 mb-2">Status</p>
+                  <p className="text-xs text-slate-400 mb-2">Status</p>
                   <div className="flex flex-wrap gap-2">
                     <FilterPill label="All" active={filters.status === 'All'} onClick={() => updateFilter('status', 'All')} />
                     {ALL_STATUSES.map(s => (
@@ -1003,7 +1042,7 @@ export default function PaymentsPage() {
                 {/* Row 2: Currency + Date + Risk */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Currency</p>
+                    <p className="text-xs text-slate-400 mb-2">Currency</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterPill label="All" active={filters.currency === 'All'} onClick={() => updateFilter('currency', 'All')} />
                       {ALL_CURRENCIES.map(c => (
@@ -1012,7 +1051,7 @@ export default function PaymentsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Date Range</p>
+                    <p className="text-xs text-slate-400 mb-2">Date Range</p>
                     <div className="flex flex-wrap gap-2">
                       {(['today', '7d', '30d', '90d'] as DateRange[]).map(d => (
                         <FilterPill key={d} label={d === 'today' ? 'Today' : d} active={filters.dateRange === d} onClick={() => updateFilter('dateRange', d)} />
@@ -1020,7 +1059,7 @@ export default function PaymentsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Risk Level</p>
+                    <p className="text-xs text-slate-400 mb-2">Risk Level</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterPill label="All" active={filters.riskLevel === 'All'} onClick={() => updateFilter('riskLevel', 'All')} />
                       {ALL_RISK_LEVELS.map(r => (
@@ -1035,27 +1074,33 @@ export default function PaymentsPage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
+                      id={paymentsSearchId}
                       type="text"
                       value={filters.search}
                       onChange={(e) => updateFilter('search', e.target.value)}
                       placeholder="Search by payment ID, sender, or recipient..."
+                      aria-label="Search payments by payment ID, sender, or recipient"
                       className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-600 text-sm focus:border-red-500 outline-none transition-colors"
                     />
                   </div>
                   <div className="flex items-center gap-2">
                     <input
+                      id={paymentsAmountMinId}
                       type="number"
                       value={filters.amountMin}
                       onChange={(e) => updateFilter('amountMin', e.target.value)}
                       placeholder="Min $"
+                      aria-label="Minimum payment amount"
                       className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-600 text-sm focus:border-red-500 outline-none transition-colors tabular-nums"
                     />
                     <span className="text-slate-600">-</span>
                     <input
+                      id={paymentsAmountMaxId}
                       type="number"
                       value={filters.amountMax}
                       onChange={(e) => updateFilter('amountMax', e.target.value)}
                       placeholder="Max $"
+                      aria-label="Maximum payment amount"
                       className="w-24 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-600 text-sm focus:border-red-500 outline-none transition-colors tabular-nums"
                     />
                   </div>
@@ -1180,6 +1225,7 @@ export default function PaymentsPage() {
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRowClick(payment); }}
+                            aria-label={`View payment details for ${payment.senderName} to ${payment.recipientName}`}
                             className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors text-slate-500 hover:text-slate-300"
                             title="View details"
                           >
@@ -1188,6 +1234,7 @@ export default function PaymentsPage() {
                           {payment.status === 'Pending' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); }}
+                              aria-label={`Cancel payment ${payment.id}`}
                               className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors text-slate-500 hover:text-red-400"
                               title="Cancel"
                             >
@@ -1197,6 +1244,7 @@ export default function PaymentsPage() {
                           {payment.status === 'Settled' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); }}
+                              aria-label={`Refund payment ${payment.id}`}
                               className="p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors text-slate-500 hover:text-amber-400"
                               title="Refund"
                             >
@@ -1220,6 +1268,7 @@ export default function PaymentsPage() {
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
+                  aria-label="Go to previous payments page"
                   className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1252,6 +1301,7 @@ export default function PaymentsPage() {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
+                  aria-label="Go to next payments page"
                   className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronRight className="w-4 h-4" />

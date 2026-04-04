@@ -893,6 +893,7 @@ function ValidatorTableSection({
   );
   const [sortBy, setSortBy] = useState<SortKey>("votingPower");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const searchInputId = "validator-search";
 
   const filteredValidators = useMemo(() => {
     let result = [...VALIDATORS];
@@ -966,10 +967,12 @@ function ValidatorTableSection({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
+              id={searchInputId}
               type="text"
               placeholder="Search validators by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search validators by name or address"
               className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all outline-none"
             />
           </div>
@@ -981,6 +984,7 @@ function ValidatorTableSection({
           onChange={(e) =>
             setStatusFilter(e.target.value as typeof statusFilter)
           }
+          aria-label="Filter validators by status"
           className="border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm bg-slate-800/50 text-white focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all outline-none"
         >
           <option value="all">All Status</option>
@@ -993,6 +997,7 @@ function ValidatorTableSection({
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortKey)}
+          aria-label="Sort validators"
           className="border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm bg-slate-800/50 text-white focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all outline-none"
         >
           <option value="votingPower">Sort: Voting Power</option>
@@ -1006,6 +1011,7 @@ function ValidatorTableSection({
         <div className="flex items-center bg-slate-800/50 rounded-xl p-1 border border-slate-700/50">
           <button
             onClick={() => setViewMode("list")}
+            aria-label="Show validators in list view"
             className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-slate-700 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"}`}
             title="List view"
           >
@@ -1013,6 +1019,7 @@ function ValidatorTableSection({
           </button>
           <button
             onClick={() => setViewMode("grid")}
+            aria-label="Show validators in grid view"
             className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-slate-700 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"}`}
             title="Grid view"
           >
@@ -1083,6 +1090,7 @@ function ValidatorTableSection({
                           toggleCompare(v.rank);
                         }}
                         onClick={(e) => e.stopPropagation()}
+                        aria-label={`Select ${v.name} for comparison`}
                         className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-red-600 focus:ring-red-500/30 focus:ring-offset-0"
                       />
                     </td>
@@ -1694,6 +1702,7 @@ function DelegationModal({
 
   const balance = wallet.connected ? wallet.balance : 0;
   const amountNum = parseFloat(amount) || 0;
+  const amountInputId = "delegate-amount";
   const estimatedMonthlyReward = validator
     ? amountNum * (validator.apy / 100 / 12)
     : 0;
@@ -1804,17 +1813,24 @@ function DelegationModal({
           {/* Amount input */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium text-white">Amount</label>
+              <label
+                htmlFor={amountInputId}
+                className="text-sm font-medium text-white"
+              >
+                Amount
+              </label>
               <span className="text-xs text-slate-500">
                 Balance: {formatNumber(balance, 2)} AETHEL
               </span>
             </div>
             <div className="relative">
               <input
+                id={amountInputId}
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
+                aria-label="Delegation amount in AETHEL"
                 className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-lg font-semibold tabular-nums placeholder-slate-600 focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all outline-none"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">

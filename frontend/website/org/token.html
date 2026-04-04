@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AETHEL Token | Aethelred</title>
-  <meta name="description" content="Official AETHEL tokenomics v1.1: 10B fixed supply, 6.3% TGE circulating float, 9-bucket allocation, vesting schedules, fundraising breakdown, and governance controls.">
-  <meta name="keywords" content="AETHEL tokenomics, Aethelred token allocation, AETHEL vesting, TGE circulating supply, AETHEL fundraising, Seals airdrop">
+  <meta name="description" content="Canonical AETHEL token design reference: 10B fixed supply, zero inflation, governance controls, and release metrics published only after the canonical token source pack is released.">
+  <meta name="keywords" content="AETHEL tokenomics, Aethelred fixed supply, zero inflation, token disclosure policy, protocol utility token">
   <meta name="author" content="Aethelred Foundation">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <meta name="theme-color" content="#9f0a24">
@@ -15,7 +15,7 @@
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://www.aethelred.org/token.html">
   <meta property="og:title" content="AETHEL Token | Aethelred">
-  <meta property="og:description" content="Tokenomics reference for AETHEL: fixed supply architecture, TGE metrics, allocation, vesting, fundraising, and governance controls.">
+  <meta property="og:description" content="Token design reference for AETHEL: fixed supply architecture, governance controls, and canonical release metrics published only after the canonical token source pack is released.">
   <meta property="og:image" content="https://www.aethelred.org/og-image.jpg">
   <meta property="og:image:alt" content="AETHEL Token social preview image">
   <meta property="og:site_name" content="Aethelred">
@@ -24,7 +24,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@AethelredHQ">
   <meta name="twitter:title" content="AETHEL Token | Aethelred">
-  <meta name="twitter:description" content="Read the official tokenomics model: 10B fixed supply, 6.3% TGE float, vesting and fundraising structure.">
+  <meta name="twitter:description" content="Read the canonical AETHEL token design reference: 10B fixed supply, zero inflation, and release metrics published only after the canonical token source pack is released.">
   <meta name="twitter:image" content="https://www.aethelred.org/og-image.jpg">
   <meta name="twitter:image:alt" content="AETHEL Token social preview image">
 
@@ -64,7 +64,7 @@
         "@id": "https://www.aethelred.org/token.html#webpage",
         "name": "AETHEL Token",
         "url": "https://www.aethelred.org/token.html",
-        "description": "Official AETHEL tokenomics v1.1: 10B fixed supply, 6.3% TGE circulating float, 9-bucket allocation, vesting schedules, fundraising breakdown, and governance controls.",
+        "description": "Canonical AETHEL token design reference: 10B fixed supply, zero inflation, governance controls, and release metrics published only after the canonical token source pack is released.",
         "isPartOf": {
           "@id": "https://www.aethelred.org#website"
         },
@@ -148,27 +148,27 @@
             <a class="dropdown-item" href="#overview">
               <span>Overview</span>
               <strong>Core Parameters</strong>
-              <p>Fixed supply, TGE float, valuation targets, and release philosophy.</p>
+              <p>Fixed supply, zero inflation, and the public disclosure boundary.</p>
             </a>
             <a class="dropdown-item" href="#allocation">
               <span>Distribution</span>
-              <strong>Allocation Model</strong>
-              <p>Nine allocation buckets across rewards, team, market, insurance, and reserves.</p>
+              <strong>Public Token Scope</strong>
+              <p>What is public today, and what remains gated until canonical release.</p>
             </a>
             <a class="dropdown-item" href="#vesting">
-              <span>Vesting</span>
-              <strong>Unlock Schedules</strong>
-              <p>TGE unlocks, cliffs, linear release periods, and end dates by bucket.</p>
+              <span>Release Controls</span>
+              <strong>Disclosure Sequencing</strong>
+              <p>How token release details move from internal planning into public publication.</p>
             </a>
             <a class="dropdown-item" href="#emission">
-              <span>TGE Metrics</span>
-              <strong>Launch Baseline</strong>
-              <p>FDV, circulating supply, market cap, and investor entry metrics.</p>
+              <span>Release Metrics</span>
+              <strong>Public Baseline</strong>
+              <p>Total supply and inflation are public; float and pricing remain withheld pending approval.</p>
             </a>
             <a class="dropdown-item" href="#fees">
-              <span>Fundraising</span>
-              <strong>Capital Structure</strong>
-              <p>Seed, community, strategic, and exchange round token economics.</p>
+              <span>Disclosure</span>
+              <strong>Publication Rules</strong>
+              <p>Commercial, float, valuation, and counterparty claims publish only from approved source packs.</p>
             </a>
             <a class="dropdown-item" href="#treasury">
               <span>Governance</span>
@@ -204,15 +204,15 @@
       <a data-nav-link href="investors.html">Investors</a>
       <a href="#overview">Overview</a>
       <a href="#utility">Principles</a>
-      <a href="#allocation">Allocation</a>
-      <a href="#vesting">Vesting</a>
-      <a href="#emission">TGE Metrics</a>
-      <a href="#fees">Fundraising</a>
-      <a href="#staking">Airdrop</a>
+      <a href="#allocation">Public Scope</a>
+      <a href="#vesting">Release Controls</a>
+      <a href="#emission">Release Metrics</a>
+      <a href="#fees">Disclosure Rules</a>
+      <a href="#staking">Community Programs</a>
       <a href="#treasury">Governance Controls</a>
       <a href="#stablecoin">Stablecoin Infrastructure</a>
-      <a href="#contracts">Market Maker</a>
-      <a href="#value-accrual">Milestones</a>
+      <a href="#contracts">Counterparties</a>
+      <a href="#value-accrual">Publication Sequence</a>
     </nav>
   </div>
 
@@ -223,35 +223,41 @@
           <span class="kicker" data-reveal>10B Fixed Supply &middot; Deflationary by Design</span>
           <h1 class="hero-title" data-reveal="slow" id="page-title"><span class="gradient">AETHEL</span> fixed supply launch economics.</h1>
           <p class="hero-copy" data-reveal="stagger-1">
-            AETHEL is modeled as a fixed 10 billion token supply with no inflation. Launch float is capped at 6.3% at TGE, with staged unlocks across rewards, contributors, ecosystem, public sales, insurance, and contingency reserves. Review the <a class="body-link" href="governance.html">governance controls</a> that manage treasury decisions and the <a class="body-link" href="investors.html">institutional diligence hub</a> for allocation context.
+            AETHEL is a fixed 10 billion token supply with no inflation. Canonical launch float, vesting, fundraising, and counterparty metrics will publish from a single canonical token source pack once it is approved and released; this page focuses on the fixed-supply model and governance controls that do not depend on draft deal assumptions.
           </p>
           <div class="hero-actions" data-reveal="stagger-2">
             <a class="btn btn-primary" href="#allocation">View Allocation</a>
-            <a class="btn btn-secondary" href="#emission">Review TGE Metrics</a>
+            <a class="btn btn-secondary" href="#emission">Review Release Metrics</a>
           </div>
+          <p class="hero-copy spacer-16" data-reveal="stagger-2">
+            Download the current publications:
+            <a class="body-link" href="aethelred-tokenomics-paper.pdf" download>Tokenomics PDF</a>
+            and
+            <a class="body-link" href="aethelred-whitepaper.pdf" download>Whitepaper PDF</a>.
+          </p>
           <div class="badge-row spacer-24" data-reveal="stagger-3">
             <span class="badge">10B fixed supply</span>
-            <span class="badge">6.3% TGE float</span>
-            <span class="badge">9 allocation buckets</span>
-            <span class="badge">$16M raise target</span>
+            <span class="badge">0% inflation</span>
+            <span class="badge">Canonical release pack pending</span>
+            <span class="badge">Counterparty claims gated</span>
           </div>
         </div>
 
         <aside class="hero-rail" data-reveal="stagger-2" aria-label="Token highlights">
           <article class="stat-card">
-            <span class="stat-label">TGE circulating supply</span>
-            <strong class="stat-value" data-count="630" data-count-suffix="M" data-count-label="630M AETHEL">0</strong>
-            <p class="stat-note">Launch circulating supply set to 630,000,000 AETHEL.</p>
+            <span class="stat-label">Total supply</span>
+            <strong class="stat-value">10B</strong>
+            <p class="stat-note">Fixed genesis supply with no post-genesis inflation.</p>
           </article>
           <article class="stat-card">
-            <span class="stat-label">TGE circulating float</span>
-            <strong class="stat-value" data-count="6.3" data-count-decimals="1" data-count-suffix="%" data-count-label="6.3%">0</strong>
-            <p class="stat-note">Controlled launch float designed to reduce immediate unlock pressure.</p>
+            <span class="stat-label">Launch float</span>
+            <strong class="stat-value">Pending</strong>
+            <p class="stat-note">Published only after the canonical token source pack is released.</p>
           </article>
           <article class="stat-card">
-            <span class="stat-label">Target FDV at TGE</span>
-            <strong class="stat-value" data-count="1" data-count-prefix="$" data-count-suffix="B" data-count-label="$1B">0</strong>
-            <p class="stat-note">Model baseline at $0.10 per token with fixed 10B fully diluted supply.</p>
+            <span class="stat-label">Launch metrics</span>
+            <strong class="stat-value">Pending</strong>
+            <p class="stat-note">Pricing, float, and fundraising metrics move here only after the canonical token source pack is released.</p>
           </article>
         </aside>
       </div>
@@ -262,7 +268,7 @@
         <div class="section-intro" data-reveal>
           <span class="kicker">Token Overview</span>
           <h2 class="section-title" id="overview-title">Core parameters</h2>
-          <p class="section-text">The model prioritizes predictable supply, conservative launch float, and long-horizon unlock scheduling across all major token buckets.</p>
+          <p class="section-text">The model prioritizes predictable supply, zero inflation, and governance-controlled release scheduling. Exact launch metrics publish only after the canonical token source pack is released.</p>
         </div>
 
         <div class="grid-3">
@@ -272,20 +278,20 @@
             <p>Fixed maximum supply. No post genesis inflation according to the tokenomics baseline.</p>
           </article>
           <article class="metric-card" data-reveal="stagger-1">
-            <small>TGE circulating</small>
-            <strong>630,000,000</strong>
-            <p>6.3% of total supply released at launch through defined TGE unlock buckets.</p>
+            <small>Launch float</small>
+            <strong>Pending release</strong>
+            <p>Published only after the canonical token source pack is approved and released.</p>
           </article>
           <article class="metric-card" data-reveal="stagger-1">
-            <small>TGE market cap</small>
-            <strong>$63,000,000</strong>
-            <p>Modeled at $0.10 token price and 630M circulating tokens at TGE.</p>
+            <small>Launch pricing</small>
+            <strong>Pending release</strong>
+            <p>Pricing, market-cap, and investor-entry metrics are withheld until canonical release.</p>
           </article>
         </div>
 
         <div class="callout spacer-24" data-reveal="stagger-2">
-          <strong>Funding target</strong>
-          <p>Total targeted raise is $16,000,000 across Seed, Community, Strategic, and Exchange rounds, representing 8.25% of supply with a weighted average entry of $0.0194.</p>
+          <strong>Canonical release policy</strong>
+          <p>Float, allocation, fundraising, exchange, and market-maker metrics are published only after the canonical token source pack is released. Draft finance models are not treated as public commitments. The current public reference set is available as the <a class="body-link" href="aethelred-tokenomics-paper.pdf" download>tokenomics paper PDF</a> and the <a class="body-link" href="aethelred-whitepaper.pdf" download>whitepaper PDF</a>.</p>
         </div>
       </div>
     </section>
@@ -302,7 +308,7 @@
           <article class="feature-card" data-reveal="stagger-1">
             <span class="feature-number">01</span>
             <h3>Controlled launch float</h3>
-            <p>TGE circulating supply is capped at 6.3% to avoid excessive day-one supply shock.</p>
+            <p>Launch float is published only after the canonical token source pack is approved and released.</p>
           </article>
           <article class="feature-card" data-reveal="stagger-1">
             <span class="feature-number">02</span>
@@ -316,8 +322,8 @@
           </article>
           <article class="feature-card" data-reveal="stagger-2">
             <span class="feature-number">04</span>
-            <h3>Ecosystem runway</h3>
-            <p>Dedicated 15% grants bucket with staged release supports builders and dApp adoption.</p>
+            <h3>Ecosystem funding discipline</h3>
+            <p>Builder and ecosystem programs are release-gated and published only when approved through canonical token disclosures.</p>
           </article>
           <article class="feature-card" data-reveal="stagger-2">
             <span class="feature-number">05</span>
@@ -326,8 +332,8 @@
           </article>
           <article class="feature-card" data-reveal="stagger-2">
             <span class="feature-number">06</span>
-            <h3>Liquidity operations</h3>
-            <p>Treasury and market maker inventory is tracked as a dedicated allocation bucket.</p>
+            <h3>Counterparty gating</h3>
+            <p>Liquidity and external commercial counterparties are not named publicly until agreements are executed and cleared for disclosure.</p>
           </article>
         </div>
       </div>
@@ -337,91 +343,54 @@
       <div class="container">
         <div class="section-intro" data-reveal>
           <span class="kicker">Allocation</span>
-          <h2 class="section-title" id="allocation-title">Token allocation and distribution</h2>
-          <p class="section-text">The full 10 billion AETHEL allocation is partitioned into nine buckets with different unlock and vesting policies.</p>
+          <h2 class="section-title" id="allocation-title">What is public today</h2>
+          <p class="section-text">The public token posture focuses on fixed supply, zero inflation, protocol utility, governance controls, and disclosure discipline. Detailed bucket-by-bucket release metrics move public only through the canonical token source pack.</p>
         </div>
 
         <div class="table-wrap" data-reveal="stagger-1">
           <table aria-label="Token allocation table">
             <thead>
               <tr>
-                <th>Category</th>
-                <th>Allocation</th>
-                <th>Tokens</th>
-                <th>TGE Unlock</th>
-                <th>Purpose</th>
+                <th>Area</th>
+                <th>Public Status</th>
+                <th>What the public site states today</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>PoUW Rewards</td>
-                <td>30%</td>
-                <td>3,000,000,000</td>
-                <td>0%</td>
-                <td>Validator incentives over a 10 year program</td>
+                <td>Supply baseline</td>
+                <td>Public</td>
+                <td>Fixed supply of 10,000,000,000 AETHEL with zero post-genesis inflation.</td>
               </tr>
               <tr>
-                <td>Core Contributors</td>
-                <td>20%</td>
-                <td>2,000,000,000</td>
-                <td>0%</td>
-                <td>Team alignment and long-term execution incentives</td>
+                <td>Utility model</td>
+                <td>Public</td>
+                <td>Staking, fees, slashing collateral, governance participation, and verified-compute settlement roles are public.</td>
               </tr>
               <tr>
-                <td>Ecosystem and Grants</td>
-                <td>15%</td>
-                <td>1,500,000,000</td>
-                <td>2%</td>
-                <td>Developer adoption and dApp grants</td>
+                <td>Burn and deflation</td>
+                <td>Public</td>
+                <td>Deflationary supply reduction mechanisms may operate without introducing post-genesis inflation.</td>
               </tr>
               <tr>
-                <td>Treasury and MM</td>
-                <td>6%</td>
-                <td>600,000,000</td>
-                <td>25%</td>
-                <td>Operational runway and market maker inventory</td>
+                <td>Ecosystem and treasury programs</td>
+                <td>Governed</td>
+                <td>Programs exist, but exact public release metrics publish only through approved canonical materials.</td>
               </tr>
               <tr>
-                <td>Public Sales</td>
-                <td>7.5%</td>
-                <td>750,000,000</td>
-                <td>20%</td>
-                <td>Community and exchange distribution</td>
+                <td>Community incentives</td>
+                <td>Governed</td>
+                <td>Community programs may exist, but exact amounts, tiers, and launch-distribution metrics are withheld pending approval.</td>
               </tr>
               <tr>
-                <td>Airdrop Seals</td>
-                <td>7%</td>
-                <td>700,000,000</td>
-                <td>25%</td>
-                <td>Community and participation incentives</td>
+                <td>Commercial launch metrics</td>
+                <td>Withheld</td>
+                <td>Launch float, circulating supply, pricing, valuation, and fundraising metrics are not public protocol facts today.</td>
               </tr>
               <tr>
-                <td>Strategic Seed</td>
-                <td>5.5%</td>
-                <td>550,000,000</td>
-                <td>0%</td>
-                <td>Strategic and seed investor allocation</td>
-              </tr>
-              <tr>
-                <td>Insurance Fund</td>
-                <td>5%</td>
-                <td>500,000,000</td>
-                <td>10%</td>
-                <td>Slashing appeals and hack indemnification</td>
-              </tr>
-              <tr>
-                <td>Contingency Reserve</td>
-                <td>4%</td>
-                <td>400,000,000</td>
-                <td>0%</td>
-                <td>Emergency reserve for unknown unknowns</td>
-              </tr>
-              <tr>
-                <td><strong>Total</strong></td>
-                <td><strong>100%</strong></td>
-                <td><strong>10,000,000,000</strong></td>
-                <td><strong>6.3%</strong></td>
-                <td><strong>630,000,000 AETHEL circulating at TGE</strong></td>
+                <td>Counterparties</td>
+                <td>Executed only</td>
+                <td>Exchange, market-maker, and other commercial counterparties are named publicly only after executed status and disclosure approval.</td>
               </tr>
             </tbody>
           </table>
@@ -432,115 +401,55 @@
     <section class="section section-tight" id="vesting" aria-labelledby="vesting-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">Vesting</span>
-          <h2 class="section-title" id="vesting-title">Category vesting schedules</h2>
-          <p class="section-text">Unlock schedules include explicit TGE percentages, cliff durations, vesting windows, monthly unlock rates, and target completion dates.</p>
+          <span class="kicker">Release Controls</span>
+          <h2 class="section-title" id="vesting-title">How token details become public</h2>
+          <p class="section-text">This page intentionally distinguishes code-backed public facts from release metrics that remain gated until the canonical token source pack is approved.</p>
         </div>
 
         <div class="table-wrap" data-reveal="stagger-1">
           <table aria-label="Token vesting schedule table">
             <thead>
               <tr>
-                <th>Category</th>
-                <th>TGE Unlock</th>
-                <th>TGE Tokens</th>
-                <th>Cliff</th>
-                <th>Vesting Period</th>
-                <th>Vesting Type</th>
-                <th>Monthly Unlock</th>
-                <th>End Date</th>
+                <th>Detail</th>
+                <th>Current Public Status</th>
+                <th>Publication Rule</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>PoUW Rewards</td>
-                <td>0%</td>
-                <td>0</td>
-                <td>0 months</td>
-                <td>120 months</td>
-                <td>Linear</td>
-                <td>25,000,000</td>
-                <td>Dec 2036</td>
+                <td>Fixed supply and inflation posture</td>
+                <td>Public</td>
+                <td>Code-backed and publishable now.</td>
               </tr>
               <tr>
-                <td>Core Contributors</td>
-                <td>0%</td>
-                <td>0</td>
-                <td>6 months</td>
-                <td>42 months</td>
-                <td>Cliff + Linear</td>
-                <td>41,666,667</td>
-                <td>Mar 2030</td>
+                <td>Token utility roles</td>
+                <td>Public</td>
+                <td>May be stated in public docs and websites today.</td>
               </tr>
               <tr>
-                <td>Ecosystem and Grants</td>
-                <td>2%</td>
-                <td>30,000,000</td>
-                <td>6 months</td>
-                <td>48 months</td>
-                <td>Linear</td>
-                <td>23,750,000</td>
-                <td>Mar 2031</td>
+                <td>Bucket allocations and unlocks</td>
+                <td>Governed</td>
+                <td>Publish only when approved through the canonical token source pack.</td>
               </tr>
               <tr>
-                <td>Strategic Seed</td>
-                <td>0%</td>
-                <td>0</td>
-                <td>12 months</td>
-                <td>24 months</td>
-                <td>Linear</td>
-                <td>22,916,667</td>
-                <td>Dec 2028</td>
+                <td>Community and ecosystem program sizing</td>
+                <td>Governed</td>
+                <td>Publish only after final approval for public release.</td>
               </tr>
               <tr>
-                <td>Public Sales</td>
-                <td>20%</td>
-                <td>150,000,000</td>
-                <td>0 months</td>
-                <td>18 months</td>
-                <td>Linear</td>
-                <td>29,166,667</td>
-                <td>Jun 2028</td>
+                <td>Float, circulating baseline, and pricing</td>
+                <td>Withheld</td>
+                <td>Remain non-public until the approved release pack is published.</td>
               </tr>
               <tr>
-                <td>Airdrop Seals</td>
-                <td>25%</td>
-                <td>175,000,000</td>
-                <td>0 months</td>
-                <td>12 months</td>
-                <td>Linear</td>
-                <td>43,750,000</td>
-                <td>Dec 2027</td>
+                <td>Fundraising and valuation metrics</td>
+                <td>Withheld</td>
+                <td>Do not publish as public protocol facts until separately approved.</td>
               </tr>
               <tr>
-                <td>Treasury and MM</td>
-                <td>25%</td>
-                <td>150,000,000</td>
-                <td>0 months</td>
-                <td>36 months</td>
-                <td>Linear</td>
-                <td>12,500,000</td>
-                <td>Dec 2029</td>
-              </tr>
-              <tr>
-                <td>Insurance Fund</td>
-                <td>10%</td>
-                <td>50,000,000</td>
-                <td>0 months</td>
-                <td>30 months</td>
-                <td>Linear</td>
-                <td>12,500,000</td>
-                <td>Jun 2029</td>
-              </tr>
-              <tr>
-                <td>Contingency Reserve</td>
-                <td>0%</td>
-                <td>0</td>
-                <td>12 months</td>
-                <td>TBD</td>
-                <td>TBD</td>
-                <td>TBD</td>
-                <td>TBD</td>
+                <td>Commercial counterparties</td>
+                <td>Executed only</td>
+                <td>Public naming follows executed status plus disclosure approval.</td>
               </tr>
             </tbody>
           </table>
@@ -548,20 +457,20 @@
 
         <div class="timeline spacer-24" data-reveal="stagger-2">
           <article class="timeline-item">
-            <h3>TGE float: 6.3%</h3>
-            <p>630,000,000 AETHEL enters circulation across public sales, airdrop, treasury and insurance unlocks.</p>
+            <h3>Public facts come from canonical sources</h3>
+            <p>Fixed supply, zero inflation, and utility roles stay aligned to the public tokenomics and whitepaper drafts.</p>
           </article>
           <article class="timeline-item">
-            <h3>Team cliff ends at month 6</h3>
-            <p>Core contributors unlock initial liquidity after cliff, then continue linear release.</p>
+            <h3>Commercial metrics do not publish by drift</h3>
+            <p>Float, pricing, valuation, and fundraising numbers stay out of the public site until they are explicitly approved.</p>
           </article>
           <article class="timeline-item">
-            <h3>Public sales complete by Jun 2028</h3>
-            <p>Public sales tranche reaches full unlock within the scheduled 18 month window.</p>
+            <h3>Counterparties follow executed-only disclosure</h3>
+            <p>Market-maker, exchange, and related counterparties are not named publicly while they remain pipeline items.</p>
           </article>
           <article class="timeline-item">
-            <h3>PoUW rewards extend to Dec 2036</h3>
-            <p>Longest unlock curve is reserved for validator incentive continuity.</p>
+            <h3>Release packs remain the source of truth</h3>
+            <p>When release metrics become public, they should appear first through the approved canonical token source pack.</p>
           </article>
         </div>
       </div>
@@ -570,16 +479,16 @@
     <section class="section" id="emission" aria-labelledby="emission-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">TGE Metrics</span>
-          <h2 class="section-title" id="emission-title">Launch valuation and circulating baseline</h2>
-          <p class="section-text">The model sets a fixed supply launch framework at $0.10 token reference price and documents market cap and investor entry metrics.</p>
+          <span class="kicker">Release Metrics</span>
+          <h2 class="section-title" id="emission-title">Public baseline versus withheld launch metrics</h2>
+          <p class="section-text">The token page may publish the code-backed baseline today, but launch-specific commercial metrics remain withheld until the canonical token source pack is approved and released.</p>
         </div>
 
         <div class="split">
           <article class="panel" data-reveal="stagger-1">
             <h3>Core launch metrics</h3>
             <div class="table-wrap">
-              <table aria-label="TGE metrics table">
+              <table aria-label="Launch metrics posture table">
                 <thead>
                   <tr>
                     <th>Metric</th>
@@ -594,29 +503,29 @@
                     <td>Fixed supply; no inflation</td>
                   </tr>
                   <tr>
-                    <td>TGE FDV Target</td>
-                    <td>$1,000,000,000</td>
-                    <td>$0.10 per token</td>
+                    <td>Launch valuation posture</td>
+                    <td>Pending canonical release</td>
+                    <td>Published only after canonical token source pack release</td>
                   </tr>
                   <tr>
-                    <td>TGE Circulating Supply</td>
-                    <td>630,000,000 AETHEL</td>
-                    <td>6.3% of total supply</td>
+                    <td>Launch circulating baseline</td>
+                    <td>Pending canonical release</td>
+                    <td>Float published only after canonical token source pack release</td>
                   </tr>
                   <tr>
-                    <td>TGE Market Cap</td>
-                    <td>$63,000,000</td>
-                    <td>At $0.10 per token</td>
+                    <td>Launch market-cap posture</td>
+                    <td>Pending canonical release</td>
+                    <td>Depends on final approved pricing baseline</td>
                   </tr>
                   <tr>
-                    <td>Average Investor Entry</td>
-                    <td>$0.0194</td>
-                    <td>Weighted average across rounds</td>
+                    <td>Investor pricing metrics</td>
+                    <td>Pending canonical release</td>
+                    <td>Published only after approved pricing disclosure</td>
                   </tr>
                   <tr>
-                    <td>Investor Upside at TGE</td>
-                    <td>5.15x</td>
-                    <td>$0.10 / $0.0194</td>
+                    <td>Commercial scenario metrics</td>
+                    <td>Not published</td>
+                    <td>Derived only from approved pricing, not draft assumptions</td>
                   </tr>
                 </tbody>
               </table>
@@ -624,41 +533,41 @@
           </article>
 
           <article class="panel" data-reveal="stagger-2">
-            <h3>Team vesting checkpoints</h3>
+            <h3>Publication gates</h3>
             <div class="table-wrap">
-              <table aria-label="Team vesting checkpoints">
+              <table aria-label="Publication gates table">
                 <thead>
                   <tr>
-                    <th>Month</th>
-                    <th>Cumulative Unlock</th>
-                    <th>Tokens Unlocked</th>
+                    <th>Topic</th>
+                    <th>Gate</th>
+                    <th>Current posture</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>6</td>
-                    <td>15.00%</td>
-                    <td>300,000,000</td>
+                    <td>Fixed supply</td>
+                    <td>Code-backed</td>
+                    <td>Public now</td>
                   </tr>
                   <tr>
-                    <td>12</td>
-                    <td>27.08%</td>
-                    <td>541,666,667</td>
+                    <td>Inflation posture</td>
+                    <td>Code-backed</td>
+                    <td>Public now</td>
                   </tr>
                   <tr>
-                    <td>24</td>
-                    <td>47.08%</td>
-                    <td>941,666,667</td>
+                    <td>Float and circulation</td>
+                    <td>Canonical token source pack</td>
+                    <td>Withheld pending approval</td>
                   </tr>
                   <tr>
-                    <td>42</td>
-                    <td>77.08%</td>
-                    <td>1,541,666,667</td>
+                    <td>Pricing and valuation</td>
+                    <td>Commercial disclosure approval</td>
+                    <td>Withheld pending approval</td>
                   </tr>
                   <tr>
-                    <td>60</td>
-                    <td>100.00%</td>
-                    <td>2,000,000,000</td>
+                    <td>Counterparty names</td>
+                    <td>Executed status + approval</td>
+                    <td>Withheld pending approval</td>
                   </tr>
                 </tbody>
               </table>
@@ -671,69 +580,45 @@
     <section class="section section-tight" id="fees" aria-labelledby="fees-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">Fund Raising Breakdown</span>
-          <h2 class="section-title" id="fees-title">Round structure and pricing</h2>
-          <p class="section-text">Capital formation is split across Seed, Community, Strategic, and Exchange rounds with explicit source buckets and target windows.</p>
+          <span class="kicker">Disclosure Controls</span>
+          <h2 class="section-title" id="fees-title">What the public token page will not assert prematurely</h2>
+          <p class="section-text">Historical finance models may exist internally, but this public page does not treat draft pricing, fundraising, or valuation assumptions as released protocol facts.</p>
         </div>
 
         <div class="table-wrap" data-reveal="stagger-1">
-          <table aria-label="Fundraising rounds table">
+          <table aria-label="Disclosure controls table">
             <thead>
               <tr>
-                <th>Round</th>
-                <th>Amount</th>
-                <th>Tokens</th>
-                <th>Price</th>
-                <th>% Supply</th>
-                <th>FDV</th>
-                <th>Timing</th>
+                <th>Claim type</th>
+                <th>Public status</th>
+                <th>Rule</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Seed</td>
-                <td>$1,000,000</td>
-                <td>100,000,000</td>
-                <td>$0.01</td>
-                <td>1.00%</td>
-                <td>$100M</td>
-                <td>Mar Apr 2026</td>
+                <td>Fundraising totals</td>
+                <td>Withheld</td>
+                <td>Do not publish until separately approved for disclosure.</td>
               </tr>
               <tr>
-                <td>Community Echo</td>
-                <td>$6,000,000</td>
-                <td>400,000,000</td>
-                <td>$0.015</td>
-                <td>4.00%</td>
-                <td>$150M</td>
-                <td>Jun Jul 2026</td>
+                <td>Valuation and FDV</td>
+                <td>Withheld</td>
+                <td>Do not publish as protocol facts until canonical approval is complete.</td>
               </tr>
               <tr>
-                <td>Strategic</td>
-                <td>$3,750,000</td>
-                <td>150,000,000</td>
-                <td>$0.025</td>
-                <td>1.50%</td>
-                <td>$250M</td>
-                <td>Sep Oct 2026</td>
+                <td>Round structures and pricing</td>
+                <td>Withheld</td>
+                <td>Remain out of the public site until released through the approved token source pack.</td>
               </tr>
               <tr>
-                <td>Exchange Binance</td>
-                <td>$5,250,000</td>
-                <td>175,000,000</td>
-                <td>$0.03</td>
-                <td>1.75%</td>
-                <td>$300M</td>
-                <td>Nov 2026</td>
+                <td>Exchange and market-maker counterparties</td>
+                <td>Executed only</td>
+                <td>Names and details publish only after executed status and disclosure approval.</td>
               </tr>
               <tr>
-                <td><strong>Total Raised</strong></td>
-                <td><strong>$16,000,000</strong></td>
-                <td><strong>825,000,000</strong></td>
-                <td><strong>$0.0194 avg</strong></td>
-                <td><strong>8.25%</strong></td>
-                <td></td>
-                <td></td>
+                <td>Benchmark-linked performance claims</td>
+                <td>Governed</td>
+                <td>Public performance claims require verified benchmark packs and claim-register approval.</td>
               </tr>
             </tbody>
           </table>
@@ -744,48 +629,38 @@
     <section class="section" id="staking" aria-labelledby="staking-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">Seals Airdrop Program</span>
-          <h2 class="section-title" id="staking-title">Community distribution tiers</h2>
-          <p class="section-text">Airdrop allocation is 7% of total supply, with 25% unlocked at TGE and 75% vesting linearly after launch.</p>
+          <span class="kicker">Community Programs</span>
+          <h2 class="section-title" id="staking-title">Public community posture</h2>
+          <p class="section-text">Community and ecosystem programs may be part of the broader network rollout, but exact token amounts, tiers, and public release metrics remain gated until approved for disclosure.</p>
         </div>
 
         <div class="split">
           <article class="panel" data-reveal="stagger-1">
-            <h3>Airdrop tier design</h3>
+            <h3>What is public today</h3>
             <div class="table-wrap">
-              <table aria-label="Airdrop tier table">
+              <table aria-label="Community program posture table">
                 <thead>
                   <tr>
-                    <th>Tier</th>
-                    <th>Points</th>
-                    <th>Airdrop Amount</th>
-                    <th>Total Tokens</th>
+                    <th>Area</th>
+                    <th>Public posture</th>
+                    <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Diamond</td>
-                    <td>10,000+</td>
-                    <td>50,000 AETHEL</td>
-                    <td>25,000,000</td>
+                    <td>Community participation</td>
+                    <td>Public</td>
+                    <td>Community engagement and developer participation are part of the network-growth story.</td>
                   </tr>
                   <tr>
-                    <td>Gold</td>
-                    <td>5,000 to 9,999</td>
-                    <td>20,000 AETHEL</td>
-                    <td>40,000,000</td>
+                    <td>Program existence</td>
+                    <td>Public</td>
+                    <td>Programs may exist, but exact token-release mechanics are not asserted here without approval.</td>
                   </tr>
                   <tr>
-                    <td>Silver</td>
-                    <td>1,000 to 4,999</td>
-                    <td>5,000 AETHEL</td>
-                    <td>50,000,000</td>
-                  </tr>
-                  <tr>
-                    <td>Bronze</td>
-                    <td>100 to 999</td>
-                    <td>500 AETHEL</td>
-                    <td>25,000,000</td>
+                    <td>Token amounts and tiers</td>
+                    <td>Withheld</td>
+                    <td>Exact amounts, eligibility, and timing publish only from the approved canonical token source pack.</td>
                   </tr>
                 </tbody>
               </table>
@@ -793,23 +668,23 @@
           </article>
 
           <article class="panel" data-reveal="stagger-2">
-            <h3>Program timeline</h3>
+            <h3>Publication sequence</h3>
             <div class="timeline spacer-16">
               <article class="timeline-item">
-                <h3>Program start</h3>
-                <p>March 2026 points accrual begins across community channels and participation tasks.</p>
+                <h3>Public drafts first</h3>
+                <p>The whitepaper and tokenomics establish the protocol posture before any community release metrics are published.</p>
               </article>
               <article class="timeline-item">
-                <h3>Testnet launch</h3>
-                <p>May 1 2026 validator and bug bounty activity contributes to Seals scoring.</p>
+                <h3>Operational readiness next</h3>
+                <p>Testnet, release-bundle, and operator readiness work should precede public launch-specific community token claims.</p>
               </article>
               <article class="timeline-item">
-                <h3>Snapshot</h3>
-                <p>November 2026 final points snapshot locks the TGE distribution list.</p>
+                <h3>Canonical release pack approval</h3>
+                <p>Community program amounts and mechanics should only go live after the approved token source pack is ready.</p>
               </article>
               <article class="timeline-item">
-                <h3>Distribution</h3>
-                <p>December 7 to 10 2026 distribution during TGE with ongoing vesting schedules.</p>
+                <h3>Public publication after approval</h3>
+                <p>Only then should amounts, tiers, timelines, and final eligibility rules appear on the website.</p>
               </article>
             </div>
           </article>
@@ -845,13 +720,13 @@
               <tr>
                 <td>Contingency Reserve</td>
                 <td>Team and advisor majority</td>
-                <td>Emergency funds and strategic pivots</td>
+                <td>Emergency reserves and governance-directed contingency actions</td>
                 <td>30 days</td>
               </tr>
               <tr>
                 <td>Treasury</td>
                 <td>Team controlled</td>
-                <td>Operational spend and market maker loaning</td>
+                <td>Operational spend and governed commercial execution</td>
                 <td>14 days for requests above $500K</td>
               </tr>
             </tbody>
@@ -958,50 +833,40 @@
     <section class="section" id="contracts" aria-labelledby="contracts-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">Market Maker Strategy</span>
-          <h2 class="section-title" id="contracts-title">Liquidity operations framework</h2>
-          <p class="section-text">Treasury and listing support includes loaned inventory and staged exchange liquidity with return conditions.</p>
+          <span class="kicker">Counterparty Disclosure</span>
+          <h2 class="section-title" id="contracts-title">Commercial counterparties stay gated until executed</h2>
+          <p class="section-text">Liquidity planning is governed through canonical counterparty status. Public names are withheld until agreements are executed and approved for disclosure.</p>
         </div>
 
         <div class="table-wrap" data-reveal="stagger-1">
-          <table aria-label="Market maker strategy table">
+          <table aria-label="Counterparty disclosure table">
             <thead>
               <tr>
-                <th>Partner</th>
-                <th>Type</th>
-                <th>Token Amount</th>
-                <th>TGE Available</th>
-                <th>Terms</th>
+                <th>Category</th>
+                <th>Current public posture</th>
+                <th>Disclosure rule</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Wintermute</td>
-                <td>Loan</td>
-                <td>125,000,000</td>
-                <td>125,000,000</td>
-                <td>3-month loan returnable with fee</td>
+                <td>Market makers</td>
+                <td>Not named publicly</td>
+                <td>Publish only after executed status and approval.</td>
               </tr>
               <tr>
-                <td>GSR</td>
-                <td>Loan</td>
-                <td>75,000,000</td>
-                <td>75,000,000</td>
-                <td>3-month loan returnable with fee</td>
+                <td>Exchange counterparties</td>
+                <td>Not named publicly</td>
+                <td>Publish only after executed status and approval.</td>
               </tr>
               <tr>
-                <td>Exchange Listings</td>
-                <td>Exchange Liquidity</td>
-                <td>175,000,000</td>
-                <td>43,750,000</td>
-                <td>Per listing agreement unlock schedule</td>
+                <td>Commercial allocation metrics</td>
+                <td>Withheld</td>
+                <td>Amounts and terms do not appear on the public site before canonical release.</td>
               </tr>
               <tr>
-                <td><strong>Total MM Ammunition</strong></td>
-                <td></td>
-                <td><strong>375,000,000</strong></td>
-                <td><strong>243,750,000</strong></td>
-                <td><strong>Approx $37.5M at $1B FDV</strong></td>
+                <td>Counterparty naming policy</td>
+                <td>Executed only</td>
+                <td>Pipeline, target, or unsigned relationships remain off the public website.</td>
               </tr>
             </tbody>
           </table>
@@ -1012,35 +877,31 @@
     <section class="section section-tight" id="value-accrual" aria-labelledby="value-accrual-title">
       <div class="container">
         <div class="section-intro" data-reveal>
-          <span class="kicker">Milestones</span>
-          <h2 class="section-title" id="value-accrual-title">Token launch roadmap</h2>
-          <p class="section-text">Execution milestones align fundraising, community growth, TGE readiness, and mainnet delivery.</p>
+          <span class="kicker">Publication Sequence</span>
+          <h2 class="section-title" id="value-accrual-title">How token communications should roll out</h2>
+          <p class="section-text">The public token surface should expand only as technical readiness, legal review, and disclosure approval advance.</p>
         </div>
 
         <div class="timeline" data-reveal="stagger-1">
           <article class="timeline-item">
-            <h3>March to April 2026</h3>
-            <p>Seed round target close at $100M FDV baseline with community channel launch.</p>
+            <h3>Public architecture and token posture</h3>
+            <p>Publish code-backed supply, utility, governance, and disclosure controls first.</p>
           </article>
           <article class="timeline-item">
-            <h3>May 1 2026</h3>
-            <p>Public testnet launch with validator onboarding and bug bounty activation.</p>
+            <h3>Operational readiness</h3>
+            <p>Use testnet, runbooks, CI, and release bundles to establish credible operational readiness.</p>
           </article>
           <article class="timeline-item">
-            <h3>June to October 2026</h3>
-            <p>Community and strategic fundraising rounds targeting $150M and $250M FDV steps.</p>
+            <h3>Canonical token source pack</h3>
+            <p>Prepare the single approved pack that governs float, release metrics, and commercial disclosures.</p>
           </article>
           <article class="timeline-item">
-            <h3>November 2026</h3>
-            <p>Exchange round target and final Seals airdrop snapshot before token generation event.</p>
+            <h3>Approved launch disclosures</h3>
+            <p>Publish float, pricing, and counterparties only after the relevant approvals are complete.</p>
           </article>
           <article class="timeline-item">
-            <h3>December 7 to 10 2026</h3>
-            <p>TGE at Abu Dhabi Finance Week with airdrop distribution and listing deployment.</p>
-          </article>
-          <article class="timeline-item">
-            <h3>Q1 2027</h3>
-            <p>Mainnet launch target with dApp ecosystem rollout and post-TGE execution.</p>
+            <h3>Mainnet and TGE communications</h3>
+            <p>Use the final approved disclosures only when the technical, legal, and commercial states are actually ready to support them.</p>
           </article>
         </div>
 
@@ -1061,16 +922,16 @@
               <img src="aethelred-logo.png" alt="Aethelred logo" width="38" height="38" loading="lazy">
               <span class="brand-word">Aethelred</span>
             </a>
-            <p>A fixed-supply token model designed for disciplined launch float, staged releases, and long-horizon ecosystem execution.</p>
+            <p>A fixed-supply protocol utility token model with governed disclosures, release controls, and public-safe token communications.</p>
           </div>
 
           <div>
             <p class="footer-title">Token</p>
             <ul class="footer-list">
               <li><a href="#overview">Core Parameters</a></li>
-              <li><a href="#allocation">Allocation Model</a></li>
-              <li><a href="#emission">TGE Metrics</a></li>
-              <li><a href="#fees">Fundraising</a></li>
+              <li><a href="#allocation">Public Scope</a></li>
+              <li><a href="#emission">Release Metrics</a></li>
+              <li><a href="#fees">Disclosure Rules</a></li>
               <li><a href="#stablecoin">Stablecoin Infrastructure</a></li>
             </ul>
           </div>
@@ -1104,7 +965,8 @@
         </div>
       </div>
     </div>
-  </footer>
+        <p style="font-size:0.7rem;color:#6b7280;margin:1rem 0;max-width:720px;line-height:1.4;">This page describes design-stage architecture and features. No content constitutes an offer, solicitation, or recommendation to purchase any token or digital asset. ADGM DLT Foundation registration is in preparation. All parameters are design targets subject to governance and legal review.</p>
+    </footer>
 
   <script src="main.js" defer></script>
 </body>

@@ -6,12 +6,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server';
-import {
-  successResponse,
-  notFoundResponse,
-  errorResponse,
-  HTTP,
-} from '@/lib/api/responses';
+import { successResponse, notFoundResponse, errorResponse, HTTP } from '@/lib/api/responses';
 import { requireAuth, runMiddleware } from '@/lib/api/middleware';
 import {
   buildPurchaseReceipt,

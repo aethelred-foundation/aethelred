@@ -35,7 +35,7 @@ jobs:
       - name: Install SDK + test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,integrations]"
+          python -m pip install ".[dev,integrations]"
 
       - name: Run curated SDK tests with coverage thresholds
         run: |

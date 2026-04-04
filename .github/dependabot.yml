@@ -25,7 +25,7 @@ updates:
       interval: "weekly"
       day: "monday"
     reviewers:
-      - "aethelred/core-team"
+      - "aethelred-foundation/core-team"
     labels:
       - "dependencies"
       - "rust"
@@ -33,6 +33,10 @@ updates:
     commit-message:
       prefix: "deps(rust-core):"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # Rust crates - consensus
   - package-ecosystem: "cargo"
@@ -86,6 +90,42 @@ updates:
       - "vscode"
     commit-message:
       prefix: "deps(vscode):"
+
+  # TypeScript SDK
+  - package-ecosystem: "npm"
+    directory: "/sdk/typescript"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    labels:
+      - "dependencies"
+      - "typescript"
+      - "sdk"
+    commit-message:
+      prefix: "deps(sdk-ts):"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # Python SDK
+  - package-ecosystem: "pip"
+    directory: "/sdk/aethelred-py"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    labels:
+      - "dependencies"
+      - "python"
+      - "sdk"
+    commit-message:
+      prefix: "deps(sdk-py):"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"

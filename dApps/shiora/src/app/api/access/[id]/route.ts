@@ -41,10 +41,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return notFoundResponse('AccessGrant', id);
   }
 
-  const daysLeft = Math.max(
-    0,
-    Math.round((grant.expiresAt - Date.now()) / 86400000),
-  );
+  const daysLeft = Math.max(0, Math.round((grant.expiresAt - Date.now()) / 86400000));
 
   return successResponse({
     ...grant,

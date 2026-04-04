@@ -6,7 +6,7 @@
 
 <p align="center">
  <strong>The Sovereign Layer 1 for Verifiable AI</strong><br/>
- Proof-of-Useful-Work consensus · Quantum-safe cryptography · On-chain zkML & TEE verification
+ Proof-of-Useful-Work consensus · ML-DSA-65 + ECDSA hybrid · On-chain zkML &amp; TEE verification
 </p>
 
 <p align="center">
@@ -23,19 +23,29 @@
  <img src="https://img.shields.io/badge/Solidity-0.8.20-363636?style=flat-square&logo=solidity&logoColor=white" alt="Solidity">
  <img src="https://img.shields.io/badge/Cosmos_SDK-v0.50-2E3148?style=flat-square" alt="Cosmos SDK">
  <img src="https://img.shields.io/badge/CometBFT-v0.38-blue?style=flat-square" alt="CometBFT">
- <img src="https://img.shields.io/badge/PQC-Kyber+Dilithium-purple?style=flat-square" alt="PQC">
+ <img src="https://img.shields.io/badge/PQC-ML--KEM--768+ML--DSA--65-purple?style=flat-square" alt="PQC">
 </p>
 <p align="center">
  <a href="https://discord.gg/aethelred"><img src="https://img.shields.io/badge/Discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
- <a href="https://aethelred-foundation.github.io/aethelred/"><img src="https://img.shields.io/badge/docs-aethelred.io-orange?style=flat-square" alt="Docs"></a>
+ <a href="https://www.aethelred.org"><img src="https://img.shields.io/badge/website-aethelred.org-111827?style=flat-square" alt="Website"></a>
+ <a href="https://www.aethelred.io"><img src="https://img.shields.io/badge/protocol-aethelred.io-f97316?style=flat-square" alt="Protocol"></a>
+ <a href="https://docs.aethelred.io"><img src="https://img.shields.io/badge/docs-docs.aethelred.io-orange?style=flat-square" alt="Docs"></a>
  <a href="https://github.com/aethelred-foundation/AIPs"><img src="https://img.shields.io/badge/AIPs-proposals-purple?style=flat-square" alt="AIPs"></a>
+ <a href="docs/WHITEPAPER.md"><img src="https://img.shields.io/badge/whitepaper-public%20draft-0f766e?style=flat-square" alt="Whitepaper"></a>
+ <a href="docs/TOKENOMICS.md"><img src="https://img.shields.io/badge/tokenomics-public%20draft-14532d?style=flat-square" alt="Tokenomics"></a>
 </p>
+
+---
+
+> **Classification: Public Reference** — This README is a public-facing project overview. This repository is the canonical authority and release source of truth for the Aethelred protocol monorepo. For canonical disclosure documents, see `docs/WHITEPAPER.md` and `docs/TOKENOMICS.md`. ADGM DLT Foundation registration is in preparation. No content in this repository constitutes an offer of securities or regulated financial products.
 
 ---
 
 ## What is Aethelred?
 
-Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 blockchain purpose-built for **verifiable AI computation**. Instead of burning energy on meaningless hashes, validators perform **Proof-of-Useful-Work (PoUW)** - running AI inference jobs inside **Intel SGX / AWS Nitro TEEs** and generating **zero-knowledge ML proofs** (EZKL, RISC Zero, Groth16, Halo2, Plonky2) that are verified on-chain in every block.
+Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 built for **regulated and high-assurance AI workloads**. It combines deterministic settlement, **Proof-of-Useful-Work (PoUW)**, confidential execution in approved **TEE backends**, **zkML verification**, and **Digital Seals** so enterprises, operators, and auditors can verify what ran, where it ran, and how the result was anchored on-chain.
+
+The public-facing protocol posture is governed by the canonical draft [whitepaper](docs/WHITEPAPER.md), public [tokenomics paper](docs/TOKENOMICS.md), and the official sites at [aethelred.org](https://www.aethelred.org) and [aethelred.io](https://www.aethelred.io). Launch, valuation, float, and counterparty claims are intentionally withheld from this overview until approved for public disclosure.
 
 ```
 AI Job Submitted → VRF Scheduler → Validator TEE Execution
@@ -45,15 +55,28 @@ AI Job Submitted → VRF Scheduler → Validator TEE Execution
  2/3 Consensus → Digital Seal Minted → Job Settled
 ```
 
+### Protocol Snapshot
+
+| Metric | Current Public Posture |
+|---|---|
+| **Native token** | `AETHEL` |
+| **Total supply** | `10,000,000,000 AETHEL` fixed at genesis |
+| **Post-genesis inflation** | `0%` |
+| **Core token utility** | Staking, fees, slashing collateral, governance, verified-compute settlement |
+| **Verification surface** | Digital Seals, TEE attestation, zkML proof verification |
+| **Supported proof systems** | Groth16, PLONK, EZKL, Halo2, STARK |
+| **Confidential compute posture** | Intel SGX, AMD SEV-SNP, AWS Nitro, Azure Confidential VMs, Google Confidential VMs, NVIDIA confidential-computing paths |
+| **Public disclosure rule** | Performance, launch, float, valuation, and counterparty claims publish only after canonical approval |
+
 ### Why Aethelred?
 
 | Feature | Aethelred | Ethereum L2s | Centralized APIs |
 |---|---|---|---|
-| **Verifiable AI** | On-chain TEE + zkML | Off-chain only | Trust-based |
-| **Quantum-Safe** | Dilithium3 + ECDSA | ECDSA only | No |
-| **Decentralized** | 100+ validators | Partial | No |
-| **Compliance** | GDPR/HIPAA/OFAC native | No | Partial |
-| **IBC Ready** | Yes | Partial | No |
+| **Verifiable AI** | TEE + zkML + Digital Seals | Mostly off-chain | Trust-based |
+| **Confidential compute** | Policy-aware confidential execution | Limited / app-specific | Vendor-controlled |
+| **Post-quantum posture** | ML-DSA-65 + ML-KEM-768 hybrid design | Classical-first | Rare |
+| **Evidence portability** | Portable seal + proof artifact model | Fragmented | Fragmented |
+| **Governed disclosure** | Claims, readiness, and launch posture tracked in-repo | Rare | Opaque |
 
 ---
 
@@ -111,7 +134,7 @@ aethelred/
 
 ## Quick Start
 
-**Requirements**: Go 1.24+, Rust 1.75+, Docker
+**Requirements**: Go 1.24+, Rust 1.85+, Docker
 
 ```bash
 # 1. Clone
@@ -137,6 +160,8 @@ aethel tx pouw submit-job \
 
 ## Ecosystem Repos
 
+### Core Infrastructure & SDKs
+
 | Repo | Description |
 |---|---|
 | [contracts](https://github.com/aethelred-foundation/contracts) | Solidity bridge + staking contracts |
@@ -148,6 +173,16 @@ aethel tx pouw submit-job \
 | [vscode-aethelred](https://github.com/aethelred-foundation/vscode-aethelred) | VSCode extension |
 | [aethelred-docs](https://github.com/aethelred-foundation/aethelred-docs) | Documentation site |
 | [AIPs](https://github.com/aethelred-foundation/AIPs) | Aethelred Improvement Proposals |
+
+### Flagship dApps
+
+| dApp | Description |
+|---|---|
+| [cruzible](https://github.com/aethelred-foundation/cruzible) | Liquid staking — stake AETHEL and receive liquid staking tokens |
+| [zeroid](https://github.com/aethelred-foundation/zeroid) | Decentralized identity — ZK-backed self-sovereign identity on-chain |
+| [noblepay](https://github.com/aethelred-foundation/noblepay) | Cross-border payments — TEE-verified stablecoin settlement |
+| [terraqura](https://github.com/aethelred-foundation/terraqura) | Carbon credits — verifiable carbon credit issuance and retirement |
+| [shiora](https://github.com/aethelred-foundation/shiora) | Health data platform — sovereign, jurisdiction-bound health data compute |
 
 ---
 
@@ -167,17 +202,72 @@ cargo test --workspace # Test all Rust crates
 
 ---
 
+## Operator Model
+
+Aethelred separates **consensus participation** from **compute-heavy verification responsibilities** so the network can support both standard validator operations and higher-assurance confidential-compute paths.
+
+- **Consensus validators** handle block proposal, settlement, and protocol state transitions.
+- **Compute-capable operators** add TEE-backed execution, proof generation, and heavier verification workloads.
+- **Operator truth source** is the release bundle and runbooks, not this overview page.
+
+For current operator guidance, use:
+
+- [Testnet Validator Runbook](docs/TESTNET_VALIDATOR_RUNBOOK.md)
+- [Mainnet Validator Runbook](docs/VALIDATOR_RUNBOOK.md)
+- [Hardware Requirements](docs/validator/HARDWARE_REQUIREMENTS.md)
+
+---
+
+## Cross-Chain Bridge
+
+Aethelred bridges to Ethereum via **Circle CCTP V2** (native USDC — no wrapped tokens, no AMM/LP custody):
+
+1. Source-chain USDC is burned via Circle `TokenMessengerV2`
+2. Cross-domain attestation validated by Circle infrastructure
+3. Destination-chain USDC natively minted after message validation
+
+Additional sovereign stablecoins (USDU, DDSC) are supported through separate institutional asset controls. The Security Council can freeze bridge transfers immediately via emergency halt.
+
+---
+
+## Current Public Delivery Posture
+
+This repository follows the same disclosure posture as the public whitepaper and tokenomics paper:
+
+- **Architecture, token design, and operator surfaces** are public.
+- **Fixed supply and zero post-genesis inflation** are public.
+- **Launch timing, float, valuation, fundraising, and named commercial counterparties** are not asserted here unless approved for public disclosure.
+- **Testnet readiness** is treated as an operational program backed by release bundles, runbooks, CI evidence, and hosted topology checks.
+- **Mainnet and TGE communications** remain gated by technical readiness, legal review, and disclosure approval.
+
+Canonical public references:
+
+- [Whitepaper](docs/WHITEPAPER.md)
+- [Tokenomics](docs/TOKENOMICS.md)
+- [Protocol Overview](docs/protocol/overview.md)
+- [Official site](https://www.aethelred.org)
+- [Protocol site](https://www.aethelred.io)
+
+---
+
 ## Security
 
-Aethelred has been security-audited with **27 findings remediated** (2026-02-28).
+Aethelred's public security posture is tracked in-repo and backed by evidence:
 
-- Post-Quantum Cryptography: Ed25519 + Dilithium3 dual-key
-- TEE Platforms: Intel SGX, AWS Nitro Enclaves, AMD SEV-SNP
+- Post-Quantum Cryptography: ML-DSA-65 (Dilithium3, FIPS 204) + ECDSA hybrid signatures; ML-KEM-768 (FIPS 203) for key exchange
+- TEE Platforms: Intel SGX (DCAP), AMD SEV-SNP, AWS Nitro Enclaves, Azure Confidential VMs, Google Confidential VMs, NVIDIA H100 CC
 - Circuit Breaker: Automatic halt on anomaly detection
 - Encrypted Mempool: Threshold encryption against front-running
-- Compliance: GDPR, HIPAA, OFAC, CCPA native enforcement
+- Internal Security Review: **27 findings remediated and verified**
+- Internal Full Audit v2: **36 findings closed**
+- External audit scopes: **in progress**
 
-Found a vulnerability? See [SECURITY.md](SECURITY.md).
+See:
+
+- [Audit Status Tracker](docs/audits/STATUS.md)
+- [Security Policy](SECURITY.md)
+- [Threat Model](docs/security/threat-model.md)
+- [Release Provenance](docs/security/release-provenance.md)
 
 ---
 
@@ -187,7 +277,7 @@ We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 - [Aethelred Improvement Proposals](https://github.com/aethelred-foundation/AIPs)
 - [Discord](https://discord.gg/aethelred)
-- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.md)
+- [Bug Reports](https://github.com/aethelred-foundation/aethelred/issues/new?template=bug_report.yml)
 
 ---
 

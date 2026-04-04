@@ -1,11 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type {
-  ConsentGrant,
-  DataListing,
-  MarketplaceCategory,
-} from '@/types';
+import type { ConsentGrant, DataListing, MarketplaceCategory } from '@/types';
 import { MARKETPLACE_CATEGORIES } from '@/lib/constants';
 import {
   generateMockGrants,
@@ -152,9 +148,7 @@ function cloneListing(listing: DataListing): DataListing {
 
 function buildMarketplaceSeedData(): DataListing[] {
   const seed = 900;
-  const categories = MARKETPLACE_CATEGORIES.map(
-    (category) => category.id as MarketplaceCategory,
-  );
+  const categories = MARKETPLACE_CATEGORIES.map((category) => category.id as MarketplaceCategory);
 
   return Array.from({ length: 20 }, (_, index) => {
     const category = seededPick(seed + index * 7, categories);
@@ -174,10 +168,11 @@ function buildMarketplaceSeedData(): DataListing[] {
         end: createdAt,
       },
       qualityScore: seededInt(seed + index * 19, 60, 99),
-      anonymizationLevel: seededPick(
-        seed + index * 9,
-        ['k-anonymity', 'l-diversity', 'differential-privacy'] as const,
-      ),
+      anonymizationLevel: seededPick(seed + index * 9, [
+        'k-anonymity',
+        'l-diversity',
+        'differential-privacy',
+      ] as const),
       price: parseFloat((seededRandom(seed + index * 23) * 500 + 10).toFixed(2)),
       currency: 'AETHEL',
       status: index < 14 ? 'active' : 'expired',
@@ -254,9 +249,7 @@ export function listRecords(ownerAddress: string): MockHealthRecord[] {
 }
 
 export function getRecord(ownerAddress: string, id: string): MockHealthRecord | undefined {
-  const record = ensureRecords(ownerAddress).find(
-    (entry) => entry.id === id && !entry.deleted,
-  );
+  const record = ensureRecords(ownerAddress).find((entry) => entry.id === id && !entry.deleted);
 
   return record ? cloneRecord(record) : undefined;
 }
@@ -288,10 +281,7 @@ export function updateRecord(
   return cloneRecord(collection[index]);
 }
 
-export function softDeleteRecord(
-  ownerAddress: string,
-  id: string,
-): MockHealthRecord | undefined {
+export function softDeleteRecord(ownerAddress: string, id: string): MockHealthRecord | undefined {
   return updateRecord(ownerAddress, id, {
     deleted: true,
   });
@@ -301,18 +291,12 @@ export function listAccessGrants(ownerAddress: string): MockAccessGrant[] {
   return ensureGrants(ownerAddress).map(cloneGrant);
 }
 
-export function getAccessGrant(
-  ownerAddress: string,
-  id: string,
-): MockAccessGrant | undefined {
+export function getAccessGrant(ownerAddress: string, id: string): MockAccessGrant | undefined {
   const grant = ensureGrants(ownerAddress).find((entry) => entry.id === id);
   return grant ? cloneGrant(grant) : undefined;
 }
 
-export function createAccessGrant(
-  ownerAddress: string,
-  grant: MockAccessGrant,
-): MockAccessGrant {
+export function createAccessGrant(ownerAddress: string, grant: MockAccessGrant): MockAccessGrant {
   const collection = ensureGrants(ownerAddress);
   const nextGrant = cloneGrant(grant);
   collection.unshift(nextGrant);
@@ -342,18 +326,12 @@ export function listConsents(ownerAddress: string): ConsentGrant[] {
   return ensureConsents(ownerAddress).map(cloneConsent);
 }
 
-export function getConsent(
-  ownerAddress: string,
-  id: string,
-): ConsentGrant | undefined {
+export function getConsent(ownerAddress: string, id: string): ConsentGrant | undefined {
   const consent = ensureConsents(ownerAddress).find((entry) => entry.id === id);
   return consent ? cloneConsent(consent) : undefined;
 }
 
-export function createConsent(
-  ownerAddress: string,
-  consent: ConsentGrant,
-): ConsentGrant {
+export function createConsent(ownerAddress: string, consent: ConsentGrant): ConsentGrant {
   const collection = ensureConsents(ownerAddress);
   const nextConsent = cloneConsent(consent);
   collection.unshift(nextConsent);
@@ -408,9 +386,7 @@ export function updateMarketplaceListing(
   state.marketplace[index] = {
     ...state.marketplace[index],
     ...updates,
-    dateRange: updates.dateRange
-      ? { ...updates.dateRange }
-      : state.marketplace[index].dateRange,
+    dateRange: updates.dateRange ? { ...updates.dateRange } : state.marketplace[index].dateRange,
   };
 
   schedulePersist();

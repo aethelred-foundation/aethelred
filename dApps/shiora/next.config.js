@@ -19,8 +19,10 @@ const nextConfig = {
   // Environment variables
   env: {
     NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.mainnet.aethelred.org',
-    NEXT_PUBLIC_SHIORA_API_URL: process.env.NEXT_PUBLIC_SHIORA_API_URL || 'https://api.shiora.health',
-    NEXT_PUBLIC_IPFS_GATEWAY: process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.ipfs.io/ipfs/',
+    NEXT_PUBLIC_SHIORA_API_URL:
+      process.env.NEXT_PUBLIC_SHIORA_API_URL || 'https://api.shiora.health',
+    NEXT_PUBLIC_IPFS_GATEWAY:
+      process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.ipfs.io/ipfs/',
   },
 
   // Image optimization
@@ -74,11 +76,18 @@ const nextConfig = {
               `form-action 'self'`,
             ].join('; '),
           },
-          ...(enableHsts ? [{
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          }] : []),
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          ...(enableHsts
+            ? [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=31536000; includeSubDomains',
+                },
+              ]
+            : []),
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+          },
         ],
       },
     ];
