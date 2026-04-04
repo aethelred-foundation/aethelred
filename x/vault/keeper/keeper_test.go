@@ -2536,7 +2536,7 @@ func parseStakeUint64(s string) uint64 {
 }
 
 func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
-	vectorPath := "../../../dApps/cruzible/test-vectors/validator-selection/default.json"
+	vectorPath := "../../../testdata/cruzible/test-vectors/validator-selection/default.json"
 	data, err := os.ReadFile(vectorPath)
 	if err != nil {
 		t.Skipf("test vector file not found at %s: %v", vectorPath, err)
@@ -2586,7 +2586,7 @@ func TestConformance_validatorSetHash_fromVectors(t *testing.T) {
 }
 
 func TestConformance_stakerRegistryRoot_fromVectors(t *testing.T) {
-	vectorPath := "../../../dApps/cruzible/test-vectors/reward/default.json"
+	vectorPath := "../../../testdata/cruzible/test-vectors/reward/default.json"
 	data, err := os.ReadFile(vectorPath)
 	if err != nil {
 		t.Skipf("test vector file not found at %s: %v", vectorPath, err)

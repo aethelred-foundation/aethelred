@@ -47,6 +47,8 @@ Aethelred is a sovereign **Cosmos SDK / CometBFT** Layer 1 built for **regulated
 
 The public-facing protocol posture is governed by the canonical draft [whitepaper](docs/WHITEPAPER.md), public [tokenomics paper](docs/TOKENOMICS.md), and the official sites at [aethelred.org](https://www.aethelred.org) and [aethelred.io](https://www.aethelred.io). Launch, valuation, float, and counterparty claims are intentionally withheld from this overview until approved for public disclosure.
 
+This repository is the canonical home for the protocol, contracts, SDKs, infrastructure, and shared release artifacts. Flagship applications such as Cruzible, ZeroID, NoblePay, TerraQura, and Shiora are maintained in their own canonical repositories and are referenced here by pointer, not vendored source.
+
 ```
 AI Job Submitted → VRF Scheduler → Validator TEE Execution
  ↓
@@ -183,6 +185,8 @@ aethel tx pouw submit-job \
 | [noblepay](https://github.com/aethelred-foundation/noblepay) | Cross-border payments — TEE-verified stablecoin settlement |
 | [terraqura](https://github.com/aethelred-foundation/terraqura) | Carbon credits — verifiable carbon credit issuance and retirement |
 | [shiora](https://github.com/aethelred-foundation/shiora) | Health data platform — sovereign, jurisdiction-bound health data compute |
+
+Application source of truth for the flagship dApps lives in those dedicated repositories. This monorepo keeps only shared protocol fixtures and repository pointers needed for cross-product release coordination.
 
 ---
 
