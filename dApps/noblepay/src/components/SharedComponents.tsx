@@ -455,10 +455,24 @@ export function Footer() {
             <a href="https://aethelred.io" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors inline-flex items-center gap-1">
               Docs <ExternalLink className="h-3 w-3" />
             </a>
-            <a href="https://github.com/aethelred" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">
+            <a
+              href="https://github.com/aethelred"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Aethelred GitHub"
+              title="Aethelred GitHub"
+              className="hover:text-slate-300 transition-colors"
+            >
               <Github className="h-4 w-4" />
             </a>
-            <a href="https://twitter.com/aethelred" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">
+            <a
+              href="https://twitter.com/aethelred"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Aethelred on X"
+              title="Aethelred on X"
+              className="hover:text-slate-300 transition-colors"
+            >
               <Twitter className="h-4 w-4" />
             </a>
           </div>

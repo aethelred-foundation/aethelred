@@ -976,7 +976,7 @@ export default function PaymentsPage() {
       <div className="min-h-screen bg-[#0f172a] text-slate-100">
         <TopNav activePage="/payments" />
 
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
           {/* ============================================================ */}
           {/* HEADER WITH ACTIONS                                          */}
@@ -1020,7 +1020,7 @@ export default function PaymentsPage() {
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
               >
                 {showFilters ? 'Hide' : 'Show'}
               </button>
@@ -1030,7 +1030,7 @@ export default function PaymentsPage() {
               <div className="space-y-4">
                 {/* Row 1: Status */}
                 <div>
-                  <p className="text-xs text-slate-500 mb-2">Status</p>
+                  <p className="text-xs text-slate-400 mb-2">Status</p>
                   <div className="flex flex-wrap gap-2">
                     <FilterPill label="All" active={filters.status === 'All'} onClick={() => updateFilter('status', 'All')} />
                     {ALL_STATUSES.map(s => (
@@ -1042,7 +1042,7 @@ export default function PaymentsPage() {
                 {/* Row 2: Currency + Date + Risk */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Currency</p>
+                    <p className="text-xs text-slate-400 mb-2">Currency</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterPill label="All" active={filters.currency === 'All'} onClick={() => updateFilter('currency', 'All')} />
                       {ALL_CURRENCIES.map(c => (
@@ -1051,7 +1051,7 @@ export default function PaymentsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Date Range</p>
+                    <p className="text-xs text-slate-400 mb-2">Date Range</p>
                     <div className="flex flex-wrap gap-2">
                       {(['today', '7d', '30d', '90d'] as DateRange[]).map(d => (
                         <FilterPill key={d} label={d === 'today' ? 'Today' : d} active={filters.dateRange === d} onClick={() => updateFilter('dateRange', d)} />
@@ -1059,7 +1059,7 @@ export default function PaymentsPage() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 mb-2">Risk Level</p>
+                    <p className="text-xs text-slate-400 mb-2">Risk Level</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterPill label="All" active={filters.riskLevel === 'All'} onClick={() => updateFilter('riskLevel', 'All')} />
                       {ALL_RISK_LEVELS.map(r => (

@@ -301,7 +301,7 @@ export default function CrossChainPage() {
       <div className="min-h-screen bg-[#0f172a] text-slate-100">
         <TopNav activePage="/cross-chain" />
 
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
           {/* HEADER */}
           <div className="mb-8">
@@ -337,11 +337,11 @@ export default function CrossChainPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Block Height</span>
+                    <span className="text-slate-400">Block Height</span>
                     <span className="text-white font-mono">{chain.blockHeight.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Avg Latency</span>
+                    <span className="text-slate-400">Avg Latency</span>
                     <span className={`font-medium ${chain.avgLatency < 300 ? 'text-emerald-400' : chain.avgLatency < 600 ? 'text-amber-400' : 'text-red-400'}`}>
                       {chain.avgLatency}ms
                     </span>
