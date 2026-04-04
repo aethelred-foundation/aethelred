@@ -118,7 +118,9 @@ func (p *HTTPDrandPulseProvider) latestPulseVerified(ctx context.Context) (Drand
 		_ = httpClient.Close()
 		return DrandPulse{}, fmt.Errorf("build verifying drand client: %w", err)
 	}
-	defer verifiedClient.Close()
+	defer func() {
+		_ = verifiedClient.Close()
+	}()
 
 	result, err := verifiedClient.Get(ctx, 0)
 	if err != nil {
@@ -158,7 +160,9 @@ func (p *HTTPDrandPulseProvider) latestPulseLocalHTTP(ctx context.Context) (Dran
 	if err != nil {
 		return DrandPulse{}, fmt.Errorf("drand request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return DrandPulse{}, fmt.Errorf("drand relay status %d", resp.StatusCode)

@@ -41,10 +41,10 @@ import (
 type Framework string
 
 const (
-	FrameworkSOC2   Framework = "SOC2"
-	FrameworkGDPR   Framework = "GDPR"
-	FrameworkADGM   Framework = "ADGM"
-	FrameworkHIPAA  Framework = "HIPAA"
+	FrameworkSOC2     Framework = "SOC2"
+	FrameworkGDPR     Framework = "GDPR"
+	FrameworkADGM     Framework = "ADGM"
+	FrameworkHIPAA    Framework = "HIPAA"
 	FrameworkISO27001 Framework = "ISO27001"
 )
 
@@ -60,13 +60,13 @@ const (
 	CategoryPrivacy         ControlCategory = "Privacy"
 
 	// GDPR Principles
-	CategoryLawfulness      ControlCategory = "Lawfulness"
+	CategoryLawfulness        ControlCategory = "Lawfulness"
 	CategoryPurposeLimitation ControlCategory = "Purpose Limitation"
-	CategoryDataMinimization ControlCategory = "Data Minimization"
-	CategoryAccuracy        ControlCategory = "Accuracy"
+	CategoryDataMinimization  ControlCategory = "Data Minimization"
+	CategoryAccuracy          ControlCategory = "Accuracy"
 	CategoryStorageLimitation ControlCategory = "Storage Limitation"
-	CategoryIntegrity       ControlCategory = "Integrity & Confidentiality"
-	CategoryAccountability  ControlCategory = "Accountability"
+	CategoryIntegrity         ControlCategory = "Integrity & Confidentiality"
+	CategoryAccountability    ControlCategory = "Accountability"
 )
 
 // ============================================================================
@@ -78,46 +78,46 @@ type EventType string
 
 const (
 	// Access Events
-	EventUserLogin          EventType = "USER_LOGIN"
-	EventUserLogout         EventType = "USER_LOGOUT"
-	EventAccessGranted      EventType = "ACCESS_GRANTED"
-	EventAccessDenied       EventType = "ACCESS_DENIED"
+	EventUserLogin           EventType = "USER_LOGIN"
+	EventUserLogout          EventType = "USER_LOGOUT"
+	EventAccessGranted       EventType = "ACCESS_GRANTED"
+	EventAccessDenied        EventType = "ACCESS_DENIED"
 	EventPrivilegeEscalation EventType = "PRIVILEGE_ESCALATION"
 
 	// Data Events
-	EventDataCreated        EventType = "DATA_CREATED"
-	EventDataRead           EventType = "DATA_READ"
-	EventDataUpdated        EventType = "DATA_UPDATED"
-	EventDataDeleted        EventType = "DATA_DELETED"
-	EventDataExported       EventType = "DATA_EXPORTED"
+	EventDataCreated  EventType = "DATA_CREATED"
+	EventDataRead     EventType = "DATA_READ"
+	EventDataUpdated  EventType = "DATA_UPDATED"
+	EventDataDeleted  EventType = "DATA_DELETED"
+	EventDataExported EventType = "DATA_EXPORTED"
 
 	// Cryptographic Events
-	EventKeyGenerated       EventType = "KEY_GENERATED"
-	EventKeyUsed            EventType = "KEY_USED"
-	EventKeyRotated         EventType = "KEY_ROTATED"
-	EventKeyRevoked         EventType = "KEY_REVOKED"
-	EventSignatureCreated   EventType = "SIGNATURE_CREATED"
-	EventSignatureVerified  EventType = "SIGNATURE_VERIFIED"
+	EventKeyGenerated      EventType = "KEY_GENERATED"
+	EventKeyUsed           EventType = "KEY_USED"
+	EventKeyRotated        EventType = "KEY_ROTATED"
+	EventKeyRevoked        EventType = "KEY_REVOKED"
+	EventSignatureCreated  EventType = "SIGNATURE_CREATED"
+	EventSignatureVerified EventType = "SIGNATURE_VERIFIED"
 
 	// Validator Events
-	EventValidatorJoined    EventType = "VALIDATOR_JOINED"
-	EventValidatorLeft      EventType = "VALIDATOR_LEFT"
-	EventVoteExtension      EventType = "VOTE_EXTENSION"
-	EventConsensusReached   EventType = "CONSENSUS_REACHED"
-	EventSlashingApplied    EventType = "SLASHING_APPLIED"
+	EventValidatorJoined  EventType = "VALIDATOR_JOINED"
+	EventValidatorLeft    EventType = "VALIDATOR_LEFT"
+	EventVoteExtension    EventType = "VOTE_EXTENSION"
+	EventConsensusReached EventType = "CONSENSUS_REACHED"
+	EventSlashingApplied  EventType = "SLASHING_APPLIED"
 
 	// Compute Events
-	EventJobSubmitted       EventType = "JOB_SUBMITTED"
-	EventJobVerified        EventType = "JOB_VERIFIED"
-	EventJobCompleted       EventType = "JOB_COMPLETED"
-	EventJobFailed          EventType = "JOB_FAILED"
-	EventSealCreated        EventType = "SEAL_CREATED"
+	EventJobSubmitted EventType = "JOB_SUBMITTED"
+	EventJobVerified  EventType = "JOB_VERIFIED"
+	EventJobCompleted EventType = "JOB_COMPLETED"
+	EventJobFailed    EventType = "JOB_FAILED"
+	EventSealCreated  EventType = "SEAL_CREATED"
 
 	// Administrative Events
-	EventConfigChanged      EventType = "CONFIG_CHANGED"
-	EventBackupCreated      EventType = "BACKUP_CREATED"
-	EventSystemStarted      EventType = "SYSTEM_STARTED"
-	EventSystemStopped      EventType = "SYSTEM_STOPPED"
+	EventConfigChanged EventType = "CONFIG_CHANGED"
+	EventBackupCreated EventType = "BACKUP_CREATED"
+	EventSystemStarted EventType = "SYSTEM_STARTED"
+	EventSystemStopped EventType = "SYSTEM_STOPPED"
 )
 
 // ============================================================================
@@ -127,45 +127,45 @@ const (
 // AuditEntry represents a single audit log entry
 type AuditEntry struct {
 	// Identity
-	ID              string            `json:"id"`
-	Timestamp       time.Time         `json:"timestamp"`
-	TimestampUTC    string            `json:"timestamp_utc"`
+	ID           string    `json:"id"`
+	Timestamp    time.Time `json:"timestamp"`
+	TimestampUTC string    `json:"timestamp_utc"`
 
 	// Event Information
-	EventType       EventType         `json:"event_type"`
-	Category        ControlCategory   `json:"category"`
-	Severity        string            `json:"severity"` // INFO, WARNING, CRITICAL
+	EventType EventType       `json:"event_type"`
+	Category  ControlCategory `json:"category"`
+	Severity  string          `json:"severity"` // INFO, WARNING, CRITICAL
 
 	// Actor Information
-	ActorType       string            `json:"actor_type"`   // user, system, validator
-	ActorID         string            `json:"actor_id"`
-	ActorIP         string            `json:"actor_ip,omitempty"`
-	ActorLocation   string            `json:"actor_location,omitempty"`
+	ActorType     string `json:"actor_type"` // user, system, validator
+	ActorID       string `json:"actor_id"`
+	ActorIP       string `json:"actor_ip,omitempty"`
+	ActorLocation string `json:"actor_location,omitempty"`
 
 	// Resource Information
-	ResourceType    string            `json:"resource_type"`
-	ResourceID      string            `json:"resource_id"`
+	ResourceType string `json:"resource_type"`
+	ResourceID   string `json:"resource_id"`
 
 	// Action Details
-	Action          string            `json:"action"`
-	ActionResult    string            `json:"action_result"` // success, failure, partial
-	Description     string            `json:"description"`
+	Action       string `json:"action"`
+	ActionResult string `json:"action_result"` // success, failure, partial
+	Description  string `json:"description"`
 
 	// Data Classification
-	DataClassification string         `json:"data_classification,omitempty"` // public, internal, confidential, restricted
+	DataClassification string `json:"data_classification,omitempty"` // public, internal, confidential, restricted
 
 	// Compliance Mapping
-	Frameworks      []Framework       `json:"frameworks"`
-	Controls        []string          `json:"controls"` // e.g., ["CC6.1", "CC6.2"]
+	Frameworks []Framework `json:"frameworks"`
+	Controls   []string    `json:"controls"` // e.g., ["CC6.1", "CC6.2"]
 
 	// Additional Context
-	Metadata        map[string]string `json:"metadata,omitempty"`
-	RequestID       string            `json:"request_id,omitempty"`
-	SessionID       string            `json:"session_id,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	RequestID string            `json:"request_id,omitempty"`
+	SessionID string            `json:"session_id,omitempty"`
 
 	// Integrity
-	PreviousHash    string            `json:"previous_hash"`
-	Hash            string            `json:"hash"`
+	PreviousHash string `json:"previous_hash"`
+	Hash         string `json:"hash"`
 }
 
 // ComputeHash computes the SHA-256 hash of the entry
@@ -185,31 +185,31 @@ func (e *AuditEntry) ComputeHash() string {
 
 // AuditLogger manages audit log collection
 type AuditLogger struct {
-	mu           sync.RWMutex
-	entries      []*AuditEntry
-	lastHash     string
-	maxEntries   int
-	retention    time.Duration
-	exportPath   string
-	autoExport   bool
+	mu         sync.RWMutex
+	entries    []*AuditEntry
+	lastHash   string
+	maxEntries int
+	retention  time.Duration
+	exportPath string
+	autoExport bool
 
 	// Callbacks
-	onEntry      func(*AuditEntry)
-	onExport     func(string)
+	onEntry  func(*AuditEntry)
+	onExport func(string)
 }
 
 // AuditLoggerConfig configures the audit logger
 type AuditLoggerConfig struct {
-	MaxEntries  int
-	Retention   time.Duration
-	ExportPath  string
-	AutoExport  bool
+	MaxEntries int
+	Retention  time.Duration
+	ExportPath string
+	AutoExport bool
 }
 
 // DefaultAuditLoggerConfig returns production defaults
 func DefaultAuditLoggerConfig() AuditLoggerConfig {
 	return AuditLoggerConfig{
-		MaxEntries: 1000000,        // 1M entries in memory
+		MaxEntries: 1000000,                  // 1M entries in memory
 		Retention:  7 * 365 * 24 * time.Hour, // 7 years
 		ExportPath: "/var/log/aethelred/audit",
 		AutoExport: true,
@@ -264,17 +264,17 @@ func (al *AuditLogger) Log(entry *AuditEntry) error {
 // LogEvent is a convenience method for logging events
 func (al *AuditLogger) LogEvent(eventType EventType, category ControlCategory, actor, resource, action, result, description string) error {
 	return al.Log(&AuditEntry{
-		EventType:      eventType,
-		Category:       category,
-		Severity:       "INFO",
-		ActorType:      "system",
-		ActorID:        actor,
-		ResourceType:   "general",
-		ResourceID:     resource,
-		Action:         action,
-		ActionResult:   result,
-		Description:    description,
-		Frameworks:     []Framework{FrameworkSOC2, FrameworkGDPR},
+		EventType:    eventType,
+		Category:     category,
+		Severity:     "INFO",
+		ActorType:    "system",
+		ActorID:      actor,
+		ResourceType: "general",
+		ResourceID:   resource,
+		Action:       action,
+		ActionResult: result,
+		Description:  description,
+		Frameworks:   []Framework{FrameworkSOC2, FrameworkGDPR},
 	})
 }
 
@@ -310,7 +310,9 @@ func (al *AuditLogger) exportAndRotate() {
 	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	encoder := json.NewEncoder(file)
 	for _, entry := range entries {
@@ -328,16 +330,16 @@ func (al *AuditLogger) exportAndRotate() {
 
 // AuditFilter defines criteria for filtering audit entries
 type AuditFilter struct {
-	StartTime      *time.Time
-	EndTime        *time.Time
-	EventTypes     []EventType
-	Categories     []ControlCategory
-	ActorIDs       []string
-	ResourceIDs    []string
-	Severities     []string
-	Frameworks     []Framework
-	ActionResults  []string
-	SearchText     string
+	StartTime     *time.Time
+	EndTime       *time.Time
+	EventTypes    []EventType
+	Categories    []ControlCategory
+	ActorIDs      []string
+	ResourceIDs   []string
+	Severities    []string
+	Frameworks    []Framework
+	ActionResults []string
+	SearchText    string
 }
 
 // Matches checks if an entry matches the filter
@@ -382,8 +384,8 @@ func (f *AuditFilter) Matches(entry *AuditEntry) bool {
 
 // ReportGenerator generates compliance reports
 type ReportGenerator struct {
-	logger      *AuditLogger
-	config      ReportConfig
+	logger *AuditLogger
+	config ReportConfig
 }
 
 // ReportConfig configures report generation
@@ -405,30 +407,30 @@ func NewReportGenerator(logger *AuditLogger, config ReportConfig) *ReportGenerat
 // Report represents a compliance report
 type Report struct {
 	// Metadata
-	Title           string                 `json:"title"`
-	Framework       Framework              `json:"framework"`
-	Version         string                 `json:"version"`
-	GeneratedAt     time.Time              `json:"generated_at"`
-	ReportingPeriod ReportingPeriod        `json:"reporting_period"`
-	Organization    string                 `json:"organization"`
+	Title           string          `json:"title"`
+	Framework       Framework       `json:"framework"`
+	Version         string          `json:"version"`
+	GeneratedAt     time.Time       `json:"generated_at"`
+	ReportingPeriod ReportingPeriod `json:"reporting_period"`
+	Organization    string          `json:"organization"`
 
 	// Executive Summary
-	ExecutiveSummary ExecutiveSummary      `json:"executive_summary"`
+	ExecutiveSummary ExecutiveSummary `json:"executive_summary"`
 
 	// Control Assessment
-	Controls        []ControlAssessment    `json:"controls"`
+	Controls []ControlAssessment `json:"controls"`
 
 	// Evidence
-	Evidence        []Evidence             `json:"evidence"`
+	Evidence []Evidence `json:"evidence"`
 
 	// Findings
-	Findings        []Finding              `json:"findings"`
+	Findings []Finding `json:"findings"`
 
 	// Statistics
-	Statistics      ReportStatistics       `json:"statistics"`
+	Statistics ReportStatistics `json:"statistics"`
 
 	// Integrity
-	Hash            string                 `json:"hash"`
+	Hash string `json:"hash"`
 }
 
 // ReportingPeriod defines the time range for a report
@@ -440,45 +442,45 @@ type ReportingPeriod struct {
 
 // ExecutiveSummary provides a high-level summary
 type ExecutiveSummary struct {
-	OverallStatus       string    `json:"overall_status"` // Compliant, Partially Compliant, Non-Compliant
-	ComplianceScore     float64   `json:"compliance_score"`
-	TotalControls       int       `json:"total_controls"`
-	ControlsMet         int       `json:"controls_met"`
-	ControlsPartial     int       `json:"controls_partial"`
-	ControlsNotMet      int       `json:"controls_not_met"`
-	CriticalFindings    int       `json:"critical_findings"`
-	HighFindings        int       `json:"high_findings"`
-	MediumFindings      int       `json:"medium_findings"`
-	LowFindings         int       `json:"low_findings"`
-	KeyAchievements     []string  `json:"key_achievements"`
-	AreasForImprovement []string  `json:"areas_for_improvement"`
+	OverallStatus       string   `json:"overall_status"` // Compliant, Partially Compliant, Non-Compliant
+	ComplianceScore     float64  `json:"compliance_score"`
+	TotalControls       int      `json:"total_controls"`
+	ControlsMet         int      `json:"controls_met"`
+	ControlsPartial     int      `json:"controls_partial"`
+	ControlsNotMet      int      `json:"controls_not_met"`
+	CriticalFindings    int      `json:"critical_findings"`
+	HighFindings        int      `json:"high_findings"`
+	MediumFindings      int      `json:"medium_findings"`
+	LowFindings         int      `json:"low_findings"`
+	KeyAchievements     []string `json:"key_achievements"`
+	AreasForImprovement []string `json:"areas_for_improvement"`
 }
 
 // ControlAssessment represents the assessment of a single control
 type ControlAssessment struct {
-	ControlID       string    `json:"control_id"`
-	ControlName     string    `json:"control_name"`
-	Category        string    `json:"category"`
-	Description     string    `json:"description"`
-	Status          string    `json:"status"` // Met, Partially Met, Not Met, N/A
-	TestingMethod   string    `json:"testing_method"`
-	TestResults     string    `json:"test_results"`
-	EvidenceRefs    []string  `json:"evidence_refs"`
-	Findings        []string  `json:"findings"`
-	Recommendations []string  `json:"recommendations"`
+	ControlID       string   `json:"control_id"`
+	ControlName     string   `json:"control_name"`
+	Category        string   `json:"category"`
+	Description     string   `json:"description"`
+	Status          string   `json:"status"` // Met, Partially Met, Not Met, N/A
+	TestingMethod   string   `json:"testing_method"`
+	TestResults     string   `json:"test_results"`
+	EvidenceRefs    []string `json:"evidence_refs"`
+	Findings        []string `json:"findings"`
+	Recommendations []string `json:"recommendations"`
 }
 
 // Evidence represents supporting evidence for controls
 type Evidence struct {
-	ID              string            `json:"id"`
-	Type            string            `json:"type"` // document, log, screenshot, interview
-	Title           string            `json:"title"`
-	Description     string            `json:"description"`
-	Source          string            `json:"source"`
-	CollectedAt     time.Time         `json:"collected_at"`
-	Hash            string            `json:"hash"`
-	Controls        []string          `json:"controls"`
-	Metadata        map[string]string `json:"metadata,omitempty"`
+	ID          string            `json:"id"`
+	Type        string            `json:"type"` // document, log, screenshot, interview
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Source      string            `json:"source"`
+	CollectedAt time.Time         `json:"collected_at"`
+	Hash        string            `json:"hash"`
+	Controls    []string          `json:"controls"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // Finding represents a compliance finding
@@ -497,14 +499,14 @@ type Finding struct {
 
 // ReportStatistics provides statistical analysis
 type ReportStatistics struct {
-	TotalEvents       int64             `json:"total_events"`
-	EventsByType      map[string]int64  `json:"events_by_type"`
-	EventsByCategory  map[string]int64  `json:"events_by_category"`
-	EventsBySeverity  map[string]int64  `json:"events_by_severity"`
-	EventsByDay       map[string]int64  `json:"events_by_day"`
-	SuccessRate       float64           `json:"success_rate"`
-	FailureRate       float64           `json:"failure_rate"`
-	AverageDaily      float64           `json:"average_daily"`
+	TotalEvents      int64            `json:"total_events"`
+	EventsByType     map[string]int64 `json:"events_by_type"`
+	EventsByCategory map[string]int64 `json:"events_by_category"`
+	EventsBySeverity map[string]int64 `json:"events_by_severity"`
+	EventsByDay      map[string]int64 `json:"events_by_day"`
+	SuccessRate      float64          `json:"success_rate"`
+	FailureRate      float64          `json:"failure_rate"`
+	AverageDaily     float64          `json:"average_daily"`
 }
 
 // GenerateSOC2Report generates a SOC 2 Type II report
@@ -897,16 +899,16 @@ func (rg *ReportGenerator) computeStatistics(entries []*AuditEntry) ReportStatis
 
 // DSARRequest represents a data subject access request
 type DSARRequest struct {
-	RequestID       string    `json:"request_id"`
-	SubjectID       string    `json:"subject_id"`
-	SubjectEmail    string    `json:"subject_email"`
-	RequestType     string    `json:"request_type"` // access, rectification, erasure, portability
-	RequestDate     time.Time `json:"request_date"`
-	DueDate         time.Time `json:"due_date"` // 30 days from request
-	Status          string    `json:"status"`   // pending, processing, completed, rejected
-	ProcessedDate   time.Time `json:"processed_date,omitempty"`
-	ProcessedBy     string    `json:"processed_by,omitempty"`
-	Notes           string    `json:"notes,omitempty"`
+	RequestID     string    `json:"request_id"`
+	SubjectID     string    `json:"subject_id"`
+	SubjectEmail  string    `json:"subject_email"`
+	RequestType   string    `json:"request_type"` // access, rectification, erasure, portability
+	RequestDate   time.Time `json:"request_date"`
+	DueDate       time.Time `json:"due_date"` // 30 days from request
+	Status        string    `json:"status"`   // pending, processing, completed, rejected
+	ProcessedDate time.Time `json:"processed_date,omitempty"`
+	ProcessedBy   string    `json:"processed_by,omitempty"`
+	Notes         string    `json:"notes,omitempty"`
 }
 
 // DSARResponse represents the response to a DSAR
@@ -923,15 +925,15 @@ type DSARResponse struct {
 
 // DSARHandler handles data subject access requests
 type DSARHandler struct {
-	logger      *AuditLogger
-	config      DSARConfig
+	logger *AuditLogger
+	config DSARConfig
 }
 
 // DSARConfig configures DSAR handling
 type DSARConfig struct {
-	MaxResponseDays  int
-	DataCategories   []string
-	ProcessingBases  map[string]string
+	MaxResponseDays   int
+	DataCategories    []string
+	ProcessingBases   map[string]string
 	RetentionPolicies map[string]string
 }
 
@@ -1019,11 +1021,14 @@ func (e *Exporter) ExportJSON(ctx context.Context, filter AuditFilter, filename 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(entries)
+	if err := encoder.Encode(entries); err != nil {
+		_ = file.Close()
+		return err
+	}
+	return file.Close()
 }
 
 // ExportCSV exports audit entries to CSV
@@ -1039,10 +1044,8 @@ func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename s
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	writer := csv.NewWriter(file)
-	defer writer.Flush()
 
 	// Write header
 	header := []string{
@@ -1068,11 +1071,17 @@ func (e *Exporter) ExportCSV(ctx context.Context, filter AuditFilter, filename s
 			entry.Description,
 		}
 		if err := writer.Write(row); err != nil {
+			_ = file.Close()
 			return err
 		}
 	}
 
-	return nil
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		_ = file.Close()
+		return err
+	}
+	return file.Close()
 }
 
 // ExportZipBundle exports a complete compliance bundle
@@ -1086,10 +1095,8 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	zipWriter := zip.NewWriter(file)
-	defer zipWriter.Close()
 
 	entries := e.logger.Query(filter)
 
@@ -1100,6 +1107,8 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 	}
 	jsonBytes, _ := json.MarshalIndent(entries, "", "  ")
 	if _, err := jsonWriter.Write(jsonBytes); err != nil {
+		_ = zipWriter.Close()
+		_ = file.Close()
 		return err
 	}
 
@@ -1112,16 +1121,22 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 	csvW := csv.NewWriter(csvBuf)
 	header := []string{"ID", "Timestamp", "Event Type", "Category", "Severity", "Actor ID", "Resource ID", "Action", "Result"}
 	if err := csvW.Write(header); err != nil {
+		_ = zipWriter.Close()
+		_ = file.Close()
 		return err
 	}
 	for _, entry := range entries {
 		row := []string{entry.ID, entry.TimestampUTC, string(entry.EventType), string(entry.Category), entry.Severity, entry.ActorID, entry.ResourceID, entry.Action, entry.ActionResult}
 		if err := csvW.Write(row); err != nil {
+			_ = zipWriter.Close()
+			_ = file.Close()
 			return err
 		}
 	}
 	csvW.Flush()
 	if _, err := csvWriter.Write(csvBuf.Bytes()); err != nil {
+		_ = zipWriter.Close()
+		_ = file.Close()
 		return err
 	}
 
@@ -1137,10 +1152,16 @@ func (e *Exporter) ExportZipBundle(ctx context.Context, filter AuditFilter, file
 	}
 	manifestBytes, _ := json.MarshalIndent(manifest, "", "  ")
 	if _, err := manifestWriter.Write(manifestBytes); err != nil {
+		_ = zipWriter.Close()
+		_ = file.Close()
 		return err
 	}
 
-	return nil
+	if err := zipWriter.Close(); err != nil {
+		_ = file.Close()
+		return err
+	}
+	return file.Close()
 }
 
 // ============================================================================

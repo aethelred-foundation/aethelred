@@ -101,7 +101,7 @@ body:
       label: Environment
       placeholder: |
         OS: macOS 15 / Ubuntu 24.04
-        Go: 1.24.6
+        Go: 1.25.8
         Rust: 1.85.0
         Node: aethelred-testnet-1
         Aethelred version: v0.x.x or commit SHA

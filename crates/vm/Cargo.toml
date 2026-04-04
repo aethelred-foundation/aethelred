@@ -14,7 +14,6 @@ default = ["std", "wasmer-runtime"]
 std = []
 # WASM runtime backend selection
 wasmer-runtime = ["wasmer", "wasmer-middlewares"]
-wasmtime-runtime = ["wasmtime"]
 # Mock TEE for development
 mock-tee = []
 # Full SGX DCAP verification
@@ -54,13 +53,8 @@ rand = "0.8"
 # =============================================================================
 # WASM Runtime - Wasmer (Primary)
 # =============================================================================
-wasmer = { version = "4.2", optional = true, features = ["cranelift", "singlepass"] }
-wasmer-middlewares = { version = "4.2", optional = true }
-
-# =============================================================================
-# WASM Runtime - Wasmtime (Alternative)
-# =============================================================================
-wasmtime = { version = "24.0.6", optional = true }
+wasmer = { version = "4.4.0", optional = true, features = ["cranelift", "singlepass"] }
+wasmer-middlewares = { version = "4.4.0", optional = true }
 
 # =============================================================================
 # Cryptography for Precompiles
@@ -105,7 +99,7 @@ lru = "0.16.3"
 # =============================================================================
 # Metrics
 # =============================================================================
-prometheus = "0.13"
+prometheus = "0.14"
 
 # =============================================================================
 # Logging

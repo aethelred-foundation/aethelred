@@ -6,8 +6,7 @@
     "Sandbox Required Gate",
     "Docker Required Gate",
     "Load Test Required Gate",
-    "Fuzzing Required Gate",
-    "dApps Required Gate"
+    "Fuzzing Required Gate"
   ],
   "main": [
     "Contracts Required Gate",
@@ -17,8 +16,7 @@
     "Docker Required Gate",
     "Load Test Required Gate",
     "Fuzzing Required Gate",
-    "E2E Required Gate",
-    "dApps Required Gate"
+    "E2E Required Gate"
   ],
   "develop": [
     "Contracts Required Gate",
@@ -27,8 +25,7 @@
     "Sandbox Required Gate",
     "Docker Required Gate",
     "Load Test Required Gate",
-    "Fuzzing Required Gate",
-    "dApps Required Gate"
+    "Fuzzing Required Gate"
   ],
   "release/*": [
     "Contracts Required Gate",
@@ -38,7 +35,6 @@
     "Docker Required Gate",
     "Load Test Required Gate",
     "Fuzzing Required Gate",
-    "E2E Required Gate",
-    "dApps Required Gate"
+    "E2E Required Gate"
   ]
 }

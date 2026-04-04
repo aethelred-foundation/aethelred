@@ -191,8 +191,8 @@
     {
       "name": "cruzible",
       "source_path": "dApps/cruzible",
-      "role": "application-frontend",
-      "description": "Explorer, staking, and governance dashboard for the Aethelred network.",
+      "role": "external-application-pointer",
+      "description": "Reference stub for the canonical Cruzible repository; application source is maintained outside this monorepo.",
       "homepage": "https://cruzible.aethelred.io",
       "topics": [
         "aethelred",
@@ -204,8 +204,8 @@
         "web3"
       ],
       "has_discussions": false,
-      "inject_standards": true,
-      "release_authority": true
+      "inject_standards": false,
+      "release_authority": false
     },
     {
       "name": ".github",

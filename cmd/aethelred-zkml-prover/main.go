@@ -305,7 +305,9 @@ func (s *server) proxy(w http.ResponseWriter, r *http.Request, path string, body
 		writeError(w, http.StatusBadGateway, "backend request failed")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	for k, values := range resp.Header {
 		for _, v := range values {

@@ -25,7 +25,6 @@ Purpose: Enumerate every gate that must pass before testnet and mainnet launch.
 | G-CONTRACT | Contracts gate | `forge build` + `forge test` + `npx hardhat test` | Yes | `Contracts CI` (`.github/workflows/contracts-ci.yml`) | Smart Contracts | Test output, coverage report |
 | G-DOCKER | Docker gate | Docker images build successfully | Yes | `Docker Build & Push` (`.github/workflows/docker-build.yml`) | Infrastructure | Built image digests |
 | G-SANDBOX | Sandbox gate | Sandbox CI passes | Yes | `Infinity Sandbox CI` (`.github/workflows/sandbox-ci.yml`) | Core Protocol | Test output in CI logs |
-| G-DAPPS | dApps gate | dApp builds and tests pass | Yes | `dApps CI` (`.github/workflows/dapps-ci.yml`) | Frontend | Build output in CI logs |
 | G-HELM | Helm gate | Helm chart lint and template tests | Yes | `Helm Charts CI` (`.github/workflows/helm-charts-ci.yml`) | Infrastructure | Lint output in CI logs |
 | G-OPENAPI | OpenAPI gate | `make openapi-validate` | Yes | Part of `SDK Release Readiness` | SDK | Validated OpenAPI spec |
 
@@ -147,24 +146,16 @@ Purpose: Enumerate every gate that must pass before testnet and mainnet launch.
 - **CI workflow**: `Infinity Sandbox CI` (`.github/workflows/sandbox-ci.yml`)
 - **Branch protection**: `Sandbox Required Gate`
 
-### G-DAPPS: dApps Gate
-
-- **Command**: dApp build and test suite
-- **CI workflow**: `dApps CI` (`.github/workflows/dapps-ci.yml`)
-- **Branch protection**: `dApps Required Gate`
-
----
-
 ## Branch Protection Mapping
 
 Required checks per branch are defined in `.github/branch-protection/required-checks.json`.
 
 | Branch | Required Gates |
 |--------|---------------|
-| `main` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E, dApps |
-| `develop` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, dApps |
-| `release/*` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E, dApps |
-| Default (all other) | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, dApps |
+| `main` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
+| `develop` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
+| `release/*` | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing, E2E |
+| Default (all other) | Contracts, Rust, Security, Sandbox, Docker, Load Test, Fuzzing |
 
 ---
 
@@ -187,7 +178,6 @@ All gates below must show `PASS` before mainnet tag is cut:
 - [ ] G-CONTRACT: All contract tests pass (Foundry + Hardhat)
 - [ ] G-DOCKER: Docker images build successfully
 - [ ] G-SANDBOX: Sandbox CI passes
-- [ ] G-DAPPS: dApp builds succeed
 - [ ] G-HELM: Helm charts lint clean
 - [ ] G-OPENAPI: OpenAPI spec validates
 - [ ] Freeze policy compliance verified (see `FREEZE_POLICY.md`)

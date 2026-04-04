@@ -299,7 +299,7 @@ func isEndpointReachable(endpoint string) bool {
 			continue
 		}
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode >= 200 && resp.StatusCode < 500 {
 			return true

@@ -1,5 +1,4 @@
 //go:build pqc_circl
-// +build pqc_circl
 
 // Package pqc provides production PQC using Cloudflare's circl library.
 //
@@ -10,18 +9,19 @@
 // Build with: go build -tags=pqc_circl
 //
 // Prerequisites:
-//   go get github.com/cloudflare/circl@latest
+//
+//	go get github.com/cloudflare/circl@latest
 package pqc
 
 import (
 	"fmt"
 
+	"github.com/cloudflare/circl/kem/kyber/kyber1024"
+	"github.com/cloudflare/circl/kem/kyber/kyber512"
+	"github.com/cloudflare/circl/kem/kyber/kyber768"
 	"github.com/cloudflare/circl/sign/dilithium/mode2"
 	"github.com/cloudflare/circl/sign/dilithium/mode3"
 	"github.com/cloudflare/circl/sign/dilithium/mode5"
-	"github.com/cloudflare/circl/kem/kyber/kyber512"
-	"github.com/cloudflare/circl/kem/kyber/kyber768"
-	"github.com/cloudflare/circl/kem/kyber/kyber1024"
 )
 
 func init() {

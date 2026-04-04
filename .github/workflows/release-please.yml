@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,7 +14,27 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Detect release token
+        id: release_token
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          if [ -n "$RELEASE_PLEASE_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Explain release automation skip
+        if: ${{ steps.release_token.outputs.enabled != 'true' }}
+        run: |
+          echo "Release Please is skipped on this repository because RELEASE_PLEASE_TOKEN is not configured."
+          echo "Configure a dedicated token with pull-request creation rights to enable automated release PRs."
+
+      - name: Run release please
+        if: ${{ steps.release_token.outputs.enabled == 'true' }}
+        uses: googleapis/release-please-action@v4
         with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
