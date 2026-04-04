@@ -44,6 +44,7 @@ export default function CredentialsPage() {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const searchInputId = "credentials-search";
 
   const statusCounts = {
     all: credentials.length,
@@ -150,16 +151,19 @@ export default function CredentialsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
             <input
+              id={searchInputId}
               type="text"
               placeholder="Search credentials by type, issuer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search credentials by type or issuer"
               className="input pl-10"
             />
           </div>
           <div className="flex items-center border border-[var(--border-primary)] rounded-xl overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
+              aria-label="Show credentials in grid view"
               className={`p-2.5 transition-colors ${
                 viewMode === "grid"
                   ? "bg-brand-600 text-white"
@@ -170,6 +174,7 @@ export default function CredentialsPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
+              aria-label="Show credentials in list view"
               className={`p-2.5 transition-colors ${
                 viewMode === "list"
                   ? "bg-brand-600 text-white"

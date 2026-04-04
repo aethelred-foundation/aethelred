@@ -2,11 +2,11 @@ module.exports = {
   ci: {
     collect: {
       startServerCommand: 'npm --prefix dApps/noblepay run start',
-      startServerReadyPattern: 'ready on',
+      startServerReadyPattern: 'Ready',
       url: [
         'http://localhost:3002/',
         'http://localhost:3002/payments',
-        'http://localhost:3002/transfers',
+        'http://localhost:3002/cross-chain',
       ],
       numberOfRuns: 3,
       settings: {

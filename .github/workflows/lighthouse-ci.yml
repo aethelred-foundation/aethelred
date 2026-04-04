@@ -48,6 +48,7 @@ jobs:
           configPath: ${{ matrix.working-directory }}/lighthouserc.js
           uploadArtifacts: true
           temporaryPublicStorage: true
+          artifactName: lighthouse-results-${{ matrix.app }}
 
       - name: Upload Lighthouse results
         if: always()
