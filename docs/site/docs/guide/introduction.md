@@ -8,10 +8,10 @@ Traditional blockchains treat computation as an afterthought. Aethelred treats i
 
 | Capability | How Aethelred Delivers It |
 |---|---|
-| **Post-quantum signatures** | Hybrid ECDSA + Dilithium3 on every transaction |
-| **Post-quantum key exchange** | Kyber768 KEM for node-to-node channels |
-| **TEE attestation** | SGX DCAP, AMD SEV-SNP, AWS Nitro -- first-class on-chain verification |
-| **zkML proofs** | Groth16, PLONK, and STARK backends for model-inference verification |
+| **Post-quantum signatures** | Hybrid ECDSA + ML-DSA-65 (Dilithium3, FIPS 204) on every transaction |
+| **Post-quantum key exchange** | ML-KEM-768 (Kyber768, FIPS 203) for node-to-node channels |
+| **TEE attestation** | SGX DCAP, AMD SEV-SNP, AWS Nitro, Azure Confidential VMs, Google Confidential VMs -- first-class on-chain verification |
+| **zkML proofs** | Groth16, PLONK, EZKL, Halo2, STARK backends for model-inference verification |
 | **Sovereign data** | Compile-time jurisdiction enforcement with hardware-backed constraints |
 | **Consensus** | BFT + Proof-of-Useful-Work (PoUW) -- validators earn rewards by running real AI workloads |
 

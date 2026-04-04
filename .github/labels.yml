@@ -1,0 +1,148 @@
+# Aethelred Foundation — Org-Wide Label Standard
+# Source of truth. Synced to all repos via .github/workflows/sync-labels.yml
+
+# ── Priority ──────────────────────────────────
+- name: p0
+  color: "B60205"
+  description: "Critical priority — drop everything"
+- name: p1
+  color: "D93F0B"
+  description: "High priority"
+- name: p2
+  color: "FBCA04"
+  description: "Medium priority"
+- name: p3
+  color: "0E8A16"
+  description: "Low priority"
+
+# ── Workflow ──────────────────────────────────
+- name: blocked
+  color: "000000"
+  description: "Blocked by dependency or decision"
+- name: needs-triage
+  color: "D876E3"
+  description: "Needs triage and prioritization"
+- name: release
+  color: "1D76DB"
+  description: "Release preparation or release issue"
+- name: mainnet
+  color: "0052CC"
+  description: "Mainnet-related work"
+- name: testnet
+  color: "0366D6"
+  description: "Testnet-related work"
+- name: good first issue
+  color: "7057FF"
+  description: "Good entry point for new contributors"
+- name: help wanted
+  color: "008672"
+  description: "Extra attention is needed"
+
+# ── Type ──────────────────────────────────────
+- name: bug
+  color: "D73A4A"
+  description: "Something is broken"
+- name: enhancement
+  color: "A2EEEF"
+  description: "New feature or enhancement"
+- name: task
+  color: "EDEDED"
+  description: "General tracked task"
+- name: refactor
+  color: "C2E0C6"
+  description: "Internal restructuring without behavior change"
+- name: docs
+  color: "0075CA"
+  description: "Documentation work"
+- name: security
+  color: "5319E7"
+  description: "Security-sensitive work"
+- name: question
+  color: "D876E3"
+  description: "Further information is requested"
+
+# ── Domain ────────────────────────────────────
+- name: protocol
+  color: "6F42C1"
+  description: "Core protocol work (consensus, ABCI++, modules)"
+- name: governance
+  color: "6A1B9A"
+  description: "Governance-related work"
+- name: aip
+  color: "7057FF"
+  description: "AIP-related issue or pull request"
+- name: contracts
+  color: "E99695"
+  description: "Smart contracts work (Solidity, bridge)"
+- name: cli
+  color: "BFDADC"
+  description: "CLI-related work"
+- name: sdk
+  color: "0E8A16"
+  description: "SDK-related work"
+- name: dx
+  color: "C5DEF5"
+  description: "Developer experience"
+- name: validator
+  color: "F9D0C4"
+  description: "Validator and operator work"
+- name: infra
+  color: "FEF2C0"
+  description: "Infrastructure or platform work (Helm, Terraform, Docker)"
+
+# ── Language ──────────────────────────────────
+- name: typescript
+  color: "1F6FEB"
+  description: "TypeScript-specific work"
+- name: python
+  color: "3572A5"
+  description: "Python-specific work"
+- name: rust
+  color: "DEA584"
+  description: "Rust-specific work"
+- name: go
+  color: "00ADD8"
+  description: "Go-specific work"
+- name: solidity
+  color: "AA6746"
+  description: "Solidity-specific work"
+- name: vscode
+  color: "007ACC"
+  description: "VS Code extension work"
+
+# ── Ops / Engineering ─────────────────────────
+- name: ci
+  color: "BFD4F2"
+  description: "CI/CD workflow work"
+- name: dependencies
+  color: "D4C5F9"
+  description: "Dependency management"
+- name: breaking-change
+  color: "B60205"
+  description: "Introduces incompatible behavior or API changes"
+- name: audit
+  color: "8B5CF6"
+  description: "Audit finding or audit readiness work"
+- name: performance
+  color: "F9D0C4"
+  description: "Performance optimization or benchmark work"
+- name: community
+  color: "F4BFFF"
+  description: "Community health and contributor experience"
+
+# ── Ecosystem Apps ────────────────────────────
+- name: shiora
+  color: "F9D0C4"
+  description: "Shiora app work"
+- name: noblepay
+  color: "C2E0C6"
+  description: "NoblePay app work"
+- name: zeroid
+  color: "BFDADC"
+  description: "ZeroID app work"
+- name: cruzible
+  color: "FEF2C0"
+  description: "Cruzible app work"
+- name: terraqura
+  color: "A2EEEF"
+  description: "TerraQura app work"

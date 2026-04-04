@@ -5,6 +5,9 @@
   <em>Version 2.0.0 | February 2026</em>
 </p>
 
+> **Classification: Internal / Technical Design Reference**
+> This document is not a canonical public disclosure source. It is maintained for internal engineering use and may contain design-stage parameters, targets, and assumptions that have not been approved for public disclosure. For public-facing protocol information, refer to the canonical whitepaper (`docs/WHITEPAPER.md`).
+
 ---
 
 ## Table of Contents
@@ -23,7 +26,11 @@
 
 ### 1.1 Vision
 
-Aethelred is a **Verifiable Compute Cloud** built on a Layer-1 blockchain. Unlike legacy chains (Ethereum, Solana) that sell "Blockspace," Aethelred sells **"Verified Intelligence"** - cryptographically proven AI computation results that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
+Aethelred is a **Verifiable Compute Cloud** built on a Layer-1 blockchain. Unlike legacy chains (Ethereum, Solana) that sell "Blockspace," Aethelred sells **"Verified Intelligence"** — cryptographically proven AI computation results that enterprises can trust for regulatory compliance, financial decisions, and healthcare diagnostics.
+
+Supported proof systems: **Groth16, PLONK, EZKL, Halo2, STARK** — all routing through the unified on-chain verifier surface.
+
+Post-quantum cryptography: **ML-DSA-65** (FIPS 204, formerly Dilithium3) for signatures · **ML-KEM-768** (FIPS 203, formerly Kyber768) for key exchange.
 
 ### 1.2 The Trust Trilemma
 
@@ -127,13 +134,15 @@ pub struct Sovereign<T> {
 ├───────────────┬─────────────────────────────────────────────────────────────┤
 │ Jurisdiction  │ Requirements                                                 │
 ├───────────────┼─────────────────────────────────────────────────────────────┤
-│ UAE           │ Data residency required, TEE mandatory, ADGM/DIFC compliance│
-│ Saudi Arabia  │ PDPL compliance, data localization                          │
-│ European Union│ GDPR compliance, adequacy decisions recognized               │
-│ United Kingdom│ UK-GDPR, post-Brexit data transfer rules                    │
-│ United States │ State-specific (CCPA, NY DFS), sector-specific (HIPAA)      │
-│ Singapore     │ PDPA compliance, MAS guidelines for financial               │
-│ China         │ PIPL, data localization, cross-border transfer rules        │
+│ UAE           │ Data residency required, TEE mandatory, ADGM/DIFC compliance (pending)│
+│ Saudi Arabia  │ PDPL compliance, data localization (pending)                │
+│ European Union│ GDPR compliance, adequacy decisions recognized (pending)    │
+│ United Kingdom│ UK-GDPR, post-Brexit data transfer rules (pending)          │
+│ United States │ CCPA, NY DFS, sector-specific HIPAA (pending)               │
+│ Singapore     │ PDPA compliance, MAS guidelines for financial (pending)     │
+│ China         │ PIPL, data localization, cross-border transfer rules (pending)│
+│ Switzerland   │ nDSG / revDSG compliance, FINMA guidelines (pending)       │
+│ India         │ DPDP Act 2023, data localization requirements (pending)     │
 │ Global        │ Minimal restrictions, hardware verification only            │
 └───────────────┴─────────────────────────────────────────────────────────────┘
 ```
@@ -199,7 +208,7 @@ Aethelred's architecture is built on eight foundational pillars, collectively kn
 | 3 | **Privacy** | Sovereign TEE Enclaves | Intel SGX / AMD SEV-SNP hardware isolation | Enables "Blind Compute" for medical/banking data |
 | 4 | **Speed** | AI Pre-Compiles | Native VM opcodes for MatMul, ReLU, Attention | 1,000x faster verification of neural networks |
 | 5 | **Economy** | Congestion-Squared Burn | Fee burn = Network Load² | High demand creates exponential deflation |
-| 6 | **Governance** | Bi-Cameral Senate | House of Tokens + House of Sovereigns | Prevents mob rule while ensuring enterprise stability |
+| 6 | **Governance** | Bi-Cameral Senate | House of Tokens + House of Validators | Prevents mob rule while ensuring enterprise stability |
 | 7 | **Interop** | Zero-Copy Data Bridge | Pointer swizzling for external data | Process petabytes of S3 data without on-chain movement |
 | 8 | **Storage** | Vector-Vault | Native vector embedding storage | Protocol acts as global database for LLMs |
 
@@ -511,15 +520,17 @@ Aethelred's architecture is built on eight foundational pillars, collectively kn
 
 ### 7.1 Benchmarks
 
-| Metric | Target | Achieved | Notes |
+> **Note:** Specific throughput and finality numbers are withheld from public distribution pending benchmark pack verification. The figures below are internal testnet targets and are subject to change before mainnet.
+
+| Metric | Target | Testnet Reference | Notes |
 |--------|--------|----------|-------|
-| Block Time | 3 seconds | 2.8 seconds | CometBFT with optimizations |
-| Finality | 3 seconds | 2.8 seconds | Instant finality (no reorgs) |
-| TPS (Transfers) | 10,000 | 12,500 | Standard ECDSA transfers |
-| TPS (Compute Jobs) | 500 | 650 | Depends on job complexity |
-| Inference Latency | < 100ms | 45ms | Llama-3 8B, batch size 1 |
-| Proof Generation | < 5s | 2.3s | TEE attestation |
-| ZK Proof (Optional) | < 30s | 18s | EZKL for small models |
+| Block Time | 3 seconds | ~2.8 seconds | CometBFT with optimizations |
+| Finality | Instant | Instant | No reorgs (BFT) |
+| TPS (Transfers) | 8,500+ | Internal target | Standard ECDSA transfers |
+| TPS (Compute Jobs) | 500+ | Internal target | Depends on job complexity |
+| Inference Latency | < 100ms | ~45ms | Llama-3 8B, batch size 1 |
+| TEE Attestation Latency | < 5s | ~10ms (on-chain verify) | Hardware attestation + chain verify |
+| ZK Proof Latency (Optional) | < 30s | 5–30 seconds | EZKL/Halo2 for small-to-mid models |
 
 ### 7.2 Scalability Roadmap
 

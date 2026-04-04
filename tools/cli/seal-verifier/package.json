@@ -16,7 +16,12 @@
     "build:browser-extension": "node -e \"console.log('Browser extension assets are static in browser-extension/')\"",
     "build:bin": "pkg dist/index.js --targets node20-linux-x64,node20-macos-x64,node20-win-x64 --out-path bin"
   },
-  "keywords": ["aethelred", "seal", "verification", "blockchain"],
+  "keywords": [
+    "aethelred",
+    "seal",
+    "verification",
+    "blockchain"
+  ],
   "author": "Aethelred Team",
   "license": "Apache-2.0",
   "dependencies": {
@@ -29,5 +34,24 @@
     "@types/node": "^20.11.0",
     "pkg": "^5.8.1",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "handlebars": "^4.7.9",
+    "flatted": "^3.4.2",
+    "serialize-javascript": "^7.0.5",
+    "undici": "^6.24.0",
+    "fast-xml-parser": "^5.5.7",
+    "picomatch": "^2.3.2",
+    "immutable": "^4.3.8",
+    "socket.io-parser": "^4.2.6",
+    "underscore": "^1.13.8",
+    "cookie": "^0.7.0",
+    "tmp": "^0.2.4",
+    "h3": "^1.15.9",
+    "brace-expansion": "^2.0.3",
+    "@tootallnate/once": "^3.0.1",
+    "esbuild": "^0.25.0",
+    "postcss": "^8.4.31",
+    "minimatch": "^9.0.7"
   }
 }

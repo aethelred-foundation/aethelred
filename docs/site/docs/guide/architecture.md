@@ -11,7 +11,7 @@ Aethelred is organized into four principal layers: the **Client Layer**, the **C
 ├──────────────────────────────────────────────────────────┤
 │                     Client Layer                          │
 │   RPC transport ─ Transaction builder ─ Query engine      │
-│   Wallet management ─ Hybrid ECDSA+Dilithium3 signing    │
+│   Wallet management ─ Hybrid ECDSA+ML-DSA-65 (Dilithium3) signing    │
 ├──────────────────────────────────────────────────────────┤
 │                    Compute Layer                           │
 │   Runtime ─ Device mgmt ─ Tensor engine ─ NN modules     │
@@ -31,7 +31,7 @@ Aethelred is organized into four principal layers: the **Client Layer**, the **C
 
 The Client Layer provides the interface between user applications and the Aethelred network. It handles:
 
-- **Transaction construction** -- build, sign, and broadcast transactions using hybrid ECDSA + Dilithium3 signatures
+- **Transaction construction** -- build, sign, and broadcast transactions using hybrid ECDSA + ML-DSA-65 (Dilithium3) signatures
 - **Query engine** -- read on-chain state (accounts, jobs, seals, models) via RPC or gRPC
 - **Key management** -- generate, store, and rotate post-quantum key pairs (see [Key Management](/cryptography/key-management))
 - **Connection pooling** -- automatic failover across multiple RPC endpoints
@@ -117,7 +117,7 @@ Block {
     Header {
         height:          uint64
         timestamp:       RFC3339
-        proposer:        Address (Dilithium3 public key hash)
+        proposer:        Address (ML-DSA-65 (Dilithium3) public key hash)
         parent_hash:     SHA3-256
         state_root:      Merkle root
         attestation_root: Merkle root of TEE quotes
@@ -137,7 +137,7 @@ Validators stake AETH tokens and earn rewards proportional to the useful work th
 
 ```
 1. User submits compute job via SDK
-2. Client signs tx with hybrid ECDSA+Dilithium3
+2. Client signs tx with hybrid ECDSA+ML-DSA-65 (Dilithium3)
 3. Transaction enters mempool
 4. Proposer includes job in next block
 5. Validators execute job inside TEE enclaves

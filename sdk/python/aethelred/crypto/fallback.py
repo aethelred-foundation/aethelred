@@ -232,20 +232,16 @@ class _PurePythonHybridSigner:
     ) -> None:
         from aethelred.crypto.pqc.dilithium import DilithiumSigner, DilithiumSecurityLevel
 
-        # Initialize ECDSA (secp256k1) — ecdsa package is REQUIRED (PY-03 fix)
-        try:
-            from ecdsa import SigningKey, SECP256k1
-        except ImportError:
-            raise ImportError(
-                "The 'ecdsa' package is required for ECDSA operations. "
-                "Install it with: pip install ecdsa"
-            )
-
+        # Initialize ECDSA (secp256k1) via cryptography (FIPS-compliant, replaces ecdsa pkg)
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            generate_private_key as _ec_gen, derive_private_key as _ec_derive, SECP256K1
+        )
         if ecdsa_private_key:
-            self._ecdsa_sk = SigningKey.from_string(ecdsa_private_key, curve=SECP256k1)
+            private_value = int.from_bytes(ecdsa_private_key, "big")
+            self._ecdsa_sk = _ec_derive(private_value, SECP256K1())
         else:
-            self._ecdsa_sk = SigningKey.generate(curve=SECP256k1)
-        self._ecdsa_vk = self._ecdsa_sk.get_verifying_key()
+            self._ecdsa_sk = _ec_gen(SECP256K1())
+        self._ecdsa_vk = self._ecdsa_sk.public_key()
 
         # Initialize Dilithium3
         self._dilithium = DilithiumSigner(
@@ -255,8 +251,13 @@ class _PurePythonHybridSigner:
         )
 
     def sign(self, message: bytes) -> bytes:
-        # ECDSA signature
-        ecdsa_sig = self._ecdsa_sk.sign(message, hashfunc=hashlib.sha256)
+        # ECDSA signature (raw r||s, 64 bytes) via cryptography RFC 6979
+        from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+        der_sig = self._ecdsa_sk.sign(message, ECDSA(hashes.SHA256()))
+        r, s = decode_dss_signature(der_sig)
+        ecdsa_sig = r.to_bytes(32, "big") + s.to_bytes(32, "big")
 
         # Dilithium signature
         dil_sig = self._dilithium.sign(message)
@@ -273,8 +274,13 @@ class _PurePythonHybridSigner:
             ecdsa_sig = signature[self.HEADER_SIZE : self.HEADER_SIZE + ecdsa_len]
             dil_sig_bytes = signature[self.HEADER_SIZE + ecdsa_len :]
 
-            # Verify ECDSA
-            self._ecdsa_vk.verify(ecdsa_sig, message, hashfunc=hashlib.sha256)
+            # Verify ECDSA (raw r||s → DER for cryptography)
+            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+            r = int.from_bytes(ecdsa_sig[:32], "big")
+            s = int.from_bytes(ecdsa_sig[32:], "big")
+            self._ecdsa_vk.verify(encode_dss_signature(r, s), message, ECDSA(hashes.SHA256()))
 
             # Verify Dilithium
             return self._dilithium.verify(message, dil_sig_bytes)
@@ -287,7 +293,8 @@ class _PurePythonHybridSigner:
             return False
 
     def public_key_bytes(self) -> bytes:
-        ecdsa_pk = self._ecdsa_vk.to_string()
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        ecdsa_pk = self._ecdsa_vk.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)[1:]
         dil_pk = self._dilithium.public_key_bytes()
         return ecdsa_pk + dil_pk
 
@@ -313,14 +320,12 @@ class _PurePythonHybridVerifier:
         self._ecdsa_pk_bytes = public_key[:-dil_pk_size]
         self._dil_pk_bytes = public_key[-dil_pk_size:]
 
-        try:
-            from ecdsa import VerifyingKey, SECP256k1
-            self._ecdsa_vk = VerifyingKey.from_string(self._ecdsa_pk_bytes, curve=SECP256k1)
-        except ImportError:
-            raise ImportError(
-                "The 'ecdsa' package is required for ECDSA verification. "
-                "Install it with: pip install ecdsa"
-            )
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            EllipticCurvePublicKey, SECP256K1
+        )
+        # _ecdsa_pk_bytes is 64-byte uncompressed (no prefix); prepend 04 for X9.62
+        uncompressed = b"\x04" + self._ecdsa_pk_bytes
+        self._ecdsa_vk = EllipticCurvePublicKey.from_encoded_point(SECP256K1(), uncompressed)
 
         # Verification-only: use DilithiumSigner.verify_with_public_key static method
         # instead of creating a signer with dummy secret key (PY-17 fix)
@@ -334,7 +339,12 @@ class _PurePythonHybridVerifier:
             ecdsa_sig = signature[self.HEADER_SIZE : self.HEADER_SIZE + ecdsa_len]
             dil_sig_bytes = signature[self.HEADER_SIZE + ecdsa_len :]
 
-            self._ecdsa_vk.verify(ecdsa_sig, message, hashfunc=hashlib.sha256)
+            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+            r = int.from_bytes(ecdsa_sig[:32], "big")
+            s = int.from_bytes(ecdsa_sig[32:], "big")
+            self._ecdsa_vk.verify(encode_dss_signature(r, s), message, ECDSA(hashes.SHA256()))
 
             # Use static verification (no dummy secret key needed)
             from aethelred.crypto.pqc.dilithium import DilithiumSigner
@@ -368,13 +378,16 @@ class _NativeHybridSigner:
     ) -> None:
         import oqs  # type: ignore[import-untyped]
 
-        # ECDSA via python-ecdsa
-        from ecdsa import SigningKey, SECP256k1
+        # ECDSA via cryptography (FIPS-compliant, replaces ecdsa pkg)
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            generate_private_key as _ec_gen, derive_private_key as _ec_derive, SECP256K1
+        )
         if ecdsa_private_key:
-            self._ecdsa_sk = SigningKey.from_string(ecdsa_private_key, curve=SECP256k1)
+            private_value = int.from_bytes(ecdsa_private_key, "big")
+            self._ecdsa_sk = _ec_derive(private_value, SECP256K1())
         else:
-            self._ecdsa_sk = SigningKey.generate(curve=SECP256k1)
-        self._ecdsa_vk = self._ecdsa_sk.get_verifying_key()
+            self._ecdsa_sk = _ec_gen(SECP256K1())
+        self._ecdsa_vk = self._ecdsa_sk.public_key()
 
         # Dilithium3 via liboqs
         self._sig = oqs.Signature("Dilithium3", dilithium_secret_key)
@@ -384,23 +397,35 @@ class _NativeHybridSigner:
             self._public_key = self._sig.generate_keypair()
 
     def sign(self, message: bytes) -> bytes:
-        ecdsa_sig = self._ecdsa_sk.sign(message, hashfunc=hashlib.sha256)
+        from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+        der_sig = self._ecdsa_sk.sign(message, ECDSA(hashes.SHA256()))
+        r, s = decode_dss_signature(der_sig)
+        ecdsa_sig = r.to_bytes(32, "big") + s.to_bytes(32, "big")
         dil_sig = self._sig.sign(message)
         header = len(ecdsa_sig).to_bytes(self.HEADER_SIZE, "big")
         return header + ecdsa_sig + dil_sig
 
     def verify(self, message: bytes, signature: bytes) -> bool:
         try:
+            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
             ecdsa_len = int.from_bytes(signature[: self.HEADER_SIZE], "big")
             ecdsa_sig = signature[self.HEADER_SIZE : self.HEADER_SIZE + ecdsa_len]
             dil_sig = signature[self.HEADER_SIZE + ecdsa_len :]
-            self._ecdsa_vk.verify(ecdsa_sig, message, hashfunc=hashlib.sha256)
+            r = int.from_bytes(ecdsa_sig[:32], "big")
+            s = int.from_bytes(ecdsa_sig[32:], "big")
+            self._ecdsa_vk.verify(encode_dss_signature(r, s), message, ECDSA(hashes.SHA256()))
             return self._sig.verify(message, dil_sig, self._public_key)
         except Exception:
             return False
 
     def public_key_bytes(self) -> bytes:
-        return self._ecdsa_vk.to_string() + self._public_key
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        ecdsa_pk = self._ecdsa_vk.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)[1:]
+        return ecdsa_pk + self._public_key
 
 
 class _NativeHybridVerifier:
@@ -410,20 +435,31 @@ class _NativeHybridVerifier:
 
     def __init__(self, public_key: bytes) -> None:
         import oqs  # type: ignore[import-untyped]
-        from ecdsa import VerifyingKey, SECP256k1
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            EllipticCurvePublicKey, SECP256K1
+        )
 
         sig = oqs.Signature("Dilithium3")
         dil_pk_size = sig.length_public_key
-        self._ecdsa_vk = VerifyingKey.from_string(public_key[:-dil_pk_size], curve=SECP256k1)
+        # ecdsa_pk_bytes is 64-byte uncompressed (no prefix); prepend 04 for X9.62
+        ecdsa_pk_bytes = public_key[:-dil_pk_size]
+        self._ecdsa_vk = EllipticCurvePublicKey.from_encoded_point(
+            SECP256K1(), b"\x04" + ecdsa_pk_bytes
+        )
         self._dil_pk = public_key[-dil_pk_size:]
         self._sig = sig
 
     def verify(self, message: bytes, signature: bytes) -> bool:
         try:
+            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
             ecdsa_len = int.from_bytes(signature[: self.HEADER_SIZE], "big")
             ecdsa_sig = signature[self.HEADER_SIZE : self.HEADER_SIZE + ecdsa_len]
             dil_sig = signature[self.HEADER_SIZE + ecdsa_len :]
-            self._ecdsa_vk.verify(ecdsa_sig, message, hashfunc=hashlib.sha256)
+            r = int.from_bytes(ecdsa_sig[:32], "big")
+            s = int.from_bytes(ecdsa_sig[32:], "big")
+            self._ecdsa_vk.verify(encode_dss_signature(r, s), message, ECDSA(hashes.SHA256()))
             return self._sig.verify(message, dil_sig, self._dil_pk)
         except Exception:
             return False

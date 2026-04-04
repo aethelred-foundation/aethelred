@@ -1,0 +1,81 @@
+name: Security Review Request
+description: Request security review for sensitive changes (not for reporting vulnerabilities)
+title: "[SECURITY-REVIEW] "
+labels: ["security", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **This form is for requesting review of security-sensitive code changes.**
+        > To **report a vulnerability**, email **security@aethelred.io** — do NOT use this form. See [SECURITY.md](../../SECURITY.md).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Security Area
+      options:
+        - Consensus (PoUW, VRF, vote extensions, finality)
+        - State transitions (ABCI++, BeginBlock/EndBlock)
+        - Contracts (Solidity bridge, ERC20, staking)
+        - Authentication / signatures (Ed25519, Dilithium3, BLS)
+        - Key management / secrets / vault
+        - TEE attestation (SGX, Nitro, SEV-SNP)
+        - ZK proof verification
+        - Encrypted mempool
+        - CI/CD pipeline
+        - Dependencies / supply chain
+        - SDK (client-facing attack surface)
+        - Infrastructure (Docker, Helm, Terraform)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Change Summary
+      description: What is being changed and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: threat_model
+    attributes:
+      label: Threat Model / Abuse Cases
+      description: What could go wrong? What would an attacker try?
+    validations:
+      required: true
+
+  - type: textarea
+    id: touchpoints
+    attributes:
+      label: Files / Modules / Endpoints Affected
+      description: List the specific code paths that need review
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Potential Severity if Exploited
+      options:
+        - Critical (consensus halt, funds theft, double-spend)
+        - High (TEE bypass, ZK forgery, governance attack)
+        - Medium (DoS, data integrity)
+        - Low (information leak, non-exploitable misconfig)
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Tests / Fuzzing / Static Analysis Evidence
+      description: What verification has already been done?
+      placeholder: |
+        - Unit tests added: yes/no
+        - Fuzzing run: yes/no (duration, findings)
+        - Static analysis (govulncheck, cargo-audit, slither): results
+        - External review: yes/no
+
+  - type: input
+    id: related_pr
+    attributes:
+      label: Related PR
+      placeholder: "#123 or URL"
