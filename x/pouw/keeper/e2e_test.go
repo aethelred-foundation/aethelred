@@ -1437,7 +1437,9 @@ func TestEndToEnd_RealNodeDockerSmokeGate(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%s unreachable: %v", name, err)
 			}
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 			if resp.StatusCode != http.StatusOK {
 				t.Fatalf("%s returned HTTP %d", name, resp.StatusCode)
 			}
@@ -1542,7 +1544,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 		if err != nil {
 			t.Fatalf("RPC unreachable at %s: %v", rpcURL, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("RPC returned %d", resp.StatusCode)
 		}
@@ -1553,7 +1555,7 @@ func TestEndToEnd_MultiValidatorTopology(t *testing.T) {
 		if err != nil {
 			t.Fatalf("FastAPI verifier unreachable at %s: %v", fastapiURL, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("FastAPI verifier returned %d", resp.StatusCode)
 		}
