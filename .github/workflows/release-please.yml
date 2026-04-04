@@ -14,14 +14,25 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Detect release token
+        id: release_token
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          if [ -n "$RELEASE_PLEASE_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Explain release automation skip
-        if: ${{ secrets.RELEASE_PLEASE_TOKEN == '' }}
+        if: ${{ steps.release_token.outputs.enabled != 'true' }}
         run: |
           echo "Release Please is skipped on this repository because RELEASE_PLEASE_TOKEN is not configured."
           echo "Configure a dedicated token with pull-request creation rights to enable automated release PRs."
 
       - name: Run release please
-        if: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
+        if: ${{ steps.release_token.outputs.enabled == 'true' }}
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
