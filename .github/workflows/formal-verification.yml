@@ -308,7 +308,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [core, consensus, vm]
+        include:
+          - crate: core
+            kani_args: ""
+          - crate: consensus
+            kani_args: ""
+          - crate: vm
+            # The VM stack currently pulls in `corosensei`, which contains
+            # third-party global ASM that Kani cannot model yet.
+            kani_args: "-Z unstable-options --ignore-global-asm"
     steps:
       - uses: actions/checkout@v4
 
@@ -316,6 +324,7 @@ jobs:
         uses: model-checking/kani-github-action@v1
         with:
           working-directory: crates/${{ matrix.crate }}
+          args: ${{ matrix.kani_args }}
 
       - name: Report harness results
         if: always()
