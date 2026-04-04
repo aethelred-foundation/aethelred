@@ -49,7 +49,7 @@ jobs:
 
       - name: Upload fuzz corpus
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-fuzz-corpus
           path: |
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload fuzz corpus
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-fuzz-corpus
           path: |
@@ -229,7 +229,7 @@ jobs:
 
       - name: Upload Go extended corpus
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-extended-fuzz-corpus
           path: |
@@ -321,7 +321,7 @@ jobs:
 
       - name: Upload Rust extended corpus
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-extended-fuzz-corpus
           path: |
@@ -349,7 +349,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: always() && (steps.go_crashes.outputs.crash_count != '0' || steps.rust_crashes.outputs.crash_count != '0')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-crash-artifacts
           path: |

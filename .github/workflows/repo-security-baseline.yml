@@ -48,7 +48,7 @@ jobs:
           set -euo pipefail
           syft dir:. -o cyclonedx-json=sbom.cdx.json
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.event.repository.name }}
           path: sbom.cdx.json
