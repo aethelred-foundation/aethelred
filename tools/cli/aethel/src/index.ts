@@ -221,6 +221,7 @@ diagnostics
   .action(async (_, command) => {
     const globalOpts = command.parent?.parent?.opts() as GlobalOptions;
     const rpcUrl = effectiveRpcUrl(globalOpts);
+    const skipDashboard = process.env.AETHELRED_SMOKE_SKIP_DASHBOARD === "1";
     const checks: Array<{ check: string; ok: boolean; detail: string }> = [];
 
     try {
@@ -244,11 +245,13 @@ diagnostics
       checks.push({ check: "rpc-health", ok: false, detail: `${rpcUrl}: ${(error as Error).message}` });
     }
 
-    for (const [name, url] of [
+    const endpointChecks = [
       ["fastapi-verifier", "http://127.0.0.1:8000/health"],
       ["nextjs-verifier", "http://127.0.0.1:3000/api/health"],
-      ["developer-dashboard", "http://127.0.0.1:3101/devtools"],
-    ] as const) {
+      ...(skipDashboard ? [] : ([["developer-dashboard", "http://127.0.0.1:3101/devtools"]] as const)),
+    ];
+
+    for (const [name, url] of endpointChecks) {
       try {
         await fetch(url, { method: "GET" });
         checks.push({ check: name, ok: true, detail: url });
