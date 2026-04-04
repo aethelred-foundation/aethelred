@@ -7,8 +7,8 @@ use crate::reputation::{
     ReputationSnapshot, ScoreUpdate, ValidatorReputation, DEFAULT_DECAY_RATE, DEFAULT_WINDOW_DAYS,
     MAX_SCORE, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC, MULTIPLIER_TEE, MULTIPLIER_ZK, SLOTS_PER_DAY,
 };
-use std::collections::HashMap;
 use crate::traits::VerificationMethod;
+use std::collections::HashMap;
 
 // =============================================================================
 // HELPERS
