@@ -24,9 +24,45 @@ permissions:
   contents: read
 
 jobs:
+  deployment-policy:
+    name: Deployment Policy
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_deploy: ${{ steps.policy.outputs.should_run_deploy }}
+      selected_target: ${{ steps.policy.outputs.selected_target }}
+    steps:
+      - id: policy
+        name: Resolve deploy policy
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "selected_target=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ vars.ENABLE_AUTO_STAGING_DEPLOY }}" = "true" ]; then
+            echo "should_run_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "selected_target=staging" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_run_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "selected_target=none" >> "$GITHUB_OUTPUT"
+
+      - name: Report deploy policy
+        run: |
+          if [ "${{ steps.policy.outputs.should_run_deploy }}" = "true" ]; then
+            echo "Deploy workflow active for target: ${{ steps.policy.outputs.selected_target }}"
+          else
+            echo "Auto deploy disabled for push events; set ENABLE_AUTO_STAGING_DEPLOY=true or use workflow_dispatch."
+          fi
+
   audit-signoff-gate:
     name: Audit Signoff Gate
+    if: ${{ needs.deployment-policy.outputs.should_run_deploy == 'true' }}
     runs-on: ubuntu-latest
+    needs:
+      - deployment-policy
     steps:
       - uses: actions/checkout@v4
       - name: Verify external audit signoff (contracts + consensus)
@@ -34,10 +70,11 @@ jobs:
 
   deploy-staging:
     name: Deploy Staging
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.target == 'staging') }}
+    if: ${{ needs.deployment-policy.outputs.selected_target == 'staging' }}
     runs-on: ubuntu-latest
     environment: staging
     needs:
+      - deployment-policy
       - audit-signoff-gate
     steps:
       - uses: actions/checkout@v4
@@ -69,10 +106,11 @@ jobs:
 
   deploy-canary:
     name: Deploy Canary
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'canary' }}
+    if: ${{ needs.deployment-policy.outputs.selected_target == 'canary' }}
     runs-on: ubuntu-latest
     environment: canary
     needs:
+      - deployment-policy
       - audit-signoff-gate
     steps:
       - uses: actions/checkout@v4
@@ -100,10 +138,11 @@ jobs:
 
   deploy-production:
     name: Promote Production
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'production' }}
+    if: ${{ needs.deployment-policy.outputs.selected_target == 'production' }}
     runs-on: ubuntu-latest
     environment: production
     needs:
+      - deployment-policy
       - audit-signoff-gate
     steps:
       - uses: actions/checkout@v4
