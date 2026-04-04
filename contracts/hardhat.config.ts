@@ -14,10 +14,10 @@
  */
 
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-network-helpers";
 import "@openzeppelin/hardhat-upgrades";
-import "@nomicfoundation/hardhat-verify";
-import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 import "solidity-coverage";
 import * as dotenv from "dotenv";
@@ -56,9 +56,6 @@ const MAINNET_RPC_URL = process.env.MAINNET_RPC_URL ||
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
-const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || "";
-
-const REPORT_GAS = process.env.REPORT_GAS === "true";
 const ALLOW_UNLIMITED_CONTRACT_SIZE =
   process.env.ALLOW_UNLIMITED_CONTRACT_SIZE === "true";
 
@@ -195,20 +192,6 @@ const config: HardhatUserConfig = {
         },
       },
     ],
-  },
-
-  // Gas Reporter Configuration
-  gasReporter: {
-    enabled: REPORT_GAS,
-    currency: "USD",
-    coinmarketcap: COINMARKETCAP_API_KEY,
-    token: "ETH",
-    gasPriceApi: "https://api.etherscan.io/api?module=proxy&action=eth_gasPrice",
-    outputFile: process.env.CI ? "gas-report.txt" : undefined,
-    noColors: process.env.CI ? true : false,
-    showTimeSpent: true,
-    showMethodSig: true,
-    excludeContracts: ["Mock", "Test"],
   },
 
   // Contract Sizer Configuration
