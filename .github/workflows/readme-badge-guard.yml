@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "README.md"
-      - "dApps/*/README.md"
+      - "dApps/README.md"
 
 jobs:
   validate-badges:
@@ -39,7 +39,7 @@ jobs:
             done < <(grep -oP "$pattern" "$readme" 2>/dev/null || true)
           }
 
-          for readme in README.md dApps/*/README.md; do
+          for readme in README.md dApps/README.md; do
             [ -f "$readme" ] || continue
             check_workflow_refs "$readme" 'workflows/\K[^/]+(?=/badge\.svg)' ""
             check_workflow_refs "$readme" 'workflow/status/[^/]+/[^/]+/\K[^?]+' " (Shields)"
@@ -48,7 +48,7 @@ jobs:
 
           # 2. No Discord member-count badges (require numeric guild ID, break easily)
           echo "--- Checking for banned Discord metric badges ---"
-          for readme in README.md dApps/*/README.md; do
+          for readme in README.md dApps/README.md; do
             [ -f "$readme" ] || continue
             if grep -qP 'img\.shields\.io/discord/' "$readme"; then
               echo "ERROR: $readme contains a Shields.io Discord member-count badge (banned - use static badge or remove)"
@@ -61,7 +61,7 @@ jobs:
 
           # 3. No Codecov badges unless codecov.yml config exists
           echo "--- Checking for orphan Codecov badges ---"
-          for readme in README.md dApps/*/README.md; do
+          for readme in README.md dApps/README.md; do
             [ -f "$readme" ] || continue
             if grep -qP 'codecov\.(io|com)' "$readme"; then
               if [ ! -f "codecov.yml" ] && [ ! -f ".codecov.yml" ]; then

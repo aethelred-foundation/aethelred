@@ -187,7 +187,6 @@ type DCAPVerifier struct {
 
 	// Metrics
 	metrics *DCAPMetrics
-
 }
 
 // DCAPConfig contains configuration for DCAP verification
@@ -882,7 +881,9 @@ func (v *DCAPVerifier) httpGet(ctx context.Context, url string) ([]byte, error) 
 		}
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if v.breaker != nil {
@@ -1036,7 +1037,7 @@ func (v *DCAPVerifier) fetchCRLFromIntel(url string) (*x509.RevocationList, erro
 		}
 		lastErr = err
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 		}
 		time.Sleep(time.Duration(attempt+1) * 500 * time.Millisecond)
@@ -1054,7 +1055,9 @@ func (v *DCAPVerifier) fetchCRLFromIntel(url string) (*x509.RevocationList, erro
 		}
 		return nil, fmt.Errorf("failed to fetch CRL after %d attempts", v.config.MaxRetries)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Read response with size limit (10MB max for CRL)
 	const maxCRLSize = 10 * 1024 * 1024

@@ -29,12 +29,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Syft with retry
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors \
+            https://github.com/anchore/syft/releases/download/v1.42.3/syft_1.42.3_linux_amd64.tar.gz \
+            -o /tmp/syft.tar.gz
+          tar -xzf /tmp/syft.tar.gz -C "${RUNNER_TEMP}/bin" syft
+          chmod +x "${RUNNER_TEMP}/bin/syft"
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
       - name: Generate SBOM (CycloneDX JSON)
-        uses: anchore/sbom-action@v0
-        with:
-          path: .
-          format: cyclonedx-json
-          output-file: sbom.cdx.json
+        shell: bash
+        env:
+          SYFT_CHECK_FOR_APP_UPDATE: "false"
+        run: |
+          set -euo pipefail
+          syft dir:. -o cyclonedx-json=sbom.cdx.json
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
@@ -47,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24.6'
+          go-version: '1.25.8'
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.85.0'

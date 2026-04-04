@@ -388,7 +388,9 @@ func (r *Runner) runAgainstNode() (*Report, error) {
 			r.metrics.RecordJobCompletion(time.Since(start), false)
 			return
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
 			atomic.AddInt64(&r.metrics.NetworkErrors, 1)

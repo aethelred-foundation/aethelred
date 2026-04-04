@@ -596,7 +596,9 @@ func (ps *ProverService) CallRemoteProver(ctx context.Context, req *ProofRequest
 		}
 		return nil, fmt.Errorf("prover request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		// SECURITY FIX M-02: Bound error body read to prevent memory-pressure DoS.
@@ -661,7 +663,9 @@ func (ps *ProverService) CallRemoteVerifier(ctx context.Context, proof []byte, p
 		}
 		return false, fmt.Errorf("verifier request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		// SECURITY FIX M-02: Bound error body read to prevent memory-pressure DoS.

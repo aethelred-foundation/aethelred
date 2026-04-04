@@ -118,11 +118,21 @@ func (c *CLI) RunDemo(withVerification bool) error {
 		}
 
 		// Display results
-		fmt.Fprintf(w, "Credit Score:\t%d (%s)\n", result.Score, result.ScoreCategory)
-		fmt.Fprintf(w, "Default Probability:\t%.2f%%\n", result.DefaultProbability*100)
-		fmt.Fprintf(w, "Decision:\t%s\n", strings.ToUpper(string(result.Decision)))
-		fmt.Fprintf(w, "Confidence:\t%.1f%%\n", result.Confidence*100)
-		w.Flush()
+		if _, err := fmt.Fprintf(w, "Credit Score:\t%d (%s)\n", result.Score, result.ScoreCategory); err != nil {
+			return fmt.Errorf("write credit score output: %w", err)
+		}
+		if _, err := fmt.Fprintf(w, "Default Probability:\t%.2f%%\n", result.DefaultProbability*100); err != nil {
+			return fmt.Errorf("write default probability output: %w", err)
+		}
+		if _, err := fmt.Fprintf(w, "Decision:\t%s\n", strings.ToUpper(string(result.Decision))); err != nil {
+			return fmt.Errorf("write decision output: %w", err)
+		}
+		if _, err := fmt.Fprintf(w, "Confidence:\t%.1f%%\n", result.Confidence*100); err != nil {
+			return fmt.Errorf("write confidence output: %w", err)
+		}
+		if err := w.Flush(); err != nil {
+			return fmt.Errorf("flush demo output: %w", err)
+		}
 
 		if result.RecommendedRate != nil {
 			fmt.Printf("Recommended Rate: %.2f%%\n", *result.RecommendedRate)
@@ -222,19 +232,30 @@ func (c *CLI) ListScenarios() {
 	fmt.Println(strings.Repeat("-", 90))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "ID\tName\tCategory\tExpected\tLoan\n")
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+	if _, err := fmt.Fprintf(w, "ID\tName\tCategory\tExpected\tLoan\n"); err != nil {
+		fmt.Printf("failed to render scenarios header: %v\n", err)
+		return
+	}
+	if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 		strings.Repeat("-", 25),
 		strings.Repeat("-", 30),
 		strings.Repeat("-", 10),
 		strings.Repeat("-", 10),
-		strings.Repeat("-", 15))
+		strings.Repeat("-", 15)); err != nil {
+		fmt.Printf("failed to render scenarios divider: %v\n", err)
+		return
+	}
 
 	for _, s := range scenarios {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t$%.0f\n",
-			s.ID, s.Name, s.Category, s.ExpectedDecision, s.LoanAmount)
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t$%.0f\n",
+			s.ID, s.Name, s.Category, s.ExpectedDecision, s.LoanAmount); err != nil {
+			fmt.Printf("failed to render scenario row: %v\n", err)
+			return
+		}
 	}
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		fmt.Printf("failed to flush scenarios output: %v\n", err)
+	}
 }
 
 // ListModels lists registered models
@@ -283,9 +304,9 @@ func (c *CLI) ExportResults(filename string) error {
 	apps := c.pipeline.ListApplications()
 
 	output := struct {
-		ExportedAt   time.Time                   `json:"exported_at"`
+		ExportedAt   time.Time                    `json:"exported_at"`
 		Applications []*demotypes.LoanApplication `json:"applications"`
-		Metrics      *PipelineMetrics            `json:"metrics"`
+		Metrics      *PipelineMetrics             `json:"metrics"`
 	}{
 		ExportedAt:   time.Now().UTC(),
 		Applications: apps,

@@ -1,5 +1,4 @@
 //go:build !race
-// +build !race
 
 package credit_scoring_test
 

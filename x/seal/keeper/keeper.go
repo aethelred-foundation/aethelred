@@ -343,7 +343,9 @@ func (k Keeper) ListSealsByModel(ctx context.Context, modelHash []byte) ([]*type
 	if err != nil {
 		return nil, err
 	}
-	defer iter.Close()
+	defer func() {
+		_ = iter.Close()
+	}()
 
 	for ; iter.Valid(); iter.Next() {
 		id, err := iter.PrimaryKey()
@@ -381,7 +383,9 @@ func (k Keeper) ListSealsByRequester(ctx context.Context, requester string) ([]*
 	if err != nil {
 		return nil, err
 	}
-	defer iter.Close()
+	defer func() {
+		_ = iter.Close()
+	}()
 
 	for ; iter.Valid(); iter.Next() {
 		id, err := iter.PrimaryKey()

@@ -457,7 +457,9 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 		}
 		return nil, fmt.Errorf("executor request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		// SECURITY FIX M-02: Bound error body read to prevent memory-pressure DoS.
@@ -522,7 +524,9 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 		}
 		return false, fmt.Errorf("verifier request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		// SECURITY FIX M-02: Bound error body read to prevent memory-pressure DoS.
@@ -602,7 +606,9 @@ func (nes *NitroEnclaveService) Shutdown() error {
 	defer nes.enclaveMutex.Unlock()
 
 	if nes.vsockConn != nil {
-		nes.vsockConn.Close()
+		if err := nes.vsockConn.Close(); err != nil {
+			nes.logger.Error("failed to close vsock connection", "error", err)
+		}
 	}
 
 	nes.enclaveReady = false

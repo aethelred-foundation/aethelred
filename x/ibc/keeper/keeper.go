@@ -681,7 +681,9 @@ func (k Keeper) NotifySubscribers(
 	if err != nil {
 		return nil // No subscriptions
 	}
-	defer iter.Close()
+	defer func() {
+		_ = iter.Close()
+	}()
 
 	for ; iter.Valid(); iter.Next() {
 		stateStr, err := iter.Value()

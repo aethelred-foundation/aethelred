@@ -56,7 +56,6 @@
 //! # Features
 //!
 //! - **wasmer-runtime**: Use Wasmer as the WASM runtime (default)
-//! - **wasmtime-runtime**: Use Wasmtime as the WASM runtime (alternative)
 //! - **mock-tee**: Mock TEE for development without real hardware
 //! - **sgx**: Enable Intel SGX DCAP verification
 //! - **zkp**: Enable ZK proof verification (arkworks)

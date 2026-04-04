@@ -62,7 +62,9 @@ func (k Keeper) callRemoteZKVerifier(ctx context.Context, endpoint string, proof
 		}
 		return false, fmt.Errorf("verifier request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		limitedBody := limitedReader(resp.Body, 4096)
@@ -138,7 +140,9 @@ func (k Keeper) callRemoteAttestationVerifier(ctx context.Context, endpoint stri
 		}
 		return false, fmt.Errorf("attestation verifier request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		limitedBody := limitedReader(resp.Body, 4096)

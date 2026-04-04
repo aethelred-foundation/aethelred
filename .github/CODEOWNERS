@@ -34,12 +34,8 @@
 /sdk/rust/                              @AethelredFoundation/sdk
 /sdk/aethelred-sdk/                     @AethelredFoundation/sdk
 
-# ── dApps ─────────────────────────────────────
-/dApps/                                 @AethelredFoundation/sdk
-/dApps/zeroid/                          @AethelredFoundation/sdk @AethelredFoundation/security
-/dApps/noblepay/                        @AethelredFoundation/sdk @AethelredFoundation/security
-/dApps/cruzible/                        @AethelredFoundation/sdk
-/dApps/shiora/                          @AethelredFoundation/sdk
+# ── External app registry pointers ───────────
+/dApps/                                 @AethelredFoundation/core-admins @AethelredFoundation/docs
 
 # ── Frontend / tooling ────────────────────────
 /frontend/                              @AethelredFoundation/sdk @AethelredFoundation/docs

@@ -1,19 +1,5 @@
 # Cruzible
 
-**TEE-verified liquid staking vault for the Aethelred sovereign L1**
+Canonical repository: <https://github.com/aethelred-foundation/cruzible>
 
-> This directory is a **monorepo mirror**. The canonical source of truth is
-> [aethelred-foundation/cruzible](https://github.com/aethelred-foundation/cruzible).
->
-> Issues, PRs, releases, and CI run in the dedicated repo.
-> This copy exists for monorepo-wide builds and integration testing only.
-
-## Quick Links
-
-- **Repo**: <https://github.com/aethelred-foundation/cruzible>
-- **Docs**: <https://docs.aethelred.io>
-- **Discord**: <https://discord.gg/aethelred>
-
-## License
-
-Apache-2.0 — see [LICENSE](../../LICENSE)
+This directory is a pointer stub only. Cruzible source, package manifests, lockfiles, and CI live in the dedicated `cruzible` repository. The Aethelred monorepo keeps only shared protocol fixtures under `testdata/` for cross-language conformance tests.
