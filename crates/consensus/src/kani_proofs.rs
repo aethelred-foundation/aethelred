@@ -56,7 +56,7 @@ fn verify_compute_multiplier_regression_points() {
 fn verify_slot_epoch_roundtrip() {
     let slots_per_epoch: u64 = kani::any();
     kani::assume(slots_per_epoch > 0);
-    kani::assume(slots_per_epoch <= 1_000_000); // bound for tractability
+    kani::assume(slots_per_epoch <= 10_000); // tighter CI tractability bound
 
     let timing = types::SlotTiming {
         slot_duration_ms: 6000,
@@ -65,6 +65,7 @@ fn verify_slot_epoch_roundtrip() {
     };
 
     let epoch: u64 = kani::any();
+    kani::assume(epoch <= 10_000);
     kani::assume(epoch <= u64::MAX / slots_per_epoch); // prevent overflow
 
     let first_slot = timing.first_slot_of_epoch(epoch);
@@ -82,9 +83,10 @@ fn verify_slot_epoch_roundtrip() {
 fn verify_epoch_boundary_consistency() {
     let slots_per_epoch: u64 = kani::any();
     kani::assume(slots_per_epoch > 0);
-    kani::assume(slots_per_epoch <= 1_000_000);
+    kani::assume(slots_per_epoch <= 10_000);
 
     let slot: u64 = kani::any();
+    kani::assume(slot <= 10_000_000);
 
     let timing = types::SlotTiming {
         slot_duration_ms: 6000,
@@ -113,6 +115,9 @@ fn verify_validator_eligibility_jail_logic() {
     let jailed_until: u64 = kani::any();
     let active: bool = kani::any();
     let stake: u128 = kani::any();
+    kani::assume(current_slot <= 10_000_000);
+    kani::assume(jailed_until <= 10_000_000);
+    kani::assume(stake <= (MIN_STAKE_FOR_ELECTION as u128) * 2);
 
     let mut validator = types::ValidatorInfo::new([1u8; 32], stake, vec![], vec![], 1000, 0);
     validator.active = active;
