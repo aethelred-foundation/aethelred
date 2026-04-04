@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775343405629,
+  "lastUpdate": 1775343507327,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -29,6 +29,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a54ff0a4d041db9703919fa455eba9ac35d1568b",
+          "message": "Remove invalid release workflow conditions (#57)\n\n* Fix workflow gating and benchmark write permissions\n\n* Remove invalid release workflow conditions",
+          "timestamp": "2026-04-05T02:57:07+04:00",
+          "tree_id": "4d64c017ed93f87cd83cc806842822081df51dd1",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/a54ff0a4d041db9703919fa455eba9ac35d1568b"
+        },
+        "date": 1775343506332,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
+            "range": "± 3",
             "unit": "ns/iter"
           }
         ]
