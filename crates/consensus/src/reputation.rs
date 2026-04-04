@@ -711,7 +711,7 @@ impl ReputationEngine {
     /// Update daily job count
     fn update_daily_count(&self, state: &mut ValidatorReputation, day: u32) {
         if let Some(entry) = state.daily_job_counts.iter_mut().find(|(d, _)| *d == day) {
-            entry.1 += 1;
+            entry.1 = entry.1.saturating_add(1);
         } else {
             // Remove old day counts
             while state.daily_job_counts.len() >= 7 {
@@ -723,11 +723,12 @@ impl ReputationEngine {
 
     /// Update active streak
     fn update_active_streak(&self, state: &mut ValidatorReputation, current_day: u32) {
+        let next_active_day = state.last_active_day.saturating_add(1);
         if state.last_active_day == 0 {
             state.active_streak = 1;
-        } else if current_day == state.last_active_day + 1 {
-            state.active_streak += 1;
-        } else if current_day > state.last_active_day + 1 {
+        } else if current_day == next_active_day {
+            state.active_streak = state.active_streak.saturating_add(1);
+        } else if current_day > next_active_day {
             state.active_streak = 1;
         }
         state.last_active_day = current_day;

@@ -53,7 +53,10 @@ fn verify_gas_meter_reject_preserves_state() {
     // Second consume that would exceed limit
     let second: u64 = kani::any();
     kani::assume(second > 0);
-    kani::assume(used_after_first + second > limit);
+    kani::assume(match used_after_first.checked_add(second) {
+        Some(total) => total > limit,
+        None => true,
+    });
 
     let result = meter.consume(second);
 

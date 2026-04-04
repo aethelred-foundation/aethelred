@@ -8,6 +8,7 @@ use crate::reputation::{
     MAX_SCORE, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC, MULTIPLIER_TEE, MULTIPLIER_ZK, SLOTS_PER_DAY,
 };
 use crate::traits::VerificationMethod;
+use std::collections::HashMap;
 
 // =============================================================================
 // HELPERS
@@ -453,6 +454,34 @@ fn test_engine_active_streak_broken() {
 
     let rep = engine.get_reputation(&[1u8; 32]).unwrap();
     assert_eq!(rep.active_streak, 1); // Reset after gap
+}
+
+#[test]
+fn test_engine_active_streak_saturates_at_u32_max() {
+    let engine = test_engine();
+    let validator = [9u8; 32];
+    let current_day = u32::MAX;
+    let slot = current_day as u64 * SLOTS_PER_DAY;
+
+    let mut state = ValidatorReputation::new(validator);
+    state.active_streak = u32::MAX;
+    state.last_active_day = u32::MAX;
+
+    let snapshot = ReputationSnapshot {
+        slot,
+        validators: HashMap::from([(validator, state)]),
+        config: ReputationConfig::devnet(),
+    };
+    engine.restore(snapshot).unwrap();
+    engine.update_slot(slot);
+
+    engine
+        .record_job(validator, make_job(100, true, slot))
+        .unwrap();
+
+    let rep = engine.get_reputation(&validator).unwrap();
+    assert_eq!(rep.active_streak, u32::MAX);
+    assert_eq!(rep.last_active_day, u32::MAX);
 }
 
 #[test]
