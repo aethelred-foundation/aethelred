@@ -13,7 +13,7 @@ on:
         default: "30s"
 
 env:
-  GO_VERSION: "1.24.6"
+  GO_VERSION: "1.25.8"
   RUST_VERSION: "1.85.0"
   GOFLAGS: "-mod=mod"
   # PR runs use short duration; nightly/manual can use longer
