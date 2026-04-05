@@ -68,3 +68,32 @@ variable "ebs_volume_size" {
   description = "EBS volume size in GB for each validator"
   default     = 500
 }
+
+variable "public_dns_zone_name" {
+  type        = string
+  description = "Public Route53 zone name used for testnet operator endpoints (for example: testnet.aethelred.io)"
+  default     = ""
+}
+
+variable "public_dns_ttl" {
+  type        = number
+  description = "TTL in seconds for public testnet DNS records"
+  default     = 60
+}
+
+variable "public_dns_records" {
+  type        = map(string)
+  description = "Map of relative record names to public CNAME targets for testnet endpoints"
+  default = {
+    rpc      = ""
+    api      = ""
+    grpc     = ""
+    explorer = ""
+    faucet   = ""
+    seed1    = ""
+    seed2    = ""
+    peer1    = ""
+    peer2    = ""
+    peer3    = ""
+  }
+}

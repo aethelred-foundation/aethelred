@@ -1,7 +1,7 @@
 # Testnet Release Candidate: aethelred-testnet-1
 
 **Release Branch:** `release/testnet-v1.0`
-**Image Tag:** `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0`
+**Image Tag:** `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1`
 **Chain ID:** `aethelred-testnet-1`
 **Genesis Time:** April 1, 2026 14:00 UTC
 **Freeze Policy:** [FREEZE_POLICY.md](./FREEZE_POLICY.md)
@@ -94,7 +94,7 @@ Per [FREEZE_POLICY.md](./FREEZE_POLICY.md) and [GATE_INVENTORY.md](./GATE_INVENT
 - [ ] Release branch `release/testnet-v1.0` exists and is frozen
 - [ ] Genesis artifact published with checksum
 - [ ] All 18 CI gates green on release branch
-- [ ] Public validator image pulls anonymously: `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0`
+- [ ] Public validator image pulls anonymously: `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1`
 - [ ] Public DNS resolves for RPC, explorer, faucet, seeds, and peers
 - [ ] Loadtest harness produces bounded pass/fail in under 5 minutes
 - [ ] Validator runbook current with testnet-specific instructions

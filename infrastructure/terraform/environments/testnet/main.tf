@@ -33,6 +33,27 @@ provider "aws" {
   }
 }
 
+locals {
+  public_dns_zone_enabled = trimspace(var.public_dns_zone_name) != ""
+  public_dns_records      = { for name, target in var.public_dns_records : name => trimspace(target) if trimspace(target) != "" }
+}
+
+data "aws_route53_zone" "public_testnet" {
+  count        = local.public_dns_zone_enabled ? 1 : 0
+  name         = var.public_dns_zone_name
+  private_zone = false
+}
+
+resource "aws_route53_record" "public_testnet" {
+  for_each = local.public_dns_zone_enabled ? local.public_dns_records : {}
+
+  zone_id = data.aws_route53_zone.public_testnet[0].zone_id
+  name    = "${each.key}.${trim(var.public_dns_zone_name, \".\")}"
+  type    = "CNAME"
+  ttl     = var.public_dns_ttl
+  records = [each.value]
+}
+
 # -----------------------------------------------------------------------------
 # Validator cluster
 # -----------------------------------------------------------------------------
@@ -81,4 +102,12 @@ output "validator_s3_bucket" {
 output "validator_asg_name" {
   description = "Auto Scaling Group name"
   value       = module.validators.autoscaling_group_name
+}
+
+output "public_testnet_dns_records" {
+  description = "Public Route53 records created for the testnet operator endpoints"
+  value = {
+    for name, record in aws_route53_record.public_testnet :
+    name => record.fqdn
+  }
 }
