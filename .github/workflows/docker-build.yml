@@ -2,8 +2,8 @@ name: Docker Build & Push
 
 on:
   push:
-    branches: [main, develop]
-    tags: ["v*"]
+    branches: [main, develop, "release/**"]
+    tags: ["v*", "testnet-v*", "mainnet-v*"]
   pull_request:
     branches: [main]
 
@@ -13,7 +13,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/aethelredd
+  IMAGE_NAME: aethelred-foundation/aethelred/aethelredd
 
 jobs:
   docker-build:

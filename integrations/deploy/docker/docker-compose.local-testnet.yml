@@ -21,7 +21,7 @@ services:
 
   aethelred-rpc-real:
     profiles: ["real-node"]
-    image: ghcr.io/aethelred/validator:latest
+    image: ghcr.io/aethelred-foundation/aethelred/aethelredd:latest
     container_name: aethelred-real-validator
     command: ["aethelredd", "start", "--home=/data", "--rpc.laddr=tcp://0.0.0.0:26657"]
     ports:

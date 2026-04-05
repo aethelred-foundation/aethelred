@@ -131,7 +131,7 @@ Start a local single-node network for development:
 ```bash
 # Using Docker
 docker run -p 26657:26657 -p 9090:9090 -p 1317:1317 \
-  aethelred/node:latest init-and-start
+  ghcr.io/aethelred-foundation/aethelred/aethelredd:latest init-and-start
 
 # Using the CLI
 aethelred node init --chain-id aethelred-local
