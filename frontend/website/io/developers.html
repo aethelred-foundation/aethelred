@@ -256,7 +256,7 @@ import hashlib
 
 from aethelred import AethelredClient, ProofType
 
-client = AethelredClient("https://rpc.testnet.aethelred.org")
+client = AethelredClient("https://rpc.testnet.aethelred.io")
 prompt = b'{"prompt":"Hello AI"}'
 
 submit = client.jobs.submit(
@@ -621,11 +621,11 @@ print(pipeline("Approve payment for vendor INV-2381"))</code></pre>
         <div class="grid grid-3 stack-bottom-16">
           <article class="card">
             <p class="kpi-label">Mainnet</p>
-            <p class="kpi-value mono">api.mainnet.aethelred.org</p>
+            <p class="kpi-value mono">api.mainnet.aethelred.io</p>
           </article>
           <article class="card">
             <p class="kpi-label">Testnet</p>
-            <p class="kpi-value mono">api.testnet.aethelred.org</p>
+            <p class="kpi-value mono">api.testnet.aethelred.io</p>
           </article>
           <article class="card">
             <p class="kpi-label">Local</p>
@@ -698,7 +698,7 @@ print(pipeline("Approve payment for vendor INV-2381"))</code></pre>
             <span class="code-label">curl</span>
           </div>
 <pre><code data-code-typing># Submit a compute job
-curl -X POST https://api.testnet.aethelred.org/aethelred/pouw/v1/jobs \
+curl -X POST https://api.testnet.aethelred.io/aethelred/pouw/v1/jobs \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${AETHELRED_API_KEY}" \
   -d '{

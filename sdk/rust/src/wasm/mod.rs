@@ -114,8 +114,8 @@ pub enum WasmNetwork {
 impl WasmNetwork {
     fn endpoint(&self) -> &'static str {
         match self {
-            WasmNetwork::Mainnet => "https://api.aethelred.org/v1",
-            WasmNetwork::Testnet => "https://testnet-api.aethelred.org/v1",
+            WasmNetwork::Mainnet => "https://api.mainnet.aethelred.io/v1",
+            WasmNetwork::Testnet => "https://api.testnet.aethelred.io/v1",
             WasmNetwork::Local => "http://127.0.0.1:26657",
         }
     }

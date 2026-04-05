@@ -89,7 +89,7 @@ func TestHealthCheck_ReturnsFalseOnFailure(t *testing.T) {
 func TestNetworkConfig_KnownNetworks(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, "aethelred-1", Mainnet.Config().ChainID)
+	require.Equal(t, "aethelred-mainnet-1", Mainnet.Config().ChainID)
 	require.Equal(t, "aethelred-testnet-1", Testnet.Config().ChainID)
 	require.Equal(t, "http://127.0.0.1:26657", Local.Config().RPCURL)
 }

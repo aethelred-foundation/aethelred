@@ -227,7 +227,7 @@ aethelred tx gov submit-proposal software-upgrade v2.0.0 \
     --title "v2.0.0 Security Upgrade" \
     --description "Addresses audit findings RS-01 through RS-07" \
     --from governance \
-    --chain-id aethelred-1
+    --chain-id aethelred-mainnet-1
 
 # 2. Vote
 aethelred tx gov vote $PROPOSAL_ID yes --from validator

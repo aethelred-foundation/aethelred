@@ -6,9 +6,9 @@ Complete API reference for the Aethelred blockchain REST and gRPC endpoints.
 
 | Environment | REST API | gRPC | WebSocket |
 |-------------|----------|------|-----------|
-| Mainnet | `https://api.mainnet.aethelred.org` | `grpc.mainnet.aethelred.org:9090` | `wss://ws.mainnet.aethelred.org` |
-| Testnet | `https://api.testnet.aethelred.org` | `grpc.testnet.aethelred.org:9090` | `wss://ws.testnet.aethelred.org` |
-| Devnet | `https://api.devnet.aethelred.org` | `grpc.devnet.aethelred.org:9090` | `wss://ws.devnet.aethelred.org` |
+| Mainnet | `https://api.mainnet.aethelred.io` | `grpc.mainnet.aethelred.io:9090` | `wss://ws.mainnet.aethelred.io` |
+| Testnet | `https://api.testnet.aethelred.io` | `grpc.testnet.aethelred.io:9090` | `wss://ws.testnet.aethelred.io` |
+| Devnet | `https://api.devnet.aethelred.io` | `grpc.devnet.aethelred.io:9090` | `wss://ws.devnet.aethelred.io` |
 | Local | `http://localhost:1317` | `localhost:9090` | `ws://localhost:26657/websocket` |
 
 ## Authentication
@@ -17,7 +17,7 @@ Most read endpoints don't require authentication. Write operations require a sig
 
 ```bash
 # Optional API key for rate limit increase
-curl -H "X-API-Key: your-api-key" https://api.mainnet.aethelred.org/v1/jobs
+curl -H "X-API-Key: your-api-key" https://api.mainnet.aethelred.io/v1/jobs
 ```
 
 ---
@@ -474,7 +474,7 @@ GET /v1/network/epoch/{epoch_number}
 ### Subscribe to Jobs
 
 ```javascript
-const ws = new WebSocket('wss://ws.testnet.aethelred.org');
+const ws = new WebSocket('wss://ws.testnet.aethelred.io');
 
 ws.send(JSON.stringify({
   type: 'subscribe',

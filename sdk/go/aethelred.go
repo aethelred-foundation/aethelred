@@ -221,9 +221,9 @@ type ClientConfig struct {
 // DefaultClientConfig returns default client configuration
 func DefaultClientConfig(network Network) ClientConfig {
 	endpoints := map[Network]string{
-		Mainnet: "https://rpc.aethelred.io",
-		Testnet: "https://testnet-rpc.aethelred.io",
-		Devnet:  "https://devnet-rpc.aethelred.io",
+		Mainnet: "https://rpc.mainnet.aethelred.io",
+		Testnet: "https://rpc.testnet.aethelred.io",
+		Devnet:  "https://rpc.devnet.aethelred.io",
 		Local:   "http://127.0.0.1:26657",
 	}
 

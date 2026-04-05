@@ -1,6 +1,6 @@
 # Validators
 
-Validators are the backbone of the Aethelred network. They participate in BFT consensus, execute AI compute jobs inside TEE enclaves, and produce attestation quotes and zkML proofs. In return, they earn AETH token rewards proportional to the useful work they contribute.
+Validators are the backbone of the Aethelred network. They participate in BFT consensus, execute AI compute jobs inside TEE enclaves, and produce attestation quotes and zkML proofs. In return, they earn AETHEL token rewards proportional to the useful work they contribute.
 
 ## Requirements
 
@@ -19,11 +19,11 @@ Validators are the backbone of the Aethelred network. They participate in BFT co
 
 | Parameter | Value |
 |---|---|
-| Minimum self-stake | 100,000 AETH |
+| Minimum self-stake | 100,000 AETHEL |
 | Maximum commission | 20% |
 | Unbonding period | 21 days |
-| Slashing for downtime | 0.01% of stake |
-| Slashing for double-sign | 5% of stake |
+| Slashing for downtime | 1.0% of stake |
+| Slashing for double-sign | 50% of stake |
 | Slashing for invalid attestation | 10% of stake |
 
 ## Setting Up a Validator
@@ -32,7 +32,7 @@ Validators are the backbone of the Aethelred network. They participate in BFT co
 
 ```bash
 aethelred node init \
-  --chain-id aethelred-1 \
+  --chain-id aethelred-mainnet-1 \
   --moniker "my-validator" \
   --home /opt/aethelred
 ```
@@ -68,7 +68,7 @@ aethelred tendermint show-validator
 
 ```bash
 aethelred tx staking create-validator \
-  --amount 100000000000uaeth \
+  --amount 100000000000uaethel \
   --pubkey $(aethelred tendermint show-validator) \
   --moniker "my-validator" \
   --commission-rate 0.05 \
@@ -76,10 +76,10 @@ aethelred tx staking create-validator \
   --commission-max-change-rate 0.01 \
   --min-self-delegation 100000000000 \
   --from validator \
-  --chain-id aethelred-1 \
+  --chain-id aethelred-mainnet-1 \
   --gas auto \
   --gas-adjustment 1.3 \
-  --fees 5000uaeth
+  --fees 5000uaethel
 ```
 
 ### 5. Start the Node
@@ -96,13 +96,13 @@ aethelred node start \
 
 Validators earn rewards from two sources:
 
-### Block Rewards
+### Network Incentive Flow
 
-Fixed inflation-based rewards distributed proportionally to voting power.
+Aethelred uses a fixed-supply token model with no post-genesis inflation. Validator rewards are funded from protocol fee flows and governed incentive pools.
 
 ```
-block_reward = annual_inflation * total_supply / blocks_per_year
-validator_share = block_reward * (validator_power / total_power)
+epoch_reward = governed_reward_pool * (validator_power / total_power)
+validator_share = epoch_reward + verification_fees
 delegator_reward = validator_share * (1 - commission_rate)
 ```
 
@@ -164,15 +164,15 @@ groups:
 
 | Infraction | Penalty | Jailing | Evidence Window |
 |---|---|---|---|
-| Downtime (missing >95% of blocks in a window) | 0.01% slash | 10 min jail | 10,000 blocks |
-| Double signing | 5% slash | Permanent tombstone | Unlimited |
+| Downtime (missing >95% of blocks in a window) | 1.0% slash | 10 min jail | 10,000 blocks |
+| Double signing | 50% slash | Permanent tombstone | Unlimited |
 | Invalid TEE attestation | 10% slash | 24h jail | 50,000 blocks |
 | Fraudulent compute result | 10% slash + reward clawback | 7 day jail | 100,000 blocks |
 
 ### Unjailing
 
 ```bash
-aethelred tx slashing unjail --from validator --chain-id aethelred-1
+aethelred tx slashing unjail --from validator --chain-id aethelred-mainnet-1
 ```
 
 ## Delegation
@@ -180,9 +180,9 @@ aethelred tx slashing unjail --from validator --chain-id aethelred-1
 Token holders can delegate to validators to earn a share of rewards:
 
 ```bash
-aethelred tx staking delegate <validator-operator-addr> 10000000000uaeth \
+aethelred tx staking delegate <validator-operator-addr> 10000000000uaethel \
   --from delegator \
-  --chain-id aethelred-1
+  --chain-id aethelred-mainnet-1
 ```
 
 ## Related Pages

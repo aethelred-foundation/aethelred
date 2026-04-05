@@ -685,17 +685,17 @@ async fn handle_network_command(
             println!(
                 "  {} {}",
                 "RPC:".bold(),
-                "https://testnet-rpc.aethelred.io".cyan()
+                "https://rpc.testnet.aethelred.io".cyan()
             );
             println!(
                 "  {} {}",
                 "API:".bold(),
-                "https://testnet-api.aethelred.io".cyan()
+                "https://api.testnet.aethelred.io".cyan()
             );
             println!(
                 "  {} {}",
                 "Explorer:".bold(),
-                "https://testnet.explorer.aethelred.io".cyan()
+                "https://explorer.testnet.aethelred.io".cyan()
             );
         }
         Some(cmd) => {

@@ -272,7 +272,7 @@ impl Default for NetworkConfig {
         Self {
             network_id: NETWORK_ID.to_string(),
             chain_id: 1337, // Aethelred chain ID
-            rpc_endpoint: "https://rpc.aethelred.org".to_string(),
+            rpc_endpoint: "https://rpc.mainnet.aethelred.io".to_string(),
             block_time_secs: 6,
             finality_confirmations: MIN_CONFIRMATIONS,
         }

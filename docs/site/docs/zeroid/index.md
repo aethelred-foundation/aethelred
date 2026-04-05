@@ -184,7 +184,7 @@ cd circuits && npm test
 ## Resources
 
 - [Application](https://zeroid.aethelred.io)
-- [API Reference](https://api.aethelred.io/zeroid/docs)
+- [API Reference](https://api.mainnet.aethelred.io/zeroid/docs)
 - [GitHub Repository](https://github.com/aethelred-foundation/zeroid)
 - [Aethelred Platform](/guide/introduction)
 - [Cryptography Overview](/cryptography/overview)

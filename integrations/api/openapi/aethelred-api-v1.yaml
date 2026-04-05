@@ -28,9 +28,9 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0
 
 servers:
-  - url: https://api.aethelred.org/v1
+  - url: https://api.mainnet.aethelred.io/v1
     description: Production
-  - url: https://testnet-api.aethelred.org/v1
+  - url: https://api.testnet.aethelred.io/v1
     description: Testnet
   - url: http://localhost:26657
     description: Local development

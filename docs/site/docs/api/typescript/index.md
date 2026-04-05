@@ -76,9 +76,9 @@ interface Config {
 
 | Network   | Endpoint                              |
 |-----------|---------------------------------------|
-| `mainnet` | `https://rpc.mainnet.aethelred.org`   |
-| `testnet` | `https://rpc.testnet.aethelred.org`   |
-| `devnet`  | `https://rpc.devnet.aethelred.org`    |
+| `mainnet` | `https://rpc.mainnet.aethelred.io`   |
+| `testnet` | `https://rpc.testnet.aethelred.io`   |
+| `devnet`  | `https://rpc.devnet.aethelred.io`    |
 | `local`   | `http://localhost:26657`              |
 
 ### Client Modules
@@ -102,7 +102,7 @@ const t = Tensor.randn([512, 512], { device: 'webgpu' });
 
 // Node.js: HTTP client, seals, jobs
 import { AethelredClient } from '@aethelred/sdk';
-const client = new AethelredClient('https://rpc.testnet.aethelred.org');
+const client = new AethelredClient('https://rpc.testnet.aethelred.io');
 ```
 
 ### Error Handling

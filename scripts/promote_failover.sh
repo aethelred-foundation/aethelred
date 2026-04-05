@@ -43,7 +43,7 @@ fi
 : "${HSM_PIN:?HSM_PIN not set}"
 : "${HSM_KEY_LABEL:?HSM_KEY_LABEL not set}"
 : "${HSM_MODULE_PATH:=/opt/cloudhsm/lib/libcloudhsm_pkcs11.so}"
-: "${API_ENDPOINT:=https://api.aethelred.org}"
+: "${API_ENDPOINT:=https://api.mainnet.aethelred.io}"
 : "${SLACK_WEBHOOK:=}"
 : "${PAGERDUTY_KEY:=}"
 

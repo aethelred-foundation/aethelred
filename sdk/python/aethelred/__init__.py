@@ -69,7 +69,7 @@ Quick Start:
     >>> model_int8 = aethel.quantize.quantize_dynamic(model)
     >>>
     >>> # Submit to blockchain
-    >>> client = aethel.AethelredClient("https://rpc.mainnet.aethelred.org")
+    >>> client = aethel.AethelredClient("https://rpc.mainnet.aethelred.io")
     >>> job = client.jobs.submit(model=model, input=data)
     >>> seal = client.seals.create(job_id=job.job_id)
 
@@ -584,9 +584,9 @@ def get_sdk_info() -> dict:
             ],
         },
         "supported_networks": {
-            "mainnet": "https://rpc.mainnet.aethelred.org",
-            "testnet": "https://rpc.testnet.aethelred.org",
-            "devnet": "https://rpc.devnet.aethelred.org",
+            "mainnet": "https://rpc.mainnet.aethelred.io",
+            "testnet": "https://rpc.testnet.aethelred.io",
+            "devnet": "https://rpc.devnet.aethelred.io",
             "local": "http://127.0.0.1:26657",
         },
         "supported_devices": [

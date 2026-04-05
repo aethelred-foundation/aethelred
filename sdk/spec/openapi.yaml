@@ -14,9 +14,9 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0
 
 servers:
-  - url: https://rpc.mainnet.aethelred.org
+  - url: https://rpc.mainnet.aethelred.io
     description: Mainnet
-  - url: https://rpc.testnet.aethelred.org
+  - url: https://rpc.testnet.aethelred.io
     description: Testnet
   - url: http://localhost:26657
     description: Local Development

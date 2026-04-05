@@ -131,7 +131,7 @@ Block {
 
 ### Validator Economics
 
-Validators stake AETH tokens and earn rewards proportional to the useful work they contribute. See [Validators](/guide/validators) for staking requirements, reward calculation, and slashing conditions.
+Validators stake AETHEL tokens and earn rewards proportional to the useful work they contribute. See [Validators](/guide/validators) for staking requirements, reward calculation, and slashing conditions.
 
 ## Data Flow: End-to-End Job Execution
 

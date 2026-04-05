@@ -370,7 +370,7 @@
                   <span class="code-label">curl</span>
                 </div>
 <pre><code data-code-typing data-lang="bash"># Submit a compute job against the current REST example
-curl -X POST https://api.testnet.aethelred.org/aethelred/pouw/v1/jobs \
+curl -X POST https://api.testnet.aethelred.io/aethelred/pouw/v1/jobs \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${AETHELRED_API_KEY}" \
   -d '{
@@ -393,7 +393,7 @@ import hashlib
 
 from aethelred import AethelredClient, ProofType
 
-client = AethelredClient("https://rpc.testnet.aethelred.org")
+client = AethelredClient("https://rpc.testnet.aethelred.io")
 payload = b'{"prompt":"Hello AI"}'
 model_hash = "09f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3c5d6a1f9f7e2b3"
 
@@ -534,30 +534,30 @@ print(f"seal valid: {verification.valid}")</code></pre>
                 <div class="copy-row">
                   <div>
                     <p class="copy-label">REST</p>
-                    <p class="copy-value">https://api.testnet.aethelred.org</p>
+                    <p class="copy-value">https://api.testnet.aethelred.io</p>
                   </div>
-                  <button class="copy-btn" data-copy="https://api.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                  <button class="copy-btn" data-copy="https://api.testnet.aethelred.io" data-copy-label="Copy">Copy</button>
                 </div>
                 <div class="copy-row">
                   <div>
                     <p class="copy-label">RPC</p>
-                    <p class="copy-value">https://rpc.testnet.aethelred.org</p>
+                    <p class="copy-value">https://rpc.testnet.aethelred.io</p>
                   </div>
-                  <button class="copy-btn" data-copy="https://rpc.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                  <button class="copy-btn" data-copy="https://rpc.testnet.aethelred.io" data-copy-label="Copy">Copy</button>
                 </div>
                 <div class="copy-row">
                   <div>
                     <p class="copy-label">WebSocket</p>
-                    <p class="copy-value">wss://ws.testnet.aethelred.org</p>
+                    <p class="copy-value">wss://ws.testnet.aethelred.io</p>
                   </div>
-                  <button class="copy-btn" data-copy="wss://ws.testnet.aethelred.org" data-copy-label="Copy">Copy</button>
+                  <button class="copy-btn" data-copy="wss://ws.testnet.aethelred.io" data-copy-label="Copy">Copy</button>
                 </div>
                 <div class="copy-row">
                   <div>
                     <p class="copy-label">gRPC</p>
-                    <p class="copy-value">grpc.testnet.aethelred.org:9090</p>
+                    <p class="copy-value">grpc.testnet.aethelred.io:9090</p>
                   </div>
-                  <button class="copy-btn" data-copy="grpc.testnet.aethelred.org:9090" data-copy-label="Copy">Copy</button>
+                  <button class="copy-btn" data-copy="grpc.testnet.aethelred.io:9090" data-copy-label="Copy">Copy</button>
                 </div>
               </article>
               <article class="card docs-copy-card">

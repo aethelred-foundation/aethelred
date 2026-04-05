@@ -6,8 +6,8 @@ Aethelred operates multiple networks for different stages of development and dep
 
 | Network | Chain ID | Purpose | RPC Endpoint |
 |---|---|---|---|
-| **Mainnet** | `aethelred-1` | Production | `https://rpc.mainnet.aethelred.io` |
-| **Testnet** | `aethelred-testnet-3` | Pre-production testing | `https://rpc.testnet.aethelred.io` |
+| **Mainnet** | `aethelred-mainnet-1` | Production | `https://rpc.mainnet.aethelred.io` |
+| **Testnet** | `aethelred-testnet-1` | Pre-production testing | `https://rpc.testnet.aethelred.io` |
 | **Devnet** | `aethelred-devnet` | Development and experimentation | `https://rpc.devnet.aethelred.io` |
 | **Local** | `aethelred-local` | Local single-node development | `http://localhost:26657` |
 
@@ -36,7 +36,7 @@ client, err := aethelred.NewClient(
 client, err := aethelred.NewClient(
     aethelred.WithEndpoint("https://rpc.mainnet.aethelred.io"),
     aethelred.WithGRPCEndpoint("grpc.mainnet.aethelred.io:9090"),
-    aethelred.WithChainID("aethelred-1"),
+    aethelred.WithChainID("aethelred-mainnet-1"),
     aethelred.WithTimeout(15 * time.Second),
     aethelred.WithKeyring(keyring),
     aethelred.WithRetryPolicy(aethelred.RetryPolicy{
@@ -55,7 +55,7 @@ use aethelred::client::{Client, ClientConfig};
 let client = Client::new(ClientConfig {
     rpc_endpoint: "https://rpc.testnet.aethelred.io".into(),
     grpc_endpoint: Some("grpc.testnet.aethelred.io:9090".into()),
-    chain_id: "aethelred-testnet-3".into(),
+    chain_id: "aethelred-testnet-1".into(),
     timeout: Duration::from_secs(15),
     ..Default::default()
 }).await?;
@@ -68,7 +68,7 @@ import { Client } from '@aethelred/sdk';
 
 const client = await Client.connect({
   rpcEndpoint: 'https://rpc.testnet.aethelred.io',
-  chainId: 'aethelred-testnet-3',
+  chainId: 'aethelred-testnet-1',
   timeout: 15_000,
 });
 ```
@@ -80,7 +80,7 @@ import aethelred
 
 client = aethelred.Client(
     rpc_endpoint="https://rpc.testnet.aethelred.io",
-    chain_id="aethelred-testnet-3",
+    chain_id="aethelred-testnet-1",
 )
 ```
 
@@ -92,7 +92,7 @@ All SDKs respect the following environment variables as defaults:
 |---|---|---|
 | `AETHELRED_RPC_URL` | Primary RPC endpoint | `https://rpc.mainnet.aethelred.io` |
 | `AETHELRED_GRPC_URL` | gRPC endpoint | `grpc.mainnet.aethelred.io:9090` |
-| `AETHELRED_CHAIN_ID` | Chain identifier | `aethelred-1` |
+| `AETHELRED_CHAIN_ID` | Chain identifier | `aethelred-mainnet-1` |
 | `AETHELRED_KEYRING_BACKEND` | Keyring backend | `file`, `os`, `test` |
 | `AETHELRED_KEYRING_DIR` | Keyring directory | `~/.aethelred/keyring` |
 | `AETHELRED_GAS_PRICES` | Default gas prices | `0.025uaeth` |

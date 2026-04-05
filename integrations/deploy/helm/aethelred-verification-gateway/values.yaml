@@ -55,7 +55,7 @@ application:
     periodSeconds: 10
 
 verification:
-  rpcUrl: https://rpc.testnet.aethelred.org
+  rpcUrl: https://rpc.testnet.aethelred.io
   headerPrefix: x-aethelred
   mode: seal-envelope
   sidecar:

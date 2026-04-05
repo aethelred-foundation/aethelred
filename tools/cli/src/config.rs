@@ -53,8 +53,8 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             network: "testnet".to_string(),
-            rpc_endpoint: "https://testnet-rpc.aethelred.io".to_string(),
-            api_endpoint: "https://testnet-api.aethelred.io".to_string(),
+            rpc_endpoint: "https://rpc.testnet.aethelred.io".to_string(),
+            api_endpoint: "https://api.testnet.aethelred.io".to_string(),
             chain_id: "aethelred-testnet-1".to_string(),
             output_format: "text".to_string(),
             keyring_backend: "os".to_string(),
@@ -157,18 +157,18 @@ impl Config {
 
         match network {
             "mainnet" => {
-                self.rpc_endpoint = "https://rpc.aethelred.io".to_string();
-                self.api_endpoint = "https://api.aethelred.io".to_string();
+                self.rpc_endpoint = "https://rpc.mainnet.aethelred.io".to_string();
+                self.api_endpoint = "https://api.mainnet.aethelred.io".to_string();
                 self.chain_id = "aethelred-mainnet-1".to_string();
             }
             "testnet" => {
-                self.rpc_endpoint = "https://testnet-rpc.aethelred.io".to_string();
-                self.api_endpoint = "https://testnet-api.aethelred.io".to_string();
+                self.rpc_endpoint = "https://rpc.testnet.aethelred.io".to_string();
+                self.api_endpoint = "https://api.testnet.aethelred.io".to_string();
                 self.chain_id = "aethelred-testnet-1".to_string();
             }
             "devnet" => {
-                self.rpc_endpoint = "https://devnet-rpc.aethelred.io".to_string();
-                self.api_endpoint = "https://devnet-api.aethelred.io".to_string();
+                self.rpc_endpoint = "https://rpc.devnet.aethelred.io".to_string();
+                self.api_endpoint = "https://api.devnet.aethelred.io".to_string();
                 self.chain_id = "aethelred-devnet-1".to_string();
             }
             "local" => {
@@ -195,8 +195,8 @@ impl NetworkPreset {
     pub fn mainnet() -> Self {
         Self {
             name: "mainnet".to_string(),
-            rpc: "https://rpc.aethelred.io".to_string(),
-            api: "https://api.aethelred.io".to_string(),
+            rpc: "https://rpc.mainnet.aethelred.io".to_string(),
+            api: "https://api.mainnet.aethelred.io".to_string(),
             chain_id: "aethelred-mainnet-1".to_string(),
             explorer: "https://explorer.aethelred.io".to_string(),
             faucet: None,
@@ -206,10 +206,10 @@ impl NetworkPreset {
     pub fn testnet() -> Self {
         Self {
             name: "testnet".to_string(),
-            rpc: "https://testnet-rpc.aethelred.io".to_string(),
-            api: "https://testnet-api.aethelred.io".to_string(),
+            rpc: "https://rpc.testnet.aethelred.io".to_string(),
+            api: "https://api.testnet.aethelred.io".to_string(),
             chain_id: "aethelred-testnet-1".to_string(),
-            explorer: "https://testnet.explorer.aethelred.io".to_string(),
+            explorer: "https://explorer.testnet.aethelred.io".to_string(),
             faucet: Some("https://faucet.aethelred.io".to_string()),
         }
     }
@@ -217,10 +217,10 @@ impl NetworkPreset {
     pub fn devnet() -> Self {
         Self {
             name: "devnet".to_string(),
-            rpc: "https://devnet-rpc.aethelred.io".to_string(),
-            api: "https://devnet-api.aethelred.io".to_string(),
+            rpc: "https://rpc.devnet.aethelred.io".to_string(),
+            api: "https://api.devnet.aethelred.io".to_string(),
             chain_id: "aethelred-devnet-1".to_string(),
-            explorer: "https://devnet.explorer.aethelred.io".to_string(),
+            explorer: "https://explorer.devnet.aethelred.io".to_string(),
             faucet: Some("https://devnet-faucet.aethelred.io".to_string()),
         }
     }

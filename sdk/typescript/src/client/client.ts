@@ -37,7 +37,7 @@ export interface AccountInfo {
  * ```typescript
  * // Connect to testnet
  * const client = await AethelredClient.connect({
- *   rpcUrl: 'https://testnet-rpc.aethelred.io',
+ *   rpcUrl: 'https://rpc.testnet.aethelred.io',
  *   chainId: 'aethelred-testnet-1',
  * });
  *

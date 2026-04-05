@@ -293,11 +293,11 @@ Token Standard              ERC-20 (upgradeable,        Not detailed      POTENT
                             Votes, Permit, Burnable,                      OMISSION
                             Pausable)
 
-Cosmos Denomination         uaeth (6 decimals)          Not detailed      OMISSION
+Cosmos Denomination         uaethel (6 decimals)        Not detailed      OMISSION
 
 EVM Denomination            wei (18 decimals)           Not detailed      OMISSION
 
-Cross-Layer Scale           1 uaeth = 10^12 wei         Not detailed      OMISSION
+Cross-Layer Scale           1 uaethel = 10^12 wei       Not detailed      OMISSION
 
 Burn Mechanism              Multi-layered               Congestion-       DIFFERENT
                             (base fee, congestion-      Squared burn      LANGUAGE

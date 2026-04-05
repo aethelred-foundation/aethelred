@@ -459,8 +459,8 @@ class TestRealtimeClient:
         from aethelred.core.config import Config
         return Config(
             rpc_url="http://localhost:26657",
-            endpoint="https://api.aethelred.org",
-            chain_id="aethelred-1",
+            endpoint="https://api.mainnet.aethelred.io",
+            chain_id="aethelred-mainnet-1",
             api_key=None,
         )
 

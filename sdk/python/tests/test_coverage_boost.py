@@ -143,7 +143,7 @@ class TestConfigFactoryMethods:
     def test_mainnet(self) -> None:
         from aethelred.core.config import Config
         cfg = Config.mainnet()
-        assert cfg.chain_id == "aethelred-1"
+        assert cfg.chain_id == "aethelred-mainnet-1"
 
     def test_testnet(self) -> None:
         from aethelred.core.config import Config
@@ -187,7 +187,7 @@ class TestConfigFactoryMethods:
         cfg = Config.mainnet()
         nc = cfg.get_network_config()
         assert nc is not None
-        assert nc.chain_id == "aethelred-1"
+        assert nc.chain_id == "aethelred-mainnet-1"
 
     def test_endpoint_setter(self) -> None:
         from aethelred.core.config import Config
