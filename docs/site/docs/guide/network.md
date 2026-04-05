@@ -95,7 +95,7 @@ All SDKs respect the following environment variables as defaults:
 | `AETHELRED_CHAIN_ID` | Chain identifier | `aethelred-mainnet-1` |
 | `AETHELRED_KEYRING_BACKEND` | Keyring backend | `file`, `os`, `test` |
 | `AETHELRED_KEYRING_DIR` | Keyring directory | `~/.aethelred/keyring` |
-| `AETHELRED_GAS_PRICES` | Default gas prices | `0.025uaeth` |
+| `AETHELRED_GAS_PRICES` | Default gas prices | `0.025uaethel` |
 
 ## Multi-Endpoint Failover
 
@@ -164,4 +164,5 @@ for event := range sub.Events() {
 - [Installation](/guide/installation) -- install SDKs before connecting
 - [CLI Configuration](/cli/configuration) -- configure network via CLI
 - [Submitting Jobs](/guide/jobs) -- send compute jobs to the network
-- [Validators](/guide/validators) -- run a validator node
+- [Testnet Validator Onboarding](/guide/validator-testnet) -- join `aethelred-testnet-1`
+- [Mainnet Validator Requirements](/guide/validators) -- review the production validator profile
