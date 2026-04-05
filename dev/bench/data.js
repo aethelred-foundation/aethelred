@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775343507327,
+  "lastUpdate": 1775379034617,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -53,6 +53,36 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/aethelred-foundation/aethelred/commit/a54ff0a4d041db9703919fa455eba9ac35d1568b"
         },
         "date": 1775343506332,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
+            "range": "± 3",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "713cfaf3ad50dcfb3900a24ff351eb18e65ae823",
+          "message": "Merge pull request #61 from aethelred-foundation/codex/portfolio-main-sync\n\ndocs(ecosystem): formalize canonical dApp portfolio structure",
+          "timestamp": "2026-04-05T12:49:16+04:00",
+          "tree_id": "acd213cd395d700bc22ee726145fb0d09812cb98",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/713cfaf3ad50dcfb3900a24ff351eb18e65ae823"
+        },
+        "date": 1775379033703,
         "tool": "cargo",
         "benches": [
           {
