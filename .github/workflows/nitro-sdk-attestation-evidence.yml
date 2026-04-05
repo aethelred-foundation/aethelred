@@ -26,7 +26,7 @@ jobs:
           - "attestation::engine::tests::test_epid_quotes_return_generic_unsupported_format_error"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable

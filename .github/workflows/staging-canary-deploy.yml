@@ -64,7 +64,7 @@ jobs:
     needs:
       - deployment-policy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Verify external audit signoff (contracts + consensus)
         run: make audit-signoff-check
 
@@ -77,7 +77,7 @@ jobs:
       - deployment-policy
       - audit-signoff-gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: azure/setup-helm@v4
       - uses: azure/setup-kubectl@v4
       - name: Configure kubeconfig
@@ -113,7 +113,7 @@ jobs:
       - deployment-policy
       - audit-signoff-gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: azure/setup-helm@v4
       - uses: azure/setup-kubectl@v4
       - name: Configure kubeconfig
@@ -145,7 +145,7 @@ jobs:
       - deployment-policy
       - audit-signoff-gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: azure/setup-helm@v4
       - uses: azure/setup-kubectl@v4
       - name: Configure kubeconfig
