@@ -290,3 +290,28 @@ func TestNewClient_AppliesConnectionPoolConfig(t *testing.T) {
 	require.Equal(t, 22, transport.MaxConnsPerHost)
 	require.Equal(t, 42*time.Second, transport.IdleConnTimeout)
 }
+
+func TestNewClient_UsesProvidedHTTPClientAndAppliesTimeout(t *testing.T) {
+	t.Parallel()
+
+	httpClient := &http.Client{}
+
+	c, err := NewClient(Local, WithHTTPClient(httpClient), WithTimeout(5*time.Second))
+	require.NoError(t, err)
+
+	require.Same(t, httpClient, c.httpClient)
+	require.Equal(t, 5*time.Second, c.httpClient.Timeout)
+}
+
+func TestNewClient_UsesProvidedHTTPTransport(t *testing.T) {
+	t.Parallel()
+
+	transport := &http.Transport{}
+
+	c, err := NewClient(Local, WithHTTPTransport(transport))
+	require.NoError(t, err)
+
+	got, ok := c.httpClient.Transport.(*http.Transport)
+	require.True(t, ok)
+	require.Same(t, transport, got)
+}

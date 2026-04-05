@@ -4,7 +4,7 @@
     "body": [
       "from aethelred import AethelredClient",
       "",
-      "client = AethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.io')",
+      "client = AethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.org')",
       "$0"
     ],
     "description": "Create Aethelred client"
@@ -14,7 +14,7 @@
     "body": [
       "from aethelred import AsyncAethelredClient",
       "",
-      "async with AsyncAethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.io') as client:",
+      "async with AsyncAethelredClient('https://rpc.${1|mainnet,testnet,devnet|}.aethelred.org') as client:",
       "    $0"
     ],
     "description": "Create async Aethelred client"

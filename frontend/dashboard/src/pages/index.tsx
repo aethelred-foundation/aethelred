@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // API configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.io';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.org';
 
 // Types
 interface NetworkStats {
