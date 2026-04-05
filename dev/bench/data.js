@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775379034617,
+  "lastUpdate": 1775383975267,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -89,6 +89,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2651,
             "range": "± 3",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "573abffc682b420e9767b1b0e737dd96a54319df",
+          "message": "Merge pull request #62 from aethelred-foundation/codex/protocol-launch-normalization\n\nNormalize protocol network identity and launch docs",
+          "timestamp": "2026-04-05T14:11:32+04:00",
+          "tree_id": "819eab94afffb37f5f0ffc58f9d3f5de950725e5",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/573abffc682b420e9767b1b0e737dd96a54319df"
+        },
+        "date": 1775383974443,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 25",
             "unit": "ns/iter"
           }
         ]
