@@ -56,7 +56,7 @@ environments.
 
 ## 3. Environment Matrix
 
-### 3.1 Mainnet (`aethelred-1`)
+### 3.1 Mainnet (`aethelred-mainnet-1`)
 
 | Component | Configuration | Behavior |
 |-----------|---------------|----------|

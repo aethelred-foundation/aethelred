@@ -148,11 +148,11 @@ Job costs depend on the compute resources consumed and the proof generation requ
 
 | Component | Cost Formula |
 |---|---|
-| Base fee | `0.01 AETH` per job |
-| Compute | `gas_used * gas_price` (default `0.025 uaeth/gas`) |
+| Base fee | `0.01 AETHEL` per job |
+| Compute | `gas_used * gas_price` (default `0.025 uaethel/gas`) |
 | TEE premium | `+20%` of compute cost for TEE execution |
-| zkML proof | `proof_constraints * 0.000001 uaeth` |
-| Storage | `output_size_bytes * 0.0001 uaeth` |
+| zkML proof | `proof_constraints * 0.000001 uaethel` |
+| Storage | `output_size_bytes * 0.0001 uaethel` |
 
 ### Estimating Cost
 
@@ -165,7 +165,7 @@ estimate, err := client.EstimateJobCost(ctx, &aethelred.JobRequest{
 })
 
 fmt.Printf("Estimated gas:  %d\n", estimate.Gas)
-fmt.Printf("Estimated cost: %s AETH\n", estimate.Cost)
+fmt.Printf("Estimated cost: %s AETHEL\n", estimate.Cost)
 ```
 
 ## Batch Jobs

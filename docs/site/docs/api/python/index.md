@@ -27,7 +27,7 @@ Requires Python >= 3.9.
 import aethelred as aethel
 
 # Synchronous client
-with aethel.AethelredClient("https://rpc.testnet.aethelred.org") as client:
+with aethel.AethelredClient("https://rpc.testnet.aethelred.io") as client:
     healthy = client.health_check()
 
     # Submit a compute job
@@ -69,7 +69,7 @@ asyncio.run(main())
 from aethelred import Config, Network
 
 config = Config(
-    rpc_url="https://rpc.testnet.aethelred.org",
+    rpc_url="https://rpc.testnet.aethelred.io",
     api_key="your-key",
     max_connections=20,
     log_level="INFO",
@@ -79,9 +79,9 @@ client = aethel.AethelredClient(config)
 
 | Network | Endpoint |
 |---------|----------|
-| `Network.MAINNET` | `https://rpc.mainnet.aethelred.org` |
-| `Network.TESTNET` | `https://rpc.testnet.aethelred.org` |
-| `Network.DEVNET`  | `https://rpc.devnet.aethelred.org`  |
+| `Network.MAINNET` | `https://rpc.mainnet.aethelred.io` |
+| `Network.TESTNET` | `https://rpc.testnet.aethelred.io` |
+| `Network.DEVNET`  | `https://rpc.devnet.aethelred.io`  |
 | `Network.LOCAL`   | `http://127.0.0.1:26657`           |
 
 ### Client Modules

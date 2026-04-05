@@ -49,7 +49,7 @@ func TestCB_PrometheusExporter_NewAndRender(t *testing.T) {
 	require.Contains(t, output, "aethelred_pouw_jobs_submitted_total")
 	require.Contains(t, output, "aethelred_pouw_jobs_completed_total")
 	require.Contains(t, output, "# TYPE")
-	require.Contains(t, output, "chain_id=\"aethelred-1\"")
+	require.Contains(t, output, "chain_id=\"aethelred-mainnet-1\"")
 }
 
 func TestCB_PrometheusExporter_SetDefaultLabel(t *testing.T) {

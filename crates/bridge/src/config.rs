@@ -269,8 +269,8 @@ impl Default for AethelredConfig {
 impl AethelredConfig {
     pub fn testnet() -> Self {
         Self {
-            rpc_url: "https://rpc.testnet.aethelred.org".to_string(),
-            ws_url: Some("wss://ws.testnet.aethelred.org".to_string()),
+            rpc_url: "https://rpc.testnet.aethelred.io".to_string(),
+            ws_url: Some("wss://ws.testnet.aethelred.io".to_string()),
             chain_id: "aethelred-testnet-1".to_string(),
             bridge_module_address: "0x0000000000000000000000000000000000000006".to_string(),
             confirmations: 1,
@@ -281,8 +281,8 @@ impl AethelredConfig {
 
     pub fn mainnet() -> Self {
         Self {
-            rpc_url: "https://rpc.aethelred.org".to_string(),
-            ws_url: Some("wss://ws.aethelred.org".to_string()),
+            rpc_url: "https://rpc.mainnet.aethelred.io".to_string(),
+            ws_url: Some("wss://ws.mainnet.aethelred.io".to_string()),
             chain_id: "aethelred-mainnet-1".to_string(),
             bridge_module_address: "0x0000000000000000000000000000000000000006".to_string(),
             confirmations: 3,

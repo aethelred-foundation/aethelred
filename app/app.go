@@ -371,7 +371,7 @@ func New(
 	// Initialize vote extension signing/verification (AS-17)
 	chainID := cast.ToString(appOpts.Get("chain-id"))
 	if chainID == "" {
-		chainID = "aethelred-1"
+		chainID = "aethelred-mainnet-1"
 	}
 	app.InitVoteExtensionSigner(chainID)
 	app.InitVoteExtensionVerifier(chainID)

@@ -21,7 +21,7 @@ variable "environment" {
 variable "chain_id" {
   type        = string
   description = "Cosmos chain ID"
-  default     = "aethelred-1"
+  default     = "aethelred-mainnet-1"
 }
 
 # Validator counts — 7 total split across regions

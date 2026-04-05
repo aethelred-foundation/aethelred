@@ -1,6 +1,6 @@
 {
   "$schema": "https://aethelred.org/schemas/genesis-v1.json",
-  "chain_id": "aethelred-1",
+  "chain_id": "aethelred-mainnet-1",
   "chain_name": "Aethelred Mainnet",
   "genesis_time": "2026-06-01T00:00:00.000000Z",
 

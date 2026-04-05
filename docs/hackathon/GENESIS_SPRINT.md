@@ -82,7 +82,7 @@ def hide_ssn_in_image():
  img.save("hidden_pii.jpg", exif=exif_bytes)
 
  # Now try to submit this as input to an AI job
- client = AethelredClient(endpoint="https://rpc.devnet.aethelred.org")
+ client = AethelredClient(endpoint="https://rpc.devnet.aethelred.io")
 
  job = client.submit_job(
  model_id="image-classifier-v1",
@@ -251,7 +251,7 @@ export default function DiagnosePage() {
  <p>Verified On-Chain: {result.proofTxHash}</p>
 
  <a
- href={`https://explorer.aethelred.org/tx/${result.proofTxHash}`}
+ href={`https://explorer.aethelred.io/tx/${result.proofTxHash}`}
  target="_blank"
  >
  View Proof on Aethelred Explorer →
@@ -275,7 +275,7 @@ from aethelred.compliance import HIPAAChecker
 app = FastAPI()
 
 client = AethelredClient(
- endpoint="https://rpc.testnet.aethelred.org",
+ endpoint="https://rpc.testnet.aethelred.io",
  api_key=os.environ["AETHELRED_API_KEY"]
 )
 
@@ -472,7 +472,7 @@ async def quantum_panic_drill():
 
  # Initialize client
  client = AethelredClient(
- endpoint="https://rpc.devnet.aethelred.org",
+ endpoint="https://rpc.devnet.aethelred.io",
  api_key=os.environ["AETHELRED_API_KEY"],
  )
 
@@ -587,7 +587,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- DevNet RPC: `https://rpc.devnet.aethelred.org`
+- DevNet RPC: `https://rpc.devnet.aethelred.io`
 - DevNet Faucet: `https://faucet.devnet.aethelred.org`
 - SDK Docs: `./sdk/python/README.md`
 - Slack: `#genesis-sprint`

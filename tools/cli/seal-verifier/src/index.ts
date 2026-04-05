@@ -26,8 +26,8 @@ interface CliVerifyOptions {
 }
 
 const NETWORK_RPC: Record<string, string> = {
-  mainnet: "https://rpc.mainnet.aethelred.org",
-  testnet: "https://rpc.testnet.aethelred.org",
+  mainnet: "https://rpc.mainnet.aethelred.io",
+  testnet: "https://rpc.testnet.aethelred.io",
   devnet: "http://localhost:26657",
   local: "http://localhost:26657",
 };

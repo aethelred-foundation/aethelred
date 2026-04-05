@@ -21,7 +21,7 @@ pip install -e sdk/python
 from aethelred import AethelredClient, ProofType
 
 # Connect to testnet
-client = AethelredClient("https://rpc.testnet.aethelred.org")
+client = AethelredClient("https://rpc.testnet.aethelred.io")
 
 # Check network status
 info = client.network.get_info()
@@ -99,7 +99,7 @@ from aethelred.utils import sha256
 
 # Connect with wallet
 client = AethelredClient(
- "https://rpc.testnet.aethelred.org",
+ "https://rpc.testnet.aethelred.io",
  wallet_path="./wallet.json"
 )
 
@@ -286,7 +286,7 @@ except JobError as e:
 | Resource | URL |
 |----------|-----|
 | Documentation | https://docs.aethelred.org |
-| API Reference | https://api.aethelred.org/docs |
+| API Reference | https://api.mainnet.aethelred.io/docs |
 | GitHub | https://github.com/aethelred |
 | Testnet Faucet | https://faucet.testnet.aethelred.org |
-| Block Explorer | https://explorer.aethelred.org |
+| Block Explorer | https://explorer.aethelred.io |
