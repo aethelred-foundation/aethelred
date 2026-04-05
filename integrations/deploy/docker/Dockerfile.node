@@ -2,7 +2,7 @@
 # AETHELRED NODE - Multi-Stage Production Dockerfile
 # =============================================================================
 #
-# Build: docker build -f Dockerfile.node -t aethelred/node:latest .
+# Build: docker build -f Dockerfile.node -t ghcr.io/aethelred-foundation/aethelred/aethelredd:latest .
 #
 # Features:
 #   - Multi-stage build for minimal image size

@@ -43,7 +43,7 @@ affinity:
 
 validator:
   image:
-    repository: ghcr.io/aethelred/validator
+    repository: ghcr.io/aethelred-foundation/aethelred/aethelredd
     tag: latest
     pullPolicy: IfNotPresent
   command:

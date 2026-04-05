@@ -2,7 +2,7 @@
 
 **Network:** `aethelred-testnet-1`
 **Last Updated:** 2026-04-05
-**Image Tag:** `aethelred/node:testnet-v1.0.0`
+**Image Tag:** `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0`
 **Release Branch:** `release/testnet-v1.0`
 **Primary Contact:** `validators@aethelred.io`
 **Operator Channels:** Slack `#validators-testnet`, Slack `#validators-emergency`
@@ -28,12 +28,12 @@ If any step diverges from that flow, stop and use the troubleshooting section be
 
 ```bash
 # 1. Pull the testnet image
-docker pull aethelred/node:testnet-v1.0.0
+docker pull ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0
 
 # 2. Initialize node home
 mkdir -p $HOME/.aethelred
 docker run --rm -v $HOME/.aethelred:/root/.aethelred \
-  aethelred/node:testnet-v1.0.0 init my-validator --chain-id aethelred-testnet-1
+  ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0 init my-validator --chain-id aethelred-testnet-1
 
 # 3. Download and verify genesis
 curl -fsSL \
@@ -56,7 +56,7 @@ docker run -d --name aethelred-testnet \
   --restart unless-stopped \
   -p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \
   -v $HOME/.aethelred:/root/.aethelred \
-  aethelred/node:testnet-v1.0.0 start
+  ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0 start
 
 docker exec aethelred-testnet aethelredd status | jq '.sync_info.catching_up'
 # Wait until: false
@@ -134,6 +134,16 @@ shasum -a 256 $HOME/.aethelred/config/genesis.json
 
 If the checksum does not match, do not start the node. Escalate in Slack `#validators-testnet`.
 
+## Image Availability
+
+The public operator image is published to GitHub Container Registry under the canonical protocol repository namespace:
+
+```text
+ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.0
+```
+
+If `docker pull` returns `denied` or `manifest unknown`, stop and escalate. Public validator onboarding should not begin until the release image is anonymously pullable.
+
 ## Hardware Requirements (Testnet)
 
 Testnet requirements are intentionally lighter than the planned mainnet profile:
@@ -210,7 +220,7 @@ When a new testnet image is announced:
 docker stop aethelred-testnet
 
 # 2. Pull the new image
-docker pull aethelred/node:testnet-v1.0.1
+docker pull ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1
 
 # 3. Remove old container (the data remains under $HOME/.aethelred)
 docker rm aethelred-testnet
@@ -220,7 +230,7 @@ docker run -d --name aethelred-testnet \
   --restart unless-stopped \
   -p 26656:26656 -p 26657:26657 -p 1317:1317 -p 9090:9090 \
   -v $HOME/.aethelred:/root/.aethelred \
-  aethelred/node:testnet-v1.0.1 start
+  ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1 start
 ```
 
 ## Testnet vs Mainnet

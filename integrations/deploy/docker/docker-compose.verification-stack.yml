@@ -32,7 +32,7 @@ services:
       - aethelred-node
 
   aethelred-node:
-    image: ghcr.io/aethelred/validator:latest
+    image: ghcr.io/aethelred-foundation/aethelred/aethelredd:latest
     command: ["aethelredd", "start", "--home=/data", "--rpc.laddr=tcp://0.0.0.0:26657"]
     ports:
       - "26657:26657"
