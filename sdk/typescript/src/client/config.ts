@@ -43,18 +43,18 @@ export interface NetworkConfig {
  */
 export const Networks: Record<string, NetworkConfig> = {
   mainnet: {
-    rpcUrl: 'https://rpc.aethelred.io',
-    restUrl: 'https://api.aethelred.io',
-    chainId: 'aethelred-1',
+    rpcUrl: 'https://rpc.mainnet.aethelred.io',
+    restUrl: 'https://api.mainnet.aethelred.io',
+    chainId: 'aethelred-mainnet-1',
     gasPrice: '0.025uaethel',
     explorer: 'https://explorer.aethelred.io',
   },
   testnet: {
-    rpcUrl: 'https://testnet-rpc.aethelred.io',
-    restUrl: 'https://testnet-api.aethelred.io',
+    rpcUrl: 'https://rpc.testnet.aethelred.io',
+    restUrl: 'https://api.testnet.aethelred.io',
     chainId: 'aethelred-testnet-1',
     gasPrice: '0.001uaethel',
-    explorer: 'https://testnet-explorer.aethelred.io',
+    explorer: 'https://explorer.testnet.aethelred.io',
   },
   local: {
     rpcUrl: 'http://127.0.0.1:26657',

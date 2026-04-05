@@ -31,9 +31,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Vitest coverage provider
-        run: npm install --no-save @vitest/coverage-v8@^1.2.1
-
       - name: Run SDK TypeScript tests with coverage thresholds
         run: npx vitest run --coverage --config vitest.config.ts
 

@@ -9,7 +9,7 @@ fn bench_tx_serialization(c: &mut Criterion) {
             "amount": {"denom": "uaethel", "amount": "1000000"},
             "memo": "",
             "sequence": 42_u64,
-            "chain_id": "aethelred-1",
+            "chain_id": "aethelred-testnet-1",
         });
 
         b.iter(|| {
@@ -18,7 +18,7 @@ fn bench_tx_serialization(c: &mut Criterion) {
     });
 
     c.bench_function("tx_deserialize_json", |b| {
-        let raw = br#"{"type":"transfer","from":"aethel1sender","to":"aethel1receiver","amount":{"denom":"uaethel","amount":"1000000"},"memo":"","sequence":42,"chain_id":"aethelred-1"}"#;
+        let raw = br#"{"type":"transfer","from":"aethel1sender","to":"aethel1receiver","amount":{"denom":"uaethel","amount":"1000000"},"memo":"","sequence":42,"chain_id":"aethelred-testnet-1"}"#;
 
         b.iter(|| {
             let _val: serde_json::Value = serde_json::from_slice(raw).unwrap();

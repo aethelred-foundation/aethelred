@@ -502,11 +502,11 @@ template = "{template_str}"
 default = "{network}"
 
 [network.mainnet]
-rpc = "https://rpc.aethelred.io"
+rpc = "https://rpc.mainnet.aethelred.io"
 chain_id = "aethelred-mainnet-1"
 
 [network.testnet]
-rpc = "https://testnet-rpc.aethelred.io"
+rpc = "https://rpc.testnet.aethelred.io"
 chain_id = "aethelred-testnet-1"
 
 [network.local]
@@ -555,7 +555,7 @@ trace_sampling = 0.1
 
 # Network Configuration
 AETHELRED_NETWORK={network}
-AETHELRED_RPC_URL=https://testnet-rpc.aethelred.io
+AETHELRED_RPC_URL=https://rpc.testnet.aethelred.io
 
 # Authentication (NEVER commit real keys!)
 AETHELRED_PRIVATE_KEY=
@@ -1285,7 +1285,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize client
     let config = ClientConfig {
-        rpc_url: "https://testnet-rpc.aethelred.io".into(),
+        rpc_url: "https://rpc.testnet.aethelred.io".into(),
         chain_id: "aethelred-testnet-1".into(),
         ..Default::default()
     };

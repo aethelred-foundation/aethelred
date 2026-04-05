@@ -32,9 +32,9 @@ The Aethelred SDK ecosystem provides comprehensive tools for interacting with th
 
 | Network | RPC URL | Chain ID |
 |---------|---------|----------|
-| Mainnet | `https://rpc.mainnet.aethelred.org` | `aethelred-1` |
-| Testnet | `https://rpc.testnet.aethelred.org` | `aethelred-testnet-1` |
-| Devnet | `https://rpc.devnet.aethelred.org` | `aethelred-devnet-1` |
+| Mainnet | `https://rpc.mainnet.aethelred.io` | `aethelred-mainnet-1` |
+| Testnet | `https://rpc.testnet.aethelred.io` | `aethelred-testnet-1` |
+| Devnet | `https://rpc.devnet.aethelred.io` | `aethelred-devnet-1` |
 | Local | `http://localhost:26657` | `aethelred-local` |
 
 ---
@@ -66,7 +66,7 @@ Public registry installs are enabled after package publishing.
 # Python
 from aethelred import AethelredClient
 
-client = AethelredClient("https://rpc.testnet.aethelred.org")
+client = AethelredClient("https://rpc.testnet.aethelred.io")
 stats = client.network.get_stats()
 print(f"Active validators: {stats.active_validators}")
 ```
@@ -76,7 +76,7 @@ print(f"Active validators: {stats.active_validators}")
 import { AethelredClient } from '@aethelred/sdk';
 
 const client = new AethelredClient({
-  rpcUrl: 'https://rpc.testnet.aethelred.org'
+  rpcUrl: 'https://rpc.testnet.aethelred.io'
 });
 const stats = await client.network.getStats();
 console.log(`Active validators: ${stats.activeValidators}`);
@@ -107,7 +107,7 @@ pip install -e sdk/python[all]
 from aethelred import AethelredClient, Config, Network
 
 # Simple connection
-client = AethelredClient("https://rpc.testnet.aethelred.org")
+client = AethelredClient("https://rpc.testnet.aethelred.io")
 
 # With configuration
 config = Config(
@@ -176,7 +176,7 @@ import asyncio
 from aethelred import AsyncAethelredClient
 
 async def main():
-    async with AsyncAethelredClient("https://rpc.testnet.aethelred.org") as client:
+    async with AsyncAethelredClient("https://rpc.testnet.aethelred.io") as client:
         # Concurrent operations
         jobs, seals = await asyncio.gather(
             client.jobs.list(limit=10),
@@ -238,7 +238,7 @@ import { AethelredClient, Network } from '@aethelred/sdk';
 
 // Simple
 const client = new AethelredClient({
-  rpcUrl: 'https://rpc.testnet.aethelred.org'
+  rpcUrl: 'https://rpc.testnet.aethelred.io'
 });
 
 // With options
@@ -571,7 +571,7 @@ curl http://localhost:1317/aethelred/seal/v1/seals
 ```typescript
 // Type 'aethel-client' for:
 const client = new AethelredClient({
-  rpcUrl: 'https://rpc.testnet.aethelred.org'
+  rpcUrl: 'https://rpc.testnet.aethelred.io'
 });
 
 // Type 'aethel-job' for:
@@ -614,8 +614,8 @@ Open http://localhost:3000
 ### Configuration
 
 ```env
-NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.aethelred.org
-NEXT_PUBLIC_API_URL=https://api.mainnet.aethelred.org
+NEXT_PUBLIC_RPC_URL=https://rpc.mainnet.aethelred.io
+NEXT_PUBLIC_API_URL=https://api.mainnet.aethelred.io
 ```
 
 ---

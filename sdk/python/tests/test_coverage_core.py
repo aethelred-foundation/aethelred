@@ -296,7 +296,7 @@ class TestAsyncAethelredClient:
             mock_response.status_code = 200
             mock_response.json.return_value = {
                 "default_node_info": {
-                    "network": "aethelred-1",
+                    "network": "aethelred-mainnet-1",
                     "version": "0.1.0",
                 }
             }

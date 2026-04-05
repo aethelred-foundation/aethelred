@@ -20,9 +20,9 @@ docker run --rm -v $HOME/.aethelred:/root/.aethelred \
 
 # 3. Download and verify genesis
 curl -o $HOME/.aethelred/config/genesis.json \
-  https://raw.githubusercontent.com/aethelred/aethelred/release/testnet-v1.0/config/genesis/testnet-genesis.json
+  https://raw.githubusercontent.com/aethelred-foundation/aethelred/release/testnet-v1.0/config/genesis/testnet-genesis.json
 
-echo "3d1444f8aad97614323b5ddefaf85f27caf5c65cd9465a9aa4b84de8e018c36d  $HOME/.aethelred/config/genesis.json" \
+echo "fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6  $HOME/.aethelred/config/genesis.json" \
   | shasum -a 256 -c -
 # Must print: OK
 
@@ -51,14 +51,14 @@ curl -X POST https://faucet.testnet.aethelred.io/api/faucet \
 
 # 8. Create validator
 docker exec aethelred-testnet aethelredd tx staking create-validator \
-  --amount=10000000000000000000000utaethelel \
+  --amount=1000000000uaethel \
   --pubkey=$(docker exec aethelred-testnet aethelredd tendermint show-validator) \
   --moniker="my-validator" \
   --chain-id=aethelred-testnet-1 \
   --commission-rate="0.10" \
   --commission-max-rate="0.20" \
   --commission-max-change-rate="0.01" \
-  --min-self-delegation="1000000000000000000000" \
+  --min-self-delegation="1000000000" \
   --from=validator \
   --gas=auto \
   --gas-adjustment=1.5 \
@@ -73,7 +73,7 @@ docker exec aethelred-testnet aethelredd tx staking create-validator \
 |-----------|-------|
 | Chain ID | `aethelred-testnet-1` |
 | Token | `tAETHEL` (no monetary value) |
-| Bond denom | `utaethelel` |
+| Bond denom | `uaethel` |
 | Block time | 6 seconds |
 | Min validator stake | 1,000 tAETHEL |
 | Unbonding period | 1 day |
@@ -116,7 +116,7 @@ Every validator MUST verify the genesis file before starting:
 
 ```bash
 shasum -a 256 $HOME/.aethelred/config/genesis.json
-# Expected: 3d1444f8aad97614323b5ddefaf85f27caf5c65cd9465a9aa4b84de8e018c36d
+# Expected: fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6
 ```
 
 If the checksum does not match, **do not start the node**. Contact `#validators-testnet` on Slack.

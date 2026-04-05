@@ -40,7 +40,7 @@ import (
 // ---------------------------------------------------------------------------
 
 // MainnetChainID is the canonical chain ID for the Aethelred mainnet.
-const MainnetChainID = "aethelred-1"
+const MainnetChainID = "aethelred-mainnet-1"
 
 // MainnetDenom is the staking denomination for the Aethelred mainnet.
 const MainnetDenom = "uaethel"

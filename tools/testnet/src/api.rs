@@ -907,7 +907,7 @@ impl ApiRouter {
                 "description": "API for interacting with the Aethelred AI Blockchain Testnet"
             },
             "servers": [
-                { "url": "https://testnet-api.aethelred.io/api/v1" }
+                { "url": "https://api.testnet.aethelred.io/api/v1" }
             ],
             "paths": paths,
             "components": {
@@ -1255,8 +1255,8 @@ pub struct SdkConfig {
 impl Default for SdkConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "https://testnet-api.aethelred.io".to_string(),
-            ws_url: "wss://testnet-ws.aethelred.io".to_string(),
+            rpc_url: "https://api.testnet.aethelred.io".to_string(),
+            ws_url: "wss://ws.testnet.aethelred.io".to_string(),
             api_key: None,
             timeout_ms: 30000,
             retry_enabled: true,

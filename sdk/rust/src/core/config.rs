@@ -13,16 +13,16 @@ pub enum Network {
 impl Network {
     pub fn rpc_url(&self) -> &'static str {
         match self {
-            Network::Mainnet => "https://rpc.mainnet.aethelred.org",
-            Network::Testnet => "https://rpc.testnet.aethelred.org",
-            Network::Devnet => "https://rpc.devnet.aethelred.org",
+            Network::Mainnet => "https://rpc.mainnet.aethelred.io",
+            Network::Testnet => "https://rpc.testnet.aethelred.io",
+            Network::Devnet => "https://rpc.devnet.aethelred.io",
             Network::Local => "http://127.0.0.1:26657",
         }
     }
 
     pub fn chain_id(&self) -> &'static str {
         match self {
-            Network::Mainnet => "aethelred-1",
+            Network::Mainnet => "aethelred-mainnet-1",
             Network::Testnet => "aethelred-testnet-1",
             Network::Devnet => "aethelred-devnet-1",
             Network::Local => "aethelred-local",

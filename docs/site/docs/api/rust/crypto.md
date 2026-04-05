@@ -68,7 +68,7 @@ impl HybridSignature {
 
 ```rust
 let kp = KeyPair::generate()?;
-let msg = b"transfer 100 AETH";
+let msg = b"transfer 100 AETHEL";
 let sig = kp.sign(msg)?;
 let valid = kp.public_key().verify(msg, &sig)?;
 assert!(valid);

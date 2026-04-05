@@ -12,9 +12,12 @@ The testnet relaxes security thresholds and operational requirements to enable r
 
 | Parameter | Testnet | Mainnet | Rationale |
 |-----------|---------|---------|-----------|
-| Min Validators | 7 | 21 | Lower quorum allows testnet to launch with a smaller initial validator set |
-| Max Validators | 100 | 100 | Same |
-| Min Self-Delegation | 1,000,000 uaeth (1 AETH) | 10,000,000 uaeth (10 AETH) | Lower barrier to entry for testnet validators |
+| Min Validators | 4 | 21 | Lower quorum allows testnet to launch with a smaller initial validator set |
+| Max Validators | 200 | 1000 | Testnet supports a broader experimental set while mainnet keeps a tighter operational envelope |
+| Active Validator Set | 50 | 100 | Smaller active set reduces launch complexity on testnet |
+| Min Validator Stake | 1,000,000,000 uaethel (1,000 tAETHEL) | 100,000,000,000 uaethel (100,000 AETHEL) | Lower barrier to entry for testnet validators |
+| Min Delegator Stake | 10,000,000 uaethel (10 tAETHEL) | 100,000,000 uaethel (100 AETHEL) | Lower barrier for testnet delegators |
+| Unbonding Period | 86,400s (1 day) | 1,814,400s (21 days) | Faster iteration and validator recovery during testnet |
 
 ### Seal / TEE Verification (x/verify)
 
@@ -45,18 +48,18 @@ The testnet relaxes security thresholds and operational requirements to enable r
 | Parameter | Testnet | Mainnet | Rationale |
 |-----------|---------|---------|-----------|
 | Voting Period | 172,800s (2 days) | 604,800s (7 days) | Shortened to allow rapid governance iteration |
-| Max Deposit Period | 172,800s (2 days) | 1,209,600s (14 days) | Shortened for same reason |
-| Min Deposit | 10 AETH | 100 AETH | Lower deposit to encourage governance testing |
+| Max Deposit Period | 172,800s (2 days) | 604,800s (7 days) | Shortened for the same reason |
+| Min Deposit | 10,000 tAETHEL | 100,000 AETHEL | Lower deposit to encourage governance testing |
+| Quorum | 25% | 33% | Testnet quorum is relaxed to match the smaller validator population |
 
 ### Slashing
 
 | Parameter | Testnet | Mainnet | Rationale |
 |-----------|---------|---------|-----------|
-| Slash Fraction Double Sign | 5% | 5% | Same -- double signing penalty is kept identical to mainnet to test real consequences |
-| Slash Fraction Downtime | 0.01% | 0.01% | Same |
-| Downtime Jail Duration | 600s | 600s | Same |
-
-Slashing parameters are intentionally identical between testnet and mainnet. Validators should experience the same penalty model during testing.
+| Slash Fraction Double Sign | 50% | 50% | Double-signing penalty is identical to mainnet to preserve safety discipline during testnet |
+| Slash Fraction Downtime | 0.5% | 1.0% | Testnet is less punitive for uptime misses while still exercising the slashing path |
+| Downtime Jail Duration | 300s | 600s | Shorter jail time reduces operator friction during testnet iteration |
+| Min Signed Per Window | 80% | 95% | Testnet tolerates more operational instability while operators tune infrastructure |
 
 ### Network / P2P
 
@@ -76,10 +79,8 @@ Slashing parameters are intentionally identical between testnet and mainnet. Val
 The following parameters are intentionally kept at mainnet values to ensure accurate testing:
 
 - Block time target (6 seconds)
-- Unbonding period (21 days)
-- Inflation model (7% initial, 7-20% range)
-- Community tax (2%)
-- Slashing parameters (all)
+- Bond denom (`uaethel`, 6 decimals)
+- Fixed-supply token model with zero post-genesis inflation
 - IBC enabled
 - Vote extensions enabled
 

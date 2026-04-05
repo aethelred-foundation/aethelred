@@ -17,8 +17,8 @@ aethelred init --network testnet
 network = "testnet"
 
 # RPC and API endpoints (auto-set when you switch networks)
-rpc_endpoint = "https://testnet-rpc.aethelred.io"
-api_endpoint = "https://testnet-api.aethelred.io"
+rpc_endpoint = "https://rpc.testnet.aethelred.io"
+api_endpoint = "https://api.testnet.aethelred.io"
 
 # Chain identifier
 chain_id = "aethelred-testnet-1"
@@ -46,8 +46,8 @@ Every config key can be overridden with an environment variable prefixed by `AET
 | Variable | Config Key | Example |
 |----------|-----------|---------|
 | `AETHELRED_NETWORK` | `network` | `mainnet` |
-| `AETHELRED_RPC_ENDPOINT` | `rpc_endpoint` | `https://rpc.aethelred.io` |
-| `AETHELRED_API_ENDPOINT` | `api_endpoint` | `https://api.aethelred.io` |
+| `AETHELRED_RPC_ENDPOINT` | `rpc_endpoint` | `https://rpc.mainnet.aethelred.io` |
+| `AETHELRED_API_ENDPOINT` | `api_endpoint` | `https://api.mainnet.aethelred.io` |
 | `AETHELRED_CHAIN_ID` | `chain_id` | `aethelred-mainnet-1` |
 | `AETHELRED_OUTPUT_FORMAT` | `output_format` | `json` |
 | `AETHELRED_KEYRING_BACKEND` | `keyring_backend` | `file` |
@@ -62,9 +62,9 @@ The CLI ships with four built-in network profiles:
 
 | Network | RPC Endpoint | Chain ID | Explorer |
 |---------|-------------|----------|----------|
-| `mainnet` | `https://rpc.aethelred.io` | `aethelred-mainnet-1` | [explorer.aethelred.io](https://explorer.aethelred.io) |
-| `testnet` | `https://testnet-rpc.aethelred.io` | `aethelred-testnet-1` | [testnet.explorer.aethelred.io](https://testnet.explorer.aethelred.io) |
-| `devnet` | `https://devnet-rpc.aethelred.io` | `aethelred-devnet-1` | [devnet.explorer.aethelred.io](https://devnet.explorer.aethelred.io) |
+| `mainnet` | `https://rpc.mainnet.aethelred.io` | `aethelred-mainnet-1` | [explorer.aethelred.io](https://explorer.aethelred.io) |
+| `testnet` | `https://rpc.testnet.aethelred.io` | `aethelred-testnet-1` | [explorer.testnet.aethelred.io](https://explorer.testnet.aethelred.io) |
+| `devnet` | `https://rpc.devnet.aethelred.io` | `aethelred-devnet-1` | [explorer.devnet.aethelred.io](https://explorer.devnet.aethelred.io) |
 | `local` | `http://localhost:26657` | `aethelred-local-1` | `http://localhost:8080` |
 
 Switch networks on the fly:

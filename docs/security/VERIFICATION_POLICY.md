@@ -26,7 +26,7 @@ The policy is the single source of truth for:
 
 | Environment | Chain ID Pattern         | `AllowSimulated` | Real Verifier Required | Notes |
 |-------------|--------------------------|-------------------|------------------------|-------|
-| **Mainnet** | `aethelred-1`            | `false`           | Yes                    | Full production security |
+| **Mainnet** | `aethelred-mainnet-1`            | `false`           | Yes                    | Full production security |
 | **Testnet** | `aethelred-testnet-*`    | `false`           | Yes                    | Mirror mainnet policy |
 | **Devnet**  | `aethelred-devnet-*`     | `true` (optional) | No                     | Development iteration |
 | **Localnet**| `aethelred-local-*`      | `true`            | No                     | Single-validator testing |
