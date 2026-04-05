@@ -129,6 +129,7 @@ aethelred/
 ├── scripts/ # Dev tooling
 ├── tools/ # Load testing, devnet scripts
 ├── infrastructure/ # Helm charts, Terraform
+├── ecosystem/ # Canonical ecosystem manifest, dApp stubs, compatibility metadata
 └── docs/ # Architecture docs
 ```
 
@@ -177,6 +178,8 @@ aethel tx pouw submit-job \
 | [AIPs](https://github.com/aethelred-foundation/AIPs) | Aethelred Improvement Proposals |
 
 ### Flagship dApps
+
+The flagship dApps are canonical in their own standalone repositories. This protocol repo keeps ecosystem manifests and compatibility testing, not the long-term production source of truth for those apps.
 
 | dApp | Description |
 |---|---|

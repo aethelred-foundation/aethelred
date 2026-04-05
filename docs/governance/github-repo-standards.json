@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-03-13",
+  "updated_at": "2026-04-05",
   "org": "aethelred-foundation",
   "default_branch": "main",
   "default_codeowners": [
@@ -20,7 +20,7 @@
       "name": "aethelred",
       "source_path": ".",
       "role": "canonical-monorepo",
-      "description": "Canonical monorepo for the Aethelred protocol, security baselines, and public release provenance.",
+      "description": "Canonical protocol repository for the Aethelred chain, compatibility manifests, and public release provenance.",
       "homepage": "https://aethelred.io",
       "topics": [
         "aethelred",
@@ -190,7 +190,7 @@
     },
     {
       "name": "cruzible",
-      "source_path": "dApps/cruzible",
+      "source_path": "ecosystem/apps/cruzible",
       "role": "external-application-pointer",
       "description": "Reference stub for the canonical Cruzible repository; application source is maintained outside this monorepo.",
       "homepage": "https://cruzible.aethelred.io",
@@ -202,6 +202,86 @@
         "nextjs",
         "typescript",
         "web3"
+      ],
+      "has_discussions": false,
+      "inject_standards": false,
+      "release_authority": false
+    },
+    {
+      "name": "zeroid",
+      "source_path": "ecosystem/apps/zeroid",
+      "role": "external-application-pointer",
+      "description": "Reference stub for the canonical ZeroID repository; application source is maintained outside this monorepo.",
+      "homepage": "https://zeroid.aethelred.io",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "did",
+        "nextjs",
+        "self-sovereign-identity",
+        "tee",
+        "typescript",
+        "zero-knowledge-proofs"
+      ],
+      "has_discussions": false,
+      "inject_standards": false,
+      "release_authority": false
+    },
+    {
+      "name": "noblepay",
+      "source_path": "ecosystem/apps/noblepay",
+      "role": "external-application-pointer",
+      "description": "Reference stub for the canonical NoblePay repository; application source is maintained outside this monorepo.",
+      "homepage": "https://app.thenoble.one",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "compliance",
+        "cross-border-payments",
+        "enterprise",
+        "nextjs",
+        "tee",
+        "typescript"
+      ],
+      "has_discussions": false,
+      "inject_standards": false,
+      "release_authority": false
+    },
+    {
+      "name": "terraqura",
+      "source_path": "ecosystem/apps/terraqura",
+      "role": "external-application-pointer",
+      "description": "Reference stub for the canonical TerraQura repository; application source is maintained outside this monorepo.",
+      "homepage": "https://app.terraqura.com",
+      "topics": [
+        "aethelred",
+        "blockchain",
+        "carbon-credits",
+        "climate-tech",
+        "evm",
+        "iot",
+        "proof-of-physics",
+        "typescript"
+      ],
+      "has_discussions": false,
+      "inject_standards": false,
+      "release_authority": false
+    },
+    {
+      "name": "shiora",
+      "source_path": "ecosystem/apps/shiora",
+      "role": "external-application-pointer",
+      "description": "Reference stub for the canonical Shiora repository; application source is maintained outside this monorepo.",
+      "homepage": "https://app.shiora.health",
+      "topics": [
+        "aethelred",
+        "ai",
+        "blockchain",
+        "health-data",
+        "privacy",
+        "tee",
+        "typescript",
+        "zero-knowledge-proofs"
       ],
       "has_discussions": false,
       "inject_standards": false,

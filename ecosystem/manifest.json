@@ -1,0 +1,158 @@
+{
+  "$schema": "https://aethelred.io/schemas/ecosystem-manifest-v1.json",
+  "version": "1.0.0",
+  "last_updated": "2026-04-05",
+  "protocol": {
+    "repo": "aethelred-foundation/aethelred",
+    "chain_id": 8821,
+    "testnet_chain_id": 88210,
+    "status": "testnet-preview"
+  },
+  "tiers": {
+    "core": [
+      {
+        "name": "aethelred",
+        "repo": "aethelred-foundation/aethelred",
+        "role": "Protocol core: node, consensus, modules, chain runtime",
+        "canonical": true
+      },
+      {
+        "name": "contracts",
+        "repo": "aethelred-foundation/contracts",
+        "role": "Production smart contracts",
+        "canonical": true
+      },
+      {
+        "name": "AIPs",
+        "repo": "aethelred-foundation/AIPs",
+        "role": "Governance proposals",
+        "canonical": true
+      },
+      {
+        "name": "aethelred-docs",
+        "repo": "aethelred-foundation/aethelred-docs",
+        "role": "Documentation site",
+        "canonical": true
+      }
+    ],
+    "platform": [
+      {
+        "name": "aethelred-sdk-ts",
+        "repo": "aethelred-foundation/aethelred-sdk-ts",
+        "language": "TypeScript",
+        "role": "TypeScript SDK",
+        "canonical": true
+      },
+      {
+        "name": "aethelred-sdk-py",
+        "repo": "aethelred-foundation/aethelred-sdk-py",
+        "language": "Python",
+        "role": "Python SDK",
+        "canonical": true
+      },
+      {
+        "name": "aethelred-sdk-go",
+        "repo": "aethelred-foundation/aethelred-sdk-go",
+        "language": "Go",
+        "role": "Go SDK",
+        "canonical": true
+      },
+      {
+        "name": "aethelred-sdk-rs",
+        "repo": "aethelred-foundation/aethelred-sdk-rs",
+        "language": "Rust",
+        "role": "Rust SDK",
+        "canonical": true
+      },
+      {
+        "name": "aethelred-cli",
+        "repo": "aethelred-foundation/aethelred-cli",
+        "role": "CLI tool",
+        "canonical": true
+      },
+      {
+        "name": "vscode-aethelred",
+        "repo": "aethelred-foundation/vscode-aethelred",
+        "role": "VS Code extension",
+        "canonical": true
+      }
+    ],
+    "dapps": [
+      {
+        "name": "Cruzible",
+        "repo": "aethelred-foundation/cruzible",
+        "pinned_sha": "9be8e2dff6354c5984bf252f5f6cd0292f78861c",
+        "pinned_date": "2026-04-05",
+        "homepage": "https://cruzible.aethelred.io",
+        "description": "Explorer, staking, and governance dashboard",
+        "status": "testnet-preview",
+        "canonical": true,
+        "monorepo_stub": "ecosystem/apps/cruzible/",
+        "package_manager": "npm",
+        "lockfile": "package-lock.json",
+        "install_command": "npm ci",
+        "build_command": "npm run build"
+      },
+      {
+        "name": "ZeroID",
+        "repo": "aethelred-foundation/zeroid",
+        "pinned_sha": "08b1b82c09e8665b06fe6ff25aec0486f91bfcf5",
+        "pinned_date": "2026-04-05",
+        "homepage": "https://zeroid.aethelred.io",
+        "description": "Self-sovereign identity with ZK proofs and TEE attestation",
+        "status": "testnet-preview",
+        "canonical": true,
+        "monorepo_stub": "ecosystem/apps/zeroid/",
+        "package_manager": "npm",
+        "lockfile": "package-lock.json",
+        "install_command": "npm ci",
+        "build_command": "npm run build"
+      },
+      {
+        "name": "NoblePay",
+        "repo": "aethelred-foundation/noblepay",
+        "pinned_sha": "4b92ea8334cce8aa8d07f61f4d5e1e203a614c5a",
+        "pinned_date": "2026-04-05",
+        "homepage": "https://app.thenoble.one",
+        "description": "Enterprise cross-border payment platform with TEE compliance",
+        "status": "testnet-preview",
+        "canonical": true,
+        "monorepo_stub": "ecosystem/apps/noblepay/",
+        "package_manager": "npm",
+        "lockfile": "package-lock.json",
+        "install_command": "npm ci",
+        "build_command": "npm run build"
+      },
+      {
+        "name": "TerraQura",
+        "repo": "aethelred-foundation/terraqura",
+        "pinned_sha": "adba87e32cfec766df4ced5925dee185abf98c12",
+        "pinned_date": "2026-04-05",
+        "homepage": "https://app.terraqura.com",
+        "description": "Institutional-grade carbon credit platform with Proof-of-Physics",
+        "status": "testnet-preview",
+        "canonical": true,
+        "monorepo_stub": "ecosystem/apps/terraqura/",
+        "package_manager": "pnpm",
+        "lockfile": "pnpm-lock.yaml",
+        "install_command": "pnpm install --frozen-lockfile",
+        "build_command": "pnpm build"
+      },
+      {
+        "name": "Shiora",
+        "repo": "aethelred-foundation/shiora",
+        "pinned_sha": "48c0d0dcbf68dc64438a14fcc2c46f58cfc734ce",
+        "pinned_date": "2026-04-05",
+        "homepage": "https://app.shiora.health",
+        "description": "Women's health AI platform with ZK-enabled privacy",
+        "status": "testnet-preview",
+        "canonical": true,
+        "monorepo_stub": "ecosystem/apps/shiora/",
+        "package_manager": "npm",
+        "lockfile": "package-lock.json",
+        "install_command": "npm ci",
+        "build_command": "npm run build"
+      }
+    ]
+  }
+}
