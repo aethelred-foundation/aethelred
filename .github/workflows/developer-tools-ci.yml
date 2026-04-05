@@ -43,7 +43,7 @@ jobs:
       dashboard: ${{ steps.filter.outputs.dashboard }}
       local-testnet: ${{ steps.filter.outputs.local_testnet }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -79,7 +79,7 @@ jobs:
           - tools/cli/seal-verifier
           - tools/cli/model-registry
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -107,7 +107,7 @@ jobs:
     needs: changes
     if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.vscode-extension == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -139,7 +139,7 @@ jobs:
     needs: changes
     if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.dashboard == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -160,7 +160,7 @@ jobs:
     needs: changes
     if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.local-testnet == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate local testnet compose config
         run: |
           docker compose -f integrations/deploy/docker/docker-compose.local-testnet.yml config >/tmp/local-testnet-compose.yaml
@@ -171,7 +171,7 @@ jobs:
     needs: changes
     if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.local-testnet == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:

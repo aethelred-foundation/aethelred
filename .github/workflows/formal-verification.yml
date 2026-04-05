@@ -47,7 +47,7 @@ jobs:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_certora == 'true' }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -152,7 +152,7 @@ jobs:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || github.event.inputs.run_kani == 'true' }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -233,7 +233,7 @@ jobs:
           echo ""
           echo "Structure validation still passed. This is a non-blocking skip."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: env.CERTORA_KEY_PRESENT == 'true'
         with:
           submodules: recursive
@@ -321,7 +321,7 @@ jobs:
             # third-party global ASM that Kani cannot model yet.
             kani_args: "-Z unstable-options --ignore-global-asm"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Defer consensus proofs on pull requests
         if: ${{ matrix.crate == 'consensus' && github.event_name == 'pull_request' }}

@@ -10,7 +10,7 @@ jobs:
   repo-inventory:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Print manifest and test inventory
         run: |
           set -euo pipefail
@@ -28,7 +28,7 @@ jobs:
   sbom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Syft with retry
         shell: bash
         run: |
@@ -56,7 +56,7 @@ jobs:
   quick-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v5
         with:
           go-version: '1.25.8'
