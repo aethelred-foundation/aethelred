@@ -93,7 +93,7 @@ The tokenomics are designed around five core principles:
 | Cosmos Denomination | uaethel (micro-AETHEL, 6 decimals) |
 | EVM Denomination | wei (18 decimals) |
 | Cross-Layer Scale Factor | 1 uaethel = 10^12 wei |
-| Chain ID (Mainnet) | aethelred-1 (Cosmos) / 8821 (EVM) |
+| Chain ID (Mainnet) | aethelred-mainnet-1 (Cosmos) / 8821 (EVM) |
 | Chain ID (Testnet) | aethelred-testnet-1 / 88210 (EVM) |
 
 ### 2.2 Multi-Layer Denomination
@@ -584,7 +584,7 @@ Any remainder from integer division in the distribution calculation is added to 
 | Parameter | Value | Governance Bounds |
 |-----------|-------|-------------------|
 | Minimum Validator Stake | 100,000 AETHEL | >= 1 AETHEL |
-| Minimum Compute Node Stake | 10,000 AETHEL | — |
+| Minimum Compute Node Stake | 5,000 AETHEL | — |
 | Minimum Delegator Stake | 100 AETHEL | — |
 | Maximum Validators | 100 | [5, 500] |
 | Minimum Commission | 5% (500 BPS) | [1%, 50%] |
@@ -1349,7 +1349,7 @@ Every economically significant action emits indexed events for off-chain monitor
 | Cosmos Denomination | uaethel (6 decimals) | `tokenomics.go` |
 | EVM Denomination | wei (18 decimals) | `AethelredToken.sol` |
 | Scale Factor | 10^12 | `tokenomics.go:UaethToWeiScaleFactor` |
-| Chain ID (Cosmos) | aethelred-1 | `mainnet_params.go` |
+| Chain ID (Cosmos) | aethelred-mainnet-1 | `mainnet_params.go` |
 | Chain ID (EVM) | 8821 | Protocol specification |
 | TGE Target Price | $0.10 / AETHEL | Tokenomics Final v1.0 |
 | TGE FDV | $1,000,000,000 | Tokenomics Final v1.0 |
@@ -1385,7 +1385,7 @@ Every economically significant action emits indexed events for off-chain monitor
 | Parameter | Value | Source |
 |-----------|-------|--------|
 | Min Validator Stake | 100,000 AETHEL | `mainnet-genesis.json` |
-| Min Compute Stake | 10,000 AETHEL | `mainnet-genesis.json` |
+| Min Compute Stake | 5,000 AETHEL | `mainnet-genesis.json` |
 | Min Delegator Stake | 100 AETHEL | `mainnet-genesis.json` |
 | Max Validators | 100 | `tokenomics.go:MaxValidators` |
 | Min Commission | 500 BPS (5%) | `tokenomics.go:MinCommissionBps` |

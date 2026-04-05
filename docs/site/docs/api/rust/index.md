@@ -58,7 +58,7 @@ use aethelred::prelude::*;
 async fn main() -> Result<()> {
     let client = Client::new(ClientConfig {
         rpc_endpoint: "https://rpc.testnet.aethelred.io".into(),
-        chain_id: "aethelred-testnet-3".into(),
+        chain_id: "aethelred-testnet-1".into(),
         ..Default::default()
     }).await?;
 
@@ -81,7 +81,7 @@ All fallible operations return `Result<T, aethelred::Error>` with structured var
 match client.submit_job(request).await {
     Ok(job) => println!("Job ID: {}", job.id),
     Err(Error::InsufficientFunds { required, available }) => {
-        eprintln!("Need {} uaeth, have {}", required, available);
+        eprintln!("Need {} uaethel, have {}", required, available);
     }
     Err(Error::Network(e)) => eprintln!("Network error: {}", e),
     Err(e) => eprintln!("Unexpected: {}", e),

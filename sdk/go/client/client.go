@@ -33,17 +33,17 @@ func (n Network) Config() NetworkConfig {
 	switch n {
 	case Mainnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.mainnet.aethelred.org",
-			ChainID: "aethelred-1",
+			RPCURL:  "https://rpc.mainnet.aethelred.io",
+			ChainID: "aethelred-mainnet-1",
 		}
 	case Testnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.testnet.aethelred.org",
+			RPCURL:  "https://rpc.testnet.aethelred.io",
 			ChainID: "aethelred-testnet-1",
 		}
 	case Devnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.devnet.aethelred.org",
+			RPCURL:  "https://rpc.devnet.aethelred.io",
 			ChainID: "aethelred-devnet-1",
 		}
 	case Local:

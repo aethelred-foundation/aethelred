@@ -15,9 +15,9 @@ The Aethelred REST API provides programmatic access to the blockchain, allowing 
 
 | Network | Base URL |
 |---------|----------|
-| **Mainnet** | `https://rpc.aethelred.io` |
-| **Testnet (Nebula)** | `https://testnet-rpc.aethelred.io` |
-| **Devnet** | `https://devnet-rpc.aethelred.io` |
+| **Mainnet** | `https://rpc.mainnet.aethelred.io` |
+| **Testnet (Nebula)** | `https://rpc.testnet.aethelred.io` |
+| **Devnet** | `https://rpc.devnet.aethelred.io` |
 | **Local** | `http://localhost:26657` |
 
 ### Authentication
@@ -704,7 +704,7 @@ GET /v1/blocks/{height}
   "proposer": "aethelredval1abc...",
 
   "header": {
-    "chain_id": "aethelred-1",
+    "chain_id": "aethelred-mainnet-1",
     "app_hash": "0x123456...",
     "consensus_hash": "0x789abc...",
     "validators_hash": "0xdef012..."
@@ -988,7 +988,7 @@ GET /v1/status
 ```json
 {
   "network": {
-    "chain_id": "aethelred-1",
+    "chain_id": "aethelred-mainnet-1",
     "block_height": 1234567,
     "block_time": "2026-02-08T12:00:00Z",
     "sync_status": "SYNCED"

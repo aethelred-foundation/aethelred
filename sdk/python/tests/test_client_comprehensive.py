@@ -384,7 +384,7 @@ class TestAsyncClientUtility:
                 "default_node_info": {
                     "default_node_id": "abc123",
                     "listen_addr": "tcp://0.0.0.0:26656",
-                    "network": "aethelred-1",
+                    "network": "aethelred-mainnet-1",
                     "version": "0.37.0",
                     "moniker": "validator-1",
                 }
@@ -392,7 +392,7 @@ class TestAsyncClientUtility:
         )
 
         info = await client.get_node_info()
-        assert info.network == "aethelred-1"
+        assert info.network == "aethelred-mainnet-1"
         assert info.moniker == "validator-1"
 
     @pytest.mark.asyncio
@@ -423,7 +423,7 @@ class TestAsyncClientUtility:
         client._client = AsyncMock()
         client._client.request = AsyncMock(
             return_value=_make_response(200, {
-                "default_node_info": {"network": "aethelred-1"}
+                "default_node_info": {"network": "aethelred-mainnet-1"}
             })
         )
 
@@ -529,10 +529,10 @@ class TestSyncClient:
     def test_get_node_info(self) -> None:
         client = AethelredClient("https://node.test")
         client._async_client.get_node_info = AsyncMock(
-            return_value=MagicMock(network="aethelred-1")
+            return_value=MagicMock(network="aethelred-mainnet-1")
         )
         info = client.get_node_info()
-        assert info.network == "aethelred-1"
+        assert info.network == "aethelred-mainnet-1"
 
     def test_get_latest_block(self) -> None:
         client = AethelredClient("https://node.test")

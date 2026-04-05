@@ -28,7 +28,7 @@ async function main() {
       prefix: 'aethelred',
     });
     client = await AethelredClient.connectWithSigner(
-      { rpcUrl: 'https://testnet-rpc.aethelred.io' },
+      { rpcUrl: 'https://rpc.testnet.aethelred.io' },
       wallet
     );
     console.log('✓ Connected with signing capability');

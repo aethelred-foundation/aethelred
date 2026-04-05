@@ -36,7 +36,7 @@ let client = Client::with_failover(vec![
     "https://rpc1.mainnet.aethelred.io".into(),
     "https://rpc2.mainnet.aethelred.io".into(),
 ], ClientConfig {
-    chain_id: "aethelred-1".into(),
+    chain_id: "aethelred-mainnet-1".into(),
     ..Default::default()
 }).await?;
 ```
@@ -59,10 +59,10 @@ let tx = client.tx_builder()
     .add_message(MsgSend {
         from_address: sender.clone(),
         to_address: recipient.clone(),
-        amount: vec![Coin::new(1_000_000, "uaeth")],
+        amount: vec![Coin::new(1_000_000, "uaethel")],
     })
     .set_gas_limit(200_000)
-    .set_fee(vec![Coin::new(5_000, "uaeth")])
+    .set_fee(vec![Coin::new(5_000, "uaethel")])
     .set_memo("payment")
     .sign(&signer_name)
     .await?;

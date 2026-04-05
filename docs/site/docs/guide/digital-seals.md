@@ -90,7 +90,7 @@ Digital Seals are stored in a dedicated state tree with the following properties
 
 | Property | Value |
 |---|---|
-| Storage cost | 0.01 AETH per seal (includes 1 year of state rent) |
+| Storage cost | 0.01 AETHEL per seal (includes 1 year of state rent) |
 | Maximum metadata size | 4 KB |
 | Seal immutability | Seals are append-only; they cannot be modified or deleted |
 | Query index | By `seal_id`, `model_hash`, `creator`, or `jurisdiction` |

@@ -296,8 +296,8 @@ for i in {1..10}; do
 done
 
 # 2. Check with multiple sources that primary is not signing
-LAST_SIGNED=$(curl -s https://api.aethelred.org/validators/$VALIDATOR_ADDR/last_signed)
-CURRENT_HEIGHT=$(curl -s https://api.aethelred.org/status | jq .height)
+LAST_SIGNED=$(curl -s https://api.mainnet.aethelred.io/validators/$VALIDATOR_ADDR/last_signed)
+CURRENT_HEIGHT=$(curl -s https://api.mainnet.aethelred.io/status | jq .height)
 
 if [ $((CURRENT_HEIGHT - LAST_SIGNED)) -lt 100 ]; then
  echo "PRIMARY MAY STILL BE ACTIVE! Last signed $LAST_SIGNED, current $CURRENT_HEIGHT"
@@ -328,7 +328,7 @@ echo "Failover complete. Monitor for successful block signing."
 | Offense | Penalty | Jail Duration | Recovery |
 |---------|---------|---------------|----------|
 | Double Signing | 50% slash | Permanent | Impossible |
-| Downtime (>500 blocks) | 0.01% slash | 10 minutes | Automatic |
+| Downtime (>500 blocks) | 1.0% slash | 10 minutes | Automatic |
 | Byzantine Behavior | 5% slash | 1 week | Governance vote |
 
 ---

@@ -91,8 +91,8 @@ class Network(Enum):
     def rpc_url(self) -> str:
         """Get the default RPC URL for this network."""
         urls = {
-            Network.MAINNET: "https://rpc.aethelred.io",
-            Network.TESTNET: "https://testnet-rpc.aethelred.io",
+            Network.MAINNET: "https://rpc.mainnet.aethelred.io",
+            Network.TESTNET: "https://rpc.testnet.aethelred.io",
             Network.DEVNET: "http://localhost:26657",
             Network.CUSTOM: "",
         }
@@ -102,8 +102,8 @@ class Network(Enum):
     def api_url(self) -> str:
         """Get the default API URL for this network."""
         urls = {
-            Network.MAINNET: "https://api.aethelred.io",
-            Network.TESTNET: "https://testnet-api.aethelred.io",
+            Network.MAINNET: "https://api.mainnet.aethelred.io",
+            Network.TESTNET: "https://api.testnet.aethelred.io",
             Network.DEVNET: "http://localhost:1317",
             Network.CUSTOM: "",
         }
@@ -113,7 +113,7 @@ class Network(Enum):
     def chain_id(self) -> str:
         """Get the chain ID for this network."""
         chain_ids = {
-            Network.MAINNET: "aethelred-1",
+            Network.MAINNET: "aethelred-mainnet-1",
             Network.TESTNET: "aethelred-testnet-1",
             Network.DEVNET: "aethelred-devnet",
             Network.CUSTOM: "",
@@ -125,7 +125,7 @@ class Network(Enum):
         """Get the block explorer URL for this network."""
         urls = {
             Network.MAINNET: "https://explorer.aethelred.io",
-            Network.TESTNET: "https://testnet-explorer.aethelred.io",
+            Network.TESTNET: "https://explorer.testnet.aethelred.io",
             Network.DEVNET: "http://localhost:3000",
             Network.CUSTOM: "",
         }

@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signature = keypair.sign(data.hash())?;
 
     // Create digital seal
-    let client = AethelredClient::connect("https://testnet-rpc.aethelred.io")?;
+    let client = AethelredClient::connect("https://rpc.testnet.aethelred.io")?;
     let seal = client.create_seal(&data, &signature)?;
     
     println!("Seal: {}", seal.id());

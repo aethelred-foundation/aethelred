@@ -24,8 +24,8 @@ interface GlobalOptions {
 }
 
 const DEFAULT_NETWORKS: Record<string, string> = {
-  mainnet: "https://rpc.mainnet.aethelred.org",
-  testnet: "https://rpc.testnet.aethelred.org",
+  mainnet: "https://rpc.mainnet.aethelred.io",
+  testnet: "https://rpc.testnet.aethelred.io",
   // Use IPv4 loopback to avoid "::1" resolution mismatches with local mock RPC binds.
   devnet: "http://127.0.0.1:26657",
   local: "http://127.0.0.1:26657",

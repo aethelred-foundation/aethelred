@@ -12,14 +12,14 @@
 
 | File | Path | SHA-256 |
 |------|------|---------|
-| Genesis JSON | `config/genesis/testnet-genesis.json` | `3d1444f8aad97614323b5ddefaf85f27caf5c65cd9465a9aa4b84de8e018c36d` |
+| Genesis JSON | `config/genesis/testnet-genesis.json` | `fa276d9f9f9c5d2c50e17c88fb820b8e8ac500b8acb0ae1c1b9e0637c080b3a6` |
 | Checksum file | `config/genesis/testnet-genesis.sha256` | — |
 
 ### How to Verify Genesis
 
 ```bash
 # Clone the release branch
-git clone -b release/testnet-v1.0 https://github.com/aethelred/aethelred.git
+git clone -b release/testnet-v1.0 https://github.com/aethelred-foundation/aethelred.git
 cd aethelred
 
 # Verify checksum
@@ -64,7 +64,7 @@ peer-3@peer3.testnet.aethelred.io:26656
 |-----------|---------|---------|
 | Chain ID | `aethelred-testnet-1` | `aethelred-mainnet-1` |
 | Token symbol | `tAETHEL` | `AETHEL` |
-| Bond denom | `utaethelel` | `uaethelel` |
+| Bond denom | `uaethel` | `uaethel` |
 | Min validators | 4 | 21 |
 | Active set size | 50 | 100 |
 | Min validator stake | 1,000 tAETHEL | 100,000 AETHEL |

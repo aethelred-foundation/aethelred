@@ -37,7 +37,7 @@ func NewPrometheusExporter(metrics *ModuleMetrics) *PrometheusExporter {
 		customGauges:     make(map[string]*AtomicGauge),
 		customHistograms: make(map[string]*TimingHistogram),
 		defaultLabels: map[string]string{
-			"chain_id": "aethelred-1",
+			"chain_id": "aethelred-mainnet-1",
 		},
 	}
 }

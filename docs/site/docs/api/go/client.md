@@ -14,9 +14,9 @@ import "github.com/aethelred/sdk-go/client"
 
 | Network   | Chain ID                | RPC Endpoint                          |
 |-----------|-------------------------|---------------------------------------|
-| `Mainnet` | `aethelred-1`           | `https://rpc.mainnet.aethelred.org`   |
-| `Testnet` | `aethelred-testnet-1`   | `https://rpc.testnet.aethelred.org`   |
-| `Devnet`  | `aethelred-devnet-1`    | `https://rpc.devnet.aethelred.org`    |
+| `Mainnet` | `aethelred-mainnet-1`           | `https://rpc.mainnet.aethelred.io`   |
+| `Testnet` | `aethelred-testnet-1`   | `https://rpc.testnet.aethelred.io`   |
+| `Devnet`  | `aethelred-devnet-1`    | `https://rpc.devnet.aethelred.io`    |
 | `Local`   | `aethelred-local`       | `http://127.0.0.1:26657`             |
 
 ---

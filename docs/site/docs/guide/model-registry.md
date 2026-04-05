@@ -164,8 +164,8 @@ Model checkpoints are stored in Aethelred's decentralized storage layer (backed 
 
 | Component | Storage Location | Cost |
 |---|---|---|
-| Metadata + manifest | On-chain state | 0.01 AETH per version |
-| Checkpoint binary | Decentralized storage | 0.001 AETH per MB/month |
+| Metadata + manifest | On-chain state | 0.01 AETHEL per version |
+| Checkpoint binary | Decentralized storage | 0.001 AETHEL per MB/month |
 
 ## Related Pages
 

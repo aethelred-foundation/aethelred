@@ -1914,7 +1914,7 @@ func TestCB6_RenderLaunchReviewReport_AllCategories(t *testing.T) {
 
 func TestCB6_RenderGenesisCeremonyReport_AllFields(t *testing.T) {
 	result := &keeper.GenesisCeremonyResult{
-		ChainID:        "aethelred-1",
+		ChainID:        "aethelred-mainnet-1",
 		GenesisTime:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 		BlockHeight:    1,
 		ValidatorCount: 10,
@@ -1924,7 +1924,7 @@ func TestCB6_RenderGenesisCeremonyReport_AllFields(t *testing.T) {
 		ParamsHash:     "abc123",
 	}
 	report := keeper.RenderGenesisCeremonyReport(result)
-	require.Contains(t, report, "aethelred-1")
+	require.Contains(t, report, "aethelred-mainnet-1")
 }
 
 // ---------------------------------------------------------------------------

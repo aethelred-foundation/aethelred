@@ -1744,11 +1744,11 @@
   "servers": [
     {
       "description": "Mainnet",
-      "url": "https://rpc.mainnet.aethelred.org"
+      "url": "https://rpc.mainnet.aethelred.io"
     },
     {
       "description": "Testnet",
-      "url": "https://rpc.testnet.aethelred.org"
+      "url": "https://rpc.testnet.aethelred.io"
     },
     {
       "description": "Local Development",
