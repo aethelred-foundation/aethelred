@@ -4,6 +4,8 @@
  * Verifies that the SDK defaults proofType to HYBRID when not specified.
  */
 
+import { describe, expect, it } from 'vitest';
+
 import { ProofType } from '../core/types';
 
 describe('Enterprise Hybrid Defaults', () => {
