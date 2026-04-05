@@ -2,6 +2,8 @@
 
 Get started with Aethelred in under 5 minutes.
 
+If you are onboarding a validator for the public testnet, use [TESTNET_VALIDATOR_RUNBOOK.md](./TESTNET_VALIDATOR_RUNBOOK.md). This quickstart is for developers building against the protocol and for teams validating the local developer toolchain.
+
 ## Prerequisites
 
 - Python 3.9+ or Node.js 18+ or Go 1.21+ or Rust 1.70+
@@ -152,70 +154,65 @@ print(f"Validators: {len(verification.seal.validators)}")
 
 ## 4. Local Development Setup
 
-Run a local Aethelred node for development:
+Run the supported local devtools stack for protocol and SDK work:
 
 ```bash
 # Clone the repository
-git clone https://github.com/aethelred/aethelred
-cd aethelred/docker
+git clone https://github.com/aethelred-foundation/aethelred.git
+cd aethelred
 
-# Start local environment
-docker-compose up -d
+# Start the local stack (default profile: mock RPC + verifier apps)
+make local-testnet-up
 
-# Check services
-docker-compose ps
+# Check service health
+make local-testnet-doctor
 
-# Get testnet tokens
-curl -X POST http://localhost:8080/faucet \
- -d '{"address": "aethel1..."}'
+# Optional: run a real local validator instead of the mock RPC profile
+AETHELRED_LOCAL_TESTNET_PROFILE=real-node make local-testnet-up
 ```
 
 Services available:
 - **Node RPC**: http://localhost:26657
-- **REST API**: http://localhost:1317
-- **Explorer**: http://localhost:3000
-- **Faucet**: http://localhost:8080
+- **FastAPI verifier**: http://localhost:8000/health
+- **Next.js verifier**: http://localhost:3000/api/health
+- **Devtools dashboard**: http://localhost:3101/devtools (when the `dashboard` profile is enabled)
+
+The default local stack is for developer integration and UI verification. It is not the same thing as public testnet validator onboarding.
 
 ## 5. CLI Tools
 
 ### Install CLI
 
 ```bash
-npm install -g @aethelred/cli
+cargo install aethelred-cli
 ```
 
 ### Configure
 
 ```bash
-# Set network
-aethel config set-network testnet
+# Initialize config for testnet
+aethelred init --network testnet
 
-# Import wallet
-aethel wallet import ./wallet.json
+# Check connectivity
+aethelred status --json
 
-# Check balance
-aethel wallet balance
+# Generate or import a key if needed
+aethelred key generate
 ```
 
-### Submit Job via CLI
+### Common CLI Checks
 
 ```bash
-# Submit job
-aethel job submit \
- --model sha256:abc123... \
- --input sha256:def456... \
- --proof-type tee \
- --priority 5
+# Inspect validator/network state
+aethelred validator list
+aethelred validator status
 
-# Check status
-aethel job status <job-id>
-
-# Create seal
-aethel seal create --job <job-id>
-
-# Verify seal
-aethel seal verify <seal-id>
+# Create and verify a seal
+aethelred seal create --model <HASH> --input <HASH> --output <HASH>
+aethelred seal verify <SEAL_ID>
 ```
+
+For the full command surface, use [docs/site/docs/cli/commands.md](./site/docs/cli/commands.md) in the repo or the live CLI docs on `docs.aethelred.io`.
 
 ## 6. VS Code Extension
 
@@ -279,14 +276,16 @@ except JobError as e:
 - Learn about [post-quantum cryptography](./PQC_GUIDE.md)
 - Explore [compliance features](./COMPLIANCE.md)
 - Run the [example applications](../examples/)
+- Follow the [testnet validator runbook](./TESTNET_VALIDATOR_RUNBOOK.md) if you are joining as an operator
 - Join [Discord](https://discord.gg/aethelred) for support
 
 ## Resources
 
 | Resource | URL |
 |----------|-----|
-| Documentation | https://docs.aethelred.org |
-| API Reference | https://api.mainnet.aethelred.io/docs |
-| GitHub | https://github.com/aethelred |
-| Testnet Faucet | https://faucet.testnet.aethelred.org |
-| Block Explorer | https://explorer.aethelred.io |
+| Documentation | https://docs.aethelred.io |
+| API Reference | ./API_REFERENCE.md |
+| GitHub | https://github.com/aethelred-foundation/aethelred |
+| Testnet Faucet | https://faucet.testnet.aethelred.io |
+| Testnet Explorer | https://explorer.testnet.aethelred.io |
+| Validator Runbook | ./TESTNET_VALIDATOR_RUNBOOK.md |
