@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 // API configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.org';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.mainnet.aethelred.io';
 
 // Types
 interface NetworkStats {
@@ -151,6 +152,7 @@ function StatCard({
 
 // Main Dashboard component
 export default function Dashboard() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Queries with auto-refresh
@@ -180,14 +182,20 @@ export default function Dashboard() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.startsWith('seal_')) {
-      window.location.href = `/seals/${searchQuery}`;
-    } else if (searchQuery.startsWith('job_')) {
-      window.location.href = `/jobs/${searchQuery}`;
-    } else if (searchQuery.startsWith('aethel1')) {
-      window.location.href = `/address/${searchQuery}`;
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      return;
+    }
+
+    const encodedQuery = encodeURIComponent(trimmedQuery);
+    if (trimmedQuery.startsWith('seal_')) {
+      void router.push(`/seals/${encodedQuery}`);
+    } else if (trimmedQuery.startsWith('job_')) {
+      void router.push(`/jobs/${encodedQuery}`);
+    } else if (trimmedQuery.startsWith('aethel1')) {
+      void router.push(`/address/${encodedQuery}`);
     } else {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+      void router.push(`/search?q=${encodedQuery}`);
     }
   };
 

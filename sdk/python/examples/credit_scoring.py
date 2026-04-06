@@ -156,8 +156,9 @@ def main():
     # Simulated credit score output
     credit_score = 0.78  # 78% approval probability
 
-    print(f"\n   Credit Score Output: {credit_score:.4f}")
-    print(f"   Interpretation: {credit_score * 100:.1f}% approval probability")
+    approval_band = "STRONG" if credit_score > 0.75 else "REVIEW"
+    print(f"\n   Decision Band: {approval_band}")
+    print("   Interpretation: exact model outputs remain sealed in the audit artifact set")
 
     # Step 7: Verify result
     print("\n7. Verifying result cryptographically...")
@@ -195,8 +196,8 @@ def main():
     print("CREDIT SCORING COMPLETE")
     print("=" * 60)
     print(f"\nLoan Application Result:")
-    print(f"  - Credit Score: {credit_score * 100:.1f}%")
-    print(f"  - Recommendation: {'APPROVE' if credit_score > 0.6 else 'REVIEW'}")
+    print(f"  - Decision Band: {approval_band}")
+    print("  - Recommendation: see sealed result package")
     print(f"  - Verified: YES (TEE + zkML)")
     print(f"  - Audit Trail: {seal_id}")
     print(f"\nThis result is cryptographically verified and can be used")

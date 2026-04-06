@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"cosmossdk.io/log"
@@ -291,7 +292,12 @@ func (e *EnhancedVoteExtension) MarshalWithSignature() ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal signature: %w", err)
 	}
 
-	result := make([]byte, 4+len(baseBytes)+4+len(sigBytes))
+	totalLen, err := checkedEnhancedVoteExtensionSize(len(baseBytes), len(sigBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]byte, totalLen)
 	binary.BigEndian.PutUint32(result[0:4], uint32(len(baseBytes)))
 	copy(result[4:4+len(baseBytes)], baseBytes)
 	binary.BigEndian.PutUint32(result[4+len(baseBytes):8+len(baseBytes)], uint32(len(sigBytes)))
@@ -304,6 +310,27 @@ func (e *EnhancedVoteExtension) MarshalWithSignature() ([]byte, error) {
 // component (16 MB). This prevents integer overflow on 32-bit systems
 // and OOM DoS from crafted payloads. (GO-02 security fix)
 const maxVoteExtensionSize = 16 * 1024 * 1024
+
+func checkedEnhancedVoteExtensionSize(baseLen, sigLen int) (int, error) {
+	if baseLen < 0 || sigLen < 0 {
+		return 0, errors.New("vote extension component length cannot be negative")
+	}
+	if baseLen > maxVoteExtensionSize || sigLen > maxVoteExtensionSize {
+		return 0, fmt.Errorf(
+			"vote extension component too large: base=%d bytes, signature=%d bytes (max %d each)",
+			baseLen,
+			sigLen,
+			maxVoteExtensionSize,
+		)
+	}
+	if baseLen > math.MaxUint32 || sigLen > math.MaxUint32 {
+		return 0, fmt.Errorf("vote extension component exceeds uint32 encoding limit")
+	}
+	if baseLen > math.MaxInt-8 || sigLen > math.MaxInt-8-baseLen {
+		return 0, errors.New("enhanced vote extension size overflow")
+	}
+	return 8 + baseLen + sigLen, nil
+}
 
 // UnmarshalEnhancedVoteExtension unmarshals an enhanced vote extension
 func UnmarshalEnhancedVoteExtension(data []byte) (*EnhancedVoteExtension, error) {

@@ -22,6 +22,11 @@ pub async fn run(cmd: ConfigCommands, config: &Config) -> Result<()> {
 }
 
 fn show(config: &Config) -> Result<()> {
+    let custom: serde_json::Map<String, serde_json::Value> = config
+        .custom
+        .iter()
+        .map(|(key, value)| (key.clone(), json!(display_value(key, value))))
+        .collect();
     let payload = json!({
         "network": config.network,
         "rpc_endpoint": config.rpc_endpoint,
@@ -35,7 +40,7 @@ fn show(config: &Config) -> Result<()> {
             "price": config.gas.price,
             "adjustment": config.gas.adjustment
         },
-        "custom": config.custom
+        "custom": custom
     });
     print_value(&payload, &config.output_format)
 }
@@ -46,7 +51,7 @@ fn set_value(config: &Config, key: &str, value: &str) -> Result<()> {
         .set(key, value)
         .with_context(|| format!("failed to set '{key}'"))?;
     updated.save(None).context("failed to save config")?;
-    println!("Set {key} = {value}");
+    println!("Set {key} = {}", display_value(key, value));
     Ok(())
 }
 
@@ -54,8 +59,34 @@ fn get_value(config: &Config, key: &str) -> Result<()> {
     let value = config
         .get(key)
         .ok_or_else(|| anyhow!("key '{key}' not found"))?;
-    println!("{value}");
+    println!("{}", display_value(key, &value));
     Ok(())
+}
+
+fn display_value(key: &str, value: &str) -> String {
+    if is_sensitive_key(key) {
+        "[REDACTED]".to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn is_sensitive_key(key: &str) -> bool {
+    let normalized = key.to_ascii_lowercase();
+    [
+        "secret",
+        "token",
+        "password",
+        "private",
+        "mnemonic",
+        "seed",
+        "apikey",
+        "api_key",
+        "access_key",
+        "client_secret",
+    ]
+    .iter()
+    .any(|needle| normalized.contains(needle))
 }
 
 fn reset(config: &Config, key: Option<String>) -> Result<()> {
