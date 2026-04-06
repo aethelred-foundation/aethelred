@@ -90,7 +90,7 @@ export class ConfigManager {
                 simulatorEnabled: config.get<boolean>('hardware.simulatorEnabled') ?? true,
             },
             network: {
-                endpoint: config.get<string>('network.endpoint') ?? 'https://api.testnet.aethelred.io',
+                endpoint: config.get<string>('network.endpoint') ?? 'https://testnet-api.aethelred.io',
                 chain: config.get<'mainnet' | 'testnet' | 'devnet' | 'local'>('network.chain') ?? 'testnet',
             },
             ui: {
