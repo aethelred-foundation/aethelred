@@ -25,7 +25,7 @@ async def main() -> None:
     # -- Step 1: Configure enterprise client -------------------
 
     rpc_url = os.environ.get(
-        "AETHELRED_RPC_URL", "https://rpc.testnet.aethelred.network"
+        "AETHELRED_RPC_URL", "https://rpc.testnet.aethelred.io"
     )
     api_key = os.environ.get("AETHELRED_API_KEY")
 

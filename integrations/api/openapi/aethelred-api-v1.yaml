@@ -21,8 +21,8 @@ info:
   version: 1.0.0
   contact:
     name: Aethelred Team
-    url: https://aethelred.org
-    email: developers@aethelred.org
+    url: https://aethelred.io
+    email: developers@aethelred.io
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
