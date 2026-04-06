@@ -1,4 +1,7 @@
 name: Nitro SDK Warning Budget
+permissions:
+  contents: read
+
 
 on:
   pull_request:

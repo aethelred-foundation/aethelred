@@ -1,4 +1,7 @@
 name: Infinity Sandbox CI
+permissions:
+  contents: read
+
 
 on:
   push:

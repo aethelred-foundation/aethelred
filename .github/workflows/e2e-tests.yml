@@ -1,4 +1,7 @@
 name: E2E Chain Tests
+permissions:
+  contents: read
+
 
 on:
   pull_request:

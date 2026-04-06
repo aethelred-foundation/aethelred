@@ -1,4 +1,7 @@
 name: Go SDK GPU Integration
+permissions:
+  contents: read
+
 
 on:
   workflow_dispatch:

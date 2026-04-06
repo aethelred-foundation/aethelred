@@ -1,4 +1,7 @@
 name: SDK Go pkg/nn Coverage
+permissions:
+  contents: read
+
 
 on:
   pull_request:

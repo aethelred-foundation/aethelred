@@ -1,4 +1,7 @@
 name: Contracts Size Gate
+permissions:
+  contents: read
+
 
 on:
   pull_request:

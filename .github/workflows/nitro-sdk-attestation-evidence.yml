@@ -1,4 +1,7 @@
 name: Nitro SDK Attestation Evidence Tests
+permissions:
+  contents: read
+
 
 on:
   pull_request:

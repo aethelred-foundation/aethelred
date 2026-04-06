@@ -1,4 +1,7 @@
 name: Security Scans
+permissions:
+  contents: read
+
 
 on:
   push:
