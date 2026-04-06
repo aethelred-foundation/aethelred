@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775499393959,
+  "lastUpdate": 1775502410121,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -239,6 +239,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2651,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6b802e72f287c4c96acde7e10ebff28f564dd6cd",
+          "message": "Merge pull request #73 from aethelred-foundation/codex/security-wave\n\nFix remaining share-readiness security findings",
+          "timestamp": "2026-04-06T23:05:31+04:00",
+          "tree_id": "7c3cca8560a9760d6d7c983918200e1a47eebf9f",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/6b802e72f287c4c96acde7e10ebff28f564dd6cd"
+        },
+        "date": 1775502409142,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 3164,
+            "range": "± 9",
             "unit": "ns/iter"
           }
         ]
