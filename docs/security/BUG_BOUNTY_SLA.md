@@ -1,55 +1,77 @@
-# Aethelred Immunefi Bug Bounty SLA (Testnet -> Mainnet)
+# Aethelred Bug Bounty SLA
 
-## Scope
+## Purpose
 
-This SLA governs submissions affecting:
+This document defines the operating service levels for the Aethelred protocol bug
+bounty and coordinated vulnerability disclosure workflow.
 
-- PoUW consensus and job assignment randomness
-- TEE attestation verification and enclave integrity checks
-- Slashing, insurance appeals, and emergency halt controls
-- Stablecoin bridge contracts and CCTP relay paths
+## Submission States
 
-## Severity Tiers
+| State | Meaning |
+|---|---|
+| Received | Submission entered intake queue |
+| Acknowledged | Reporter received first response |
+| Triage | Security team validating impact and reproduction |
+| Accepted | Valid issue with assigned severity and owner |
+| Fix In Progress | Engineering owner assigned and patch underway |
+| Mitigated | Immediate risk reduction in place |
+| Resolved | Fix merged and validated |
+| Rewarded | Reward decision finalized and payment approved |
+| Disclosed | Public disclosure approved and published |
 
-### Critical - `$100,000`
+## Response SLAs
 
-Examples:
+| Severity | Acknowledge | Triage decision | Update cadence |
+|---|---:|---:|---:|
+| Critical | 24 hours | 72 hours | every 24 hours |
+| High | 24 hours | 5 business days | every 3 business days |
+| Medium | 48 hours | 7 business days | weekly |
+| Low | 5 business days | 10 business days | at milestones |
 
-- TEE execution escape or attestation bypass that allows fraudulent compute acceptance
-- Consensus halt or permanent liveness break caused by protocol-level exploit
-- Bridge exploit enabling unauthorized mint/burn or loss of custody guarantees
+## Remediation Targets
 
-Target response: acknowledge within 24 hours, mitigation plan within 72 hours, patch rollout initiated immediately.
+| Severity | Target containment | Target resolution |
+|---|---:|---:|
+| Critical | immediate | 7 days or approved emergency window |
+| High | 5 business days | 21 days |
+| Medium | 10 business days | 45 days |
+| Low | next planned hardening cycle | 90 days |
 
-### High - `$50,000`
+These are operating targets, not absolute contractual guarantees. Issues with
+cross-chain, custody, or external dependency implications may require a longer
+coordinated remediation window.
 
-Examples:
+## Disclosure Windows
 
-- MEV/randomness manipulation in PoUW assignment that biases high-value workloads
-- Circuit-breaker or halt-governance bypass leading to unsafe unpause/halt control
-- Slashing/appeal logic exploit causing unauthorized reimbursement or slash evasion
+- Critical issues: disclosure after containment, remediation, and explicit
+  executive/security approval
+- High issues: disclosure normally after production deployment and regression
+  validation
+- Medium and Low issues: disclosure may be batched into a security release note
 
-Target response: acknowledge within 24 hours, mitigation plan within 5 days.
+## Communication Rules
 
-### Medium - `$10,000`
+- all security communication stays private until disclosure is approved
+- all accepted issues receive a named internal owner
+- all accepted issues must have an evidence trail in issue tracking and release
+  artifacts
+- all resolved issues require regression coverage or a written rationale when a
+  test is not feasible
 
-Examples:
+## Exclusions From Reward Eligibility
 
-- Security-impacting validation gaps requiring elevated privileges
-- Non-critical bridge/accounting mismatch risks with no direct theft path
-- Denial-of-service vectors with practical recovery paths
+- unsupported branch-only issues
+- already known internal issues
+- public information leaks with no security consequence
+- findings that require compromised root credentials without a protocol flaw
+- volumetric denial-of-service without a protocol weakness
 
-Target response: acknowledge within 48 hours, mitigation plan within 7 days.
+## Escalation Triggers
 
-## Exclusions
+The following conditions trigger executive-security escalation:
 
-- Findings requiring compromised validator/custodian root credentials
-- Best-practice issues with no realistic exploitability
-- Third-party provider outages without protocol exploit path
-
-## Disclosure Workflow
-
-1. Submit on Immunefi with PoC, affected component, blast radius, and reproducibility steps.
-2. Security team triages and assigns severity/owner.
-3. Patch + regression tests are required before closure.
-4. Public disclosure only after fix deployment and explicit disclosure window approval.
+- credible funds-at-risk scenario
+- chain safety or liveness risk
+- validator or governance privilege escalation
+- exploit path affecting custody or bridge invariants
+- issue likely to require emergency halt, rollback, or coordinated operator action

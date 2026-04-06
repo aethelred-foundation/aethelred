@@ -2,52 +2,119 @@
 
 ## Reporting a Vulnerability
 
-**Please do NOT report security vulnerabilities through public GitHub Issues.**
+Please do **not** report security vulnerabilities through public GitHub issues,
+discussions, or pull requests.
 
-Email **security@aethelred.io** with:
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact assessment
-- (Optional) Suggested fix
+Send reports to **security@aethelred.io** with:
 
-We will acknowledge within **24 hours** and provide a detailed response within **72 hours**.
+- affected asset, branch, tag, endpoint, or image
+- issue summary and impact
+- reproducible steps or proof of concept
+- exploit prerequisites and assumptions
+- logs, traces, or transaction references where relevant
+- suggested remediation, if available
 
-## Severity Matrix & SLA
+If you need an encrypted channel, email first and request a secure handoff.
 
-| Severity | Criteria | Response SLA | Fix SLA |
-|---|---|---|---|
-| **Critical** | Consensus halt, funds theft, double-spend | 24h | 7 days |
-| **High** | TEE bypass, ZK proof forgery, governance attack | 48h | 14 days |
-| **Medium** | DoS, data integrity issues | 72h | 30 days |
-| **Low** | Info leak, non-exploitable misconfig | 7 days | 90 days |
+## Program Status
 
-## Bug Bounty Program
+Aethelred currently operates a **private, invitation-only protocol bug bounty**
+for the protocol and validator surface.
 
-We maintain an active bug bounty program. Rewards are paid in AETHEL tokens.
+Current status:
 
-| Severity | Reward Range |
+- **Protocol bug bounty**: active, private by invitation
+- **Public protocol bug bounty**: not yet open
+- **dApps and ecosystem repos**: out of scope until separately announced
+
+## Program Contacts
+
+| Function | Contact |
 |---|---|
-| Critical | 50,000 – 500,000 AETHEL |
-| High | 10,000 – 50,000 AETHEL |
-| Medium | 1,000 – 10,000 AETHEL |
-| Low | 100 – 1,000 AETHEL |
+| Official intake mailbox | `security@aethelred.io` |
+| Interim triage owner | `Ramesh Tamilselvan <rameshtamilselvan@gmail.com>` |
+| Interim reward approval owner | `Ramesh Tamilselvan <rameshtamilselvan@gmail.com>` |
+| Interim disclosure approval owner | `Ramesh Tamilselvan <rameshtamilselvan@gmail.com>` |
 
-## Audit History
+The canonical program documents are:
 
-| Date | Auditor | Scope | Report |
-|---|---|---|---|
-| 2026-02-22 | Internal Security Review | Full protocol (Go, Rust, Solidity, SDKs) | [docs/audits/STATUS.md](docs/audits/STATUS.md) |
-| 2026-02-28 | External Consultant | VRF and protocol review | [docs/audits/STATUS.md](docs/audits/STATUS.md) |
-| 2026-03-13 | External mainnet audits | Contracts and consensus-critical paths | [docs/audits/README.md](docs/audits/README.md) |
+- [docs/security/BUG_BOUNTY_PROGRAM.md](docs/security/BUG_BOUNTY_PROGRAM.md)
+- [docs/security/BUG_BOUNTY_SEVERITY_MATRIX.md](docs/security/BUG_BOUNTY_SEVERITY_MATRIX.md)
+- [docs/security/BUG_BOUNTY_SLA.md](docs/security/BUG_BOUNTY_SLA.md)
+- [docs/security/BUG_BOUNTY_TRIAGE_PLAYBOOK.md](docs/security/BUG_BOUNTY_TRIAGE_PLAYBOOK.md)
+- [docs/security/BUG_BOUNTY_ROLLOUT_PLAN.md](docs/security/BUG_BOUNTY_ROLLOUT_PLAN.md)
 
-## Supported Versions
+## Scope Summary
 
-| Version | Supported |
+In scope for the current private program:
+
+- protocol consensus safety and liveness
+- validator, staking, slashing, and governance controls
+- PoUW job integrity, randomness, and settlement correctness
+- TEE attestation validation and enclave trust binding
+- bridge and custody-critical paths when deployed or reachable in the current release
+- protocol RPC, REST, gRPC, and validator-facing security flaws
+- protocol SDK issues that create a real protocol exploit path
+- validator image and release artifacts in the active supported release
+
+Out of scope unless explicitly approved in writing:
+
+- marketing sites, brochure pages, or general website content issues
+- social engineering, phishing, spam, or physical attacks
+- denial-of-service without a concrete protocol exploit path
+- missing headers, generic best-practice findings, or clickjacking with no material impact
+- third-party library CVEs without a demonstrated Aethelred exploit path
+- vulnerabilities in dApps or ecosystem repos that have not been explicitly added to scope
+
+## Supported Security Targets
+
+| Surface | Status |
 |---|---|
-| `main` | Yes |
-| `v0.x.x` | Yes |
+| `release/testnet-v1.0` | Supported |
+| `main` | Supported |
+| `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1` | Supported |
 
-## Audit Evidence And Provenance
+## Response Standards
+
+| Severity | Initial acknowledgement | Triage target | Update cadence |
+|---|---:|---:|---:|
+| Critical | 24 hours | 72 hours | every 24 hours |
+| High | 24 hours | 5 business days | every 3 business days |
+| Medium | 48 hours | 7 business days | weekly |
+| Low | 5 business days | 10 business days | at milestones |
+
+Detailed remediation and disclosure SLAs are maintained in
+[docs/security/BUG_BOUNTY_SLA.md](docs/security/BUG_BOUNTY_SLA.md).
+
+## Reward Policy
+
+The current protocol bounty is denominated in **USD value**, not in AETHEL
+tokens.
+
+Default payout method:
+
+- **USDC**
+
+Fallback payout methods may be used where needed for legal, compliance, or
+counterparty reasons.
+
+Severity bands and payout ranges are defined in
+[docs/security/BUG_BOUNTY_SEVERITY_MATRIX.md](docs/security/BUG_BOUNTY_SEVERITY_MATRIX.md).
+
+## Safe Harbor
+
+If you act in good faith, avoid privacy violations and destructive testing, and
+follow this policy, Aethelred will not pursue action against compliant security
+research performed within scope.
+
+Researchers must:
+
+- avoid accessing, modifying, or exfiltrating third-party data
+- avoid degrading availability for real users, validators, or counterparties
+- stop testing and report immediately once sensitive data or systemic access is obtained
+- avoid persistence, backdoors, or post-exploitation activity beyond what is needed to prove impact
+
+## Audit Evidence and Provenance
 
 - Audit evidence index: [docs/audits/README.md](docs/audits/README.md)
 - Audit status tracker: [docs/audits/STATUS.md](docs/audits/STATUS.md)
@@ -55,9 +122,8 @@ We maintain an active bug bounty program. Rewards are paid in AETHEL tokens.
 
 ## Security Design Principles
 
-- **Fail closed**: All security-critical paths default to reject/fail on unexpected state
-- **No floating point in consensus**: All arithmetic uses `sdkmath.Int` (deterministic)
-- **Signed vote extensions**: Ed25519 + BLS12-381 signatures required in production
-- **TEE attestation binding**: Block height + chain ID bound into attestation `UserData`
-- **PQC ready**: Dilithium3 post-quantum signatures available alongside Ed25519
-- **Encrypted mempool**: Threshold encryption prevents front-running
+- **Fail closed**: security-critical paths reject on unexpected state
+- **Deterministic consensus**: no floating point or nondeterministic arithmetic in consensus
+- **Attestation binding**: enclave trust is bound to chain and workload context
+- **Defense in depth**: compile-time, genesis-time, and runtime gates are all used
+- **Operational traceability**: security-relevant changes require evidence and provenance
