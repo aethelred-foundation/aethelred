@@ -74,7 +74,7 @@ Quick Start:
     >>> seal = client.seals.create(job_id=job.job_id)
 
 Documentation:
-    https://docs.aethelred.org/sdk/python
+    https://docs.aethelred.io/sdk/python
 
 GitHub:
     https://github.com/aethelred/sdk-python

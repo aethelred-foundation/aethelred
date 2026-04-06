@@ -9,7 +9,7 @@ version: '3.8'
 services:
   # ============ Aethelred Node ============
   aethelred-node:
-    image: aethelred/node:latest
+    image: ghcr.io/aethelred-foundation/aethelred/aethelredd:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile.node

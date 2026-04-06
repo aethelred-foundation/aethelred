@@ -11,7 +11,7 @@
 # ------------------------------------
 # Stage 1: Build the Go binary
 # ------------------------------------
-FROM golang:1.25.8-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25.8-bookworm AS builder
 
 WORKDIR /build
 
@@ -23,9 +23,11 @@ RUN go mod download
 COPY . .
 
 # Build with optimizations and version info
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
 ARG VERSION=dev
 ARG COMMIT=unknown
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build \
       -tags production \
       -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \

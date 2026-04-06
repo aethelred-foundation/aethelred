@@ -4,7 +4,7 @@
 
 **Document Version:** 1.1
 **Last Updated:** 2026-03-26
-**Contact:** security@aethelred.org | ops@aethelred.org
+**Contact:** security@aethelred.io | ops@aethelred.io
 
 > **Testnet validators:** This document is for **mainnet** operations.
 > For testnet, see [TESTNET_VALIDATOR_RUNBOOK.md](./TESTNET_VALIDATOR_RUNBOOK.md).
@@ -201,7 +201,7 @@ mkdir -p /data/aethelred/{config,data,keys}
 chmod 700 /data/aethelred/keys
 
 # 3. Pull the Aethelred node image
-docker pull aethelred/node:mainnet-v1.0.0  # Update to actual release tag before mainnet launch
+docker pull ghcr.io/aethelred-foundation/aethelred/aethelredd:mainnet-v1.0.0  # Update to actual release tag before mainnet launch
 
 # 4. Create config
 cat > /data/aethelred/config/config.toml << 'EOF'
@@ -243,7 +243,7 @@ docker run -d \
  -v /data/aethelred:/data \
  -v /opt/cloudhsm:/opt/cloudhsm:ro \
  --device /dev/cloudhsm \
- aethelred/node:mainnet-v1.0.0  # Update to actual release tag before mainnet launch \
+ ghcr.io/aethelred-foundation/aethelred/aethelredd:mainnet-v1.0.0  # Update to actual release tag before mainnet launch \
  start --config /data/config/config.toml
 ```
 
@@ -411,7 +411,7 @@ aethelredd snapshot restore --dry-run /backups/latest.tar.gz
 aws cloudhsmv2 describe-backups --backup-id latest
 
 # 3. Test failover node can start
-ssh failover "docker run --rm aethelred/node:latest version"
+ssh failover "docker run --rm ghcr.io/aethelred-foundation/aethelred/aethelredd:latest version"
 
 # 4. Log verification results
 echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log
@@ -458,7 +458,7 @@ echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log
 | **NOC Hotline** | 24/7 | Immediate |
 | **+971-50-XXX-XXXX** | | |
 | **Security Incident** | 24/7 | < 15 min |
-| **security@aethelred.org** | | |
+| **security@aethelred.io** | | |
 | **Slack: #validators-emergency** | 24/7 | < 5 min |
 
 ### Escalation Path

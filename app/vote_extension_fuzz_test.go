@@ -43,10 +43,14 @@ func FuzzVoteExtensionSignVerify(f *testing.F) {
 	f.Add([]byte("seed-2"))
 	f.Add([]byte("seed-3"))
 
+	// Reuse a deterministic keypair across iterations so the PR fuzz lane
+	// spends its budget on message variation instead of repeated key setup.
+	keySeed := sha256.Sum256([]byte("vote-extension-sign-verify"))
+	priv := ed25519.NewKeyFromSeed(keySeed[:])
+	pub := priv.Public().(ed25519.PublicKey)
+
 	f.Fuzz(func(t *testing.T, data []byte) {
 		seed := sha256.Sum256(data)
-		priv := ed25519.NewKeyFromSeed(seed[:])
-		pub := priv.Public().(ed25519.PublicKey)
 
 		height := int64(binary.BigEndian.Uint64(seed[:8]))
 		addr := seed[:20]

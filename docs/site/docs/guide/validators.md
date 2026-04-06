@@ -1,8 +1,10 @@
-# Validators
+# Mainnet Validator Requirements
+
+This page describes the planned production validator profile for Aethelred mainnet. If you are onboarding to the public testnet, use [Testnet Validator Onboarding](/guide/validator-testnet) and the canonical repository runbook instead.
 
 Validators are the backbone of the Aethelred network. They participate in BFT consensus, execute AI compute jobs inside TEE enclaves, and produce attestation quotes and zkML proofs. In return, they earn AETHEL token rewards proportional to the useful work they contribute.
 
-## Requirements
+## Planned Mainnet Requirements
 
 ### Hardware
 
@@ -26,7 +28,7 @@ Validators are the backbone of the Aethelred network. They participate in BFT co
 | Slashing for double-sign | 50% of stake |
 | Slashing for invalid attestation | 10% of stake |
 
-## Setting Up a Validator
+## Mainnet Setup Flow
 
 ### 1. Initialize the Node
 
@@ -187,6 +189,7 @@ aethelred tx staking delegate <validator-operator-addr> 10000000000uaethel \
 
 ## Related Pages
 
+- [Testnet Validator Onboarding](/guide/validator-testnet) -- public testnet operator flow
 - [Connecting to Network](/guide/network) -- node configuration
 - [TEE Attestation](/guide/tee-attestation) -- validator TEE requirements
 - [Submitting Jobs](/guide/jobs) -- jobs executed by validators

@@ -1004,9 +1004,9 @@
   },
   "info": {
     "contact": {
-      "email": "developers@aethelred.org",
+      "email": "developers@aethelred.io",
       "name": "Aethelred Team",
-      "url": "https://aethelred.org"
+      "url": "https://aethelred.io"
     },
     "description": "The Aethelred AI Blockchain API provides endpoints for submitting AI compute jobs,\ncreating digital seals, managing models, and verifying cryptographic proofs.\n",
     "license": {

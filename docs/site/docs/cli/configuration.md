@@ -77,7 +77,7 @@ aethelred --network mainnet status
 aethelred config set network mainnet
 ```
 
-Testnet and devnet include a faucet at `https://faucet.aethelred.io` and `https://devnet-faucet.aethelred.io` respectively.
+Testnet and devnet include faucets at `https://faucet.testnet.aethelred.io` and `https://faucet.devnet.aethelred.io` respectively.
 
 ## Keyring Setup
 

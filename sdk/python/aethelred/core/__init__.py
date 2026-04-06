@@ -6,7 +6,7 @@ Example::
 
     from aethelred.core import DualKeyWallet, AethelredConfig
 
-    config = AethelredConfig(endpoint="https://mainnet.aethelred.org")
+    config = AethelredConfig(endpoint="https://rpc.mainnet.aethelred.io")
     wallet = DualKeyWallet()
     print(wallet.address)
 """

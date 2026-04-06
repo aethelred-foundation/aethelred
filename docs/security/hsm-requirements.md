@@ -670,8 +670,8 @@ disaster_recovery:
 ### HSM Integration Support
 
 - **Technical Support**: hsm-support@aethelred.org
-- **Security Incidents**: security@aethelred.org
-- **Documentation**: https://docs.aethelred.org/security/hsm
+- **Security Incidents**: security@aethelred.io
+- **Documentation**: https://docs.aethelred.io/security/hsm
 
 ### Vendor Support Contacts
 

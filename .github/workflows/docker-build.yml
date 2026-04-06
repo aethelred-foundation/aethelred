@@ -2,8 +2,8 @@ name: Docker Build & Push
 
 on:
   push:
-    branches: [main, develop]
-    tags: ["v*"]
+    branches: [main, develop, "release/**"]
+    tags: ["v*", "testnet-v*", "mainnet-v*"]
   pull_request:
     branches: [main]
 
@@ -13,7 +13,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/aethelredd
+  IMAGE_NAME: aethelred-foundation/aethelred/aethelredd
 
 jobs:
   docker-build:
@@ -41,12 +41,14 @@ jobs:
             type=sha,prefix=
             type=ref,event=branch
             type=semver,pattern={{version}}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

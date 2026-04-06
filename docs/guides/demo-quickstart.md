@@ -159,7 +159,7 @@ sudo systemctl start docker
 
 ## Need Help?
 
-- Documentation: https://docs.aethelred.ai
+- Documentation: https://docs.aethelred.io
 - GitHub: https://github.com/aethelred
 - Discord: https://discord.gg/aethelred
-- Email: team@aethelred.ai
+- Email: team@aethelred.io

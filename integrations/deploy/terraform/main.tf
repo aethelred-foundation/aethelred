@@ -117,7 +117,7 @@ variable "spammer_instance_type" {
 variable "aethelred_docker_image" {
   description = "Docker image for Aethelred node"
   type        = string
-  default     = "aethelred/node:latest"
+  default     = "ghcr.io/aethelred-foundation/aethelred/aethelredd:latest"
 }
 
 variable "ssh_key_name" {

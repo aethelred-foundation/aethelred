@@ -700,7 +700,7 @@ except AethelredError as e:
 
 ## Support
 
-- **Documentation**: https://docs.aethelred.org
+- **Documentation**: https://docs.aethelred.io
 - **GitHub**: https://github.com/aethelred
 - **Discord**: https://discord.gg/aethelred
-- **Email**: developers@aethelred.org
+- **Email**: developers@aethelred.io

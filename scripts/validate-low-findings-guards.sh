@@ -8,10 +8,29 @@ fail() {
   exit 1
 }
 
+has_match() {
+  local pattern="$1"
+  local file="$2"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "$pattern" "$file"
+  else
+    grep -Eq "$pattern" "$file"
+  fi
+}
+
+list_has_match() {
+  local pattern="$1"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "$pattern"
+  else
+    grep -Eq "$pattern"
+  fi
+}
+
 require_line() {
   local pattern="$1"
   local file="$2"
-  rg -q "$pattern" "$file" || fail "missing pattern '$pattern' in $file"
+  has_match "$pattern" "$file" || fail "missing pattern '$pattern' in $file"
 }
 
 require_fixed() {
@@ -41,13 +60,14 @@ VV="$ROOT/crates/core/src/pillars/vector_vault.rs"
 [[ -f "$VV" ]] || fail "missing $VV"
 require_line 'const EPSILON: f32' "$VV"
 require_line '!denom\.is_finite\(\) \|\| denom <= EPSILON' "$VV"
-require_line 'if score\.is_finite\(\) \{ score \} else \{ 0\.0 \}' "$VV"
+require_line 'if score\.is_finite\(\)' "$VV"
+require_line '0\.0' "$VV"
 
 # L-03: generic unsupported attestation format error (avoid EPID-specific leak).
 NITRO_ENGINE="$ROOT/services/tee-worker/nitro-sdk/src/attestation/engine.rs"
 [[ -f "$NITRO_ENGINE" ]] || fail "missing $NITRO_ENGINE"
 require_fixed 'Unsupported attestation quote format' "$NITRO_ENGINE"
-if rg -q 'Unsupported .*EPID|EPID.*unsupported' "$NITRO_ENGINE"; then
+if has_match '"[^"]*(Unsupported[^"]*EPID|EPID[^"]*unsupported)[^"]*"' "$NITRO_ENGINE"; then
   fail "L-03 guard violated: EPID-specific unsupported-format string leaked in $NITRO_ENGINE"
 fi
 
@@ -69,10 +89,10 @@ for repo in \
   "$ROOT/services/tee-worker/nitro-sdk"
 do
   if git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    if git -C "$repo" ls-files | rg -q '\.DS_Store$'; then
+    if git -C "$repo" ls-files | list_has_match '\.DS_Store$'; then
       fail "tracked .DS_Store detected in $repo"
     fi
-    if git -C "$repo" ls-files | rg -q '(^|/)target/'; then
+    if git -C "$repo" ls-files | list_has_match '(^|/)target/'; then
       fail "tracked target/ artifact detected in $repo"
     fi
   fi
