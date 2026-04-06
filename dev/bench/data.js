@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775502410121,
+  "lastUpdate": 1775502631792,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -269,6 +269,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 3164,
             "range": "± 9",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bc6203b6997adb9ce827fcfde199bf32cef28873",
+          "message": "Merge pull request #74 from aethelred-foundation/codex/final-share\n\nUpdate demo dashboard Vite dependency",
+          "timestamp": "2026-04-06T23:09:12+04:00",
+          "tree_id": "7a4771b5530f5e80b620efc30481175c7abd8dc1",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/bc6203b6997adb9ce827fcfde199bf32cef28873"
+        },
+        "date": 1775502630890,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
