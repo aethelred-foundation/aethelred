@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775502631792,
+  "lastUpdate": 1775502845466,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -299,6 +299,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87f93f37cde9341fc0d0507f05eaf4f8d82f3349",
+          "message": "Merge pull request #75 from aethelred-foundation/codex/final-share\n\nTighten final share-readiness guards",
+          "timestamp": "2026-04-06T23:12:48+04:00",
+          "tree_id": "0c8cee6cfaec420bf7388447097bb9b5dd7e07c2",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/87f93f37cde9341fc0d0507f05eaf4f8d82f3349"
+        },
+        "date": 1775502844674,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2999,
+            "range": "± 41",
             "unit": "ns/iter"
           }
         ]
