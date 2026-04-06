@@ -94,6 +94,12 @@ pub fn compute_commitment_hash(block_data: &str, nonce: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
+fn compute_block_data_hash(block_data: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(block_data.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
 /// Generate a random nonce for commitment.
 pub fn generate_nonce() -> String {
     use rand::Rng;
@@ -135,7 +141,7 @@ pub fn detect_mev_patterns(reveals: &[ValidatedReveal]) -> Vec<MevAlert> {
                     "MEDIUM"
                 }
                 .to_string(),
-                block_data_hash: compute_commitment_hash(data, ""),
+                block_data_hash: compute_block_data_hash(data),
             });
         }
     }

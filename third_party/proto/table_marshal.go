@@ -3002,11 +3002,20 @@ func (p *Buffer) Marshal(pb Message) error {
 // another n bytes. After grow(n), at least n bytes can be written to the
 // buffer without another allocation.
 func (p *Buffer) grow(n int) {
+	if n < 0 || len(p.buf) > math.MaxInt-n {
+		panic(ErrTooLarge)
+	}
 	need := len(p.buf) + n
 	if need <= cap(p.buf) {
 		return
 	}
-	newCap := len(p.buf) * 2
+	newCap := need
+	if len(p.buf) <= math.MaxInt/2 {
+		newCap = len(p.buf) * 2
+		if newCap < need {
+			newCap = need
+		}
+	}
 	if newCap < need {
 		newCap = need
 	}

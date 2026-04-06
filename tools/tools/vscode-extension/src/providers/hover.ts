@@ -19,24 +19,6 @@ import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
 
 /**
- * Pattern matching for sovereign decorators.
- */
-const SOVEREIGN_PATTERNS = {
-    python: {
-        decorator: /@sovereign\s*(\([^)]*\))?/g,
-        function: /def\s+(\w+)\s*\([^)]*\)/g,
-    },
-    rust: {
-        decorator: /#\[sovereign\s*(\([^)]*\))?\]/g,
-        function: /fn\s+(\w+)\s*(<[^>]*>)?\s*\([^)]*\)/g,
-    },
-    typescript: {
-        decorator: /@sovereign\s*(\([^)]*\))?/g,
-        function: /(?:async\s+)?function\s+(\w+)|(\w+)\s*[=:]\s*(?:async\s+)?(?:\([^)]*\)|[^=])*=>/g,
-    },
-};
-
-/**
  * Hover provider for Aethelred sovereign functions.
  */
 export class AethelredHoverProvider implements vscode.HoverProvider {

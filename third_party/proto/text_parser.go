@@ -313,6 +313,9 @@ func unescape(s string) (ch string, tail string, err error) {
 			return "", "", fmt.Errorf(`\%c%s contains non-hexadecimal digits`, r, ss)
 		}
 		if r == 'x' || r == 'X' {
+			if i > 0xFF {
+				return "", "", fmt.Errorf(`\%c%s is not a valid byte escape`, r, ss)
+			}
 			return string([]byte{byte(i)}), s, nil
 		}
 		if i > utf8.MaxRune {

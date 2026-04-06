@@ -224,10 +224,11 @@ fn apply_diversity_constraints(
     let candidate_map: HashMap<String, &ValidatorInput> =
         candidates.iter().map(|v| (v.address.clone(), v)).collect();
 
+    let selection_capacity = target_count.min(scored.len()).min(candidates.len());
     let mut region_count: HashMap<String, usize> = HashMap::new();
     let mut operator_count: HashMap<String, usize> = HashMap::new();
-    let mut selected_addrs: HashSet<String> = HashSet::with_capacity(target_count);
-    let mut selected = Vec::with_capacity(target_count);
+    let mut selected_addrs: HashSet<String> = HashSet::with_capacity(selection_capacity);
+    let mut selected = Vec::with_capacity(selection_capacity);
 
     for validator in scored {
         if selected.len() >= target_count {

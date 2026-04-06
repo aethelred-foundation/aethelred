@@ -80,7 +80,11 @@ function hashPayload(value: unknown): string {
 }
 
 function normalizedPrefix(prefix?: string): string {
-  return (prefix ?? "x-aethelred").toLowerCase().replace(/-+$/, "");
+  let normalized = (prefix ?? "x-aethelred").toLowerCase();
+  while (normalized.endsWith("-")) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
 }
 
 function fireAndForget(hook: VerificationHook | undefined, envelope: VerificationEnvelope): void {
