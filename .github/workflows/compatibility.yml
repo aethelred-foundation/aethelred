@@ -16,7 +16,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout protocol repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build dApp matrix from manifest
         id: set-matrix
@@ -46,7 +46,7 @@ jobs:
     name: "${{ matrix.name }}"
     steps:
       - name: Checkout protocol repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         if: ${{ matrix.package_manager == 'pnpm' }}

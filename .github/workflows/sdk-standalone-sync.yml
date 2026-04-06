@@ -55,7 +55,7 @@ jobs:
       SDK_STANDALONE_AUTO_PUSH: ${{ vars.SDK_STANDALONE_AUTO_PUSH }}
       SDK_STANDALONE_AUTO_PR: ${{ vars.SDK_STANDALONE_AUTO_PR }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Determine whether matrix item should run
         id: select
