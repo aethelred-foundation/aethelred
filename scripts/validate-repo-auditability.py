@@ -37,7 +37,9 @@ def _normalize_origin(url: str | None) -> str | None:
     if not url:
         return None
     if url.startswith("git@github.com:"):
-        return url.replace("git@github.com:", "https://github.com/")
+        url = url.replace("git@github.com:", "https://github.com/")
+    if url.endswith(".git"):
+        url = url[:-4]
     return url
 
 
@@ -146,7 +148,7 @@ def validate(generate_matrix: bool, matrix_path: Path | None):
             continue
 
         origin = _normalize_origin(_git_origin(local_path))
-        expected_https = f"https://github.com/{repo_name}.git"
+        expected_https = _normalize_origin(f"https://github.com/{repo_name}.git")
         row["origin_ok"] = origin == expected_https
         if not row["origin_ok"]:
             failures.append(f"{repo_name}: origin mismatch ({origin!r} != {expected_https!r})")
