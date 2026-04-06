@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775479064102,
+  "lastUpdate": 1775482330970,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -179,6 +179,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 7",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8c4dc28a3d1179d501e103665d524663016eb986",
+          "message": "Merge pull request #71 from aethelred-foundation/codex/fix-fuzz-issues-59-67\n\nFix TEE fuzz crashes and start SDK dependency batches",
+          "timestamp": "2026-04-06T17:30:51+04:00",
+          "tree_id": "ff7d29578390bd67806d51c51436d528f5603566",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/8c4dc28a3d1179d501e103665d524663016eb986"
+        },
+        "date": 1775482330031,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2999,
+            "range": "± 2",
             "unit": "ns/iter"
           }
         ]
