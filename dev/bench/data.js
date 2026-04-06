@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775482330970,
+  "lastUpdate": 1775499393959,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -209,6 +209,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2999,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d804bc7d207eb1e649aab04feb720c5dcaccb71",
+          "message": "Set explicit workflow token permissions (#72)\n\n* Set explicit workflow token permissions\n\n* Fix auditability and nitro warning guard\n\n* Align auditability registry with workflow set",
+          "timestamp": "2026-04-06T22:15:12+04:00",
+          "tree_id": "e4d2f8d11e71808095e3a96fe90486e1ce3d6aa1",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/0d804bc7d207eb1e649aab04feb720c5dcaccb71"
+        },
+        "date": 1775499392848,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
