@@ -1164,12 +1164,7 @@ impl Precompile for SgxDcapVerifyPrecompile {
         runtime_data_hash.copy_from_slice(&input[64..96]);
 
         // Extract quote bytes
-        if input.len() < quote_offset + quote_length {
-            return Err(PrecompileError::InvalidInputFormat(
-                "Quote data extends beyond input".into(),
-            ));
-        }
-        let quote_bytes = &input[quote_offset..quote_offset + quote_length];
+        let quote_bytes = checked_abi_slice(input, quote_offset, quote_length, "Quote data")?;
 
         // Parse the quote
         let quote = match self.parse_dcap_quote(quote_bytes) {
@@ -1545,13 +1540,8 @@ impl Precompile for NitroVerifyPrecompile {
         let mut user_data_hash = [0u8; 32];
         user_data_hash.copy_from_slice(&input[64..96]);
 
-        if input.len() < attestation_offset + attestation_length {
-            return Err(PrecompileError::InvalidInputFormat(
-                "Attestation extends beyond input".into(),
-            ));
-        }
-
-        let attestation_bytes = &input[attestation_offset..attestation_offset + attestation_length];
+        let attestation_bytes =
+            checked_abi_slice(input, attestation_offset, attestation_length, "Attestation")?;
 
         // Parse attestation
         let attestation = match self.parse_attestation(attestation_bytes) {
@@ -1871,13 +1861,7 @@ impl Precompile for SevSnpVerifyPrecompile {
         let mut expected_data_hash = [0u8; 32];
         expected_data_hash.copy_from_slice(&input[64..96]);
 
-        if input.len() < report_offset + report_length {
-            return Err(PrecompileError::InvalidInputFormat(
-                "Report extends beyond input".into(),
-            ));
-        }
-
-        let report_bytes = &input[report_offset..report_offset + report_length];
+        let report_bytes = checked_abi_slice(input, report_offset, report_length, "Report")?;
 
         // Parse report
         let report = match self.parse_report(report_bytes) {
@@ -2115,6 +2099,25 @@ fn u256_to_usize(bytes: &[u8; 32]) -> usize {
     val
 }
 
+fn checked_abi_slice<'a>(
+    input: &'a [u8],
+    offset: usize,
+    length: usize,
+    field_name: &str,
+) -> PrecompileResult<&'a [u8]> {
+    let end = offset.checked_add(length).ok_or_else(|| {
+        PrecompileError::InvalidInputFormat(format!("{field_name} range overflows input bounds"))
+    })?;
+
+    if end > input.len() {
+        return Err(PrecompileError::InvalidInputFormat(format!(
+            "{field_name} extends beyond input"
+        )));
+    }
+
+    Ok(&input[offset..end])
+}
+
 // =============================================================================
 // TESTS
 // =============================================================================
@@ -2281,6 +2284,51 @@ mod tests {
 
         let small_input = vec![0u8; 100];
         assert_eq!(precompile.gas_cost(&small_input), 300_000);
+    }
+
+    #[test]
+    fn test_universal_tee_precompile_rejects_issue_59_regression_without_panicking() {
+        let registry = crate::precompiles::PrecompileRegistry::new();
+        let input = [
+            0x04, 0x03, 0xfa, 0x04, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
+            0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
+            0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
+            0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c, 0x1c,
+            0x1c, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            registry.execute(addresses::TEE_VERIFY, &input, u64::MAX)
+        }));
+
+        assert!(result.is_ok(), "issue #59 regression panicked");
+    }
+
+    #[test]
+    fn test_universal_tee_precompile_rejects_issue_67_regression_without_panicking() {
+        let registry = crate::precompiles::PrecompileRegistry::new();
+        let input = [
+            0x01, 0x00, 0x00, 0x00, 0x47, 0x47, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93,
+            0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93,
+            0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93,
+            0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93,
+            0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93,
+            0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x93, 0x47, 0x47, 0x47, 0x47, 0x47,
+            0x47, 0x47, 0x47, 0x47, 0xc7, 0x47, 0x47, 0x47, 0x47, 0x47, 0x47, 0x47, 0x47, 0x47,
+        ];
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            registry.execute(addresses::TEE_VERIFY, &input, u64::MAX)
+        }));
+
+        assert!(result.is_ok(), "issue #67 regression panicked");
     }
 
     // =========================================================================
