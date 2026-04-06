@@ -44,9 +44,18 @@ jobs:
       cli: ${{ steps.filter.outputs.cli }}
       vscode_extension: ${{ steps.filter.outputs.vscode_extension }}
       dashboard: ${{ steps.filter.outputs.dashboard }}
+      dashboard_package: ${{ steps.dashboard_package.outputs.exists }}
       local_testnet: ${{ steps.filter.outputs.local_testnet }}
     steps:
       - uses: actions/checkout@v4
+      - name: Detect dashboard package manifest
+        id: dashboard_package
+        run: |
+          if [ -f frontend/dashboard/package.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -140,7 +149,7 @@ jobs:
   dashboard-build:
     runs-on: ubuntu-latest
     needs: changes
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.changes.outputs.dashboard == 'true') && hashFiles('frontend/dashboard/package.json') != '' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || needs.changes.outputs.dashboard == 'true') && needs.changes.outputs.dashboard_package == 'true' }}
     steps:
       - uses: actions/checkout@v4
 

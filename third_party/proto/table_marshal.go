@@ -3001,11 +3001,22 @@ func (p *Buffer) Marshal(pb Message) error {
 // grow grows the buffer's capacity, if necessary, to guarantee space for
 // another n bytes. After grow(n), at least n bytes can be written to the
 // buffer without another allocation.
+func checkedBufferGrowth(current, add int) (int, bool) {
+	if current < 0 || add < 0 {
+		return 0, false
+	}
+	need64 := uint64(current) + uint64(add)
+	if need64 > uint64(math.MaxInt) {
+		return 0, false
+	}
+	return int(need64), true
+}
+
 func (p *Buffer) grow(n int) {
-	if n < 0 || len(p.buf) > math.MaxInt-n {
+	need, ok := checkedBufferGrowth(len(p.buf), n)
+	if !ok {
 		panic(ErrTooLarge)
 	}
-	need := len(p.buf) + n
 	if need <= cap(p.buf) {
 		return
 	}
