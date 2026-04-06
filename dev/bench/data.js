@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775474869848,
+  "lastUpdate": 1775479064102,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -149,6 +149,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 3",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "77545e342827ff4a8bb7e59837d4a0b29d872afe",
+          "message": "Merge pull request #70 from aethelred-foundation/codex/bug-bounty-launch-pack\n\nLaunch protocol bug bounty program pack",
+          "timestamp": "2026-04-06T16:36:23+04:00",
+          "tree_id": "4307db1d3f81ed98445e67ead0175ca270e410b7",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/77545e342827ff4a8bb7e59837d4a0b29d872afe"
+        },
+        "date": 1775479063228,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 7",
             "unit": "ns/iter"
           }
         ]
