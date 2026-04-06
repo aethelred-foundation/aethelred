@@ -320,7 +320,7 @@
         },
         "aethelred.network.endpoint": {
           "type": "string",
-          "default": "https://testnet-api.aethelred.io",
+          "default": "https://api.testnet.aethelred.io",
           "description": "Aethelred network RPC endpoint."
         },
         "aethelred.network.chain": {

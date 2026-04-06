@@ -117,5 +117,5 @@ Supporting docs:
 1. Publish registry artifacts (PyPI / npm / crates.io / Go module path) using the SDK publish workflow.
 2. Decide final Go major-version strategy (`v1.x` now vs `/v2` module path migration).
 3. If direct GitHub install is required for npm/cargo, use the standalone export playbook and publish dedicated repos for `sdk/typescript` and `sdk/rust`: `$AETHELRED_REPO_ROOT/docs/sdk/REPO_SPLIT_PLAYBOOK.md`.
-4. Sync public docs URLs (`docs.aethelred.org`) to the current SDK README content after first registry release.
+4. Sync public docs URLs (`docs.aethelred.io`) to the current SDK README content after first registry release.
 5. Keep the vendored Python build backend in sync with `pyproject.toml` metadata when packaging fields change: `$AETHELRED_REPO_ROOT/sdk/python/build_backend/README.md`.

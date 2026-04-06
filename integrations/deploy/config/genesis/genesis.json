@@ -1,5 +1,5 @@
 {
-  "$schema": "https://aethelred.org/schemas/genesis-v1.json",
+  "$schema": "https://aethelred.io/schemas/genesis-v1.json",
   "chain_id": "aethelred-devnet-1",
   "chain_name": "Aethelred DevNet",
   "genesis_time": "2024-01-01T00:00:00.000000Z",

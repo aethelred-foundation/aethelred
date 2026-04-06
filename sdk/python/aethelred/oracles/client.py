@@ -287,7 +287,7 @@ class OracleClient:
         >>> from aethelred import Client
         >>> from aethelred.oracles import OracleClient
         >>>
-        >>> client = Client(endpoint="https://mainnet.aethelred.org")
+        >>> client = Client(endpoint="https://rpc.mainnet.aethelred.io")
         >>> oracle = OracleClient(client)
         >>>
         >>> # List available feeds

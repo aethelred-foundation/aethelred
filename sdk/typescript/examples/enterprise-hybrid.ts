@@ -25,7 +25,7 @@ async function main() {
   // just instantiate a client and submit jobs.
 
   const client = new AethelredClient({
-    rpcUrl: process.env.AETHELRED_RPC_URL ?? 'https://rpc.testnet.aethelred.network',
+    rpcUrl: process.env.AETHELRED_RPC_URL ?? 'https://rpc.testnet.aethelred.io',
     apiKey: process.env.AETHELRED_API_KEY,
   });
 

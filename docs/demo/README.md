@@ -178,4 +178,4 @@ cd crates/demo/falcon-lion && cargo build --release
 **Need help:**
 - Check logs in `demo/exports/logs/`
 - Run with `--verbose` flag
-- Contact: team@aethelred.ai
+- Contact: team@aethelred.io

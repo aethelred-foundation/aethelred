@@ -1,7 +1,7 @@
 # Aethelred Testnet Validator Runbook (v1.1)
 
 **Network:** `aethelred-testnet-1`
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-06
 **Image Tag:** `ghcr.io/aethelred-foundation/aethelred/aethelredd:testnet-v1.0.1`
 **Release Branch:** `release/testnet-v1.0`
 **Primary Contact:** `validators@aethelred.io`

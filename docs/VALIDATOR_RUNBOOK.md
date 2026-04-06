@@ -4,7 +4,7 @@
 
 **Document Version:** 1.1
 **Last Updated:** 2026-03-26
-**Contact:** security@aethelred.org | ops@aethelred.org
+**Contact:** security@aethelred.io | ops@aethelred.io
 
 > **Testnet validators:** This document is for **mainnet** operations.
 > For testnet, see [TESTNET_VALIDATOR_RUNBOOK.md](./TESTNET_VALIDATOR_RUNBOOK.md).
@@ -458,7 +458,7 @@ echo "Backup verification completed: $(date)" >> /var/log/backup-verify.log
 | **NOC Hotline** | 24/7 | Immediate |
 | **+971-50-XXX-XXXX** | | |
 | **Security Incident** | 24/7 | < 15 min |
-| **security@aethelred.org** | | |
+| **security@aethelred.io** | | |
 | **Slack: #validators-emergency** | 24/7 | < 5 min |
 
 ### Escalation Path

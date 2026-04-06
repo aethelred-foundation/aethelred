@@ -635,7 +635,7 @@ main() {
         echo -e "Results saved to: ${CYAN}$OUTPUT_DIR${NC}"
     fi
 
-    echo -e "For more information: ${CYAN}https://docs.aethelred.ai${NC}"
+    echo -e "For more information: ${CYAN}https://docs.aethelred.io${NC}"
     echo ""
 }
 

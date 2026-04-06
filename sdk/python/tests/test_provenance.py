@@ -98,7 +98,7 @@ class TestTrustedData:
         return {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
-                "https://aethelred.org/credentials/oracle/v1",
+                "https://aethelred.io/credentials/oracle/v1",
             ],
             "id": "urn:uuid:test-credential-123",
             "type": ["VerifiableCredential", "OraclePriceAttestation"],
