@@ -413,9 +413,9 @@ impl NitroEnclaveClient {
     /// In practice, uses the /dev/nsm device.
     #[cfg(target_os = "linux")]
     pub fn get_attestation_document(
-        user_data: Option<&[u8]>,
-        nonce: Option<&[u8]>,
-        public_key: Option<&[u8]>,
+        _user_data: Option<&[u8]>,
+        _nonce: Option<&[u8]>,
+        _public_key: Option<&[u8]>,
     ) -> Result<Vec<u8>, AttestationError> {
         // In an actual Nitro enclave, this would:
         // 1. Open /dev/nsm
@@ -429,7 +429,7 @@ impl NitroEnclaveClient {
 
     /// Get random bytes from Nitro RNG
     #[cfg(target_os = "linux")]
-    pub fn get_random(size: usize) -> Result<Vec<u8>, AttestationError> {
+    pub fn get_random(_size: usize) -> Result<Vec<u8>, AttestationError> {
         // Uses /dev/nsm for true random from the Nitro security module
         Err(AttestationError::AwsNitro(
             "Must run inside Nitro Enclave".to_string(),

@@ -1,4 +1,7 @@
 name: Sample Apps Docker Smoke
+permissions:
+  contents: read
+
 
 on:
   pull_request:

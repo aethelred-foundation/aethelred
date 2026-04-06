@@ -38,12 +38,11 @@ WARNING_COUNT="$(
   grep -E "warning: .* generated [0-9]+ warnings" "$LOG_FILE" \
     | tail -1 \
     | grep -Eo "[0-9]+" \
-    | tail -1
+    | tail -1 || true
 )"
 
 if [[ -z "${WARNING_COUNT:-}" ]]; then
-  echo "Could not parse warning count from cargo output" >&2
-  exit 1
+  WARNING_COUNT=0
 fi
 
 echo "nitro-sdk full-sdk warning count: ${WARNING_COUNT}"

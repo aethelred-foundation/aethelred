@@ -1,4 +1,7 @@
 name: SDK TypeScript Tests
+permissions:
+  contents: read
+
 
 on:
   pull_request:

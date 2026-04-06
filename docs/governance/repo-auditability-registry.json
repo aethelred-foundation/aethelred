@@ -22,7 +22,6 @@
         ".github/workflows/repo-authority-guard.yml",
         ".github/workflows/release.yml",
         ".github/workflows/release-please.yml",
-        ".github/workflows/security.yml",
         ".github/workflows/security-scans.yml"
       ],
       "advanced_expected_docs": [

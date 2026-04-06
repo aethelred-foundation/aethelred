@@ -1,4 +1,7 @@
 name: Rust Crates CI
+permissions:
+  contents: read
+
 
 on:
   push:

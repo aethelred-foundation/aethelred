@@ -1,4 +1,7 @@
 name: Repo Authority Guard
+permissions:
+  contents: read
+
 
 on:
   pull_request:

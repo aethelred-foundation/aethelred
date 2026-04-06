@@ -1,4 +1,7 @@
 name: Audit Config Guards
+permissions:
+  contents: read
+
 
 on:
   pull_request:

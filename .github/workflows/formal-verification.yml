@@ -9,6 +9,9 @@
 # Kani proofs are enforced as a required check.
 
 name: Formal Verification
+permissions:
+  contents: read
+
 
 on:
   schedule:
