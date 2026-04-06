@@ -17,7 +17,7 @@ Baseline required in every repo:
 
 | Repo | Role | Baseline | Tracked | Advanced | Push Readiness | Notes |
 |---|---|---:|---:|---:|---|---|
-| `aethelred-foundation/aethelred` | `canonical-monorepo` | 10/10 | 10/10 | 6/6 | ready (push may require workflow-scope PAT) | baseline tracked locally |
+| `aethelred-foundation/aethelred` | `canonical-monorepo` | 10/10 | 10/10 | 5/5 | ready (push may require workflow-scope PAT) | baseline tracked locally |
 | `aethelred-foundation/contracts` | `smart-contracts` | n/a | n/a | n/a | registry-only | not evaluated in this environment |
 | `aethelred-foundation/aethelred-sdk-ts` | `sdk-typescript` | n/a | n/a | n/a | registry-only | not evaluated in this environment |
 | `aethelred-foundation/aethelred-sdk-py` | `sdk-python` | n/a | n/a | n/a | registry-only | not evaluated in this environment |
