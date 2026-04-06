@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775383975267,
+  "lastUpdate": 1775474869848,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -119,6 +119,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 25",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "69f5f872e3b531924846770b3b45cab7fbe3e874",
+          "message": "Merge pull request #69 from aethelred-foundation/codex/release-to-main-sync\n\nSync release testnet updates into main",
+          "timestamp": "2026-04-06T15:26:29+04:00",
+          "tree_id": "2095fb1ea052922d311659af3919226e914450d8",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/69f5f872e3b531924846770b3b45cab7fbe3e874"
+        },
+        "date": 1775474869050,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 3",
             "unit": "ns/iter"
           }
         ]
