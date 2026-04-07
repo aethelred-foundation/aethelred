@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775528113901,
+  "lastUpdate": 1775529367962,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -359,6 +359,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2660,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "300554ba2a888d4fb02f6006d80585cf2bb66861",
+          "message": "Merge pull request #85 from aethelred-foundation/ramesh/share-readiness-alert-cleanup-20260407\n\nClose remaining share-readiness alerts",
+          "timestamp": "2026-04-07T06:34:47+04:00",
+          "tree_id": "0b477a0c1cf42374537e09f2ed4b6a9adae2d33b",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/300554ba2a888d4fb02f6006d80585cf2bb66861"
+        },
+        "date": 1775529366697,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 2",
             "unit": "ns/iter"
           }
         ]
