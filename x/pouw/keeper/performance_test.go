@@ -570,10 +570,12 @@ func TestBenchmark_InvariantsComplete(t *testing.T) {
 }
 
 func TestBenchmark_ParamValidation(t *testing.T) {
-	result := keeper.RunParamValidationBenchmark(100)
+	// Match the sample size used by GeneratePerformanceReport so the
+	// microbenchmark is stable on shared CI runners.
+	result := keeper.RunParamValidationBenchmark(1000)
 
 	require.Equal(t, "ValidateParams", result.Name)
-	require.Equal(t, 100, result.Iterations)
+	require.Equal(t, 1000, result.Iterations)
 	// Threshold lowered from 80k to 15k to accommodate GitHub Actions
 	// runners (ubuntu-latest, 2-4 cores) where param validation typically
 	// achieves ~50k ops/sec but can dip under load.
