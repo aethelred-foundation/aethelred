@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775587531714,
+  "lastUpdate": 1775588815764,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -449,6 +449,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "distinct": true,
+          "id": "569f18c44c923331d8a51099c27cd92130ee4ac6",
+          "message": "Stabilize CI param validation benchmark",
+          "timestamp": "2026-04-07T23:05:12+04:00",
+          "tree_id": "fdb4aca8adc9ff357a2df03811ab0f8547a01ef8",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/569f18c44c923331d8a51099c27cd92130ee4ac6"
+        },
+        "date": 1775588814706,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2999,
+            "range": "± 4",
             "unit": "ns/iter"
           }
         ]
