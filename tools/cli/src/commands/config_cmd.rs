@@ -80,7 +80,7 @@ fn display_value(key: &str, value: &str) -> String {
 }
 
 fn is_sensitive_key(key: &str) -> bool {
-    let normalized = key.to_ascii_lowercase();
+    let normalized = key.to_ascii_lowercase().replace(['-', '.'], "_");
     [
         "secret",
         "token",
@@ -92,6 +92,11 @@ fn is_sensitive_key(key: &str) -> bool {
         "api_key",
         "access_key",
         "client_secret",
+        "secret_key",
+        "signing_key",
+        "seed_phrase",
+        "auth",
+        "credential",
     ]
     .iter()
     .any(|needle| normalized.contains(needle))
@@ -161,4 +166,34 @@ fn import_config(input: &std::path::Path) -> Result<()> {
         .context("failed to persist imported config")?;
     println!("Imported config from {}", input.display());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{display_value, is_sensitive_key};
+
+    #[test]
+    fn redacts_sensitive_custom_keys_with_separators() {
+        assert_eq!(display_value("rpc.auth_token", "secret-value"), "[REDACTED]");
+        assert_eq!(display_value("signing-key", "secret-value"), "[REDACTED]");
+        assert_eq!(display_value("seed.phrase", "secret-value"), "[REDACTED]");
+    }
+
+    #[test]
+    fn leaves_non_sensitive_keys_visible() {
+        assert_eq!(
+            display_value("rpc_endpoint", "https://rpc.aethelred.io"),
+            "https://rpc.aethelred.io"
+        );
+        assert_eq!(display_value("network", "testnet"), "testnet");
+    }
+
+    #[test]
+    fn recognizes_common_secret_key_patterns() {
+        assert!(is_sensitive_key("api_key"));
+        assert!(is_sensitive_key("RPC.AUTH-TOKEN"));
+        assert!(is_sensitive_key("hardware.private.key"));
+        assert!(!is_sensitive_key("chain_id"));
+        assert!(!is_sensitive_key("gas.price"));
+    }
 }
