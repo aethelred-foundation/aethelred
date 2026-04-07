@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775502845466,
+  "lastUpdate": 1775528113901,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -329,6 +329,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2999,
             "range": "± 41",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96934c7fbe24aea54c5e403d677984897e58b93d",
+          "message": "Merge pull request #84 from aethelred-foundation/ramesh/share-readiness-security-fixes-20260407\n\nFix share-readiness security findings",
+          "timestamp": "2026-04-07T06:13:53+04:00",
+          "tree_id": "74eeb3d943a1858a3bbe26b3cbde8c786a1bbc6e",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/96934c7fbe24aea54c5e403d677984897e58b93d"
+        },
+        "date": 1775528112842,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2660,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
