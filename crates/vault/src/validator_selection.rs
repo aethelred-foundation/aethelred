@@ -17,10 +17,6 @@ use crate::types::*;
 /// Maximum score for any individual dimension (basis points).
 const MAX_SCORE: u32 = 10_000;
 
-/// Bound internal allocations even if an external caller supplies an
-/// unexpectedly large target count.
-const MAX_SELECTION_CAPACITY: usize = 10_000;
-
 /// Select validators from candidates using the TEE scoring algorithm.
 ///
 /// # Algorithm
@@ -228,15 +224,10 @@ fn apply_diversity_constraints(
     let candidate_map: HashMap<String, &ValidatorInput> =
         candidates.iter().map(|v| (v.address.clone(), v)).collect();
 
-    let selection_capacity = scored
-        .len()
-        .min(candidates.len())
-        .min(target_count)
-        .min(MAX_SELECTION_CAPACITY);
     let mut region_count: HashMap<String, usize> = HashMap::new();
     let mut operator_count: HashMap<String, usize> = HashMap::new();
-    let mut selected_addrs: HashSet<String> = HashSet::with_capacity(selection_capacity);
-    let mut selected = Vec::with_capacity(selection_capacity);
+    let mut selected_addrs: HashSet<String> = HashSet::new();
+    let mut selected = Vec::new();
 
     for validator in scored {
         if selected.len() >= target_count {

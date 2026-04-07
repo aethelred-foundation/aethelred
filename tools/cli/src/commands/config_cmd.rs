@@ -63,11 +63,7 @@ fn get_value(config: &Config, key: &str) -> Result<()> {
     let value = config
         .get(key)
         .ok_or_else(|| anyhow!("key '{key}' not found"))?;
-    if is_sensitive_key(key) {
-        println!("[REDACTED]");
-    } else {
-        println!("{value}");
-    }
+    println!("{}", display_value(key, &value));
     Ok(())
 }
 
