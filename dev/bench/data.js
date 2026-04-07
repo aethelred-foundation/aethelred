@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775529367962,
+  "lastUpdate": 1775530547642,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -383,6 +383,36 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/aethelred-foundation/aethelred/commit/300554ba2a888d4fb02f6006d80585cf2bb66861"
         },
         "date": 1775529366697,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e60a2a34e915216ad9bf5894a358ae9e908ee955",
+          "message": "Merge pull request #86 from aethelred-foundation/ramesh/share-readiness-final-redaction-20260407\n\nStop echoing config values in CLI output",
+          "timestamp": "2026-04-07T06:54:26+04:00",
+          "tree_id": "e5a36e0ec4bbedfb7f73c811cabf803575473a04",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/e60a2a34e915216ad9bf5894a358ae9e908ee955"
+        },
+        "date": 1775530546336,
         "tool": "cargo",
         "benches": [
           {
