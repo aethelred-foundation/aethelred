@@ -51,19 +51,20 @@ fn set_value(config: &Config, key: &str, value: &str) -> Result<()> {
         .set(key, value)
         .with_context(|| format!("failed to set '{key}'"))?;
     updated.save(None).context("failed to save config")?;
-    if is_sensitive_key(key) {
-        println!("Set {key} = [REDACTED]");
-    } else {
-        println!("Set {key} = {value}");
-    }
+    println!("Updated key '{key}'");
     Ok(())
 }
 
 fn get_value(config: &Config, key: &str) -> Result<()> {
-    let value = config
+    config
         .get(key)
         .ok_or_else(|| anyhow!("key '{key}' not found"))?;
-    println!("{}", display_value(key, &value));
+
+    if is_sensitive_key(key) {
+        println!("Key '{key}' is configured: [REDACTED]");
+    } else {
+        println!("Key '{key}' is configured");
+    }
     Ok(())
 }
 
