@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775530547642,
+  "lastUpdate": 1775587531714,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -413,6 +413,36 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/aethelred-foundation/aethelred/commit/e60a2a34e915216ad9bf5894a358ae9e908ee955"
         },
         "date": 1775530546336,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "distinct": true,
+          "id": "03365315184f756e7fb978522200f67e1f9976e5",
+          "message": "Fix CI by recording refmt checksum",
+          "timestamp": "2026-04-07T22:44:09+04:00",
+          "tree_id": "37fc6214bd2912594a4d15440dd3449999dd5a83",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/03365315184f756e7fb978522200f67e1f9976e5"
+        },
+        "date": 1775587530734,
         "tool": "cargo",
         "benches": [
           {
