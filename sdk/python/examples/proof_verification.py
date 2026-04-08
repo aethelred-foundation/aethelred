@@ -1,424 +1,304 @@
 #!/usr/bin/env python3
 """
-Proof Generation and Verification Example
+Proof Verification Example
 
-This example demonstrates how to:
-1. Generate zero-knowledge proofs locally
-2. Verify zkML proofs
-3. Verify TEE attestations
-4. Work with hybrid proofs (TEE + zkML)
+This example demonstrates how to use the Aethelred SDK to:
+1. Fetch and verify Digital Seals
+2. Inspect TEE attestations
+3. Inspect zkML proofs
+4. Understand hybrid verification (TEE + zkML)
 
 Prerequisites:
-    pip install -e /Users/rameshtamilselvan/Downloads/AethelredMVP/sdk/python[ml]
+    pip install aethelred
 
 Usage:
+    export AETHELRED_API_KEY="your-api-key"
     python proof_verification.py
 """
 
-import numpy as np
-from datetime import datetime
+import logging
+import os
+from datetime import datetime, timezone
 
 from aethelred import (
-    ProofGenerator,
-    ProofVerifier,
-    TEEVerifier,
-    ZKVerifier,
-    ProofConfig,
-    ProofSystem,
-    setup_logging,
-)
-from aethelred.core.types import (
-    Circuit,
-    CircuitMetrics,
-    Proof,
+    AethelredClient,
+    Config,
     ProofType,
-    ZKProof,
     TEEAttestation,
     TEEPlatform,
+    ZKMLProof,
+    VerificationResult,
+    sha256_hex,
 )
 
-
-def create_mock_circuit() -> Circuit:
-    """Create a mock circuit for demonstration."""
-    return Circuit(
-        circuit_id="circuit_demo_001",
-        model_hash="sha256:abc123def456...",
-        version="1.0.0",
-        circuit_binary=b"MOCK_CIRCUIT_BINARY",
-        verification_key=b"MOCK_VERIFICATION_KEY",
-        proving_key_hash="sha256:pk_hash_789...",
-        input_shape=(1, 64),
-        output_shape=(1, 1),
-        quantization_bits=8,
-        optimization_level=2,
-        metrics=CircuitMetrics(
-            constraints=1000000,
-            public_inputs=2,
-            private_inputs=64,
-            gates=2000000,
-            depth=1000,
-            memory_bytes=32000000,
-            estimated_proving_time_ms=1000,
-        ),
-        framework="pytorch",
-    )
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
-def create_mock_tee_attestation() -> TEEAttestation:
-    """Create a mock TEE attestation."""
-    return TEEAttestation(
-        platform=TEEPlatform.INTEL_SGX,
-        enclave_id="enclave_demo_001",
-        measurement="mrenclave_abc123...",
-        report_data=b"output_hash_demo",
-        signature=b"ATTESTATION_SIGNATURE",
-        certificate_chain=[b"CERT_1", b"CERT_2", b"ROOT_CERT"],
-        timestamp=datetime.utcnow(),
-    )
+# ---------------------------------------------------------------------------
+# 1. Seal Verification
+# ---------------------------------------------------------------------------
 
-
-def proof_generation_example():
-    """Demonstrate local proof generation."""
+def seal_verification_example(client: AethelredClient) -> None:
+    """Demonstrate fetching and verifying a Digital Seal."""
     print("\n" + "=" * 50)
-    print("Proof Generation")
+    print("1. Digital Seal Verification")
     print("=" * 50)
 
-    # Initialize generator
-    generator = ProofGenerator(
-        default_proof_system=ProofSystem.HALO2,
-        gpu_enabled=True
-    )
+    # In production, this seal_id would come from a previous job submission
+    demo_seal_id = "seal_demo_001"
 
-    # Create mock circuit and input
-    circuit = create_mock_circuit()
-    input_data = np.random.randn(1, 64).astype(np.float32)
+    print(f"\n   Fetching seal: {demo_seal_id}")
 
-    print("\n1. Basic Proof Generation:")
-    print(f"   Circuit: {circuit.circuit_id}")
-    print(f"   Input shape: {input_data.shape}")
-    print(f"   Proof system: Halo2")
+    try:
+        seal = client.seals.get(demo_seal_id)
 
-    # Generate proof (simulated)
-    print("\n   Generating proof...")
-    print("   - Witness generation: 150ms")
-    print("   - Proof generation: 2,100ms")
-    print("   - Self-verification: PASSED")
+        print(f"   Seal ID      : {seal.id}")
+        print(f"   Status       : {seal.status}")
+        print(f"   Proof Type   : {seal.proof_type}")
+        print(f"   Block Height : {seal.block_height}")
 
-    print("\n2. Different Proof Systems:")
+        # Verify the seal on-chain
+        print("\n   Verifying seal on-chain...")
+        result = client.verification.verify_seal(demo_seal_id)
+        print(f"   Valid: {result.get('valid', 'N/A')}")
 
-    systems = [
-        ("groth16", "Fastest verification, smallest proofs, trusted setup required"),
-        ("plonk", "Universal setup, good balance of proof size and speed"),
-        ("halo2", "No trusted setup, recursive friendly"),
-        ("stark", "Transparent, quantum resistant, larger proofs"),
+    except Exception as exc:
+        logger.info("Network unavailable, simulating: %s", exc)
+        _print_simulated_seal_verification(demo_seal_id)
+
+
+def _print_simulated_seal_verification(seal_id: str) -> None:
+    """Print simulated seal verification output."""
+    print(f"\n   [Simulated] Seal ID      : {seal_id}")
+    print(f"   [Simulated] Status       : ACTIVE")
+    print(f"   [Simulated] Proof Type   : HYBRID")
+    print(f"   [Simulated] Block Height : 1,234,567")
+    print(f"   [Simulated] TX Hash      : 0xabc123...def456")
+    print(f"   [Simulated] Timestamp    : {datetime.now(tz=timezone.utc).isoformat()}")
+
+    print("\n   [Simulated] Seal Commitments:")
+    print(f"   - Model Hash : {sha256_hex(b'demo-model')[:16]}...")
+    print(f"   - Input Hash : {sha256_hex(b'demo-input')[:16]}...")
+    print(f"   - Output Hash: {sha256_hex(b'demo-output')[:16]}...")
+
+    print("\n   [Simulated] Verification Checks:")
+    print("     not_revoked          : PASS")
+    print("     output_hash          : PASS")
+    print("     validator_signatures : PASS (3/3)")
+    print("   [Simulated] Overall: VALID")
+
+
+# ---------------------------------------------------------------------------
+# 2. TEE Attestation Inspection
+# ---------------------------------------------------------------------------
+
+def tee_attestation_example() -> None:
+    """Demonstrate TEE attestation structure and verification concepts."""
+    print("\n" + "=" * 50)
+    print("2. TEE Attestation Inspection")
+    print("=" * 50)
+
+    print("\n   Supported TEE Platforms:")
+    for platform in TEEPlatform:
+        print(f"     - {platform.value}")
+
+    print("\n   Intel SGX Attestation:")
+    print("   When a job runs inside an SGX enclave, the attestation includes:")
+    print("   - MRENCLAVE: hash of the enclave code and data")
+    print("   - Report data: hash of the computation output")
+    print("   - Quote signature: signed by the Intel Attestation Service")
+    print("   - Certificate chain: verifiable up to Intel's root CA")
+
+    print("\n   AMD SEV-SNP Attestation:")
+    print("   - Measurement: hash of the VM image")
+    print("   - SNP report: hardware-signed attestation report")
+    print("   - VCEK/ASK/ARK certificate chain to AMD root")
+
+    print("\n   AWS Nitro Attestation:")
+    print("   - PCR values: Platform Configuration Registers")
+    print("     PCR0 = enclave image, PCR1 = kernel, PCR2 = application")
+    print("   - COSE_Sign1 document signed by the Nitro HSM")
+
+    print("\n   Verification checks performed for all platforms:")
+    checks = [
+        ("signature", "Attestation signature is cryptographically valid"),
+        ("certificate_chain", "Chain of trust verified to platform root CA"),
+        ("measurement", "Code measurement matches expected hash"),
+        ("tcb_level", "Trusted Computing Base is up-to-date"),
+        ("freshness", "Attestation is not expired"),
     ]
-
-    for system, description in systems:
-        print(f"\n   {system.upper()}:")
-        print(f"     {description}")
-
-        # Show example
-        print(f"""
-     result = generator.generate(
-         circuit=circuit,
-         input_data=input_data,
-         proof_system="{system}"
-     )
-        """)
-
-    print("3. Proof Configuration:")
-    print("""
-    config = ProofConfig(
-        proof_system=ProofSystem.HALO2,
-        use_gpu=True,
-        gpu_device=0,
-        num_threads=8,
-        max_memory_gb=32,
-        memory_mapped=True,
-        parallel_proving=True,
-        batch_size=1,
-        compress_proof=True,
-        include_public_inputs=True,
-        timeout_seconds=300
-    )
-
-    result = generator.generate(
-        circuit=circuit,
-        input_data=input_data,
-        config=config
-    )
-    """)
-
-    print("4. Batch Proof Generation:")
-    print("""
-    inputs = [input1, input2, input3, input4]
-
-    results = generator.generate_batch(
-        circuit=circuit,
-        inputs=inputs,
-        parallel=True
-    )
-
-    for i, result in enumerate(results):
-        print(f"Proof {i}: {result.proving_time_ms}ms")
-    """)
+    for name, description in checks:
+        print(f"     {name:20s}: {description}")
 
 
-def proof_verification_example():
-    """Demonstrate proof verification."""
+# ---------------------------------------------------------------------------
+# 3. zkML Proof Inspection
+# ---------------------------------------------------------------------------
+
+def zkml_proof_example() -> None:
+    """Demonstrate zkML proof structure and verification concepts."""
     print("\n" + "=" * 50)
-    print("Proof Verification")
+    print("3. zkML Proof Inspection")
     print("=" * 50)
 
-    verifier = ProofVerifier()
-    circuit = create_mock_circuit()
+    print("\n   Supported proof systems:")
+    systems = [
+        ("Groth16", "Fastest verification (~10ms), smallest proofs, trusted setup required"),
+        ("PLONK", "Universal setup, good balance of proof size and speed"),
+        ("Halo2", "No trusted setup, recursive proof friendly"),
+        ("STARK", "Transparent (no trusted setup), quantum resistant, larger proofs"),
+    ]
+    for name, description in systems:
+        print(f"     {name:8s}: {description}")
 
-    print("\n1. Unified Verification:")
-    print("""
-    # Verify any proof type
-    result = verifier.verify(
-        proof=proof,
-        circuit=circuit,
-        expected_input_hash="abc123...",
-        expected_output_hash="def456...",
-        expected_model_hash="789xyz..."
-    )
+    print("\n   A zkML proof guarantees that:")
+    print("   1. The correct model was used (model hash commitment)")
+    print("   2. The correct input was processed (input hash commitment)")
+    print("   3. The computation was performed faithfully (circuit satisfaction)")
+    print("   4. The output is the genuine result (output hash commitment)")
 
-    if result.is_valid:
-        print("Proof verified successfully!")
-        print(f"Checks: {result.checks}")
-    else:
-        print(f"Verification failed: {result.error}")
-    """)
-
-    print("2. Verification Result Details:")
-    print("""
-    result = verifier.verify(proof, circuit)
-
-    print(f"Valid: {result.is_valid}")
-    print(f"Status: {result.status}")
-    print(f"Time: {result.verification_time_ms}ms")
-
-    # Individual checks
-    for check, passed in result.checks.items():
-        print(f"  {check}: {'PASS' if passed else 'FAIL'}")
-    """)
-
-    print("\n   Example output:")
-    print("   Valid: True")
-    print("   Status: valid")
-    print("   Time: 15ms")
-    print("   Checks:")
-    print("     input_hash: PASS")
-    print("     output_hash: PASS")
-    print("     model_hash: PASS")
-    print("     zk_format: PASS")
-    print("     zk_vk_hash: PASS")
-    print("     zk_proof: PASS")
+    print("\n   Verification checks for zkML proofs:")
+    checks = [
+        ("input_hash", "Public input matches the committed input hash"),
+        ("output_hash", "Public output matches the committed output hash"),
+        ("model_hash", "Verification key corresponds to the registered model"),
+        ("zk_format", "Proof is well-formed for the chosen proof system"),
+        ("zk_proof", "Mathematical verification of the proof passes"),
+    ]
+    for name, description in checks:
+        print(f"     {name:12s}: {description}")
 
 
-def tee_verification_example():
-    """Demonstrate TEE attestation verification."""
+# ---------------------------------------------------------------------------
+# 4. Hybrid Verification
+# ---------------------------------------------------------------------------
+
+def hybrid_verification_example() -> None:
+    """Demonstrate hybrid proof verification (TEE + zkML)."""
     print("\n" + "=" * 50)
-    print("TEE Attestation Verification")
+    print("4. Hybrid Verification (TEE + zkML)")
     print("=" * 50)
 
-    tee_verifier = TEEVerifier(
-        cache_certificates=True,
-        allow_debug_enclaves=False,
-        max_attestation_age_hours=24
-    )
+    print(f"\n   Default proof type: {ProofType.HYBRID.value}")
 
-    print("\n1. Intel SGX Verification:")
     print("""
-    attestation = TEEAttestation(
-        platform=TEEPlatform.INTEL_SGX,
-        enclave_id="enclave_001",
-        measurement="mrenclave_abc...",  # MRENCLAVE hash
-        report_data=output_hash,
-        signature=attestation_signature,
-        certificate_chain=[cert1, cert2, root]
-    )
+   Hybrid proofs combine TEE attestation and zkML proof
+   for defense-in-depth security:
 
-    result = tee_verifier.verify(
-        attestation,
-        expected_measurement="mrenclave_abc..."
-    )
-    """)
+   TEE provides:
+     - Hardware-based isolation and confidentiality
+     - Fast execution (attestation in ~1 second)
+     - Tamper-evident execution environment
 
-    print("   Verification checks for SGX:")
-    print("   - signature: Verify quote signature")
-    print("   - certificate_chain: Verify chain to Intel root")
-    print("   - tcb_level: Check Trusted Computing Base level")
-    print("   - measurement: Verify MRENCLAVE matches expected")
-    print("   - freshness: Attestation not expired")
+   zkML provides:
+     - Mathematical soundness (cannot be forged)
+     - Publicly verifiable without trusted hardware
+     - Permanent, replayable proof artifact
 
-    print("\n2. AMD SEV-SNP Verification:")
-    print("""
-    attestation = TEEAttestation(
-        platform=TEEPlatform.AMD_SEV_SNP,
-        enclave_id="vm_001",
-        measurement="measurement_hash...",
-        report_data=output_hash,
-        signature=attestation_signature,
-        certificate_chain=[vcek, ask, ark],
-        snp_report=snp_report_bytes
-    )
+   Combined:
+     - Compromise of one layer does not break security
+     - Satisfies enterprise audit requirements (SOC 2, HIPAA, GDPR)
+     - Digital Seal anchors both proofs on-chain""")
 
-    result = tee_verifier.verify(attestation)
-    """)
+    print("\n   Hybrid verification checks:")
+    checks = [
+        ("tee_signature", "TEE attestation signature valid"),
+        ("tee_measurement", "Enclave measurement matches registered model"),
+        ("tee_freshness", "Attestation is recent"),
+        ("zk_proof", "Zero-knowledge proof mathematically valid"),
+        ("zk_hashes", "Input/output/model hashes match commitments"),
+        ("consensus", "Validator quorum reached agreement"),
+    ]
+    for name, description in checks:
+        print(f"     {name:18s}: {description}")
 
-    print("   Verification checks for SEV-SNP:")
-    print("   - signature: Verify attestation report")
-    print("   - certificate_chain: Verify chain to AMD root")
-    print("   - snp_report: Parse and validate SNP report")
-    print("   - tcb_version: Check TCB version")
-    print("   - freshness: Report not expired")
-
-    print("\n3. AWS Nitro Verification:")
-    print("""
-    attestation = TEEAttestation(
-        platform=TEEPlatform.AWS_NITRO,
-        enclave_id="i-abc123-enc",
-        measurement="pcr0_hash...",
-        report_data=output_hash,
-        signature=cose_sign1,
-        certificate_chain=[cert_chain],
-        pcr_values={
-            0: "pcr0_hash...",  # Enclave image
-            1: "pcr1_hash...",  # Kernel
-            2: "pcr2_hash...",  # Application
-            3: "pcr3_hash...",  # IAM role
-            4: "pcr4_hash...",  # Instance ID
-        }
-    )
-
-    result = tee_verifier.verify(
-        attestation,
-        expected_measurement="pcr0_hash..."
-    )
-    """)
+    print("\n   Both the TEE and zkML checks must pass for the hybrid")
+    print("   verification to be considered valid.")
 
 
-def hybrid_verification_example():
-    """Demonstrate hybrid proof verification."""
+# ---------------------------------------------------------------------------
+# 5. End-to-End Verification Workflow
+# ---------------------------------------------------------------------------
+
+def end_to_end_example(client: AethelredClient) -> None:
+    """Demonstrate a complete verification workflow."""
     print("\n" + "=" * 50)
-    print("Hybrid Proof Verification (TEE + zkML)")
+    print("5. End-to-End Verification Workflow")
     print("=" * 50)
 
     print("""
-    # Hybrid proofs combine TEE attestation and zkML proof
-    # for maximum security
+   Typical verification flow:
 
-    1. TEE provides:
-       - Hardware-based isolation
-       - Fast execution
-       - Confidentiality guarantees
+   1. Submit a compute job:
+      response = client.jobs.submit(
+          model_hash=model_hash,
+          input_hash=input_hash,
+      )
 
-    2. zkML provides:
-       - Mathematical soundness
-       - Publicly verifiable
-       - No trusted hardware required
+   2. Wait for completion:
+      job = client.jobs.wait_for_completion(response.job_id)
 
-    3. Combined:
-       - Defense in depth
-       - Compromise of one doesn't break security
-       - Strongest verification guarantees
+   3. Retrieve the Digital Seal:
+      seal = client.seals.get(job.metadata["seal_id"])
+
+   4. Verify on-chain:
+      result = client.verification.verify_seal(seal.id)
+
+   5. Check the result:
+      if result["valid"]:
+          print("Computation is cryptographically verified!")
+      else:
+          print("Verification failed -- do not trust the result.")
     """)
 
-    print("Verifying Hybrid Proof:")
-    print("""
-    verifier = ProofVerifier()
+    # Attempt a live verification against a known seal
+    demo_seal_id = "seal_demo_001"
 
-    # Hybrid proof contains both
-    hybrid_proof = Proof(
-        proof_id="proof_hybrid_001",
-        proof_type=ProofType.HYBRID,
-        job_id="job_001",
-        tee_attestation=tee_attestation,
-        zk_proof=zk_proof,
-        input_hash="abc...",
-        output_hash="def...",
-        model_hash="xyz..."
-    )
-
-    result = verifier.verify(hybrid_proof, circuit)
-
-    # Both must pass for hybrid verification
-    print(f"TEE Valid: {result.checks.get('tee_valid')}")
-    print(f"ZK Valid: {result.checks.get('zk_valid')}")
-    print(f"Hybrid Valid: {result.is_valid}")
-    """)
+    try:
+        result = client.verification.verify_seal(demo_seal_id)
+        print(f"   Live verification result: valid={result.get('valid', 'N/A')}")
+    except Exception as exc:
+        logger.info("Network unavailable: %s", exc)
+        print("   [Simulated] Verification result: valid=True")
+        print("   [Simulated] All 6 checks passed.")
 
 
-def digital_seal_verification_example():
-    """Demonstrate Digital Seal verification."""
-    print("\n" + "=" * 50)
-    print("Digital Seal Verification")
-    print("=" * 50)
-
-    print("""
-    # Digital Seals are on-chain records of verified computations
-
-    verifier = ProofVerifier()
-
-    # Verify a seal
-    result = verifier.verify_seal(
-        seal,
-        expected_output_hash="abc123..."
-    )
-
-    print(f"Seal Valid: {result.is_valid}")
-    print(f"Status: {result.status}")
-
-    # Verification checks:
-    # - not_revoked: Seal hasn't been revoked
-    # - output_hash: Output matches expected
-    # - validator_signatures: Quorum of validators signed
-    """)
-
-    print("\nSeal Properties:")
-    print("""
-    seal = client.get_seal("seal_abc123")
-
-    print(f"Seal ID: {seal.seal_id}")
-    print(f"Job ID: {seal.job_id}")
-    print(f"Model Hash: {seal.model_hash}")
-    print(f"Input Hash: {seal.input_hash}")
-    print(f"Output Hash: {seal.output_hash}")
-    print(f"Proof Type: {seal.proof_type}")
-    print(f"Validators: {seal.validators}")
-    print(f"Block Height: {seal.block_height}")
-    print(f"TX Hash: {seal.tx_hash}")
-    print(f"Timestamp: {seal.timestamp}")
-    print(f"Status: {seal.status}")
-    print(f"Revoked: {seal.revoked}")
-    """)
-
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
     """Run all verification examples."""
-    setup_logging(level="INFO")
-
     print("=" * 60)
     print("Aethelred Proof Verification Examples")
     print("=" * 60)
 
-    proof_generation_example()
-    proof_verification_example()
-    tee_verification_example()
+    api_key = os.environ.get("AETHELRED_API_KEY", "YOUR_API_KEY_HERE")
+    config = Config.testnet(api_key=api_key)
+    client = AethelredClient(config)
+
+    print(f"\nNetwork : {config.network.value}")
+    print(f"Endpoint: {config.rpc_url}")
+
+    seal_verification_example(client)
+    tee_attestation_example()
+    zkml_proof_example()
     hybrid_verification_example()
-    digital_seal_verification_example()
+    end_to_end_example(client)
 
     print("\n" + "=" * 60)
     print("Examples Complete")
     print("=" * 60)
     print("\nKey Takeaways:")
-    print("  1. Use ProofGenerator for local proof generation")
-    print("  2. Use ProofVerifier for unified verification")
-    print("  3. TEEVerifier handles platform-specific attestations")
-    print("  4. Hybrid proofs provide maximum security")
-    print("  5. Digital Seals provide immutable audit trails")
+    print("  1. Digital Seals provide immutable on-chain audit trails")
+    print("  2. TEE attestations prove hardware-isolated execution")
+    print("  3. zkML proofs provide mathematical verification guarantees")
+    print("  4. Hybrid proofs (the default) combine both for maximum security")
+    print("  5. Use client.verification.verify_seal() for end-to-end checks")
 
 
 if __name__ == "__main__":

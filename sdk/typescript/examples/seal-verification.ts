@@ -1,14 +1,22 @@
 /**
  * Digital Seal Verification Example
  *
- * This example demonstrates how to create, verify, and audit
- * Digital Seals for AI computations.
+ * This example demonstrates how to query, verify, and inspect
+ * Digital Seals for AI computations using both online (client.verification)
+ * and offline (verifySealOffline) approaches.
  *
  * Run with: npx ts-node examples/seal-verification.ts
  */
 
-import { AethelredClient, utils } from '../src';
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import {
+  AethelredClient,
+  Network,
+  AethelredError,
+  ConnectionError,
+  SealError,
+  verifySealOffline,
+  fingerprintSealSha256,
+} from '../src';
 
 async function main() {
   console.log('='.repeat(60));
@@ -16,195 +24,164 @@ async function main() {
   console.log('='.repeat(60));
   console.log();
 
-  // For creating seals, we need a signer
-  // In production, use your actual mnemonic securely
-  const DEMO_MNEMONIC = process.env.MNEMONIC || 'demo mnemonic not set';
+  // Connect to testnet
+  const client = new AethelredClient({ network: Network.TESTNET });
 
-  let client: any;
+  const healthy = await client.healthCheck();
+  console.log(`Node health: ${healthy ? 'OK' : 'UNREACHABLE'}\n`);
 
-  if (DEMO_MNEMONIC !== 'demo mnemonic not set') {
-    // Connect with signer for full functionality
-    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(DEMO_MNEMONIC, {
-      prefix: 'aethelred',
-    });
-    client = await AethelredClient.connectWithSigner(
-      { rpcUrl: 'https://testnet-rpc.aethelred.io' },
-      wallet
-    );
-    console.log('✓ Connected with signing capability');
-  } else {
-    // Connect read-only
-    client = await AethelredClient.connectToNetwork('testnet');
-    console.log('✓ Connected in read-only mode');
-    console.log('  (Set MNEMONIC env var for full functionality)');
-  }
-  console.log();
-
-  // Part 1: Query existing seals
+  // ── Part 1: Query Existing Seals ──────────────────────────
   console.log('-'.repeat(60));
   console.log('PART 1: Querying Existing Seals');
   console.log('-'.repeat(60));
 
-  const sealList = await client.seal.listSeals({
-    limit: 5,
-    status: 'active',
-  });
+  let sealList: { total: number; seals: any[] } = { total: 0, seals: [] };
 
-  console.log(`\nFound ${sealList.total} total seals`);
-  console.log(`Showing ${sealList.seals.length} active seals:\n`);
+  try {
+    sealList = await client.seals.list({
+      limit: 5,
+      status: 'active',
+    });
 
-  for (const seal of sealList.seals) {
-    console.log(`Seal: ${seal.id}`);
-    console.log(`  Status: ${seal.status}`);
-    console.log(`  Purpose: ${seal.purpose}`);
-    console.log(`  Model: ${seal.modelCommitment.slice(0, 16)}...`);
-    console.log(`  Block: ${seal.blockHeight}`);
-    console.log(`  Validators: ${seal.validators?.length || 0}`);
-    console.log();
+    console.log(`\nFound ${sealList.total} total seals`);
+    console.log(`Showing ${sealList.seals.length} active seals:\n`);
+
+    for (const seal of sealList.seals) {
+      console.log(`Seal: ${seal.id}`);
+      console.log(`  Status: ${seal.status}`);
+      console.log(`  Purpose: ${seal.purpose}`);
+      console.log(`  Model: ${seal.modelCommitment?.slice(0, 16) ?? 'N/A'}...`);
+      console.log(`  Block: ${seal.blockHeight}`);
+      console.log(`  Validators: ${seal.validators?.length ?? 0}`);
+      console.log();
+    }
+  } catch (err) {
+    if (err instanceof ConnectionError) {
+      console.log(`  Could not reach node: ${err.message}\n`);
+    } else if (err instanceof AethelredError) {
+      console.log(`  Error querying seals: ${err.message}\n`);
+    } else {
+      throw err;
+    }
   }
 
-  // Part 2: Verify a seal
+  // ── Part 2: Online Verification (via client.verification) ─
   if (sealList.seals.length > 0) {
     console.log('-'.repeat(60));
-    console.log('PART 2: Verifying a Seal');
+    console.log('PART 2: Online Seal Verification');
     console.log('-'.repeat(60));
 
     const sealToVerify = sealList.seals[0];
-    console.log(`\nVerifying seal: ${sealToVerify.id}`);
-
-    const verification = await client.seal.verifySeal(sealToVerify.id);
-
-    console.log('\nVerification Result:');
-    console.log(`  Valid: ${verification.valid ? '✅ Yes' : '❌ No'}`);
-    console.log(`  Integrity: ${verification.integrityValid ? '✅ Valid' : '❌ Invalid'}`);
-    console.log(`  Signatures: ${verification.signaturesValid ? '✅ Valid' : '❌ Invalid'}`);
-    console.log(`  On-Chain: ${verification.onChainValid ? '✅ Confirmed' : '❌ Not found'}`);
-    console.log(`  Not Revoked: ${verification.notRevoked ? '✅ Active' : '⚠️ Revoked'}`);
-
-    if (verification.details) {
-      console.log('\nDetails:');
-      console.log(`  Verified At: ${verification.details.verifiedAt}`);
-      console.log(`  Block Height: ${verification.details.blockHeight}`);
-    }
-
-    // Quick verify
-    const quickResult = await client.seal.quickVerify(sealToVerify.id);
-    console.log(`\nQuick Verify: ${quickResult ? '✅ Valid' : '❌ Invalid'}`);
-  }
-
-  // Part 3: Generate audit report
-  if (sealList.seals.length > 0) {
-    console.log('\n' + '-'.repeat(60));
-    console.log('PART 3: Generating Audit Report');
-    console.log('-'.repeat(60));
-
-    const sealForAudit = sealList.seals[0];
-    console.log(`\nGenerating audit for seal: ${sealForAudit.id}`);
-
-    const audit = await client.seal.generateAuditReport({
-      sealId: sealForAudit.id,
-      format: 'full',
-      includeEvidence: true,
-      includeTimeline: true,
-    });
-
-    console.log('\nAudit Report:');
-    console.log(`  Report ID: ${audit.id}`);
-    console.log(`  Generated: ${audit.generatedAt}`);
-    console.log(`  Status: ${audit.status}`);
-
-    if (audit.compliance) {
-      console.log(`\n  Compliance:`);
-      for (const [framework, status] of Object.entries(audit.compliance)) {
-        console.log(`    ${framework}: ${status ? '✅' : '❌'}`);
-      }
-    }
-
-    if (audit.timeline && audit.timeline.length > 0) {
-      console.log(`\n  Timeline:`);
-      for (const event of audit.timeline.slice(0, 5)) {
-        console.log(`    ${event.timestamp}: ${event.event}`);
-      }
-    }
-  }
-
-  // Part 4: Hash verification
-  console.log('\n' + '-'.repeat(60));
-  console.log('PART 4: Hash Utilities Demo');
-  console.log('-'.repeat(60));
-
-  // Simulate model and input hashing
-  const sampleModel = Buffer.from('sample model weights data');
-  const sampleInput = { feature1: 0.5, feature2: 0.8, feature3: 100 };
-  const sampleOutput = { score: 750, decision: 'approved' };
-
-  const modelHash = utils.sha256(sampleModel);
-  const inputHash = utils.hashInput(sampleInput);
-  const outputHash = utils.hashOutput(sampleOutput);
-
-  console.log('\nHash Examples:');
-  console.log(`  Model Hash: ${modelHash.slice(0, 32)}...`);
-  console.log(`  Input Hash: ${inputHash.slice(0, 32)}...`);
-  console.log(`  Output Hash: ${outputHash.slice(0, 32)}...`);
-
-  // Commitment scheme
-  const { commitment, salt } = utils.createCommitment('sensitive data');
-  console.log(`\nCommitment Scheme:`);
-  console.log(`  Commitment: ${commitment.slice(0, 32)}...`);
-  console.log(`  Salt: ${salt.slice(0, 16)}...`);
-
-  const verified = utils.verifyCommitment('sensitive data', salt, commitment);
-  console.log(`  Verified: ${verified ? '✅ Yes' : '❌ No'}`);
-
-  // Merkle tree
-  const items = ['tx1', 'tx2', 'tx3', 'tx4'];
-  const merkleRoot = utils.createMerkleRoot(items);
-  const proof = utils.createMerkleProof(items, 1);
-  const merkleValid = utils.verifyMerkleProof('tx2', proof, merkleRoot, 1);
-
-  console.log(`\nMerkle Tree:`);
-  console.log(`  Root: ${merkleRoot.slice(0, 32)}...`);
-  console.log(`  Proof for 'tx2': Valid = ${merkleValid ? '✅ Yes' : '❌ No'}`);
-
-  // Part 5: Create a seal (requires signer)
-  if (client.canSign()) {
-    console.log('\n' + '-'.repeat(60));
-    console.log('PART 5: Creating a New Seal');
-    console.log('-'.repeat(60));
-
-    console.log('\nCreating seal for verified AI computation...');
+    console.log(`\nVerifying seal on-chain: ${sealToVerify.id}`);
 
     try {
-      const sealResponse = await client.seal.createSeal({
-        modelHash,
-        inputHash,
-        outputHash,
-        purpose: 'demo_verification',
-        metadata: {
-          sdk_example: 'true',
-          demo_run: new Date().toISOString(),
-        },
-      });
+      const verification = await client.verification.verify_seal(sealToVerify.id);
 
-      console.log('\nSeal Created:');
-      console.log(`  Seal ID: ${sealResponse.sealId}`);
-      console.log(`  Status: ${sealResponse.status}`);
-      console.log(`  TX Hash: ${sealResponse.txHash}`);
+      console.log('\nVerification Result:');
+      console.log(`  Valid       : ${verification.valid ? 'Yes' : 'No'}`);
+      console.log(`  On-chain   : ${verification.onChainValid ? 'Confirmed' : 'Not found'}`);
+      console.log(`  Proof OK   : ${verification.proofVerified ?? 'N/A'}`);
+      console.log(`  TEE OK     : ${verification.teeVerified ?? 'N/A'}`);
 
-      // Wait for seal to be finalized
-      console.log('\nWaiting for seal finalization...');
-      const finalSeal = await client.seal.waitForStatus(
-        sealResponse.sealId,
-        'active',
-        30000
-      );
-      console.log(`Seal finalized at block ${finalSeal.blockHeight}`);
-    } catch (error) {
-      console.log(`Error creating seal: ${error}`);
+      if (verification.details) {
+        console.log(`  Verified At: ${verification.details.verifiedAt}`);
+        console.log(`  Block      : ${verification.details.blockHeight}`);
+      }
+    } catch (err) {
+      if (err instanceof SealError) {
+        console.log(`  Seal error: ${err.message}`);
+      } else if (err instanceof AethelredError) {
+        console.log(`  Verification error: ${err.message}`);
+      } else {
+        throw err;
+      }
     }
-  } else {
-    console.log('\n(Skipping seal creation - no signer available)');
   }
+
+  // ── Part 3: Offline Verification (via devtools) ───────────
+  if (sealList.seals.length > 0) {
+    console.log('\n' + '-'.repeat(60));
+    console.log('PART 3: Offline Seal Verification');
+    console.log('-'.repeat(60));
+
+    const sealForOffline = sealList.seals[0];
+    console.log(`\nVerifying seal offline: ${sealForOffline.id}`);
+
+    try {
+      // Fetch the full seal object
+      const fullSeal = await client.seals.get(sealForOffline.id);
+
+      // Offline verification (no network call needed after fetching)
+      const offlineResult = verifySealOffline(fullSeal);
+      console.log(`  Offline valid: ${offlineResult.valid ? 'Yes' : 'No'}`);
+
+      if (offlineResult.errors && offlineResult.errors.length > 0) {
+        console.log(`  Errors:`);
+        for (const e of offlineResult.errors) {
+          console.log(`    - ${e}`);
+        }
+      }
+
+      // Fingerprint the seal
+      const fingerprint = fingerprintSealSha256(fullSeal);
+      console.log(`  Fingerprint: ${fingerprint.slice(0, 32)}...`);
+    } catch (err) {
+      if (err instanceof AethelredError) {
+        console.log(`  Error: ${err.message}`);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // ── Part 4: Inspect a Specific Seal ───────────────────────
+  if (sealList.seals.length > 0) {
+    console.log('\n' + '-'.repeat(60));
+    console.log('PART 4: Detailed Seal Inspection');
+    console.log('-'.repeat(60));
+
+    const sealId = sealList.seals[0].id;
+    console.log(`\nFetching full seal: ${sealId}`);
+
+    try {
+      const seal = await client.seals.get(sealId);
+
+      console.log(`\nSeal Details:`);
+      console.log(`  ID          : ${seal.id}`);
+      console.log(`  Status      : ${seal.status}`);
+      console.log(`  Purpose     : ${seal.purpose}`);
+      console.log(`  Block Height: ${seal.blockHeight}`);
+      console.log(`  Created     : ${seal.createdAt}`);
+
+      if (seal.teeAttestation) {
+        console.log(`\n  TEE Attestation:`);
+        console.log(`    Platform    : ${seal.teeAttestation.platform}`);
+        console.log(`    Enclave Hash: ${seal.teeAttestation.enclaveHash?.slice(0, 16)}...`);
+      }
+
+      if (seal.zkmlProof) {
+        console.log(`\n  zkML Proof:`);
+        console.log(`    Proof System : ${seal.zkmlProof.proofSystem}`);
+        console.log(`    Public Inputs: ${seal.zkmlProof.publicInputs?.length ?? 0} elements`);
+      }
+    } catch (err) {
+      if (err instanceof SealError) {
+        console.log(`  Seal not found: ${err.message}`);
+      } else if (err instanceof AethelredError) {
+        console.log(`  Error: ${err.message}`);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // ── Part 5: Network Info ──────────────────────────────────
+  console.log('\n' + '-'.repeat(60));
+  console.log('PART 5: Network Info');
+  console.log('-'.repeat(60));
+
+  console.log(`\n  RPC URL  : ${client.getRpcUrl()}`);
+  console.log(`  Chain ID : ${client.getChainId()}`);
 
   // Summary
   console.log('\n' + '='.repeat(60));
@@ -214,14 +191,11 @@ async function main() {
 Key Takeaways:
 
 1. Digital Seals provide cryptographic proof of AI computations
-2. Seals can be verified independently by anyone
-3. Audit reports enable regulatory compliance
-4. Hash utilities ensure data integrity
-5. Merkle proofs enable efficient batch verification
+2. Online verification (client.verification) checks on-chain state
+3. Offline verification (verifySealOffline) validates locally without RPC
+4. fingerprintSealSha256 produces a unique identifier for any seal
+5. Both TEE attestations and zkML proofs can be inspected
 `);
-
-  // Cleanup
-  client.disconnect();
 }
 
 main().catch(console.error);

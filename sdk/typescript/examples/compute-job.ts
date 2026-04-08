@@ -2,112 +2,94 @@
  * Compute Job Submission Example
  *
  * This example demonstrates how to submit AI computation jobs
- * for verified execution.
+ * for verified execution, poll for completion, and inspect results.
  *
  * Run with: npx ts-node examples/compute-job.ts
  */
 
-import { AethelredClient, utils, ProofType, JobPriority } from '../src';
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import {
+  AethelredClient,
+  Network,
+  ProofType,
+  AethelredError,
+  ConnectionError,
+  JobError,
+} from '../src';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('     Aethelred Enterprise Hybrid Compute Job Example');
+  console.log('     Aethelred Compute Job Example');
   console.log('='.repeat(60));
   console.log();
 
   // Connect to testnet
-  const client = await AethelredClient.connectToNetwork('testnet');
-  console.log('✓ Connected to Aethelred testnet\n');
+  const client = new AethelredClient({ network: Network.TESTNET });
 
-  // Part 1: Query registered models
+  const healthy = await client.healthCheck();
+  console.log(`Node health: ${healthy ? 'OK' : 'UNREACHABLE'}\n`);
+
+  // ── Part 1: Available Models ──────────────────────────────
   console.log('-'.repeat(60));
   console.log('PART 1: Available Models');
   console.log('-'.repeat(60));
 
-  const models = await client.compute.listModels({ status: 'active' });
-  console.log(`\nFound ${models.length} active models:\n`);
+  try {
+    const models = await client.models.list({ status: 'active' });
+    console.log(`\nFound ${models.length} active models:\n`);
 
-  for (const model of models.slice(0, 5)) {
-    console.log(`Model: ${model.name} v${model.version}`);
-    console.log(`  ID: ${model.modelId}`);
-    console.log(`  Hash: ${model.modelHash.slice(0, 16)}...`);
-    console.log(`  Status: ${model.status}`);
-    console.log(`  Usage Count: ${model.usageCount}`);
-    if (model.metrics) {
-      console.log(`  AUC-ROC: ${model.metrics.aucRoc.toFixed(3)}`);
+    for (const model of models.slice(0, 5)) {
+      console.log(`Model: ${model.name} v${model.version}`);
+      console.log(`  ID: ${model.modelId}`);
+      console.log(`  Hash: ${model.modelHash.slice(0, 16)}...`);
+      console.log(`  Status: ${model.status}`);
+      console.log(`  Usage Count: ${model.usageCount}`);
+      if (model.metrics) {
+        console.log(`  AUC-ROC: ${model.metrics.aucRoc.toFixed(3)}`);
+      }
+      console.log();
     }
-    console.log();
-  }
-
-  // Part 2: Estimate job time
-  console.log('-'.repeat(60));
-  console.log('PART 2: Time Estimates');
-  console.log('-'.repeat(60));
-
-  if (models.length > 0) {
-    const model = models[0];
-    console.log(`\nEstimating time for model: ${model.name}`);
-
-    const proofTypes: ProofType[] = ['tee', 'zkml', 'hybrid'];
-    for (const proofType of proofTypes) {
-      const estimate = await client.compute.estimateTime(
-        model.modelHash,
-        proofType,
-        'normal'
-      );
-      console.log(`\n  ${proofType.toUpperCase()}:`);
-      console.log(`    Estimated: ${estimate.estimatedTimeMs}ms`);
-      console.log(`    Queue Wait: ${estimate.queueWaitMs}ms`);
-      console.log(`    Execution: ${estimate.executionTimeMs}ms`);
-      console.log(`    Queue Position: ${estimate.queuePosition}`);
+  } catch (err) {
+    if (err instanceof AethelredError) {
+      console.log(`  Error listing models: ${err.message}\n`);
+    } else {
+      throw err;
     }
   }
 
-  // Part 3: Queue status
-  console.log('\n' + '-'.repeat(60));
-  console.log('PART 3: Queue Status');
+  // ── Part 2: Query Recent Jobs ─────────────────────────────
+  console.log('-'.repeat(60));
+  console.log('PART 2: Recent Jobs');
   console.log('-'.repeat(60));
 
-  const queueStatus = await client.compute.getQueueStatus();
-  console.log(`\nCurrent Queue Status:`);
-  console.log(`  Pending Jobs: ${queueStatus.pendingJobs}`);
-  console.log(`  Executing Jobs: ${queueStatus.executingJobs}`);
-  console.log(`  Estimated Wait: ${queueStatus.estimatedWaitTimeMs}ms`);
-  console.log(`  Validator Capacity: ${queueStatus.validatorCapacity}`);
-  console.log(`  Current Utilization: ${(queueStatus.currentUtilization * 100).toFixed(1)}%`);
+  try {
+    const recentJobs = await client.jobs.list({ limit: 5 });
+    console.log(`\nFound ${recentJobs.total} total jobs`);
+    console.log(`Showing ${recentJobs.jobs.length} recent jobs:\n`);
 
-  console.log(`\n  Jobs by Priority:`);
-  for (const [priority, count] of Object.entries(queueStatus.jobsByPriority)) {
-    console.log(`    ${priority}: ${count}`);
-  }
-
-  // Part 4: Query recent jobs
-  console.log('\n' + '-'.repeat(60));
-  console.log('PART 4: Recent Jobs');
-  console.log('-'.repeat(60));
-
-  const recentJobs = await client.compute.listJobs({ limit: 5 });
-  console.log(`\nFound ${recentJobs.total} total jobs`);
-  console.log(`Showing ${recentJobs.jobs.length} recent jobs:\n`);
-
-  for (const job of recentJobs.jobs) {
-    const statusIcon = getStatusIcon(job.status);
-    console.log(`Job: ${job.id}`);
-    console.log(`  Status: ${statusIcon} ${job.status}`);
-    console.log(`  Proof Type: ${job.proofType}`);
-    console.log(`  Priority: ${job.priority}`);
-    console.log(`  Created: ${job.createdAt}`);
-    if (job.result) {
-      console.log(`  Output Hash: ${job.result.outputHash.slice(0, 16)}...`);
-      console.log(`  Execution Time: ${job.result.executionTimeMs}ms`);
+    for (const job of recentJobs.jobs) {
+      const statusIcon = getStatusIcon(job.status);
+      console.log(`Job: ${job.id}`);
+      console.log(`  Status: ${statusIcon} ${job.status}`);
+      console.log(`  Proof Type: ${job.proofType}`);
+      console.log(`  Priority: ${job.priority}`);
+      console.log(`  Created: ${job.createdAt}`);
+      if (job.result) {
+        console.log(`  Output Hash: ${job.result.outputHash.slice(0, 16)}...`);
+        console.log(`  Execution Time: ${job.result.executionTimeMs}ms`);
+      }
+      console.log();
     }
-    console.log();
+  } catch (err) {
+    if (err instanceof AethelredError) {
+      console.log(`  Error listing jobs: ${err.message}\n`);
+    } else {
+      throw err;
+    }
   }
 
-  // Part 5: Submit a job (simulated - needs signer in production)
+  // ── Part 3: Submit a Job ──────────────────────────────────
   console.log('-'.repeat(60));
-  console.log('PART 5: Job Submission Demo');
+  console.log('PART 3: Job Submission');
   console.log('-'.repeat(60));
 
   // Prepare input data
@@ -125,133 +107,126 @@ async function main() {
     },
   };
 
-  const inputHash = utils.hashInput(inputData);
-  console.log(`\nInput prepared:`);
-  console.log(`  Input Hash: ${inputHash.slice(0, 32)}...`);
+  const modelHash = '0xabc123...'; // Replace with a real model hash
+  const inputHash = '0xdef456...'; // Replace with a real input hash
 
-  if (client.canSign()) {
+  console.log(`\nInput prepared:`);
+  console.log(`  Model Hash: ${modelHash}`);
+  console.log(`  Input Hash: ${inputHash}`);
+
+  try {
     console.log('\nSubmitting job...');
 
-    try {
-      const response = await client.compute.submitJob({
-        modelHash: models[0]?.modelHash || 'demo-model-hash',
-        inputHash,
-        purpose: 'demo_credit_scoring',
-        proofType: 'hybrid',
-        priority: 'normal',
-        maxWaitTime: 60,
-        metadata: {
-          sdk_example: 'true',
-        },
-      });
+    const response = await client.jobs.submit({
+      modelHash,
+      inputHash,
+      purpose: 'demo_credit_scoring',
+      proofType: ProofType.HYBRID,
+      priority: 'normal',
+      metadata: {
+        sdk_example: 'true',
+      },
+    });
 
-      console.log(`\nJob Submitted:`);
-      console.log(`  Job ID: ${response.jobId}`);
-      console.log(`  Status: ${response.status}`);
-      console.log(`  TX Hash: ${response.txHash}`);
+    console.log(`\nJob Submitted:`);
+    console.log(`  Job ID: ${response.jobId}`);
+    console.log(`  Status: ${response.status}`);
+    console.log(`  TX Hash: ${response.txHash}`);
 
-      // Wait for completion
-      console.log('\nWaiting for job completion...');
-      const completedJob = await client.compute.waitForCompletion(
-        response.jobId,
-        120000 // 2 minute timeout
-      );
+    // Poll for completion
+    console.log('\nWaiting for job completion...');
+    const completedJob = await client.jobs.waitForCompletion(
+      response.jobId,
+      { timeout: 120_000, pollInterval: 2000 },
+    );
 
-      console.log(`\nJob Completed:`);
-      console.log(`  Status: ${getStatusIcon(completedJob.status)} ${completedJob.status}`);
+    console.log(`\nJob Completed:`);
+    console.log(`  Status: ${getStatusIcon(completedJob.status)} ${completedJob.status}`);
 
-      if (completedJob.result) {
-        console.log(`  Output Hash: ${completedJob.result.outputHash}`);
-        console.log(`  Verification: ${completedJob.result.verificationType}`);
-        console.log(`  Consensus: ${completedJob.result.consensusReached ? 'Yes' : 'No'}`);
-        console.log(`  Verifications: ${completedJob.result.verifications.length}`);
-        console.log(`  Execution Time: ${completedJob.result.executionTimeMs}ms`);
-
-        if (completedJob.sealId) {
-          console.log(`  Seal ID: ${completedJob.sealId}`);
-        }
-      }
-
-      if (completedJob.error) {
-        console.log(`  Error: ${completedJob.error}`);
-      }
-    } catch (error) {
-      console.log(`Error: ${error}`);
+    if (completedJob.result) {
+      console.log(`  Output Hash: ${completedJob.result.outputHash}`);
+      console.log(`  Execution Time: ${completedJob.result.executionTimeMs}ms`);
     }
-  } else {
-    console.log('\n(Job submission skipped - no signer available)');
-    console.log('In production, you would:');
-    console.log('  1. Connect with a wallet (mnemonic or Keplr)');
-    console.log('  2. Call client.compute.submitJob(request)');
-    console.log('  3. Wait for completion with waitForCompletion()');
-    console.log('  4. Retrieve the verified result and seal ID');
+
+    if (completedJob.metadata?.seal_id) {
+      console.log(`  Seal ID: ${completedJob.metadata.seal_id}`);
+    }
+  } catch (err) {
+    if (err instanceof JobError) {
+      console.log(`\nJob error: ${err.message} (job: ${err.jobId})`);
+    } else if (err instanceof ConnectionError) {
+      console.log(`\nConnection error: ${err.message}`);
+    } else if (err instanceof AethelredError) {
+      console.log(`\nError: ${err.message}`);
+    } else {
+      throw err;
+    }
   }
 
-  // Part 6: Compute statistics
+  // ── Part 4: Query Validators ──────────────────────────────
   console.log('\n' + '-'.repeat(60));
-  console.log('PART 6: Compute Statistics');
+  console.log('PART 4: Active Validators');
   console.log('-'.repeat(60));
 
-  const stats = await client.compute.getStats();
-  console.log(`\nOverall Statistics:`);
-  console.log(`  Total Jobs: ${stats.totalJobs}`);
-  console.log(`  Pending: ${stats.pendingJobs}`);
-  console.log(`  Executing: ${stats.executingJobs}`);
-  console.log(`  Completed: ${stats.completedJobs}`);
-  console.log(`  Failed: ${stats.failedJobs}`);
-  console.log(`  Avg Processing: ${stats.averageProcessingTimeMs}ms`);
-  console.log(`  Registered Models: ${stats.registeredModels}`);
-  console.log(`  Active Validators: ${stats.activeValidators}`);
+  try {
+    const validators = await client.validators.list({ status: 'active' });
+    console.log(`\nActive Validators: ${validators.length}\n`);
 
-  console.log(`\n  Jobs by Proof Type:`);
-  for (const [type, count] of Object.entries(stats.jobsByProofType)) {
-    console.log(`    ${type}: ${count}`);
+    for (const v of validators.slice(0, 3)) {
+      console.log(`  ${v.moniker ?? v.address}`);
+      console.log(`    Status: ${v.status}`);
+      console.log(`    Commission: ${v.commission ?? 'N/A'}`);
+      console.log();
+    }
+  } catch (err) {
+    if (err instanceof AethelredError) {
+      console.log(`  Error listing validators: ${err.message}\n`);
+    } else {
+      throw err;
+    }
   }
 
   // Summary
-  console.log('\n' + '='.repeat(60));
+  console.log('='.repeat(60));
   console.log('EXAMPLE COMPLETE');
   console.log('='.repeat(60));
   console.log(`
 Compute Job Lifecycle:
 
-1. 📋 Prepare input data and compute hash
-2. 📤 Submit job with model hash, input, and proof type
-3. ⏳ Job enters queue with assigned priority
-4. 🔐 Validators execute in TEE enclave
-5. 📊 Optional zkML proof generated
-6. ✅ Consensus reached on output
-7. 📜 Digital Seal created on-chain
-8. 📩 Result returned with verification
+1. Prepare input data and compute hash
+2. Submit job with model hash, input, and proof type
+3. Job enters queue with assigned priority
+4. Validators execute in TEE enclave
+5. Optional zkML proof generated
+6. Consensus reached on output
+7. Digital Seal created on-chain
+8. Result returned with verification
 
 Proof Types:
-  • TEE: Fast (~1s), hardware attestation
-  • zkML: Slower (~30s), mathematical proof
-  • Hybrid: Both for maximum assurance
+  TEE     : Fast (~1s), hardware attestation
+  zkML    : Slower (~30s), mathematical proof
+  HYBRID  : Both for maximum assurance
 `);
-
-  // Cleanup
-  client.disconnect();
 }
 
 function getStatusIcon(status: string): string {
   switch (status) {
     case 'pending':
-      return '⏳';
+      return '[PENDING]';
     case 'assigned':
-      return '📋';
+      return '[ASSIGNED]';
     case 'executing':
-      return '⚙️';
+      return '[EXECUTING]';
     case 'verifying':
-      return '🔍';
+      return '[VERIFYING]';
     case 'completed':
-      return '✅';
+      return '[COMPLETED]';
     case 'failed':
-      return '❌';
+      return '[FAILED]';
     case 'expired':
-      return '⏰';
+      return '[EXPIRED]';
     default:
-      return '❓';
+      return '[UNKNOWN]';
   }
 }
 

@@ -105,3 +105,7 @@ path = "examples/submit_job.rs"
 [[example]]
 name = "verify_seal"
 path = "examples/verify_seal.rs"
+
+[[example]]
+name = "enterprise_hybrid"
+path = "examples/enterprise_hybrid.rs"
