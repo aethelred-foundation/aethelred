@@ -26,6 +26,7 @@ export default defineConfig({
                     { text: 'Python SDK', link: '/api/python/' },
                 ]
             },
+            { text: 'API Explorer', link: '/api/explorer' },
             { text: 'Cryptography', link: '/cryptography/overview' },
             { text: 'CLI', link: '/cli/installation' },
             {
@@ -73,6 +74,15 @@ export default defineConfig({
                         { text: 'Submitting Jobs', link: '/guide/jobs' },
                         { text: 'Model Registry', link: '/guide/model-registry' },
                         { text: 'Validators', link: '/guide/validators' },
+                    ]
+                },
+                {
+                    text: 'Enterprise',
+                    items: [
+                        { text: 'Compliance Integration', link: '/guide/enterprise-compliance' },
+                        { text: 'Authentication', link: '/guide/authentication' },
+                        { text: 'Error Catalog', link: '/guide/error-catalog' },
+                        { text: 'Framework Integrations', link: '/guide/framework-integrations' },
                     ]
                 },
             ],

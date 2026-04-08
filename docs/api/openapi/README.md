@@ -13,8 +13,27 @@ make openapi
 ## Output Files
 
 ```
-docs/api/openapi/aethelred.swagger.json
-docs/api/openapi/aethelred.openapi.yaml
+docs/api/openapi/aethelred.swagger.json           # Swagger JSON
+docs/api/openapi/aethelred.openapi.yaml            # OpenAPI 3.1.0 YAML
+docs/api/openapi/aethelred.postman_collection.json # Postman collection
+docs/api/openapi/index.html                        # Interactive Swagger UI
+```
+
+## Interactive API Explorer
+
+Open `index.html` in a browser to explore the API interactively:
+
+```bash
+npx serve docs/api/openapi
+# Then open http://localhost:3000
+```
+
+## Postman Collection
+
+Import `aethelred.postman_collection.json` into Postman or Bruno for quick API testing. Regenerate from the OpenAPI spec:
+
+```bash
+npx openapi-to-postmanv2 -s aethelred.openapi.yaml -o aethelred.postman_collection.json -p
 ```
 
 ## Generation Modes

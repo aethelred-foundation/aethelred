@@ -22,19 +22,24 @@ The Aethelred REST API provides programmatic access to the blockchain, allowing 
 
 ### Authentication
 
-Public read endpoints require no authentication. Write endpoints require a signed request.
+Public read endpoints require no authentication. Write endpoints require a signed request with `X-Aethelred-Signature` and `X-Aethelred-Address` headers. API key authentication (`X-API-Key` header) is available for rate-limited read access.
+
+For the complete signing guide, key management best practices, and SDK code examples, see **[Authentication Guide](./AUTHENTICATION.md)**.
 
 ```http
 POST /v1/compute/submit
 Content-Type: application/json
-X-Aethelred-Signature: <signature>
-X-Aethelred-Address: <your-address>
+X-API-Key: <your-api-key>
+X-Aethelred-Signature: <composite-signature>
+X-Aethelred-Address: <your-aethel1-address>
 
 {
-  "model_id": "...",
-  "encrypted_input": "..."
+  "model_hash": "sha256:abc123...",
+  "input_hash": "sha256:def456..."
 }
 ```
+
+For a complete listing of error codes with recovery actions, see **[Error Catalog](./ERROR_CATALOG.md)**.
 
 ---
 

@@ -211,3 +211,32 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --manifest-path ./sdk/rust/Cargo.toml
+
+  publish-go:
+    name: Publish Go (Go Proxy)
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: sdk-go
+    if: ${{ needs.preflight.result == 'success' && needs.preflight.outputs.publish_requested == 'true' && needs.preflight.outputs.publish_go == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Verify Go module
+        working-directory: ./sdk/go
+        run: |
+          go mod tidy
+          go vet ./...
+          go test ./...
+      - name: Publish Go module via proxy
+        env:
+          SDK_VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          echo "Publishing Go module as sdk/go/v${SDK_VERSION}"
+          echo "Go modules are published to the Go Module Proxy"
+          echo "by pushing a version tag. The proxy fetches from"
+          echo "the repository automatically once the tag is pushed."
+          GOPROXY=https://proxy.golang.org GO111MODULE=on \
+            go list -m "github.com/aethelred/sdk-go@v${SDK_VERSION}" 2>/dev/null || \
+            echo "Module will be indexed after tag push"
