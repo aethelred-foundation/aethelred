@@ -15,9 +15,9 @@ The Aethelred REST API provides programmatic access to the blockchain, allowing 
 
 | Network | Base URL |
 |---------|----------|
-| **Mainnet** | `https://rpc.aethelred.io` |
-| **Testnet (Nebula)** | `https://testnet-rpc.aethelred.io` |
-| **Devnet** | `https://devnet-rpc.aethelred.io` |
+| **Mainnet** | `https://rpc.mainnet.aethelred.io` |
+| **Testnet** | `https://rpc.testnet.aethelred.io` |
+| **Devnet** | `https://rpc.devnet.aethelred.io` |
 | **Local** | `http://localhost:26657` |
 
 ### Authentication
