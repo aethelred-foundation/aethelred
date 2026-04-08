@@ -7,6 +7,8 @@ export enum Network {
   TESTNET = 'testnet',
   DEVNET = 'devnet',
   LOCAL = 'local',
+  /** Sandbox mode for offline development and testing. */
+  MOCK = 'mock',
 }
 
 export interface NetworkConfig {
@@ -20,34 +22,39 @@ export interface NetworkConfig {
 
 export const NETWORK_CONFIGS: Record<Network, NetworkConfig> = {
   [Network.MAINNET]: {
-    rpcUrl: 'https://rpc.mainnet.aethelred.org',
-    chainId: 'aethelred-1',
-    wsUrl: 'wss://ws.mainnet.aethelred.org',
-    grpcUrl: 'grpc.mainnet.aethelred.org:9090',
-    restUrl: 'https://api.mainnet.aethelred.org',
-    explorerUrl: 'https://explorer.aethelred.org',
+    rpcUrl: 'https://rpc.mainnet.aethelred.io',
+    chainId: 'aethelred-mainnet-1',
+    wsUrl: 'wss://ws.mainnet.aethelred.io',
+    grpcUrl: 'grpc.mainnet.aethelred.io:9090',
+    restUrl: 'https://api.mainnet.aethelred.io',
+    explorerUrl: 'https://explorer.aethelred.io',
   },
   [Network.TESTNET]: {
-    rpcUrl: 'https://rpc.testnet.aethelred.org',
+    rpcUrl: 'https://rpc.testnet.aethelred.io',
     chainId: 'aethelred-testnet-1',
-    wsUrl: 'wss://ws.testnet.aethelred.org',
-    grpcUrl: 'grpc.testnet.aethelred.org:9090',
-    restUrl: 'https://api.testnet.aethelred.org',
-    explorerUrl: 'https://testnet.explorer.aethelred.org',
+    wsUrl: 'wss://ws.testnet.aethelred.io',
+    grpcUrl: 'grpc.testnet.aethelred.io:9090',
+    restUrl: 'https://api.testnet.aethelred.io',
+    explorerUrl: 'https://testnet.explorer.aethelred.io',
   },
   [Network.DEVNET]: {
-    rpcUrl: 'https://rpc.devnet.aethelred.org',
+    rpcUrl: 'https://rpc.devnet.aethelred.io',
     chainId: 'aethelred-devnet-1',
-    wsUrl: 'wss://ws.devnet.aethelred.org',
-    grpcUrl: 'grpc.devnet.aethelred.org:9090',
-    restUrl: 'https://api.devnet.aethelred.org',
-    explorerUrl: 'https://devnet.explorer.aethelred.org',
+    wsUrl: 'wss://ws.devnet.aethelred.io',
+    grpcUrl: 'grpc.devnet.aethelred.io:9090',
+    restUrl: 'https://api.devnet.aethelred.io',
+    explorerUrl: 'https://devnet.explorer.aethelred.io',
   },
   [Network.LOCAL]: {
     rpcUrl: 'http://127.0.0.1:26657',
     chainId: 'aethelred-local',
     wsUrl: 'ws://127.0.0.1:26657/websocket',
     grpcUrl: '127.0.0.1:9090',
+    restUrl: 'http://127.0.0.1:1317',
+  },
+  [Network.MOCK]: {
+    rpcUrl: 'http://127.0.0.1:26657',
+    chainId: 'aethelred-mock-1',
     restUrl: 'http://127.0.0.1:1317',
   },
 };

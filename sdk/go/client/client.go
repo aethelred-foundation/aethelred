@@ -26,6 +26,10 @@ const (
 	Testnet Network = "testnet"
 	Devnet  Network = "devnet"
 	Local   Network = "local"
+	// Mock is the sandbox network for offline development and testing.
+	// Developers can use NewClient(Mock) to create a client that targets
+	// a local mock endpoint without requiring a running node.
+	Mock Network = "mock"
 )
 
 // NetworkConfig returns the configuration for a network.
@@ -33,23 +37,28 @@ func (n Network) Config() NetworkConfig {
 	switch n {
 	case Mainnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.mainnet.aethelred.org",
-			ChainID: "aethelred-1",
+			RPCURL:  "https://rpc.mainnet.aethelred.io",
+			ChainID: "aethelred-mainnet-1",
 		}
 	case Testnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.testnet.aethelred.org",
+			RPCURL:  "https://rpc.testnet.aethelred.io",
 			ChainID: "aethelred-testnet-1",
 		}
 	case Devnet:
 		return NetworkConfig{
-			RPCURL:  "https://rpc.devnet.aethelred.org",
+			RPCURL:  "https://rpc.devnet.aethelred.io",
 			ChainID: "aethelred-devnet-1",
 		}
 	case Local:
 		return NetworkConfig{
 			RPCURL:  "http://127.0.0.1:26657",
 			ChainID: "aethelred-local",
+		}
+	case Mock:
+		return NetworkConfig{
+			RPCURL:  "http://127.0.0.1:26657",
+			ChainID: "aethelred-mock-1",
 		}
 	default:
 		return Mainnet.Config()

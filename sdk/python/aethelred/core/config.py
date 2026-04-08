@@ -62,11 +62,12 @@ class SecretStr:
 
 class Network(str, Enum):
     """Predefined Aethelred networks."""
-    
+
     MAINNET = "mainnet"
     TESTNET = "testnet"
     DEVNET = "devnet"
     LOCAL = "local"
+    MOCK = "mock"
 
 
 @dataclass
@@ -84,34 +85,42 @@ class NetworkConfig:
 # Predefined network configurations
 NETWORK_CONFIGS: Dict[Network, NetworkConfig] = {
     Network.MAINNET: NetworkConfig(
-        rpc_url="https://rpc.mainnet.aethelred.org",
-        chain_id="aethelred-1",
-        ws_url="wss://ws.mainnet.aethelred.org",
-        grpc_url="grpc.mainnet.aethelred.org:9090",
-        rest_url="https://api.mainnet.aethelred.org",
-        explorer_url="https://explorer.aethelred.org",
+        rpc_url="https://rpc.mainnet.aethelred.io",
+        chain_id="aethelred-mainnet-1",
+        ws_url="wss://ws.mainnet.aethelred.io",
+        grpc_url="grpc.mainnet.aethelred.io:9090",
+        rest_url="https://api.mainnet.aethelred.io",
+        explorer_url="https://explorer.aethelred.io",
     ),
     Network.TESTNET: NetworkConfig(
-        rpc_url="https://rpc.testnet.aethelred.org",
+        rpc_url="https://rpc.testnet.aethelred.io",
         chain_id="aethelred-testnet-1",
-        ws_url="wss://ws.testnet.aethelred.org",
-        grpc_url="grpc.testnet.aethelred.org:9090",
-        rest_url="https://api.testnet.aethelred.org",
-        explorer_url="https://testnet.explorer.aethelred.org",
+        ws_url="wss://ws.testnet.aethelred.io",
+        grpc_url="grpc.testnet.aethelred.io:9090",
+        rest_url="https://api.testnet.aethelred.io",
+        explorer_url="https://testnet.explorer.aethelred.io",
     ),
     Network.DEVNET: NetworkConfig(
-        rpc_url="https://rpc.devnet.aethelred.org",
+        rpc_url="https://rpc.devnet.aethelred.io",
         chain_id="aethelred-devnet-1",
-        ws_url="wss://ws.devnet.aethelred.org",
-        grpc_url="grpc.devnet.aethelred.org:9090",
-        rest_url="https://api.devnet.aethelred.org",
-        explorer_url="https://devnet.explorer.aethelred.org",
+        ws_url="wss://ws.devnet.aethelred.io",
+        grpc_url="grpc.devnet.aethelred.io:9090",
+        rest_url="https://api.devnet.aethelred.io",
+        explorer_url="https://devnet.explorer.aethelred.io",
     ),
     Network.LOCAL: NetworkConfig(
         rpc_url="http://127.0.0.1:26657",
         chain_id="aethelred-local",
         ws_url="ws://127.0.0.1:26657/websocket",
         grpc_url="127.0.0.1:9090",
+        rest_url="http://127.0.0.1:1317",
+        explorer_url=None,
+    ),
+    Network.MOCK: NetworkConfig(
+        rpc_url="http://127.0.0.1:26657",
+        chain_id="aethelred-mock-1",
+        ws_url=None,
+        grpc_url=None,
         rest_url="http://127.0.0.1:1317",
         explorer_url=None,
     ),
@@ -192,6 +201,7 @@ class Config:
         self.cache_enabled = cache_enabled
         self.cache_ttl = cache_ttl
         self.cache_max_size = cache_max_size
+        self._mock_mode: bool = False
 
         # Derive from network defaults when not provided
         network_config = NETWORK_CONFIGS.get(self.network)
@@ -233,6 +243,19 @@ class Config:
     def local(cls, **kwargs) -> "Config":
         """Create local development configuration."""
         return cls.from_network(Network.LOCAL, **kwargs)
+
+    @classmethod
+    def mock(cls, **kwargs) -> "Config":
+        """Create a sandbox configuration for offline development.
+
+        The returned config targets ``Network.MOCK`` and sets the
+        ``_mock_mode`` flag to ``True``.  Pair with
+        :class:`aethelred.testing.MockTransport` for a fully offline
+        development experience.
+        """
+        instance = cls.from_network(Network.MOCK, **kwargs)
+        instance._mock_mode = True
+        return instance
     
     @classmethod
     def custom(cls, rpc_url: str, chain_id: str, **kwargs) -> "Config":

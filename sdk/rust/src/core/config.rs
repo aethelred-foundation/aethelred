@@ -8,24 +8,28 @@ pub enum Network {
     Testnet,
     Devnet,
     Local,
+    /// Sandbox mode for offline development and testing.
+    Mock,
 }
 
 impl Network {
     pub fn rpc_url(&self) -> &'static str {
         match self {
-            Network::Mainnet => "https://rpc.mainnet.aethelred.org",
-            Network::Testnet => "https://rpc.testnet.aethelred.org",
-            Network::Devnet => "https://rpc.devnet.aethelred.org",
+            Network::Mainnet => "https://rpc.mainnet.aethelred.io",
+            Network::Testnet => "https://rpc.testnet.aethelred.io",
+            Network::Devnet => "https://rpc.devnet.aethelred.io",
             Network::Local => "http://127.0.0.1:26657",
+            Network::Mock => "http://127.0.0.1:26657",
         }
     }
 
     pub fn chain_id(&self) -> &'static str {
         match self {
-            Network::Mainnet => "aethelred-1",
+            Network::Mainnet => "aethelred-mainnet-1",
             Network::Testnet => "aethelred-testnet-1",
             Network::Devnet => "aethelred-devnet-1",
             Network::Local => "aethelred-local",
+            Network::Mock => "aethelred-mock-1",
         }
     }
 }
@@ -74,6 +78,11 @@ impl Config {
     }
     pub fn local() -> Self {
         Self::new(Network::Local)
+    }
+
+    /// Create a sandbox configuration for offline development and testing.
+    pub fn mock() -> Self {
+        Self::new(Network::Mock)
     }
 
     pub fn with_api_key(mut self, api_key: impl Into<String>) -> Self {
