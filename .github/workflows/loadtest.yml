@@ -6,7 +6,8 @@ on:
   push:
     branches: [main, develop, "release/**"]
   schedule:
-    - cron: "0 2 * * *"
+    - cron: "0 2 * * *"       # nightly baseline
+    - cron: "0 6 * * 0"       # weekly soak test (Sunday 06:00 UTC)
   workflow_dispatch:
     inputs:
       mode:
@@ -38,11 +39,14 @@ jobs:
       - name: Determine test mode
         id: mode
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            echo "mode=${DISPATCH_MODE}" >> "$GITHUB_OUTPUT"
+          elif [[ "${EVENT_NAME}" == "schedule" ]]; then
             echo "mode=baseline" >> "$GITHUB_OUTPUT"
           else
             echo "mode=smoke" >> "$GITHUB_OUTPUT"
@@ -72,6 +76,19 @@ jobs:
               ;;
           esac
 
+      - name: Run proof generation benchmarks
+        if: steps.mode.outputs.mode == 'baseline' || steps.mode.outputs.mode == 'smoke'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/loadtest
+          go test ./x/verify/keeper/... \
+            -bench='BenchmarkProof|BenchmarkHybrid' \
+            -benchmem \
+            -benchtime=1s \
+            -count=3 \
+            -json | tee artifacts/loadtest/proof-bench-results.json
+
       - name: Upload load test artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -79,6 +96,214 @@ jobs:
           path: |
             artifacts/loadtest/**
             loadtest-results/**
+
+      - name: Download previous baseline
+        if: github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: loadtest-results-baseline
+          path: artifacts/baseline-prev
+        continue-on-error: true
+
+      - name: Compare against baseline
+        if: github.event_name == 'pull_request'
+        id: baseline_check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PREV_FILE="artifacts/baseline-prev/loadtest-results.json"
+          CURR_FILE="artifacts/loadtest/loadtest-results.json"
+
+          # If no previous baseline exists, skip comparison
+          if [[ ! -f "${PREV_FILE}" ]]; then
+            echo "No previous baseline found; skipping regression check."
+            echo "regression=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ ! -f "${CURR_FILE}" ]]; then
+            echo "No current results found; skipping regression check."
+            echo "regression=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          REGRESSION="false"
+          REPORT=""
+
+          # Extract metrics using jq (with defaults for missing fields)
+          PREV_P99=$(jq -r '.p99_latency_ms // 0' "${PREV_FILE}")
+          CURR_P99=$(jq -r '.p99_latency_ms // 0' "${CURR_FILE}")
+          PREV_TPS=$(jq -r '.tps // 0' "${PREV_FILE}")
+          CURR_TPS=$(jq -r '.tps // 0' "${CURR_FILE}")
+          PREV_SUCCESS=$(jq -r '.success_rate // 100' "${PREV_FILE}")
+          CURR_SUCCESS=$(jq -r '.success_rate // 100' "${CURR_FILE}")
+
+          REPORT="| Metric | Baseline | Current | Delta | Status |\n"
+          REPORT+="|--------|----------|---------|-------|--------|\n"
+
+          # P99 Latency: fail if > 130% of baseline
+          if [[ "${PREV_P99}" != "0" ]] && command -v bc &>/dev/null; then
+            RATIO=$(echo "scale=2; ${CURR_P99} / ${PREV_P99}" | bc)
+            if (( $(echo "${RATIO} > 1.30" | bc -l) )); then
+              REGRESSION="true"
+              STATUS="FAIL"
+            else
+              STATUS="PASS"
+            fi
+            REPORT+="| P99 Latency (ms) | ${PREV_P99} | ${CURR_P99} | ${RATIO}x | ${STATUS} |\n"
+          fi
+
+          # TPS: fail if < 70% of baseline
+          if [[ "${PREV_TPS}" != "0" ]] && command -v bc &>/dev/null; then
+            RATIO=$(echo "scale=2; ${CURR_TPS} / ${PREV_TPS}" | bc)
+            if (( $(echo "${RATIO} < 0.70" | bc -l) )); then
+              REGRESSION="true"
+              STATUS="FAIL"
+            else
+              STATUS="PASS"
+            fi
+            REPORT+="| TPS | ${PREV_TPS} | ${CURR_TPS} | ${RATIO}x | ${STATUS} |\n"
+          fi
+
+          # Success rate: fail if < 95%
+          if command -v bc &>/dev/null; then
+            if (( $(echo "${CURR_SUCCESS} < 95" | bc -l) )); then
+              REGRESSION="true"
+              STATUS="FAIL"
+            else
+              STATUS="PASS"
+            fi
+            REPORT+="| Success Rate (%) | ${PREV_SUCCESS} | ${CURR_SUCCESS} | - | ${STATUS} |\n"
+          fi
+
+          echo "regression=${REGRESSION}" >> "$GITHUB_OUTPUT"
+          {
+            echo "report<<REPORT_EOF"
+            echo -e "${REPORT}"
+            echo "REPORT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "${REGRESSION}" == "true" ]]; then
+            echo "Performance regression detected!"
+            echo -e "${REPORT}"
+            exit 1
+          fi
+
+          echo "All performance metrics within acceptable thresholds."
+          echo -e "${REPORT}"
+
+      - name: Comment PR with performance delta
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        env:
+          REPORT: ${{ steps.baseline_check.outputs.report }}
+          REGRESSION: ${{ steps.baseline_check.outputs.regression }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const report = process.env.REPORT || 'No comparison data available.';
+            const regression = process.env.REGRESSION === 'true';
+            const icon = regression ? ':x:' : ':white_check_mark:';
+            const body = `## ${icon} Load Test Performance Report\n\n${report}\n\n` +
+              `**Thresholds:** P99 latency ≤130% baseline, TPS ≥70% baseline, Success rate ≥95%`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body,
+            });
+
+  soak-test:
+    name: Weekly Soak Test (4h Endurance)
+    if: github.event_name == 'schedule' && github.event.schedule == '0 6 * * 0'
+    runs-on: ubuntu-latest-16-cores
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run soak test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/soak
+
+          # Record initial memory baseline
+          INITIAL_MEM=$(go run ./cmd/aethelred-loadtest \
+            --scenario endurance \
+            --duration 10s \
+            --validators 100 \
+            --output-json 2>/dev/null | jq -r '.memory_rss_mb // 0' || echo "0")
+          echo "Initial memory baseline: ${INITIAL_MEM}MB"
+
+          # Run the full 4-hour soak test
+          go run ./cmd/aethelred-loadtest \
+            --scenario endurance \
+            --duration 4h \
+            --validators 100 \
+            --output-dir artifacts/soak \
+            --report-interval 5m
+
+      - name: Check for degradation
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOAK_RESULTS="artifacts/soak/soak-results.json"
+
+          if [[ ! -f "${SOAK_RESULTS}" ]]; then
+            echo "No soak results file found; skipping degradation check."
+            exit 0
+          fi
+
+          FAILED="false"
+
+          # Check memory growth (fail if >20% growth from start to end)
+          START_MEM=$(jq -r '.memory_samples[0].rss_mb // 0' "${SOAK_RESULTS}")
+          END_MEM=$(jq -r '.memory_samples[-1].rss_mb // 0' "${SOAK_RESULTS}")
+          if [[ "${START_MEM}" != "0" ]] && command -v bc &>/dev/null; then
+            GROWTH=$(echo "scale=2; (${END_MEM} - ${START_MEM}) / ${START_MEM}" | bc)
+            echo "Memory growth: ${GROWTH} (threshold: 0.20)"
+            if (( $(echo "${GROWTH} > 0.20" | bc -l) )); then
+              echo "FAIL: Memory growth ${GROWTH} exceeds 20% threshold"
+              FAILED="true"
+            fi
+          fi
+
+          # Check latency degradation (fail if >10% increase from first to last quartile)
+          FIRST_Q_P99=$(jq -r '.latency_quartiles.first.p99_ms // 0' "${SOAK_RESULTS}")
+          LAST_Q_P99=$(jq -r '.latency_quartiles.last.p99_ms // 0' "${SOAK_RESULTS}")
+          if [[ "${FIRST_Q_P99}" != "0" ]] && command -v bc &>/dev/null; then
+            DEGRADATION=$(echo "scale=2; (${LAST_Q_P99} - ${FIRST_Q_P99}) / ${FIRST_Q_P99}" | bc)
+            echo "Latency degradation: ${DEGRADATION} (threshold: 0.10)"
+            if (( $(echo "${DEGRADATION} > 0.10" | bc -l) )); then
+              echo "FAIL: Latency degradation ${DEGRADATION} exceeds 10% threshold"
+              FAILED="true"
+            fi
+          fi
+
+          # Check for OOM events
+          OOM_COUNT=$(jq -r '.oom_events // 0' "${SOAK_RESULTS}")
+          if [[ "${OOM_COUNT}" -gt 0 ]]; then
+            echo "FAIL: ${OOM_COUNT} OOM events detected during soak test"
+            FAILED="true"
+          fi
+
+          if [[ "${FAILED}" == "true" ]]; then
+            echo "Soak test degradation detected!"
+            exit 1
+          fi
+
+          echo "Soak test passed: no degradation detected."
+
+      - name: Upload soak test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-test-results
+          path: artifacts/soak/**
 
   loadtest-required-gate:
     name: Load Test Required Gate

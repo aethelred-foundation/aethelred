@@ -43,6 +43,32 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 		}
 	}
 
+	// Model size validation: if the model is registered, validate against limits.
+	// Unregistered models are still accepted for backward compatibility.
+	var estimatedUWU uint64
+	if model, modelErr := k.Keeper.GetRegisteredModel(ctx, msg.ModelHash); modelErr == nil && model != nil {
+		// Validate model is active.
+		if !model.IsActive {
+			return nil, fmt.Errorf("model %x is registered but inactive", msg.ModelHash)
+		}
+
+		// Use BaseUwuValue as the cost-estimation basis for this model.
+		estimatedUWU = model.BaseUwuValue
+
+		// Compute cost estimate and attach to job metadata for transparency.
+		estimator := NewCostEstimator(&k.Keeper)
+		verifyType := proofTypeToVerificationString(msg.ProofType)
+		if estimate, estErr := estimator.EstimateJobCost(ctx, msg.ModelHash, verifyType, uint32(msg.Priority)); estErr == nil {
+			fee = estimate.TotalEstimate
+		}
+	} else {
+		// Model not found in registry; log for observability but allow submission.
+		ctx.Logger().Warn("SubmitJob: model not found in registry, using default fee",
+			"model_hash", fmt.Sprintf("%x", msg.ModelHash),
+			"creator", msg.Creator,
+		)
+	}
+
 	// SECURITY FIX (P0): Use deterministic block time instead of time.Now()
 	// This ensures all validators derive the same job ID and timestamps.
 	job := types.NewComputeJobWithBlockTime(
@@ -78,7 +104,25 @@ func (k msgServer) SubmitJob(goCtx context.Context, msg *types.MsgSubmitJob) (*t
 		return nil, err
 	}
 
-	return &types.MsgSubmitJobResponse{JobId: job.Id}, nil
+	return &types.MsgSubmitJobResponse{
+		JobId:        job.Id,
+		EstimatedUwu: estimatedUWU,
+	}, nil
+}
+
+// proofTypeToVerificationString converts a ProofType enum to the string
+// identifier used by the cost estimator.
+func proofTypeToVerificationString(pt types.ProofType) string {
+	switch pt {
+	case types.ProofTypeTEE:
+		return "tee"
+	case types.ProofTypeZKML:
+		return "zkml"
+	case types.ProofTypeHybrid:
+		return "hybrid"
+	default:
+		return "tee"
+	}
 }
 
 // RegisterModel handles MsgRegisterModel.

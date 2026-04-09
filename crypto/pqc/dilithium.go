@@ -256,8 +256,10 @@ func (kp *DilithiumKeyPair) Sign(message []byte) (*DilithiumSignature, error) {
 	h.Write(nonce)
 	commitment := h.Sum(nil)
 
-	// Compute challenge
-	challenge := sha256.Sum256(append(kp.PublicKey, commitment...))
+	// Compute challenge using only the first 32 bytes of commitment.
+	// VerifyDilithium extracts commitment[:32] from the packed signature,
+	// so Sign must hash the same 32 bytes to produce a matching challenge.
+	challenge := sha256.Sum256(append(kp.PublicKey, commitment[:32]...))
 
 	// Compute response (simplified)
 	h.Reset()
