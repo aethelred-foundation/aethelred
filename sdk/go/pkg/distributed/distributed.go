@@ -821,11 +821,10 @@ func NewElasticTrainer(module nn.Module, optimizer interface{}, processGroup *Pr
 	}
 }
 
-// SaveCheckpoint saves a checkpoint
-func (et *ElasticTrainer) SaveCheckpoint() error {
-	et.mu.Lock()
-	defer et.mu.Unlock()
-
+// saveCheckpointLocked performs the checkpoint save while assuming the caller
+// already holds et.mu. This avoids a re-entrant deadlock when called from
+// HandleNodeFailure which also holds the lock.
+func (et *ElasticTrainer) saveCheckpointLocked() error {
 	checkpoint := map[string]interface{}{
 		"epoch":      et.epoch,
 		"iteration":  et.iteration,
@@ -836,6 +835,14 @@ func (et *ElasticTrainer) SaveCheckpoint() error {
 	return nil
 }
 
+// SaveCheckpoint saves a checkpoint. Safe for external callers.
+func (et *ElasticTrainer) SaveCheckpoint() error {
+	et.mu.Lock()
+	defer et.mu.Unlock()
+
+	return et.saveCheckpointLocked()
+}
+
 // LoadCheckpoint loads a checkpoint
 func (et *ElasticTrainer) LoadCheckpoint() error {
 	et.mu.Lock()
@@ -844,7 +851,9 @@ func (et *ElasticTrainer) LoadCheckpoint() error {
 	return nil
 }
 
-// HandleNodeFailure handles a node failure
+// HandleNodeFailure handles a node failure. It decrements the node count,
+// verifies the minimum node threshold, and saves a checkpoint for recovery.
+// Uses saveCheckpointLocked to avoid re-entrant deadlock on et.mu.
 func (et *ElasticTrainer) HandleNodeFailure(failedRank int) error {
 	et.mu.Lock()
 	defer et.mu.Unlock()
@@ -854,8 +863,8 @@ func (et *ElasticTrainer) HandleNodeFailure(failedRank int) error {
 		return fmt.Errorf("not enough nodes: %d < %d", et.CurrentNodes, et.MinNodes)
 	}
 
-	// Save checkpoint and reconfigure
-	return et.SaveCheckpoint()
+	// Save checkpoint and reconfigure — use locked variant to avoid deadlock
+	return et.saveCheckpointLocked()
 }
 
 // HandleNodeJoin handles a new node joining

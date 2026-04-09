@@ -797,17 +797,22 @@ func (h *HSMSigner) Close() error {
 	return nil
 }
 
-// Reconnect attempts to reconnect to the HSM
+// Reconnect attempts to reconnect to the HSM.
+// The health check context is reassigned under the mutex to prevent a data
+// race with the healthCheckLoop goroutine that reads h.healthCtx.
 func (h *HSMSigner) Reconnect(ctx context.Context) error {
 	if err := h.Close(); err != nil {
 		h.logger.Warn("Error closing HSM before reconnect", "error", err)
 	}
 
+	h.mu.Lock()
 	// Reset session channel
 	h.sessions = make(chan *HSMSession, h.config.SessionPoolSize)
 
-	// Reset health check context
+	// Reset health check context under lock so the old healthCheckLoop
+	// (which reads h.healthCtx) cannot race with this assignment.
 	h.healthCtx, h.healthCancel = context.WithCancel(context.Background())
+	h.mu.Unlock()
 
 	return h.Connect(ctx)
 }
