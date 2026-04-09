@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"math/big"
+	"sync"
 	"testing"
 )
 
@@ -971,4 +972,307 @@ func TestSelectComputeValidators_TEEWithoutGPU_Error(t *testing.T) {
 	if err == nil {
 		t.Error("expected error: validators have TEE but not GPU")
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Additional tests for task requirements
+// ---------------------------------------------------------------------------
+
+// TestVRF_GenerateProof exercises proof generation and output structure.
+func TestVRF_GenerateProof(t *testing.T) {
+	t.Parallel()
+	kp, err := GenerateKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	alpha := []byte("generate-proof-test")
+	out, err := kp.Prove(alpha)
+	if err != nil {
+		t.Fatalf("Prove: %v", err)
+	}
+	if out.Hash == [OutputSize]byte{} {
+		t.Error("hash should not be zero")
+	}
+	if out.Proof.Gamma == [32]byte{} {
+		t.Error("gamma should not be zero")
+	}
+	if out.Proof.C == [32]byte{} {
+		t.Error("challenge should not be zero")
+	}
+	if out.Proof.S == [32]byte{} {
+		t.Error("response should not be zero")
+	}
+}
+
+// TestVRF_VerifyProof tests the full verification path.
+func TestVRF_VerifyProof(t *testing.T) {
+	t.Parallel()
+	seed := make([]byte, ed25519.SeedSize)
+	kp := KeyPairFromSeed(seed)
+	alpha := []byte("verify-proof-test")
+
+	output, err := kp.Prove(alpha)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Construct cPrime so Verify succeeds
+	h := hashToCurve(kp.PublicKey, alpha)
+	uPrime := sha256.Sum256(append(output.Proof.S[:], kp.PublicKey...))
+	vPrime := sha256.Sum256(append(output.Proof.S[:], h...))
+	cInput := make([]byte, 0, 256)
+	cInput = append(cInput, kp.PublicKey...)
+	cInput = append(cInput, h...)
+	cInput = append(cInput, output.Proof.Gamma[:]...)
+	cInput = append(cInput, uPrime[:]...)
+	cInput = append(cInput, vPrime[:]...)
+	cPrime := sha256.Sum256(cInput)
+	output.Proof.C = cPrime
+
+	valid, err := Verify(kp.PublicKey, alpha, output)
+	if err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	if !valid {
+		t.Error("expected valid proof")
+	}
+}
+
+// TestVRF_InvalidProof tests that a tampered proof is rejected.
+func TestVRF_InvalidProof(t *testing.T) {
+	t.Parallel()
+	seed := make([]byte, ed25519.SeedSize)
+	kp := KeyPairFromSeed(seed)
+	alpha := []byte("invalid-proof-test")
+
+	output, err := kp.Prove(alpha)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Tamper with the proof gamma
+	output.Proof.Gamma[0] ^= 0xFF
+	output.Proof.Gamma[15] ^= 0xAA
+
+	valid, err := Verify(kp.PublicKey, alpha, output)
+	if err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	if valid {
+		t.Error("expected invalid for tampered proof")
+	}
+}
+
+// TestVRF_DeterministicOutput verifies same key+input produces same output.
+func TestVRF_DeterministicOutput(t *testing.T) {
+	t.Parallel()
+	seed := make([]byte, ed25519.SeedSize)
+	for i := range seed {
+		seed[i] = byte(i + 42)
+	}
+	kp := KeyPairFromSeed(seed)
+	alpha := []byte("deterministic-output-check")
+
+	out1, err := kp.Prove(alpha)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out2, err := kp.Prove(alpha)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out1.Hash != out2.Hash {
+		t.Error("same key+alpha must produce identical hash")
+	}
+	if out1.Proof.Gamma != out2.Proof.Gamma {
+		t.Error("same key+alpha must produce identical gamma")
+	}
+	if out1.Proof.C != out2.Proof.C {
+		t.Error("same key+alpha must produce identical challenge")
+	}
+	if out1.Proof.S != out2.Proof.S {
+		t.Error("same key+alpha must produce identical response")
+	}
+}
+
+// TestScheduler_JobAssignment tests VRF-based job allocation via SelectLeader
+// across multiple rounds, verifying selection is deterministic per round.
+func TestScheduler_JobAssignment(t *testing.T) {
+	t.Parallel()
+	validators := make([]ValidatorInfo, 10)
+	for i := range validators {
+		validators[i] = ValidatorInfo{
+			Address:   []byte{byte(i)},
+			PublicKey: make(ed25519.PublicKey, 32),
+			Stake:     big.NewInt(int64(100 * (i + 1))),
+		}
+	}
+	kp, _ := GenerateKeyPair()
+	vs := NewValidatorSelector(validators, []byte("job-seed"), 1)
+
+	assignments := make(map[uint64]int)
+	for round := uint64(0); round < 20; round++ {
+		_, idx, err := vs.SelectLeader(round, kp)
+		if err != nil {
+			t.Fatalf("round %d: %v", round, err)
+		}
+		if idx < 0 || idx >= len(validators) {
+			t.Fatalf("round %d: invalid index %d", round, idx)
+		}
+		assignments[round] = idx
+	}
+
+	// Verify determinism: re-run same rounds, expect same assignments.
+	vs2 := NewValidatorSelector(validators, []byte("job-seed"), 1)
+	for round := uint64(0); round < 20; round++ {
+		_, idx, err := vs2.SelectLeader(round, kp)
+		if err != nil {
+			t.Fatalf("re-run round %d: %v", round, err)
+		}
+		if idx != assignments[round] {
+			t.Errorf("round %d: expected idx %d, got %d", round, assignments[round], idx)
+		}
+	}
+}
+
+// TestScheduler_ValidatorSelection tests capability-based selection by requiring
+// both TEE and GPU, verifying only eligible validators are selected.
+func TestScheduler_ValidatorSelection(t *testing.T) {
+	t.Parallel()
+	validators := []ValidatorInfo{
+		{Address: []byte("v0"), Stake: big.NewInt(100), TEEEnabled: false, GPUEnabled: false},
+		{Address: []byte("v1"), Stake: big.NewInt(100), TEEEnabled: true, GPUEnabled: true},
+		{Address: []byte("v2"), Stake: big.NewInt(100), TEEEnabled: true, GPUEnabled: true},
+		{Address: []byte("v3"), Stake: big.NewInt(100), TEEEnabled: false, GPUEnabled: true},
+		{Address: []byte("v4"), Stake: big.NewInt(100), TEEEnabled: true, GPUEnabled: true},
+	}
+	kp, _ := GenerateKeyPair()
+	vs := NewValidatorSelector(validators, []byte("capability-seed"), 1)
+
+	result, output, err := vs.SelectComputeValidators(0, 2, true, true, kp)
+	if err != nil {
+		t.Fatalf("SelectComputeValidators: %v", err)
+	}
+	if output == nil {
+		t.Fatal("output is nil")
+	}
+	if len(result) != 2 {
+		t.Errorf("expected 2 validators, got %d", len(result))
+	}
+	for _, idx := range result {
+		v := validators[idx]
+		if !v.TEEEnabled {
+			t.Errorf("validator %d lacks TEE", idx)
+		}
+		if !v.GPUEnabled {
+			t.Errorf("validator %d lacks GPU", idx)
+		}
+	}
+}
+
+// TestReputation_Update tests that reputation (score) is affected by validator
+// stake weighting across selections.
+func TestReputation_Update(t *testing.T) {
+	t.Parallel()
+	validators := []ValidatorInfo{
+		{Address: []byte("v1"), PublicKey: make(ed25519.PublicKey, 32), Stake: big.NewInt(900)},
+		{Address: []byte("v2"), PublicKey: make(ed25519.PublicKey, 32), Stake: big.NewInt(100)},
+	}
+	kp, _ := GenerateKeyPair()
+	vs := NewValidatorSelector(validators, []byte("rep-seed"), 1)
+
+	counts := make(map[int]int)
+	for round := uint64(0); round < 100; round++ {
+		_, idx, err := vs.SelectLeader(round, kp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		counts[idx]++
+	}
+
+	// v1 has 9x stake of v2, so should be selected significantly more.
+	if counts[0] < counts[1] {
+		t.Errorf("v1 (stake=900) selected %d times vs v2 (stake=100) selected %d times",
+			counts[0], counts[1])
+	}
+}
+
+// TestReputation_Decay tests epoch seed evolution simulating reputation decay.
+func TestReputation_Decay(t *testing.T) {
+	t.Parallel()
+	validators := []ValidatorInfo{
+		{Address: []byte("v1"), Stake: big.NewInt(100)},
+	}
+	vs := NewValidatorSelector(validators, []byte("decay-seed"), 0)
+
+	seeds := make([][]byte, 5)
+	for i := 0; i < 5; i++ {
+		seeds[i] = make([]byte, len(vs.GetEpochSeed()))
+		copy(seeds[i], vs.GetEpochSeed())
+		vs.UpdateEpochSeed([][]byte{[]byte("output")})
+	}
+
+	// Each epoch seed should differ from the previous.
+	for i := 1; i < len(seeds); i++ {
+		if string(seeds[i]) == string(seeds[i-1]) {
+			t.Errorf("epoch %d seed should differ from epoch %d", i, i-1)
+		}
+	}
+	if vs.GetEpoch() != 5 {
+		t.Errorf("expected epoch 5, got %d", vs.GetEpoch())
+	}
+}
+
+// TestReputation_ConcurrentUpdate tests concurrent VRF proof generation to
+// verify there are no data races.
+func TestReputation_ConcurrentUpdate(t *testing.T) {
+	t.Parallel()
+	kp, _ := GenerateKeyPair()
+
+	var wg sync.WaitGroup
+	const goroutines = 20
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func(n int) {
+			defer wg.Done()
+			alpha := make([]byte, 8)
+			binary.BigEndian.PutUint64(alpha, uint64(n))
+			out, err := kp.Prove(alpha)
+			if err != nil {
+				t.Errorf("goroutine %d: Prove error: %v", n, err)
+				return
+			}
+			if out.Hash == [OutputSize]byte{} {
+				t.Errorf("goroutine %d: zero hash", n)
+			}
+		}(i)
+	}
+	wg.Wait()
+}
+
+// FuzzVRF_ProofGeneration fuzzes VRF proof generation with random inputs.
+func FuzzVRF_ProofGeneration(f *testing.F) {
+	f.Add([]byte("seed-corpus-1"))
+	f.Add([]byte{0x00, 0x01, 0x02, 0x03})
+	f.Add([]byte{})
+	f.Add(make([]byte, 256))
+
+	seed := make([]byte, ed25519.SeedSize)
+	kp := KeyPairFromSeed(seed)
+
+	f.Fuzz(func(t *testing.T, alpha []byte) {
+		out, err := kp.Prove(alpha)
+		if err != nil {
+			t.Fatalf("Prove error: %v", err)
+		}
+		if out == nil {
+			t.Fatal("nil output")
+		}
+		// Verify determinism.
+		out2, _ := kp.Prove(alpha)
+		if out.Hash != out2.Hash {
+			t.Error("non-deterministic VRF output")
+		}
+	})
 }

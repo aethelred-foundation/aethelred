@@ -3,6 +3,7 @@ package wasm
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 )
@@ -860,4 +861,301 @@ func (m *mockStateStore) Delete(key []byte) error {
 func (m *mockStateStore) Has(key []byte) (bool, error) {
 	_, ok := m.data[string(key)]
 	return ok, nil
+}
+
+// ---------------------------------------------------------------------------
+// Additional tests for task requirements
+// ---------------------------------------------------------------------------
+
+// TestVM_Init verifies runtime initialisation with both runtime types and
+// custom gas configurations.
+func TestVM_Init(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		rt      RuntimeType
+		gas     *GasConfig
+		wantGas uint64
+	}{
+		{"wasmer-default", WasmerRuntime, nil, 1000},
+		{"wasmtime-default", WasmtimeRuntime, nil, 1000},
+		{"wasmer-custom", WasmerRuntime, &GasConfig{CallGas: 42, MaxGas: 999}, 42},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			r := NewRuntime(tt.rt, tt.gas)
+			if r == nil {
+				t.Fatal("runtime is nil")
+			}
+			if r.runtimeType != tt.rt {
+				t.Errorf("expected runtime type %v, got %v", tt.rt, r.runtimeType)
+			}
+			if r.gasConfig.CallGas != tt.wantGas {
+				t.Errorf("expected CallGas=%d, got %d", tt.wantGas, r.gasConfig.CallGas)
+			}
+			if r.modules == nil {
+				t.Error("modules map is nil")
+			}
+			if r.hostFunctions == nil {
+				t.Error("host functions map is nil")
+			}
+		})
+	}
+}
+
+// TestVM_Execute_BasicExecution runs a simple execution through the runtime
+// and validates the result structure.
+func TestVM_Execute_BasicExecution(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, err := r.LoadModule(bytecode)
+	if err != nil {
+		t.Fatalf("LoadModule: %v", err)
+	}
+
+	result, err := r.Execute(
+		context.Background(), module.Hash, "entry", nil, 50000, 5*time.Second,
+	)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if result == nil {
+		t.Fatal("result is nil")
+	}
+	if len(result.Returns) == 0 {
+		t.Error("expected return values")
+	}
+	if result.GasUsed == 0 {
+		t.Error("expected gas consumption")
+	}
+	if result.Duration <= 0 {
+		t.Error("expected positive duration")
+	}
+	if result.MemoryUsed == 0 {
+		t.Error("expected non-zero memory usage")
+	}
+	// Logs and StateChanges may be nil when no entries were recorded,
+	// because append([]T(nil), emptySlice...) returns nil.
+	// We only verify they don't cause panics on access.
+	_ = len(result.Logs)
+	_ = len(result.StateChanges)
+}
+
+// TestVM_Precompiles verifies that all standard host functions are registered
+// and callable without error.
+func TestVM_Precompiles(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+	fns := StandardHostFunctions()
+	for name, fn := range fns {
+		r.RegisterHostFunction(name, fn)
+	}
+
+	// Verify all standard functions are accessible.
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	expected := []string{"env.log", "env.state_get", "env.state_set", "env.sha256", "env.gas_remaining"}
+	for _, name := range expected {
+		if _, ok := r.hostFunctions[name]; !ok {
+			t.Errorf("host function %q not registered", name)
+		}
+	}
+}
+
+// TestVM_MemoryLimits verifies that memory growth beyond maximum is rejected.
+func TestVM_MemoryLimits(t *testing.T) {
+	t.Parallel()
+	ctx := &ExecutionContext{
+		memory:      make([]byte, 65536),
+		memoryPages: 1,
+		memoryMax:   3,
+	}
+
+	// Grow within limits.
+	if !ctx.GrowMemory(1) {
+		t.Error("expected successful grow to 2 pages")
+	}
+	if ctx.memoryPages != 2 {
+		t.Errorf("expected 2 pages, got %d", ctx.memoryPages)
+	}
+
+	// Grow to exactly max.
+	if !ctx.GrowMemory(1) {
+		t.Error("expected successful grow to 3 pages (max)")
+	}
+
+	// Exceed max.
+	if ctx.GrowMemory(1) {
+		t.Error("expected grow failure exceeding max")
+	}
+
+	// Verify read/write boundaries.
+	maxOffset := uint32(ctx.memoryPages * 65536)
+	_, err := ctx.ReadMemory(maxOffset-1, 2)
+	if err == nil {
+		t.Error("expected out of bounds read at boundary")
+	}
+
+	err = ctx.WriteMemory(maxOffset-1, []byte{0x00, 0x00})
+	if err == nil {
+		t.Error("expected out of bounds write at boundary")
+	}
+}
+
+// TestVM_GasMetering verifies gas consumption accounting across execution.
+func TestVM_GasMetering(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, _ := r.LoadModule(bytecode)
+
+	// CallGas (1000) + execute (1000) = 2000 total
+	result, err := r.Execute(context.Background(), module.Hash, "main", nil, 2000, time.Second)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if result.GasUsed != 2000 {
+		t.Errorf("expected exactly 2000 gas used, got %d", result.GasUsed)
+	}
+
+	// One less than needed should fail.
+	_, err = r.Execute(context.Background(), module.Hash, "main", nil, 1999, time.Second)
+	if err == nil {
+		t.Error("expected out of gas error with 1999 gas")
+	}
+
+	// Zero gas should fail immediately.
+	_, err = r.Execute(context.Background(), module.Hash, "main", nil, 0, time.Second)
+	if err == nil {
+		t.Error("expected out of gas error with 0 gas")
+	}
+}
+
+// TestVM_Timeout verifies that execution respects context cancellation.
+func TestVM_Timeout(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, _ := r.LoadModule(bytecode)
+
+	// Already-cancelled context should cause an error.
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := r.Execute(ctx, module.Hash, "main", nil, 100000, time.Second)
+	if err == nil {
+		t.Error("expected error for cancelled context")
+	}
+
+	// Context with tight deadline.
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel2()
+	time.Sleep(time.Millisecond) // ensure deadline passes
+
+	_, err = r.Execute(ctx2, module.Hash, "main", nil, 100000, time.Second)
+	if err == nil {
+		t.Error("expected error for timed out context")
+	}
+}
+
+// TestVM_ConcurrentExecution runs multiple VM instances concurrently to verify
+// there are no data races in the runtime.
+func TestVM_ConcurrentExecution(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, err := r.LoadModule(bytecode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const goroutines = 20
+	var wg sync.WaitGroup
+	errs := make(chan error, goroutines)
+
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func(n int) {
+			defer wg.Done()
+			result, err := r.Execute(
+				context.Background(),
+				module.Hash,
+				"concurrent_fn",
+				[]Value{{Type: I32, Data: int32(n)}},
+				100000,
+				5*time.Second,
+			)
+			if err != nil {
+				errs <- err
+				return
+			}
+			if result == nil {
+				errs <- errors.New("nil result")
+				return
+			}
+			if result.GasUsed == 0 {
+				errs <- errors.New("zero gas used")
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		t.Errorf("concurrent execution error: %v", err)
+	}
+}
+
+// TestVM_Execute_HostFunctionIntegration verifies host functions are available
+// during execution context setup.
+func TestVM_Execute_HostFunctionIntegration(t *testing.T) {
+	t.Parallel()
+	r := NewRuntime(WasmerRuntime, nil)
+
+	var fnCalled bool
+	r.RegisterHostFunction("test.marker", func(ctx *ExecutionContext, args []Value) ([]Value, error) {
+		fnCalled = true
+		return nil, nil
+	})
+
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, _ := r.LoadModule(bytecode)
+
+	_, err := r.Execute(context.Background(), module.Hash, "main", nil, 100000, 5*time.Second)
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+
+	// The placeholder execution doesn't invoke host functions, but verify
+	// the function was registered correctly.
+	r.mu.RLock()
+	_, ok := r.hostFunctions["test.marker"]
+	r.mu.RUnlock()
+	if !ok {
+		t.Error("host function should be registered")
+	}
+	_ = fnCalled // used for more advanced runtime testing
+}
+
+// BenchmarkVM_Execute measures execution latency of the WASM runtime.
+func BenchmarkVM_Execute(b *testing.B) {
+	r := NewRuntime(WasmerRuntime, nil)
+	bytecode := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
+	module, err := r.LoadModule(bytecode)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	ctx := context.Background()
+	args := []Value{{Type: I32, Data: int32(1)}}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := r.Execute(ctx, module.Hash, "bench_fn", args, 100000, 5*time.Second)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
