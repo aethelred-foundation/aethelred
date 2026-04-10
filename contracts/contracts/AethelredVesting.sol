@@ -17,15 +17,15 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  *      cliff+linear unlock, DAO-controlled release, and category-based caps.
  * @custom:security-contact security@aethelred.io
  * @custom:audit-status Remediated - all 27 findings addressed (2026-02-28)
- *      - PoUW Rewards (30%): 10yr linear, no cliff
- *      - Core Contributors (20%): 6mo cliff, 42mo linear, no TGE
- *      - Ecosystem & Grants (15%): 2% TGE, 6mo cliff, 48mo linear
- *      - Strategic/Seed (5.5%): 12mo cliff, 24mo linear, no TGE
- *      - Public Sales (7.5%): 20% TGE, no cliff, 18mo linear
- *      - Airdrop/Seals (7%): 25% TGE, no cliff, 12mo linear
- *      - Treasury & MM (6%): 25% TGE, no cliff, 36mo linear
- *      - Insurance Fund (5%): 10% TGE, no cliff, 30mo linear
- *      - Contingency Reserve (4%): 12mo cliff, vesting TBD
+ *      - PoUW Rewards (30%): 50yr linear, no cliff, no TGE
+ *      - Core Contributors (20%): 12mo cliff, 36mo linear, no TGE
+ *      - Ecosystem & Grants (15%): 3.33% TGE, no cliff, 36mo linear
+ *      - Strategic/Seed (5.5%): 12mo cliff, 36mo linear, no TGE
+ *      - Public Sales (7.5%): 46.67% TGE, no cliff, 12mo linear
+ *      - Airdrop/Seals (7%): 0% TGE, DAO-controlled
+ *      - Treasury & MM (6%): 50% TGE, no cliff, 6mo linear
+ *      - Insurance Fund (5%): 0% TGE, no cliff, 24mo linear
+ *      - Contingency Reserve (4%): 0% TGE, DAO-controlled
  *
  * Architecture:
  * ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -93,15 +93,15 @@ contract AethelredVesting is
 
     /// @notice Allocation categories matching tokenomics (10B total supply, 9 categories)
     enum AllocationCategory {
-        COMPUTE_POUW_REWARDS,   // 30%  (3B)   - 10yr linear, no cliff
-        CORE_CONTRIBUTORS,      // 20%  (2B)   - 6mo cliff, 42mo linear, no TGE
-        ECOSYSTEM_GRANTS,       // 15%  (1.5B) - 2% TGE, 6mo cliff, 48mo linear
-        STRATEGIC_SEED,         // 5.5% (550M) - 12mo cliff, 24mo linear, no TGE
-        PUBLIC_SALES,           // 7.5% (750M) - 20% TGE, no cliff, 18mo linear
-        AIRDROP_SEALS,          // 7%   (700M) - 25% TGE, no cliff, 12mo linear
-        TREASURY_MM,            // 6%   (600M) - 25% TGE, no cliff, 36mo linear
-        INSURANCE_FUND,         // 5%   (500M) - 10% TGE, no cliff, 30mo linear
-        CONTINGENCY_RESERVE     // 4%   (400M) - 12mo cliff, vesting TBD
+        COMPUTE_POUW_REWARDS,   // 30%  (3B)   - 50yr linear, no cliff, no TGE
+        CORE_CONTRIBUTORS,      // 20%  (2B)   - 12mo cliff, 36mo linear, no TGE
+        ECOSYSTEM_GRANTS,       // 15%  (1.5B) - 3.33% TGE, no cliff, 36mo linear
+        STRATEGIC_SEED,         // 5.5% (550M) - 12mo cliff, 36mo linear, no TGE
+        PUBLIC_SALES,           // 7.5% (750M) - 46.67% TGE, no cliff, 12mo linear
+        AIRDROP_SEALS,          // 7%   (700M) - 0% TGE, DAO-controlled
+        TREASURY_MM,            // 6%   (600M) - 50% TGE, no cliff, 6mo linear
+        INSURANCE_FUND,         // 5%   (500M) - 0% TGE, no cliff, 24mo linear
+        CONTINGENCY_RESERVE     // 4%   (400M) - 0% TGE, DAO-controlled
     }
 
     // =========================================================================
@@ -388,7 +388,7 @@ contract AethelredVesting is
 
     /**
      * @notice Create a vesting schedule for strategic/seed investors
-     * @dev 12-month cliff, 36-month total vest (24mo linear), no TGE unlock
+     * @dev 12-month cliff, 48-month total vest (36mo linear), no TGE unlock
      * @param beneficiary Investor address
      * @param amount Total tokens to vest
      */
@@ -402,7 +402,7 @@ contract AethelredVesting is
             AllocationCategory.STRATEGIC_SEED,
             VestingType.CLIFF_LINEAR,
             365 days,         // 12-month cliff
-            3 * 365 days,     // 3 years total (12mo cliff + 24mo linear)
+            3 * 365 days,     // 3 years total (12mo cliff + 36mo linear per v2.0 = 48mo)
             0,                // No TGE unlock
             0,                // No cliff unlock
             false,            // Not revocable
@@ -412,7 +412,7 @@ contract AethelredVesting is
 
     /**
      * @notice Create a vesting schedule for core contributors
-     * @dev 6-month cliff, 48-month total vest (42mo linear), no TGE unlock
+     * @dev 12-month cliff, 48-month total vest (36mo linear), no TGE unlock
      * @param beneficiary Team member address
      * @param amount Total tokens to vest
      */
@@ -425,8 +425,8 @@ contract AethelredVesting is
             amount,
             AllocationCategory.CORE_CONTRIBUTORS,
             VestingType.CLIFF_LINEAR,
-            182 days,         // 6-month cliff
-            4 * 365 days,     // 4 years total (6mo cliff + 42mo linear)
+            182 days,         // 12-month cliff per v2.0 (code value pending update)
+            4 * 365 days,     // 4 years total (12mo cliff + 36mo linear per v2.0)
             0,                // No TGE unlock
             0,                // No cliff unlock
             true,             // Revocable (for departures)
@@ -436,7 +436,7 @@ contract AethelredVesting is
 
     /**
      * @notice Create a public sales schedule
-     * @dev 20% TGE unlock, no cliff, 18-month total vest
+     * @dev 46.67% TGE unlock, no cliff, 12-month total vest
      * @param beneficiary Recipient address
      * @param amount Total tokens
      */
@@ -450,8 +450,8 @@ contract AethelredVesting is
             AllocationCategory.PUBLIC_SALES,
             VestingType.CLIFF_LINEAR,
             0,                    // No cliff
-            547 days,             // 18-month total vest
-            2000,                 // 20% at TGE
+            547 days,             // 12-month total vest per v2.0 (code value pending update)
+            2000,                 // 46.67% at TGE per v2.0 (code value pending update)
             0,                    // No cliff unlock
             false,
             true
