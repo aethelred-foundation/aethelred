@@ -155,7 +155,7 @@ pub enum SigningAlgorithm {
 
 impl SigningAlgorithm {
     /// Get the PKCS#11 mechanism for this algorithm
-    fn mechanism(&self) -> Mechanism {
+    fn mechanism(&self) -> Mechanism<'_> {
         match self {
             SigningAlgorithm::EcdsaP256 => Mechanism::Ecdsa,
             SigningAlgorithm::EcdsaP384 => Mechanism::Ecdsa,
@@ -220,6 +220,7 @@ struct HsmSession {
     pkcs11: Pkcs11,
     session: Session,
     key_handle: ObjectHandle,
+    authenticated_at: Instant,
     last_activity: Instant,
     algorithm: SigningAlgorithm,
 }
@@ -317,6 +318,7 @@ impl HsmSigner {
             pkcs11,
             session,
             key_handle,
+            authenticated_at: Instant::now(),
             last_activity: Instant::now(),
             algorithm: config.algorithm,
         };
@@ -364,6 +366,8 @@ impl HsmSigner {
     ///
     /// The signature bytes
     pub fn sign(&self, data: &[u8]) -> HsmResult<Vec<u8>> {
+        self.ensure_active_session()?;
+
         let mut session_guard = self.session.lock().unwrap();
         let hsm_session = session_guard.as_mut().ok_or(HsmError::ConnectionLost)?;
 
@@ -454,6 +458,7 @@ impl HsmSigner {
             pkcs11,
             session,
             key_handle,
+            authenticated_at: Instant::now(),
             last_activity: Instant::now(),
             algorithm: self.config.algorithm,
         });
@@ -463,6 +468,8 @@ impl HsmSigner {
 
     /// Get the public key from the HSM
     pub fn get_public_key(&self) -> HsmResult<Vec<u8>> {
+        self.ensure_active_session()?;
+
         let session_guard = self.session.lock().unwrap();
         let hsm_session = session_guard.as_ref().ok_or(HsmError::ConnectionLost)?;
 
@@ -559,7 +566,10 @@ impl HsmSigner {
     /// Check if the HSM session is still valid
     pub fn is_connected(&self) -> bool {
         let session_guard = self.session.lock().unwrap();
-        session_guard.is_some()
+        session_guard
+            .as_ref()
+            .map(|session| !session_rotation_required(session.authenticated_at, self.config.session_timeout))
+            .unwrap_or(false)
     }
 
     /// Get the HSM type
@@ -583,6 +593,23 @@ impl HsmSigner {
                 .logout()
                 .map_err(|e| HsmError::SessionOpenFailed(e.to_string()))?;
         }
+        Ok(())
+    }
+
+    fn ensure_active_session(&self) -> HsmResult<()> {
+        let session_timed_out = {
+            let session_guard = self.session.lock().unwrap();
+            let hsm_session = session_guard.as_ref().ok_or(HsmError::ConnectionLost)?;
+            session_rotation_required(hsm_session.authenticated_at, self.config.session_timeout)
+        };
+
+        if session_timed_out {
+            if !self.config.auto_reconnect {
+                return Err(HsmError::SessionTimeout);
+            }
+            self.reconnect()?;
+        }
+
         Ok(())
     }
 }
@@ -667,6 +694,10 @@ fn sha256_hash(data: &[u8]) -> [u8; 32] {
     hash
 }
 
+fn session_rotation_required(authenticated_at: Instant, session_timeout: Duration) -> bool {
+    !session_timeout.is_zero() && authenticated_at.elapsed() >= session_timeout
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -700,5 +731,30 @@ mod tests {
         assert_eq!(config.key_label, "aethelred-validator-key");
         assert!(config.auto_reconnect);
         assert_eq!(config.max_reconnect_attempts, 3);
+        assert_eq!(config.session_timeout, Duration::from_secs(300));
+    }
+
+    #[test]
+    fn test_session_rotation_required_when_timeout_elapsed() {
+        let authenticated_at = Instant::now()
+            .checked_sub(Duration::from_secs(301))
+            .expect("instant subtraction should succeed");
+
+        assert!(session_rotation_required(
+            authenticated_at,
+            Duration::from_secs(300)
+        ));
+    }
+
+    #[test]
+    fn test_session_rotation_not_required_within_timeout() {
+        let authenticated_at = Instant::now()
+            .checked_sub(Duration::from_secs(60))
+            .expect("instant subtraction should succeed");
+
+        assert!(!session_rotation_required(
+            authenticated_at,
+            Duration::from_secs(300)
+        ));
     }
 }
