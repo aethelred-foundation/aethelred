@@ -132,15 +132,13 @@ impl EthereumListener {
         let mut events = Vec::new();
 
         for deposit in deposits {
-            // Check if we've already processed this deposit
-            if self.storage.has_deposit(&deposit.deposit_id)? {
-                continue;
-            }
-
             // Calculate confirmations
             let confirmations = current_block.saturating_sub(deposit.block_number);
+            let existing_status = self.storage.get_deposit_status(&deposit.deposit_id)?;
 
-            if confirmations >= self.config.confirmations {
+            if confirmations >= self.config.confirmations
+                && matches!(existing_status, None | Some(DepositStatus::Pending))
+            {
                 // Deposit is finalized
                 events.push(EthereumEvent::DepositFinalized {
                     deposit_id: deposit.deposit_id,
@@ -150,14 +148,17 @@ impl EthereumListener {
                 // Store the deposit
                 self.storage.store_deposit(&deposit)?;
                 self.metrics.increment_eth_deposits();
+                continue;
             }
 
-            // Always emit the deposit event for tracking
-            events.push(EthereumEvent::Deposit(deposit));
+            if existing_status.is_none() {
+                events.push(EthereumEvent::Deposit(deposit));
+            }
         }
 
         // Emit new block event
         let block_hash = provider.get_block_hash(to_block).await?;
+        self.storage.set_eth_block_hash(to_block, block_hash)?;
         events.push(EthereumEvent::NewBlock {
             number: to_block,
             hash: block_hash,

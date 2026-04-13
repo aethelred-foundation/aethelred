@@ -274,55 +274,46 @@ impl ConsensusEngine {
 
     /// Check if we should vote for a mint proposal
     async fn should_vote_mint(&self, proposal: &MintProposal) -> Result<bool> {
-        // Verify the deposit exists and is valid
-        let _deposit = &proposal.deposit;
-
-        // Verify deposit on Ethereum (in production, would query the chain)
-        // For now, assume valid if we have it in storage
-        Ok(true)
+        let stored_status = self.storage.get_deposit_status(&proposal.deposit.deposit_id)?;
+        Ok(matches!(stored_status, Some(DepositStatus::Confirmed)))
     }
 
     /// Check if we should vote for a withdrawal proposal
-    async fn should_vote_withdrawal(&self, _proposal: &WithdrawalProposal) -> Result<bool> {
-        // Verify the burn exists and is valid on Aethelred
-        // For now, assume valid if we have it in storage
-        Ok(true)
+    async fn should_vote_withdrawal(&self, proposal: &WithdrawalProposal) -> Result<bool> {
+        let stored_status = self.storage.get_burn_status(&proposal.burn.burn_id)?;
+        Ok(matches!(stored_status, Some(WithdrawalStatus::Confirmed)))
     }
 
     /// Create a vote for a mint proposal
     async fn create_mint_vote(&self, _proposal: &MintProposal) -> Result<RelayerVote> {
-        // In production, sign with relayer's private key
-        Ok(RelayerVote {
-            relayer: [0u8; 32], // Our relayer address
-            approve: true,
-            signature: vec![0u8; 64], // Signature
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        })
+        Err(BridgeError::Signing(
+            "Automatic mint voting is disabled until hardware-backed relayer signing is configured"
+                .to_string(),
+        ))
     }
 
     /// Create a vote for a withdrawal proposal
     async fn create_withdrawal_vote(&self, _proposal: &WithdrawalProposal) -> Result<RelayerVote> {
-        Ok(RelayerVote {
-            relayer: [0u8; 32],
-            approve: true,
-            signature: vec![0u8; 64],
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        })
+        Err(BridgeError::Signing(
+            "Automatic withdrawal voting is disabled until hardware-backed relayer signing is configured"
+                .to_string(),
+        ))
     }
 
     /// Verify a vote signature
     fn verify_vote_signature(&self, vote: &RelayerVote) -> Result<()> {
-        // In production, verify ECDSA/EdDSA signature
         if vote.signature.is_empty() {
             return Err(BridgeError::Verification("Empty signature".to_string()));
         }
-        Ok(())
+        if vote.relayer == [0u8; 32] {
+            return Err(BridgeError::Verification(
+                "Vote relayer address is not set".to_string(),
+            ));
+        }
+
+        Err(BridgeError::Verification(
+            "Cryptographic vote verification is required and has not been configured".to_string(),
+        ))
     }
 
     /// Submit a mint transaction to Aethelred
@@ -331,14 +322,10 @@ impl ConsensusEngine {
             "Submitting mint to Aethelred: {}",
             hex::encode(&proposal_id[..8])
         );
-
-        // In production:
-        // 1. Build the mint transaction
-        // 2. Sign with relayer key
-        // 3. Submit to Aethelred RPC
-        // 4. Wait for inclusion
-
-        Ok(())
+        Err(BridgeError::Aethelred(
+            "Mint submission is disabled until authenticated Aethelred transaction broadcasting is configured"
+                .to_string(),
+        ))
     }
 
     /// Submit a withdrawal proposal to Ethereum
@@ -347,14 +334,10 @@ impl ConsensusEngine {
             "Submitting withdrawal proposal to Ethereum: {}",
             hex::encode(&proposal_id[..8])
         );
-
-        // In production:
-        // 1. Build the proposeWithdrawal transaction
-        // 2. Estimate gas
-        // 3. Sign with relayer key
-        // 4. Submit to Ethereum
-
-        Ok(())
+        Err(BridgeError::Ethereum(
+            "Withdrawal submission is disabled until authenticated Ethereum transaction broadcasting is configured"
+                .to_string(),
+        ))
     }
 }
 

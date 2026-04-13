@@ -125,15 +125,13 @@ impl AethelredListener {
         let mut events = Vec::new();
 
         for burn in burns {
-            // Check if already processed
-            if self.storage.has_burn(&burn.burn_id)? {
-                continue;
-            }
-
             // Calculate confirmations
             let confirmations = current_block.saturating_sub(burn.block_height);
+            let existing_status = self.storage.get_burn_status(&burn.burn_id)?;
 
-            if confirmations >= self.config.confirmations {
+            if confirmations >= self.config.confirmations
+                && matches!(existing_status, None | Some(WithdrawalStatus::Pending))
+            {
                 events.push(AethelredEvent::BurnFinalized {
                     burn_id: burn.burn_id,
                     block_height: burn.block_height,
@@ -141,9 +139,12 @@ impl AethelredListener {
 
                 self.storage.store_burn(&burn)?;
                 self.metrics.increment_aethelred_burns();
+                continue;
             }
 
-            events.push(AethelredEvent::Burn(burn));
+            if existing_status.is_none() {
+                events.push(AethelredEvent::Burn(burn));
+            }
         }
 
         // Get mint completion events
