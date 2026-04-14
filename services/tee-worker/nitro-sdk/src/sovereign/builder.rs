@@ -402,14 +402,16 @@ where
             EncryptionAlgorithm::Aes256GcmSiv => 12,
         };
         let mut nonce = vec![0u8; size];
-        rand::thread_rng().fill_bytes(&mut nonce);
+        let mut rng = rand::rng();
+        rng.fill_bytes(&mut nonce);
         nonce
     }
 
     fn generate_salt() -> Vec<u8> {
         use rand::RngCore;
         let mut salt = vec![0u8; 32];
-        rand::thread_rng().fill_bytes(&mut salt);
+        let mut rng = rand::rng();
+        rng.fill_bytes(&mut salt);
         salt
     }
 

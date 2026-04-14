@@ -274,21 +274,23 @@ impl SecureRandom {
     /// Generate random bytes
     pub fn fill_bytes(buffer: &mut [u8]) -> Result<(), CryptoError> {
         use rand::RngCore;
-        rand::thread_rng()
-            .try_fill_bytes(buffer)
-            .map_err(|e| CryptoError::RandomFailed(e.to_string()))
+        let mut rng = rand::rng();
+        rng.fill_bytes(buffer);
+        Ok(())
     }
 
     /// Generate a random 32-byte value
     pub fn random_32() -> Result<[u8; 32], CryptoError> {
-        use rand::Rng;
-        Ok(rand::thread_rng().r#gen())
+        Ok(rand::random())
     }
 
     /// Generate a random nonce
     pub fn nonce(size: usize) -> Result<Vec<u8>, CryptoError> {
-        use rand::Rng;
-        Ok((0..size).map(|_| rand::thread_rng().r#gen()).collect())
+        use rand::RngCore;
+        let mut nonce = vec![0u8; size];
+        let mut rng = rand::rng();
+        rng.fill_bytes(&mut nonce);
+        Ok(nonce)
     }
 }
 
