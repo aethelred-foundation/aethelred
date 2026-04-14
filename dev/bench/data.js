@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775588815764,
+  "lastUpdate": 1776160127992,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -479,6 +479,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2999,
             "range": "± 4",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c3a4158add0b263ca0abd5a97d5e36a606f6bc84",
+          "message": "deps(contracts): bump axios to 1.15.0\n\nValidated the dependency update against the live required gates before merge.",
+          "timestamp": "2026-04-14T13:47:28+04:00",
+          "tree_id": "90cbc2685423ff4814ad5b9de21de945b3f72428",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/c3a4158add0b263ca0abd5a97d5e36a606f6bc84"
+        },
+        "date": 1776160126800,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
