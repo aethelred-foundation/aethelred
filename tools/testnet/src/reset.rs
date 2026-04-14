@@ -542,7 +542,7 @@ impl ResetManager {
                     NotificationType::PreReset { hours_remaining } => {
                         Notification {
                             title: format!("Testnet Reset in {} hours", hours_remaining),
-                            message: self.format_message(
+                            message: Self::format_message(
                                 &self.config.notifications.messages.pre_reset_template,
                                 &[
                                     ("time_remaining", &format!("{} hours", hours_remaining)),
@@ -560,7 +560,7 @@ impl ResetManager {
                     NotificationType::MaintenanceStart => {
                         Notification {
                             title: "Testnet Maintenance Started".to_string(),
-                            message: self.format_message(
+                            message: Self::format_message(
                                 &self.config.notifications.messages.maintenance_start_template,
                                 &[
                                     ("duration", &format!("{} minutes", self.config.maintenance_duration_minutes)),
@@ -574,7 +574,7 @@ impl ResetManager {
                     NotificationType::ResetComplete => {
                         Notification {
                             title: "Testnet Reset Complete".to_string(),
-                            message: self.format_message(
+                            message: Self::format_message(
                                 &self.config.notifications.messages.reset_complete_template,
                                 &[
                                     ("genesis_hash", "0xnewgenesis..."),
@@ -588,7 +588,7 @@ impl ResetManager {
                     NotificationType::Cancelled { reason } => {
                         Notification {
                             title: "Testnet Reset Cancelled".to_string(),
-                            message: self.format_message(
+                            message: Self::format_message(
                                 &self.config.notifications.messages.reset_cancelled_template,
                                 &[("reason", reason)],
                             ),
@@ -605,7 +605,7 @@ impl ResetManager {
         notifications
     }
 
-    fn format_message(&self, template: &str, vars: &[(&str, &str)]) -> String {
+    fn format_message(template: &str, vars: &[(&str, &str)]) -> String {
         let mut result = template.to_string();
         for (key, value) in vars {
             result = result.replace(&format!("{{{}}}", key), value);
@@ -795,23 +795,29 @@ impl ResetProcess {
             return Ok(false);
         }
 
-        let step = &mut self.steps[self.current_step];
-        step.status = StepStatus::Running;
-        step.started_at = Some(current_timestamp());
+        let started_at = current_timestamp();
+        {
+            let step = &mut self.steps[self.current_step];
+            step.status = StepStatus::Running;
+            step.started_at = Some(started_at);
+        }
 
         // Execute step (simulated)
         let result = self.execute_step(self.current_step);
-
-        step.completed_at = Some(current_timestamp());
+        let completed_at = current_timestamp();
 
         match result {
             Ok(details) => {
+                let step = &mut self.steps[self.current_step];
+                step.completed_at = Some(completed_at);
                 step.status = StepStatus::Completed;
                 step.details = details;
                 self.current_step += 1;
                 Ok(self.current_step < self.steps.len())
             }
             Err(e) => {
+                let step = &mut self.steps[self.current_step];
+                step.completed_at = Some(completed_at);
                 step.status = StepStatus::Failed;
                 step.details = e.clone();
                 self.status = ResetStatus::Failed;

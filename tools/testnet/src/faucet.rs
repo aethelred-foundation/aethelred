@@ -332,6 +332,7 @@ impl Faucet {
         // Verify requester has bulk access
         let developer = self.verified_developers.get(&requester)
             .ok_or(FaucetError::Unauthorized)?;
+        let developer = developer.clone();
 
         if developer.tier != DeveloperTier::Premium && developer.tier != DeveloperTier::Enterprise {
             return Err(FaucetError::InsufficientTier {

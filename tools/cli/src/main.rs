@@ -1172,7 +1172,7 @@ struct VersionEntry {
 }
 
 fn read_sdk_version_from_matrix() -> Option<String> {
-    let raw = include_str!("../../sdk/version-matrix.json");
+    let raw = include_str!("../../../sdk/version-matrix.json");
     let matrix: VersionMatrix = serde_json::from_str(raw).ok()?;
     Some(matrix.packages.go.version)
 }

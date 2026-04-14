@@ -613,9 +613,10 @@ pub async fn start_server(config: VaultServiceConfig) -> Result<(), Box<dyn std:
         }
         None => {
             // Generate a random key for development/testing
-            use rand::RngCore;
+            use rand::Rng;
             let mut key = [0u8; 32];
-            rand::thread_rng().fill_bytes(&mut key);
+            let mut rng = rand::rng();
+            rng.fill(&mut key);
             warn!("No operator_key_hex configured — using random key (development only)");
             key
         }
@@ -2809,9 +2810,9 @@ mod tests {
         payload[64..96].copy_from_slice(&universe);
 
         // Verify individual regions
-        assert_eq!(&payload[0..32], canonical.as_slice());
-        assert_eq!(&payload[32..64], policy.as_slice());
-        assert_eq!(&payload[64..96], universe.as_slice());
+        assert_eq!(&payload[0..32], &canonical[..]);
+        assert_eq!(&payload[32..64], &policy[..]);
+        assert_eq!(&payload[64..96], &universe[..]);
 
         // Verify full hash differs from 64-byte version (no universe)
         let mut old_payload = [0u8; 64];
@@ -2821,8 +2822,8 @@ mod tests {
         let hash_96 = Sha256::digest(&payload);
         let hash_64 = Sha256::digest(&old_payload);
         assert_ne!(
-            hash_96.as_slice(),
-            hash_64.as_slice(),
+            &hash_96[..],
+            &hash_64[..],
             "96-byte payload hash must differ from 64-byte (universe hash changes the digest)"
         );
     }

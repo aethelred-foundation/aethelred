@@ -833,7 +833,7 @@ impl AdvancedProfiler {
 
         // Gas optimization by opcode
         for consumer in &gas.top_consumers {
-            if consumer.opcode == "SSTORE" && consumer.percentage > 30.0 {
+            if consumer.operation == "SSTORE" && consumer.percentage > 30.0 {
                 suggestions.push(OptimizationSuggestion {
                     category: SuggestionCategory::GasOptimization,
                     severity: SuggestionSeverity::High,
@@ -895,11 +895,14 @@ impl AdvancedProfiler {
         // Remove oldest profiles
         if self.profiles.len() > self.config.max_profiles {
             let excess = self.profiles.len() - self.config.max_profiles;
-            let mut profiles: Vec<_> = self.profiles.iter().collect();
-            profiles.sort_by_key(|(_, p)| p.timestamp);
+            let mut profiles: Vec<_> = self.profiles
+                .iter()
+                .map(|(id, profile)| (id.clone(), profile.timestamp))
+                .collect();
+            profiles.sort_by_key(|(_, timestamp)| *timestamp);
 
             for (id, _) in profiles.into_iter().take(excess) {
-                self.profiles.remove(id);
+                self.profiles.remove(&id);
             }
         }
     }
@@ -977,7 +980,8 @@ fn categorize_opcode(opcode: &str) -> String {
 
 fn generate_id() -> String {
     use rand::Rng;
-    let random: u64 = rand::thread_rng().gen();
+    let mut rng = rand::rng();
+    let random: u64 = rng.random();
     format!("{:x}", random)
 }
 

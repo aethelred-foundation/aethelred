@@ -30,7 +30,7 @@ chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1.35", features = ["full"] }
 
 # Random for simulations
-rand = "0.8"
+rand = "0.9.3"
 
 # Hashing
 sha2 = "0.10"
@@ -40,7 +40,7 @@ hex = "0.4"
 reqwest = { version = "0.11", features = ["json"] }
 
 # WebSocket
-tokio-tungstenite = "0.21"
+tokio-tungstenite = "0.29"
 
 # CLI
 clap = { version = "4.4", features = ["derive"] }
@@ -59,7 +59,7 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 rusqlite = { version = "0.30", optional = true }
 
 # Metrics
-prometheus = { version = "0.13", optional = true }
+prometheus = { version = "0.14", optional = true }
 
 [dev-dependencies]
 tempfile = "3.10"

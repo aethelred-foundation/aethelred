@@ -290,14 +290,15 @@ async fn check_health(rpc: &str) -> Result<()> {
 // =============================================================================
 
 async fn generate_key(output: &PathBuf) -> Result<()> {
-    use rand::RngCore;
+    use rand::Rng;
     use sha2::{Digest, Sha256};
 
     println!("Generating new relayer key pair...");
 
     // Generate random seed
     let mut seed = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut seed);
+    let mut rng = rand::rng();
+    rng.fill(&mut seed);
 
     // Derive key (in production, use proper key derivation)
     let mut hasher = Sha256::new();

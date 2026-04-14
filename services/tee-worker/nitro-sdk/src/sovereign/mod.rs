@@ -291,7 +291,8 @@ impl SovereignId {
     pub fn new() -> Self {
         use rand::RngCore;
         let mut bytes = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut bytes);
+        let mut rng = rand::rng();
+        rng.fill_bytes(&mut bytes);
         SovereignId(bytes)
     }
 

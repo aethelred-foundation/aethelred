@@ -162,7 +162,7 @@ impl EcdsaSecretKey {
 
     /// Generate random secret key
     pub fn generate() -> CryptoResult<Self> {
-        let signing_key = SigningKey::random(&mut rand::thread_rng());
+        let signing_key = SigningKey::random(&mut k256::elliptic_curve::rand_core::OsRng);
         let bytes = signing_key.to_bytes();
         let mut key = [0u8; 32];
         key.copy_from_slice(&bytes);

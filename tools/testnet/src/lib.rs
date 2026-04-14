@@ -265,6 +265,13 @@ impl Testnet {
             is_healthy: true,
             sync_status: SyncStatus::Synced,
         };
+        let mut reset_config = ResetConfig::default();
+        reset_config.auto_reset_enabled = config.weekly_reset_enabled;
+        reset_config.schedule = ResetSchedule::Weekly {
+            day_of_week: config.reset_day,
+            hour_utc: config.reset_hour,
+            minute: 0,
+        };
 
         Testnet {
             faucet: Arc::new(RwLock::new(Faucet::new(FaucetConfig::default()))),
@@ -272,7 +279,7 @@ impl Testnet {
             debugger: Arc::new(RwLock::new(Debugger::new())),
             explorer: Arc::new(RwLock::new(Explorer::new())),
             webhooks: Arc::new(RwLock::new(WebhookManager::new())),
-            reset_manager: Arc::new(RwLock::new(ResetManager::new(config.clone()))),
+            reset_manager: Arc::new(RwLock::new(ResetManager::new(reset_config))),
             environments: Arc::new(RwLock::new(EnvironmentManager::new())),
             chaos: Arc::new(RwLock::new(ChaosEngine::new())),
             profiler: Arc::new(RwLock::new(Profiler::new())),

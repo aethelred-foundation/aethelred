@@ -3,9 +3,9 @@
 //! Targets uncovered lines in reputation.rs
 
 use crate::reputation::{
-    ComputeJobRecord, JobMetadata, ReputationConfig, ReputationEngine, ReputationMetrics,
-    ReputationSnapshot, ScoreUpdate, ValidatorReputation, DEFAULT_DECAY_RATE, DEFAULT_WINDOW_DAYS,
-    MAX_SCORE, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC, MULTIPLIER_TEE, MULTIPLIER_ZK, SLOTS_PER_DAY,
+    ComputeJobRecord, ReputationConfig, ReputationEngine, ReputationSnapshot, ValidatorReputation,
+    DEFAULT_DECAY_RATE, DEFAULT_WINDOW_DAYS, MULTIPLIER_HYBRID, MULTIPLIER_REEXEC, MULTIPLIER_TEE,
+    MULTIPLIER_ZK, SLOTS_PER_DAY,
 };
 use crate::traits::VerificationMethod;
 use std::collections::HashMap;

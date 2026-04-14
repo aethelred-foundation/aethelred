@@ -36,7 +36,7 @@ serde_arrays = "0.1"
 sha2 = "0.10"
 sha3 = "0.10"
 blake3 = "1.5"
-rand = "0.8"
+rand = "0.9.3"
 hex = "0.4"
 base64 = "0.21"
 
@@ -49,7 +49,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Numeric
-rust_decimal = { version = "1.33", features = ["serde", "maths"] }
+rust_decimal = { version = "1.33", features = ["serde"] }
 rust_decimal_macros = "1.33"
 
 # Concurrency
@@ -65,7 +65,7 @@ clap = { version = "4.4", features = ["derive"] }
 [dev-dependencies]
 tokio-test = "0.4"
 criterion = "0.5"
-proptest = "1.4"
+proptest = "1.10"
 
 [package.metadata.docs.rs]
 all-features = true

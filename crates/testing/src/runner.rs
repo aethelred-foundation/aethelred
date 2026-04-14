@@ -367,7 +367,6 @@ impl TestExecutor {
 
     pub fn execute_suite(&self, suite: &TestSuite) -> SuiteResult {
         let start = Instant::now();
-        let mut results = Vec::new();
 
         self.hooks.before_all();
 
@@ -376,11 +375,11 @@ impl TestExecutor {
             setup();
         }
 
-        if self.config.parallel > 1 && suite.tests.len() > 1 {
-            results = self.execute_parallel(suite);
+        let results = if self.config.parallel > 1 && suite.tests.len() > 1 {
+            self.execute_parallel(suite)
         } else {
-            results = self.execute_sequential(suite);
-        }
+            self.execute_sequential(suite)
+        };
 
         // Run teardown
         if let Some(ref teardown) = suite.teardown {

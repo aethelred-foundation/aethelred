@@ -44,7 +44,7 @@ pub trait Arbitrary: Clone + Debug {
 // Implementations for primitive types
 impl Arbitrary for bool {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen()
+        rng.random()
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -58,7 +58,7 @@ impl Arbitrary for bool {
 
 impl Arbitrary for i32 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(-1000..1000)
+        rng.random_range(-1000..1000)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -78,7 +78,7 @@ impl Arbitrary for i32 {
 
 impl Arbitrary for i64 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(-10000..10000)
+        rng.random_range(-10000..10000)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -98,7 +98,7 @@ impl Arbitrary for i64 {
 
 impl Arbitrary for u32 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(0..1000)
+        rng.random_range(0..1000)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -114,7 +114,7 @@ impl Arbitrary for u32 {
 
 impl Arbitrary for u64 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(0..10000)
+        rng.random_range(0..10000)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -130,7 +130,7 @@ impl Arbitrary for u64 {
 
 impl Arbitrary for usize {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(0..100)
+        rng.random_range(0..100)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -146,7 +146,7 @@ impl Arbitrary for usize {
 
 impl Arbitrary for f32 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(-100.0..100.0)
+        rng.random_range(-100.0..100.0)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -162,7 +162,7 @@ impl Arbitrary for f32 {
 
 impl Arbitrary for f64 {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        rng.gen_range(-1000.0..1000.0)
+        rng.random_range(-1000.0..1000.0)
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -178,8 +178,8 @@ impl Arbitrary for f64 {
 
 impl Arbitrary for String {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        let len = rng.gen_range(0..20);
-        (0..len).map(|_| rng.gen_range('a'..='z')).collect()
+        let len = rng.random_range(0..20);
+        (0..len).map(|_| rng.random_range('a'..='z')).collect()
     }
 
     fn shrink(&self) -> Vec<Self> {
@@ -196,7 +196,7 @@ impl Arbitrary for String {
 
 impl<T: Arbitrary> Arbitrary for Vec<T> {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        let len = rng.gen_range(0..10);
+        let len = rng.random_range(0..10);
         (0..len).map(|_| T::arbitrary(rng)).collect()
     }
 
@@ -228,7 +228,7 @@ impl<T: Arbitrary> Arbitrary for Vec<T> {
 
 impl<T: Arbitrary> Arbitrary for Option<T> {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        if rng.gen_bool(0.8) {
+        if rng.random_bool(0.8) {
             Some(T::arbitrary(rng))
         } else {
             None
@@ -316,9 +316,9 @@ impl Arbitrary for ArbitraryShape {
         let max_dim = 4;
         let max_size_per_dim = 10;
 
-        let num_dims = rng.gen_range(1..=max_dim);
+        let num_dims = rng.random_range(1..=max_dim);
         let dims: Vec<usize> = (0..num_dims)
-            .map(|_| rng.gen_range(1..=max_size_per_dim))
+            .map(|_| rng.random_range(1..=max_size_per_dim))
             .collect();
 
         ArbitraryShape {
@@ -367,7 +367,7 @@ pub struct ArbitraryTensor {
 impl ArbitraryTensor {
     pub fn with_shape(shape: Vec<usize>, rng: &mut StdRng) -> Self {
         let size: usize = shape.iter().product();
-        let data: Vec<f32> = (0..size).map(|_| rng.gen_range(-1.0..1.0)).collect();
+        let data: Vec<f32> = (0..size).map(|_| rng.random_range(-1.0..1.0)).collect();
         ArbitraryTensor { shape, data }
     }
 }
@@ -376,7 +376,7 @@ impl Arbitrary for ArbitraryTensor {
     fn arbitrary(rng: &mut StdRng) -> Self {
         let shape = ArbitraryShape::arbitrary(rng);
         let size: usize = shape.dims.iter().product();
-        let data: Vec<f32> = (0..size).map(|_| rng.gen_range(-1.0..1.0)).collect();
+        let data: Vec<f32> = (0..size).map(|_| rng.random_range(-1.0..1.0)).collect();
 
         ArbitraryTensor {
             shape: shape.dims,
@@ -415,8 +415,8 @@ pub struct ArbitraryProbabilities {
 
 impl Arbitrary for ArbitraryProbabilities {
     fn arbitrary(rng: &mut StdRng) -> Self {
-        let len = rng.gen_range(2..10);
-        let mut values: Vec<f32> = (0..len).map(|_| rng.gen_range(0.0..1.0)).collect();
+        let len = rng.random_range(2..10);
+        let mut values: Vec<f32> = (0..len).map(|_| rng.random_range(0.0..1.0)).collect();
         let sum: f32 = values.iter().sum();
         for v in &mut values {
             *v /= sum;

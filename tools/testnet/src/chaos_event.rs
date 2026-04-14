@@ -127,7 +127,7 @@ impl Default for LeaderboardConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LeaderboardCategory {
     MostTransactions,
     MostChaosPoints,
@@ -733,7 +733,7 @@ impl ChaosEventManager {
             });
         }
 
-        let event = ChaosEvent {
+        let mut event = ChaosEvent {
             id: format!("purge_{}", event_number),
             event_number,
             name: format!("Purge Night #{}", event_number),
@@ -750,7 +750,7 @@ impl ChaosEventManager {
         };
 
         // Log event start
-        self.log_event(&event, ChaosLogEventType::EventStarted, "Purge Night has begun!", None);
+        Self::log_event(&mut event, ChaosLogEventType::EventStarted, "Purge Night has begun!", None);
 
         self.current_event = Some(event);
         Ok(self.current_event.as_ref().unwrap())
@@ -798,25 +798,28 @@ impl ChaosEventManager {
 
     /// Record a contract deployment
     pub fn record_contract_deploy(&mut self, address: &str) {
+        let mut should_check_challenge = false;
         if let Some(ref mut event) = self.current_event {
             if event.phase != ChaosPhase::Active {
                 return;
             }
 
             event.metrics.contracts_deployed += 1;
+            should_check_challenge = true;
 
             if let Some(participant) = event.participants.get_mut(address) {
                 participant.contracts_deployed += 1;
                 participant.chaos_points += 50; // Bonus for contract deployment
             }
+        }
 
-            // Check contract army challenge
+        if should_check_challenge {
             self.check_challenge_completion(address, "contract_army");
         }
     }
 
     /// Record a revert
-    pub fn record_revert(&mut self, address: &str, error_type: &str) {
+    pub fn record_revert(&mut self, address: &str, _error_type: &str) {
         if let Some(ref mut event) = self.current_event {
             event.metrics.reverts_triggered += 1;
 
@@ -831,7 +834,7 @@ impl ChaosEventManager {
         if let Some(ref mut event) = self.current_event {
             event.metrics.validator_misses += 1;
 
-            self.log_event(
+            Self::log_event(
                 event,
                 ChaosLogEventType::ValidatorDown,
                 &format!("Validator {} missed a block!", validator),
@@ -842,10 +845,13 @@ impl ChaosEventManager {
 
     /// Record reorg
     pub fn record_reorg(&mut self, depth: u64, triggered_by: Option<&str>) {
+        let mut completed_challenge_for = None;
+        let mut new_record = None;
+
         if let Some(ref mut event) = self.current_event {
             event.metrics.reorgs_triggered += 1;
 
-            self.log_event(
+            Self::log_event(
                 event,
                 ChaosLogEventType::ReorgOccurred,
                 &format!("Chain reorg of depth {} detected!", depth),
@@ -857,21 +863,23 @@ impl ChaosEventManager {
                 if let Some(participant) = event.participants.get_mut(address) {
                     participant.chaos_points += 1000;
                 }
-
-                // Check reorg challenge
-                self.check_challenge_completion(address, "chain_reorg");
+                completed_challenge_for = Some(address.to_string());
+                new_record = Some((address.to_string(), event.event_number));
             }
+        }
 
-            // Check if this is a new record
-            if event.event_number > self.all_time_records.first_reorg.event_number {
-                if let Some(address) = triggered_by {
-                    self.all_time_records.first_reorg = RecordEntry {
-                        holder: address.to_string(),
-                        value: depth,
-                        event_number: event.event_number,
-                        achieved_at: current_timestamp(),
-                    };
-                }
+        if let Some(address) = completed_challenge_for {
+            self.check_challenge_completion(&address, "chain_reorg");
+        }
+
+        if let Some((address, event_number)) = new_record {
+            if event_number > self.all_time_records.first_reorg.event_number {
+                self.all_time_records.first_reorg = RecordEntry {
+                    holder: address,
+                    value: depth,
+                    event_number,
+                    achieved_at: current_timestamp(),
+                };
             }
         }
     }
@@ -924,7 +932,7 @@ impl ChaosEventManager {
                     if let Some(badge) = challenge.badge.clone() {
                         participant.badges_earned.push(badge.clone());
 
-                        self.log_event(
+                        Self::log_event(
                             event,
                             ChaosLogEventType::BadgeAwarded,
                             &format!("{} earned the {} badge!", address, badge.name),
@@ -933,7 +941,7 @@ impl ChaosEventManager {
                     }
                 }
 
-                self.log_event(
+                Self::log_event(
                     event,
                     ChaosLogEventType::ChallengeCompleted,
                     &format!("{} completed challenge: {}", address, challenge.name),
@@ -943,9 +951,17 @@ impl ChaosEventManager {
         }
     }
 
-    fn log_event(&self, event: &ChaosEvent, event_type: ChaosLogEventType, description: &str, participant: Option<String>) {
-        // In a real implementation, this would push to event.event_log
-        // For now, we just print
+    fn log_event(event: &mut ChaosEvent, event_type: ChaosLogEventType, description: &str, participant: Option<String>) {
+        event.event_log.push_front(ChaosLogEntry {
+            timestamp: current_timestamp(),
+            event_type: event_type.clone(),
+            description: description.to_string(),
+            participant,
+            details: None,
+        });
+        if event.event_log.len() > 1000 {
+            event.event_log.pop_back();
+        }
         println!("[CHAOS] {} - {:?}: {}", event.name, event_type, description);
     }
 

@@ -1210,7 +1210,7 @@ mod tests {
 
         let session_id = Uuid::new_v4();
         let cohorts = protocol.get_cohorts();
-        let partners = protocol.get_partners();
+        let _partners = protocol.get_partners();
 
         // Create session manually for testing
         let session = DiscoverySession {

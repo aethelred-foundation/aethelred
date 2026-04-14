@@ -253,11 +253,10 @@ impl BatchGroth16VerifyPrecompile {
     /// Parse the entries to calculate total public inputs for gas estimation
     fn count_total_public_inputs(input: &[u8]) -> (usize, usize) {
         let mut total_inputs = 0usize;
-        let mut num_proofs = 0usize;
         if input.len() < 4 {
             return (0, 0);
         }
-        num_proofs = u32::from_le_bytes([input[0], input[1], input[2], input[3]]) as usize;
+        let num_proofs = u32::from_le_bytes([input[0], input[1], input[2], input[3]]) as usize;
 
         let mut offset = 4;
         for _ in 0..num_proofs {

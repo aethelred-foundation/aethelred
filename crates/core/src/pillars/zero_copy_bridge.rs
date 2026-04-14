@@ -30,7 +30,7 @@
 //! without ever paying gas fees to store that data on-chain.
 
 use rand::rngs::OsRng;
-use rand::RngCore;
+use rand::TryRngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -789,7 +789,9 @@ impl ZeroCopyBridge {
 
     fn generate_tunnel_id(&self) -> [u8; 32] {
         let mut id = [0u8; 32];
-        OsRng.fill_bytes(&mut id);
+        let mut rng = OsRng;
+        rng.try_fill_bytes(&mut id)
+            .expect("OS RNG unavailable while generating secure tunnel identifier");
         id
     }
 
