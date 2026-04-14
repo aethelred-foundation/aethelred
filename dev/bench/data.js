@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160127992,
+  "lastUpdate": 1776160357314,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -509,6 +509,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae44c7948c164f56e367b21525711464a4db5d95",
+          "message": "deps(sdk-ts): bump axios from 1.14.0 to 1.15.0 in /sdk/typescript (#106)\n\nBumps [axios](https://github.com/axios/axios) from 1.14.0 to 1.15.0.\n- [Release notes](https://github.com/axios/axios/releases)\n- [Changelog](https://github.com/axios/axios/blob/v1.x/CHANGELOG.md)\n- [Commits](https://github.com/axios/axios/compare/v1.14.0...v1.15.0)\n\n---\nupdated-dependencies:\n- dependency-name: axios\n  dependency-version: 1.15.0\n  dependency-type: direct:production\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:18+04:00",
+          "tree_id": "b36428e171ca2a95866ca827a143527cf15b7fda",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/ae44c7948c164f56e367b21525711464a4db5d95"
+        },
+        "date": 1776160356240,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
+            "range": "± 5",
             "unit": "ns/iter"
           }
         ]
