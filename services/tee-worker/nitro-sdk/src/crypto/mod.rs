@@ -286,11 +286,10 @@ impl SecureRandom {
 
     /// Generate a random nonce
     pub fn nonce(size: usize) -> Result<Vec<u8>, CryptoError> {
-        use rand::RngCore;
-        let mut nonce = vec![0u8; size];
+        use rand::Rng;
+
         let mut rng = rand::rng();
-        rng.fill_bytes(&mut nonce);
-        Ok(nonce)
+        Ok((0..size).map(|_| rng.random::<u8>()).collect())
     }
 }
 
@@ -399,6 +398,13 @@ mod tests {
 
         // Check not all zeros
         assert!(bytes.iter().any(|&b| b != 0));
+    }
+
+    #[test]
+    fn test_secure_random_nonce() {
+        let nonce = SecureRandom::nonce(12).unwrap();
+        assert_eq!(nonce.len(), 12);
+        assert!(nonce.iter().any(|&b| b != 0));
     }
 
     #[test]
