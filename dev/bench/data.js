@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776161475392,
+  "lastUpdate": 1776178742208,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -839,6 +839,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c4f0f7b7147415e06fa2abcf4973c7ffb915c381",
+          "message": "hardening: remediate security and tooling issues\n\n* deps(go): bump github.com/hashicorp/go-getter from 1.8.5 to 1.8.6\n\nBumps [github.com/hashicorp/go-getter](https://github.com/hashicorp/go-getter) from 1.8.5 to 1.8.6.\n- [Release notes](https://github.com/hashicorp/go-getter/releases)\n- [Commits](https://github.com/hashicorp/go-getter/compare/v1.8.5...v1.8.6)\n\n---\nupdated-dependencies:\n- dependency-name: github.com/hashicorp/go-getter\n  dependency-version: 1.8.6\n  dependency-type: indirect\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* chore(ci): refresh required checks for go-getter update\n\n* fix(deps): tidy go-getter dependency graph\n\n* hardening: remediate security and tooling issues\n\n* build: track vendored patched crates\n\n* build: pin Rust 1.85-compatible ICU lockfiles\n\n* ci: restore SDK and Nitro Rust compatibility\n\n* style: satisfy legacy Rust CI formatting\n\n* deps(testnet): remediate websocket and metrics advisories\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T18:57:40+04:00",
+          "tree_id": "f182229c26690a6dc43f76d3bbfbfd760fcbd158",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/c4f0f7b7147415e06fa2abcf4973c7ffb915c381"
+        },
+        "date": 1776178740956,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 5",
             "unit": "ns/iter"
           }
         ]
