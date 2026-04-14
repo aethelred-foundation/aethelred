@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160384334,
+  "lastUpdate": 1776160407895,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -719,6 +719,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2991,
             "range": "± 3",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "85464344749a9492c7e43ea3ff52ad2acda001e4",
+          "message": "Bump rand from 0.8.5 to 0.9.3 in /sdk/rust (#115)\n\nBumps [rand](https://github.com/rust-random/rand) from 0.8.5 to 0.9.3.\n- [Release notes](https://github.com/rust-random/rand/releases)\n- [Changelog](https://github.com/rust-random/rand/blob/0.9.3/CHANGELOG.md)\n- [Commits](https://github.com/rust-random/rand/compare/0.8.5...0.9.3)\n\n---\nupdated-dependencies:\n- dependency-name: rand\n  dependency-version: 0.9.3\n  dependency-type: direct:production\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:39+04:00",
+          "tree_id": "d2ea99a73da235cd9e094cfa6774841a25003cc6",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/85464344749a9492c7e43ea3ff52ad2acda001e4"
+        },
+        "date": 1776160407337,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2998,
+            "range": "± 2",
             "unit": "ns/iter"
           }
         ]
