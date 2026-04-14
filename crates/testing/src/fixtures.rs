@@ -167,7 +167,9 @@ impl Fixture for ModelFixture {
         let weight_count: usize = self.config.input_shape.iter().product::<usize>()
             * self.config.output_shape.iter().product::<usize>();
 
-        let weights: Vec<f32> = (0..weight_count).map(|_| rng.random::<f32>() * 0.01).collect();
+        let weights: Vec<f32> = (0..weight_count)
+            .map(|_| rng.random::<f32>() * 0.01)
+            .collect();
         *self.weights.lock().unwrap() = Some(weights);
 
         Ok(())
