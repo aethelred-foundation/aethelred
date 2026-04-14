@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160428622,
+  "lastUpdate": 1776161470641,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -779,6 +779,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2653,
             "range": "± 25",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e3c71a9da781901b2f92dd89b5b899e026d8741e",
+          "message": "deps(sdk-ts): bump follow-redirects to 1.16.0\n\nValidated the dependency update against the live required gates before merge.",
+          "timestamp": "2026-04-14T14:09:49+04:00",
+          "tree_id": "22a9150e5a5292802f64e64839680a708081b3ab",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/e3c71a9da781901b2f92dd89b5b899e026d8741e"
+        },
+        "date": 1776161469317,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2655,
+            "range": "± 11",
             "unit": "ns/iter"
           }
         ]
