@@ -824,7 +824,7 @@ async fn handle_job_command(args: &[&str], session: &mut InteractiveSession) -> 
             table.printstd();
         }
         Some("submit") => {
-            let model = args.get(1).or(session.context.current_model.as_deref());
+            let model = args.get(1).copied().or(session.context.current_model.as_deref());
             if let Some(model_id) = model {
                 let spinner = create_spinner(&format!("Submitting job for {}...", model_id));
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -841,7 +841,7 @@ async fn handle_job_command(args: &[&str], session: &mut InteractiveSession) -> 
             }
         }
         Some("wait") => {
-            if let Some(job_id) = args.get(1).or(session.context.current_job.as_deref()) {
+            if let Some(job_id) = args.get(1).copied().or(session.context.current_job.as_deref()) {
                 let pb = ProgressBar::new(100);
                 pb.set_style(ProgressStyle::default_bar()
                     .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}% {msg}")

@@ -20,6 +20,11 @@ exclude = [
 ]
 resolver = "2"
 
+[patch.crates-io]
+rust_decimal = { path = "vendor/rust_decimal" }
+ark-std = { path = "vendor/ark-std" }
+getrandom_or_panic = { path = "vendor/getrandom_or_panic" }
+
 [workspace.lints.clippy]
 # Allowed: style/design choices that are not bugs
 type_complexity = "warn"

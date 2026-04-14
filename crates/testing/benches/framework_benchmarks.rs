@@ -9,7 +9,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 fn test_case_creation_bench(c: &mut Criterion) {
     c.bench_function("test_case_creation", |b| {
         b.iter(|| {
-            let tc = TestCase::new("bench_test", || {});
+            let tc = TestCase::new("bench_test", || Ok::<(), Box<dyn std::error::Error>>(()));
             black_box(tc);
         });
     });
@@ -18,7 +18,7 @@ fn test_case_creation_bench(c: &mut Criterion) {
 fn test_case_execution_bench(c: &mut Criterion) {
     c.bench_function("test_case_execution_noop", |b| {
         b.iter(|| {
-            let tc = TestCase::new("bench_test", || {});
+            let tc = TestCase::new("bench_test", || Ok::<(), Box<dyn std::error::Error>>(()));
             let result = tc.run();
             black_box(result);
         });

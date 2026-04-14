@@ -540,11 +540,14 @@ impl VendorAttester for RemoteVendorAttester {
 fn generate_p256_platform_key() -> Result<([u8; 32], [u8; 32], [u8; 32]), AttestationError> {
     use p256::ecdsa::SigningKey as P256SigningKey;
     use rand::rngs::OsRng;
-    use rand::RngCore;
+    use rand::TryRngCore;
 
     let mut key_bytes = [0u8; 32];
+    let mut rng = OsRng;
     loop {
-        OsRng.fill_bytes(&mut key_bytes);
+        rng.try_fill_bytes(&mut key_bytes).map_err(|e| {
+            AttestationError::SigningFailed(format!("OS RNG failed to generate P-256 key: {}", e))
+        })?;
         if P256SigningKey::from_slice(&key_bytes).is_ok() {
             break;
         }
@@ -677,15 +680,16 @@ impl HardwareAttestationProvider for MockHardwareProvider {
         // Generate a random P-256 key (simulates hardware key generation).
         // In a real TEE, this would use hardware RNG + sealed storage.
         let platform_key = {
-            use rand::RngCore;
+            use rand::Rng;
             let mut key_bytes = [0u8; 32];
-            rand::thread_rng().fill_bytes(&mut key_bytes);
+            let mut rng = rand::rng();
+            rng.fill(&mut key_bytes);
             // Ensure valid P-256 scalar (non-zero, < curve order).
             // Retry if we get an invalid key (astronomically unlikely).
             loop {
                 match P256SigningKey::from_slice(&key_bytes) {
                     Ok(_) => break key_bytes,
-                    Err(_) => rand::thread_rng().fill_bytes(&mut key_bytes),
+                    Err(_) => rng.fill(&mut key_bytes),
                 }
             }
         };

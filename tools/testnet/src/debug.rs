@@ -154,84 +154,121 @@ impl Debugger {
 
     /// Step forward in debug session
     pub fn step_forward(&mut self, session_id: &str) -> Result<DebugStep, DebugError> {
-        let session = self.sessions.get_mut(session_id)
-            .ok_or(DebugError::SessionNotFound)?;
+        let (step_index, tx_hash, step) = {
+            let session = self.sessions.get_mut(session_id)
+                .ok_or(DebugError::SessionNotFound)?;
 
-        if session.current_step >= session.trace.execution_steps.len() {
-            return Err(DebugError::EndOfExecution);
-        }
+            if session.current_step >= session.trace.execution_steps.len() {
+                return Err(DebugError::EndOfExecution);
+            }
 
-        session.current_step += 1;
-        session.last_activity = Self::current_timestamp();
+            session.current_step += 1;
+            session.last_activity = Self::current_timestamp();
 
-        let step = &session.trace.execution_steps[session.current_step - 1];
+            (
+                session.current_step,
+                session.tx_hash.clone(),
+                session.trace.execution_steps[session.current_step - 1].clone(),
+            )
+        };
 
-        // Check breakpoints
-        let breakpoint_hit = self.check_breakpoints(&session.tx_hash, step);
+        let breakpoint_hit = self.check_breakpoints(&tx_hash, &step);
+        let watch_values = self.evaluate_watches(&tx_hash, &step);
 
         Ok(DebugStep {
-            step_index: session.current_step,
-            execution_step: step.clone(),
+            step_index,
+            execution_step: step,
             breakpoint_hit,
-            watch_values: self.evaluate_watches(&session.tx_hash, step),
+            watch_values,
         })
     }
 
     /// Step backward in debug session
     pub fn step_backward(&mut self, session_id: &str) -> Result<DebugStep, DebugError> {
-        let session = self.sessions.get_mut(session_id)
-            .ok_or(DebugError::SessionNotFound)?;
+        let (step_index, tx_hash, step) = {
+            let session = self.sessions.get_mut(session_id)
+                .ok_or(DebugError::SessionNotFound)?;
 
-        if session.current_step == 0 {
-            return Err(DebugError::StartOfExecution);
-        }
+            if session.current_step == 0 {
+                return Err(DebugError::StartOfExecution);
+            }
 
-        session.current_step -= 1;
-        session.last_activity = Self::current_timestamp();
+            session.current_step -= 1;
+            session.last_activity = Self::current_timestamp();
 
-        let step = &session.trace.execution_steps[session.current_step];
+            (
+                session.current_step,
+                session.tx_hash.clone(),
+                session.trace.execution_steps[session.current_step].clone(),
+            )
+        };
 
         Ok(DebugStep {
-            step_index: session.current_step,
+            step_index,
             execution_step: step.clone(),
             breakpoint_hit: None,
-            watch_values: self.evaluate_watches(&session.tx_hash, step),
+            watch_values: self.evaluate_watches(&tx_hash, &step),
         })
     }
 
     /// Continue execution until breakpoint or end
     pub fn continue_execution(&mut self, session_id: &str) -> Result<DebugStep, DebugError> {
-        let session = self.sessions.get_mut(session_id)
-            .ok_or(DebugError::SessionNotFound)?;
+        {
+            let session = self.sessions.get_mut(session_id)
+                .ok_or(DebugError::SessionNotFound)?;
+            session.status = DebugSessionStatus::Running;
+            session.last_activity = Self::current_timestamp();
+        }
 
-        session.status = DebugSessionStatus::Running;
-        session.last_activity = Self::current_timestamp();
+        loop {
+            let next_step = {
+                let session = self.sessions.get_mut(session_id)
+                    .ok_or(DebugError::SessionNotFound)?;
 
-        while session.current_step < session.trace.execution_steps.len() {
-            session.current_step += 1;
-            let step = &session.trace.execution_steps[session.current_step - 1];
+                if session.current_step >= session.trace.execution_steps.len() {
+                    None
+                } else {
+                    session.current_step += 1;
+                    Some((
+                        session.current_step,
+                        session.tx_hash.clone(),
+                        session.trace.execution_steps[session.current_step - 1].clone(),
+                    ))
+                }
+            };
 
-            // Check breakpoints
-            if let Some(bp) = self.check_breakpoints(&session.tx_hash, step) {
+            let Some((step_index, tx_hash, step)) = next_step else {
+                break;
+            };
+
+            if let Some(bp) = self.check_breakpoints(&tx_hash, &step) {
+                let session = self.sessions.get_mut(session_id)
+                    .ok_or(DebugError::SessionNotFound)?;
                 session.status = DebugSessionStatus::Paused;
                 session.breakpoints_hit.push(bp.clone());
 
                 return Ok(DebugStep {
-                    step_index: session.current_step,
+                    step_index,
                     execution_step: step.clone(),
                     breakpoint_hit: Some(bp),
-                    watch_values: self.evaluate_watches(&session.tx_hash, step),
+                    watch_values: self.evaluate_watches(&tx_hash, &step),
                 });
             }
         }
 
-        session.status = DebugSessionStatus::Completed;
-
-        let last_step = session.trace.execution_steps.last().cloned()
-            .ok_or(DebugError::EndOfExecution)?;
+        let (step_index, last_step) = {
+            let session = self.sessions.get_mut(session_id)
+                .ok_or(DebugError::SessionNotFound)?;
+            session.status = DebugSessionStatus::Completed;
+            (
+                session.current_step,
+                session.trace.execution_steps.last().cloned()
+                    .ok_or(DebugError::EndOfExecution)?,
+            )
+        };
 
         Ok(DebugStep {
-            step_index: session.current_step,
+            step_index,
             execution_step: last_step,
             breakpoint_hit: None,
             watch_values: Vec::new(),
@@ -269,7 +306,7 @@ impl Debugger {
         StateInspection {
             address: address.to_string(),
             block_number,
-            balance: format!("{}", rand::random::<u64>() % 1_000_000_000_000_000_000_000u128),
+            balance: format!("{}", rand::random::<u128>() % 1_000_000_000_000_000_000_000u128),
             nonce: rand::random::<u64>() % 1000,
             code: Some(vec![0x60, 0x60, 0x60, 0x40, 0x52]), // Sample bytecode
             storage: self.simulate_storage_slots(address),

@@ -24,7 +24,7 @@
 #[cfg(not(feature = "production"))]
 use rand::rngs::OsRng;
 #[cfg(not(feature = "production"))]
-use rand::RngCore;
+use rand::TryRngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, SystemTime};
@@ -992,7 +992,10 @@ impl EnclaveExecutor {
         }
 
         let mut nonce = [0u8; 12];
-        OsRng.fill_bytes(&mut nonce);
+        let mut rng = OsRng;
+        rng.try_fill_bytes(&mut nonce).map_err(|e| {
+            EnclaveError::ExecutionFailed(format!("failed to generate development nonce: {}", e))
+        })?;
 
         let mut key_material = [0u8; 32];
         self.derive_stream_key(sender_pubkey, &nonce, &mut key_material);
@@ -1022,7 +1025,13 @@ impl EnclaveExecutor {
             .as_secs();
 
         let mut nonce = [0u8; 32];
-        OsRng.fill_bytes(&mut nonce);
+        let mut rng = OsRng;
+        rng.try_fill_bytes(&mut nonce).map_err(|e| {
+            EnclaveError::ExecutionFailed(format!(
+                "failed to generate development attestation nonce: {}",
+                e
+            ))
+        })?;
 
         use sha2::{Digest, Sha256};
         let mut report_hasher = Sha256::new();

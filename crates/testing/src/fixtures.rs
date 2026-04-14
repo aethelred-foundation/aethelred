@@ -162,12 +162,12 @@ impl Fixture for ModelFixture {
     fn setup(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Generate random weights
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let weight_count: usize = self.config.input_shape.iter().product::<usize>()
             * self.config.output_shape.iter().product::<usize>();
 
-        let weights: Vec<f32> = (0..weight_count).map(|_| rng.gen::<f32>() * 0.01).collect();
+        let weights: Vec<f32> = (0..weight_count).map(|_| rng.random::<f32>() * 0.01).collect();
         *self.weights.lock().unwrap() = Some(weights);
 
         Ok(())
@@ -204,7 +204,7 @@ impl DataGenerator {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size: usize = shape.iter().product();
-        (0..size).map(|_| rng.gen::<f32>()).collect()
+        (0..size).map(|_| rng.random::<f32>()).collect()
     }
 
     /// Generate tensor with normal distribution (Box-Muller transform)
@@ -215,8 +215,8 @@ impl DataGenerator {
         let size: usize = shape.iter().product();
         let mut result = Vec::with_capacity(size);
         while result.len() < size {
-            let u1: f32 = rng.gen::<f32>().max(f32::EPSILON);
-            let u2: f32 = rng.gen::<f32>();
+            let u1: f32 = rng.random::<f32>().max(f32::EPSILON);
+            let u2: f32 = rng.random::<f32>();
             let z0 = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f32::consts::PI * u2).cos();
             result.push(mean + std * z0);
             if result.len() < size {
@@ -233,7 +233,7 @@ impl DataGenerator {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size: usize = shape.iter().product();
-        (0..size).map(|_| rng.gen_range(min..max)).collect()
+        (0..size).map(|_| rng.random_range(min..max)).collect()
     }
 
     /// Generate one-hot encoded data
@@ -260,7 +260,7 @@ impl DataGenerator {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size = batch_size * seq_length * features;
-        (0..size).map(|_| rng.gen::<f32>()).collect()
+        (0..size).map(|_| rng.random::<f32>()).collect()
     }
 
     /// Generate image-like data (NCHW format)
@@ -274,7 +274,7 @@ impl DataGenerator {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(self.seed);
         let size = batch_size * channels * height * width;
-        (0..size).map(|_| rng.gen_range(0.0..1.0)).collect()
+        (0..size).map(|_| rng.random_range(0.0..1.0)).collect()
     }
 
     /// Generate attention mask
@@ -303,9 +303,9 @@ impl DataGenerator {
         let mut values = Vec::new();
 
         for i in 0..size {
-            if rng.gen::<f32>() > sparsity {
+            if rng.random::<f32>() > sparsity {
                 indices.push(i);
-                values.push(rng.gen::<f32>());
+                values.push(rng.random::<f32>());
             }
         }
 
@@ -334,13 +334,13 @@ impl ClassificationDataset {
 
         for class in 0..num_classes {
             let center: Vec<f32> = (0..num_features)
-                .map(|_| rng.gen_range(-1.0..1.0))
+                .map(|_| rng.random_range(-1.0..1.0))
                 .collect();
 
             for _ in 0..samples_per_class {
                 let sample: Vec<f32> = center
                     .iter()
-                    .map(|&c| c + rng.gen_range(-0.3..0.3))
+                    .map(|&c| c + rng.random_range(-0.3..0.3))
                     .collect();
                 features.push(sample);
                 labels.push(class);
@@ -373,8 +373,8 @@ impl ClassificationDataset {
         for (cx, cy, label) in quadrants {
             for _ in 0..samples_per_quadrant {
                 features.push(vec![
-                    cx + rng.gen_range(-0.3..0.3),
-                    cy + rng.gen_range(-0.3..0.3),
+                    cx + rng.random_range(-0.3..0.3),
+                    cy + rng.random_range(-0.3..0.3),
                 ]);
                 labels.push(label);
             }
@@ -436,16 +436,16 @@ impl RegressionDataset {
 
         // Random coefficients
         let coefficients: Vec<f32> = (0..num_features)
-            .map(|_| rng.gen_range(-2.0..2.0))
+            .map(|_| rng.random_range(-2.0..2.0))
             .collect();
-        let bias = rng.gen_range(-1.0..1.0);
+        let bias = rng.random_range(-1.0..1.0);
 
         let mut features = Vec::new();
         let mut targets = Vec::new();
 
         for _ in 0..num_samples {
             let x: Vec<f32> = (0..num_features)
-                .map(|_| rng.gen_range(-1.0..1.0))
+                .map(|_| rng.random_range(-1.0..1.0))
                 .collect();
             let y: f32 = x
                 .iter()
@@ -453,7 +453,7 @@ impl RegressionDataset {
                 .map(|(xi, ci)| xi * ci)
                 .sum::<f32>()
                 + bias
-                + rng.gen_range(-0.1..0.1);
+                + rng.random_range(-0.1..0.1);
 
             features.push(x);
             targets.push(y);
@@ -467,19 +467,19 @@ impl RegressionDataset {
         use rand::{Rng, SeedableRng};
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
-        let coefficients: Vec<f32> = (0..=degree).map(|_| rng.gen_range(-1.0..1.0)).collect();
+        let coefficients: Vec<f32> = (0..=degree).map(|_| rng.random_range(-1.0..1.0)).collect();
 
         let mut features = Vec::new();
         let mut targets = Vec::new();
 
         for _ in 0..num_samples {
-            let x: f32 = rng.gen_range(-2.0..2.0);
+            let x: f32 = rng.random_range(-2.0..2.0);
             let y: f32 = coefficients
                 .iter()
                 .enumerate()
                 .map(|(i, &c)| c * x.powi(i as i32))
                 .sum::<f32>()
-                + rng.gen_range(-0.05..0.05);
+                + rng.random_range(-0.05..0.05);
 
             features.push(vec![x]);
             targets.push(y);

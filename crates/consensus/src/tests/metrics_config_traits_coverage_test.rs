@@ -1,7 +1,7 @@
 //! Comprehensive coverage tests for Metrics, Config, and Traits modules
 
 use crate::metrics::{
-    BlockMetrics, ComputeMetrics, ConsensusMetricsCollector, MetricsSnapshot,
+    BlockMetrics, ComputeMetrics, ConsensusMetricsCollector,
     ReputationMetrics as MetricsReputationMetrics, TimingMetrics, ValidatorMetrics, VrfMetrics,
 };
 use crate::pouw::config::{PoUWConfig, UtilityCategory, VerificationMethod};
@@ -15,7 +15,7 @@ use crate::traits;
 fn test_metrics_collector_new() {
     let collector = ConsensusMetricsCollector::new();
     assert!(collector.is_enabled());
-    assert!(collector.uptime().as_nanos() >= 0);
+    let _ = collector.uptime();
 }
 
 #[test]

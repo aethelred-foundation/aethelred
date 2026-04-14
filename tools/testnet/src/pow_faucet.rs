@@ -813,7 +813,7 @@ pub struct Leaderboard {
     pub period: LeaderboardPeriod,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LeaderboardPeriod {
     Daily,
     Weekly,
@@ -1350,7 +1350,8 @@ impl RewardInfo {
 
 fn generate_id() -> String {
     use rand::Rng;
-    let random: u64 = rand::thread_rng().gen();
+    let mut rng = rand::rng();
+    let random: u64 = rng.random();
     format!("{:x}", random)
 }
 

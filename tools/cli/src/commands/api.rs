@@ -30,11 +30,7 @@ impl ApiClient {
         })
     }
 
-    pub async fn get_api<K: AsRef<str>, V: AsRef<str>>(
-        &self,
-        path: &str,
-        query: &[(K, V)],
-    ) -> Result<Value> {
+    pub async fn get_api(&self, path: &str, query: &[(&str, String)]) -> Result<Value> {
         self.request_json(
             Method::GET,
             &format!("{}{}", self.api_endpoint, path),
@@ -74,11 +70,7 @@ impl ApiClient {
         .await
     }
 
-    pub async fn get_rpc<K: AsRef<str>, V: AsRef<str>>(
-        &self,
-        path: &str,
-        query: &[(K, V)],
-    ) -> Result<Value> {
+    pub async fn get_rpc(&self, path: &str, query: &[(&str, String)]) -> Result<Value> {
         self.request_json(
             Method::GET,
             &format!("{}{}", self.rpc_endpoint, path),
@@ -88,17 +80,14 @@ impl ApiClient {
         .await
     }
 
-    async fn request_json<K: AsRef<str>, V: AsRef<str>>(
+    async fn request_json(
         &self,
         method: Method,
         url: &str,
-        query: &[(K, V)],
+        query: &[(&str, String)],
         body: Option<&Value>,
     ) -> Result<Value> {
-        let query_pairs: Vec<(&str, &str)> = query
-            .iter()
-            .map(|(k, v)| (k.as_ref(), v.as_ref()))
-            .collect();
+        let query_pairs: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
 
         let mut request = self.client.request(method, url).query(&query_pairs);
         if let Some(payload) = body {

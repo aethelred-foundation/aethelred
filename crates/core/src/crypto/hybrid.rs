@@ -962,9 +962,8 @@ impl HybridKeyPair {
     pub fn generate_with_level(level: DilithiumSecurityLevel) -> CryptoResult<Self> {
         // Generate ECDSA keypair
         use k256::ecdsa::SigningKey;
-        use rand::rngs::OsRng;
 
-        let ecdsa_sk = SigningKey::random(&mut OsRng);
+        let ecdsa_sk = SigningKey::random(&mut k256::elliptic_curve::rand_core::OsRng);
         let ecdsa_pk = ecdsa_sk.verifying_key();
 
         let classical_sk = EcdsaSecretKey::from_bytes(&ecdsa_sk.to_bytes())?;
@@ -1124,15 +1123,15 @@ fn generate_dilithium_keypair(
 fn generate_dilithium_keypair(
     level: DilithiumSecurityLevel,
 ) -> CryptoResult<(DilithiumSecretKey, DilithiumPublicKey)> {
-    use rand::RngCore;
+    use rand::Rng;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut sk_bytes = vec![0u8; level.secret_key_size()];
     let mut pk_bytes = vec![0u8; level.public_key_size()];
 
-    rng.fill_bytes(&mut sk_bytes);
-    rng.fill_bytes(&mut pk_bytes);
+    rng.fill(&mut sk_bytes[..]);
+    rng.fill(&mut pk_bytes[..]);
 
     Ok((
         DilithiumSecretKey::from_bytes(&sk_bytes, level)?,

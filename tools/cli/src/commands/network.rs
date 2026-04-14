@@ -105,11 +105,16 @@ fn switch_network(config: &Config, network: &str) -> Result<()> {
 
 async fn params(config: &Config) -> Result<()> {
     let client = ApiClient::new(config)?;
-    let value = client
+    let value = match client
         .get_api("/cosmos/base/tendermint/v1beta1/node_info", &[])
         .await
-        .or_else(|_| client.get_api("/v1/status", &[]).await)
-        .context("failed to fetch chain parameters")?;
+    {
+        Ok(value) => value,
+        Err(_) => client
+            .get_api("/v1/status", &[])
+            .await
+            .context("failed to fetch chain parameters")?,
+    };
     print_value(&value, &config.output_format)
 }
 
@@ -151,10 +156,12 @@ async fn blocks(config: &Config, count: usize) -> Result<()> {
 
 async fn pending(config: &Config) -> Result<()> {
     let client = ApiClient::new(config)?;
-    let value = client
-        .get_rpc("/unconfirmed_txs", &[])
-        .await
-        .or_else(|_| client.get_api("/v1/transactions?status=pending", &[]).await)
-        .context("failed to fetch pending transactions")?;
+    let value = match client.get_rpc("/unconfirmed_txs", &[]).await {
+        Ok(value) => value,
+        Err(_) => client
+            .get_api("/v1/transactions?status=pending", &[])
+            .await
+            .context("failed to fetch pending transactions")?,
+    };
     print_value(&value, &config.output_format)
 }

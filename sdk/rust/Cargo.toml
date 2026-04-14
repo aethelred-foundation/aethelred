@@ -45,12 +45,12 @@ chrono = { version = "0.4", features = ["serde"] }
 # Utils
 url = "2.5"
 derive_builder = "0.12"
-rand = "0.9"
+rand = "0.9.3"
 num_cpus = "1.17"
 
 [dev-dependencies]
 tokio-test = "0.4"
-wiremock = "0.5"
+wiremock = "0.6.5"
 pretty_assertions = "1.4"
 
 [features]

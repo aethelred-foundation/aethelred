@@ -577,8 +577,8 @@ pub fn temp_dir() -> tempfile::TempDir {
 pub fn random_tensor(shape: &[usize]) -> Vec<f32> {
     use rand::Rng;
     let size: usize = shape.iter().product();
-    let mut rng = rand::thread_rng();
-    (0..size).map(|_| rng.gen::<f32>()).collect()
+    let mut rng = rand::rng();
+    (0..size).map(|_| rng.random::<f32>()).collect()
 }
 
 /// Create a test tensor with zeros

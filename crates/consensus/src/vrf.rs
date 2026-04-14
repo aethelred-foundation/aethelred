@@ -88,9 +88,10 @@ impl VrfKeys {
 
     /// Generate random VRF keypair
     pub fn generate() -> ConsensusResult<Self> {
-        use rand::RngCore;
+        use rand::Rng;
         let mut seed = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut seed);
+        let mut rng = rand::rng();
+        rng.fill(&mut seed);
         Self::from_seed(&seed)
     }
 

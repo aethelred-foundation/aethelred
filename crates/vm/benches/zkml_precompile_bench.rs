@@ -13,7 +13,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 // We reference the precompiles module through the crate's public API.
-use aethelred_vm::precompiles::{addresses, gas_costs, Precompile, PrecompileRegistry};
+use aethelred_vm::precompiles::{addresses, PrecompileRegistry};
 
 // ---------------------------------------------------------------------------
 // Input builders

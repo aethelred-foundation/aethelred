@@ -279,7 +279,10 @@ impl AdvancedChaosEngine {
         use rand::SeedableRng;
         let rng = match config.seed {
             Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
-            None => rand::rngs::StdRng::from_entropy(),
+            None => {
+                let mut thread_rng = rand::rng();
+                rand::rngs::StdRng::from_rng(&mut thread_rng)
+            }
         };
 
         Self {
@@ -417,21 +420,28 @@ impl AdvancedChaosEngine {
 
         // Check for scheduled scenarios
         let timestamp = current_timestamp();
-        for (id, scenario) in &self.scenarios {
-            if !scenario.enabled {
-                continue;
-            }
-
-            let should_trigger = match &scenario.trigger {
-                ChaosTrigger::Scheduled { start_time } if *start_time <= timestamp => true,
-                ChaosTrigger::Periodic { interval_seconds } => {
-                    (timestamp % *interval_seconds) == 0
+        let scheduled_scenarios: Vec<(String, f64)> = self.scenarios
+            .iter()
+            .filter_map(|(id, scenario)| {
+                if !scenario.enabled {
+                    return None;
                 }
-                _ => false,
-            };
 
-            if should_trigger && self.should_apply_probability(scenario.probability) {
-                let _ = self.trigger_scenario(id);
+                let should_trigger = match &scenario.trigger {
+                    ChaosTrigger::Scheduled { start_time } if *start_time <= timestamp => true,
+                    ChaosTrigger::Periodic { interval_seconds } => {
+                        (timestamp % *interval_seconds) == 0
+                    }
+                    _ => false,
+                };
+
+                should_trigger.then(|| (id.clone(), scenario.probability))
+            })
+            .collect();
+
+        for (id, probability) in scheduled_scenarios {
+            if self.should_apply_probability(probability) {
+                let _ = self.trigger_scenario(&id);
             }
         }
     }
@@ -451,11 +461,15 @@ impl AdvancedChaosEngine {
 
         let mut effects = Vec::new();
 
-        for failure in &self.active_failures {
-            if self.affects_context(&failure, context) {
-                if let Some(effect) = self.compute_effect(&failure.chaos_type) {
-                    effects.push(effect);
-                }
+        let applicable_types: Vec<ChaosType> = self.active_failures
+            .iter()
+            .filter(|failure| Self::affects_context(failure, context))
+            .map(|failure| failure.chaos_type.clone())
+            .collect();
+
+        for chaos_type in applicable_types {
+            if let Some(effect) = self.compute_effect(&chaos_type) {
+                effects.push(effect);
             }
         }
 
@@ -468,7 +482,7 @@ impl AdvancedChaosEngine {
         }
     }
 
-    fn affects_context(&self, failure: &ActiveFailure, context: &ChaosContext) -> bool {
+    fn affects_context(failure: &ActiveFailure, context: &ChaosContext) -> bool {
         // Check if the failure's targets affect this context
         if failure.affected_targets.is_empty() {
             return true; // Affects all
@@ -492,13 +506,13 @@ impl AdvancedChaosEngine {
     fn compute_effect(&mut self, chaos_type: &ChaosType) -> Option<ChaosEffect> {
         match chaos_type {
             ChaosType::NetworkLatency { min_ms, max_ms, jitter_ms } => {
-                let base_delay = self.rng.gen_range(*min_ms..=*max_ms);
-                let jitter = self.rng.gen_range(0..=*jitter_ms);
+                let base_delay = self.rng.random_range(*min_ms..=*max_ms);
+                let jitter = self.rng.random_range(0..=*jitter_ms);
                 Some(ChaosEffect::Delay(Duration::from_millis(base_delay + jitter)))
             }
 
             ChaosType::PacketLoss { loss_percentage, .. } => {
-                if self.rng.gen::<f64>() < *loss_percentage / 100.0 {
+                if self.rng.random::<f64>() < *loss_percentage / 100.0 {
                     Some(ChaosEffect::Drop)
                 } else {
                     None
@@ -547,12 +561,13 @@ impl AdvancedChaosEngine {
 
     fn should_apply_probability(&mut self, probability: f64) -> bool {
         let adjusted = probability * self.config.probability_multiplier;
-        self.rng.gen::<f64>() < adjusted
+        self.rng.random::<f64>() < adjusted
     }
 
     /// Heal all active failures
     pub fn heal_all(&mut self) {
-        for failure in self.active_failures.drain(..) {
+        let failures: Vec<_> = self.active_failures.drain(..).collect();
+        for failure in failures {
             self.record_event(ChaosEvent {
                 id: format!("evt_{}", generate_id()),
                 scenario_id: failure.scenario_id,
@@ -782,8 +797,8 @@ impl ChaosPresets {
 // ============ Helper Functions ============
 
 fn generate_id() -> String {
-    use rand::Rng;
-    let random: u64 = rand::thread_rng().gen();
+    let mut rng = rand::rng();
+    let random: u64 = rng.random();
     format!("{:x}", random)
 }
 

@@ -103,8 +103,8 @@ fn compute_block_data_hash(block_data: &str) -> String {
 /// Generate a random nonce for commitment.
 pub fn generate_nonce() -> String {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let nonce: [u8; 32] = rng.gen();
+    let mut rng = rand::rng();
+    let nonce: [u8; 32] = rng.random();
     hex::encode(nonce)
 }
 

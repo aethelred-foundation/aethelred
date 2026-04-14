@@ -436,12 +436,12 @@ async fn run_detect(args: HardwareDetectArgs, _config: &Config) -> anyhow::Resul
     );
 
     // Detection phases
-    let phases = vec![
-        ("Detecting CPU capabilities...", detect_cpu),
-        ("Detecting memory configuration...", detect_memory),
-        ("Scanning for TEE support...", detect_tee),
-        ("Scanning for GPU devices...", detect_gpu),
-        ("Analyzing platform...", detect_platform),
+    let phases: Vec<(&str, fn())> = vec![
+        ("Detecting CPU capabilities...", detect_cpu as fn()),
+        ("Detecting memory configuration...", detect_memory as fn()),
+        ("Scanning for TEE support...", detect_tee as fn()),
+        ("Scanning for GPU devices...", detect_gpu as fn()),
+        ("Analyzing platform...", detect_platform as fn()),
     ];
 
     pb.set_message("Starting detection...");
