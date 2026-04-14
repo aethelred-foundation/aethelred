@@ -3,7 +3,7 @@
 > Status update (post-snapshot remediation): `aethelred-rust-node` has since been converted into a buildable/testable Rust crate baseline in the local remediation clone (`Cargo.toml` + CI + passing offline tests). Treat `AETHEL-MR-002` below as snapshot evidence, not current status.
 
 Date: 2026-02-24
-Reviewer: Codex (simulated independent auditor-style review; not an official Trail of Bits / OpenZeppelin / Hecken / CertiK engagement)
+Reviewer: Internal adversarial review (simulated independent auditor-style review; not an official external firm engagement)
 Scope: Public repos listed by user + mapped local snapshots / fresh clones where available.
 
 ## Executive Summary

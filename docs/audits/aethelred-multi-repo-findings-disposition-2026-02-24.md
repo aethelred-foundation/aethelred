@@ -34,8 +34,8 @@ What was implemented now:
    - `/tmp/aethelred-core-audit/docs/governance/core-disposition-ratification.md`
    - `/tmp/aethelred-core-audit/.github/workflows/mirror-drift-check.yml`
 9. Workflow-free authority/disposition branches were pushed to both public repos (docs/manifests/security scope only):
-   - `aethelred-foundation/aethelred-cosmos-node`: `codex/repo-authority-aethel-mr-001-noworkflows-20260224`
-   - `aethelred-foundation/aethelred-core`: `codex/repo-authority-aethel-mr-001-noworkflows-20260224`
+   - `aethelred-foundation/aethelred-cosmos-node`: `repo-authority-aethel-mr-001-noworkflows-20260224`
+   - `aethelred-foundation/aethelred-core`: `repo-authority-aethel-mr-001-noworkflows-20260224`
 
 Remaining required action:
 1. Ratify ADR-0001 at Foundation/org level (human sign-off; cannot be automated from this workspace).
@@ -107,7 +107,7 @@ Current measured rollout status (from local clones, generated matrix):
 - All 9 repos now show baseline `4/4` present and `4/4` tracked locally.
 - `aethelred-core` and `aethelred-cosmos-node` baseline + authority workflows are on workflow-bearing local branches prepared earlier.
 - The other 7 repos now have dedicated baseline rollout branches prepared locally:
-  - `codex/aethel-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
+  - `aeth-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
 - Advanced workflow coverage remains uneven by repo (tracked in the rollout matrix) and is now explicitly measurable.
 
 Remaining action (per repo):

@@ -15,7 +15,7 @@ export default defineConfig({
       'src/**/*.{test,spec}.{ts,tsx}',
     ],
     exclude: [
-      '.claude/**',
+      '[.]*/**',
       '.next/**',
       'coverage/**',
       'e2e/**',

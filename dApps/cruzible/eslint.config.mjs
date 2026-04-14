@@ -13,7 +13,7 @@ const reactHooksRules = reactHooks.configs.flat.recommended.rules;
 export default [
   {
     ignores: [
-      ".claude/**",
+      "[.]*/**",
       ".next/**",
       "coverage/**",
       "node_modules/**",

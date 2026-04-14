@@ -77,7 +77,7 @@ npx hardhat coverage
 
 These contracts manage sensitive health data references and financial operations. Before any mainnet deployment:
 
-- **Professional audit** -- Engage at least one reputable smart contract auditing firm (e.g., Trail of Bits, OpenZeppelin, Spearbit, Cyfrin).
+- **Professional audit** -- Engage at least one reputable smart contract auditing firm with deep Layer 1 and healthcare-grade assurance experience.
 - **Formal verification** -- Consider formal verification for critical state transitions in `ShioraAccessControl`, `ShioraConsentManager`, and `ShioraReproductiveVault`.
 - **Invariant testing** -- Write Foundry invariant tests for token accounting in `ShioraStaking` and `ShioraMarketplace`.
 - **Bug bounty** -- Launch a bug bounty program (Immunefi or similar) before or at mainnet launch.

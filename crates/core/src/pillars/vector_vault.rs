@@ -62,12 +62,12 @@ pub struct VectorEmbedding {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EmbeddingModel {
-    /// OpenAI text-embedding-ada-002
-    OpenAIAda002 { dimensions: usize },
-    /// OpenAI text-embedding-3-small
-    OpenAI3Small { dimensions: usize },
-    /// OpenAI text-embedding-3-large
-    OpenAI3Large { dimensions: usize },
+    /// Legacy remote embedding model (1536 dimensions)
+    RemoteLegacy1536 { dimensions: usize },
+    /// Standard remote embedding model (1536 dimensions)
+    RemoteStandard1536 { dimensions: usize },
+    /// Extended remote embedding model (3072 dimensions)
+    RemoteStandard3072 { dimensions: usize },
     /// Cohere Embed v3
     CohereV3 { dimensions: usize },
     /// Sentence Transformers
@@ -91,9 +91,9 @@ pub enum EmbeddingModel {
 impl EmbeddingModel {
     pub fn dimensions(&self) -> usize {
         match self {
-            EmbeddingModel::OpenAIAda002 { dimensions } => *dimensions,
-            EmbeddingModel::OpenAI3Small { dimensions } => *dimensions,
-            EmbeddingModel::OpenAI3Large { dimensions } => *dimensions,
+            EmbeddingModel::RemoteLegacy1536 { dimensions } => *dimensions,
+            EmbeddingModel::RemoteStandard1536 { dimensions } => *dimensions,
+            EmbeddingModel::RemoteStandard3072 { dimensions } => *dimensions,
             EmbeddingModel::CohereV3 { dimensions } => *dimensions,
             EmbeddingModel::SentenceTransformers { dimensions, .. } => *dimensions,
             EmbeddingModel::Custom { dimensions, .. } => *dimensions,
@@ -313,7 +313,7 @@ pub struct VaultConfig {
 impl Default for VaultConfig {
     fn default() -> Self {
         VaultConfig {
-            default_model: EmbeddingModel::OpenAI3Small { dimensions: 1536 },
+            default_model: EmbeddingModel::RemoteStandard1536 { dimensions: 1536 },
             default_index: IndexType::HNSW {
                 m: 16,
                 ef_construction: 200,
@@ -1278,7 +1278,7 @@ mod tests {
             id: [id_byte; 32],
             vector: vec![value; 1536],
             dimensions: 1536,
-            model: EmbeddingModel::OpenAI3Small { dimensions: 1536 },
+            model: EmbeddingModel::RemoteStandard1536 { dimensions: 1536 },
             metadata: EmbeddingMetadata {
                 content_type: ContentType::Text {
                     language: "en".to_string(),
@@ -1433,7 +1433,7 @@ mod tests {
         };
 
         let config = VaultConfig::attested_qdrant(
-            EmbeddingModel::OpenAI3Small { dimensions: 1536 },
+            EmbeddingModel::RemoteStandard1536 { dimensions: 1536 },
             IndexType::HNSW {
                 m: 16,
                 ef_construction: 200,

@@ -68,7 +68,7 @@ const MOCK_PROPOSALS: TreasuryProposal[] = [
   {
     id: '0xprop003',
     title: 'Security Audit — Annual Retainer',
-    description: 'Annual security audit retainer with Trail of Bits for continuous smart contract review.',
+    description: 'Annual security audit retainer with the lead external auditor for continuous smart contract review.',
     proposer: '0x3456789012abcdef3456789012abcdef34567890',
     recipient: '0xcdef1234567890abcdef1234567890abcdef12345',
     amount: 200_000,

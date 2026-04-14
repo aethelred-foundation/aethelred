@@ -1,7 +1,7 @@
 # Aethelred Security Audit Report (Stringent External Review)
 
 Date: 2026-03-02  
-Reviewer mode: Adversarial audit (Trail of Bits / OpenZeppelin / CertiK style)  
+Reviewer mode: Adversarial external audit style  
 Scope reviewed: Go L1 node/module paths (`app`, `x/verify`, `x/pouw`), Solidity contracts under `contracts/`, deployment config/scripts.
 
 ## Executive Summary
@@ -195,4 +195,3 @@ A hostname resolving to private/link-local ranges can bypass simple string check
 2. **Short-term (P1):** Remove production default key fallback; patch signature domain separation and seal immutability where deployed.
 3. **Short-term (P1/P2):** Add endpoint allowlist + bounded response reads in all remote verifier/prover paths.
 4. **Defense-in-depth:** Unify outbound HTTP security policy in one reusable package and enforce it from all modules.
-

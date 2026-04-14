@@ -129,14 +129,10 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI & Dev Tooling (local only) ────────────────────────────────────
-.ai-tools/
-.claude/
-.cursor/
-.codex/
-.serena/
+# ── Local Hidden Workspaces (local only) ─────────────────────────────
+/.*/
 .aider*
-CLAUDE.md
+sdk/go/.cache/
 
 # ── Local Test Outputs ───────────────────────────────────────────────
 loadtest-results/

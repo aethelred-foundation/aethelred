@@ -190,7 +190,7 @@ const TX_TYPES = [
 
 const AI_MODELS = [
   "GPT-4 Turbo",
-  "Claude 3 Opus",
+  "Flagship Tool-Use Model",
   "Llama 3 70B",
   "Gemini Ultra",
   "Mistral Large",

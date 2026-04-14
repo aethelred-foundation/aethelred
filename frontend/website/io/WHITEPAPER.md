@@ -451,7 +451,7 @@ An on-chain vector storage system provides HNSW-indexed (Hierarchical Navigable 
 
 - **Capacity:** Up to 10,000,000 vectors per namespace.
 - **Index Types:** Flat (exact), IVF (approximate), HNSW (default, m=16, ef_construction=200), PQ (100x compression), SQ (4-8x compression).
-- **Embedding Models:** Support for OpenAI Ada-002, OpenAI 3-Small/Large, Cohere v3, Sentence Transformers, CLIP, BioMedLM, FinBERT, and custom models.
+- **Embedding Models:** Support for remote legacy/current 1536-d models, a 3072-d extended model, Cohere v3, Sentence Transformers, CLIP, BioMedLM, FinBERT, and custom models.
 - **Search:** Cosine similarity with epsilon-safe denominator, filterable by tags, content type, date range, and owner.
 - **Access Control:** Per-namespace owner, reader list, public/private flag, optional encryption.
 - **Document Processing:** Automatic chunking (fixed, semantic, sentence, recursive) with configurable chunk size (default 512 tokens) and overlap (default 50 tokens).
@@ -854,7 +854,7 @@ Mainnet launch requires passing 12 production-readiness gates:
 
 | Gate | Check |
 |------|-------|
-| G1 | External audit sign-off (Trail of Bits + OtterSec) |
+| G1 | External audit sign-off (lead audit partner + specialist review) |
 | G2 | CI branch protection (6 required gates) |
 | G3/G4 | Dependency integrity (Go/Rust) |
 | G5 | Static analysis (gosec, trivy, slither, cargo-audit) |
@@ -890,7 +890,7 @@ A three-layer defence prevents simulated verification from reaching production:
 
 | Auditor | Scope | Status |
 |---------|-------|--------|
-| Trail of Bits | Smart contracts, consensus, cryptography | Engaged — 2 audit cycles |
+| Lead External Auditor | Smart contracts, consensus, cryptography | Engaged — 2 audit cycles |
 | OtterSec | Smart contracts, bridge, tokenomics | Engaged — 2 audit cycles |
 | Internal Security Review | Full protocol (Go/Solidity/Rust) | Complete — 27 findings, all remediated |
 | External VRF Consultant | VRF + protocol review | Complete — RS-01 (Critical) fixed |
@@ -1071,7 +1071,7 @@ Aethelred does not compete with general-purpose smart contract platforms. It cre
 | Team hiring difficulty | Low | High | 20% allocation matches market standard; 6-month cliff for early liquidity |
 | Exchange listing failure | Low | High | Binance primary + Bybit/OKX contingency; DEX backup |
 | Testnet delay | Medium | Medium | Buffer built into timeline; contractor support available |
-| Smart contract exploit | Low | Catastrophic | 2 audit cycles (Trail of Bits + OtterSec); Insurance Fund; formal verification |
+| Smart contract exploit | Low | Catastrophic | 2 audit cycles (lead external partner + specialist reviewer); Insurance Fund; formal verification |
 | Regulatory uncertainty | Medium | Medium | ADGM engagement from day one; legal counsel on retainer; compliance-first design |
 
 ---

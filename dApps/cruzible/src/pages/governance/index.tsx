@@ -284,7 +284,7 @@ const PROPOSALS: Proposal[] = [
     proposer: "TEE Guard",
     proposerAddress: "aeth1j5nt...k3w8",
     description:
-      "Allocate 750,000 AETHEL for comprehensive security audits of the Aethelred bridge contracts by Trail of Bits and Zellic.",
+      "Allocate 750,000 AETHEL for comprehensive external security audits of the Aethelred bridge contracts.",
     fullDescription: "",
     votesFor: 11_200_000,
     votesAgainst: 820_000,
@@ -489,7 +489,7 @@ const PROPOSALS: Proposal[] = [
 
 const TREASURY_DISBURSEMENTS: TreasuryDisbursement[] = [
   {
-    recipient: "Trail of Bits",
+    recipient: "Lead External Auditor",
     amount: 450_000,
     purpose: "Bridge Security Audit Phase 1",
     date: "Feb 18, 2026",

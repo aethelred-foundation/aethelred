@@ -335,7 +335,7 @@ The effective circulating supply at any point is further reduced by:
 |----------|--------|-----------|---------|
 | Engineering | $6,400,000 | 40% | Core protocol development, VM, consensus, cryptography |
 | Infrastructure | $2,400,000 | 15% | Validator infrastructure, TEE provisioning, devnet/testnet |
-| Security | $2,400,000 | 15% | Audits (Trail of Bits, OtterSec), bug bounty, formal verification |
+| Security | $2,400,000 | 15% | Audits (lead external partner, specialist review), bug bounty, formal verification |
 | Business Development | $1,600,000 | 10% | Exchange listings, partnerships, market making setup |
 | Legal & Compliance | $1,600,000 | 10% | ADGM registration, regulatory counsel, compliance infrastructure |
 | Operations | $1,600,000 | 10% | Office, administration, travel, contingency |
@@ -1097,7 +1097,7 @@ All validator keys implement `ZeroizeOnDrop` — cryptographic key material is s
 
 | Auditor | Scope | Status |
 |---------|-------|--------|
-| Trail of Bits | Smart contracts, consensus, cryptography | Engaged — 2 audit cycles planned |
+| Lead External Auditor | Smart contracts, consensus, cryptography | Engaged — 2 audit cycles planned |
 | OtterSec | Smart contracts, bridge, tokenomics | Engaged — 2 audit cycles planned |
 | Internal Security Review | Full protocol (Go/Solidity/Rust) | Complete — 27 findings, all remediated |
 | External VRF Consultant | VRF + protocol review | Complete — RS-01 (Critical) fixed |
@@ -1253,7 +1253,7 @@ Mainnet launch requires passing 10 production readiness checks:
 | Team hiring difficulty | Low | High | 20% allocation matches market standard; 6-month cliff provides early liquidity | CEO |
 | Exchange listing failure | Low | High | Binance primary + Bybit/OKX contingency; DEX backup plan | BD Team |
 | Testnet delay | Medium | Medium | Buffer built into timeline; contractor support available (Protofire) | CTO |
-| Smart contract exploit | Low | Catastrophic | 2 audit cycles (Trail of Bits + OtterSec); Insurance Fund; formal verification | Security Lead |
+| Smart contract exploit | Low | Catastrophic | 2 audit cycles (lead external partner + specialist reviewer); Insurance Fund; formal verification | Security Lead |
 | Regulatory uncertainty | Medium | Medium | ADGM engagement from day one; legal counsel on retainer; compliance-first token design | General Counsel |
 
 ---

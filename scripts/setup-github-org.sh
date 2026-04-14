@@ -10,7 +10,7 @@ ROLLOUT_MODE="${ROLLOUT_MODE:-branch}"
 OPEN_PRS="${OPEN_PRS:-0}"
 APPLY_LABELS="${APPLY_LABELS:-1}"
 APPLY_BRANCH_PROTECTION="${APPLY_BRANCH_PROTECTION:-0}"
-BRANCH_NAME="${BRANCH_NAME:-codex/github-standards-$(date +%Y%m%d)}"
+BRANCH_NAME="${BRANCH_NAME:-ramesh/github-standards-$(date +%Y%m%d)}"
 
 usage() {
   cat <<'USAGE'
