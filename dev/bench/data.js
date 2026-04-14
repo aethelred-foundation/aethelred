@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160407895,
+  "lastUpdate": 1776160428622,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -749,6 +749,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2998,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db98e8054c78b82e17a24c95f3e9ed92627356b7",
+          "message": "Bump rand from 0.8.5 to 0.9.3 in /services/tee-worker/nitro-sdk (#116)\n\nBumps [rand](https://github.com/rust-random/rand) from 0.8.5 to 0.9.3.\n- [Release notes](https://github.com/rust-random/rand/releases)\n- [Changelog](https://github.com/rust-random/rand/blob/0.9.3/CHANGELOG.md)\n- [Commits](https://github.com/rust-random/rand/compare/0.8.5...0.9.3)\n\n---\nupdated-dependencies:\n- dependency-name: rand\n  dependency-version: 0.9.3\n  dependency-type: direct:production\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:42+04:00",
+          "tree_id": "9726c788ef58ab89744991e7b80414cde8c29342",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/db98e8054c78b82e17a24c95f3e9ed92627356b7"
+        },
+        "date": 1776160427255,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2653,
+            "range": "± 25",
             "unit": "ns/iter"
           }
         ]
