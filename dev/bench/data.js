@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160376739,
+  "lastUpdate": 1776160384334,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -689,6 +689,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2656,
             "range": "± 51",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc7df410a949b0af73c4ffcfabca95f5e4e1b82f",
+          "message": "Bump next from 15.5.14 to 15.5.15 in /integrations/apps/nextjs-verifier (#114)\n\nBumps [next](https://github.com/vercel/next.js) from 15.5.14 to 15.5.15.\n- [Release notes](https://github.com/vercel/next.js/releases)\n- [Changelog](https://github.com/vercel/next.js/blob/canary/release.js)\n- [Commits](https://github.com/vercel/next.js/compare/v15.5.14...v15.5.15)\n\n---\nupdated-dependencies:\n- dependency-name: next\n  dependency-version: 15.5.15\n  dependency-type: direct:production\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:36+04:00",
+          "tree_id": "7b5a982a00df3e9080d8d729fe8ea5b066c23c31",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/fc7df410a949b0af73c4ffcfabca95f5e4e1b82f"
+        },
+        "date": 1776160383203,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2991,
+            "range": "± 3",
             "unit": "ns/iter"
           }
         ]
