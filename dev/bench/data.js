@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776178742208,
+  "lastUpdate": 1776180727185,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -869,6 +869,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 5",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6423bc59b8f3341e514ef5058d2fa84c73b53ad0",
+          "message": "fix(nitro-sdk): generate nonces directly from rng output",
+          "timestamp": "2026-04-14T19:30:43+04:00",
+          "tree_id": "8d657bf3b492c109dcf208374c00823e3d078fb1",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/6423bc59b8f3341e514ef5058d2fa84c73b53ad0"
+        },
+        "date": 1776180725853,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 3147,
+            "range": "± 4",
             "unit": "ns/iter"
           }
         ]
