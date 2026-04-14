@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160372228,
+  "lastUpdate": 1776160376739,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -659,6 +659,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2651,
             "range": "± 4",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d6f71eb31598bbf1cbf1fabbff258f3886fe5522",
+          "message": "deps(go): bump golang.org/x/crypto from 0.48.0 to 0.50.0 (#113)\n\nBumps [golang.org/x/crypto](https://github.com/golang/crypto) from 0.48.0 to 0.50.0.\n- [Commits](https://github.com/golang/crypto/compare/v0.48.0...v0.50.0)\n\n---\nupdated-dependencies:\n- dependency-name: golang.org/x/crypto\n  dependency-version: 0.50.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:33+04:00",
+          "tree_id": "8c4e269c38f2ca1acc798dd5c3398c99f10b7965",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/d6f71eb31598bbf1cbf1fabbff258f3886fe5522"
+        },
+        "date": 1776160375687,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2656,
+            "range": "± 51",
             "unit": "ns/iter"
           }
         ]
