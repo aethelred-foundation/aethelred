@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160370414,
+  "lastUpdate": 1776160372228,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -628,6 +628,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "sha256_4kb",
             "value": 2652,
+            "range": "± 4",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "71a0a74794ed1eb0cce8b61b98f169a8cd5bded5",
+          "message": "deps(go): bump github.com/cosmos/gogoproto from 1.7.0 to 1.7.2 (#111)\n\nBumps [github.com/cosmos/gogoproto](https://github.com/cosmos/gogoproto) from 1.7.0 to 1.7.2.\n- [Release notes](https://github.com/cosmos/gogoproto/releases)\n- [Changelog](https://github.com/cosmos/gogoproto/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/cosmos/gogoproto/compare/v1.7.0...v1.7.2)\n\n---\nupdated-dependencies:\n- dependency-name: github.com/cosmos/gogoproto\n  dependency-version: 1.7.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:30+04:00",
+          "tree_id": "93dd8254aeb399b1df78d61468700bf86befc653",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/71a0a74794ed1eb0cce8b61b98f169a8cd5bded5"
+        },
+        "date": 1776160370699,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
             "range": "± 4",
             "unit": "ns/iter"
           }
