@@ -18,6 +18,14 @@ target/
 keeper.test
 *.out
 vendor/
+!crates/vendor/
+crates/vendor/*
+!crates/vendor/ark-std/
+!crates/vendor/ark-std/**
+!crates/vendor/getrandom_or_panic/
+!crates/vendor/getrandom_or_panic/**
+!crates/vendor/rust_decimal/
+!crates/vendor/rust_decimal/**
 
 # ── IDE & Editors ─────────────────────────────────────────────────────
 .idea/
@@ -150,6 +158,8 @@ dApps/terraqura/
 
 # ── Cargo Local Config ──────────────────────────────────────────────
 .cargo/
+!crates/vendor/rust_decimal/.cargo/
+!crates/vendor/rust_decimal/.cargo/**
 
 # ── Husky (managed per install) ──────────────────────────────────────
 .husky/_/
