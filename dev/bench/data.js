@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776160357314,
+  "lastUpdate": 1776160365445,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -539,6 +539,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2651,
             "range": "± 5",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6f99be9b0b7dcfefe50aba4f4af2649e287abccc",
+          "message": "ci(deps): bump actions/upload-pages-artifact from 3 to 5 (#108)\n\nBumps [actions/upload-pages-artifact](https://github.com/actions/upload-pages-artifact) from 3 to 5.\n- [Release notes](https://github.com/actions/upload-pages-artifact/releases)\n- [Commits](https://github.com/actions/upload-pages-artifact/compare/v3...v5)\n\n---\nupdated-dependencies:\n- dependency-name: actions/upload-pages-artifact\n  dependency-version: '5'\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-14T13:51:24+04:00",
+          "tree_id": "250cf4ce4b5e135b3f58e4e1b8bbb2d0ee871cf4",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/6f99be9b0b7dcfefe50aba4f4af2649e287abccc"
+        },
+        "date": 1776160363810,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 3",
             "unit": "ns/iter"
           }
         ]
