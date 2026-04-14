@@ -662,7 +662,7 @@ cd examples
 ### 8.3 Get Help
 
 - **Discord**: https://discord.gg/aethelred
-- **GitHub Issues**: https://github.com/aethelred/aethelred/issues
+- **GitHub Issues**: https://github.com/aethelred-foundation/aethelred/issues
 - **Documentation**: https://docs.aethelred.io
 - **Email**: support@aethelred.io
 

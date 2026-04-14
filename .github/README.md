@@ -15,7 +15,7 @@ This directory contains the repository-wide GitHub configuration for Aethelred.
 - `ISSUE_TEMPLATE/`: issue intake templates for bugs and feature requests
 - `PULL_REQUEST_TEMPLATE.md`: pull request checklist and contributor expectations
 - `branch-protection/`: required check definitions used to keep launch branches honest
-- `dependabot.yml`: dependency update policy
+- dependency hygiene is controlled through manual remediation PRs and the security scan workflows
 
 ## Operating Rules
 

@@ -16,13 +16,14 @@ Workflows are now split by concern:
 
 Configure GitHub branch protection with these required checks:
 
-1. `Audit Signoff Required Gate` (required on `main` and `release/*`)
-2. `Core Required Gate`
-3. `Contracts Required Gate`
-4. `Rust Required Gate`
-5. `Security Required Gate`
-6. `Sandbox Required Gate`
-7. `Load Test Required Gate`
+1. `Contracts Required Gate`
+2. `Docker Required Gate`
+3. `E2E Required Gate`
+4. `Fuzzing Required Gate`
+5. `Load Test Required Gate`
+6. `Rust Required Gate`
+7. `Sandbox Required Gate`
+8. `Security Required Gate`
 
 You can apply these branch protections with:
 
@@ -32,6 +33,12 @@ scripts/setup_required_github_checks.sh <owner/repo> main develop
 
 Required check mappings are maintained in:
 `.github/branch-protection/required-checks.json`.
+
+Operational baseline for `main`:
+
+1. Two approving reviews required.
+2. Direct pushes restricted to release-authority actors.
+3. Linear history, conversation resolution, and admin enforcement enabled.
 
 ## Kubernetes Packaging
 

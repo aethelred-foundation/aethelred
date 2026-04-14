@@ -19,10 +19,15 @@ replace the canonical repo-authority model documented in:
 ## Release Rules
 
 - Every release must originate from a reviewed pull request merged into `main`.
+- Canonical `main` releases require the protected-branch policy in force at the
+  time of merge, including required status checks, conversation resolution, and
+  two approving reviews.
 - Version tags use semantic versioning: `vMAJOR.MINOR.PATCH`.
 - GitHub Releases must reference the exact tag and commit SHA they were built from.
 - Release notes must link to the changelog, upgrade notes, and any relevant AIPs.
 - Security-sensitive releases must reference the applicable advisory or incident note.
+- External audit and regulatory evidence packs must record the exact release or
+  audit snapshot commit SHA they rely on.
 
 ## Artifact Expectations
 
@@ -49,7 +54,8 @@ describing its provenance.
 Before announcing a release:
 
 1. Confirm the release tag resolves to the intended commit.
-2. Confirm `SECURITY.md`, support links, and changelog references are current.
-3. Confirm the correct repo is publishing the release for that surface.
-4. Confirm generated artifacts match the committed source tree.
-5. Confirm audit or advisory references do not overstate the current status.
+2. Confirm the commit is traceable to the reviewed pull request and protected-branch evidence.
+3. Confirm `SECURITY.md`, support links, and changelog references are current.
+4. Confirm the correct repo is publishing the release for that surface.
+5. Confirm generated artifacts match the committed source tree.
+6. Confirm audit or advisory references do not overstate the current status.

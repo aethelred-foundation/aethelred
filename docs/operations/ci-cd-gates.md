@@ -53,8 +53,8 @@ Set these on protected branches:
 1. Require pull request before merge.
 2. Require status checks to pass.
 3. Require branches to be up to date before merging.
-4. Require 1+ approving review (2 for `main` recommended).
-5. Require CODEOWNERS review.
+4. Require 2 approving reviews on `main`; require at least 1 on `develop` and `release/*` unless an active freeze policy elevates that requirement.
+5. Restrict direct pushes to `main` to release-authority actors only.
 6. Require conversation resolution.
 7. Enforce for administrators.
 8. Disallow force pushes and branch deletion.
