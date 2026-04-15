@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776244471598,
+  "lastUpdate": 1776285905536,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -928,6 +928,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "sha256_4kb",
             "value": 2651,
+            "range": "± 5",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b66cb735c1bec80714a0620e16ee57856008d95f",
+          "message": "deps: curate npm dependency refresh (#138)",
+          "timestamp": "2026-04-16T00:43:43+04:00",
+          "tree_id": "8465a70e80029d582b63ced2f59306291f5254cd",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/b66cb735c1bec80714a0620e16ee57856008d95f"
+        },
+        "date": 1776285904268,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
             "range": "± 5",
             "unit": "ns/iter"
           }
