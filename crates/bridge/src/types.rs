@@ -383,11 +383,11 @@ impl RelayerSet {
     /// Get minimum votes required for consensus
     pub fn min_votes_required(&self) -> usize {
         let active_count = self.relayers.iter().filter(|r| r.active).count();
-        let threshold = (active_count * self.threshold_bps as usize) / 10000;
-        if threshold == 0 {
+        if active_count == 0 {
             1
         } else {
-            threshold
+            let numerator = active_count * self.threshold_bps as usize;
+            numerator.div_ceil(10000).max(1)
         }
     }
 
@@ -505,9 +505,9 @@ mod tests {
             total_stake: 3000,
         };
 
-        assert_eq!(set.min_votes_required(), 2); // 67% of 3 = 2.01 -> 2
+        assert_eq!(set.min_votes_required(), 3); // 67% of 3 rounds up to 3
         assert!(!set.has_consensus(1));
-        assert!(set.has_consensus(2));
+        assert!(!set.has_consensus(2));
         assert!(set.has_consensus(3));
     }
 

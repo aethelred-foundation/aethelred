@@ -1269,6 +1269,11 @@ impl SlashingManager {
 
         // Verify attestation
         let verified = self.verify_attestation(&attestation, current_time)?;
+        if !verified {
+            return Err(SystemContractError::Slashing(
+                "Invalid attestation response".into(),
+            ));
+        }
 
         let challenge = self
             .attestation_challenges
@@ -1321,6 +1326,10 @@ impl SlashingManager {
 
     /// Verify a TEE attestation
     fn verify_attestation(&self, attestation: &TeeAttestation, current_time: u64) -> Result<bool> {
+        if attestation.attestation.is_empty() || attestation.measurement == [0u8; 32] {
+            return Ok(false);
+        }
+
         // Check attestation age
         let age = current_time.saturating_sub(attestation.timestamp);
         if age > self.config.attestation_max_age_secs {
@@ -1329,13 +1338,66 @@ impl SlashingManager {
 
         // Verify attestation based on type
         match attestation.tee_type {
-            TeeType::IntelSgx => {
-                // Placeholder validation: ensure payload and measurement are present.
-                Ok(!attestation.attestation.is_empty() && attestation.measurement != [0u8; 32])
-            }
-            TeeType::AwsNitro => Ok(!attestation.attestation.is_empty()),
-            TeeType::AmdSev => Ok(!attestation.attestation.is_empty()),
+            TeeType::IntelSgx => self.verify_sgx_attestation(attestation),
+            TeeType::AwsNitro => self.verify_nitro_attestation(attestation),
+            TeeType::AmdSev => self.verify_sev_attestation(attestation),
         }
+    }
+
+    fn verify_sgx_attestation(&self, attestation: &TeeAttestation) -> Result<bool> {
+        let bytes = &attestation.attestation;
+        if bytes.len() < 436 {
+            return Ok(false);
+        }
+
+        let version = u16::from_le_bytes([bytes[0], bytes[1]]);
+        if version != 3 {
+            return Ok(false);
+        }
+
+        let tee_type = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+        if tee_type != 0 {
+            return Ok(false);
+        }
+
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&bytes[112..144]);
+
+        Ok(measurement == attestation.measurement)
+    }
+
+    fn verify_nitro_attestation(&self, attestation: &TeeAttestation) -> Result<bool> {
+        let bytes = &attestation.attestation;
+        if bytes.len() < 100 {
+            return Ok(false);
+        }
+
+        // COSE_Sign1/CBOR array envelope used by Nitro documents.
+        if !bytes.starts_with(&[0x84]) {
+            return Ok(false);
+        }
+
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&bytes[40..72]);
+
+        Ok(measurement == attestation.measurement)
+    }
+
+    fn verify_sev_attestation(&self, attestation: &TeeAttestation) -> Result<bool> {
+        let bytes = &attestation.attestation;
+        if bytes.len() < 672 {
+            return Ok(false);
+        }
+
+        let version = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+        if version != 2 {
+            return Ok(false);
+        }
+
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&bytes[80..112]);
+
+        Ok(measurement == attestation.measurement)
     }
 
     // =========================================================================
@@ -1734,6 +1796,26 @@ pub struct SlashingStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::system_contracts::bank::BankConfig;
+
+    fn make_manager() -> SlashingManager {
+        let bank = std::sync::Arc::new(RwLock::new(Bank::new(BankConfig::default())));
+        SlashingManager::new(SlashingConfig::devnet(), bank)
+    }
+
+    fn make_sgx_attestation(measurement: [u8; 32], timestamp: u64) -> TeeAttestation {
+        let mut quote = vec![0u8; 436];
+        quote[0..2].copy_from_slice(&3u16.to_le_bytes());
+        quote[4..8].copy_from_slice(&0u32.to_le_bytes());
+        quote[112..144].copy_from_slice(&measurement);
+
+        TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: quote,
+            measurement,
+            timestamp,
+        }
+    }
 
     #[test]
     fn test_offense_severity_mapping() {
@@ -1818,5 +1900,50 @@ mod tests {
         };
 
         assert!(ban.is_active(u64::MAX - 1));
+    }
+
+    #[test]
+    fn test_invalid_attestation_response_does_not_satisfy_challenge() {
+        let mut manager = make_manager();
+        let target = [7u8; 32];
+        let issued = manager.issue_attestation_challenges(&[target], 61, b"seed");
+        let challenge = issued.first().expect("challenge should be issued");
+
+        let invalid = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![0xAA; 32],
+            measurement: [9u8; 32],
+            timestamp: 80,
+        };
+
+        let err = manager
+            .submit_attestation_response(challenge.id, invalid, 80)
+            .expect_err("invalid attestation must be rejected");
+        assert!(err.to_string().contains("Invalid attestation response"));
+
+        let expired = manager.process_expired_attestation_challenges(challenge.deadline + 1);
+        assert_eq!(expired.len(), 1);
+        assert_eq!(expired[0].offender, target);
+        assert_eq!(
+            expired[0].offense_type,
+            OffenseType::AttestationChallengeFailure
+        );
+    }
+
+    #[test]
+    fn test_valid_sgx_attestation_satisfies_challenge() {
+        let mut manager = make_manager();
+        let target = [8u8; 32];
+        let issued = manager.issue_attestation_challenges(&[target], 61, b"seed");
+        let challenge = issued.first().expect("challenge should be issued");
+
+        let attestation = make_sgx_attestation([5u8; 32], 80);
+
+        assert!(manager
+            .submit_attestation_response(challenge.id, attestation, 80)
+            .expect("valid attestation should be accepted"));
+
+        let expired = manager.process_expired_attestation_challenges(challenge.deadline + 1);
+        assert!(expired.is_empty());
     }
 }

@@ -45,6 +45,7 @@ dependencies = [
 name = "aethelred-bridge"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "chrono",
  "clap",
  "hex",
