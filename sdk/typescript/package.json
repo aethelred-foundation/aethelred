@@ -59,7 +59,7 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "docs": "typedoc",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build"
