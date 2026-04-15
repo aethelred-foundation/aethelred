@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776180727185,
+  "lastUpdate": 1776244471598,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -899,6 +899,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 3147,
             "range": "± 4",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f55932264fcd879516c01283c7164c2c4c872639",
+          "message": "hardening: align audit controls and release provenance (#123)",
+          "timestamp": "2026-04-15T13:13:08+04:00",
+          "tree_id": "2b8b4d36e15372792fb17aad1324e3079b9a636d",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/f55932264fcd879516c01283c7164c2c4c872639"
+        },
+        "date": 1776244470507,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
+            "range": "± 5",
             "unit": "ns/iter"
           }
         ]
