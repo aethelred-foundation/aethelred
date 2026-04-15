@@ -1,4 +1,4 @@
-# Dependabot Remediation Backlog
+# Dependency Remediation Backlog
 
 Observed: 2026-03-13 during GitHub rollout pushes.
 

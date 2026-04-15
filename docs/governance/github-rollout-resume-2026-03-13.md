@@ -96,5 +96,5 @@ Rationale:
 ## Follow-On Work
 
 - Execute the dependency/vulnerability backlog in
-  `docs/security/dependabot-remediation-backlog-2026-03-13.md`
+  `docs/security/dependency-remediation-backlog-2026-03-13.md`
 - Re-run release/provenance spot checks after the rollout PRs merge

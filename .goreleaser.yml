@@ -1,5 +1,5 @@
 project_name: aethelred
-project_url: https://github.com/aethelred/aethelred
+project_url: https://github.com/aethelred-foundation/aethelred
 
 before:
   hooks:
@@ -70,32 +70,21 @@ sboms:
 
 release:
   github:
-    owner: aethelred
+    owner: aethelred-foundation
     name: aethelred
   draft: false
   prerelease: auto
   header: |
     ## Aethelred {{ .Tag }}
 
-    See [CHANGELOG.md](https://github.com/aethelred/aethelred/blob/main/CHANGELOG.md) for full details.
+    See [CHANGELOG.md](https://github.com/aethelred-foundation/aethelred/blob/main/CHANGELOG.md) for full details.
 
   name_template: "{{.ProjectName}} {{.Tag}}"
 
-brews:
-  - name: aethelred
-    homepage: https://aethelred.io
-    description: Aethelred CLI and node binary
-    repository:
-      owner: aethelred
-      name: homebrew-tap
-    install: |
-      bin.install "aethelredd"
-      bin.install "aethel"
-
 dockers:
   - image_templates:
-      - "ghcr.io/aethelred/node:{{ .Tag }}"
-      - "ghcr.io/aethelred/node:latest"
+      - "ghcr.io/aethelred-foundation/aethelred/aethelredd:{{ .Tag }}"
+      - "ghcr.io/aethelred-foundation/aethelred/aethelredd:latest"
     dockerfile: Dockerfile
     use: buildx
     build_flag_templates:

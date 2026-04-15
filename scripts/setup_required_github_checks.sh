@@ -50,13 +50,39 @@ checks_for_branch() {
   jq -c '.default' "${CONFIG_FILE}"
 }
 
+review_count_for_branch() {
+  local branch="$1"
+  if [[ "${branch}" == "main" ]]; then
+    echo "2"
+  else
+    echo "1"
+  fi
+}
+
+push_restrictions_for_branch() {
+  local branch="$1"
+  if [[ "${branch}" != "main" ]]; then
+    echo "null"
+    return
+  fi
+
+  local users_json teams_json
+  users_json="$(jq -cn --arg user "${MAIN_PUSH_USER:-ramtamilselvan}" '[ $user ]')"
+  teams_json="$(jq -cn --arg team "${MAIN_PUSH_TEAM:-core-admins}" '[ $team ]')"
+  jq -cn --argjson users "${users_json}" --argjson teams "${teams_json}" '{users: $users, teams: $teams}'
+}
+
 for branch in "${BRANCHES[@]}"; do
   echo "Applying branch protection for ${REPO}:${branch}"
   contexts_json="$(checks_for_branch "${branch}")"
+  review_count="$(review_count_for_branch "${branch}")"
+  restrictions_json="$(push_restrictions_for_branch "${branch}")"
   echo "Required checks: ${contexts_json}"
 
   payload="$(jq -n \
     --argjson contexts "$contexts_json" \
+    --argjson review_count "$review_count" \
+    --argjson restrictions "$restrictions_json" \
     '{
       required_status_checks: {
         strict: true,
@@ -65,17 +91,17 @@ for branch in "${BRANCHES[@]}"; do
       enforce_admins: true,
       required_pull_request_reviews: {
         dismiss_stale_reviews: true,
-        require_code_owner_reviews: true,
-        required_approving_review_count: 1
+        require_code_owner_reviews: false,
+        required_approving_review_count: $review_count
       },
-      restrictions: null,
+      restrictions: $restrictions,
       required_conversation_resolution: true,
       allow_force_pushes: false,
       allow_deletions: false,
       block_creations: false,
       required_linear_history: true,
       lock_branch: false,
-      allow_fork_syncing: true
+      allow_fork_syncing: false
     }'
   )"
 

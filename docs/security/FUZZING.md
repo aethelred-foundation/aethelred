@@ -363,7 +363,7 @@ For sustained long-term fuzzing, integrate with Google's OSS-Fuzz:
 # project.yaml (for OSS-Fuzz submission)
 homepage: "https://aethelred.io"
 language: rust
-main_repo: "https://github.com/aethelred/aethelred-node"
+main_repo: "https://github.com/aethelred-foundation/aethelred"
 fuzzing_engines:
   - libfuzzer
   - afl
