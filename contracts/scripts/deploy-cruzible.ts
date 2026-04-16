@@ -27,6 +27,7 @@ interface DeploymentAddresses {
   cruzibleImpl: string;
   deployer: string;
   admin: string;
+  upgraderTimelock: string;
   treasury: string;
   aethelToken: string;
   network: string;
@@ -46,15 +47,30 @@ async function main() {
   console.log("╠══════════════════════════════════════════════════════════╣");
   console.log(`║  Network:  ${network.name} (chain ID: ${chainId})`);
   console.log(`║  Deployer: ${deployer.address}`);
-  console.log(`║  Balance:  ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} ETH`);
+  console.log(
+    `║  Balance:  ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} ETH`,
+  );
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
   // Resolve addresses
   const isLocal = chainId === 31337 || chainId === 1337;
-  const admin = process.env.ADMIN_ADDRESS || deployer.address;
+  const admin = isLocal ? deployer.address : process.env.ADMIN_ADDRESS;
+  const upgraderTimelock = isLocal
+    ? deployer.address
+    : process.env.UPGRADER_TIMELOCK_ADDRESS;
   const treasury = process.env.TREASURY_ADDRESS || deployer.address;
 
   let aethelTokenAddr = process.env.AETHEL_TOKEN_ADDRESS;
+
+  if (!admin) {
+    throw new Error("ADMIN_ADDRESS required for non-local networks");
+  }
+
+  if (!upgraderTimelock) {
+    throw new Error(
+      "UPGRADER_TIMELOCK_ADDRESS required for non-local networks",
+    );
+  }
 
   // Deploy mock AETHEL token for local/test networks
   if (!aethelTokenAddr && isLocal) {
@@ -62,8 +78,13 @@ async function main() {
     const MockToken = await ethers.getContractFactory("AethelredToken");
     const mockToken = await upgrades.deployProxy(
       MockToken,
-      [admin, deployer.address, deployer.address, ethers.parseEther("1000000000")],
-      { kind: "uups" }
+      [
+        admin,
+        deployer.address,
+        deployer.address,
+        ethers.parseEther("1000000000"),
+      ],
+      { kind: "uups" },
     );
     await mockToken.waitForDeployment();
     aethelTokenAddr = await mockToken.getAddress();
@@ -80,12 +101,18 @@ async function main() {
 
   console.log("📦 Step 1/3: Deploying VaultTEEVerifier...");
   const VaultTEEVerifier = await ethers.getContractFactory("VaultTEEVerifier");
-  const verifier = await upgrades.deployProxy(VaultTEEVerifier, [admin], {
-    kind: "uups",
-  });
+  const verifier = await upgrades.deployProxy(
+    VaultTEEVerifier,
+    isLocal ? [admin] : [admin, upgraderTimelock],
+    {
+      kind: "uups",
+      initializer: isLocal ? "initialize" : "initializeWithTimelock",
+    },
+  );
   await verifier.waitForDeployment();
   const verifierAddr = await verifier.getAddress();
-  const verifierImplAddr = await upgrades.erc1967.getImplementationAddress(verifierAddr);
+  const verifierImplAddr =
+    await upgrades.erc1967.getImplementationAddress(verifierAddr);
   console.log(`   ✅ VaultTEEVerifier Proxy: ${verifierAddr}`);
   console.log(`   ✅ VaultTEEVerifier Impl:  ${verifierImplAddr}\n`);
 
@@ -98,12 +125,18 @@ async function main() {
   // to initialize the vault. Solution: deploy with admin as temporary vault,
   // then update after vault deployment.
   const StAETHEL = await ethers.getContractFactory("StAETHEL");
-  const stAethel = await upgrades.deployProxy(StAETHEL, [admin, admin], {
-    kind: "uups",
-  });
+  const stAethel = await upgrades.deployProxy(
+    StAETHEL,
+    isLocal ? [admin, admin] : [admin, upgraderTimelock, admin],
+    {
+      kind: "uups",
+      initializer: isLocal ? "initialize" : "initializeWithTimelock",
+    },
+  );
   await stAethel.waitForDeployment();
   const stAethelAddr = await stAethel.getAddress();
-  const stAethelImplAddr = await upgrades.erc1967.getImplementationAddress(stAethelAddr);
+  const stAethelImplAddr =
+    await upgrades.erc1967.getImplementationAddress(stAethelAddr);
   console.log(`   ✅ StAETHEL Proxy: ${stAethelAddr}`);
   console.log(`   ✅ StAETHEL Impl:  ${stAethelImplAddr}\n`);
 
@@ -115,12 +148,25 @@ async function main() {
   const Cruzible = await ethers.getContractFactory("Cruzible");
   const vault = await upgrades.deployProxy(
     Cruzible,
-    [admin, aethelTokenAddr, stAethelAddr, verifierAddr, treasury],
-    { kind: "uups" }
+    isLocal
+      ? [admin, aethelTokenAddr, stAethelAddr, verifierAddr, treasury]
+      : [
+          admin,
+          upgraderTimelock,
+          aethelTokenAddr,
+          stAethelAddr,
+          verifierAddr,
+          treasury,
+        ],
+    {
+      kind: "uups",
+      initializer: isLocal ? "initialize" : "initializeWithTimelock",
+    },
   );
   await vault.waitForDeployment();
   const vaultAddr = await vault.getAddress();
-  const vaultImplAddr = await upgrades.erc1967.getImplementationAddress(vaultAddr);
+  const vaultImplAddr =
+    await upgrades.erc1967.getImplementationAddress(vaultAddr);
   console.log(`   ✅ Cruzible Proxy: ${vaultAddr}`);
   console.log(`   ✅ Cruzible Impl:  ${vaultImplAddr}\n`);
 
@@ -132,16 +178,30 @@ async function main() {
 
   const VAULT_ROLE = ethers.keccak256(ethers.toUtf8Bytes("VAULT_ROLE"));
 
-  // Grant VAULT_ROLE to the vault contract
   const stAethelContract = await ethers.getContractAt("StAETHEL", stAethelAddr);
-  const grantTx = await stAethelContract.grantRole(VAULT_ROLE, vaultAddr);
-  await grantTx.wait();
-  console.log(`   ✅ Granted VAULT_ROLE to Cruzible on StAETHEL`);
+  if (isLocal) {
+    const grantTx = await stAethelContract.grantRole(VAULT_ROLE, vaultAddr);
+    await grantTx.wait();
+    console.log(`   ✅ Granted VAULT_ROLE to Cruzible on StAETHEL`);
 
-  // Revoke VAULT_ROLE from admin (was temporary)
-  const revokeTx = await stAethelContract.revokeRole(VAULT_ROLE, admin);
-  await revokeTx.wait();
-  console.log(`   ✅ Revoked temporary VAULT_ROLE from admin\n`);
+    const revokeTx = await stAethelContract.revokeRole(VAULT_ROLE, admin);
+    await revokeTx.wait();
+    console.log(`   ✅ Revoked temporary VAULT_ROLE from admin\n`);
+  } else {
+    const grantRoleCalldata = stAethelContract.interface.encodeFunctionData(
+      "grantRole",
+      [VAULT_ROLE, vaultAddr],
+    );
+    const revokeRoleCalldata = stAethelContract.interface.encodeFunctionData(
+      "revokeRole",
+      [VAULT_ROLE, admin],
+    );
+
+    console.log("   ⚠️ Governance action required before vault go-live:");
+    console.log(`      Target: ${stAethelAddr}`);
+    console.log(`      grantRole calldata:  ${grantRoleCalldata}`);
+    console.log(`      revokeRole calldata: ${revokeRoleCalldata}\n`);
+  }
 
   // ─────────────────────────────────────────────────────────────────────
   // Summary
@@ -157,6 +217,7 @@ async function main() {
     cruzibleImpl: vaultImplAddr,
     deployer: deployer.address,
     admin,
+    upgraderTimelock,
     treasury,
     aethelToken: aethelTokenAddr,
     network: network.name,
@@ -184,7 +245,10 @@ async function main() {
   if (!fs.existsSync(deployDir)) {
     fs.mkdirSync(deployDir, { recursive: true });
   }
-  const deployFile = path.join(deployDir, `vault-${network.name}-${chainId}.json`);
+  const deployFile = path.join(
+    deployDir,
+    `vault-${network.name}-${chainId}.json`,
+  );
   fs.writeFileSync(deployFile, JSON.stringify(deployment, null, 2));
   console.log(`\n📝 Deployment addresses saved to: ${deployFile}`);
 }

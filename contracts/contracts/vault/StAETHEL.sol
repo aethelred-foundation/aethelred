@@ -9,6 +9,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+interface IStAETHELUpgraderTimelockDelaySource {
+    function getMinDelay() external view returns (uint256);
+}
+
 /**
  * @title StAETHEL (Staked AETHEL)
  * @author Aethelred Team
@@ -53,6 +57,7 @@ contract StAETHEL is
     bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    uint256 public constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
 
     /// @notice Precision for share calculations (1e27 to avoid rounding issues).
     uint256 internal constant SHARES_PRECISION = 1e27;
@@ -108,6 +113,9 @@ contract StAETHEL is
     error ExceedsMaxShares();
     error AccountBlacklisted(address account);
     error SharesMintingFailed();
+    error AdminMustBeContract();
+    error UpgraderTimelockDelayTooShort();
+    error ProductionInitializationRequiresTimelock();
 
     // =========================================================================
     // MODIFIERS
@@ -133,7 +141,39 @@ contract StAETHEL is
      * @param vaultAddress The Cruzible contract.
      */
     function initialize(address admin, address vaultAddress) external initializer {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
+        _initializeStAETHEL(admin, admin, vaultAddress);
+    }
+
+    /**
+     * @notice Initialize the stAETHEL token with a timelock-bound upgrader role.
+     * @param admin Governance/admin executor contract.
+     * @param upgraderTimelock Timelock contract holding UPGRADER_ROLE.
+     * @param vaultAddress The Cruzible contract.
+     */
+    function initializeWithTimelock(
+        address admin,
+        address upgraderTimelock,
+        address vaultAddress
+    )
+        external
+        initializer
+    {
+        _requireContractAdmin(admin);
+        _requireContractAdmin(upgraderTimelock);
+        _requireUpgraderTimelockDelay(upgraderTimelock);
+        _initializeStAETHEL(admin, upgraderTimelock, vaultAddress);
+    }
+
+    function _initializeStAETHEL(
+        address admin,
+        address upgraderAuthority,
+        address vaultAddress
+    )
+        internal
+    {
         if (admin == address(0)) revert ZeroAddress();
+        if (upgraderAuthority == address(0)) revert ZeroAddress();
         if (vaultAddress == address(0)) revert ZeroAddress();
 
         __ERC20_init("Staked Aethelred", "stAETHEL");
@@ -145,7 +185,8 @@ contract StAETHEL is
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(PAUSER_ROLE, admin);
-        _grantRole(UPGRADER_ROLE, admin);
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
+        _grantRole(UPGRADER_ROLE, upgraderAuthority);
         _grantRole(VAULT_ROLE, vaultAddress);
 
         vault = vaultAddress;
@@ -175,7 +216,10 @@ contract StAETHEL is
      * @notice Transfer stAETHEL tokens.
      * @dev Internally transfers shares proportional to the AETHEL amount.
      */
-    function transfer(address to, uint256 amount)
+    function transfer(
+        address to,
+        uint256 amount
+    )
         public
         override
         notBlacklisted(msg.sender)
@@ -203,7 +247,11 @@ contract StAETHEL is
     /**
      * @notice Transfer stAETHEL from one account to another.
      */
-    function transferFrom(address from, address to, uint256 amount)
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    )
         public
         override
         notBlacklisted(from)
@@ -241,7 +289,10 @@ contract StAETHEL is
      * @param sharesAmount Number of shares to mint.
      * @return aethelAmount The AETHEL-equivalent value of minted shares.
      */
-    function mintShares(address to, uint256 sharesAmount)
+    function mintShares(
+        address to,
+        uint256 sharesAmount
+    )
         external
         onlyRole(VAULT_ROLE)
         notBlacklisted(to)
@@ -267,7 +318,10 @@ contract StAETHEL is
      * @param sharesAmount Number of shares to burn.
      * @return aethelAmount The AETHEL-equivalent value of burned shares.
      */
-    function burnShares(address from, uint256 sharesAmount)
+    function burnShares(
+        address from,
+        uint256 sharesAmount
+    )
         external
         onlyRole(VAULT_ROLE)
         returns (uint256 aethelAmount)
@@ -292,10 +346,7 @@ contract StAETHEL is
      * @notice Update the total pooled AETHEL (called by vault on reward distribution).
      * @param newTotalPooled The new total pooled AETHEL amount.
      */
-    function setTotalPooledAethel(uint256 newTotalPooled)
-        external
-        onlyRole(VAULT_ROLE)
-    {
+    function setTotalPooledAethel(uint256 newTotalPooled) external onlyRole(VAULT_ROLE) {
         uint256 oldAmount = totalPooledAethel;
         totalPooledAethel = newTotalPooled;
         emit TotalPooledAethelUpdated(oldAmount, newTotalPooled);
@@ -349,10 +400,7 @@ contract StAETHEL is
     // COMPLIANCE
     // =========================================================================
 
-    function setBlacklisted(address account, bool status)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setBlacklisted(address account, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
         blacklisted[account] = status;
         emit AddressBlacklisted(account, status);
     }
@@ -377,7 +425,11 @@ contract StAETHEL is
     // REQUIRED OVERRIDES
     // =========================================================================
 
-    function _update(address from, address to, uint256 value)
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    )
         internal
         override(ERC20Upgradeable, ERC20PausableUpgradeable)
     {
@@ -388,7 +440,33 @@ contract StAETHEL is
         internal
         override
         onlyRole(UPGRADER_ROLE)
-    {}
+    { }
+
+    function _requireContractAdmin(address admin) internal view {
+        if (admin == address(0)) revert ZeroAddress();
+        if (admin.code.length > 0) {
+            return;
+        }
+        if (block.chainid == 31_337 || block.chainid == 1337) {
+            return;
+        }
+        revert AdminMustBeContract();
+    }
+
+    function _requireUpgraderTimelockDelay(address upgraderTimelock) internal view {
+        if (
+            IStAETHELUpgraderTimelockDelaySource(upgraderTimelock).getMinDelay()
+                < MIN_UPGRADER_TIMELOCK_DELAY
+        ) {
+            revert UpgraderTimelockDelayTooShort();
+        }
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
+    }
 
     // =========================================================================
     // INTERNAL — STAKER REGISTRY ACCUMULATOR

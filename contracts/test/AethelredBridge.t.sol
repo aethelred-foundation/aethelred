@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "../contracts/AethelredBridge.sol";
 
 /**
@@ -13,7 +14,7 @@ import "../contracts/AethelredBridge.sol";
  * @dev Simple ERC20 token for testing
  */
 contract MockERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) { }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -71,9 +72,7 @@ contract AethelredBridgeTest is Test {
     );
 
     event WithdrawalChallenged(
-        bytes32 indexed proposalId,
-        address indexed challenger,
-        string reason
+        bytes32 indexed proposalId, address indexed challenger, string reason
     );
 
     // =========================================================================
@@ -94,8 +93,7 @@ contract AethelredBridgeTest is Test {
 
         // Deploy proxy
         bytes memory initData = abi.encodeCall(
-            AethelredBridge.initialize,
-            (admin, relayers, CONSENSUS_THRESHOLD_BPS)
+            AethelredBridge.initialize, (admin, relayers, CONSENSUS_THRESHOLD_BPS)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(bridgeImplementation), initData);
         bridge = AethelredBridge(payable(address(proxy)));
@@ -115,8 +113,8 @@ contract AethelredBridgeTest is Test {
         // Fund users
         vm.deal(user1, 1000 ether);
         vm.deal(user2, 1000 ether);
-        mockToken.mint(user1, 1000000e18);
-        mockToken.mint(user2, 1000000e18);
+        mockToken.mint(user1, 1_000_000e18);
+        mockToken.mint(user2, 1_000_000e18);
 
         // Block a user for testing
         vm.prank(guardian);
@@ -139,12 +137,48 @@ contract AethelredBridgeTest is Test {
         (uint256 relayerCount, uint256 threshold, uint256 minVotes) = bridge.relayerConfig();
         assertEq(relayerCount, 5);
         assertEq(threshold, CONSENSUS_THRESHOLD_BPS);
-        assertEq(minVotes, 3); // 5 * 67% = 3.35, rounded down = 3
+        assertEq(minVotes, 4); // ceil(5 * 67%) = ceil(3.35) = 4
     }
 
     function test_CannotReinitialize() public {
         vm.expectRevert();
         bridge.initialize(admin, relayers, CONSENSUS_THRESHOLD_BPS);
+    }
+
+    function test_Revert_Initialize_RequiresTimelockOnNonLocalChain() public {
+        vm.chainId(1);
+
+        AethelredBridge impl = new AethelredBridge();
+        bytes memory initData = abi.encodeCall(
+            AethelredBridge.initialize, (admin, relayers, CONSENSUS_THRESHOLD_BPS)
+        );
+
+        vm.expectRevert(AethelredBridge.ProductionInitializationRequiresTimelock.selector);
+        new ERC1967Proxy(address(impl), initData);
+    }
+
+    function test_InitializeWithTimelock_IsolatesUpgraderRole() public {
+        address[] memory proposers = new address[](1);
+        proposers[0] = admin;
+        address[] memory executors = new address[](1);
+        executors[0] = admin;
+
+        TimelockController timelock = new TimelockController(27 days, proposers, executors, admin);
+
+        AethelredBridge impl = new AethelredBridge();
+        bytes memory initData = abi.encodeCall(
+            AethelredBridge.initializeWithTimelock,
+            (admin, address(timelock), relayers, CONSENSUS_THRESHOLD_BPS)
+        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+        AethelredBridge timelockedBridge = AethelredBridge(payable(address(proxy)));
+
+        assertTrue(timelockedBridge.hasRole(timelockedBridge.UPGRADER_ROLE(), address(timelock)));
+        assertFalse(timelockedBridge.hasRole(timelockedBridge.UPGRADER_ROLE(), admin));
+        assertEq(
+            timelockedBridge.getRoleAdmin(timelockedBridge.UPGRADER_ROLE()),
+            timelockedBridge.UPGRADER_ROLE()
+        );
     }
 
     // =========================================================================
@@ -156,7 +190,7 @@ contract AethelredBridgeTest is Test {
         uint256 balanceBefore = address(bridge).balance;
 
         vm.prank(user1);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
 
         assertEq(address(bridge).balance, balanceBefore + amount);
         assertEq(bridge.totalLockedETH(), amount);
@@ -177,32 +211,32 @@ contract AethelredBridgeTest is Test {
             0,
             block.timestamp
         );
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
     }
 
     function test_DepositETH_MinimumAmount() public {
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.InvalidAmount.selector);
-        bridge.depositETH{value: 0.001 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 0.001 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_DepositETH_MaximumAmount() public {
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.InvalidAmount.selector);
-        bridge.depositETH{value: 101 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 101 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_DepositETH_InvalidRecipient() public {
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.InvalidRecipient.selector);
-        bridge.depositETH{value: 1 ether}(bytes32(0));
+        bridge.depositETH{ value: 1 ether }(bytes32(0));
     }
 
     function test_DepositETH_BlockedAddress() public {
         vm.deal(blockedUser, 10 ether);
         vm.prank(blockedUser);
         vm.expectRevert(AethelredBridge.AddressBlocked.selector);
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_DepositETH_WhenPaused() public {
@@ -211,7 +245,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(user1);
         vm.expectRevert();
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_CancelDeposit_ETH() public {
@@ -220,7 +254,7 @@ contract AethelredBridgeTest is Test {
 
         // Deposit
         vm.prank(user1);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
 
         // Get deposit ID
         bytes32 depositId = _computeDepositId(user1, AETHELRED_RECIPIENT, address(0), amount, 0);
@@ -240,7 +274,7 @@ contract AethelredBridgeTest is Test {
         uint256 amount = 1 ether;
 
         vm.prank(user1);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
 
         bytes32 depositId = _computeDepositId(user1, AETHELRED_RECIPIENT, address(0), amount, 0);
 
@@ -285,7 +319,8 @@ contract AethelredBridgeTest is Test {
         bridge.depositERC20(address(mockToken), amount, AETHELRED_RECIPIENT);
         vm.stopPrank();
 
-        bytes32 depositId = _computeDepositId(user1, AETHELRED_RECIPIENT, address(mockToken), amount, 0);
+        bytes32 depositId =
+            _computeDepositId(user1, AETHELRED_RECIPIENT, address(mockToken), amount, 0);
 
         vm.prank(user1);
         bridge.cancelDeposit(depositId);
@@ -301,22 +336,16 @@ contract AethelredBridgeTest is Test {
     function test_ProposeWithdrawal() public {
         // First deposit some ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(
-            proposalId,
-            user2,
-            address(0),
-            1 ether,
-            burnTxHash,
-            12345
-        );
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertEq(proposal.recipient, user2);
         assertEq(proposal.amount, 1 ether);
         assertEq(proposal.voteCount, 1);
@@ -326,13 +355,13 @@ contract AethelredBridgeTest is Test {
     function test_VoteWithdrawal() public {
         // Setup
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Vote
         vm.prank(relayer2);
@@ -341,19 +370,20 @@ contract AethelredBridgeTest is Test {
         vm.prank(relayer3);
         bridge.voteWithdrawal(proposalId);
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertEq(proposal.voteCount, 3);
     }
 
     function test_VoteWithdrawal_CannotVoteTwice() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         vm.prank(relayer1);
         vm.expectRevert(AethelredBridge.AlreadyVoted.selector);
@@ -363,7 +393,7 @@ contract AethelredBridgeTest is Test {
     function test_ProcessWithdrawal_ETH() public {
         // Setup
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
@@ -371,13 +401,8 @@ contract AethelredBridgeTest is Test {
 
         // Propose and vote
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), withdrawAmount, burnTxHash, 12345);
-
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), withdrawAmount, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         // Wait for challenge period
         vm.warp(block.timestamp + 7 days + 1);
@@ -390,25 +415,21 @@ contract AethelredBridgeTest is Test {
         assertEq(user2.balance, user2BalanceBefore + withdrawAmount);
         assertEq(bridge.totalLockedETH(), 10 ether - withdrawAmount);
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertTrue(proposal.processed);
     }
 
     function test_ProcessWithdrawal_BeforeChallengePeriod() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         // Try to process before challenge period ends
         vm.expectRevert(AethelredBridge.ChallengePeriodNotEnded.selector);
@@ -417,13 +438,13 @@ contract AethelredBridgeTest is Test {
 
     function test_ProcessWithdrawal_InsufficientVotes() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Only 1 vote (need 3)
         vm.warp(block.timestamp + 7 days + 1);
@@ -438,31 +459,32 @@ contract AethelredBridgeTest is Test {
 
     function test_ChallengeWithdrawal() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Challenge
         vm.prank(guardian);
         bridge.challengeWithdrawal(proposalId, "Fraudulent withdrawal detected");
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertTrue(proposal.challenged);
     }
 
     function test_ChallengeWithdrawal_CannotProcess() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         vm.prank(relayer2);
         bridge.voteWithdrawal(proposalId);
@@ -483,13 +505,13 @@ contract AethelredBridgeTest is Test {
 
     function test_ChallengeWithdrawal_OnlyGuardian() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         vm.prank(user1);
         vm.expectRevert();
@@ -507,16 +529,16 @@ contract AethelredBridgeTest is Test {
 
         // First deposit succeeds
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         // Second deposit within limit succeeds
         vm.prank(user1);
-        bridge.depositETH{value: 4 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 4 ether }(AETHELRED_RECIPIENT);
 
         // Third deposit exceeds limit
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.RateLimitExceeded.selector);
-        bridge.depositETH{value: 2 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 2 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_RateLimit_ResetsAfterPeriod() public {
@@ -525,19 +547,19 @@ contract AethelredBridgeTest is Test {
 
         // Fill rate limit
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // This should fail
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.RateLimitExceeded.selector);
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
 
         // Move to next period
         vm.warp(block.timestamp + 1 hours + 1);
 
         // Now it should succeed
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
     }
 
     function test_RateLimit_Disabled() public {
@@ -546,10 +568,10 @@ contract AethelredBridgeTest is Test {
 
         // Should allow unlimited deposits
         vm.prank(user1);
-        bridge.depositETH{value: 50 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 50 ether }(AETHELRED_RECIPIENT);
 
         vm.prank(user1);
-        bridge.depositETH{value: 50 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 50 ether }(AETHELRED_RECIPIENT);
     }
 
     // =========================================================================
@@ -603,7 +625,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.AddressBlocked.selector);
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
     }
 
     // =========================================================================
@@ -612,7 +634,7 @@ contract AethelredBridgeTest is Test {
 
     function test_CanProcessWithdrawal() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("proposal1");
         bytes32 burnTxHash = keccak256("burn1");
@@ -624,17 +646,14 @@ contract AethelredBridgeTest is Test {
 
         // After proposal, before votes
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         (canProcess, reason) = bridge.canProcessWithdrawal(proposalId);
         assertFalse(canProcess);
         assertEq(reason, "Insufficient votes");
 
         // After votes, before challenge period
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        _castThresholdVotes(proposalId);
 
         (canProcess, reason) = bridge.canProcessWithdrawal(proposalId);
         assertFalse(canProcess);
@@ -650,7 +669,7 @@ contract AethelredBridgeTest is Test {
 
     function test_GetCurrentRateLimitState() public {
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         (uint256 deposited, uint256 withdrawn) = bridge.getCurrentRateLimitState();
         assertEq(deposited, 5 ether);
@@ -663,7 +682,7 @@ contract AethelredBridgeTest is Test {
 
     function test_C03_BurnTxHashReplayProtection_SameHashRejected() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 burnTxHash = keccak256("burn-tx-1");
         bytes32 proposalId1 = keccak256("proposal-1");
@@ -671,13 +690,10 @@ contract AethelredBridgeTest is Test {
 
         // First proposal with this burnTxHash succeeds
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId1, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId1, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Get enough votes and process
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId1);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId1);
+        _castThresholdVotes(proposalId1);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId1);
@@ -685,38 +701,35 @@ contract AethelredBridgeTest is Test {
         // Second proposal with SAME burnTxHash must be rejected
         vm.prank(relayer1);
         vm.expectRevert(AethelredBridge.WithdrawalAlreadyProcessed.selector);
-        bridge.proposeWithdrawal(proposalId2, user2, address(0), 1 ether, burnTxHash, 12346);
+        bridge.proposeWithdrawal(proposalId2, user2, address(0), 1 ether, burnTxHash, 12_346);
     }
 
     function test_C03_BurnTxHashReplayProtection_DifferentHashAllowed() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 burnTxHash1 = keccak256("burn-tx-1");
         bytes32 burnTxHash2 = keccak256("burn-tx-2");
 
         // First proposal
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(keccak256("p1"), user2, address(0), 1 ether, burnTxHash1, 12345);
-
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(keccak256("p1"));
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(keccak256("p1"));
+        bridge.proposeWithdrawal(keccak256("p1"), user2, address(0), 1 ether, burnTxHash1, 12_345);
+        _castThresholdVotes(keccak256("p1"));
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(keccak256("p1"));
 
         // Second proposal with DIFFERENT burnTxHash should succeed
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(keccak256("p2"), user2, address(0), 1 ether, burnTxHash2, 12346);
+        bridge.proposeWithdrawal(keccak256("p2"), user2, address(0), 1 ether, burnTxHash2, 12_346);
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(keccak256("p2"));
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(keccak256("p2"));
         assertEq(proposal.recipient, user2);
     }
 
     function test_C03_ProcessedWithdrawalsMapping() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 burnTxHash = keccak256("tracked-burn");
         bytes32 proposalId = keccak256("tracked-proposal");
@@ -725,11 +738,8 @@ contract AethelredBridgeTest is Test {
         assertFalse(bridge.processedWithdrawals(burnTxHash));
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId);
@@ -752,7 +762,7 @@ contract AethelredBridgeTest is Test {
 
         // Deposit to create rate limit state in period 1
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         // Record the period in which the deposit was made
         uint256 depositPeriod = uint256(3600) / uint256(1 hours);
@@ -773,7 +783,7 @@ contract AethelredBridgeTest is Test {
         bridge.updateRateLimitConfig(100 ether, 100 ether, true);
 
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         uint256 currentPeriod = block.timestamp / 1 hours;
 
@@ -847,17 +857,14 @@ contract AethelredBridgeTest is Test {
 
     function test_Security_CannotProcessWithdrawalTwice() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("double-process");
         bytes32 burnTxHash = keccak256("double-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId);
@@ -869,23 +876,25 @@ contract AethelredBridgeTest is Test {
 
     function test_Security_ProposalIdCollision() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("unique-proposal");
         bytes32 burnTxHash = keccak256("unique-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Same proposalId must revert
         vm.prank(relayer2);
         vm.expectRevert(AethelredBridge.ProposalExists.selector);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 2 ether, keccak256("other-burn"), 12346);
+        bridge.proposeWithdrawal(
+            proposalId, user2, address(0), 2 ether, keccak256("other-burn"), 12_346
+        );
     }
 
     function test_Security_WithdrawalToBlockedAddress() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("blocked-withdrawal");
         bytes32 burnTxHash = keccak256("blocked-burn");
@@ -893,25 +902,29 @@ contract AethelredBridgeTest is Test {
         // Propose withdrawal to blocked user
         vm.prank(relayer1);
         vm.expectRevert(AethelredBridge.AddressBlocked.selector);
-        bridge.proposeWithdrawal(proposalId, blockedUser, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, blockedUser, address(0), 1 ether, burnTxHash, 12_345);
     }
 
     function test_Security_NonRelayerCannotPropose() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         vm.prank(user1);
         vm.expectRevert();
-        bridge.proposeWithdrawal(keccak256("bad"), user2, address(0), 1 ether, keccak256("bad-burn"), 12345);
+        bridge.proposeWithdrawal(
+            keccak256("bad"), user2, address(0), 1 ether, keccak256("bad-burn"), 12_345
+        );
     }
 
     function test_Security_NonRelayerCannotVote() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("vote-test");
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, keccak256("vote-burn"), 12345);
+        bridge.proposeWithdrawal(
+            proposalId, user2, address(0), 1 ether, keccak256("vote-burn"), 12_345
+        );
 
         vm.prank(user1);
         vm.expectRevert();
@@ -936,11 +949,10 @@ contract AethelredBridgeTest is Test {
         uint256 withdrawAmount = 5e18; // Must be within per-block mint ceiling (10 ether)
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(mockToken), withdrawAmount, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(
+            proposalId, user2, address(mockToken), withdrawAmount, burnTxHash, 12_345
+        );
+        _castThresholdVotes(proposalId);
 
         vm.warp(block.timestamp + 7 days + 1);
 
@@ -959,7 +971,7 @@ contract AethelredBridgeTest is Test {
         amount = bound(amount, bridge.MIN_DEPOSIT(), bridge.MAX_SINGLE_DEPOSIT());
 
         vm.prank(user1);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
 
         assertEq(bridge.totalLockedETH(), amount);
     }
@@ -968,20 +980,21 @@ contract AethelredBridgeTest is Test {
         numVoters = uint8(bound(numVoters, 1, 5));
 
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("fuzz_proposal");
         bytes32 burnTxHash = keccak256("fuzz_burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         for (uint8 i = 1; i < numVoters && i < 5; i++) {
             vm.prank(relayers[i]);
             bridge.voteWithdrawal(proposalId);
         }
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertEq(proposal.voteCount, numVoters);
     }
 
@@ -995,9 +1008,9 @@ contract AethelredBridgeTest is Test {
         uint256 amount3 = 3 ether;
 
         vm.startPrank(user1);
-        bridge.depositETH{value: amount1}(AETHELRED_RECIPIENT);
-        bridge.depositETH{value: amount2}(AETHELRED_RECIPIENT);
-        bridge.depositETH{value: amount3}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount1 }(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount2 }(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount3 }(AETHELRED_RECIPIENT);
         vm.stopPrank();
 
         assertEq(bridge.totalLockedETH(), amount1 + amount2 + amount3);
@@ -1010,10 +1023,10 @@ contract AethelredBridgeTest is Test {
         uint256 amount2 = 7 ether;
 
         vm.prank(user1);
-        bridge.depositETH{value: amount1}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount1 }(AETHELRED_RECIPIENT);
 
         vm.prank(user2);
-        bridge.depositETH{value: amount2}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount2 }(AETHELRED_RECIPIENT);
 
         assertEq(bridge.totalLockedETH(), amount1 + amount2);
         assertEq(bridge.depositNonce(), 2);
@@ -1023,7 +1036,7 @@ contract AethelredBridgeTest is Test {
         uint256 minDeposit = bridge.MIN_DEPOSIT(); // 0.01 ether
 
         vm.prank(user1);
-        bridge.depositETH{value: minDeposit}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: minDeposit }(AETHELRED_RECIPIENT);
 
         assertEq(bridge.totalLockedETH(), minDeposit);
         assertEq(bridge.depositNonce(), 1);
@@ -1033,7 +1046,7 @@ contract AethelredBridgeTest is Test {
         uint256 maxDeposit = bridge.MAX_SINGLE_DEPOSIT(); // 100 ether
 
         vm.prank(user1);
-        bridge.depositETH{value: maxDeposit}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: maxDeposit }(AETHELRED_RECIPIENT);
 
         assertEq(bridge.totalLockedETH(), maxDeposit);
         assertEq(bridge.depositNonce(), 1);
@@ -1052,7 +1065,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.InvalidAmount.selector);
-        bridge.depositETH{value: belowMin}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: belowMin }(AETHELRED_RECIPIENT);
     }
 
     // =========================================================================
@@ -1062,7 +1075,7 @@ contract AethelredBridgeTest is Test {
     function test_ProcessWithdrawal_MultipleSequential() public {
         // Deposit enough ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // First withdrawal
         bytes32 proposalId1 = keccak256("seq-proposal-1");
@@ -1070,10 +1083,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(relayer1);
         bridge.proposeWithdrawal(proposalId1, user2, address(0), 1 ether, burnTxHash1, 100);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId1);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId1);
+        _castThresholdVotes(proposalId1);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId1);
@@ -1086,10 +1096,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(relayer1);
         bridge.proposeWithdrawal(proposalId2, user2, address(0), 2 ether, burnTxHash2, 200);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId2);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId2);
+        _castThresholdVotes(proposalId2);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId2);
@@ -1102,10 +1109,7 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(relayer1);
         bridge.proposeWithdrawal(proposalId3, user1, address(0), 3 ether, burnTxHash3, 300);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId3);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId3);
+        _castThresholdVotes(proposalId3);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId3);
@@ -1116,18 +1120,15 @@ contract AethelredBridgeTest is Test {
     function test_ProcessWithdrawal_AfterUnpause() public {
         // Deposit ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("unpause-proposal");
         bytes32 burnTxHash = keccak256("unpause-burn");
 
         // Propose and vote before pause
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         // Pause the bridge
         vm.prank(guardian);
@@ -1153,14 +1154,14 @@ contract AethelredBridgeTest is Test {
 
     function test_ProposeWithdrawal_AllRelayersVote() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("all-relayers");
         bytes32 burnTxHash = keccak256("all-relayers-burn");
 
         // Relayer1 proposes (counts as 1 vote)
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Remaining 4 relayers vote
         vm.prank(relayer2);
@@ -1172,7 +1173,8 @@ contract AethelredBridgeTest is Test {
         vm.prank(relayer5);
         bridge.voteWithdrawal(proposalId);
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
         assertEq(proposal.voteCount, 5);
 
         // Verify all voted
@@ -1185,28 +1187,32 @@ contract AethelredBridgeTest is Test {
 
     function test_ProposeWithdrawal_ExactThresholdVotes() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("threshold-exact");
         bytes32 burnTxHash = keccak256("threshold-burn");
 
-        // With 5 relayers and 67% threshold, minVotes = 3
-        (, , uint256 minVotes) = bridge.relayerConfig();
-        assertEq(minVotes, 3);
+        // With 5 relayers and 67% threshold, minVotes = 4
+        (,, uint256 minVotes) = bridge.relayerConfig();
+        assertEq(minVotes, 4);
 
         // Relayer1 proposes (vote 1)
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Relayer2 votes (vote 2)
         vm.prank(relayer2);
         bridge.voteWithdrawal(proposalId);
 
-        // Relayer3 votes (vote 3 - exactly at threshold)
+        // Relayer3 votes (vote 3)
         vm.prank(relayer3);
         bridge.voteWithdrawal(proposalId);
 
-        // Wait and process - should succeed with exactly 3 votes
+        // Relayer4 votes (vote 4 - exactly at threshold)
+        vm.prank(relayer4);
+        bridge.voteWithdrawal(proposalId);
+
+        // Wait and process - should succeed with exactly 4 votes
         vm.warp(block.timestamp + 7 days + 1);
         uint256 user2BalanceBefore = user2.balance;
         bridge.processWithdrawal(proposalId);
@@ -1215,13 +1221,13 @@ contract AethelredBridgeTest is Test {
 
     function test_Revert_ProcessWithdrawal_WhenPaused() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("paused-process");
         bytes32 burnTxHash = keccak256("paused-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
         vm.prank(relayer2);
         bridge.voteWithdrawal(proposalId);
         vm.prank(relayer3);
@@ -1244,13 +1250,13 @@ contract AethelredBridgeTest is Test {
 
     function test_ChallengeWithdrawal_EmitsEvent() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("challenge-event");
         bytes32 burnTxHash = keccak256("challenge-event-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         vm.prank(guardian);
         vm.expectEmit(true, true, false, true);
@@ -1260,17 +1266,14 @@ contract AethelredBridgeTest is Test {
 
     function test_Revert_ChallengeWithdrawal_AlreadyProcessed() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("challenge-processed");
         bytes32 burnTxHash = keccak256("challenge-processed-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         vm.warp(block.timestamp + 7 days + 1);
         bridge.processWithdrawal(proposalId);
@@ -1283,13 +1286,13 @@ contract AethelredBridgeTest is Test {
 
     function test_Revert_ChallengeWithdrawal_AlreadyChallenged() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("double-challenge");
         bytes32 burnTxHash = keccak256("double-challenge-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // First challenge succeeds
         vm.prank(guardian);
@@ -1307,13 +1310,13 @@ contract AethelredBridgeTest is Test {
 
     function test_ChallengeWithdrawal_AfterVotes_StillBlocks() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("challenge-after-votes");
         bytes32 burnTxHash = keccak256("challenge-after-votes-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
         vm.prank(relayer2);
         bridge.voteWithdrawal(proposalId);
         vm.prank(relayer3);
@@ -1342,14 +1345,14 @@ contract AethelredBridgeTest is Test {
         // Verify not a relayer yet
         assertFalse(bridge.hasRole(relayerRole, newRelayer));
 
-        (uint256 countBefore, , ) = bridge.relayerConfig();
+        (uint256 countBefore,,) = bridge.relayerConfig();
 
         vm.prank(admin);
         bridge.grantRole(relayerRole, newRelayer);
 
         assertTrue(bridge.hasRole(relayerRole, newRelayer));
 
-        (uint256 countAfter, , ) = bridge.relayerConfig();
+        (uint256 countAfter,,) = bridge.relayerConfig();
         assertEq(countAfter, countBefore + 1);
     }
 
@@ -1359,14 +1362,14 @@ contract AethelredBridgeTest is Test {
         // Verify relayer5 is currently a relayer
         assertTrue(bridge.hasRole(relayerRole, relayer5));
 
-        (uint256 countBefore, , ) = bridge.relayerConfig();
+        (uint256 countBefore,,) = bridge.relayerConfig();
 
         vm.prank(admin);
         bridge.revokeRole(relayerRole, relayer5);
 
         assertFalse(bridge.hasRole(relayerRole, relayer5));
 
-        (uint256 countAfter, , ) = bridge.relayerConfig();
+        (uint256 countAfter,,) = bridge.relayerConfig();
         assertEq(countAfter, countBefore - 1);
     }
 
@@ -1376,34 +1379,38 @@ contract AethelredBridgeTest is Test {
         bytes32 adminRole = bridge.DEFAULT_ADMIN_ROLE();
 
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user1, adminRole));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, user1, adminRole
+            )
+        );
         bridge.grantRole(relayerRole, newRelayer);
     }
 
     function test_RelayerConfig_UpdatesAfterAddRemove() public {
         bytes32 relayerRole = bridge.RELAYER_ROLE();
 
-        (uint256 initialCount, uint256 threshold, uint256 initialMinVotes) = bridge.relayerConfig();
+        (uint256 initialCount,, uint256 initialMinVotes) = bridge.relayerConfig();
         assertEq(initialCount, 5);
-        assertEq(initialMinVotes, 3); // 5 * 67% = 3.35 -> 3
+        assertEq(initialMinVotes, 4); // ceil(5 * 67%) = ceil(3.35) = 4
 
         // Add a relayer: count becomes 6
         address newRelayer = address(0x20);
         vm.prank(admin);
         bridge.grantRole(relayerRole, newRelayer);
 
-        (uint256 count6, , uint256 minVotes6) = bridge.relayerConfig();
+        (uint256 count6,, uint256 minVotes6) = bridge.relayerConfig();
         assertEq(count6, 6);
-        // 6 * 6700 / 10000 = 4.02 -> 4
-        assertEq(minVotes6, 4);
+        // ceil(6 * 6700 / 10000) = ceil(4.02) = 5
+        assertEq(minVotes6, 5);
 
         // Remove a relayer: count becomes 5 again
         vm.prank(admin);
         bridge.revokeRole(relayerRole, newRelayer);
 
-        (uint256 countBack, , uint256 minVotesBack) = bridge.relayerConfig();
+        (uint256 countBack,, uint256 minVotesBack) = bridge.relayerConfig();
         assertEq(countBack, 5);
-        assertEq(minVotesBack, 3);
+        assertEq(minVotesBack, 4);
     }
 
     // =========================================================================
@@ -1474,7 +1481,7 @@ contract AethelredBridgeTest is Test {
 
         // Deposit enough ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // Propose both withdrawals at the same time so their challenge periods
         // end together, allowing both to be processed in the same rate-limit period.
@@ -1483,20 +1490,14 @@ contract AethelredBridgeTest is Test {
 
         vm.prank(relayer1);
         bridge.proposeWithdrawal(proposalId1, user2, address(0), 2 ether, burnTxHash1, 100);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId1);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId1);
+        _castThresholdVotes(proposalId1);
 
         bytes32 proposalId2 = keccak256("rl-withdrawal-2");
         bytes32 burnTxHash2 = keccak256("rl-burn-2");
 
         vm.prank(relayer1);
         bridge.proposeWithdrawal(proposalId2, user2, address(0), 2 ether, burnTxHash2, 200);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId2);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId2);
+        _castThresholdVotes(proposalId2);
 
         // Warp past both challenge periods (they were proposed at the same time)
         vm.warp(block.timestamp + 7 days + 1);
@@ -1517,12 +1518,12 @@ contract AethelredBridgeTest is Test {
 
         // Deposit up to the deposit limit
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         // Additional deposit should fail (deposit limit hit)
         vm.prank(user1);
         vm.expectRevert(AethelredBridge.RateLimitExceeded.selector);
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
 
         // But withdrawal limit is independent at 100 ether
         (uint256 deposited, uint256 withdrawn) = bridge.getCurrentRateLimitState();
@@ -1536,20 +1537,20 @@ contract AethelredBridgeTest is Test {
 
         // Period 1: deposit 4 ether
         vm.prank(user1);
-        bridge.depositETH{value: 4 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 4 ether }(AETHELRED_RECIPIENT);
 
         // Move to period 2
         vm.warp(block.timestamp + 1 hours + 1);
 
         // Period 2: can deposit full 5 ether again (new period)
         vm.prank(user1);
-        bridge.depositETH{value: 5 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 5 ether }(AETHELRED_RECIPIENT);
 
         // Total locked should be 9 ether across both periods
         assertEq(bridge.totalLockedETH(), 9 ether);
 
         // Period 2 state shows only the 5 ether from this period
-        (uint256 deposited, ) = bridge.getCurrentRateLimitState();
+        (uint256 deposited,) = bridge.getCurrentRateLimitState();
         assertEq(deposited, 5 ether);
     }
 
@@ -1562,16 +1563,16 @@ contract AethelredBridgeTest is Test {
         amount2 = bound(amount2, bridge.MIN_DEPOSIT(), 10 ether);
 
         vm.prank(user1);
-        bridge.depositETH{value: amount1}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount1 }(AETHELRED_RECIPIENT);
 
         if (amount1 + amount2 <= rateLimit) {
             vm.prank(user2);
-            bridge.depositETH{value: amount2}(AETHELRED_RECIPIENT);
+            bridge.depositETH{ value: amount2 }(AETHELRED_RECIPIENT);
             assertEq(bridge.totalLockedETH(), amount1 + amount2);
         } else {
             vm.prank(user2);
             vm.expectRevert(AethelredBridge.RateLimitExceeded.selector);
-            bridge.depositETH{value: amount2}(AETHELRED_RECIPIENT);
+            bridge.depositETH{ value: amount2 }(AETHELRED_RECIPIENT);
             assertEq(bridge.totalLockedETH(), amount1);
         }
     }
@@ -1599,7 +1600,7 @@ contract AethelredBridgeTest is Test {
         uint256 balanceBefore = user1.balance;
 
         vm.prank(user1);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
 
         assertEq(user1.balance, balanceBefore - amount);
 
@@ -1617,10 +1618,10 @@ contract AethelredBridgeTest is Test {
         a2 = bound(a2, bridge.MIN_DEPOSIT(), 50 ether);
 
         vm.prank(user1);
-        bridge.depositETH{value: a1}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: a1 }(AETHELRED_RECIPIENT);
 
         vm.prank(user2);
-        bridge.depositETH{value: a2}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: a2 }(AETHELRED_RECIPIENT);
 
         assertEq(bridge.totalLockedETH(), a1 + a2);
         assertEq(address(bridge).balance, a1 + a2);
@@ -1639,7 +1640,7 @@ contract AethelredBridgeTest is Test {
         // Deposits blocked
         vm.prank(user1);
         vm.expectRevert();
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
 
         // ERC20 deposits blocked
         vm.startPrank(user1);
@@ -1652,12 +1653,7 @@ contract AethelredBridgeTest is Test {
         vm.prank(relayer1);
         vm.expectRevert();
         bridge.proposeWithdrawal(
-            keccak256("paused"),
-            user2,
-            address(0),
-            1 ether,
-            keccak256("paused-burn"),
-            12345
+            keccak256("paused"), user2, address(0), 1 ether, keccak256("paused-burn"), 12_345
         );
 
         // Voting blocked
@@ -1679,7 +1675,7 @@ contract AethelredBridgeTest is Test {
 
         // Deposit should work again
         vm.prank(user1);
-        bridge.depositETH{value: 1 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 1 ether }(AETHELRED_RECIPIENT);
         assertEq(bridge.totalLockedETH(), 1 ether);
 
         // ERC20 deposit should work
@@ -1697,10 +1693,11 @@ contract AethelredBridgeTest is Test {
             address(0),
             1 ether,
             keccak256("after-unpause-burn"),
-            12345
+            12_345
         );
 
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(keccak256("after-unpause"));
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(keccak256("after-unpause"));
         assertEq(proposal.voteCount, 1);
     }
 
@@ -1743,13 +1740,26 @@ contract AethelredBridgeTest is Test {
     }
 
     function test_Audit_AdminCannotGrantUpgraderRole() public {
-        // Admin should NOT be able to grant UPGRADER_ROLE since its admin is UPGRADER_ROLE itself.
+        // On the production initializer path, admin does not hold UPGRADER_ROLE and
+        // therefore cannot grant it even though its admin is UPGRADER_ROLE itself.
         address newUpgrader = address(0x99);
         bytes32 upgraderRole = bridge.UPGRADER_ROLE();
+        address[] memory proposers = new address[](1);
+        proposers[0] = admin;
+        address[] memory executors = new address[](1);
+        executors[0] = admin;
+        TimelockController timelock = new TimelockController(27 days, proposers, executors, admin);
+        AethelredBridge impl = new AethelredBridge();
+        bytes memory initData = abi.encodeCall(
+            AethelredBridge.initializeWithTimelock,
+            (admin, address(timelock), relayers, CONSENSUS_THRESHOLD_BPS)
+        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+        AethelredBridge timelockedBridge = AethelredBridge(payable(address(proxy)));
 
         vm.prank(admin);
         vm.expectRevert();
-        bridge.grantRole(upgraderRole, newUpgrader);
+        timelockedBridge.grantRole(upgraderRole, newUpgrader);
     }
 
     // =========================================================================
@@ -1759,18 +1769,15 @@ contract AethelredBridgeTest is Test {
     function test_Audit_ProcessWithdrawal_BlocksBlockedRecipient() public {
         // Deposit ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // Propose withdrawal to user2 (who is not blocked yet)
         bytes32 proposalId = keccak256("sanctions-process");
         bytes32 burnTxHash = keccak256("sanctions-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         // Block user2 AFTER proposal was created
         vm.prank(guardian);
@@ -1799,7 +1806,7 @@ contract AethelredBridgeTest is Test {
     function test_Audit_EmergencyWithdrawal_AmountCap() public {
         // Deposit enough ETH
         vm.prank(user1);
-        bridge.depositETH{value: 100 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 100 ether }(AETHELRED_RECIPIENT);
 
         // Attempting to queue more than MAX_EMERGENCY_WITHDRAWAL (50 ETH) should revert
         vm.prank(admin);
@@ -1818,7 +1825,7 @@ contract AethelredBridgeTest is Test {
     function test_Audit_EmergencyWithdrawal_UpdatesTotalLocked() public {
         // Deposit ETH
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
         assertEq(bridge.totalLockedETH(), 10 ether);
 
         // Queue emergency withdrawal
@@ -1830,8 +1837,7 @@ contract AethelredBridgeTest is Test {
         bridge.approveEmergencyWithdrawal(operationId);
 
         // Need a second guardian - grant guardian role and approve
-        vm.prank(admin);
-        bridge.grantRole(bridge.GUARDIAN_ROLE(), guardian);
+        _grantGuardianRole(guardian);
         vm.prank(guardian);
         bridge.approveEmergencyWithdrawal(operationId);
 
@@ -1854,7 +1860,7 @@ contract AethelredBridgeTest is Test {
 
     function test_Audit_EmergencyWithdrawal_BlocksBlockedRecipient() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // Block user2
         vm.prank(guardian);
@@ -1868,7 +1874,7 @@ contract AethelredBridgeTest is Test {
 
     function test_Audit_EmergencyWithdrawal_BlocksRecipientBlockedDuringTimelock() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         // Queue emergency withdrawal to unblocked user2
         vm.prank(admin);
@@ -1877,8 +1883,7 @@ contract AethelredBridgeTest is Test {
         // Guardian approvals
         vm.prank(admin);
         bridge.approveEmergencyWithdrawal(operationId);
-        vm.prank(admin);
-        bridge.grantRole(bridge.GUARDIAN_ROLE(), guardian);
+        _grantGuardianRole(guardian);
         vm.prank(guardian);
         bridge.approveEmergencyWithdrawal(operationId);
 
@@ -1901,54 +1906,63 @@ contract AethelredBridgeTest is Test {
 
     function test_Audit_VoteThresholdSnapshot_RecordedAtProposal() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("snapshot-test");
         bytes32 burnTxHash = keccak256("snapshot-burn");
 
-        // Current minVotesRequired = 3 (5 relayers * 67%)
+        // Current minVotesRequired = 4 (ceil(5 relayers * 67%))
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Verify snapshot was recorded
-        AethelredBridge.WithdrawalProposal memory proposal = bridge.getWithdrawalProposal(proposalId);
-        assertEq(proposal.requiredVotesSnapshot, 3);
+        AethelredBridge.WithdrawalProposal memory proposal =
+            bridge.getWithdrawalProposal(proposalId);
+        assertEq(proposal.requiredVotesSnapshot, 4);
     }
 
     function test_Audit_VoteThresholdSnapshot_EnforcedStrictly() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("strict-snapshot");
         bytes32 burnTxHash = keccak256("strict-burn");
 
-        // Propose with minVotesRequired = 3
+        // Propose with minVotesRequired = 4
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
 
         // Vote: 2 votes (relayer1 from proposal + relayer2)
         vm.prank(relayer2);
         bridge.voteWithdrawal(proposalId);
 
-        // Remove 2 relayers - this drops minVotesRequired to ~2
-        vm.prank(admin);
-        bridge.revokeRole(bridge.RELAYER_ROLE(), relayer4);
-        vm.prank(admin);
-        bridge.revokeRole(bridge.RELAYER_ROLE(), relayer5);
+        // Remove 2 relayers - this drops minVotesRequired to 3
+        _revokeRelayerRole(relayer4);
+        _revokeRelayerRole(relayer5);
 
-        // Verify current threshold dropped to 2
-        (, , uint256 currentMinVotes) = bridge.relayerConfig();
-        assertEq(currentMinVotes, 2);
+        // Verify current threshold dropped to 3
+        (,, uint256 currentMinVotes) = bridge.relayerConfig();
+        assertEq(currentMinVotes, 3);
 
         // Wait for challenge period
         vm.warp(block.timestamp + 7 days + 1);
 
-        // Should still fail: only 2 votes but snapshot requires 3
+        // Should still fail: only 2 votes but snapshot requires 4
         vm.expectRevert(AethelredBridge.InsufficientVotes.selector);
         bridge.processWithdrawal(proposalId);
 
-        // Add the third vote - now it should pass (3 >= max(3, 2))
+        // Add the third vote - still not enough because the snapshot requires 4.
         vm.prank(relayer3);
+        bridge.voteWithdrawal(proposalId);
+
+        vm.expectRevert(AethelredBridge.InsufficientVotes.selector);
+        bridge.processWithdrawal(proposalId);
+
+        // Re-add a relayer so the proposal can actually recover the fourth vote.
+        _grantRelayerRole(relayer4);
+
+        // Add the fourth vote - now it should pass (4 >= max(4, 3))
+        vm.prank(relayer4);
         bridge.voteWithdrawal(proposalId);
 
         uint256 user2BalanceBefore = user2.balance;
@@ -1962,22 +1976,19 @@ contract AethelredBridgeTest is Test {
 
     function test_Audit_CanProcessWithdrawal_ShowsBlockedRecipient() public {
         vm.prank(user1);
-        bridge.depositETH{value: 10 ether}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: 10 ether }(AETHELRED_RECIPIENT);
 
         bytes32 proposalId = keccak256("view-blocked");
         bytes32 burnTxHash = keccak256("view-blocked-burn");
 
         vm.prank(relayer1);
-        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12345);
-        vm.prank(relayer2);
-        bridge.voteWithdrawal(proposalId);
-        vm.prank(relayer3);
-        bridge.voteWithdrawal(proposalId);
+        bridge.proposeWithdrawal(proposalId, user2, address(0), 1 ether, burnTxHash, 12_345);
+        _castThresholdVotes(proposalId);
 
         vm.warp(block.timestamp + 7 days + 1);
 
         // Before blocking: should be processable
-        (bool canProcess, ) = bridge.canProcessWithdrawal(proposalId);
+        (bool canProcess,) = bridge.canProcessWithdrawal(proposalId);
         assertTrue(canProcess);
 
         // Block recipient
@@ -1994,22 +2005,46 @@ contract AethelredBridgeTest is Test {
     // HELPERS
     // =========================================================================
 
+    function _castThresholdVotes(bytes32 proposalId) internal {
+        vm.prank(relayer2);
+        bridge.voteWithdrawal(proposalId);
+        vm.prank(relayer3);
+        bridge.voteWithdrawal(proposalId);
+        vm.prank(relayer4);
+        bridge.voteWithdrawal(proposalId);
+    }
+
+    function _grantGuardianRole(address account) internal {
+        bytes32 guardianRole = bridge.GUARDIAN_ROLE();
+        vm.prank(admin);
+        bridge.grantRole(guardianRole, account);
+    }
+
+    function _grantRelayerRole(address account) internal {
+        bytes32 relayerRole = bridge.RELAYER_ROLE();
+        vm.prank(admin);
+        bridge.grantRole(relayerRole, account);
+    }
+
+    function _revokeRelayerRole(address account) internal {
+        bytes32 relayerRole = bridge.RELAYER_ROLE();
+        vm.prank(admin);
+        bridge.revokeRole(relayerRole, account);
+    }
+
     function _computeDepositId(
         address depositor,
         bytes32 aethelredRecipient,
         address token,
         uint256 amount,
         uint256 nonce
-    ) internal view returns (bytes32) {
+    )
+        internal
+        view
+        returns (bytes32)
+    {
         return keccak256(
-            abi.encode(
-                depositor,
-                aethelredRecipient,
-                token,
-                amount,
-                nonce,
-                block.chainid
-            )
+            abi.encode(depositor, aethelredRecipient, token, amount, nonce, block.chainid)
         );
     }
 }
@@ -2031,10 +2066,8 @@ contract AethelredBridgeInvariantTest is Test {
         relayers[1] = address(0x11);
         relayers[2] = address(0x12);
 
-        bytes memory initData = abi.encodeCall(
-            AethelredBridge.initialize,
-            (address(this), relayers, 6700)
-        );
+        bytes memory initData =
+            abi.encodeCall(AethelredBridge.initialize, (address(this), relayers, 6700));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
         bridge = AethelredBridge(payable(address(proxy)));
 
@@ -2070,8 +2103,8 @@ contract BridgeHandler is Test {
     function deposit(uint256 amount) external {
         amount = bound(amount, 0.01 ether, 100 ether);
         vm.deal(address(this), amount);
-        bridge.depositETH{value: amount}(AETHELRED_RECIPIENT);
+        bridge.depositETH{ value: amount }(AETHELRED_RECIPIENT);
     }
 
-    receive() external payable {}
+    receive() external payable { }
 }

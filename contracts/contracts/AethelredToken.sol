@@ -10,6 +10,10 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+interface ITokenUpgraderTimelockDelaySource {
+    function getMinDelay() external view returns (uint256);
+}
+
 /**
  * @title AethelredToken (AETHEL)
  * @author Aethelred Team
@@ -78,6 +82,9 @@ contract AethelredToken is
     /// @notice Decimals (standard 18)
     uint8 private constant DECIMALS = 18;
 
+    /// @notice Minimum delay required for the production upgrader timelock.
+    uint256 public constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
+
     // =========================================================================
     // STATE VARIABLES
     // =========================================================================
@@ -113,10 +120,7 @@ contract AethelredToken is
      * @dev Provides a full audit trail: who was slashed, by whom, how much, and why.
      */
     event ComplianceSlash(
-        address indexed account,
-        uint256 amount,
-        bytes32 indexed reason,
-        address indexed authority
+        address indexed account, uint256 amount, bytes32 indexed reason, address indexed authority
     );
 
     // =========================================================================
@@ -131,6 +135,8 @@ contract AethelredToken is
     error InvalidAmount();
     error AdminMustBeContract();
     error ComplianceBurnReasonRequired();
+    error UpgraderTimelockDelayTooShort();
+    error ProductionInitializationRequiresTimelock();
 
     // =========================================================================
     // MODIFIERS
@@ -156,7 +162,7 @@ contract AethelredToken is
     }
 
     /**
-     * @notice Initialize the token contract
+     * @notice Initialize the token contract for local development only.
      * @param admin Admin address with all roles
      * @param minter Initial minter (usually vesting contract)
      * @param initialRecipient Address to receive initial supply
@@ -167,11 +173,51 @@ contract AethelredToken is
         address minter,
         address initialRecipient,
         uint256 initialAmount
-    ) external initializer {
+    )
+        external
+        initializer
+    {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
+        _initializeToken(admin, admin, minter, initialRecipient, initialAmount);
+    }
+
+    /**
+     * @notice Initialize the token contract with a dedicated upgrader timelock.
+     * @param admin Operational admin address
+     * @param upgraderTimelock Timelock contract holding UPGRADER_ROLE
+     * @param minter Initial minter (usually vesting contract)
+     * @param initialRecipient Address to receive initial supply
+     * @param initialAmount Amount to mint initially
+     */
+    function initializeWithTimelock(
+        address admin,
+        address upgraderTimelock,
+        address minter,
+        address initialRecipient,
+        uint256 initialAmount
+    )
+        external
+        initializer
+    {
+        _requireContractAdmin(admin);
+        _requireContractAdmin(upgraderTimelock);
+        _requireUpgraderTimelockDelay(upgraderTimelock);
+        _initializeToken(admin, upgraderTimelock, minter, initialRecipient, initialAmount);
+    }
+
+    function _initializeToken(
+        address admin,
+        address upgraderAuthority,
+        address minter,
+        address initialRecipient,
+        uint256 initialAmount
+    )
+        internal
+    {
         if (admin == address(0)) revert ZeroAddress();
+        if (upgraderAuthority == address(0)) revert ZeroAddress();
         if (initialRecipient == address(0)) revert ZeroAddress();
         if (initialAmount > TOTAL_SUPPLY_CAP) revert SupplyCapExceeded();
-        _requireContractAdmin(admin);
 
         __ERC20_init("Aethelred", "AETHEL");
         __ERC20Burnable_init();
@@ -186,7 +232,8 @@ contract AethelredToken is
         _grantRole(PAUSER_ROLE, admin);
         _grantRole(BURNER_ROLE, admin);
         _grantRole(COMPLIANCE_ROLE, admin);
-        _grantRole(UPGRADER_ROLE, admin);
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
+        _grantRole(UPGRADER_ROLE, upgraderAuthority);
 
         if (minter != address(0)) {
             _grantRole(MINTER_ROLE, minter);
@@ -212,7 +259,10 @@ contract AethelredToken is
     /**
      * @notice Transfer with compliance checks
      */
-    function transfer(address to, uint256 amount)
+    function transfer(
+        address to,
+        uint256 amount
+    )
         public
         override
         notBlacklisted(msg.sender)
@@ -226,7 +276,11 @@ contract AethelredToken is
     /**
      * @notice TransferFrom with compliance checks
      */
-    function transferFrom(address from, address to, uint256 amount)
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    )
         public
         override
         notBlacklisted(from)
@@ -253,11 +307,7 @@ contract AethelredToken is
      * @param to Recipient address
      * @param amount Amount to mint
      */
-    function mint(address to, uint256 amount)
-        external
-        onlyRole(MINTER_ROLE)
-        notBlacklisted(to)
-    {
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) notBlacklisted(to) {
         if (totalSupply() + amount > TOTAL_SUPPLY_CAP) revert SupplyCapExceeded();
         _mint(to, amount);
     }
@@ -294,7 +344,11 @@ contract AethelredToken is
      * @param amount Amount to burn
      * @param reason Machine-readable reason code (e.g., keccak256("SANCTIONS"))
      */
-    function complianceBurn(address account, uint256 amount, bytes32 reason)
+    function complianceBurn(
+        address account,
+        uint256 amount,
+        bytes32 reason
+    )
         external
         onlyRole(COMPLIANCE_BURN_ROLE)
     {
@@ -313,10 +367,7 @@ contract AethelredToken is
      * @param account Account to burn from
      * @param amount Amount to burn
      */
-    function adminBurn(address account, uint256 amount)
-        external
-        onlyRole(BURNER_ROLE)
-    {
+    function adminBurn(address account, uint256 amount) external onlyRole(BURNER_ROLE) {
         _spendAllowance(account, msg.sender, amount);
         totalBurned += amount;
         _burn(account, amount);
@@ -334,7 +385,10 @@ contract AethelredToken is
      * @param to Recipient on this chain
      * @param amount Amount to mint
      */
-    function bridgeMint(address to, uint256 amount)
+    function bridgeMint(
+        address to,
+        uint256 amount
+    )
         external
         onlyAuthorizedBridge
         notBlacklisted(to)
@@ -349,10 +403,7 @@ contract AethelredToken is
      * @param from Account burning tokens
      * @param amount Amount to burn
      */
-    function bridgeBurn(address from, uint256 amount)
-        external
-        onlyAuthorizedBridge
-    {
+    function bridgeBurn(address from, uint256 amount) external onlyAuthorizedBridge {
         _spendAllowance(from, msg.sender, amount);
         totalBurned += amount;
         _burn(from, amount);
@@ -368,10 +419,7 @@ contract AethelredToken is
      * @param account Address to update
      * @param status Blacklist status
      */
-    function setBlacklisted(address account, bool status)
-        external
-        onlyRole(COMPLIANCE_ROLE)
-    {
+    function setBlacklisted(address account, bool status) external onlyRole(COMPLIANCE_ROLE) {
         blacklisted[account] = status;
         emit AddressBlacklisted(account, status);
     }
@@ -387,7 +435,10 @@ contract AethelredToken is
      * @param accounts Addresses to update (max 200)
      * @param status Blacklist status
      */
-    function batchSetBlacklisted(address[] calldata accounts, bool status)
+    function batchSetBlacklisted(
+        address[] calldata accounts,
+        bool status
+    )
         external
         onlyRole(COMPLIANCE_ROLE)
     {
@@ -403,10 +454,7 @@ contract AethelredToken is
      * @param account Address to update
      * @param status Whitelist status
      */
-    function setWhitelisted(address account, bool status)
-        external
-        onlyRole(COMPLIANCE_ROLE)
-    {
+    function setWhitelisted(address account, bool status) external onlyRole(COMPLIANCE_ROLE) {
         whitelisted[account] = status;
         emit AddressWhitelisted(account, status);
     }
@@ -415,10 +463,7 @@ contract AethelredToken is
      * @notice Enable/disable transfer restrictions
      * @param enabled Whether restrictions are enabled
      */
-    function setTransferRestrictions(bool enabled)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setTransferRestrictions(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
         transferRestrictionsEnabled = enabled;
         emit TransferRestrictionsUpdated(enabled);
     }
@@ -432,7 +477,10 @@ contract AethelredToken is
      * @param bridge Bridge address
      * @param authorized Authorization status
      */
-    function setAuthorizedBridge(address bridge, bool authorized)
+    function setAuthorizedBridge(
+        address bridge,
+        bool authorized
+    )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
@@ -495,7 +543,11 @@ contract AethelredToken is
     // REQUIRED OVERRIDES
     // =========================================================================
 
-    function _update(address from, address to, uint256 value)
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    )
         internal
         override(ERC20Upgradeable, ERC20PausableUpgradeable, ERC20VotesUpgradeable)
     {
@@ -515,18 +567,34 @@ contract AethelredToken is
         internal
         override
         onlyRole(UPGRADER_ROLE)
-    {}
+    { }
 
     function _requireContractAdmin(address admin) internal view {
+        if (admin == address(0)) revert ZeroAddress();
         if (admin.code.length > 0) {
             return;
         }
         // Preserve local dev tooling ergonomics while enforcing multisig/contract
         // admins on deployed networks.
-        if (block.chainid == 31337 || block.chainid == 1337) {
+        if (block.chainid == 31_337 || block.chainid == 1337) {
             return;
         }
         revert AdminMustBeContract();
+    }
+
+    function _requireUpgraderTimelockDelay(address upgraderTimelock) internal view {
+        if (
+            ITokenUpgraderTimelockDelaySource(upgraderTimelock).getMinDelay()
+                < MIN_UPGRADER_TIMELOCK_DELAY
+        ) {
+            revert UpgraderTimelockDelayTooShort();
+        }
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
     }
 
     // =========================================================================

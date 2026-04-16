@@ -11,7 +11,7 @@ async function deployBridgeFixture(relayerCount = 3) {
   const bridge = await upgrades.deployProxy(
     BridgeFactory,
     [admin.address, relayers.map((r) => r.address), 6700],
-    { kind: "uups", initializer: "initialize" }
+    { kind: "uups", initializer: "initialize" },
   );
   await bridge.waitForDeployment();
   return { bridge, admin, relayers, user };
@@ -24,7 +24,7 @@ async function deployTokenFixture() {
   const token = await upgrades.deployProxy(
     TokenFactory,
     [admin.address, ethers.ZeroAddress, user.address, initialAmount],
-    { kind: "uups", initializer: "initialize" }
+    { kind: "uups", initializer: "initialize" },
   );
   await token.waitForDeployment();
   return { token, admin, bridgeOperator, user, initialAmount };
@@ -32,7 +32,9 @@ async function deployTokenFixture() {
 
 async function deployVestingFixture() {
   const [admin, beneficiary] = await ethers.getSigners();
-  const TokenFactory = await ethers.getContractFactory("MockMintableBurnableERC20");
+  const TokenFactory = await ethers.getContractFactory(
+    "MockMintableBurnableERC20",
+  );
   const token = await TokenFactory.deploy("Aethelred", "AETHEL", 18);
   await token.waitForDeployment();
 
@@ -40,7 +42,7 @@ async function deployVestingFixture() {
   const vesting = await upgrades.deployProxy(
     VestingFactory,
     [await token.getAddress(), admin.address],
-    { kind: "uups", initializer: "initialize" }
+    { kind: "uups", initializer: "initialize" },
   );
   await vesting.waitForDeployment();
   return { vesting, token, admin, beneficiary };
@@ -63,7 +65,10 @@ async function extractDepositId(bridge: any, txHash: string): Promise<string> {
   throw new Error("DepositInitiated event not found");
 }
 
-async function extractOperationId(bridge: any, txHash: string): Promise<string> {
+async function extractOperationId(
+  bridge: any,
+  txHash: string,
+): Promise<string> {
   const receipt = await ethers.provider.getTransactionReceipt(txHash);
   if (!receipt) throw new Error("missing transaction receipt");
 
@@ -85,14 +90,18 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     const { token, admin, bridgeOperator, user } = await deployTokenFixture();
     const burnAmount = ethers.parseUnits("10", 18);
 
-    await token.connect(admin).setAuthorizedBridge(bridgeOperator.address, true);
+    await token
+      .connect(admin)
+      .setAuthorizedBridge(bridgeOperator.address, true);
 
     await expect(
-      token.connect(bridgeOperator).bridgeBurn(user.address, burnAmount)
+      token.connect(bridgeOperator).bridgeBurn(user.address, burnAmount),
     ).to.be.reverted;
 
     await token.connect(user).approve(bridgeOperator.address, burnAmount);
-    await expect(token.connect(bridgeOperator).bridgeBurn(user.address, burnAmount))
+    await expect(
+      token.connect(bridgeOperator).bridgeBurn(user.address, burnAmount),
+    )
       .to.emit(token, "TokensBurnedByBridge")
       .withArgs(bridgeOperator.address, user.address, burnAmount);
   });
@@ -104,18 +113,34 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     const nonceBefore = await bridge.depositNonce();
     const chainId = (await ethers.provider.getNetwork()).chainId;
 
-    const tx = await bridge.connect(user).depositETH(recipient, { value: amount });
+    const tx = await bridge
+      .connect(user)
+      .depositETH(recipient, { value: amount });
     const depositId = await extractDepositId(bridge, tx.hash);
 
     const expected = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "bytes32", "address", "uint256", "uint256", "uint256"],
-        [user.address, recipient, ethers.ZeroAddress, amount, nonceBefore, chainId]
-      )
+        [
+          user.address,
+          recipient,
+          ethers.ZeroAddress,
+          amount,
+          nonceBefore,
+          chainId,
+        ],
+      ),
     );
     const packed = ethers.solidityPackedKeccak256(
       ["address", "bytes32", "address", "uint256", "uint256", "uint256"],
-      [user.address, recipient, ethers.ZeroAddress, amount, nonceBefore, chainId]
+      [
+        user.address,
+        recipient,
+        ethers.ZeroAddress,
+        amount,
+        nonceBefore,
+        chainId,
+      ],
     );
 
     expect(depositId).to.equal(expected);
@@ -132,9 +157,11 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     await bridge.connect(admin).revokeRole(relayerRole, relayers[2].address);
     cfg = await bridge.relayerConfig();
     expect(cfg.relayerCount).to.equal(2n);
-    expect(cfg.minVotesRequired).to.equal(1n); // floor(2 * 6700 / 10000)
+    expect(cfg.minVotesRequired).to.equal(2n); // ceil(2 * 6700 / 10000)
 
-    await bridge.connect(relayers[1]).renounceRole(relayerRole, relayers[1].address);
+    await bridge
+      .connect(relayers[1])
+      .renounceRole(relayerRole, relayers[1].address);
     cfg = await bridge.relayerConfig();
     expect(cfg.relayerCount).to.equal(1n);
     expect(cfg.minVotesRequired).to.equal(1n);
@@ -145,17 +172,29 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
 
     await bridge
       .connect(user)
-      .depositETH(ethers.zeroPadValue("0xabcd", 32), { value: ethers.parseEther("1") });
+      .depositETH(ethers.zeroPadValue("0xabcd", 32), {
+        value: ethers.parseEther("1"),
+      });
 
     await bridge.connect(admin).pause();
     await expect(
-      bridge.connect(admin).queueEmergencyWithdrawal(ethers.ZeroAddress, ethers.parseEther("0.1"), admin.address)
+      bridge
+        .connect(admin)
+        .queueEmergencyWithdrawal(
+          ethers.ZeroAddress,
+          ethers.parseEther("0.1"),
+          admin.address,
+        ),
     ).to.be.reverted;
 
     await bridge.connect(admin).unpause();
     const queueTx = await bridge
       .connect(admin)
-      .queueEmergencyWithdrawal(ethers.ZeroAddress, ethers.parseEther("0.1"), admin.address);
+      .queueEmergencyWithdrawal(
+        ethers.ZeroAddress,
+        ethers.parseEther("0.1"),
+        admin.address,
+      );
     const operationId = await extractOperationId(bridge, queueTx.hash);
     const request = await bridge.emergencyWithdrawalRequests(operationId);
 
@@ -167,17 +206,20 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     await time.increaseTo(request.executeAfter);
     await bridge.connect(admin).pause();
 
-    await expect(bridge.connect(admin).executeEmergencyWithdrawal(operationId)).to.be.reverted;
+    await expect(bridge.connect(admin).executeEmergencyWithdrawal(operationId))
+      .to.be.reverted;
   });
 
   it("H-06: timelock does not self-grant PROPOSER_ROLE or EXECUTOR_ROLE", async function () {
     const [admin] = await ethers.getSigners();
-    const TimelockFactory = await ethers.getContractFactory("SovereignGovernanceTimelock");
+    const TimelockFactory = await ethers.getContractFactory(
+      "SovereignGovernanceTimelock",
+    );
     const timelock = await TimelockFactory.deploy(
       7 * 24 * 60 * 60,
       [admin.address],
       [admin.address],
-      admin.address
+      admin.address,
     );
     await timelock.waitForDeployment();
 
@@ -185,8 +227,12 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     const executorRole = await timelock.EXECUTOR_ROLE();
     const timelockAddress = await timelock.getAddress();
 
-    expect(await timelock.hasRole(proposerRole, timelockAddress)).to.equal(false);
-    expect(await timelock.hasRole(executorRole, timelockAddress)).to.equal(false);
+    expect(await timelock.hasRole(proposerRole, timelockAddress)).to.equal(
+      false,
+    );
+    expect(await timelock.hasRole(executorRole, timelockAddress)).to.equal(
+      false,
+    );
   });
 
   it("H-07: setCategoryCap reverts when cap is reduced below already allocated amount", async function () {
@@ -194,11 +240,13 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     const amount = ethers.parseUnits("100", 18);
 
     await vesting.createCoreContributorSchedule(beneficiary.address, amount);
-    const [scheduleId] = await vesting.getBeneficiarySchedules(beneficiary.address);
+    const [scheduleId] = await vesting.getBeneficiarySchedules(
+      beneficiary.address,
+    );
     const schedule = await vesting.getSchedule(scheduleId);
 
     await expect(
-      vesting.setCategoryCap(schedule.category, amount - 1n)
+      vesting.setCategoryCap(schedule.category, amount - 1n),
     ).to.be.revertedWithCustomError(vesting, "CategoryCapBelowAllocated");
   });
 });
