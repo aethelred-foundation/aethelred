@@ -77,6 +77,13 @@ type secureCellLifecycleRequest struct {
 	RelatedOutputIDs  []string                    `json:"related_output_ids,omitempty"`
 	ApprovalThreshold *int                        `json:"approval_threshold,omitempty"`
 	ApprovalVote      string                      `json:"approval_vote,omitempty"`
+	VoteChoice        string                      `json:"vote_choice,omitempty"`
+	VoteRole          string                      `json:"vote_role,omitempty"`
+	DelegatedToDID    string                      `json:"delegated_to_did,omitempty"`
+	EscalationReason  string                      `json:"escalation_reason,omitempty"`
+	OutcomeBundleID   string                      `json:"outcome_bundle_id,omitempty"`
+	OutcomeBundleName string                      `json:"outcome_bundle_name,omitempty"`
+	OutcomeBundleType string                      `json:"outcome_bundle_type,omitempty"`
 	EffectiveAt       *time.Time                  `json:"effective_at,omitempty"`
 	Metadata          map[string]string           `json:"metadata,omitempty"`
 }
@@ -146,17 +153,18 @@ type secureCellThreadMessageRequest struct {
 }
 
 type secureCellThreadDecisionRequest struct {
-	ActorIdentity        json.RawMessage             `json:"actor_identity,omitempty"`
-	PolicyReceipt        *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	Title                string                      `json:"title,omitempty"`
-	Summary              string                      `json:"summary,omitempty"`
-	Classification       string                      `json:"classification,omitempty"`
-	ApprovalThreshold    *int                        `json:"approval_threshold,omitempty"`
-	EligibleApproverDIDs []string                    `json:"eligible_approver_dids,omitempty"`
-	RelatedExchangeIDs   []string                    `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs     []string                    `json:"related_output_ids,omitempty"`
-	Reason               string                      `json:"reason,omitempty"`
-	Metadata             map[string]string           `json:"metadata,omitempty"`
+	ActorIdentity         json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt         *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Title                 string                      `json:"title,omitempty"`
+	Summary               string                      `json:"summary,omitempty"`
+	Classification        string                      `json:"classification,omitempty"`
+	ApprovalThreshold     *int                        `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs  []string                    `json:"eligible_approver_dids,omitempty"`
+	RequiredApproverRoles []string                    `json:"required_approver_roles,omitempty"`
+	RelatedExchangeIDs    []string                    `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs      []string                    `json:"related_output_ids,omitempty"`
+	Reason                string                      `json:"reason,omitempty"`
+	Metadata              map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellSessionMemberMutationRequest struct {
@@ -182,24 +190,25 @@ type secureCellResponse struct {
 }
 
 type secureCellArtifactsResponse struct {
-	CellID                   string                                              `json:"cell_id"`
-	Status                   securecellsintegration.SecureCellStatus             `json:"status"`
-	Participants             []securecellsintegration.SecureCellParticipantState `json:"participants,omitempty"`
-	Sessions                 []securecellsintegration.SecureCellSession          `json:"sessions,omitempty"`
-	Threads                  []securecellsintegration.SecureCellSessionThread    `json:"threads,omitempty"`
-	Decisions                []securecellsintegration.SecureCellThreadDecision   `json:"decisions,omitempty"`
-	SharedOutputs            []securecellsintegration.SecureCellSharedOutput     `json:"shared_outputs,omitempty"`
-	SessionExchanges         []securecellsintegration.SecureCellSessionExchange  `json:"session_exchanges,omitempty"`
-	Transitions              []securecellsintegration.SecureCellTransition       `json:"transitions,omitempty"`
-	CreationReceipt          *policy.SignedPolicyReceipt                         `json:"creation_receipt,omitempty"`
-	ActivationReceipt        *policy.SignedPolicyReceipt                         `json:"activation_receipt,omitempty"`
-	ExecutionSeal            *evidence.Seal                                      `json:"execution_seal,omitempty"`
-	ControlLedgerID          string                                              `json:"control_ledger_id,omitempty"`
-	ControlLedgerContentHash string                                              `json:"control_ledger_content_hash,omitempty"`
-	ControlSummary           *evidence.ControlLedgerSummary                      `json:"control_summary,omitempty"`
-	PortablePackageHash      string                                              `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned    bool                                                `json:"portable_package_signed"`
-	PortablePackageAnchored  bool                                                `json:"portable_package_anchored"`
+	CellID                   string                                                   `json:"cell_id"`
+	Status                   securecellsintegration.SecureCellStatus                  `json:"status"`
+	Participants             []securecellsintegration.SecureCellParticipantState      `json:"participants,omitempty"`
+	Sessions                 []securecellsintegration.SecureCellSession               `json:"sessions,omitempty"`
+	Threads                  []securecellsintegration.SecureCellSessionThread         `json:"threads,omitempty"`
+	Decisions                []securecellsintegration.SecureCellThreadDecision        `json:"decisions,omitempty"`
+	DecisionOutcomes         []securecellsintegration.SecureCellThreadDecisionOutcome `json:"decision_outcomes,omitempty"`
+	SharedOutputs            []securecellsintegration.SecureCellSharedOutput          `json:"shared_outputs,omitempty"`
+	SessionExchanges         []securecellsintegration.SecureCellSessionExchange       `json:"session_exchanges,omitempty"`
+	Transitions              []securecellsintegration.SecureCellTransition            `json:"transitions,omitempty"`
+	CreationReceipt          *policy.SignedPolicyReceipt                              `json:"creation_receipt,omitempty"`
+	ActivationReceipt        *policy.SignedPolicyReceipt                              `json:"activation_receipt,omitempty"`
+	ExecutionSeal            *evidence.Seal                                           `json:"execution_seal,omitempty"`
+	ControlLedgerID          string                                                   `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash string                                                   `json:"control_ledger_content_hash,omitempty"`
+	ControlSummary           *evidence.ControlLedgerSummary                           `json:"control_summary,omitempty"`
+	PortablePackageHash      string                                                   `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned    bool                                                     `json:"portable_package_signed"`
+	PortablePackageAnchored  bool                                                     `json:"portable_package_anchored"`
 }
 
 type secureCellListResponse struct {
@@ -541,7 +550,32 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
-		case (strings.HasSuffix(r.URL.Path, "/approve") || strings.HasSuffix(r.URL.Path, "/comments") || strings.HasSuffix(r.URL.Path, "/contain-outputs") || strings.HasSuffix(r.URL.Path, "/release-outputs") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine") || strings.HasSuffix(r.URL.Path, "/close")) && strings.Contains(r.URL.Path, "/decisions/"):
+		case strings.HasSuffix(r.URL.Path, "/outcome-bundles/fetch") && strings.Contains(r.URL.Path, "/decisions/"):
+			cellID, sessionID, threadID, decisionID, err := parseSecureCellSessionThreadDecisionOutcomeBundleFetchPath(r.URL.Path)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread decision outcome bundle request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionThreadDecisionOutcomeBundleFetch(r, cellID, sessionID, threadID, decisionID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			req.Metadata = secureCellOutcomeBundleMetadata(req.Metadata, decisionID, req.OutcomeBundleID, req.OutcomeBundleName, req.OutcomeBundleType, req.Comment)
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case (strings.HasSuffix(r.URL.Path, "/vote") || strings.HasSuffix(r.URL.Path, "/approve") || strings.HasSuffix(r.URL.Path, "/comments") || strings.HasSuffix(r.URL.Path, "/contain-outputs") || strings.HasSuffix(r.URL.Path, "/release-outputs") || strings.HasSuffix(r.URL.Path, "/delegate") || strings.HasSuffix(r.URL.Path, "/escalate") || strings.HasSuffix(r.URL.Path, "/outcome-bundles") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine") || strings.HasSuffix(r.URL.Path, "/close")) && strings.Contains(r.URL.Path, "/decisions/"):
 			cellID, sessionID, threadID, decisionID, action, err := parseSecureCellSessionThreadDecisionLifecycleActionPath(r.URL.Path)
 			if err != nil {
 				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
@@ -554,6 +588,8 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			var authCtx *secureCellAuthContext
 			switch action {
+			case "vote":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionVote(r, cellID, sessionID, threadID, decisionID, &req)
 			case "approve":
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionApprove(r, cellID, sessionID, threadID, decisionID, &req)
 			case "comments":
@@ -562,6 +598,14 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionContainOutputs(r, cellID, sessionID, threadID, decisionID, &req)
 			case "release-outputs":
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionReleaseOutputs(r, cellID, sessionID, threadID, decisionID, &req)
+			case "delegate":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionDelegate(r, cellID, sessionID, threadID, decisionID, &req)
+			case "escalate":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionEscalate(r, cellID, sessionID, threadID, decisionID, &req)
+			case "outcome-bundles":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionOutcomeBundleCreate(r, cellID, sessionID, threadID, decisionID, &req)
+			case "fetch":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionOutcomeBundleFetch(r, cellID, sessionID, threadID, decisionID, &req)
 			case "resume":
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionResume(r, cellID, sessionID, threadID, decisionID, &req)
 			case "quarantine":
@@ -576,7 +620,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
-			req.Metadata = secureCellDecisionMutationMetadata(req.Metadata, decisionID, req.Comment, req.RelatedOutputIDs, req.ApprovalThreshold, req.ApprovalVote)
+			req.Metadata = secureCellDecisionMutationMetadata(req.Metadata, decisionID, req.Comment, req.RelatedOutputIDs, req.ApprovalThreshold, firstNonEmpty(strings.TrimSpace(req.VoteChoice), strings.TrimSpace(req.ApprovalVote)))
 			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
@@ -584,14 +628,27 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			var result *securecellsintegration.SecureCellResult
 			switch action {
+			case "vote":
+				voteChoice := strings.TrimSpace(firstNonEmpty(req.VoteChoice, req.ApprovalVote))
+				if voteChoice == "" {
+					voteChoice = "approve"
+				}
+				if !strings.EqualFold(voteChoice, "approve") {
+					writeSecureCellAPIError(w, http.StatusNotImplemented, "only approve votes are supported until the secure cell service exposes alternative vote handling")
+					return
+				}
+				lifecycle.Metadata = secureCellDecisionVoteMetadata(lifecycle.Metadata, req.ApprovalThreshold, voteChoice, req.VoteRole, req.Comment)
+				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
 			case "approve":
 				if req.ApprovalThreshold != nil && *req.ApprovalThreshold <= 0 {
 					writeSecureCellAPIError(w, http.StatusBadRequest, "approval_threshold must be greater than zero")
 					return
 				}
-				if strings.TrimSpace(req.ApprovalVote) != "" {
-					lifecycle.Metadata = secureCellDecisionApprovalMetadata(lifecycle.Metadata, req.ApprovalThreshold, req.ApprovalVote, req.Comment)
+				voteChoice := strings.TrimSpace(firstNonEmpty(req.VoteChoice, req.ApprovalVote))
+				if voteChoice == "" {
+					voteChoice = "approve"
 				}
+				lifecycle.Metadata = secureCellDecisionVoteMetadata(lifecycle.Metadata, req.ApprovalThreshold, voteChoice, req.VoteRole, req.Comment)
 				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
 			case "comments":
 				if strings.TrimSpace(req.Comment) == "" {
@@ -610,6 +667,37 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			case "release-outputs":
 				lifecycle.Metadata = secureCellDecisionOutputReleaseMetadata(lifecycle.Metadata, req.RelatedOutputIDs, req.Comment)
 				result, err = app.secureCellService.ReleaseThreadDecisionOutputs(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "delegate":
+				lifecycle.Metadata = secureCellDecisionDelegationMetadata(lifecycle.Metadata, decisionID, req.DelegatedToDID, req.Comment, req.Reason)
+				result, err = app.secureCellService.DelegateThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, securecellsintegration.SecureCellThreadDecisionDelegationRequest{
+					ActorDID:  safeSecureCellActorDID(authCtx),
+					TargetDID: req.DelegatedToDID,
+					Reason:    req.Reason,
+					Metadata:  lifecycle.Metadata,
+				})
+			case "escalate":
+				lifecycle.Metadata = secureCellDecisionEscalationMetadata(lifecycle.Metadata, decisionID, req.EscalationReason, req.Comment, req.Reason)
+				result, err = app.secureCellService.EscalateThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, securecellsintegration.SecureCellThreadDecisionDelegationRequest{
+					ActorDID:  safeSecureCellActorDID(authCtx),
+					TargetDID: req.DelegatedToDID,
+					Reason:    firstNonEmpty(req.EscalationReason, req.Reason),
+					Metadata:  lifecycle.Metadata,
+				})
+			case "outcome-bundles":
+				lifecycle.Metadata = secureCellOutcomeBundleMetadata(lifecycle.Metadata, decisionID, req.OutcomeBundleID, req.OutcomeBundleName, req.OutcomeBundleType, req.Comment)
+				result, err = app.secureCellService.PublishThreadDecisionOutcome(r.Context(), cellID, sessionID, threadID, decisionID, securecellsintegration.SecureCellThreadDecisionOutcomeRequest{
+					ActorDID:         safeSecureCellActorDID(authCtx),
+					Title:            req.OutcomeBundleName,
+					Summary:          req.Comment,
+					Classification:   "",
+					OutcomeType:      req.OutcomeBundleType,
+					RelatedOutputIDs: req.RelatedOutputIDs,
+					Reason:           req.Reason,
+					Metadata:         lifecycle.Metadata,
+				})
+			case "fetch":
+				lifecycle.Metadata = secureCellOutcomeBundleMetadata(lifecycle.Metadata, decisionID, req.OutcomeBundleID, req.OutcomeBundleName, req.OutcomeBundleType, req.Comment)
+				result, err = app.secureCellService.GetCell(r.Context(), cellID)
 			case "resume":
 				result, err = app.secureCellService.ResumeThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
 			case "quarantine":
@@ -645,18 +733,19 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.CreateThreadDecision(r.Context(), cellID, securecellsintegration.SecureCellThreadDecisionRequest{
-				SessionID:            sessionID,
-				ThreadID:             threadID,
-				ActorDID:             safeSecureCellActorDID(authCtx),
-				Title:                req.Title,
-				Summary:              req.Summary,
-				Classification:       req.Classification,
-				ApprovalThreshold:    safeSecureCellOptionalInt(req.ApprovalThreshold),
-				EligibleApproverDIDs: req.EligibleApproverDIDs,
-				RelatedExchangeIDs:   req.RelatedExchangeIDs,
-				RelatedOutputIDs:     req.RelatedOutputIDs,
-				Reason:               req.Reason,
-				Metadata:             req.Metadata,
+				SessionID:             sessionID,
+				ThreadID:              threadID,
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				Title:                 req.Title,
+				Summary:               req.Summary,
+				Classification:        req.Classification,
+				ApprovalThreshold:     safeSecureCellOptionalInt(req.ApprovalThreshold),
+				EligibleApproverDIDs:  req.EligibleApproverDIDs,
+				RequiredApproverRoles: req.RequiredApproverRoles,
+				RelatedExchangeIDs:    req.RelatedExchangeIDs,
+				RelatedOutputIDs:      req.RelatedOutputIDs,
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -1251,6 +1340,7 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
 	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
 	projection.Decisions = append([]securecellsintegration.SecureCellThreadDecision(nil), result.Decisions...)
+	projection.DecisionOutcomes = append([]securecellsintegration.SecureCellThreadDecisionOutcome(nil), result.DecisionOutcomes...)
 	projection.SharedOutputs = append([]securecellsintegration.SecureCellSharedOutput(nil), result.SharedOutputs...)
 	projection.SessionExchanges = append([]securecellsintegration.SecureCellSessionExchange(nil), result.SessionExchanges...)
 	projection.Transitions = append([]securecellsintegration.SecureCellTransition(nil), result.Transitions...)
@@ -1600,6 +1690,25 @@ func parseSecureCellSessionThreadDecisionLifecycleActionPath(path string) (cellI
 	return cellID, sessionID, threadID, decisionID, action, nil
 }
 
+func parseSecureCellSessionThreadDecisionOutcomeBundleFetchPath(path string) (cellID string, sessionID string, threadID string, decisionID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision outcome bundle path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 9 || parts[1] != "sessions" || parts[3] != "threads" || parts[5] != "decisions" || parts[8] != "fetch" || parts[7] != "outcome-bundles" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision outcome bundle path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	threadID = strings.TrimSpace(parts[4])
+	decisionID = strings.TrimSpace(parts[6])
+	if cellID == "" || sessionID == "" || threadID == "" || decisionID == "" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision outcome bundle path")
+	}
+	return cellID, sessionID, threadID, decisionID, nil
+}
+
 func cloneStringMap(values map[string]string) map[string]string {
 	if len(values) == 0 {
 		return nil
@@ -1655,6 +1764,81 @@ func secureCellDecisionApprovalMetadata(metadata map[string]string, threshold *i
 	}
 	if trimmed := strings.TrimSpace(comment); trimmed != "" {
 		out["approval_comment"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionVoteMetadata(metadata map[string]string, threshold *int, voteChoice string, voteRole string, comment string) map[string]string {
+	out := secureCellDecisionApprovalMetadata(metadata, threshold, voteChoice, comment)
+	if trimmed := strings.TrimSpace(voteChoice); trimmed != "" {
+		out["decision_vote_choice"] = trimmed
+		out["approval_vote"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(voteRole); trimmed != "" {
+		out["decision_vote_role"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionDelegationMetadata(metadata map[string]string, decisionID, delegatedToDID, comment, reason string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if trimmed := strings.TrimSpace(decisionID); trimmed != "" {
+		out["decision_id"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(delegatedToDID); trimmed != "" {
+		out["decision_delegated_to_did"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["decision_comment"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(reason); trimmed != "" {
+		out["decision_delegation_reason"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionEscalationMetadata(metadata map[string]string, decisionID, escalationReason, comment, reason string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if trimmed := strings.TrimSpace(decisionID); trimmed != "" {
+		out["decision_id"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(escalationReason); trimmed != "" {
+		out["decision_escalation_reason"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["decision_comment"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(reason); trimmed != "" {
+		out["decision_escalation_request_reason"] = trimmed
+	}
+	return out
+}
+
+func secureCellOutcomeBundleMetadata(metadata map[string]string, decisionID, outcomeBundleID, outcomeBundleName, outcomeBundleType, comment string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if trimmed := strings.TrimSpace(decisionID); trimmed != "" {
+		out["decision_id"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(outcomeBundleID); trimmed != "" {
+		out["decision_outcome_bundle_id"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(outcomeBundleName); trimmed != "" {
+		out["decision_outcome_bundle_name"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(outcomeBundleType); trimmed != "" {
+		out["decision_outcome_bundle_type"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["decision_comment"] = trimmed
 	}
 	return out
 }
