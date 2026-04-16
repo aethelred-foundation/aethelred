@@ -255,7 +255,12 @@ impl DcapVerifier {
 
         // 9. Check expected measurements
         if !self.config.expected_measurements.is_empty() {
-            if !self.config.expected_measurements.iter().any(|m| m == &quote.report.mrenclave) {
+            if !self
+                .config
+                .expected_measurements
+                .iter()
+                .any(|m| m == &quote.report.mrenclave)
+            {
                 return Err(AttestationError::MeasurementMismatch {
                     expected: hex::encode(&self.config.expected_measurements[0]),
                     actual: hex::encode(&quote.report.mrenclave),
@@ -265,7 +270,12 @@ impl DcapVerifier {
 
         // 10. Check expected signers
         if !self.config.expected_signers.is_empty() {
-            if !self.config.expected_signers.iter().any(|s| s == &quote.report.mrsigner) {
+            if !self
+                .config
+                .expected_signers
+                .iter()
+                .any(|s| s == &quote.report.mrsigner)
+            {
                 return Err(AttestationError::MeasurementMismatch {
                     expected: hex::encode(&self.config.expected_signers[0]),
                     actual: hex::encode(&quote.report.mrsigner),
@@ -302,9 +312,10 @@ impl DcapVerifier {
     /// Parse raw quote bytes into structured quote
     fn parse_quote(&self, bytes: &[u8]) -> Result<SgxQuote, AttestationError> {
         if bytes.len() < 432 {
-            return Err(AttestationError::InvalidFormat(
-                format!("Quote too short: {} bytes", bytes.len()),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "Quote too short: {} bytes",
+                bytes.len()
+            )));
         }
 
         // Parse header (48 bytes)
@@ -312,16 +323,18 @@ impl DcapVerifier {
 
         // Verify version
         if header.version != 3 {
-            return Err(AttestationError::InvalidFormat(
-                format!("Unsupported quote version: {}", header.version),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "Unsupported quote version: {}",
+                header.version
+            )));
         }
 
         // Verify attestation key type (2 = ECDSA P-256)
         if header.att_key_type != 2 {
-            return Err(AttestationError::InvalidFormat(
-                format!("Unsupported attestation key type: {}", header.att_key_type),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "Unsupported attestation key type: {}",
+                header.att_key_type
+            )));
         }
 
         // Parse report body (384 bytes)
@@ -394,7 +407,17 @@ impl DcapVerifier {
     fn parse_signature_section(
         &self,
         bytes: &[u8],
-    ) -> Result<(Vec<u8>, Vec<u8>, SgxReportBody, Vec<u8>, Vec<u8>, CertificationData), AttestationError> {
+    ) -> Result<
+        (
+            Vec<u8>,
+            Vec<u8>,
+            SgxReportBody,
+            Vec<u8>,
+            Vec<u8>,
+            CertificationData,
+        ),
+        AttestationError,
+    > {
         if bytes.len() < 4 {
             return Err(AttestationError::InvalidFormat(
                 "Signature section too short".to_string(),
@@ -490,7 +513,14 @@ impl DcapVerifier {
             }
         };
 
-        Ok((signature, att_public_key, qe_report, qe_signature, auth_data, cert_data))
+        Ok((
+            signature,
+            att_public_key,
+            qe_report,
+            qe_signature,
+            auth_data,
+            cert_data,
+        ))
     }
 
     // ========================================================================
@@ -531,15 +561,9 @@ impl DcapVerifier {
             return Err(AttestationError::InvalidSignature);
         }
 
-        // TODO: Implement actual ECDSA verification
-        // let public_key = p256::PublicKey::from_affine_coordinates(
-        //     &quote.att_public_key[..32],
-        //     &quote.att_public_key[32..],
-        // )?;
-        // let signature = p256::ecdsa::Signature::from_bytes(&quote.signature)?;
-        // public_key.verify(quote_data, &signature)?;
-
-        Ok(())
+        Err(AttestationError::IntelDcap(
+            "Cryptographic SGX quote signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify QE report signature
@@ -555,12 +579,9 @@ impl DcapVerifier {
             return Err(AttestationError::InvalidSignature);
         }
 
-        // TODO: Implement PCK signature verification
-        // 1. Parse PCK certificate from collateral
-        // 2. Extract PCK public key
-        // 3. Verify QE report signature
-
-        Ok(())
+        Err(AttestationError::IntelDcap(
+            "Cryptographic QE report signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify certificate chain
@@ -577,14 +598,9 @@ impl DcapVerifier {
             ));
         }
 
-        // TODO: Implement full certificate chain verification
-        // 1. Parse PCK certificate
-        // 2. Parse intermediate CA certificate
-        // 3. Verify against Intel Root CA
-        // 4. Check CRL for revocations
-        // 5. Check certificate validity periods
-
-        Ok(())
+        Err(AttestationError::IntelDcap(
+            "SGX certificate chain verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify nonce in report data
@@ -828,5 +844,90 @@ mod tests {
 
         assert!(verifier.verify_nonce(&report_data, &nonce));
         assert!(!verifier.verify_nonce(&report_data, &[0u8; 32]));
+    }
+
+    fn mock_quote() -> SgxQuote {
+        SgxQuote {
+            header: SgxQuoteHeader {
+                version: 3,
+                att_key_type: 2,
+                reserved: 0,
+                qe_svn: 0,
+                pce_svn: 0,
+                qe_vendor_id: [0; 16],
+                user_data: [0; 20],
+            },
+            report: SgxReportBody {
+                cpu_svn: [0; 16],
+                misc_select: 0,
+                reserved1: [0; 28],
+                attributes: SgxAttributes { flags: 0, xfrm: 0 },
+                mrenclave: [0; 32],
+                reserved2: [0; 32],
+                mrsigner: [0; 32],
+                reserved3: [0; 96],
+                isv_prod_id: 0,
+                isv_svn: 0,
+                reserved4: [0; 60],
+                report_data: [0; 64],
+            },
+            signature: vec![1; 64],
+            att_public_key: vec![2; 64],
+            qe_report: SgxReportBody {
+                cpu_svn: [0; 16],
+                misc_select: 0,
+                reserved1: [0; 28],
+                attributes: SgxAttributes { flags: 0, xfrm: 0 },
+                mrenclave: [0; 32],
+                reserved2: [0; 32],
+                mrsigner: [0; 32],
+                reserved3: [0; 96],
+                isv_prod_id: 0,
+                isv_svn: 0,
+                reserved4: [0; 60],
+                report_data: [0; 64],
+            },
+            qe_signature: vec![3; 64],
+            auth_data: Vec::new(),
+            cert_data: CertificationData {
+                cert_type: CertificationType::PckCertChain,
+                data: Vec::new(),
+            },
+        }
+    }
+
+    fn mock_collateral() -> IntelCollateral {
+        IntelCollateral {
+            pck_certificate: vec![1],
+            pck_cert_chain: vec![2],
+            tcb_info: Vec::new(),
+            tcb_info_signature: Vec::new(),
+            qe_identity: Vec::new(),
+            qe_identity_signature: Vec::new(),
+            root_ca_crl: Vec::new(),
+            pck_crl: Vec::new(),
+            fmspc: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn test_quote_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = DcapVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_quote_signature(&mock_quote());
+        assert!(matches!(result, Err(AttestationError::IntelDcap(_))));
+    }
+
+    #[test]
+    fn test_qe_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = DcapVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_qe_signature(&mock_quote(), &mock_collateral());
+        assert!(matches!(result, Err(AttestationError::IntelDcap(_))));
+    }
+
+    #[test]
+    fn test_certificate_chain_verification_fails_closed_when_backend_missing() {
+        let verifier = DcapVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_certificate_chain(&mock_quote(), &mock_collateral());
+        assert!(matches!(result, Err(AttestationError::IntelDcap(_))));
     }
 }
