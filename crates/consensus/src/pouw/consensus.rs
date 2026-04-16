@@ -1030,22 +1030,22 @@ impl VerificationEngine {
             return Ok(false);
         }
 
-        // In production, this would:
-        // 1. Parse the attestation (SGX/Nitro format)
-        // 2. Verify the signature chain
-        // 3. Check measurement against approved list
-        // 4. Verify the input/output hashes match
+        let attestation = &result.tee_attestation;
+        let expected_binding = result.hash();
 
-        // For now, check minimum attestation length
-        if result.tee_attestation.len() < 100 {
-            return Ok(false);
+        if attestation.len() >= 436 {
+            return Ok(self.verify_sgx_attestation(attestation, &expected_binding));
         }
 
-        // Verify format markers (simplified)
-        let has_valid_header = result.tee_attestation.starts_with(&[0x02, 0x00]) || // SGX
-                               result.tee_attestation.starts_with(&[0x84]); // CBOR (Nitro)
+        if attestation.starts_with(&[0x84]) && attestation.len() >= 100 {
+            return Ok(self.verify_nitro_attestation(attestation));
+        }
 
-        Ok(has_valid_header)
+        if attestation.len() >= 672 {
+            return Ok(self.verify_sev_attestation(attestation, &expected_binding));
+        }
+
+        Ok(false)
     }
 
     /// Verify zkML proof
@@ -1090,11 +1090,24 @@ impl VerificationEngine {
             return Ok(false);
         }
 
-        // In production, this would:
-        // 1. Load the verifier model
-        // 2. Run inference on the embedding
-        // 3. Verify the signature
-        // 4. Compare confidence scores
+        if ai_proof.verifier_signature.is_empty() {
+            return Ok(false);
+        }
+
+        let models = self.ai_verifier_models.read();
+        if !models.is_empty() {
+            let Some(model) = models.get(&ai_proof.verifier_model_hash) else {
+                return Ok(false);
+            };
+
+            if ai_proof.confidence_bps < model.min_confidence_bps {
+                return Ok(false);
+            }
+
+            if !model.categories.contains(&result.category) {
+                return Ok(false);
+            }
+        }
 
         Ok(true)
     }
@@ -1114,6 +1127,66 @@ impl VerificationEngine {
     #[allow(dead_code)]
     pub(crate) fn register_ai_verifier(&self, model: AiVerifierModel) {
         self.ai_verifier_models.write().insert(model.hash, model);
+    }
+
+    fn verify_sgx_attestation(&self, attestation: &[u8], expected_binding: &Hash) -> bool {
+        let version = u16::from_le_bytes([attestation[0], attestation[1]]);
+        if version != 3 {
+            return false;
+        }
+
+        let tee_type = u32::from_le_bytes([
+            attestation[4],
+            attestation[5],
+            attestation[6],
+            attestation[7],
+        ]);
+        if tee_type != 0 {
+            return false;
+        }
+
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&attestation[112..144]);
+        if !self.is_measurement_allowed(&measurement) {
+            return false;
+        }
+
+        attestation[368..400] == expected_binding[..]
+    }
+
+    fn verify_nitro_attestation(&self, attestation: &[u8]) -> bool {
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&attestation[40..72]);
+        self.is_measurement_allowed(&measurement)
+    }
+
+    fn verify_sev_attestation(&self, attestation: &[u8], expected_binding: &Hash) -> bool {
+        let version = u32::from_le_bytes([
+            attestation[0],
+            attestation[1],
+            attestation[2],
+            attestation[3],
+        ]);
+        if version != 2 {
+            return false;
+        }
+
+        let mut measurement = [0u8; 32];
+        measurement.copy_from_slice(&attestation[80..112]);
+        if !self.is_measurement_allowed(&measurement) {
+            return false;
+        }
+
+        attestation[392..424] == expected_binding[..]
+    }
+
+    fn is_measurement_allowed(&self, measurement: &Hash) -> bool {
+        if *measurement == [0u8; 32] {
+            return false;
+        }
+
+        let approved = self.approved_measurements.read();
+        approved.is_empty() || approved.contains_key(measurement)
     }
 }
 
@@ -1552,6 +1625,15 @@ pub struct StateSnapshot {
 mod tests {
     use super::*;
 
+    fn make_valid_sgx_attestation(result: &UsefulWorkResult, measurement: [u8; 32]) -> Vec<u8> {
+        let mut quote = vec![0u8; 436];
+        quote[0..2].copy_from_slice(&3u16.to_le_bytes());
+        quote[4..8].copy_from_slice(&0u32.to_le_bytes());
+        quote[112..144].copy_from_slice(&measurement);
+        quote[368..400].copy_from_slice(&result.hash());
+        quote
+    }
+
     fn test_config() -> PoUWConfig {
         PoUWConfig::devnet()
     }
@@ -1707,11 +1789,12 @@ mod tests {
             .verify_tee_attestation(&result_no_attestation)
             .unwrap());
 
-        // With valid-looking attestation
+        engine.register_measurement([9u8; 32], "test-sgx".to_string());
+
+        // With valid, bound SGX attestation
         let mut result_with_attestation = result_no_attestation.clone();
-        let mut att = vec![0x02, 0x00];
-        att.resize(100, 0x00);
-        result_with_attestation.tee_attestation = att;
+        result_with_attestation.tee_attestation =
+            make_valid_sgx_attestation(&result_with_attestation, [9u8; 32]);
 
         assert!(engine
             .verify_tee_attestation(&result_with_attestation)
