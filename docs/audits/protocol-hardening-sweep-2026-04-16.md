@@ -29,6 +29,9 @@ already merged.
 - Required the Aethelred burn parser to extract the real burn nonce from chain
   event attributes instead of fabricating `0`, preserving withdrawal-side
   monitoring and deduplication semantics.
+- Tightened the Ethereum deposit log parser so malformed block hashes,
+  transaction hashes, depositor topics, and log indexes are rejected instead
+  of being silently normalized to zero values on the bridge ingress path.
 
 ### 2. VM, attestation, and consensus verification
 
