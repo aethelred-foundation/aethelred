@@ -35,6 +35,18 @@ var (
 	// the requested collaboration session.
 	ErrSessionParticipantNotFound = errors.New("secure cell session participant not found")
 
+	// ErrThreadNotFound indicates that a collaboration thread does not exist in
+	// the secure cell state.
+	ErrThreadNotFound = errors.New("secure cell thread not found")
+
+	// ErrThreadNotActive indicates that a requested collaboration thread is not
+	// currently active.
+	ErrThreadNotActive = errors.New("secure cell thread is not active")
+
+	// ErrThreadImmutable indicates that a requested thread lifecycle mutation is
+	// not permitted from the current thread posture.
+	ErrThreadImmutable = errors.New("secure cell thread is immutable")
+
 	// ErrCellImmutable indicates that the secure cell cannot be mutated from its
 	// current lifecycle status.
 	ErrCellImmutable = errors.New("secure cell is immutable")
