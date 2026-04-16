@@ -1353,6 +1353,197 @@ func TestService_ThreadDecisionThresholdCommentsAndArtifactContainment(t *testin
 	}
 }
 
+func TestService_ThreadDecisionDelegationRoleQuorumAndOutcomes(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Decision Deliberation Cell",
+		Purpose:       "role-aware decision governance",
+		Resource:      "cell:decision-deliberation-governance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Deliberation Session",
+		Purpose:         "role-aware review",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"confidential", "decisioning"},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	shared, err := service.ShareOutput(ctx, result.CellID, SecureCellSessionShareRequest{
+		SessionID:      session.ID,
+		ActorDID:       participantA.AgentID(),
+		Name:           "Exposure Review Packet",
+		ArtifactType:   "decision_packet",
+		Classification: "decisioning",
+		Summary:        "packet for deliberation and final outcome",
+		SharedWith:     []string{participantB.AgentID()},
+		Reason:         "supporting packet shared",
+	})
+	if err != nil {
+		t.Fatalf("ShareOutput failed: %v", err)
+	}
+	sharedOutput := shared.SharedOutputs[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Deliberation Thread",
+		Purpose:         "role-aware approval workstream",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:             session.ID,
+		ThreadID:              thread.ID,
+		ActorDID:              owner.AgentID(),
+		Title:                 "Freeze Counterparty Exposure",
+		Summary:               "requires owner vote plus reviewer_b quorum",
+		Classification:        "decisioning",
+		ApprovalThreshold:     2,
+		EligibleApproverDIDs:  []string{owner.AgentID()},
+		RequiredApproverRoles: []string{"owner", "reviewer_b"},
+		RelatedOutputIDs:      []string{sharedOutput.ID},
+		Reason:                "decision proposed",
+		Metadata:              map[string]string{"ticket": "SC-DELIB-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+	if len(decision.RequiredApproverRoles) != 2 {
+		t.Fatalf("expected required approver roles, got %+v", decision.RequiredApproverRoles)
+	}
+
+	delegated, err := service.DelegateThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellThreadDecisionDelegationRequest{
+		ActorDID:  owner.AgentID(),
+		TargetDID: participantA.AgentID(),
+		Reason:    "delegate first-line review",
+		Metadata:  map[string]string{"ticket": "SC-DELIB-02"},
+	})
+	if err != nil {
+		t.Fatalf("DelegateThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, delegated, decision.ID)
+	if !ok || len(decision.Delegations) != 1 || decision.Delegations[0].Mode != SecureCellThreadDecisionDelegationModeDelegate {
+		t.Fatalf("expected delegated decision, got %+v", decision)
+	}
+
+	ownerVote, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "owner approved",
+		Metadata: map[string]string{"ticket": "SC-DELIB-03"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision owner vote failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, ownerVote, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusOpen || len(decision.ApprovalVotes) != 1 || decision.ApprovalVotes[0].ActorRole != "owner" {
+		t.Fatalf("expected open decision after owner vote, got %+v", decision)
+	}
+
+	delegateVote, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "delegate approved",
+		Metadata: map[string]string{"ticket": "SC-DELIB-04"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision delegated vote failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, delegateVote, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusOpen || len(decision.ApprovalVotes) != 2 {
+		t.Fatalf("expected open decision until reviewer_b votes, got %+v", decision)
+	}
+	if remaining := secureCellDecisionMissingRequiredRoles(decision); len(remaining) != 1 || remaining[0] != "reviewer_b" {
+		t.Fatalf("expected reviewer_b to remain outstanding, got %+v", remaining)
+	}
+
+	escalated, err := service.EscalateThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellThreadDecisionDelegationRequest{
+		ActorDID:  owner.AgentID(),
+		TargetDID: participantB.AgentID(),
+		Reason:    "escalate to reviewer_b",
+		Metadata:  map[string]string{"ticket": "SC-DELIB-05"},
+	})
+	if err != nil {
+		t.Fatalf("EscalateThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, escalated, decision.ID)
+	if !ok || len(decision.Delegations) != 2 || decision.Delegations[1].Mode != SecureCellThreadDecisionDelegationModeEscalate {
+		t.Fatalf("expected escalated decision, got %+v", decision)
+	}
+
+	finalVote, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantB.AgentID(),
+		Reason:   "reviewer_b approved",
+		Metadata: map[string]string{"ticket": "SC-DELIB-06"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision reviewer_b vote failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, finalVote, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusApproved || decision.ApprovedAt == nil || len(decision.ApprovalVotes) != 3 {
+		t.Fatalf("expected approved role-quorum decision, got %+v", decision)
+	}
+	if remaining := secureCellDecisionMissingRequiredRoles(decision); len(remaining) != 0 {
+		t.Fatalf("expected all required roles satisfied, got %+v", remaining)
+	}
+
+	outcomeResult, err := service.PublishThreadDecisionOutcome(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellThreadDecisionOutcomeRequest{
+		ActorDID:         owner.AgentID(),
+		Title:            "Exposure Freeze Outcome",
+		Summary:          "portable bundle of the approved freeze decision",
+		Classification:   "decisioning",
+		OutcomeType:      "resolution_bundle",
+		RelatedOutputIDs: []string{sharedOutput.ID},
+		Reason:           "publish governed outcome bundle",
+		Metadata:         map[string]string{"ticket": "SC-DELIB-07"},
+	})
+	if err != nil {
+		t.Fatalf("PublishThreadDecisionOutcome failed: %v", err)
+	}
+	outcome, ok := mustSecureCellDecisionOutcome(t, outcomeResult, decision.ID)
+	if !ok || outcome.SealID == "" || outcome.TraceLinkID == "" || outcome.IntegrityHash == "" {
+		t.Fatalf("expected evidence-bearing decision outcome, got %+v", outcome)
+	}
+	decision, ok = mustSecureCellDecision(t, outcomeResult, decision.ID)
+	if !ok || len(decision.OutcomeIDs) != 1 || decision.OutcomeIDs[0] != outcome.ID {
+		t.Fatalf("expected linked decision outcome ids, got %+v", decision)
+	}
+	if !controlLedgerHasControl(outcomeResult.ControlLedger, "CELL-DECIDE-ROUTE-01") || !controlLedgerHasControl(outcomeResult.ControlLedger, "CELL-DECIDE-OUTCOME-01") {
+		t.Fatalf("expected decision routing and outcome controls, got %+v", outcomeResult.ControlLedger.Controls)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 
@@ -1843,4 +2034,17 @@ func mustSecureCellSharedOutput(t *testing.T, result *SecureCellResult, outputID
 		}
 	}
 	return SecureCellSharedOutput{}, false
+}
+
+func mustSecureCellDecisionOutcome(t *testing.T, result *SecureCellResult, decisionID string) (SecureCellThreadDecisionOutcome, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, outcome := range result.DecisionOutcomes {
+		if outcome.DecisionID == decisionID {
+			return outcome, true
+		}
+	}
+	return SecureCellThreadDecisionOutcome{}, false
 }

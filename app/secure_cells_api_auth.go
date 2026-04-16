@@ -20,40 +20,45 @@ import (
 )
 
 const (
-	secureCellsAuthDefaultResource                       = "cell:regulated-collaboration"
-	secureCellsAuthRequestAction                         = "secure_cells.create"
-	secureCellsAuthSessionStartAction                    = "secure_cells.session.start"
-	secureCellsAuthSessionThreadStartAction              = "secure_cells.session.thread.start"
-	secureCellsAuthSessionShareAction                    = "secure_cells.session.share"
-	secureCellsAuthSessionExchangeAction                 = "secure_cells.session.exchange"
-	secureCellsAuthSessionThreadMessageAction            = "secure_cells.session.thread.message"
-	secureCellsAuthSessionThreadDecisionCreateAction     = "secure_cells.session.thread.decision.create"
-	secureCellsAuthSessionThreadDecisionApproveAction    = "secure_cells.session.thread.decision.approve"
-	secureCellsAuthSessionThreadDecisionCommentAction    = "secure_cells.session.thread.decision.comment"
-	secureCellsAuthSessionThreadDecisionContainAction    = "secure_cells.session.thread.decision.contain_outputs"
-	secureCellsAuthSessionThreadDecisionReleaseAction    = "secure_cells.session.thread.decision.release_outputs"
-	secureCellsAuthSessionThreadDecisionResumeAction     = "secure_cells.session.thread.decision.resume"
-	secureCellsAuthSessionThreadDecisionQuarantineAction = "secure_cells.session.thread.decision.quarantine"
-	secureCellsAuthSessionThreadDecisionCloseAction      = "secure_cells.session.thread.decision.close"
-	secureCellsAuthSessionCloseAction                    = "secure_cells.session.close"
-	secureCellsAuthSessionPauseAction                    = "secure_cells.session.pause"
-	secureCellsAuthSessionResumeAction                   = "secure_cells.session.resume"
-	secureCellsAuthSessionQuarantineAction               = "secure_cells.session.quarantine"
-	secureCellsAuthSessionThreadCloseAction              = "secure_cells.session.thread.close"
-	secureCellsAuthSessionThreadResumeAction             = "secure_cells.session.thread.resume"
-	secureCellsAuthSessionThreadQuarantineAction         = "secure_cells.session.thread.quarantine"
-	secureCellsAuthSessionMemberAdmitAction              = "secure_cells.session.member.admit"
-	secureCellsAuthSessionMemberRemoveAction             = "secure_cells.session.member.remove"
-	secureCellsAuthAdmitAction                           = "secure_cells.member.admit"
-	secureCellsAuthReleaseAction                         = "secure_cells.member.release"
-	secureCellsAuthQuarantineAction                      = "secure_cells.member.quarantine"
-	secureCellsAuthRevokeAction                          = "secure_cells.member.revoke"
-	secureCellsAuthExpireAction                          = "secure_cells.quarantine.expire"
-	secureCellsAuthPauseAction                           = "secure_cells.pause"
-	secureCellsAuthResumeAction                          = "secure_cells.resume"
-	secureCellsAuthTerminateAction                       = "secure_cells.terminate"
-	secureCellsAuthRequiredTool                          = "secure_cells"
-	secureCellsEnterpriseActionModeBase                  = "enterprise_policy_receipt"
+	secureCellsAuthDefaultResource                                = "cell:regulated-collaboration"
+	secureCellsAuthRequestAction                                  = "secure_cells.create"
+	secureCellsAuthSessionStartAction                             = "secure_cells.session.start"
+	secureCellsAuthSessionThreadStartAction                       = "secure_cells.session.thread.start"
+	secureCellsAuthSessionShareAction                             = "secure_cells.session.share"
+	secureCellsAuthSessionExchangeAction                          = "secure_cells.session.exchange"
+	secureCellsAuthSessionThreadMessageAction                     = "secure_cells.session.thread.message"
+	secureCellsAuthSessionThreadDecisionCreateAction              = "secure_cells.session.thread.decision.create"
+	secureCellsAuthSessionThreadDecisionVoteAction                = "secure_cells.session.thread.decision.vote"
+	secureCellsAuthSessionThreadDecisionApproveAction             = "secure_cells.session.thread.decision.approve"
+	secureCellsAuthSessionThreadDecisionCommentAction             = "secure_cells.session.thread.decision.comment"
+	secureCellsAuthSessionThreadDecisionContainAction             = "secure_cells.session.thread.decision.contain_outputs"
+	secureCellsAuthSessionThreadDecisionReleaseAction             = "secure_cells.session.thread.decision.release_outputs"
+	secureCellsAuthSessionThreadDecisionDelegateAction            = "secure_cells.session.thread.decision.delegate"
+	secureCellsAuthSessionThreadDecisionEscalateAction            = "secure_cells.session.thread.decision.escalate"
+	secureCellsAuthSessionThreadDecisionOutcomeBundleCreateAction = "secure_cells.session.thread.decision.outcome_bundle.create"
+	secureCellsAuthSessionThreadDecisionOutcomeBundleGetAction    = "secure_cells.session.thread.decision.outcome_bundle.get"
+	secureCellsAuthSessionThreadDecisionResumeAction              = "secure_cells.session.thread.decision.resume"
+	secureCellsAuthSessionThreadDecisionQuarantineAction          = "secure_cells.session.thread.decision.quarantine"
+	secureCellsAuthSessionThreadDecisionCloseAction               = "secure_cells.session.thread.decision.close"
+	secureCellsAuthSessionCloseAction                             = "secure_cells.session.close"
+	secureCellsAuthSessionPauseAction                             = "secure_cells.session.pause"
+	secureCellsAuthSessionResumeAction                            = "secure_cells.session.resume"
+	secureCellsAuthSessionQuarantineAction                        = "secure_cells.session.quarantine"
+	secureCellsAuthSessionThreadCloseAction                       = "secure_cells.session.thread.close"
+	secureCellsAuthSessionThreadResumeAction                      = "secure_cells.session.thread.resume"
+	secureCellsAuthSessionThreadQuarantineAction                  = "secure_cells.session.thread.quarantine"
+	secureCellsAuthSessionMemberAdmitAction                       = "secure_cells.session.member.admit"
+	secureCellsAuthSessionMemberRemoveAction                      = "secure_cells.session.member.remove"
+	secureCellsAuthAdmitAction                                    = "secure_cells.member.admit"
+	secureCellsAuthReleaseAction                                  = "secure_cells.member.release"
+	secureCellsAuthQuarantineAction                               = "secure_cells.member.quarantine"
+	secureCellsAuthRevokeAction                                   = "secure_cells.member.revoke"
+	secureCellsAuthExpireAction                                   = "secure_cells.quarantine.expire"
+	secureCellsAuthPauseAction                                    = "secure_cells.pause"
+	secureCellsAuthResumeAction                                   = "secure_cells.resume"
+	secureCellsAuthTerminateAction                                = "secure_cells.terminate"
+	secureCellsAuthRequiredTool                                   = "secure_cells"
+	secureCellsEnterpriseActionModeBase                           = "enterprise_policy_receipt"
 )
 
 type secureCellAuthContext struct {
@@ -82,6 +87,7 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeExchange(r *http.Request, cellID string, sessionID string, req *secureCellSessionExchangeRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadMessage(r *http.Request, cellID string, sessionID string, threadID string, req *secureCellThreadMessageRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionCreate(r *http.Request, cellID string, sessionID string, threadID string, req *secureCellThreadDecisionRequest) (*secureCellAuthContext, error)
+	AuthorizeThreadDecisionVote(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeSessionPause(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeSessionResume(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
@@ -93,6 +99,10 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeThreadDecisionComment(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionContainOutputs(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionReleaseOutputs(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
+	AuthorizeThreadDecisionDelegate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
+	AuthorizeThreadDecisionEscalate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
+	AuthorizeThreadDecisionOutcomeBundleCreate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
+	AuthorizeThreadDecisionOutcomeBundleFetch(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionResume(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionQuarantine(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeThreadDecisionClose(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
@@ -192,6 +202,13 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionCreate(r *ht
 	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
 }
 
+func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionVote(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
 func (a *secureCellGenericRequestAuthorizer) AuthorizeClose(r *http.Request, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	if req == nil {
 		return a.AuthorizeCreate(r, nil)
@@ -236,6 +253,22 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionContainOutpu
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionReleaseOutputs(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionDelegate(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionEscalate(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleCreate(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleFetch(r *http.Request, _ string, _ string, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.AuthorizeClose(r, "", "", req)
 }
 
@@ -355,6 +388,12 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionCreate(r *http
 	})
 }
 
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionVote(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeThreadDecisionVote(r, cellID, sessionID, threadID, decisionID, req)
+	})
+}
+
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeClose(r, cellID, sessionID, req)
@@ -418,6 +457,30 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionContainOutputs
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionReleaseOutputs(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeThreadDecisionReleaseOutputs(r, cellID, sessionID, threadID, decisionID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionDelegate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeThreadDecisionDelegate(r, cellID, sessionID, threadID, decisionID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionEscalate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeThreadDecisionEscalate(r, cellID, sessionID, threadID, decisionID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleCreate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeThreadDecisionOutcomeBundleCreate(r, cellID, sessionID, threadID, decisionID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleFetch(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeThreadDecisionOutcomeBundleFetch(r, cellID, sessionID, threadID, decisionID, req)
 	})
 }
 
@@ -703,6 +766,26 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionCreate(r 
 		resourceCandidatesForSecureCellSessionThreadDecisionCollection(cellID, sessionID, threadID),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionVote(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeThreadDecisionLifecycleMutation(r, cellID, sessionID, threadID, decisionID, req, secureCellsAuthSessionThreadDecisionVoteAction)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionDelegate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeThreadDecisionLifecycleMutation(r, cellID, sessionID, threadID, decisionID, req, secureCellsAuthSessionThreadDecisionDelegateAction)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionEscalate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeThreadDecisionLifecycleMutation(r, cellID, sessionID, threadID, decisionID, req, secureCellsAuthSessionThreadDecisionEscalateAction)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleCreate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeThreadDecisionBundleMutation(r, cellID, sessionID, threadID, decisionID, req, secureCellsAuthSessionThreadDecisionOutcomeBundleCreateAction)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeThreadDecisionOutcomeBundleFetch(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeThreadDecisionBundleMutation(r, cellID, sessionID, threadID, decisionID, req, secureCellsAuthSessionThreadDecisionOutcomeBundleGetAction)
 }
 
 func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
@@ -1053,6 +1136,42 @@ func (a *secureCellEnterpriseRequestAuthorizer) authorizeThreadDecisionOutputMut
 		req.PolicyReceipt,
 		requiredAction,
 		resourceCandidatesForSecureCellSessionThreadDecisionArtifactAction(cellID, sessionID, threadID, decisionID, threadDecisionActionFromRequiredAction(requiredAction), req.RelatedOutputIDs),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) authorizeThreadDecisionBundleMutation(
+	r *http.Request,
+	cellID string,
+	sessionID string,
+	threadID string,
+	decisionID string,
+	req *secureCellLifecycleRequest,
+	requiredAction string,
+) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(sessionID) == "" || strings.TrimSpace(threadID) == "" || strings.TrimSpace(decisionID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell, session, thread, and decision IDs are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell thread decision outcome bundle request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	bundleID := strings.TrimSpace(req.OutcomeBundleID)
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		requiredAction,
+		resourceCandidatesForSecureCellSessionThreadDecisionOutcomeBundle(cellID, sessionID, threadID, decisionID, threadDecisionActionFromRequiredAction(requiredAction), bundleID),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
@@ -1482,6 +1601,41 @@ func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionCreate(r *http.
 	return app.secureCellAuth.AuthorizeThreadDecisionCreate(r, cellID, sessionID, threadID, req)
 }
 
+func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionVote(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeThreadDecisionVote(r, cellID, sessionID, threadID, decisionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionDelegate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeThreadDecisionDelegate(r, cellID, sessionID, threadID, decisionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionEscalate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeThreadDecisionEscalate(r, cellID, sessionID, threadID, decisionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionOutcomeBundleCreate(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeThreadDecisionOutcomeBundleCreate(r, cellID, sessionID, threadID, decisionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionThreadDecisionOutcomeBundleFetch(r *http.Request, cellID string, sessionID string, threadID string, decisionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeThreadDecisionOutcomeBundleFetch(r, cellID, sessionID, threadID, decisionID, req)
+}
+
 func (app *AethelredApp) authorizeSecureCellSessionClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, nil
@@ -1848,6 +2002,14 @@ func resourceCandidatesForSecureCellSessionThreadDecisionArtifactAction(cellID, 
 	return base
 }
 
+func resourceCandidatesForSecureCellSessionThreadDecisionOutcomeBundle(cellID, sessionID, threadID, decisionID, action, bundleID string) []string {
+	base := resourceCandidatesForSecureCellSessionThreadDecisionLifecycle(cellID, sessionID, threadID, decisionID, action)
+	if trimmed := strings.TrimSpace(bundleID); trimmed != "" {
+		base = append(base, "decision-outcome-bundle:"+trimmed, trimmed)
+	}
+	return base
+}
+
 func resourceCandidatesForSecureCellSessionMemberAction(cellID, sessionID, participantDID, action string) []string {
 	cellID = strings.TrimSpace(cellID)
 	sessionID = strings.TrimSpace(sessionID)
@@ -2068,6 +2230,8 @@ func threadDecisionLifecycleActionFromRequiredAction(requiredAction string) stri
 
 func threadDecisionActionFromRequiredAction(requiredAction string) string {
 	switch strings.TrimSpace(requiredAction) {
+	case secureCellsAuthSessionThreadDecisionVoteAction:
+		return "vote"
 	case secureCellsAuthSessionThreadDecisionApproveAction:
 		return "approve"
 	case secureCellsAuthSessionThreadDecisionCommentAction:
@@ -2076,6 +2240,14 @@ func threadDecisionActionFromRequiredAction(requiredAction string) string {
 		return "contain-outputs"
 	case secureCellsAuthSessionThreadDecisionReleaseAction:
 		return "release-outputs"
+	case secureCellsAuthSessionThreadDecisionDelegateAction:
+		return "delegate"
+	case secureCellsAuthSessionThreadDecisionEscalateAction:
+		return "escalate"
+	case secureCellsAuthSessionThreadDecisionOutcomeBundleCreateAction:
+		return "outcome-bundles"
+	case secureCellsAuthSessionThreadDecisionOutcomeBundleGetAction:
+		return "outcome-bundles"
 	case secureCellsAuthSessionThreadDecisionResumeAction:
 		return "resume"
 	case secureCellsAuthSessionThreadDecisionQuarantineAction:

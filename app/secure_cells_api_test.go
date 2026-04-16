@@ -1140,6 +1140,168 @@ func TestSecureCellsHandlers_BearerThreadDecisionCommentContainmentAndThresholdF
 	}
 }
 
+func TestSecureCellsHandlers_BearerThreadDecisionVoteDelegationAndOutcomeBundleRoutes(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{23}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participantA.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{participantA.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	threshold := 2
+	decisionCreateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithOptions(t, owner, nil, nil, nil, &threshold, []string{owner.AgentID(), participantA.AgentID()})))
+	decisionCreateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	decisionCreateRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(decisionCreateRec, decisionCreateReq)
+	if decisionCreateRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, decisionCreateRec.Code, decisionCreateRec.Body.String())
+	}
+
+	var decisionCreateResp secureCellResponse
+	if err := json.Unmarshal(decisionCreateRec.Body.Bytes(), &decisionCreateResp); err != nil {
+		t.Fatalf("unmarshal decision create response: %v", err)
+	}
+	decisionID := decisionCreateResp.Result.Decisions[0].ID
+
+	voteReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/vote", bytes.NewReader(mustMarshalSecureCellDecisionVoteRequest(t, owner, "first deliberation vote", nil, nil, &threshold, "approve", "primary_reviewer", "", map[string]string{"ticket": "SC-THREAD-VOTE-01"})))
+	voteReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	voteRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(voteRec, voteReq)
+	if voteRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, voteRec.Code, voteRec.Body.String())
+	}
+
+	var voteResp secureCellResponse
+	if err := json.Unmarshal(voteRec.Body.Bytes(), &voteResp); err != nil {
+		t.Fatalf("unmarshal vote response: %v", err)
+	}
+	if voteResp.Result == nil || voteResp.Result.Decisions[0].Status != securecellsintegration.SecureCellThreadDecisionStatusOpen {
+		t.Fatalf("expected open decision after vote route, got %+v", voteResp.Result)
+	}
+	if len(voteResp.Result.Decisions[0].ApprovalVotes) != 1 {
+		t.Fatalf("expected one approval vote, got %+v", voteResp.Result.Decisions[0].ApprovalVotes)
+	}
+	voteItem := voteResp.Result.Decisions[0].ApprovalVotes[0]
+	if voteItem.ActorDID != owner.AgentID() {
+		t.Fatalf("expected vote actor DID %q, got %+v", owner.AgentID(), voteItem)
+	}
+	if voteItem.Metadata["decision_vote_choice"] != "approve" || voteItem.Metadata["decision_vote_role"] != "primary_reviewer" {
+		t.Fatalf("expected vote metadata to preserve choice and role, got %+v", voteItem.Metadata)
+	}
+
+	delegateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/delegate", bytes.NewReader(mustMarshalSecureCellDecisionDelegationRequest(t, owner, "delegate decision ownership", nil, participantA.AgentID(), map[string]string{"ticket": "SC-THREAD-DELEGATE-01"})))
+	delegateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	delegateRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(delegateRec, delegateReq)
+	if delegateRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, delegateRec.Code, delegateRec.Body.String())
+	}
+
+	escalateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/escalate", bytes.NewReader(mustMarshalSecureCellDecisionEscalationRequest(t, participantA, "escalate decision review", nil, participantB.AgentID(), "board escalation needed", map[string]string{"ticket": "SC-THREAD-ESCALATE-01"})))
+	escalateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	escalateRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(escalateRec, escalateReq)
+	if escalateRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, escalateRec.Code, escalateRec.Body.String())
+	}
+
+	finalApproveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/approve", bytes.NewReader(mustMarshalSecureCellDecisionVoteRequest(t, participantA, "second deliberation vote", nil, nil, &threshold, "approve", "secondary_reviewer", "", map[string]string{"ticket": "SC-THREAD-VOTE-02"})))
+	finalApproveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	finalApproveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(finalApproveRec, finalApproveReq)
+	if finalApproveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, finalApproveRec.Code, finalApproveRec.Body.String())
+	}
+
+	var finalApproveResp secureCellResponse
+	if err := json.Unmarshal(finalApproveRec.Body.Bytes(), &finalApproveResp); err != nil {
+		t.Fatalf("unmarshal final approve response: %v", err)
+	}
+	if finalApproveResp.Result == nil || finalApproveResp.Result.Decisions[0].Status != securecellsintegration.SecureCellThreadDecisionStatusApproved {
+		t.Fatalf("expected approved decision after second vote, got %+v", finalApproveResp.Result)
+	}
+
+	outcomeBundleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/outcome-bundles", bytes.NewReader(mustMarshalSecureCellDecisionOutcomeBundleRequest(t, owner, "create outcome bundle", nil, decisionID, "deliberation-summary", "portable", map[string]string{"ticket": "SC-THREAD-BUNDLE-01"})))
+	outcomeBundleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	outcomeBundleRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(outcomeBundleRec, outcomeBundleReq)
+	if outcomeBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, outcomeBundleRec.Code, outcomeBundleRec.Body.String())
+	}
+
+	var outcomeBundleResp secureCellResponse
+	if err := json.Unmarshal(outcomeBundleRec.Body.Bytes(), &outcomeBundleResp); err != nil {
+		t.Fatalf("unmarshal outcome bundle response: %v", err)
+	}
+	if outcomeBundleResp.Result == nil || len(outcomeBundleResp.Result.DecisionOutcomes) == 0 {
+		t.Fatalf("expected decision outcome bundle in result, got %+v", outcomeBundleResp.Result)
+	}
+
+	outcomeBundleFetchReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/outcome-bundles/fetch", bytes.NewReader(mustMarshalSecureCellDecisionOutcomeBundleRequest(t, owner, "fetch outcome bundle", nil, decisionID, "deliberation-summary", "portable", map[string]string{"ticket": "SC-THREAD-BUNDLE-02"})))
+	outcomeBundleFetchReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	outcomeBundleFetchRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(outcomeBundleFetchRec, outcomeBundleFetchReq)
+	if outcomeBundleFetchRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, outcomeBundleFetchRec.Code, outcomeBundleFetchRec.Body.String())
+	}
+
+	var outcomeBundleFetchResp secureCellResponse
+	if err := json.Unmarshal(outcomeBundleFetchRec.Body.Bytes(), &outcomeBundleFetchResp); err != nil {
+		t.Fatalf("unmarshal outcome bundle fetch response: %v", err)
+	}
+	if outcomeBundleFetchResp.Result == nil || len(outcomeBundleFetchResp.Result.DecisionOutcomes) == 0 {
+		t.Fatalf("expected fetched decision outcome bundle in result, got %+v", outcomeBundleFetchResp.Result)
+	}
+}
+
 func TestSecureCellsHandlers_BearerExpireQuarantineFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1744,6 +1906,74 @@ func mustMarshalSecureCellDecisionLifecycleRequest(t *testing.T, actor *agent.Ag
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell decision lifecycle request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellDecisionVoteRequest(t *testing.T, actor *agent.AgentIdentity, reason string, receipt *policy.SignedPolicyReceipt, relatedOutputIDs []string, approvalThreshold *int, voteChoice string, voteRole string, comment string, metadata map[string]string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellLifecycleRequest{
+		ActorIdentity:     mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:     receipt,
+		Reason:            reason,
+		Comment:           comment,
+		RelatedOutputIDs:  relatedOutputIDs,
+		ApprovalThreshold: approvalThreshold,
+		ApprovalVote:      voteChoice,
+		VoteChoice:        voteChoice,
+		VoteRole:          voteRole,
+		Metadata:          metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell decision vote request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellDecisionDelegationRequest(t *testing.T, actor *agent.AgentIdentity, reason string, receipt *policy.SignedPolicyReceipt, delegatedToDID string, metadata map[string]string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellLifecycleRequest{
+		ActorIdentity:  mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:  receipt,
+		Reason:         reason,
+		DelegatedToDID: delegatedToDID,
+		Metadata:       metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell decision delegation request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellDecisionEscalationRequest(t *testing.T, actor *agent.AgentIdentity, reason string, receipt *policy.SignedPolicyReceipt, delegatedToDID string, escalationReason string, metadata map[string]string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellLifecycleRequest{
+		ActorIdentity:    mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:    receipt,
+		Reason:           reason,
+		DelegatedToDID:   delegatedToDID,
+		EscalationReason: escalationReason,
+		Metadata:         metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell decision escalation request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellDecisionOutcomeBundleRequest(t *testing.T, actor *agent.AgentIdentity, reason string, receipt *policy.SignedPolicyReceipt, decisionID string, bundleName string, bundleType string, metadata map[string]string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellLifecycleRequest{
+		ActorIdentity:     mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:     receipt,
+		Reason:            reason,
+		OutcomeBundleID:   decisionID,
+		OutcomeBundleName: bundleName,
+		OutcomeBundleType: bundleType,
+		Metadata:          metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell decision outcome bundle request: %v", err)
 	}
 	return body
 }
