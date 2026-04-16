@@ -575,6 +575,158 @@ func TestService_PauseResumeTerminateCellLifecycle(t *testing.T) {
 	}
 }
 
+func TestService_SessionLifecycleAndSharedOutputs(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Collaboration Cell",
+		Purpose:       "session-based collaboration",
+		Resource:      "cell:collaboration",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Morning Risk Review",
+		Purpose:         "cross-bank escalation review",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "review window opened",
+		Metadata:        map[string]string{"room": "A3"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	if len(started.Sessions) != 1 {
+		t.Fatalf("expected 1 session, got %+v", started.Sessions)
+	}
+	session := started.Sessions[0]
+	if session.Status != SecureCellSessionStatusActive {
+		t.Fatalf("expected active session, got %+v", session)
+	}
+	if !controlLedgerHasControl(started.ControlLedger, "CELL-SESS-01") {
+		t.Fatalf("expected session control in ledger, got %+v", started.ControlLedger.Controls)
+	}
+
+	shared, err := service.ShareOutput(ctx, result.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantA.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Escalation Memo",
+		ArtifactType:   "memo",
+		Classification: "decisioning",
+		Summary:        "counterparty exception memo",
+		SharedWith:     []string{participantB.AgentID()},
+		Reason:         "memo circulated for review",
+		Metadata:       map[string]string{"ticket": "SC-SHARE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ShareOutput failed: %v", err)
+	}
+	if len(shared.SharedOutputs) != 1 {
+		t.Fatalf("expected 1 shared output, got %+v", shared.SharedOutputs)
+	}
+	output := shared.SharedOutputs[0]
+	if output.SessionID != session.ID || output.IntegrityHash == "" {
+		t.Fatalf("unexpected shared output: %+v", output)
+	}
+	if len(output.ChainOfCustody) < 2 {
+		t.Fatalf("expected custody chain on shared output, got %+v", output.ChainOfCustody)
+	}
+	if output.PolicyReceiptID == "" || output.SealID == "" || output.TraceLinkID == "" {
+		t.Fatalf("expected policy/seal/trace provenance on shared output, got %+v", output)
+	}
+	if !controlLedgerHasControl(shared.ControlLedger, "CELL-SHARE-01") {
+		t.Fatalf("expected share control in ledger, got %+v", shared.ControlLedger.Controls)
+	}
+	if err := evidence.VerifyPortableControlLedgerPackage(shared.PortablePackage); err != nil {
+		t.Fatalf("VerifyPortableControlLedgerPackage failed: %v", err)
+	}
+
+	closed, err := service.CloseSession(ctx, result.CellID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "review closed",
+	}, session.ID)
+	if err != nil {
+		t.Fatalf("CloseSession failed: %v", err)
+	}
+	closedSession, ok := mustSecureCellSession(t, closed, session.ID)
+	if !ok || closedSession.Status != SecureCellSessionStatusClosed || closedSession.ClosedAt == nil {
+		t.Fatalf("expected closed session, got %+v", closedSession)
+	}
+	last := closed.Transitions[len(closed.Transitions)-1]
+	if last.Action != "secure_cell.session_closed" || last.SessionID != session.ID {
+		t.Fatalf("expected session_closed transition, got %+v", last)
+	}
+}
+
+func TestService_SharingRejectedForClosedSession(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Closed Session Cell",
+		Purpose:       "session shutdown guard",
+		Resource:      "cell:session-closed",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID: owner.AgentID(),
+		Name:     "One Shot Session",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session, ok := mustSecureCellSession(t, started, started.Sessions[0].ID)
+	if !ok {
+		t.Fatalf("expected session in result, got %+v", started.Sessions)
+	}
+	if _, err := service.CloseSession(ctx, result.CellID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "done",
+	}, session.ID); err != nil {
+		t.Fatalf("CloseSession failed: %v", err)
+	}
+
+	_, err = service.ShareOutput(ctx, result.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantA.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Late Memo",
+		ArtifactType:   "memo",
+		Classification: "confidential",
+		SharedWith:     []string{participantB.AgentID()},
+	})
+	if !errors.Is(err, ErrSessionNotActive) {
+		t.Fatalf("expected ErrSessionNotActive, got %v", err)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 
@@ -1013,4 +1165,17 @@ func mustSecureCellParticipantState(t *testing.T, result *SecureCellResult, part
 	}
 	t.Fatalf("participant %q not found in %+v", participantDID, result.Participants)
 	return SecureCellParticipantState{}
+}
+
+func mustSecureCellSession(t *testing.T, result *SecureCellResult, sessionID string) (SecureCellSession, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, session := range result.Sessions {
+		if session.ID == sessionID {
+			return session, true
+		}
+	}
+	return SecureCellSession{}, false
 }
