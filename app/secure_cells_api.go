@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -68,11 +70,15 @@ type secureCellMemberMutationRequest struct {
 }
 
 type secureCellLifecycleRequest struct {
-	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
-	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	Reason        string                      `json:"reason,omitempty"`
-	EffectiveAt   *time.Time                  `json:"effective_at,omitempty"`
-	Metadata      map[string]string           `json:"metadata,omitempty"`
+	ActorIdentity     json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt     *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Reason            string                      `json:"reason,omitempty"`
+	Comment           string                      `json:"comment,omitempty"`
+	RelatedOutputIDs  []string                    `json:"related_output_ids,omitempty"`
+	ApprovalThreshold *int                        `json:"approval_threshold,omitempty"`
+	ApprovalVote      string                      `json:"approval_vote,omitempty"`
+	EffectiveAt       *time.Time                  `json:"effective_at,omitempty"`
+	Metadata          map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellSessionStartRequest struct {
@@ -140,15 +146,17 @@ type secureCellThreadMessageRequest struct {
 }
 
 type secureCellThreadDecisionRequest struct {
-	ActorIdentity      json.RawMessage             `json:"actor_identity,omitempty"`
-	PolicyReceipt      *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	Title              string                      `json:"title,omitempty"`
-	Summary            string                      `json:"summary,omitempty"`
-	Classification     string                      `json:"classification,omitempty"`
-	RelatedExchangeIDs []string                    `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs   []string                    `json:"related_output_ids,omitempty"`
-	Reason             string                      `json:"reason,omitempty"`
-	Metadata           map[string]string           `json:"metadata,omitempty"`
+	ActorIdentity        json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt        *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Title                string                      `json:"title,omitempty"`
+	Summary              string                      `json:"summary,omitempty"`
+	Classification       string                      `json:"classification,omitempty"`
+	ApprovalThreshold    *int                        `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs []string                    `json:"eligible_approver_dids,omitempty"`
+	RelatedExchangeIDs   []string                    `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs     []string                    `json:"related_output_ids,omitempty"`
+	Reason               string                      `json:"reason,omitempty"`
+	Metadata             map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellSessionMemberMutationRequest struct {
@@ -533,7 +541,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
-		case (strings.HasSuffix(r.URL.Path, "/approve") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine") || strings.HasSuffix(r.URL.Path, "/close")) && strings.Contains(r.URL.Path, "/decisions/"):
+		case (strings.HasSuffix(r.URL.Path, "/approve") || strings.HasSuffix(r.URL.Path, "/comments") || strings.HasSuffix(r.URL.Path, "/contain-outputs") || strings.HasSuffix(r.URL.Path, "/release-outputs") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine") || strings.HasSuffix(r.URL.Path, "/close")) && strings.Contains(r.URL.Path, "/decisions/"):
 			cellID, sessionID, threadID, decisionID, action, err := parseSecureCellSessionThreadDecisionLifecycleActionPath(r.URL.Path)
 			if err != nil {
 				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
@@ -548,6 +556,12 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			switch action {
 			case "approve":
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionApprove(r, cellID, sessionID, threadID, decisionID, &req)
+			case "comments":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionComment(r, cellID, sessionID, threadID, decisionID, &req)
+			case "contain-outputs":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionContainOutputs(r, cellID, sessionID, threadID, decisionID, &req)
+			case "release-outputs":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionReleaseOutputs(r, cellID, sessionID, threadID, decisionID, &req)
 			case "resume":
 				authCtx, err = app.authorizeSecureCellSessionThreadDecisionResume(r, cellID, sessionID, threadID, decisionID, &req)
 			case "quarantine":
@@ -562,6 +576,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			req.Metadata = secureCellDecisionMutationMetadata(req.Metadata, decisionID, req.Comment, req.RelatedOutputIDs, req.ApprovalThreshold, req.ApprovalVote)
 			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
@@ -570,7 +585,31 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			var result *securecellsintegration.SecureCellResult
 			switch action {
 			case "approve":
+				if req.ApprovalThreshold != nil && *req.ApprovalThreshold <= 0 {
+					writeSecureCellAPIError(w, http.StatusBadRequest, "approval_threshold must be greater than zero")
+					return
+				}
+				if strings.TrimSpace(req.ApprovalVote) != "" {
+					lifecycle.Metadata = secureCellDecisionApprovalMetadata(lifecycle.Metadata, req.ApprovalThreshold, req.ApprovalVote, req.Comment)
+				}
 				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "comments":
+				if strings.TrimSpace(req.Comment) == "" {
+					writeSecureCellAPIError(w, http.StatusBadRequest, "decision comment is required")
+					return
+				}
+				result, err = app.secureCellService.CommentThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, securecellsintegration.SecureCellThreadDecisionCommentRequest{
+					ActorDID: safeSecureCellActorDID(authCtx),
+					Comment:  req.Comment,
+					Reason:   req.Reason,
+					Metadata: req.Metadata,
+				})
+			case "contain-outputs":
+				lifecycle.Metadata = secureCellDecisionOutputContainmentMetadata(lifecycle.Metadata, req.RelatedOutputIDs, req.Comment)
+				result, err = app.secureCellService.ContainThreadDecisionOutputs(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "release-outputs":
+				lifecycle.Metadata = secureCellDecisionOutputReleaseMetadata(lifecycle.Metadata, req.RelatedOutputIDs, req.Comment)
+				result, err = app.secureCellService.ReleaseThreadDecisionOutputs(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
 			case "resume":
 				result, err = app.secureCellService.ResumeThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
 			case "quarantine":
@@ -595,6 +634,10 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread decision request: "+err.Error())
 				return
 			}
+			if req.ApprovalThreshold != nil && *req.ApprovalThreshold <= 0 {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "approval_threshold must be greater than zero")
+				return
+			}
 			authCtx, err := app.authorizeSecureCellSessionThreadDecisionCreate(r, cellID, sessionID, threadID, &req)
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
@@ -602,16 +645,18 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.CreateThreadDecision(r.Context(), cellID, securecellsintegration.SecureCellThreadDecisionRequest{
-				SessionID:          sessionID,
-				ThreadID:           threadID,
-				ActorDID:           safeSecureCellActorDID(authCtx),
-				Title:              req.Title,
-				Summary:            req.Summary,
-				Classification:     req.Classification,
-				RelatedExchangeIDs: req.RelatedExchangeIDs,
-				RelatedOutputIDs:   req.RelatedOutputIDs,
-				Reason:             req.Reason,
-				Metadata:           req.Metadata,
+				SessionID:            sessionID,
+				ThreadID:             threadID,
+				ActorDID:             safeSecureCellActorDID(authCtx),
+				Title:                req.Title,
+				Summary:              req.Summary,
+				Classification:       req.Classification,
+				ApprovalThreshold:    safeSecureCellOptionalInt(req.ApprovalThreshold),
+				EligibleApproverDIDs: req.EligibleApproverDIDs,
+				RelatedExchangeIDs:   req.RelatedExchangeIDs,
+				RelatedOutputIDs:     req.RelatedOutputIDs,
+				Reason:               req.Reason,
+				Metadata:             req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -1555,6 +1600,136 @@ func parseSecureCellSessionThreadDecisionLifecycleActionPath(path string) (cellI
 	return cellID, sessionID, threadID, decisionID, action, nil
 }
 
+func cloneStringMap(values map[string]string) map[string]string {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(values))
+	for key, value := range values {
+		out[key] = value
+	}
+	return out
+}
+
+func secureCellDecisionMutationMetadata(metadata map[string]string, decisionID, comment string, relatedOutputIDs []string, approvalThreshold *int, approvalVote string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if trimmed := strings.TrimSpace(decisionID); trimmed != "" {
+		out["decision_id"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["decision_comment"] = trimmed
+	}
+	if len(relatedOutputIDs) > 0 {
+		outputs := make([]string, 0, len(relatedOutputIDs))
+		for _, outputID := range relatedOutputIDs {
+			if trimmed := strings.TrimSpace(outputID); trimmed != "" {
+				outputs = append(outputs, trimmed)
+			}
+		}
+		if len(outputs) > 0 {
+			out["related_output_ids"] = strings.Join(outputs, ",")
+		}
+	}
+	if approvalThreshold != nil {
+		out["approval_threshold"] = fmt.Sprintf("%d", *approvalThreshold)
+	}
+	if trimmed := strings.TrimSpace(approvalVote); trimmed != "" {
+		out["approval_vote"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionApprovalMetadata(metadata map[string]string, threshold *int, vote string, comment string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if threshold != nil {
+		out["approval_threshold"] = fmt.Sprintf("%d", *threshold)
+	}
+	if trimmed := strings.TrimSpace(vote); trimmed != "" {
+		out["approval_vote"] = trimmed
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["approval_comment"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionOutputContainmentMetadata(metadata map[string]string, relatedOutputIDs []string, comment string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	out["containment_mode"] = "decision_outputs"
+	if len(relatedOutputIDs) > 0 {
+		outputs := make([]string, 0, len(relatedOutputIDs))
+		for _, outputID := range relatedOutputIDs {
+			if trimmed := strings.TrimSpace(outputID); trimmed != "" {
+				outputs = append(outputs, trimmed)
+			}
+		}
+		if len(outputs) > 0 {
+			out["related_output_ids"] = strings.Join(outputs, ",")
+		}
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["containment_comment"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionOutputReleaseMetadata(metadata map[string]string, relatedOutputIDs []string, comment string) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	out["release_mode"] = "decision_outputs"
+	if len(relatedOutputIDs) > 0 {
+		outputs := make([]string, 0, len(relatedOutputIDs))
+		for _, outputID := range relatedOutputIDs {
+			if trimmed := strings.TrimSpace(outputID); trimmed != "" {
+				outputs = append(outputs, trimmed)
+			}
+		}
+		if len(outputs) > 0 {
+			out["related_output_ids"] = strings.Join(outputs, ",")
+		}
+	}
+	if trimmed := strings.TrimSpace(comment); trimmed != "" {
+		out["release_comment"] = trimmed
+	}
+	return out
+}
+
+func secureCellDecisionCommentIntegrityHash(cellID, sessionID, threadID, decisionID, comment string, metadata map[string]string, actorDID string) string {
+	payload, err := json.Marshal(struct {
+		CellID     string            `json:"cell_id"`
+		SessionID  string            `json:"session_id"`
+		ThreadID   string            `json:"thread_id"`
+		DecisionID string            `json:"decision_id"`
+		Comment    string            `json:"comment"`
+		ActorDID   string            `json:"actor_did"`
+		Metadata   map[string]string `json:"metadata,omitempty"`
+	}{
+		CellID:     strings.TrimSpace(cellID),
+		SessionID:  strings.TrimSpace(sessionID),
+		ThreadID:   strings.TrimSpace(threadID),
+		DecisionID: strings.TrimSpace(decisionID),
+		Comment:    strings.TrimSpace(comment),
+		ActorDID:   strings.TrimSpace(actorDID),
+		Metadata:   cloneStringMap(metadata),
+	})
+	if err != nil {
+		payload = []byte(strings.TrimSpace(cellID) + ":" + strings.TrimSpace(sessionID) + ":" + strings.TrimSpace(threadID) + ":" + strings.TrimSpace(decisionID) + ":" + strings.TrimSpace(comment) + ":" + strings.TrimSpace(actorDID))
+	}
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:])
+}
+
 func secureCellErrorStatus(err error, fallback int) int {
 	switch {
 	case err == nil:
@@ -1605,6 +1780,13 @@ func safeSecureCellActorDID(authCtx *secureCellAuthContext) string {
 		return ""
 	}
 	return strings.TrimSpace(authCtx.ActorDID)
+}
+
+func safeSecureCellOptionalInt(value *int) int {
+	if value == nil {
+		return 0
+	}
+	return *value
 }
 
 func writeSecureCellAPIError(w http.ResponseWriter, status int, message string) {

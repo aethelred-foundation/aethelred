@@ -1186,6 +1186,173 @@ func TestService_ThreadDecisionLifecyclePreservesEvidence(t *testing.T) {
 	}
 }
 
+func TestService_ThreadDecisionThresholdCommentsAndArtifactContainment(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Decision Artifact Cell",
+		Purpose:       "decision-native governance",
+		Resource:      "cell:decision-artifact-governance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Decision Session",
+		Purpose:         "artifact review",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"confidential", "decisioning"},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	shared, err := service.ShareOutput(ctx, result.CellID, SecureCellSessionShareRequest{
+		SessionID:      session.ID,
+		ActorDID:       participantA.AgentID(),
+		Name:           "Exposure Snapshot",
+		ArtifactType:   "decision_packet",
+		Classification: "decisioning",
+		Summary:        "exposure snapshot for approval vote",
+		SharedWith:     []string{participantB.AgentID()},
+		Reason:         "supporting decision packet shared",
+	})
+	if err != nil {
+		t.Fatalf("ShareOutput failed: %v", err)
+	}
+	sharedOutput := shared.SharedOutputs[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Decision Thread",
+		Purpose:         "approval workstream",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             participantA.AgentID(),
+		Title:                "Freeze Counterparty Exposure",
+		Summary:              "threshold approval required before containment",
+		Classification:       "decisioning",
+		ApprovalThreshold:    2,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		RelatedOutputIDs:     []string{sharedOutput.ID},
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DECIDE-THRESHOLD-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+	if decision.ApprovalThreshold != 2 || len(decision.EligibleApproverDIDs) != 2 {
+		t.Fatalf("expected thresholded decision, got %+v", decision)
+	}
+
+	firstVote, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "first approval vote",
+		Metadata: map[string]string{"ticket": "SC-DECIDE-VOTE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision first vote failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, firstVote, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusOpen || len(decision.ApprovalVotes) != 1 {
+		t.Fatalf("expected open decision after first vote, got %+v", decision)
+	}
+	if firstVote.Transitions[len(firstVote.Transitions)-1].Action != "secure_cell.session_thread_decision_voted" {
+		t.Fatalf("expected vote transition, got %+v", firstVote.Transitions[len(firstVote.Transitions)-1])
+	}
+
+	commented, err := service.CommentThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellThreadDecisionCommentRequest{
+		ActorDID: participantA.AgentID(),
+		Comment:  "documented rationale for containment",
+		Reason:   "commented rationale",
+		Metadata: map[string]string{"ticket": "SC-DECIDE-COMMENT-01"},
+	})
+	if err != nil {
+		t.Fatalf("CommentThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, commented, decision.ID)
+	if !ok || len(decision.Comments) != 1 || decision.Comments[0].SealID == "" || decision.Comments[0].TraceLinkID == "" {
+		t.Fatalf("expected evidence-bearing decision comment, got %+v", decision)
+	}
+
+	contained, err := service.ContainThreadDecisionOutputs(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "contain decision-linked outputs",
+		Metadata: map[string]string{"ticket": "SC-DECIDE-CONTAIN-01"},
+	})
+	if err != nil {
+		t.Fatalf("ContainThreadDecisionOutputs failed: %v", err)
+	}
+	output, ok := mustSecureCellSharedOutput(t, contained, sharedOutput.ID)
+	if !ok || output.ContainmentStatus != SecureCellArtifactContainmentStatusContained || output.ContainmentSealID == "" || output.ContainmentTraceLinkID == "" {
+		t.Fatalf("expected contained shared output with evidence, got %+v", output)
+	}
+	if contained.Transitions[len(contained.Transitions)-1].Action != "secure_cell.session_thread_decision_outputs_contained" {
+		t.Fatalf("expected artifact containment transition, got %+v", contained.Transitions[len(contained.Transitions)-1])
+	}
+
+	released, err := service.ReleaseThreadDecisionOutputs(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "release decision-linked outputs",
+		Metadata: map[string]string{"ticket": "SC-DECIDE-RELEASE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ReleaseThreadDecisionOutputs failed: %v", err)
+	}
+	output, ok = mustSecureCellSharedOutput(t, released, sharedOutput.ID)
+	if !ok || output.ContainmentStatus != SecureCellArtifactContainmentStatusReleased || output.ReleasedAt == nil {
+		t.Fatalf("expected released shared output, got %+v", output)
+	}
+
+	secondVote, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "second approval vote",
+		Metadata: map[string]string{"ticket": "SC-DECIDE-VOTE-02"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision second vote failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, secondVote, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusApproved || len(decision.ApprovalVotes) != 2 || decision.ApprovedAt == nil {
+		t.Fatalf("expected approved thresholded decision, got %+v", decision)
+	}
+	if !controlLedgerHasControl(secondVote.ControlLedger, "CELL-DECIDE-VOTE-01") || !controlLedgerHasControl(secondVote.ControlLedger, "CELL-DECIDE-COMMENT-01") || !controlLedgerHasControl(secondVote.ControlLedger, "CELL-DECIDE-CONT-01") {
+		t.Fatalf("expected decision vote/comment/containment controls, got %+v", secondVote.ControlLedger.Controls)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 
@@ -1663,4 +1830,17 @@ func mustSecureCellDecision(t *testing.T, result *SecureCellResult, decisionID s
 		}
 	}
 	return SecureCellThreadDecision{}, false
+}
+
+func mustSecureCellSharedOutput(t *testing.T, result *SecureCellResult, outputID string) (SecureCellSharedOutput, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, output := range result.SharedOutputs {
+		if output.ID == outputID {
+			return output, true
+		}
+	}
+	return SecureCellSharedOutput{}, false
 }
