@@ -41,26 +41,31 @@ const (
 )
 
 const (
-	secureCellTool                      = "secure_cells"
-	secureCellCreateAction              = "secure_cells.create"
-	secureCellActivateAction            = "secure_cells.activate"
-	secureCellSessionStartAction        = "secure_cells.session.start"
-	secureCellSessionShareAction        = "secure_cells.session.share"
-	secureCellSessionExchangeAction     = "secure_cells.session.exchange"
-	secureCellSessionCloseAction        = "secure_cells.session.close"
-	secureCellSessionPauseAction        = "secure_cells.session.pause"
-	secureCellSessionResumeAction       = "secure_cells.session.resume"
-	secureCellSessionQuarantineAction   = "secure_cells.session.quarantine"
-	secureCellSessionMemberAdmitAction  = "secure_cells.session.member.admit"
-	secureCellSessionMemberRemoveAction = "secure_cells.session.member.remove"
-	secureCellMemberAdmitAction         = "secure_cells.member.admit"
-	secureCellMemberReleaseAction       = "secure_cells.member.release"
-	secureCellMemberQuarantineAction    = "secure_cells.member.quarantine"
-	secureCellMemberRevokeAction        = "secure_cells.member.revoke"
-	secureCellQuarantineExpireAction    = "secure_cells.quarantine.expire"
-	secureCellPauseAction               = "secure_cells.pause"
-	secureCellResumeAction              = "secure_cells.resume"
-	secureCellTerminateAction           = "secure_cells.terminate"
+	secureCellTool                          = "secure_cells"
+	secureCellCreateAction                  = "secure_cells.create"
+	secureCellActivateAction                = "secure_cells.activate"
+	secureCellSessionStartAction            = "secure_cells.session.start"
+	secureCellSessionThreadStartAction      = "secure_cells.session.thread.start"
+	secureCellSessionThreadMessageAction    = "secure_cells.session.thread.message"
+	secureCellSessionShareAction            = "secure_cells.session.share"
+	secureCellSessionExchangeAction         = "secure_cells.session.exchange"
+	secureCellSessionCloseAction            = "secure_cells.session.close"
+	secureCellSessionPauseAction            = "secure_cells.session.pause"
+	secureCellSessionResumeAction           = "secure_cells.session.resume"
+	secureCellSessionQuarantineAction       = "secure_cells.session.quarantine"
+	secureCellSessionThreadCloseAction      = "secure_cells.session.thread.close"
+	secureCellSessionThreadResumeAction     = "secure_cells.session.thread.resume"
+	secureCellSessionThreadQuarantineAction = "secure_cells.session.thread.quarantine"
+	secureCellSessionMemberAdmitAction      = "secure_cells.session.member.admit"
+	secureCellSessionMemberRemoveAction     = "secure_cells.session.member.remove"
+	secureCellMemberAdmitAction             = "secure_cells.member.admit"
+	secureCellMemberReleaseAction           = "secure_cells.member.release"
+	secureCellMemberQuarantineAction        = "secure_cells.member.quarantine"
+	secureCellMemberRevokeAction            = "secure_cells.member.revoke"
+	secureCellQuarantineExpireAction        = "secure_cells.quarantine.expire"
+	secureCellPauseAction                   = "secure_cells.pause"
+	secureCellResumeAction                  = "secure_cells.resume"
+	secureCellTerminateAction               = "secure_cells.terminate"
 )
 
 // SecureCellSessionStatus tracks one governed collaboration session inside a
@@ -72,6 +77,16 @@ const (
 	SecureCellSessionStatusPaused      SecureCellSessionStatus = "paused"
 	SecureCellSessionStatusQuarantined SecureCellSessionStatus = "quarantined"
 	SecureCellSessionStatusClosed      SecureCellSessionStatus = "closed"
+)
+
+// SecureCellThreadStatus tracks a collaboration thread or output stream inside
+// one governed session.
+type SecureCellThreadStatus string
+
+const (
+	SecureCellThreadStatusActive      SecureCellThreadStatus = "active"
+	SecureCellThreadStatusQuarantined SecureCellThreadStatus = "quarantined"
+	SecureCellThreadStatusClosed      SecureCellThreadStatus = "closed"
 )
 
 // SecureCellSealer creates execution seals for secure cells.
@@ -148,11 +163,33 @@ type SecureCellSession struct {
 	Metadata         map[string]string       `json:"metadata,omitempty"`
 }
 
+// SecureCellSessionThread is one governed collaboration stream inside a
+// session. Threads allow targeted containment without freezing the full room.
+type SecureCellSessionThread struct {
+	ID              string                 `json:"id"`
+	SessionID       string                 `json:"session_id"`
+	Name            string                 `json:"name"`
+	Purpose         string                 `json:"purpose,omitempty"`
+	Status          SecureCellThreadStatus `json:"status"`
+	ParticipantDIDs []string               `json:"participant_dids,omitempty"`
+	DataClasses     []string               `json:"data_classes,omitempty"`
+	StartedBy       string                 `json:"started_by,omitempty"`
+	ClosedBy        string                 `json:"closed_by,omitempty"`
+	ExchangeIDs     []string               `json:"exchange_ids,omitempty"`
+	OpenedAt        time.Time              `json:"opened_at"`
+	QuarantinedAt   *time.Time             `json:"quarantined_at,omitempty"`
+	ClosedAt        *time.Time             `json:"closed_at,omitempty"`
+	UpdatedAt       time.Time              `json:"updated_at"`
+	ContainedBy     string                 `json:"contained_by,omitempty"`
+	Metadata        map[string]string      `json:"metadata,omitempty"`
+}
+
 // SecureCellSessionExchange captures one message or exchange artifact inside a
 // governed collaboration session.
 type SecureCellSessionExchange struct {
 	ID                string                  `json:"id"`
 	SessionID         string                  `json:"session_id"`
+	ThreadID          string                  `json:"thread_id,omitempty"`
 	Name              string                  `json:"name"`
 	ExchangeType      string                  `json:"exchange_type,omitempty"`
 	Classification    string                  `json:"classification,omitempty"`
@@ -214,6 +251,7 @@ type SecureCellResult struct {
 	Policy            SecureCellPolicy                       `json:"policy"`
 	Participants      []SecureCellParticipantState           `json:"participants,omitempty"`
 	Sessions          []SecureCellSession                    `json:"sessions,omitempty"`
+	Threads           []SecureCellSessionThread              `json:"threads,omitempty"`
 	SharedOutputs     []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
 	SessionExchanges  []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
 	CreationReceipt   *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
@@ -238,10 +276,13 @@ type SecureCellTransition struct {
 	TargetType              string                      `json:"target_type,omitempty"`
 	TargetDID               string                      `json:"target_did,omitempty"`
 	SessionID               string                      `json:"session_id,omitempty"`
+	ThreadID                string                      `json:"thread_id,omitempty"`
 	SharedOutputID          string                      `json:"shared_output_id,omitempty"`
 	SessionExchangeID       string                      `json:"session_exchange_id,omitempty"`
 	SessionStatusBefore     SecureCellSessionStatus     `json:"session_status_before,omitempty"`
 	SessionStatusAfter      SecureCellSessionStatus     `json:"session_status_after,omitempty"`
+	ThreadStatusBefore      SecureCellThreadStatus      `json:"thread_status_before,omitempty"`
+	ThreadStatusAfter       SecureCellThreadStatus      `json:"thread_status_after,omitempty"`
 	CellStatusBefore        SecureCellStatus            `json:"cell_status_before,omitempty"`
 	CellStatusAfter         SecureCellStatus            `json:"cell_status_after,omitempty"`
 	ParticipantStatusBefore SecureCellParticipantStatus `json:"participant_status_before,omitempty"`
@@ -269,10 +310,13 @@ type SecureCellLifecycleEvent struct {
 	TargetType                  string                      `json:"target_type,omitempty"`
 	TargetDID                   string                      `json:"target_did,omitempty"`
 	SessionID                   string                      `json:"session_id,omitempty"`
+	ThreadID                    string                      `json:"thread_id,omitempty"`
 	SharedOutputID              string                      `json:"shared_output_id,omitempty"`
 	SessionExchangeID           string                      `json:"session_exchange_id,omitempty"`
 	SessionStatusBefore         SecureCellSessionStatus     `json:"session_status_before,omitempty"`
 	SessionStatusAfter          SecureCellSessionStatus     `json:"session_status_after,omitempty"`
+	ThreadStatusBefore          SecureCellThreadStatus      `json:"thread_status_before,omitempty"`
+	ThreadStatusAfter           SecureCellThreadStatus      `json:"thread_status_after,omitempty"`
 	CellStatus                  SecureCellStatus            `json:"cell_status"`
 	CellStatusBefore            SecureCellStatus            `json:"cell_status_before,omitempty"`
 	CellStatusAfter             SecureCellStatus            `json:"cell_status_after,omitempty"`
@@ -283,6 +327,8 @@ type SecureCellLifecycleEvent struct {
 	ParticipantCount            int                         `json:"participant_count"`
 	SessionCount                int                         `json:"session_count"`
 	ActiveSessionCount          int                         `json:"active_session_count"`
+	ThreadCount                 int                         `json:"thread_count"`
+	ActiveThreadCount           int                         `json:"active_thread_count"`
 	SharedOutputCount           int                         `json:"shared_output_count"`
 	SessionExchangeCount        int                         `json:"session_exchange_count"`
 	ActiveParticipantCount      int                         `json:"active_participant_count"`
@@ -361,6 +407,36 @@ type SecureCellSessionShareRequest struct {
 type SecureCellSessionExchangeRequest struct {
 	ActorDID       string            `json:"actor_did,omitempty"`
 	SessionID      string            `json:"session_id,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	ExchangeType   string            `json:"exchange_type,omitempty"`
+	Classification string            `json:"classification,omitempty"`
+	Resource       string            `json:"resource,omitempty"`
+	Summary        string            `json:"summary,omitempty"`
+	Recipients     []string          `json:"recipients,omitempty"`
+	IntegrityHash  string            `json:"integrity_hash,omitempty"`
+	Reason         string            `json:"reason,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellSessionThreadStartRequest starts a governed collaboration thread
+// within one session.
+type SecureCellSessionThreadStartRequest struct {
+	ActorDID        string            `json:"actor_did,omitempty"`
+	SessionID       string            `json:"session_id,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Purpose         string            `json:"purpose,omitempty"`
+	ParticipantDIDs []string          `json:"participant_dids,omitempty"`
+	DataClasses     []string          `json:"data_classes,omitempty"`
+	Reason          string            `json:"reason,omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellThreadMessageRequest records one evidence-bearing message inside a
+// thread.
+type SecureCellThreadMessageRequest struct {
+	ActorDID       string            `json:"actor_did,omitempty"`
+	SessionID      string            `json:"session_id,omitempty"`
+	ThreadID       string            `json:"thread_id,omitempty"`
 	Name           string            `json:"name,omitempty"`
 	ExchangeType   string            `json:"exchange_type,omitempty"`
 	Classification string            `json:"classification,omitempty"`
@@ -735,6 +811,103 @@ func (s *Service) StartSession(ctx context.Context, cellID string, start SecureC
 	return cloneResult(run.result)
 }
 
+// StartThread opens one governed collaboration stream inside an active
+// session.
+func (s *Service) StartThread(ctx context.Context, cellID string, start SecureCellSessionThreadStartRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	if run.result.Status != SecureCellStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: secure cell %q does not permit thread start while %s", ErrCellImmutable, run.result.CellID, run.result.Status)
+	}
+
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, start.SessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, start.SessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, start.SessionID)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(start.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellSessionActorAllowed(run, *session, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to start a thread in session %q", ErrPolicyDenied, actorDID, session.ID)
+	}
+
+	participantDIDs, err := secureCellResolveThreadParticipants(run.result.Participants, *session, start.ParticipantDIDs)
+	if err != nil {
+		return nil, err
+	}
+	dataClasses, err := secureCellResolveThreadDataClasses(*session, start.DataClasses)
+	if err != nil {
+		return nil, err
+	}
+
+	thread := SecureCellSessionThread{
+		ID:              secureCellSessionThreadID(run.request, *session, start.Name, participantDIDs, run.result.Threads),
+		SessionID:       session.ID,
+		Name:            firstNonEmpty(strings.TrimSpace(start.Name), fmt.Sprintf("%s Thread %d", session.Name, len(run.result.Threads)+1)),
+		Purpose:         firstNonEmpty(strings.TrimSpace(start.Purpose), session.Purpose),
+		Status:          SecureCellThreadStatusActive,
+		ParticipantDIDs: participantDIDs,
+		DataClasses:     dataClasses,
+		StartedBy:       actorDID,
+		OpenedAt:        time.Now().UTC(),
+		UpdatedAt:       time.Now().UTC(),
+		Metadata:        cloneStringMap(start.Metadata),
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "start_session_thread", lastReceiptHash(run.result), map[string]string{
+		"session_id":            session.ID,
+		"thread_id":             thread.ID,
+		"thread_name":           thread.Name,
+		"thread_participants":   strings.Join(thread.ParticipantDIDs, ","),
+		"thread_data_classes":   strings.Join(thread.DataClasses, ","),
+		"session_status_before": string(session.Status),
+		"cell_status_before":    string(run.result.Status),
+		"transition_reason":     strings.TrimSpace(start.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	run.result.Threads = append(run.result.Threads, thread)
+	run.result.Sessions[sessionIdx].UpdatedAt = time.Now().UTC()
+	run.result.UpdatedAt = run.result.Sessions[sessionIdx].UpdatedAt
+
+	transition := SecureCellTransition{
+		ID:                  transitionID(run.request, "session_thread_started", thread.ID),
+		Action:              "secure_cell.session_thread_started",
+		Actor:               actorDID,
+		TargetType:          "thread",
+		TargetDID:           thread.ID,
+		SessionID:           session.ID,
+		ThreadID:            thread.ID,
+		SessionStatusBefore: session.Status,
+		SessionStatusAfter:  session.Status,
+		ThreadStatusBefore:  "",
+		ThreadStatusAfter:   thread.Status,
+		CellStatusBefore:    run.result.Status,
+		CellStatusAfter:     run.result.Status,
+		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
+		Reason:              strings.TrimSpace(start.Reason),
+		Metadata:            cloneStringMap(start.Metadata),
+		OccurredAt:          receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
 // ShareOutput records one policy-bound shared output inside an active secure
 // session and regenerates the sealed evidence package.
 func (s *Service) ShareOutput(ctx context.Context, cellID string, share SecureCellSessionShareRequest) (*SecureCellResult, error) {
@@ -1017,6 +1190,135 @@ func (s *Service) RecordExchange(ctx context.Context, cellID string, exchange Se
 	return cloneResult(run.result)
 }
 
+// PostThreadMessage records one evidence-bearing message inside an active
+// thread and regenerates the sealed evidence package.
+func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message SecureCellThreadMessageRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	if run.result.Status != SecureCellStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: secure cell %q does not permit thread messaging while %s", ErrCellImmutable, run.result.CellID, run.result.Status)
+	}
+
+	threadIdx, thread := findSecureCellThread(run.result.Threads, message.ThreadID)
+	if thread == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, message.ThreadID)
+	}
+	sessionID := firstNonEmpty(strings.TrimSpace(message.SessionID), thread.SessionID)
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, message.ThreadID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	if thread.Status != SecureCellThreadStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q is not active", ErrThreadNotActive, message.ThreadID)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(message.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to message thread %q", ErrPolicyDenied, actorDID, thread.ID)
+	}
+	recipients, err := secureCellResolveThreadRecipients(run.result.Participants, *thread, message.Recipients)
+	if err != nil {
+		return nil, err
+	}
+	classification, err := secureCellResolveThreadClassification(*thread, message.Classification)
+	if err != nil {
+		return nil, err
+	}
+
+	exchangeID := secureCellThreadMessageID(run.request, *session, *thread, message.Name, actorDID, run.result.SessionExchanges)
+	item := SecureCellSessionExchange{
+		ID:             exchangeID,
+		SessionID:      session.ID,
+		ThreadID:       thread.ID,
+		Name:           firstNonEmpty(strings.TrimSpace(message.Name), fmt.Sprintf("%s Message %d", thread.Name, len(thread.ExchangeIDs)+1)),
+		ExchangeType:   firstNonEmpty(strings.TrimSpace(message.ExchangeType), "thread_message"),
+		Classification: classification,
+		Resource:       firstNonEmpty(strings.TrimSpace(message.Resource), fmt.Sprintf("secure-cell:%s:session:%s:thread:%s:message:%s", run.result.CellID, session.ID, thread.ID, exchangeID)),
+		Summary:        strings.TrimSpace(message.Summary),
+		SentBy:         actorDID,
+		Recipients:     recipients,
+		IntegrityHash:  secureCellResolveThreadMessageIntegrityHash(message, exchangeID, session.ID, thread.ID, actorDID, recipients),
+		CreatedAt:      time.Now().UTC(),
+		Metadata:       cloneStringMap(message.Metadata),
+	}
+	custody, err := secureCellBuildOutputCustody(item.SentBy, item.Recipients)
+	if err != nil {
+		return nil, err
+	}
+	item.ChainOfCustody = custody
+
+	receipt, err := s.evaluateStage(ctx, run.request, "message_session_thread", lastReceiptHash(run.result), map[string]string{
+		"session_id":                    session.ID,
+		"thread_id":                     thread.ID,
+		"session_exchange_id":           item.ID,
+		"thread_message_name":           item.Name,
+		"thread_message_type":           item.ExchangeType,
+		"thread_message_classification": item.Classification,
+		"thread_message_recipients":     strings.Join(item.Recipients, ","),
+		"thread_status_before":          string(thread.Status),
+		"session_status_before":         string(session.Status),
+		"cell_status_before":            string(run.result.Status),
+		"transition_reason":             strings.TrimSpace(message.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	run.result.SessionExchanges = append(run.result.SessionExchanges, item)
+	run.result.Sessions[sessionIdx].ExchangeIDs = append(run.result.Sessions[sessionIdx].ExchangeIDs, item.ID)
+	run.result.Sessions[sessionIdx].UpdatedAt = time.Now().UTC()
+	run.result.Threads[threadIdx].ExchangeIDs = append(run.result.Threads[threadIdx].ExchangeIDs, item.ID)
+	run.result.Threads[threadIdx].UpdatedAt = run.result.Sessions[sessionIdx].UpdatedAt
+	run.result.UpdatedAt = run.result.Sessions[sessionIdx].UpdatedAt
+	run.result.SessionExchanges[len(run.result.SessionExchanges)-1].PolicyReceiptID = receipt.ID
+	run.result.SessionExchanges[len(run.result.SessionExchanges)-1].PolicyReceiptHash = receipt.ContentHash
+
+	transition := SecureCellTransition{
+		ID:                  transitionID(run.request, "session_thread_message", item.ID),
+		Action:              "secure_cell.session_thread_message",
+		Actor:               actorDID,
+		TargetType:          "thread_message",
+		TargetDID:           item.ID,
+		SessionID:           session.ID,
+		ThreadID:            thread.ID,
+		SessionExchangeID:   item.ID,
+		SessionStatusBefore: session.Status,
+		SessionStatusAfter:  session.Status,
+		ThreadStatusBefore:  thread.Status,
+		ThreadStatusAfter:   thread.Status,
+		CellStatusBefore:    run.result.Status,
+		CellStatusAfter:     run.result.Status,
+		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
+		Reason:              strings.TrimSpace(message.Reason),
+		Metadata:            cloneStringMap(message.Metadata),
+		OccurredAt:          receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	if lastTransition := lastSecureCellTransition(run.result); lastTransition != nil && lastTransition.SessionExchangeID == item.ID {
+		lastIdx := len(run.result.SessionExchanges) - 1
+		run.result.SessionExchanges[lastIdx].SealID = safeString(lastTransition.ExecutionSeal, func(in *evidence.Seal) string { return in.SealID })
+		run.result.SessionExchanges[lastIdx].TraceLinkID = safeString(lastTransition.TraceLink, func(in *evidence.TraceLink) string { return in.ID })
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
 // AddSessionMember adds an active cell participant into one existing secure
 // collaboration session.
 func (s *Service) AddSessionMember(ctx context.Context, cellID string, mutation SecureCellSessionMemberTransitionRequest, sessionID string) (*SecureCellResult, error) {
@@ -1252,6 +1554,108 @@ func (s *Service) transitionSessionState(
 	return cloneResult(run.result)
 }
 
+func (s *Service) transitionThreadState(
+	ctx context.Context,
+	cellID string,
+	sessionID string,
+	threadID string,
+	lifecycle SecureCellLifecycleRequest,
+	stage string,
+	targetStatus SecureCellThreadStatus,
+	recordAction string,
+	allowedStatuses ...SecureCellThreadStatus,
+) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	threadIdx, thread := findSecureCellThread(run.result.Threads, threadID)
+	if thread == nil || thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, threadID)
+	}
+	if !threadStatusAllowed(thread.Status, allowedStatuses...) {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q cannot transition from %s via %s", ErrThreadImmutable, threadID, thread.Status, stage)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to mutate thread %q", ErrPolicyDenied, actorDID, threadID)
+	}
+
+	transitionMetadata := cloneStringMap(lifecycle.Metadata)
+	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
+		"session_id":            session.ID,
+		"thread_id":             thread.ID,
+		"thread_status_before":  string(thread.Status),
+		"thread_status_after":   string(targetStatus),
+		"session_status_before": string(session.Status),
+		"cell_status_before":    string(run.result.Status),
+		"transition_reason":     strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	statusBefore := thread.Status
+	updatedAt := time.Now().UTC()
+	run.result.Threads[threadIdx].Status = targetStatus
+	run.result.Threads[threadIdx].UpdatedAt = updatedAt
+	switch stage {
+	case "quarantine_session_thread":
+		run.result.Threads[threadIdx].QuarantinedAt = &updatedAt
+		run.result.Threads[threadIdx].ContainedBy = actorDID
+		if transitionMetadata == nil {
+			transitionMetadata = make(map[string]string)
+		}
+		transitionMetadata["containment_mode"] = "thread"
+	case "resume_session_thread":
+		run.result.Threads[threadIdx].QuarantinedAt = nil
+		run.result.Threads[threadIdx].ContainedBy = ""
+	case "close_session_thread":
+		run.result.Threads[threadIdx].ClosedAt = &updatedAt
+		run.result.Threads[threadIdx].ClosedBy = actorDID
+	}
+	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
+	run.result.UpdatedAt = updatedAt
+
+	transition := SecureCellTransition{
+		ID:                  transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), thread.ID),
+		Action:              recordAction,
+		Actor:               actorDID,
+		TargetType:          "thread",
+		TargetDID:           thread.ID,
+		SessionID:           session.ID,
+		ThreadID:            thread.ID,
+		SessionStatusBefore: session.Status,
+		SessionStatusAfter:  session.Status,
+		ThreadStatusBefore:  statusBefore,
+		ThreadStatusAfter:   targetStatus,
+		CellStatusBefore:    run.result.Status,
+		CellStatusAfter:     run.result.Status,
+		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
+		Reason:              strings.TrimSpace(lifecycle.Reason),
+		Metadata:            transitionMetadata,
+		OccurredAt:          receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
 // PauseSession pauses one room without pausing the parent secure cell.
 func (s *Service) PauseSession(ctx context.Context, cellID string, sessionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
 	return s.transitionSessionState(ctx, cellID, sessionID, lifecycle, "pause_session", SecureCellSessionStatusPaused, "secure_cell.session_paused", SecureCellSessionStatusActive)
@@ -1267,6 +1671,21 @@ func (s *Service) ResumeSession(ctx context.Context, cellID string, sessionID st
 // cell.
 func (s *Service) QuarantineSession(ctx context.Context, cellID string, sessionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
 	return s.transitionSessionState(ctx, cellID, sessionID, lifecycle, "quarantine_session", SecureCellSessionStatusQuarantined, "secure_cell.session_quarantined", SecureCellSessionStatusActive, SecureCellSessionStatusPaused)
+}
+
+// CloseThread closes one collaboration stream inside an active session.
+func (s *Service) CloseThread(ctx context.Context, cellID string, sessionID string, threadID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadState(ctx, cellID, sessionID, threadID, lifecycle, "close_session_thread", SecureCellThreadStatusClosed, "secure_cell.session_thread_closed", SecureCellThreadStatusActive, SecureCellThreadStatusQuarantined)
+}
+
+// ResumeThread resumes one quarantined thread.
+func (s *Service) ResumeThread(ctx context.Context, cellID string, sessionID string, threadID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadState(ctx, cellID, sessionID, threadID, lifecycle, "resume_session_thread", SecureCellThreadStatusActive, "secure_cell.session_thread_resumed", SecureCellThreadStatusQuarantined)
+}
+
+// QuarantineThread contains one thread without freezing the whole session.
+func (s *Service) QuarantineThread(ctx context.Context, cellID string, sessionID string, threadID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadState(ctx, cellID, sessionID, threadID, lifecycle, "quarantine_session_thread", SecureCellThreadStatusQuarantined, "secure_cell.session_thread_quarantined", SecureCellThreadStatusActive)
 }
 
 // ListCells returns operator-facing summaries for the current secure-cell set.
@@ -1987,6 +2406,10 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("participants_revoked", fmt.Sprintf("%d", len(participantsByStatus(participants, SecureCellParticipantStatusRevoked))))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
+	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
+	ledger.WithMetadata("threads_active", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusActive))))
+	ledger.WithMetadata("threads_quarantined", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusQuarantined))))
+	ledger.WithMetadata("threads_closed", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusClosed))))
 	ledger.WithMetadata("shared_outputs_total", fmt.Sprintf("%d", len(run.result.SharedOutputs)))
 	ledger.WithMetadata("session_exchanges_total", fmt.Sprintf("%d", len(run.result.SessionExchanges)))
 	if run.result.PausedFromStatus != "" {
@@ -2013,11 +2436,17 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	lifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	containmentRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
+	threadLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
+	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	sessionExchangeRecordIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangePolicyReceiptIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangeSealIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangeTraceLinkIDs := make([]string, 0, len(run.result.SessionExchanges))
+	threadMessageRecordIDs := make([]string, 0, len(run.result.SessionExchanges))
+	threadMessagePolicyReceiptIDs := make([]string, 0, len(run.result.SessionExchanges))
+	threadMessageSealIDs := make([]string, 0, len(run.result.SessionExchanges))
+	threadMessageTraceLinkIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sharedOutputRecordIDs := make([]string, 0, len(run.result.SharedOutputs))
 	sharedOutputPolicyReceiptIDs := make([]string, 0, len(run.result.SharedOutputs))
 	sharedOutputSealIDs := make([]string, 0, len(run.result.SharedOutputs))
@@ -2063,6 +2492,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if transition.Reason != "" {
 			data["reason"] = transition.Reason
+		}
+		if transition.ThreadID != "" {
+			data["thread_id"] = transition.ThreadID
+		}
+		if transition.ThreadStatusBefore != "" {
+			data["thread_status_before"] = string(transition.ThreadStatusBefore)
+		}
+		if transition.ThreadStatusAfter != "" {
+			data["thread_status_after"] = string(transition.ThreadStatusAfter)
 		}
 		if transition.PolicyReceipt != nil {
 			data["policy_receipt_id"] = transition.PolicyReceipt.ID
@@ -2113,6 +2551,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.session_started" || transition.Action == "secure_cell.session_closed" || transition.Action == "secure_cell.session_paused" || transition.Action == "secure_cell.session_resumed" || transition.Action == "secure_cell.session_quarantined" || transition.Action == "secure_cell.session_member_admitted" || transition.Action == "secure_cell.session_member_removed" {
 			sessionLifecycleRecordIDs = append(sessionLifecycleRecordIDs, recordID)
 		}
+		if transition.Action == "secure_cell.session_thread_started" || transition.Action == "secure_cell.session_thread_closed" || transition.Action == "secure_cell.session_thread_resumed" || transition.Action == "secure_cell.session_thread_quarantined" {
+			threadLifecycleRecordIDs = append(threadLifecycleRecordIDs, recordID)
+		}
 		if transition.Action == "secure_cell.session_shared" && transition.SharedOutputID != "" {
 			sharedOutputTransitions[transition.SharedOutputID] = transition
 		}
@@ -2122,11 +2563,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.session_quarantined" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
 		}
+		if transition.Action == "secure_cell.session_thread_quarantined" {
+			containmentRecordIDs = append(containmentRecordIDs, recordID)
+		}
 	}
 
 	for _, session := range run.result.Sessions {
 		recordID := fmt.Sprintf("%s-session-%x", cellID(req), sha256.Sum256([]byte(session.ID)))
 		sessionEvidenceRecordIDs = append(sessionEvidenceRecordIDs, recordID)
+		sessionThreads := threadsForSession(run.result.Threads, session.ID)
 		data := map[string]string{
 			"session_id":          session.ID,
 			"session_name":        session.Name,
@@ -2138,6 +2583,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"shared_outputs":      strings.Join(session.SharedOutputIDs, ","),
 			"shared_output_count": fmt.Sprintf("%d", len(session.SharedOutputIDs)),
 			"exchange_count":      fmt.Sprintf("%d", len(session.ExchangeIDs)),
+			"thread_count":        fmt.Sprintf("%d", len(sessionThreads)),
+			"active_thread_count": fmt.Sprintf("%d", len(threadsByStatus(sessionThreads, SecureCellThreadStatusActive))),
 		}
 		if session.PausedFromStatus != "" {
 			data["paused_from_status"] = string(session.PausedFromStatus)
@@ -2160,6 +2607,43 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Action:    "secure_cell.session_state",
 			Actor:     firstNonEmpty(session.ClosedBy, session.StartedBy, req.OwnerIdentity.AgentID()),
 			Timestamp: session.UpdatedAt.UTC().Format(time.RFC3339Nano),
+			Data:      data,
+		})
+	}
+
+	for _, thread := range run.result.Threads {
+		recordID := fmt.Sprintf("%s-thread-%x", cellID(req), sha256.Sum256([]byte(thread.ID)))
+		threadEvidenceRecordIDs = append(threadEvidenceRecordIDs, recordID)
+		data := map[string]string{
+			"thread_id":        thread.ID,
+			"session_id":       thread.SessionID,
+			"thread_name":      thread.Name,
+			"thread_purpose":   thread.Purpose,
+			"thread_status":    string(thread.Status),
+			"participant_dids": strings.Join(thread.ParticipantDIDs, ","),
+			"data_classes":     strings.Join(thread.DataClasses, ","),
+			"started_by":       thread.StartedBy,
+			"exchange_ids":     strings.Join(thread.ExchangeIDs, ","),
+			"exchange_count":   fmt.Sprintf("%d", len(thread.ExchangeIDs)),
+		}
+		if thread.QuarantinedAt != nil {
+			data["quarantined_at"] = thread.QuarantinedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if thread.ContainedBy != "" {
+			data["contained_by"] = thread.ContainedBy
+		}
+		if thread.ClosedBy != "" {
+			data["closed_by"] = thread.ClosedBy
+		}
+		if thread.ClosedAt != nil {
+			data["closed_at"] = thread.ClosedAt.UTC().Format(time.RFC3339Nano)
+		}
+		ledger.AddRecord(evidence.Record{
+			ID:        recordID,
+			Type:      "collaboration",
+			Action:    "secure_cell.session_thread_state",
+			Actor:     firstNonEmpty(thread.ClosedBy, thread.ContainedBy, thread.StartedBy, req.OwnerIdentity.AgentID()),
+			Timestamp: thread.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
 	}
@@ -2218,6 +2702,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		data := map[string]string{
 			"session_exchange_id":   item.ID,
 			"session_id":            item.SessionID,
+			"thread_id":             item.ThreadID,
 			"name":                  item.Name,
 			"exchange_type":         item.ExchangeType,
 			"classification":        item.Classification,
@@ -2258,6 +2743,18 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Timestamp: item.CreatedAt.UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
+		if item.ThreadID != "" {
+			threadMessageRecordIDs = append(threadMessageRecordIDs, recordID)
+			if item.PolicyReceiptID != "" {
+				threadMessagePolicyReceiptIDs = append(threadMessagePolicyReceiptIDs, item.PolicyReceiptID)
+			}
+			if sealID := data["seal_id"]; sealID != "" {
+				threadMessageSealIDs = append(threadMessageSealIDs, sealID)
+			}
+			if traceLinkID := data["trace_link_id"]; traceLinkID != "" {
+				threadMessageTraceLinkIDs = append(threadMessageTraceLinkIDs, traceLinkID)
+			}
+		}
 	}
 
 	for _, participant := range participants {
@@ -2401,6 +2898,25 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			return nil, err
 		}
 	}
+	if len(threadEvidenceRecordIDs) > 0 || len(threadLifecycleRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-THREAD-01",
+			ControlName: "Governed Collaboration Threads",
+			Description: "Secure-cell sessions can open, contain, resume, and close named collaboration threads under policy-bound lifecycle evidence.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append(append([]string(nil), threadEvidenceRecordIDs...), threadLifecycleRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"threads_total":       fmt.Sprintf("%d", len(run.result.Threads)),
+				"threads_active":      fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusActive))),
+				"threads_quarantined": fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusQuarantined))),
+				"threads_closed":      fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusClosed))),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
 	if len(sessionExchangeRecordIDs) > 0 {
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-MSG-01",
@@ -2415,6 +2931,25 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			},
 			Metadata: map[string]string{
 				"session_exchanges_total": fmt.Sprintf("%d", len(run.result.SessionExchanges)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(threadMessageRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-THREAD-MSG-01",
+			ControlName: "Thread-Scoped Exchange Provenance",
+			Description: "Thread-level exchanges are captured as independently containable, policy-bound artifacts with integrity hashes, custody history, and traceable execution evidence.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs:        threadMessageRecordIDs,
+				PolicyReceiptIDs: threadMessagePolicyReceiptIDs,
+				SealIDs:          threadMessageSealIDs,
+				TraceLinkIDs:     threadMessageTraceLinkIDs,
+			},
+			Metadata: map[string]string{
+				"thread_messages_total": fmt.Sprintf("%d", len(threadMessageRecordIDs)),
 			},
 		}); err != nil {
 			return nil, err
@@ -2545,10 +3080,13 @@ func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellT
 		TargetType:                  transition.TargetType,
 		TargetDID:                   transition.TargetDID,
 		SessionID:                   transition.SessionID,
+		ThreadID:                    transition.ThreadID,
 		SharedOutputID:              transition.SharedOutputID,
 		SessionExchangeID:           transition.SessionExchangeID,
 		SessionStatusBefore:         transition.SessionStatusBefore,
 		SessionStatusAfter:          transition.SessionStatusAfter,
+		ThreadStatusBefore:          transition.ThreadStatusBefore,
+		ThreadStatusAfter:           transition.ThreadStatusAfter,
 		CellStatus:                  run.result.Status,
 		CellStatusBefore:            transition.CellStatusBefore,
 		CellStatusAfter:             transition.CellStatusAfter,
@@ -2559,6 +3097,8 @@ func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellT
 		ParticipantCount:            len(run.result.Participants),
 		SessionCount:                len(run.result.Sessions),
 		ActiveSessionCount:          len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive)),
+		ThreadCount:                 len(run.result.Threads),
+		ActiveThreadCount:           len(threadsByStatus(run.result.Threads, SecureCellThreadStatusActive)),
 		SharedOutputCount:           len(run.result.SharedOutputs),
 		SessionExchangeCount:        len(run.result.SessionExchanges),
 		ActiveParticipantCount:      len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusActive)),
@@ -2964,11 +3504,11 @@ func transitionRecordType(action string) string {
 		return "governance"
 	case "secure_cell.member_admitted":
 		return "trust"
-	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed":
+	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed":
 		return "collaboration"
-	case "secure_cell.session_shared", "secure_cell.session_exchange":
+	case "secure_cell.session_shared", "secure_cell.session_exchange", "secure_cell.session_thread_message":
 		return "exchange"
-	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined":
+	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined":
 		return "containment"
 	default:
 		return "governance"
@@ -2983,6 +3523,10 @@ func transitionStageForAction(action string) string {
 		return "admit_member"
 	case "secure_cell.session_started":
 		return "start_session"
+	case "secure_cell.session_thread_started":
+		return "start_session_thread"
+	case "secure_cell.session_thread_message":
+		return "message_session_thread"
 	case "secure_cell.session_exchange":
 		return "exchange_session_message"
 	case "secure_cell.session_shared":
@@ -2995,6 +3539,12 @@ func transitionStageForAction(action string) string {
 		return "resume_session"
 	case "secure_cell.session_quarantined":
 		return "quarantine_session"
+	case "secure_cell.session_thread_closed":
+		return "close_session_thread"
+	case "secure_cell.session_thread_resumed":
+		return "resume_session_thread"
+	case "secure_cell.session_thread_quarantined":
+		return "quarantine_session_thread"
 	case "secure_cell.session_member_admitted":
 		return "admit_session_member"
 	case "secure_cell.session_member_removed":
@@ -3058,6 +3608,18 @@ func sessionStatusAllowed(current SecureCellSessionStatus, allowed ...SecureCell
 	return false
 }
 
+func threadStatusAllowed(current SecureCellThreadStatus, allowed ...SecureCellThreadStatus) bool {
+	if len(allowed) == 0 {
+		return true
+	}
+	for _, status := range allowed {
+		if current == status {
+			return true
+		}
+	}
+	return false
+}
+
 func participantStateForResult(result *SecureCellResult, participantDID string) (SecureCellParticipantState, bool) {
 	if result == nil {
 		return SecureCellParticipantState{}, false
@@ -3080,6 +3642,16 @@ func findSecureCellSession(sessions []SecureCellSession, sessionID string) (int,
 	return -1, nil
 }
 
+func findSecureCellThread(threads []SecureCellSessionThread, threadID string) (int, *SecureCellSessionThread) {
+	threadID = strings.TrimSpace(threadID)
+	for idx := range threads {
+		if strings.TrimSpace(threads[idx].ID) == threadID {
+			return idx, &threads[idx]
+		}
+	}
+	return -1, nil
+}
+
 func lastSecureCellTransition(result *SecureCellResult) *SecureCellTransition {
 	if result == nil || len(result.Transitions) == 0 {
 		return nil
@@ -3097,8 +3669,41 @@ func sessionsByStatus(sessions []SecureCellSession, status SecureCellSessionStat
 	return filtered
 }
 
+func threadsByStatus(threads []SecureCellSessionThread, status SecureCellThreadStatus) []SecureCellSessionThread {
+	filtered := make([]SecureCellSessionThread, 0, len(threads))
+	for _, thread := range threads {
+		if thread.Status == status {
+			filtered = append(filtered, thread)
+		}
+	}
+	return filtered
+}
+
+func threadsForSession(threads []SecureCellSessionThread, sessionID string) []SecureCellSessionThread {
+	sessionID = strings.TrimSpace(sessionID)
+	if sessionID == "" {
+		return nil
+	}
+	filtered := make([]SecureCellSessionThread, 0, len(threads))
+	for _, thread := range threads {
+		if strings.TrimSpace(thread.SessionID) == sessionID {
+			filtered = append(filtered, thread)
+		}
+	}
+	return filtered
+}
+
 func secureCellSessionHasParticipant(session SecureCellSession, participantDID string) bool {
 	for _, did := range session.ParticipantDIDs {
+		if strings.TrimSpace(did) == strings.TrimSpace(participantDID) {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellThreadHasParticipant(thread SecureCellSessionThread, participantDID string) bool {
+	for _, did := range thread.ParticipantDIDs {
 		if strings.TrimSpace(did) == strings.TrimSpace(participantDID) {
 			return true
 		}
@@ -3132,6 +3737,22 @@ func secureCellSessionActorAllowed(run *secureCellRun, session SecureCellSession
 		return true
 	}
 	for _, participantDID := range session.ParticipantDIDs {
+		if strings.TrimSpace(participantDID) == strings.TrimSpace(actorDID) {
+			state, ok := participantStateForResult(run.result, actorDID)
+			return ok && state.Status == SecureCellParticipantStatusActive
+		}
+	}
+	return false
+}
+
+func secureCellThreadActorAllowed(run *secureCellRun, thread SecureCellSessionThread, actorDID string) bool {
+	if !secureCellActorAllowed(run, actorDID, false) {
+		return false
+	}
+	if run != nil && run.request.OwnerIdentity != nil && run.request.OwnerIdentity.AgentID() == strings.TrimSpace(actorDID) {
+		return true
+	}
+	for _, participantDID := range thread.ParticipantDIDs {
 		if strings.TrimSpace(participantDID) == strings.TrimSpace(actorDID) {
 			state, ok := participantStateForResult(run.result, actorDID)
 			return ok && state.Status == SecureCellParticipantStatusActive
@@ -3225,6 +3846,52 @@ func secureCellResolveSessionDataClasses(policyConfig SecureCellPolicy, requeste
 	return requested, nil
 }
 
+func secureCellResolveThreadParticipants(states []SecureCellParticipantState, session SecureCellSession, requested []string) ([]string, error) {
+	requested = uniqueTrimmedStrings(requested)
+	sessionSet := make(map[string]struct{}, len(session.ParticipantDIDs))
+	activeSet := make(map[string]struct{}, len(states))
+	defaultParticipants := make([]string, 0, len(session.ParticipantDIDs))
+	for _, participantDID := range session.ParticipantDIDs {
+		sessionSet[strings.TrimSpace(participantDID)] = struct{}{}
+		defaultParticipants = append(defaultParticipants, strings.TrimSpace(participantDID))
+	}
+	for _, state := range states {
+		if state.Status == SecureCellParticipantStatusActive {
+			activeSet[strings.TrimSpace(state.ParticipantDID)] = struct{}{}
+		}
+	}
+	if len(requested) == 0 {
+		return defaultParticipants, nil
+	}
+	for _, participantDID := range requested {
+		if _, ok := sessionSet[participantDID]; !ok {
+			return nil, fmt.Errorf("securecells/service: %w: thread participant %q is not part of session %q", ErrSessionParticipantNotFound, participantDID, session.ID)
+		}
+		if _, ok := activeSet[participantDID]; !ok {
+			return nil, fmt.Errorf("securecells/service: %w: thread participant %q is not active in the secure cell", ErrParticipantNotFound, participantDID)
+		}
+	}
+	return requested, nil
+}
+
+func secureCellResolveThreadDataClasses(session SecureCellSession, requested []string) ([]string, error) {
+	allowed := uniqueTrimmedStrings(session.DataClasses)
+	requested = uniqueTrimmedStrings(requested)
+	if len(requested) == 0 {
+		return allowed, nil
+	}
+	allowedSet := make(map[string]struct{}, len(allowed))
+	for _, dataClass := range allowed {
+		allowedSet[dataClass] = struct{}{}
+	}
+	for _, dataClass := range requested {
+		if _, ok := allowedSet[dataClass]; !ok {
+			return nil, fmt.Errorf("securecells/service: data class %q is not permitted by thread policy", dataClass)
+		}
+	}
+	return requested, nil
+}
+
 func secureCellResolveOutputClassification(policyConfig SecureCellPolicy, session SecureCellSession, classification string) (string, error) {
 	classification = strings.TrimSpace(classification)
 	allowed := session.DataClasses
@@ -3244,6 +3911,52 @@ func secureCellResolveOutputClassification(policyConfig SecureCellPolicy, sessio
 		}
 	}
 	return "", fmt.Errorf("securecells/service: output classification %q is not permitted in session %q", classification, session.ID)
+}
+
+func secureCellResolveThreadClassification(thread SecureCellSessionThread, classification string) (string, error) {
+	classification = strings.TrimSpace(classification)
+	allowed := uniqueTrimmedStrings(thread.DataClasses)
+	if classification == "" {
+		if len(allowed) > 0 {
+			return allowed[0], nil
+		}
+		return "confidential", nil
+	}
+	for _, allowedClass := range allowed {
+		if classification == allowedClass {
+			return classification, nil
+		}
+	}
+	return "", fmt.Errorf("securecells/service: thread classification %q is not permitted in thread %q", classification, thread.ID)
+}
+
+func secureCellResolveThreadRecipients(states []SecureCellParticipantState, thread SecureCellSessionThread, requested []string) ([]string, error) {
+	threadSet := make(map[string]struct{}, len(thread.ParticipantDIDs))
+	activeSet := make(map[string]struct{}, len(states))
+	for _, participantDID := range thread.ParticipantDIDs {
+		threadSet[strings.TrimSpace(participantDID)] = struct{}{}
+	}
+	for _, state := range states {
+		if state.Status == SecureCellParticipantStatusActive {
+			activeSet[strings.TrimSpace(state.ParticipantDID)] = struct{}{}
+		}
+	}
+	requested = uniqueTrimmedStrings(requested)
+	if len(requested) == 0 {
+		requested = append([]string(nil), thread.ParticipantDIDs...)
+	}
+	if len(requested) == 0 {
+		return nil, fmt.Errorf("securecells/service: thread %q has no active recipients", thread.ID)
+	}
+	for _, participantDID := range requested {
+		if _, ok := threadSet[participantDID]; !ok {
+			return nil, fmt.Errorf("securecells/service: participant %q is not part of thread %q", participantDID, thread.ID)
+		}
+		if _, ok := activeSet[participantDID]; !ok {
+			return nil, fmt.Errorf("securecells/service: participant %q is not active in thread %q", participantDID, thread.ID)
+		}
+	}
+	return requested, nil
 }
 
 func secureCellSessionID(req SecureCellRequest, result *SecureCellResult, name string, participantDIDs []string) string {
@@ -3299,6 +4012,46 @@ func secureCellSessionExchangeID(req SecureCellRequest, session SecureCellSessio
 		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	return fmt.Sprintf("session-exchange-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
+func secureCellSessionThreadID(req SecureCellRequest, session SecureCellSession, name string, participantDIDs []string, existing []SecureCellSessionThread) string {
+	fingerprint := struct {
+		CellID          string   `json:"cell_id"`
+		SessionID       string   `json:"session_id"`
+		Sequence        int      `json:"sequence"`
+		Name            string   `json:"name"`
+		ParticipantDIDs []string `json:"participant_dids,omitempty"`
+		Timestamp       string   `json:"timestamp"`
+	}{
+		CellID:          cellID(req),
+		SessionID:       session.ID,
+		Sequence:        len(existing) + 1,
+		Name:            strings.TrimSpace(name),
+		ParticipantDIDs: append([]string(nil), participantDIDs...),
+		Timestamp:       time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	return fmt.Sprintf("session-thread-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
+func secureCellThreadMessageID(req SecureCellRequest, session SecureCellSession, thread SecureCellSessionThread, name, actorDID string, existing []SecureCellSessionExchange) string {
+	fingerprint := struct {
+		CellID    string `json:"cell_id"`
+		SessionID string `json:"session_id"`
+		ThreadID  string `json:"thread_id"`
+		Sequence  int    `json:"sequence"`
+		Name      string `json:"name"`
+		ActorDID  string `json:"actor_did"`
+		Timestamp string `json:"timestamp"`
+	}{
+		CellID:    cellID(req),
+		SessionID: session.ID,
+		ThreadID:  thread.ID,
+		Sequence:  len(existing) + 1,
+		Name:      strings.TrimSpace(name),
+		ActorDID:  strings.TrimSpace(actorDID),
+		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	return fmt.Sprintf("thread-message-%x", sha256.Sum256(mustJSON(fingerprint)))
 }
 
 func secureCellResolveOutputIntegrityHash(share SecureCellSessionShareRequest, outputID, sessionID, actorDID string, sharedWith []string) string {
@@ -3357,6 +4110,38 @@ func secureCellResolveExchangeIntegrityHash(exchange SecureCellSessionExchangeRe
 		ActorDID:       strings.TrimSpace(actorDID),
 		Recipients:     append([]string(nil), recipients...),
 		Metadata:       cloneStringMap(exchange.Metadata),
+	}))
+	return hex.EncodeToString(sum[:])
+}
+
+func secureCellResolveThreadMessageIntegrityHash(message SecureCellThreadMessageRequest, exchangeID, sessionID, threadID, actorDID string, recipients []string) string {
+	if trimmed := strings.TrimSpace(message.IntegrityHash); trimmed != "" {
+		return trimmed
+	}
+	sum := sha256.Sum256(mustJSON(struct {
+		ExchangeID     string            `json:"exchange_id"`
+		SessionID      string            `json:"session_id"`
+		ThreadID       string            `json:"thread_id"`
+		Name           string            `json:"name"`
+		ExchangeType   string            `json:"exchange_type"`
+		Classification string            `json:"classification"`
+		Resource       string            `json:"resource"`
+		Summary        string            `json:"summary"`
+		ActorDID       string            `json:"actor_did"`
+		Recipients     []string          `json:"recipients,omitempty"`
+		Metadata       map[string]string `json:"metadata,omitempty"`
+	}{
+		ExchangeID:     exchangeID,
+		SessionID:      sessionID,
+		ThreadID:       threadID,
+		Name:           strings.TrimSpace(message.Name),
+		ExchangeType:   strings.TrimSpace(message.ExchangeType),
+		Classification: strings.TrimSpace(message.Classification),
+		Resource:       strings.TrimSpace(message.Resource),
+		Summary:        strings.TrimSpace(message.Summary),
+		ActorDID:       strings.TrimSpace(actorDID),
+		Recipients:     append([]string(nil), recipients...),
+		Metadata:       cloneStringMap(message.Metadata),
 	}))
 	return hex.EncodeToString(sum[:])
 }
@@ -3427,12 +4212,17 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellCreateAction,
 				secureCellActivateAction,
 				secureCellSessionStartAction,
+				secureCellSessionThreadStartAction,
+				secureCellSessionThreadMessageAction,
 				secureCellSessionExchangeAction,
 				secureCellSessionShareAction,
 				secureCellSessionCloseAction,
 				secureCellSessionPauseAction,
 				secureCellSessionResumeAction,
 				secureCellSessionQuarantineAction,
+				secureCellSessionThreadCloseAction,
+				secureCellSessionThreadResumeAction,
+				secureCellSessionThreadQuarantineAction,
 				secureCellSessionMemberAdmitAction,
 				secureCellSessionMemberRemoveAction,
 				secureCellMemberAdmitAction,
@@ -3506,6 +4296,24 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
 				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
 			}),
+			policy.NewAllowRule("secure_cell_session_thread_start_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "start_session_thread"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_message_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "message_session_thread"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
 			policy.NewAllowRule("secure_cell_session_exchange_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "exchange_session_message"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
@@ -3550,6 +4358,30 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_session_quarantine_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "quarantine_session"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_close_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "close_session_thread"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_resume_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "resume_session_thread"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_quarantine_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "quarantine_session_thread"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -3638,6 +4470,10 @@ func actionForStage(stage string) string {
 		return secureCellActivateAction
 	case "start_session":
 		return secureCellSessionStartAction
+	case "start_session_thread":
+		return secureCellSessionThreadStartAction
+	case "message_session_thread":
+		return secureCellSessionThreadMessageAction
 	case "exchange_session_message":
 		return secureCellSessionExchangeAction
 	case "share_session_output":
@@ -3650,6 +4486,12 @@ func actionForStage(stage string) string {
 		return secureCellSessionResumeAction
 	case "quarantine_session":
 		return secureCellSessionQuarantineAction
+	case "close_session_thread":
+		return secureCellSessionThreadCloseAction
+	case "resume_session_thread":
+		return secureCellSessionThreadResumeAction
+	case "quarantine_session_thread":
+		return secureCellSessionThreadQuarantineAction
 	case "admit_session_member":
 		return secureCellSessionMemberAdmitAction
 	case "remove_session_member":

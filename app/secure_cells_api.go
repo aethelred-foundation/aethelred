@@ -86,6 +86,17 @@ type secureCellSessionStartRequest struct {
 	Metadata        map[string]string           `json:"metadata,omitempty"`
 }
 
+type secureCellSessionThreadStartRequest struct {
+	ActorIdentity   json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt   *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Name            string                      `json:"name,omitempty"`
+	Purpose         string                      `json:"purpose,omitempty"`
+	ParticipantDIDs []string                    `json:"participant_dids,omitempty"`
+	DataClasses     []string                    `json:"data_classes,omitempty"`
+	Reason          string                      `json:"reason,omitempty"`
+	Metadata        map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellSessionShareRequest struct {
 	ActorIdentity  json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt  *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -101,6 +112,20 @@ type secureCellSessionShareRequest struct {
 }
 
 type secureCellSessionExchangeRequest struct {
+	ActorIdentity  json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt  *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Name           string                      `json:"name,omitempty"`
+	ExchangeType   string                      `json:"exchange_type,omitempty"`
+	Classification string                      `json:"classification,omitempty"`
+	Resource       string                      `json:"resource,omitempty"`
+	Summary        string                      `json:"summary,omitempty"`
+	Recipients     []string                    `json:"recipients,omitempty"`
+	IntegrityHash  string                      `json:"integrity_hash,omitempty"`
+	Reason         string                      `json:"reason,omitempty"`
+	Metadata       map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellThreadMessageRequest struct {
 	ActorIdentity  json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt  *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
 	Name           string                      `json:"name,omitempty"`
@@ -141,6 +166,7 @@ type secureCellArtifactsResponse struct {
 	Status                   securecellsintegration.SecureCellStatus             `json:"status"`
 	Participants             []securecellsintegration.SecureCellParticipantState `json:"participants,omitempty"`
 	Sessions                 []securecellsintegration.SecureCellSession          `json:"sessions,omitempty"`
+	Threads                  []securecellsintegration.SecureCellSessionThread    `json:"threads,omitempty"`
 	SharedOutputs            []securecellsintegration.SecureCellSharedOutput     `json:"shared_outputs,omitempty"`
 	SessionExchanges         []securecellsintegration.SecureCellSessionExchange  `json:"session_exchanges,omitempty"`
 	Transitions              []securecellsintegration.SecureCellTransition       `json:"transitions,omitempty"`
@@ -426,6 +452,7 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			filter := secureCellAuditEventFilter{
 				CellID:         strings.TrimSpace(r.URL.Query().Get("cell_id")),
 				ParticipantDID: strings.TrimSpace(r.URL.Query().Get("participant_did")),
+				ThreadID:       strings.TrimSpace(r.URL.Query().Get("thread_id")),
 				Action:         strings.TrimSpace(r.URL.Query().Get("action")),
 				Actor:          strings.TrimSpace(r.URL.Query().Get("actor")),
 				SinceSequence:  cast.ToUint64(strings.TrimSpace(r.URL.Query().Get("since_sequence"))),
@@ -492,6 +519,123 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/messages") && strings.Contains(r.URL.Path, "/threads/"):
+			cellID, sessionID, threadID, err := parseSecureCellSessionThreadActionPath(r.URL.Path, "/messages")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellThreadMessageRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread message request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionThreadMessage(r, cellID, sessionID, threadID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.PostThreadMessage(r.Context(), cellID, securecellsintegration.SecureCellThreadMessageRequest{
+				SessionID:      sessionID,
+				ThreadID:       threadID,
+				ActorDID:       safeSecureCellActorDID(authCtx),
+				Name:           req.Name,
+				ExchangeType:   req.ExchangeType,
+				Classification: req.Classification,
+				Resource:       req.Resource,
+				Summary:        req.Summary,
+				Recipients:     req.Recipients,
+				IntegrityHash:  req.IntegrityHash,
+				Reason:         req.Reason,
+				Metadata:       req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case (strings.HasSuffix(r.URL.Path, "/close") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine")) && strings.Contains(r.URL.Path, "/threads/"):
+			cellID, sessionID, threadID, action, err := parseSecureCellSessionThreadLifecycleActionPath(r.URL.Path)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread lifecycle request: "+err.Error())
+				return
+			}
+			var authCtx *secureCellAuthContext
+			switch action {
+			case "close":
+				authCtx, err = app.authorizeSecureCellSessionThreadClose(r, cellID, sessionID, threadID, &req)
+			case "resume":
+				authCtx, err = app.authorizeSecureCellSessionThreadResume(r, cellID, sessionID, threadID, &req)
+			case "quarantine":
+				authCtx, err = app.authorizeSecureCellSessionThreadQuarantine(r, cellID, sessionID, threadID, &req)
+			default:
+				err = fmt.Errorf("unsupported secure cell session thread lifecycle action")
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			}
+			var result *securecellsintegration.SecureCellResult
+			switch action {
+			case "close":
+				result, err = app.secureCellService.CloseThread(r.Context(), cellID, sessionID, threadID, lifecycle)
+			case "resume":
+				result, err = app.secureCellService.ResumeThread(r.Context(), cellID, sessionID, threadID, lifecycle)
+			case "quarantine":
+				result, err = app.secureCellService.QuarantineThread(r.Context(), cellID, sessionID, threadID, lifecycle)
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/threads"):
+			cellID, sessionID, err := parseSecureCellSessionActionPath(r.URL.Path, "/threads")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellSessionThreadStartRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell session thread start request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionThreadStart(r, cellID, sessionID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.StartThread(r.Context(), cellID, securecellsintegration.SecureCellSessionThreadStartRequest{
+				SessionID:       sessionID,
+				ActorDID:        safeSecureCellActorDID(authCtx),
+				Name:            req.Name,
+				Purpose:         req.Purpose,
+				ParticipantDIDs: req.ParticipantDIDs,
+				DataClasses:     req.DataClasses,
+				Reason:          req.Reason,
+				Metadata:        req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/exchange"):
 			cellID, sessionID, err := parseSecureCellSessionActionPath(r.URL.Path, "/exchange")
 			if err != nil {
@@ -960,6 +1104,7 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.Status = result.Status
 	projection.Participants = append([]securecellsintegration.SecureCellParticipantState(nil), result.Participants...)
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
+	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
 	projection.SharedOutputs = append([]securecellsintegration.SecureCellSharedOutput(nil), result.SharedOutputs...)
 	projection.SessionExchanges = append([]securecellsintegration.SecureCellSessionExchange(nil), result.SessionExchanges...)
 	projection.Transitions = append([]securecellsintegration.SecureCellTransition(nil), result.Transitions...)
@@ -1246,6 +1391,49 @@ func parseSecureCellSessionMemberActionPath(path string, suffix string) (cellID 
 	return cellID, sessionID, participantDID, nil
 }
 
+func parseSecureCellSessionThreadActionPath(path string, suffix string) (cellID string, sessionID string, threadID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", "", fmt.Errorf("invalid secure cell session thread path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", "", fmt.Errorf("invalid secure cell session thread action path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 5 || parts[1] != "sessions" || parts[3] != "threads" {
+		return "", "", "", fmt.Errorf("invalid secure cell session thread action path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	threadID = strings.TrimSpace(parts[4])
+	if cellID == "" || sessionID == "" || threadID == "" {
+		return "", "", "", fmt.Errorf("invalid secure cell session thread action path")
+	}
+	return cellID, sessionID, threadID, nil
+}
+
+func parseSecureCellSessionThreadLifecycleActionPath(path string) (cellID string, sessionID string, threadID string, action string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", "", "", fmt.Errorf("invalid secure cell session thread lifecycle path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 6 || parts[1] != "sessions" || parts[3] != "threads" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell session thread lifecycle path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	threadID = strings.TrimSpace(parts[4])
+	action = strings.TrimSpace(parts[5])
+	if cellID == "" || sessionID == "" || threadID == "" || action == "" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell session thread lifecycle path")
+	}
+	return cellID, sessionID, threadID, action, nil
+}
+
 func secureCellErrorStatus(err error, fallback int) int {
 	switch {
 	case err == nil:
@@ -1269,6 +1457,12 @@ func secureCellErrorStatus(err error, fallback int) int {
 	case errors.Is(err, securecellsintegration.ErrSessionParticipantNotFound):
 		return http.StatusNotFound
 	case errors.Is(err, securecellsintegration.ErrSessionParticipantExists):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrThreadNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, securecellsintegration.ErrThreadNotActive):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrThreadImmutable):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrCellImmutable):
 		return http.StatusConflict

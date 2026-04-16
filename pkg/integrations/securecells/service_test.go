@@ -880,6 +880,162 @@ func TestService_SessionGovernanceAndExchangeLifecycle(t *testing.T) {
 	}
 }
 
+func TestService_SessionThreadLifecycleAndExchangeContainment(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Threaded Session Cell",
+		Purpose:       "thread-scoped containment",
+		Resource:      "cell:thread-governance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Credit Review",
+		Purpose:         "shared review room",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"confidential", "decisioning"},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session, ok := mustSecureCellSession(t, started, started.Sessions[0].ID)
+	if !ok {
+		t.Fatalf("expected started session, got %+v", started.Sessions)
+	}
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Escalation Thread",
+		Purpose:         "high-risk substream",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "targeted workstream opened",
+		Metadata:        map[string]string{"ticket": "SC-THREAD-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread, ok := mustSecureCellThread(t, threaded, threaded.Threads[0].ID)
+	if !ok {
+		t.Fatalf("expected started thread, got %+v", threaded.Threads)
+	}
+	if thread.Status != SecureCellThreadStatusActive || len(thread.ParticipantDIDs) != 1 || thread.ParticipantDIDs[0] != participantA.AgentID() {
+		t.Fatalf("expected active single-participant thread, got %+v", thread)
+	}
+	if !controlLedgerHasControl(threaded.ControlLedger, "CELL-THREAD-01") {
+		t.Fatalf("expected thread control in ledger, got %+v", threaded.ControlLedger.Controls)
+	}
+
+	messaged, err := service.PostThreadMessage(ctx, result.CellID, SecureCellThreadMessageRequest{
+		ThreadID:       thread.ID,
+		ActorDID:       participantA.AgentID(),
+		Name:           "Escalation Update",
+		ExchangeType:   "message",
+		Classification: "decisioning",
+		Resource:       "secure-cell:thread:message:update",
+		Summary:        "risk threshold breached",
+		Recipients:     []string{participantA.AgentID()},
+		Reason:         "thread update sent",
+		Metadata:       map[string]string{"ticket": "SC-THREAD-MSG-01"},
+	})
+	if err != nil {
+		t.Fatalf("PostThreadMessage failed: %v", err)
+	}
+	if len(messaged.SessionExchanges) != 1 {
+		t.Fatalf("expected 1 thread exchange, got %+v", messaged.SessionExchanges)
+	}
+	exchange := messaged.SessionExchanges[0]
+	if exchange.ThreadID != thread.ID || exchange.PolicyReceiptID == "" || exchange.SealID == "" || exchange.TraceLinkID == "" {
+		t.Fatalf("expected evidence-bearing thread exchange, got %+v", exchange)
+	}
+	thread, ok = mustSecureCellThread(t, messaged, thread.ID)
+	if !ok || len(thread.ExchangeIDs) != 1 || thread.ExchangeIDs[0] != exchange.ID {
+		t.Fatalf("expected thread exchange linked into thread state, got %+v", thread)
+	}
+	if !controlLedgerHasControl(messaged.ControlLedger, "CELL-THREAD-MSG-01") {
+		t.Fatalf("expected thread message control in ledger, got %+v", messaged.ControlLedger.Controls)
+	}
+
+	quarantined, err := service.QuarantineThread(ctx, result.CellID, session.ID, thread.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "contain substream",
+		Metadata: map[string]string{"ticket": "SC-THREAD-Q-01"},
+	})
+	if err != nil {
+		t.Fatalf("QuarantineThread failed: %v", err)
+	}
+	thread, ok = mustSecureCellThread(t, quarantined, thread.ID)
+	if !ok || thread.Status != SecureCellThreadStatusQuarantined || thread.QuarantinedAt == nil {
+		t.Fatalf("expected quarantined thread, got %+v", thread)
+	}
+	if quarantined.Status != SecureCellStatusActive {
+		t.Fatalf("expected parent cell to remain active, got %s", quarantined.Status)
+	}
+	session, ok = mustSecureCellSession(t, quarantined, session.ID)
+	if !ok || session.Status != SecureCellSessionStatusActive {
+		t.Fatalf("expected parent session to remain active, got %+v", session)
+	}
+
+	_, err = service.PostThreadMessage(ctx, result.CellID, SecureCellThreadMessageRequest{
+		ThreadID:       thread.ID,
+		ActorDID:       participantA.AgentID(),
+		Name:           "Blocked Update",
+		ExchangeType:   "message",
+		Classification: "decisioning",
+		Recipients:     []string{participantA.AgentID()},
+	})
+	if !errors.Is(err, ErrThreadNotActive) {
+		t.Fatalf("expected ErrThreadNotActive while thread quarantined, got %v", err)
+	}
+
+	resumed, err := service.ResumeThread(ctx, result.CellID, session.ID, thread.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "substream restored",
+	})
+	if err != nil {
+		t.Fatalf("ResumeThread failed: %v", err)
+	}
+	thread, ok = mustSecureCellThread(t, resumed, thread.ID)
+	if !ok || thread.Status != SecureCellThreadStatusActive {
+		t.Fatalf("expected active thread after resume, got %+v", thread)
+	}
+
+	closed, err := service.CloseThread(ctx, result.CellID, session.ID, thread.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "substream complete",
+	})
+	if err != nil {
+		t.Fatalf("CloseThread failed: %v", err)
+	}
+	thread, ok = mustSecureCellThread(t, closed, thread.ID)
+	if !ok || thread.Status != SecureCellThreadStatusClosed || thread.ClosedAt == nil {
+		t.Fatalf("expected closed thread, got %+v", thread)
+	}
+	last := closed.Transitions[len(closed.Transitions)-1]
+	if last.Action != "secure_cell.session_thread_closed" {
+		t.Fatalf("expected session_thread_closed transition, got %+v", last)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 
@@ -1331,4 +1487,17 @@ func mustSecureCellSession(t *testing.T, result *SecureCellResult, sessionID str
 		}
 	}
 	return SecureCellSession{}, false
+}
+
+func mustSecureCellThread(t *testing.T, result *SecureCellResult, threadID string) (SecureCellSessionThread, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, thread := range result.Threads {
+		if thread.ID == threadID {
+			return thread, true
+		}
+	}
+	return SecureCellSessionThread{}, false
 }
