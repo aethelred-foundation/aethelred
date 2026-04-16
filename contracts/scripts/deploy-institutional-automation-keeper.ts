@@ -8,7 +8,9 @@ function parseAssetIds(raw: string | undefined): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((id) => (id.startsWith("0x") && id.length === 66 ? id : ethers.id(id)));
+    .map((id) =>
+      id.startsWith("0x") && id.length === 66 ? id : ethers.id(id),
+    );
 }
 
 async function main() {
@@ -29,7 +31,9 @@ async function main() {
   console.log("Institutional bridge:", bridgeAddress);
   console.log("Tracked assets:", assetIds.length);
 
-  const Factory = await ethers.getContractFactory("InstitutionalReserveAutomationKeeper");
+  const Factory = await ethers.getContractFactory(
+    "InstitutionalReserveAutomationKeeper",
+  );
   const keeper = await Factory.deploy(bridgeAddress, assetIds);
   await keeper.waitForDeployment();
 
@@ -40,18 +44,38 @@ async function main() {
     await (await keeper.setMaxAssetsPerRun(maxAssetsPerRun)).wait();
   }
 
-  if (ownerAddress && ownerAddress.toLowerCase() !== deployer.address.toLowerCase()) {
+  if (
+    ownerAddress &&
+    ownerAddress.toLowerCase() !== deployer.address.toLowerCase()
+  ) {
     console.log("Transferring keeper ownership to:", ownerAddress);
     await (await keeper.transferOwnership(ownerAddress)).wait();
   }
 
-  const bridge = await ethers.getContractAt("InstitutionalStablecoinBridge", bridgeAddress);
+  const bridge = await ethers.getContractAt(
+    "InstitutionalStablecoinBridge",
+    bridgeAddress,
+  );
   if (grantPauserRole) {
     const pauserRole = await bridge.PAUSER_ROLE();
     const hasRole = await bridge.hasRole(pauserRole, keeperAddress);
     if (!hasRole) {
-      console.log("Granting PAUSER_ROLE to automation keeper...");
-      await (await bridge.grantRole(pauserRole, keeperAddress)).wait();
+      const governanceTimelock = await bridge.governanceTimelock();
+      if (governanceTimelock !== ethers.ZeroAddress) {
+        const grantRoleCalldata = bridge.interface.encodeFunctionData(
+          "grantRole",
+          [pauserRole, keeperAddress],
+        );
+        console.log(
+          "Governance timelock is active; queue this role grant through governance before enabling automation:",
+        );
+        console.log(`  Timelock: ${governanceTimelock}`);
+        console.log(`  Target:   ${bridgeAddress}`);
+        console.log(`  Calldata: ${grantRoleCalldata}`);
+      } else {
+        console.log("Granting PAUSER_ROLE to automation keeper...");
+        await (await bridge.grantRole(pauserRole, keeperAddress)).wait();
+      }
     }
   }
 
@@ -66,8 +90,8 @@ async function main() {
         maxAssetsPerRun: maxAssetsPerRun.toString(),
       },
       null,
-      2
-    )
+      2,
+    ),
   );
 }
 
