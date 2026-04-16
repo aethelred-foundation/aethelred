@@ -321,11 +321,17 @@ type SecureCellThreadDecision struct {
 	Title                 string                               `json:"title"`
 	Summary               string                               `json:"summary,omitempty"`
 	Classification        string                               `json:"classification,omitempty"`
+	GovernanceTemplate    string                               `json:"governance_template,omitempty"`
 	Status                SecureCellThreadDecisionStatus       `json:"status"`
 	QuarantinedFromStatus SecureCellThreadDecisionStatus       `json:"quarantined_from_status,omitempty"`
 	ApprovalThreshold     int                                  `json:"approval_threshold,omitempty"`
 	EligibleApproverDIDs  []string                             `json:"eligible_approver_dids,omitempty"`
 	RequiredApproverRoles []string                             `json:"required_approver_roles,omitempty"`
+	AllowedVoteChoices    []SecureCellThreadDecisionVoteChoice `json:"allowed_vote_choices,omitempty"`
+	RejectorRoles         []string                             `json:"rejector_roles,omitempty"`
+	AbstainerRoles        []string                             `json:"abstainer_roles,omitempty"`
+	ReopenRoles           []string                             `json:"reopen_roles,omitempty"`
+	AutoEscalateToDID     string                               `json:"auto_escalate_to_did,omitempty"`
 	ApprovalVotes         []SecureCellThreadDecisionVote       `json:"approval_votes,omitempty"`
 	Comments              []SecureCellThreadDecisionComment    `json:"comments,omitempty"`
 	Delegations           []SecureCellThreadDecisionDelegation `json:"delegations,omitempty"`
@@ -337,6 +343,8 @@ type SecureCellThreadDecision struct {
 	RelatedExchangeIDs    []string                             `json:"related_exchange_ids,omitempty"`
 	RelatedOutputIDs      []string                             `json:"related_output_ids,omitempty"`
 	ProposedAt            time.Time                            `json:"proposed_at"`
+	EscalationDueAt       *time.Time                           `json:"escalation_due_at,omitempty"`
+	ResolutionDueAt       *time.Time                           `json:"resolution_due_at,omitempty"`
 	ApprovedAt            *time.Time                           `json:"approved_at,omitempty"`
 	QuorumFailedAt        *time.Time                           `json:"quorum_failed_at,omitempty"`
 	QuarantinedAt         *time.Time                           `json:"quarantined_at,omitempty"`
@@ -646,19 +654,27 @@ type SecureCellThreadMessageRequest struct {
 // SecureCellThreadDecisionRequest creates one governed decision object inside
 // a collaboration thread.
 type SecureCellThreadDecisionRequest struct {
-	ActorDID              string            `json:"actor_did,omitempty"`
-	SessionID             string            `json:"session_id,omitempty"`
-	ThreadID              string            `json:"thread_id,omitempty"`
-	Title                 string            `json:"title,omitempty"`
-	Summary               string            `json:"summary,omitempty"`
-	Classification        string            `json:"classification,omitempty"`
-	ApprovalThreshold     int               `json:"approval_threshold,omitempty"`
-	EligibleApproverDIDs  []string          `json:"eligible_approver_dids,omitempty"`
-	RequiredApproverRoles []string          `json:"required_approver_roles,omitempty"`
-	RelatedExchangeIDs    []string          `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs      []string          `json:"related_output_ids,omitempty"`
-	Reason                string            `json:"reason,omitempty"`
-	Metadata              map[string]string `json:"metadata,omitempty"`
+	ActorDID              string                               `json:"actor_did,omitempty"`
+	SessionID             string                               `json:"session_id,omitempty"`
+	ThreadID              string                               `json:"thread_id,omitempty"`
+	Title                 string                               `json:"title,omitempty"`
+	Summary               string                               `json:"summary,omitempty"`
+	Classification        string                               `json:"classification,omitempty"`
+	GovernanceTemplate    string                               `json:"governance_template,omitempty"`
+	ApprovalThreshold     int                                  `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs  []string                             `json:"eligible_approver_dids,omitempty"`
+	RequiredApproverRoles []string                             `json:"required_approver_roles,omitempty"`
+	AllowedVoteChoices    []SecureCellThreadDecisionVoteChoice `json:"allowed_vote_choices,omitempty"`
+	RejectorRoles         []string                             `json:"rejector_roles,omitempty"`
+	AbstainerRoles        []string                             `json:"abstainer_roles,omitempty"`
+	ReopenRoles           []string                             `json:"reopen_roles,omitempty"`
+	AutoEscalateToDID     string                               `json:"auto_escalate_to_did,omitempty"`
+	EscalationDueAt       *time.Time                           `json:"escalation_due_at,omitempty"`
+	ResolutionDueAt       *time.Time                           `json:"resolution_due_at,omitempty"`
+	RelatedExchangeIDs    []string                             `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs      []string                             `json:"related_output_ids,omitempty"`
+	Reason                string                               `json:"reason,omitempty"`
+	Metadata              map[string]string                    `json:"metadata,omitempty"`
 }
 
 // SecureCellThreadDecisionCommentRequest records one evidence-bearing comment
@@ -748,6 +764,30 @@ type SecureCellExpirySweepResult struct {
 	ParticipantsReleased int                            `json:"participants_released"`
 	CellIDs              []string                       `json:"cell_ids,omitempty"`
 	Releases             []SecureCellExpirySweepRelease `json:"releases,omitempty"`
+}
+
+// SecureCellDecisionGovernanceSweepAction records one automated governance
+// action applied to a secure-cell decision.
+type SecureCellDecisionGovernanceSweepAction struct {
+	CellID     string    `json:"cell_id"`
+	SessionID  string    `json:"session_id"`
+	ThreadID   string    `json:"thread_id"`
+	DecisionID string    `json:"decision_id"`
+	Action     string    `json:"action"`
+	OccurredAt time.Time `json:"occurred_at"`
+}
+
+// SecureCellDecisionGovernanceSweepResult summarizes one global decision
+// governance sweep across live secure cells.
+type SecureCellDecisionGovernanceSweepResult struct {
+	At                 time.Time                                 `json:"at"`
+	CellsScanned       int                                       `json:"cells_scanned"`
+	DecisionsScanned   int                                       `json:"decisions_scanned"`
+	CellsMutated       int                                       `json:"cells_mutated"`
+	DecisionsEscalated int                                       `json:"decisions_escalated"`
+	DecisionsClosed    int                                       `json:"decisions_closed"`
+	CellIDs            []string                                  `json:"cell_ids,omitempty"`
+	Actions            []SecureCellDecisionGovernanceSweepAction `json:"actions,omitempty"`
 }
 
 // SecureCellListFilter narrows collection queries over live secure cells.
@@ -1623,6 +1663,27 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 	approvalThreshold := normalizeSecureCellThreshold(decision.ApprovalThreshold)
 	eligibleApproverDIDs := uniqueSecureCellStrings(decision.EligibleApproverDIDs)
 	requiredApproverRoles := uniqueSecureCellDecisionRoles(decision.RequiredApproverRoles)
+	governanceTemplate, allowedVoteChoices, rejectorRoles, abstainerRoles, reopenRoles, err := resolveSecureCellDecisionGovernance(decision.GovernanceTemplate, decision.AllowedVoteChoices, decision.RejectorRoles, decision.AbstainerRoles, decision.ReopenRoles)
+	if err != nil {
+		return nil, err
+	}
+	for _, governedRole := range append(append(append([]string(nil), rejectorRoles...), abstainerRoles...), reopenRoles...) {
+		if !secureCellDecisionRoleAvailable(run, *thread, governedRole) {
+			return nil, fmt.Errorf("securecells/service: decision governance role %q is not available for thread decision %q", governedRole, title)
+		}
+	}
+	autoEscalateToDID := strings.TrimSpace(decision.AutoEscalateToDID)
+	if autoEscalateToDID != "" && !secureCellDecisionParticipantAllowed(run, autoEscalateToDID) {
+		return nil, fmt.Errorf("securecells/service: %w: auto-escalation target %q is not permitted for thread %q", ErrPolicyDenied, autoEscalateToDID, thread.ID)
+	}
+	escalationDueAt := cloneUTCTime(decision.EscalationDueAt)
+	resolutionDueAt := cloneUTCTime(decision.ResolutionDueAt)
+	if escalationDueAt != nil && autoEscalateToDID == "" {
+		return nil, fmt.Errorf("securecells/service: auto-escalation target is required when escalation_due_at is set")
+	}
+	if escalationDueAt != nil && resolutionDueAt != nil && resolutionDueAt.Before(*escalationDueAt) {
+		return nil, fmt.Errorf("securecells/service: resolution due time must be after escalation due time")
+	}
 	if len(eligibleApproverDIDs) > 0 && len(requiredApproverRoles) == 0 && approvalThreshold > len(eligibleApproverDIDs) {
 		return nil, fmt.Errorf("securecells/service: thread decision approval threshold %d exceeds eligible approver count %d", approvalThreshold, len(eligibleApproverDIDs))
 	}
@@ -1644,34 +1705,55 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		Title:                 title,
 		Summary:               strings.TrimSpace(decision.Summary),
 		Classification:        classification,
+		GovernanceTemplate:    governanceTemplate,
 		Status:                SecureCellThreadDecisionStatusOpen,
 		ApprovalThreshold:     approvalThreshold,
 		EligibleApproverDIDs:  eligibleApproverDIDs,
 		RequiredApproverRoles: requiredApproverRoles,
+		AllowedVoteChoices:    allowedVoteChoices,
+		RejectorRoles:         rejectorRoles,
+		AbstainerRoles:        abstainerRoles,
+		ReopenRoles:           reopenRoles,
+		AutoEscalateToDID:     autoEscalateToDID,
 		ProposedBy:            actorDID,
 		RelatedExchangeIDs:    relatedExchangeIDs,
 		RelatedOutputIDs:      relatedOutputIDs,
 		ProposedAt:            time.Now().UTC(),
+		EscalationDueAt:       escalationDueAt,
+		ResolutionDueAt:       resolutionDueAt,
 		UpdatedAt:             time.Now().UTC(),
 		Metadata:              cloneStringMap(decision.Metadata),
 	}
 
-	receipt, err := s.evaluateStage(ctx, run.request, "create_thread_decision", lastReceiptHash(run.result), map[string]string{
-		"session_id":                  session.ID,
-		"thread_id":                   thread.ID,
-		"decision_id":                 item.ID,
-		"decision_title":              item.Title,
-		"decision_classification":     item.Classification,
-		"decision_approval_threshold": fmt.Sprintf("%d", item.ApprovalThreshold),
-		"decision_eligible_approvers": strings.Join(item.EligibleApproverDIDs, ","),
-		"decision_required_roles":     strings.Join(item.RequiredApproverRoles, ","),
-		"decision_related_exchanges":  strings.Join(item.RelatedExchangeIDs, ","),
-		"decision_related_outputs":    strings.Join(item.RelatedOutputIDs, ","),
-		"thread_status_before":        string(thread.Status),
-		"session_status_before":       string(session.Status),
-		"cell_status_before":          string(run.result.Status),
-		"transition_reason":           strings.TrimSpace(decision.Reason),
-	}, actorDID)
+	evaluationMetadata := map[string]string{
+		"session_id":                    session.ID,
+		"thread_id":                     thread.ID,
+		"decision_id":                   item.ID,
+		"decision_title":                item.Title,
+		"decision_classification":       item.Classification,
+		"decision_governance_template":  item.GovernanceTemplate,
+		"decision_approval_threshold":   fmt.Sprintf("%d", item.ApprovalThreshold),
+		"decision_eligible_approvers":   strings.Join(item.EligibleApproverDIDs, ","),
+		"decision_required_roles":       strings.Join(item.RequiredApproverRoles, ","),
+		"decision_allowed_vote_choices": joinSecureCellDecisionVoteChoices(item.AllowedVoteChoices),
+		"decision_rejector_roles":       strings.Join(item.RejectorRoles, ","),
+		"decision_abstainer_roles":      strings.Join(item.AbstainerRoles, ","),
+		"decision_reopen_roles":         strings.Join(item.ReopenRoles, ","),
+		"decision_auto_escalate_to":     item.AutoEscalateToDID,
+		"decision_related_exchanges":    strings.Join(item.RelatedExchangeIDs, ","),
+		"decision_related_outputs":      strings.Join(item.RelatedOutputIDs, ","),
+		"thread_status_before":          string(thread.Status),
+		"session_status_before":         string(session.Status),
+		"cell_status_before":            string(run.result.Status),
+		"transition_reason":             strings.TrimSpace(decision.Reason),
+	}
+	if item.EscalationDueAt != nil {
+		evaluationMetadata["decision_escalation_due_at"] = item.EscalationDueAt.UTC().Format(time.RFC3339Nano)
+	}
+	if item.ResolutionDueAt != nil {
+		evaluationMetadata["decision_resolution_due_at"] = item.ResolutionDueAt.UTC().Format(time.RFC3339Nano)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, "create_thread_decision", lastReceiptHash(run.result), evaluationMetadata, actorDID)
 	if err != nil {
 		return nil, err
 	}
@@ -2457,6 +2539,19 @@ func (s *Service) voteThreadDecision(
 	threshold := decisionApprovalThreshold(*decision)
 	votesBefore := len(decision.ApprovalVotes)
 	actorRole := secureCellActorRole(run, actorDID)
+	if !secureCellDecisionVoteChoiceEnabled(*decision, choice) {
+		return nil, fmt.Errorf("securecells/service: %w: vote choice %q is not permitted for decision %q", ErrPolicyDenied, choice, decisionID)
+	}
+	switch choice {
+	case SecureCellThreadDecisionVoteChoiceReject:
+		if !secureCellDecisionRoleRuleAllows(actorRole, decision.RejectorRoles) {
+			return nil, fmt.Errorf("securecells/service: %w: actor %q with role %q cannot reject decision %q", ErrPolicyDenied, actorDID, actorRole, decisionID)
+		}
+	case SecureCellThreadDecisionVoteChoiceAbstain:
+		if !secureCellDecisionRoleRuleAllows(actorRole, decision.AbstainerRoles) {
+			return nil, fmt.Errorf("securecells/service: %w: actor %q with role %q cannot abstain on decision %q", ErrPolicyDenied, actorDID, actorRole, decisionID)
+		}
+	}
 	votesAfter := votesBefore + 1
 	receipt, err := s.evaluateStage(ctx, run.request, "approve_thread_decision", lastReceiptHash(run.result), map[string]string{
 		"session_id":                  session.ID,
@@ -2791,6 +2886,9 @@ func (s *Service) routeThreadDecision(
 
 	actorRole := secureCellActorRole(run, actorDID)
 	targetRole := secureCellActorRole(run, targetDID)
+	if decision.Status == SecureCellThreadDecisionStatusQuorumFailed && !secureCellDecisionRoleRuleAllows(actorRole, decision.ReopenRoles) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q with role %q cannot reopen decision %q", ErrPolicyDenied, actorDID, actorRole, decisionID)
+	}
 	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
 		"session_id":              session.ID,
 		"thread_id":               thread.ID,
@@ -3615,6 +3713,121 @@ func (s *Service) SweepExpiredQuarantines(ctx context.Context, at time.Time, lif
 	return report, nil
 }
 
+// SweepDecisionGovernance applies automated escalation and deadline closure
+// rules to governed decisions across every secure cell managed by the service.
+func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lifecycle SecureCellLifecycleRequest) (*SecureCellDecisionGovernanceSweepResult, error) {
+	if at.IsZero() {
+		at = time.Now().UTC()
+	}
+	s.mu.RLock()
+	cellIDs := make([]string, 0, len(s.runs))
+	for cellID := range s.runs {
+		cellIDs = append(cellIDs, cellID)
+	}
+	s.mu.RUnlock()
+	sort.Strings(cellIDs)
+
+	report := &SecureCellDecisionGovernanceSweepResult{
+		At:           at.UTC(),
+		CellsScanned: len(cellIDs),
+	}
+	if len(cellIDs) == 0 {
+		return report, nil
+	}
+
+	mutatedCells := make(map[string]struct{})
+	for _, cellID := range cellIDs {
+		run, err := s.getRun(cellID)
+		if err != nil {
+			return nil, err
+		}
+		report.DecisionsScanned += len(run.result.Decisions)
+
+		type pendingAction struct {
+			sessionID  string
+			threadID   string
+			decisionID string
+			targetDID  string
+			action     string
+		}
+		pending := make([]pendingAction, 0)
+		for _, decision := range append([]SecureCellThreadDecision(nil), run.result.Decisions...) {
+			if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusQuorumFailed) {
+				continue
+			}
+			if decision.ResolutionDueAt != nil && !decision.ResolutionDueAt.After(at) {
+				pending = append(pending, pendingAction{
+					sessionID:  decision.SessionID,
+					threadID:   decision.ThreadID,
+					decisionID: decision.ID,
+					action:     "close",
+				})
+				continue
+			}
+			if decision.EscalationDueAt != nil && decision.AutoEscalateToDID != "" && !decision.EscalationDueAt.After(at) && !secureCellDecisionHasDelegation(decision, SecureCellThreadDecisionDelegationModeEscalate, decision.AutoEscalateToDID) {
+				pending = append(pending, pendingAction{
+					sessionID:  decision.SessionID,
+					threadID:   decision.ThreadID,
+					decisionID: decision.ID,
+					targetDID:  decision.AutoEscalateToDID,
+					action:     "escalate",
+				})
+			}
+		}
+
+		for _, action := range pending {
+			actorDID := run.request.OwnerIdentity.AgentID()
+			baseMetadata := mergeStringMaps(lifecycle.Metadata, map[string]string{
+				"decision_sweep_mode":   "automated",
+				"decision_sweep_action": action.action,
+			})
+			if automatedActor := strings.TrimSpace(lifecycle.ActorDID); automatedActor != "" && automatedActor != actorDID {
+				baseMetadata["automated_actor"] = automatedActor
+			}
+			switch action.action {
+			case "escalate":
+				if _, err := s.EscalateThreadDecision(ctx, cellID, action.sessionID, action.threadID, action.decisionID, SecureCellThreadDecisionDelegationRequest{
+					ActorDID:  actorDID,
+					TargetDID: action.targetDID,
+					Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), "automated decision escalation deadline reached"),
+					Metadata:  baseMetadata,
+				}); err != nil {
+					return nil, err
+				}
+				report.DecisionsEscalated++
+			case "close":
+				if _, err := s.CloseThreadDecision(ctx, cellID, action.sessionID, action.threadID, action.decisionID, SecureCellLifecycleRequest{
+					ActorDID: actorDID,
+					Reason:   firstNonEmpty(strings.TrimSpace(lifecycle.Reason), "automated decision resolution deadline reached"),
+					Metadata: baseMetadata,
+				}); err != nil {
+					return nil, err
+				}
+				report.DecisionsClosed++
+			}
+			mutatedCells[cellID] = struct{}{}
+			report.Actions = append(report.Actions, SecureCellDecisionGovernanceSweepAction{
+				CellID:     cellID,
+				SessionID:  action.sessionID,
+				ThreadID:   action.threadID,
+				DecisionID: action.decisionID,
+				Action:     action.action,
+				OccurredAt: at.UTC(),
+			})
+		}
+	}
+
+	if len(mutatedCells) > 0 {
+		report.CellIDs = make([]string, 0, len(mutatedCells))
+		for cellID := range mutatedCells {
+			report.CellIDs = append(report.CellIDs, cellID)
+		}
+		sort.Strings(report.CellIDs)
+		report.CellsMutated = len(report.CellIDs)
+	}
+	return report, nil
+}
+
 // BulkQuarantineMembers quarantines multiple participants under one operator
 // request while preserving per-participant evidence chains.
 func (s *Service) BulkQuarantineMembers(ctx context.Context, cellID string, bulk SecureCellBulkMemberTransitionRequest) (*SecureCellBulkMemberTransitionResult, error) {
@@ -4062,26 +4275,32 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		containedOutputIDs := secureCellDecisionContainedSharedOutputIDs(run.result.SharedOutputs, decision.ID)
 		containedExchangeIDs := secureCellDecisionContainedSessionExchangeIDs(run.result.SessionExchanges, decision.ID)
 		data := map[string]string{
-			"decision_id":             decision.ID,
-			"session_id":              decision.SessionID,
-			"thread_id":               decision.ThreadID,
-			"decision_title":          decision.Title,
-			"decision_status":         string(decision.Status),
-			"decision_classification": decision.Classification,
-			"approval_threshold":      fmt.Sprintf("%d", decisionApprovalThreshold(decision)),
-			"approval_vote_count":     fmt.Sprintf("%d", len(decision.ApprovalVotes)),
-			"comment_count":           fmt.Sprintf("%d", len(decision.Comments)),
-			"delegation_count":        fmt.Sprintf("%d", len(decision.Delegations)),
-			"outcome_count":           fmt.Sprintf("%d", len(decision.OutcomeIDs)),
-			"proposed_by":             decision.ProposedBy,
-			"eligible_approver_dids":  strings.Join(decision.EligibleApproverDIDs, ","),
-			"required_approver_roles": strings.Join(decision.RequiredApproverRoles, ","),
-			"related_exchange_ids":    strings.Join(decision.RelatedExchangeIDs, ","),
-			"related_output_ids":      strings.Join(decision.RelatedOutputIDs, ","),
-			"contained_output_ids":    strings.Join(containedOutputIDs, ","),
-			"contained_exchange_ids":  strings.Join(containedExchangeIDs, ","),
-			"outcome_ids":             strings.Join(decision.OutcomeIDs, ","),
-			"required_roles_missing":  strings.Join(secureCellDecisionMissingRequiredRoles(decision), ","),
+			"decision_id":                  decision.ID,
+			"session_id":                   decision.SessionID,
+			"thread_id":                    decision.ThreadID,
+			"decision_title":               decision.Title,
+			"decision_status":              string(decision.Status),
+			"decision_classification":      decision.Classification,
+			"decision_governance_template": decision.GovernanceTemplate,
+			"approval_threshold":           fmt.Sprintf("%d", decisionApprovalThreshold(decision)),
+			"approval_vote_count":          fmt.Sprintf("%d", len(decision.ApprovalVotes)),
+			"comment_count":                fmt.Sprintf("%d", len(decision.Comments)),
+			"delegation_count":             fmt.Sprintf("%d", len(decision.Delegations)),
+			"outcome_count":                fmt.Sprintf("%d", len(decision.OutcomeIDs)),
+			"proposed_by":                  decision.ProposedBy,
+			"eligible_approver_dids":       strings.Join(decision.EligibleApproverDIDs, ","),
+			"required_approver_roles":      strings.Join(decision.RequiredApproverRoles, ","),
+			"allowed_vote_choices":         joinSecureCellDecisionVoteChoices(decision.AllowedVoteChoices),
+			"rejector_roles":               strings.Join(decision.RejectorRoles, ","),
+			"abstainer_roles":              strings.Join(decision.AbstainerRoles, ","),
+			"reopen_roles":                 strings.Join(decision.ReopenRoles, ","),
+			"auto_escalate_to_did":         decision.AutoEscalateToDID,
+			"related_exchange_ids":         strings.Join(decision.RelatedExchangeIDs, ","),
+			"related_output_ids":           strings.Join(decision.RelatedOutputIDs, ","),
+			"contained_output_ids":         strings.Join(containedOutputIDs, ","),
+			"contained_exchange_ids":       strings.Join(containedExchangeIDs, ","),
+			"outcome_ids":                  strings.Join(decision.OutcomeIDs, ","),
+			"required_roles_missing":       strings.Join(secureCellDecisionMissingRequiredRoles(decision), ","),
 		}
 		if decision.Summary != "" {
 			data["decision_summary"] = decision.Summary
@@ -4100,6 +4319,12 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if decision.QuorumFailedAt != nil {
 			data["quorum_failed_at"] = decision.QuorumFailedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if decision.EscalationDueAt != nil {
+			data["escalation_due_at"] = decision.EscalationDueAt.UTC().Format(time.RFC3339Nano)
+		}
+		if decision.ResolutionDueAt != nil {
+			data["resolution_due_at"] = decision.ResolutionDueAt.UTC().Format(time.RFC3339Nano)
 		}
 		if decision.QuarantinedAt != nil {
 			data["quarantined_at"] = decision.QuarantinedAt.UTC().Format(time.RFC3339Nano)
@@ -5570,6 +5795,41 @@ func secureCellDecisionApprovalReachable(run *secureCellRun, thread SecureCellSe
 	return true
 }
 
+func secureCellDecisionVoteChoiceEnabled(decision SecureCellThreadDecision, choice SecureCellThreadDecisionVoteChoice) bool {
+	choice = SecureCellThreadDecisionVoteChoice(strings.ToLower(strings.TrimSpace(string(choice))))
+	if choice == "" {
+		return false
+	}
+	allowed := normalizeSecureCellDecisionVoteChoices(decision.AllowedVoteChoices)
+	if len(allowed) == 0 {
+		allowed = []SecureCellThreadDecisionVoteChoice{
+			SecureCellThreadDecisionVoteChoiceApprove,
+			SecureCellThreadDecisionVoteChoiceReject,
+			SecureCellThreadDecisionVoteChoiceAbstain,
+		}
+	}
+	for _, candidate := range allowed {
+		if candidate == choice {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellDecisionRoleRuleAllows(actorRole string, allowedRoles []string) bool {
+	allowedRoles = uniqueSecureCellDecisionRoles(allowedRoles)
+	if len(allowedRoles) == 0 {
+		return true
+	}
+	actorRole = strings.TrimSpace(strings.ToLower(actorRole))
+	for _, allowedRole := range allowedRoles {
+		if allowedRole == actorRole {
+			return true
+		}
+	}
+	return false
+}
+
 func secureCellDecisionCommentTotal(decisions []SecureCellThreadDecision) int {
 	total := 0
 	for _, decision := range decisions {
@@ -5676,6 +5936,76 @@ func uniqueSecureCellDecisionRoles(values []string) []string {
 		normalized = append(normalized, trimmed)
 	}
 	return normalized
+}
+
+func normalizeSecureCellDecisionVoteChoices(values []SecureCellThreadDecisionVoteChoice) []SecureCellThreadDecisionVoteChoice {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]SecureCellThreadDecisionVoteChoice, 0, len(values))
+	seen := make(map[SecureCellThreadDecisionVoteChoice]struct{}, len(values))
+	for _, value := range values {
+		normalized := SecureCellThreadDecisionVoteChoice(strings.ToLower(strings.TrimSpace(string(value))))
+		switch normalized {
+		case SecureCellThreadDecisionVoteChoiceApprove, SecureCellThreadDecisionVoteChoiceReject, SecureCellThreadDecisionVoteChoiceAbstain:
+		default:
+			continue
+		}
+		if _, ok := seen[normalized]; ok {
+			continue
+		}
+		seen[normalized] = struct{}{}
+		out = append(out, normalized)
+	}
+	return out
+}
+
+func resolveSecureCellDecisionGovernance(template string, allowedChoices []SecureCellThreadDecisionVoteChoice, rejectorRoles, abstainerRoles, reopenRoles []string) (string, []SecureCellThreadDecisionVoteChoice, []string, []string, []string, error) {
+	template = strings.TrimSpace(strings.ToLower(template))
+	defaultChoices := []SecureCellThreadDecisionVoteChoice{
+		SecureCellThreadDecisionVoteChoiceApprove,
+		SecureCellThreadDecisionVoteChoiceReject,
+		SecureCellThreadDecisionVoteChoiceAbstain,
+	}
+	defaultRejectorRoles := []string(nil)
+	defaultAbstainerRoles := []string(nil)
+	defaultReopenRoles := []string(nil)
+
+	switch template {
+	case "", "standard_review":
+		if template == "" {
+			template = "standard_review"
+		}
+	case "dual_control":
+		defaultChoices = []SecureCellThreadDecisionVoteChoice{
+			SecureCellThreadDecisionVoteChoiceApprove,
+			SecureCellThreadDecisionVoteChoiceReject,
+		}
+		defaultRejectorRoles = []string{"owner"}
+		defaultReopenRoles = []string{"owner"}
+	case "board_escalation":
+		defaultRejectorRoles = []string{"owner", "board_reviewer"}
+		defaultAbstainerRoles = []string{"owner", "board_reviewer", "reviewer_b"}
+		defaultReopenRoles = []string{"owner", "board_reviewer"}
+	default:
+		return "", nil, nil, nil, nil, fmt.Errorf("securecells/service: unsupported decision governance template %q", template)
+	}
+
+	allowedChoices = normalizeSecureCellDecisionVoteChoices(allowedChoices)
+	if len(allowedChoices) == 0 {
+		allowedChoices = append([]SecureCellThreadDecisionVoteChoice(nil), defaultChoices...)
+	}
+	rejectorRoles = firstNonEmptyDecisionRoles(rejectorRoles, defaultRejectorRoles)
+	abstainerRoles = firstNonEmptyDecisionRoles(abstainerRoles, defaultAbstainerRoles)
+	reopenRoles = firstNonEmptyDecisionRoles(reopenRoles, defaultReopenRoles)
+	return template, allowedChoices, rejectorRoles, abstainerRoles, reopenRoles, nil
+}
+
+func firstNonEmptyDecisionRoles(primary []string, fallback []string) []string {
+	if len(uniqueSecureCellDecisionRoles(primary)) > 0 {
+		return uniqueSecureCellDecisionRoles(primary)
+	}
+	return uniqueSecureCellDecisionRoles(fallback)
 }
 
 func secureCellDecisionMissingRequiredRoles(decision SecureCellThreadDecision) []string {
@@ -6528,6 +6858,25 @@ func uniqueTrimmedStrings(values []string) []string {
 
 func uniqueSecureCellStrings(values []string) []string {
 	return uniqueTrimmedStrings(values)
+}
+
+func joinSecureCellDecisionVoteChoices(values []SecureCellThreadDecisionVoteChoice) string {
+	if len(values) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(values))
+	for _, value := range normalizeSecureCellDecisionVoteChoices(values) {
+		parts = append(parts, string(value))
+	}
+	return strings.Join(parts, ",")
+}
+
+func cloneUTCTime(in *time.Time) *time.Time {
+	if in == nil || in.IsZero() {
+		return nil
+	}
+	value := in.UTC()
+	return &value
 }
 
 func normalizeSecureCellThreshold(value int) int {

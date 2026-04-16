@@ -84,6 +84,9 @@ type secureCellLifecycleRequest struct {
 	OutcomeBundleID   string                      `json:"outcome_bundle_id,omitempty"`
 	OutcomeBundleName string                      `json:"outcome_bundle_name,omitempty"`
 	OutcomeBundleType string                      `json:"outcome_bundle_type,omitempty"`
+	DeadlineAt        *time.Time                  `json:"deadline_at,omitempty"`
+	PolicyTemplate    string                      `json:"policy_template,omitempty"`
+	AutoEscalation    *bool                       `json:"auto_escalation,omitempty"`
 	EffectiveAt       *time.Time                  `json:"effective_at,omitempty"`
 	Metadata          map[string]string           `json:"metadata,omitempty"`
 }
@@ -153,18 +156,29 @@ type secureCellThreadMessageRequest struct {
 }
 
 type secureCellThreadDecisionRequest struct {
-	ActorIdentity         json.RawMessage             `json:"actor_identity,omitempty"`
-	PolicyReceipt         *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	Title                 string                      `json:"title,omitempty"`
-	Summary               string                      `json:"summary,omitempty"`
-	Classification        string                      `json:"classification,omitempty"`
-	ApprovalThreshold     *int                        `json:"approval_threshold,omitempty"`
-	EligibleApproverDIDs  []string                    `json:"eligible_approver_dids,omitempty"`
-	RequiredApproverRoles []string                    `json:"required_approver_roles,omitempty"`
-	RelatedExchangeIDs    []string                    `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs      []string                    `json:"related_output_ids,omitempty"`
-	Reason                string                      `json:"reason,omitempty"`
-	Metadata              map[string]string           `json:"metadata,omitempty"`
+	ActorIdentity         json.RawMessage                                             `json:"actor_identity,omitempty"`
+	PolicyReceipt         *policy.SignedPolicyReceipt                                 `json:"policy_receipt,omitempty"`
+	Title                 string                                                      `json:"title,omitempty"`
+	Summary               string                                                      `json:"summary,omitempty"`
+	Classification        string                                                      `json:"classification,omitempty"`
+	GovernanceTemplate    string                                                      `json:"governance_template,omitempty"`
+	ApprovalThreshold     *int                                                        `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs  []string                                                    `json:"eligible_approver_dids,omitempty"`
+	RequiredApproverRoles []string                                                    `json:"required_approver_roles,omitempty"`
+	AllowedVoteChoices    []securecellsintegration.SecureCellThreadDecisionVoteChoice `json:"allowed_vote_choices,omitempty"`
+	RejectorRoles         []string                                                    `json:"rejector_roles,omitempty"`
+	AbstainerRoles        []string                                                    `json:"abstainer_roles,omitempty"`
+	ReopenRoles           []string                                                    `json:"reopen_roles,omitempty"`
+	AutoEscalateToDID     string                                                      `json:"auto_escalate_to_did,omitempty"`
+	EscalationDueAt       *time.Time                                                  `json:"escalation_due_at,omitempty"`
+	ResolutionDueAt       *time.Time                                                  `json:"resolution_due_at,omitempty"`
+	RelatedExchangeIDs    []string                                                    `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs      []string                                                    `json:"related_output_ids,omitempty"`
+	DeadlineAt            *time.Time                                                  `json:"deadline_at,omitempty"`
+	PolicyTemplate        string                                                      `json:"policy_template,omitempty"`
+	AutoEscalation        *bool                                                       `json:"auto_escalation,omitempty"`
+	Reason                string                                                      `json:"reason,omitempty"`
+	Metadata              map[string]string                                           `json:"metadata,omitempty"`
 }
 
 type secureCellSessionMemberMutationRequest struct {
@@ -662,6 +676,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			req.Metadata = secureCellDecisionGovernanceMetadata(req.Metadata, req.DeadlineAt, req.PolicyTemplate, req.AutoEscalation)
 			req.Metadata = secureCellOutcomeBundleMetadata(req.Metadata, decisionID, req.OutcomeBundleID, req.OutcomeBundleName, req.OutcomeBundleType, req.Comment)
 			result, err := app.secureCellService.GetCell(r.Context(), cellID)
 			if err != nil {
@@ -715,6 +730,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			req.Metadata = secureCellDecisionGovernanceMetadata(req.Metadata, req.DeadlineAt, req.PolicyTemplate, req.AutoEscalation)
 			req.Metadata = secureCellDecisionMutationMetadata(req.Metadata, decisionID, req.Comment, req.RelatedOutputIDs, req.ApprovalThreshold, firstNonEmpty(strings.TrimSpace(req.VoteChoice), strings.TrimSpace(req.ApprovalVote)))
 			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
@@ -835,6 +851,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			req.Metadata = secureCellDecisionGovernanceMetadata(req.Metadata, req.DeadlineAt, req.PolicyTemplate, req.AutoEscalation)
 			result, err := app.secureCellService.CreateThreadDecision(r.Context(), cellID, securecellsintegration.SecureCellThreadDecisionRequest{
 				SessionID:             sessionID,
 				ThreadID:              threadID,
@@ -842,9 +859,17 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				Title:                 req.Title,
 				Summary:               req.Summary,
 				Classification:        req.Classification,
+				GovernanceTemplate:    secureCellDecisionServiceGovernanceTemplate(req),
 				ApprovalThreshold:     safeSecureCellOptionalInt(req.ApprovalThreshold),
 				EligibleApproverDIDs:  req.EligibleApproverDIDs,
 				RequiredApproverRoles: req.RequiredApproverRoles,
+				AllowedVoteChoices:    append([]securecellsintegration.SecureCellThreadDecisionVoteChoice(nil), req.AllowedVoteChoices...),
+				RejectorRoles:         append([]string(nil), req.RejectorRoles...),
+				AbstainerRoles:        append([]string(nil), req.AbstainerRoles...),
+				ReopenRoles:           append([]string(nil), req.ReopenRoles...),
+				AutoEscalateToDID:     strings.TrimSpace(req.AutoEscalateToDID),
+				EscalationDueAt:       safeSecureCellOptionalTime(req.EscalationDueAt),
+				ResolutionDueAt:       secureCellDecisionResolutionDueAt(req),
 				RelatedExchangeIDs:    req.RelatedExchangeIDs,
 				RelatedOutputIDs:      req.RelatedOutputIDs,
 				Reason:                req.Reason,
@@ -2004,6 +2029,23 @@ func secureCellDecisionMutationMetadata(metadata map[string]string, decisionID, 
 	return out
 }
 
+func secureCellDecisionGovernanceMetadata(metadata map[string]string, deadlineAt *time.Time, policyTemplate string, autoEscalation *bool) map[string]string {
+	out := cloneStringMap(metadata)
+	if out == nil {
+		out = make(map[string]string)
+	}
+	if deadlineAt != nil && !deadlineAt.IsZero() {
+		out["decision_deadline_at"] = deadlineAt.UTC().Format(time.RFC3339Nano)
+	}
+	if trimmed := strings.TrimSpace(policyTemplate); trimmed != "" {
+		out["decision_policy_template"] = trimmed
+	}
+	if autoEscalation != nil {
+		out["decision_auto_escalation_enabled"] = fmt.Sprintf("%t", *autoEscalation)
+	}
+	return out
+}
+
 func secureCellDecisionApprovalMetadata(metadata map[string]string, threshold *int, vote string, comment string) map[string]string {
 	out := cloneStringMap(metadata)
 	if out == nil {
@@ -2224,6 +2266,33 @@ func safeSecureCellOptionalInt(value *int) int {
 		return 0
 	}
 	return *value
+}
+
+func safeSecureCellOptionalTime(value *time.Time) *time.Time {
+	if value == nil || value.IsZero() {
+		return nil
+	}
+	normalized := value.UTC()
+	return &normalized
+}
+
+func secureCellDecisionResolutionDueAt(req secureCellThreadDecisionRequest) *time.Time {
+	if normalized := safeSecureCellOptionalTime(req.ResolutionDueAt); normalized != nil {
+		return normalized
+	}
+	return safeSecureCellOptionalTime(req.DeadlineAt)
+}
+
+func secureCellDecisionServiceGovernanceTemplate(req secureCellThreadDecisionRequest) string {
+	if template := strings.TrimSpace(req.GovernanceTemplate); template != "" {
+		return template
+	}
+	switch normalized := strings.ToLower(strings.TrimSpace(req.PolicyTemplate)); normalized {
+	case "standard_review", "dual_control", "board_escalation":
+		return normalized
+	default:
+		return ""
+	}
 }
 
 func writeSecureCellAPIError(w http.ResponseWriter, status int, message string) {
