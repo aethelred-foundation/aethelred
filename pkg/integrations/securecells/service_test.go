@@ -1994,6 +1994,170 @@ func TestService_SweepDecisionGovernanceEscalatesAndClosesExpiredDecisions(t *te
 	}
 }
 
+func TestService_ListOverdueDecisionsAndAutomationActions(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Operator Decision Cell",
+		Purpose:       "operator sla visibility",
+		Resource:      "cell:operator-decision-views",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Operator Session",
+		Purpose:         "operator overdue visibility",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Operator Thread",
+		Purpose:         "operator overdue visibility",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	now := time.Now().UTC().Truncate(time.Second)
+	firstTierDueAt := now.Add(-15 * time.Minute)
+	secondTierDueAt := now.Add(30 * time.Minute)
+	resolutionDueAt := now.Add(90 * time.Minute)
+	ladderDecisionResult, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Escalate Exposure Review",
+		Summary:              "should appear overdue for tier_1",
+		Classification:       "confidential",
+		ApprovalThreshold:    1,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID(), participantB.AgentID()},
+		EscalationLadder: []SecureCellDecisionEscalationTier{
+			{
+				TierID:    "tier_1",
+				TargetDID: participantA.AgentID(),
+				DueAt:     &firstTierDueAt,
+				Reason:    "reviewer_a deadline reached",
+			},
+			{
+				TierID:    "tier_2",
+				TargetDID: participantB.AgentID(),
+				DueAt:     &secondTierDueAt,
+				Reason:    "reviewer_b deadline reached",
+			},
+		},
+		ResolutionDueAt: &resolutionDueAt,
+		Reason:          "decision proposed",
+		Metadata:        map[string]string{"ticket": "SC-OP-OVERDUE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision ladder case failed: %v", err)
+	}
+	ladderDecisionID := ladderDecisionResult.Decisions[len(ladderDecisionResult.Decisions)-1].ID
+
+	closeDueAt := now.Add(-5 * time.Minute)
+	closeDecisionResult, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Close Stale Decision",
+		Summary:              "should appear overdue for closure",
+		Classification:       "confidential",
+		ApprovalThreshold:    1,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		ResolutionDueAt:      &closeDueAt,
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-OP-OVERDUE-02"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision close case failed: %v", err)
+	}
+	closeDecisionID := closeDecisionResult.Decisions[len(closeDecisionResult.Decisions)-1].ID
+
+	overdue, err := service.ListOverdueDecisions(ctx, SecureCellOverdueDecisionFilter{
+		CellID: result.CellID,
+		Before: &now,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueDecisions failed: %v", err)
+	}
+	if len(overdue) != 2 {
+		t.Fatalf("expected 2 overdue decisions, got %+v", overdue)
+	}
+	if overdue[0].DecisionID != ladderDecisionID || overdue[0].AutomationAction != "escalate" || overdue[0].TierID != "tier_1" || overdue[0].TargetDID != participantA.AgentID() {
+		t.Fatalf("expected first overdue item to be tier_1 escalation, got %+v", overdue[0])
+	}
+	if overdue[1].DecisionID != closeDecisionID || overdue[1].AutomationAction != "close" || overdue[1].OverdueReason != "resolution_due" {
+		t.Fatalf("expected second overdue item to be overdue close, got %+v", overdue[1])
+	}
+
+	_, err = service.SweepDecisionGovernance(ctx, now, SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated decision governance sweep",
+		Metadata: map[string]string{"ticket": "SC-OP-OVERDUE-SWEEP"},
+	})
+	if err != nil {
+		t.Fatalf("SweepDecisionGovernance failed: %v", err)
+	}
+
+	remaining, err := service.ListOverdueDecisions(ctx, SecureCellOverdueDecisionFilter{
+		CellID: result.CellID,
+		Before: &now,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueDecisions after sweep failed: %v", err)
+	}
+	if len(remaining) != 0 {
+		t.Fatalf("expected overdue queue to clear after sweep, got %+v", remaining)
+	}
+
+	actions, err := service.ListDecisionAutomationActions(ctx, SecureCellDecisionAutomationActionFilter{
+		CellID: result.CellID,
+	})
+	if err != nil {
+		t.Fatalf("ListDecisionAutomationActions failed: %v", err)
+	}
+	if len(actions) != 2 {
+		t.Fatalf("expected 2 automation actions, got %+v", actions)
+	}
+
+	actionByDecision := make(map[string]SecureCellDecisionAutomationActionRecord, len(actions))
+	for _, action := range actions {
+		actionByDecision[action.DecisionID] = action
+	}
+	ladderAction, ok := actionByDecision[ladderDecisionID]
+	if !ok || ladderAction.Action != "secure_cell.session_thread_decision_escalated" || ladderAction.TierID != "tier_1" || ladderAction.TargetDID != participantA.AgentID() || ladderAction.Trigger != "escalation_tier_due" {
+		t.Fatalf("expected ladder automation action metadata, got %+v", ladderAction)
+	}
+	closeAction, ok := actionByDecision[closeDecisionID]
+	if !ok || closeAction.Action != "secure_cell.session_thread_decision_closed" || closeAction.Trigger != "resolution_due" {
+		t.Fatalf("expected close automation action metadata, got %+v", closeAction)
+	}
+}
+
 func TestService_ListExpiringQuarantinesReturnsExpiredMembers(t *testing.T) {
 	t.Parallel()
 

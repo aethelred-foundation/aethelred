@@ -169,6 +169,7 @@ type secureCellThreadDecisionRequest struct {
 	RejectorRoles         []string                                                    `json:"rejector_roles,omitempty"`
 	AbstainerRoles        []string                                                    `json:"abstainer_roles,omitempty"`
 	ReopenRoles           []string                                                    `json:"reopen_roles,omitempty"`
+	EscalationLadder      []securecellsintegration.SecureCellDecisionEscalationTier   `json:"escalation_ladder,omitempty"`
 	AutoEscalateToDID     string                                                      `json:"auto_escalate_to_did,omitempty"`
 	EscalationDueAt       *time.Time                                                  `json:"escalation_due_at,omitempty"`
 	ResolutionDueAt       *time.Time                                                  `json:"resolution_due_at,omitempty"`
@@ -262,6 +263,14 @@ type secureCellEventListResponse struct {
 
 type secureCellWebhookDeliveryListResponse struct {
 	Items []secureCellWebhookDeliveryRecord `json:"items"`
+}
+
+type secureCellOverdueDecisionListResponse struct {
+	Items []securecellsintegration.SecureCellOverdueDecision `json:"items"`
+}
+
+type secureCellDecisionAutomationActionListResponse struct {
+	Items []securecellsintegration.SecureCellDecisionAutomationActionRecord `json:"items"`
 }
 
 type appSecureCellSealer struct {
@@ -508,6 +517,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 		if app == nil || app.secureCellService == nil {
 			writeSecureCellAPIError(w, http.StatusServiceUnavailable, "secure cell service is unavailable")
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decisions/overdue" {
+			filter, err := parseSecureCellOverdueDecisionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueDecisions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellOverdueDecisionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decisions/overdue/export" {
+			filter, err := parseSecureCellOverdueDecisionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueDecisions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellOverdueDecisionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decisions/automation-actions" {
+			filter, err := parseSecureCellDecisionAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListDecisionAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellDecisionAutomationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decisions/automation-actions/export" {
+			filter, err := parseSecureCellDecisionAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListDecisionAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellDecisionAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
 			return
 		}
 
@@ -867,6 +940,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				RejectorRoles:         append([]string(nil), req.RejectorRoles...),
 				AbstainerRoles:        append([]string(nil), req.AbstainerRoles...),
 				ReopenRoles:           append([]string(nil), req.ReopenRoles...),
+				EscalationLadder:      append([]securecellsintegration.SecureCellDecisionEscalationTier(nil), req.EscalationLadder...),
 				AutoEscalateToDID:     strings.TrimSpace(req.AutoEscalateToDID),
 				EscalationDueAt:       safeSecureCellOptionalTime(req.EscalationDueAt),
 				ResolutionDueAt:       secureCellDecisionResolutionDueAt(req),
@@ -1635,6 +1709,54 @@ func parseSecureCellListFilter(r *http.Request) (securecellsintegration.SecureCe
 	}, nil
 }
 
+func parseSecureCellOverdueDecisionFilter(r *http.Request) (securecellsintegration.SecureCellOverdueDecisionFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellOverdueDecisionFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	statuses, err := parseSecureCellDecisionStatuses(query.Get("status"))
+	if err != nil {
+		return securecellsintegration.SecureCellOverdueDecisionFilter{}, err
+	}
+	before, err := parseSecureCellOptionalTime(query.Get("before"))
+	if err != nil {
+		return securecellsintegration.SecureCellOverdueDecisionFilter{}, err
+	}
+	return securecellsintegration.SecureCellOverdueDecisionFilter{
+		CellID:         strings.TrimSpace(query.Get("cell_id")),
+		Jurisdiction:   strings.TrimSpace(query.Get("jurisdiction")),
+		ParticipantDID: strings.TrimSpace(query.Get("participant_did")),
+		Statuses:       statuses,
+		Before:         before,
+		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellDecisionAutomationActionFilter(r *http.Request) (securecellsintegration.SecureCellDecisionAutomationActionFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellDecisionAutomationActionFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	since, err := parseSecureCellOptionalTime(query.Get("since"))
+	if err != nil {
+		return securecellsintegration.SecureCellDecisionAutomationActionFilter{}, err
+	}
+	until, err := parseSecureCellOptionalTime(query.Get("until"))
+	if err != nil {
+		return securecellsintegration.SecureCellDecisionAutomationActionFilter{}, err
+	}
+	return securecellsintegration.SecureCellDecisionAutomationActionFilter{
+		CellID:     strings.TrimSpace(query.Get("cell_id")),
+		SessionID:  strings.TrimSpace(query.Get("session_id")),
+		ThreadID:   strings.TrimSpace(query.Get("thread_id")),
+		DecisionID: strings.TrimSpace(query.Get("decision_id")),
+		Action:     strings.TrimSpace(query.Get("action")),
+		Since:      since,
+		Until:      until,
+		Limit:      cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
 func parseSecureCellStatuses(raw string) ([]securecellsintegration.SecureCellStatus, error) {
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil
@@ -1649,6 +1771,35 @@ func parseSecureCellStatuses(raw string) ([]securecellsintegration.SecureCellSta
 		statuses = append(statuses, status)
 	}
 	return statuses, nil
+}
+
+func parseSecureCellDecisionStatuses(raw string) ([]securecellsintegration.SecureCellThreadDecisionStatus, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+	parts := strings.Split(raw, ",")
+	statuses := make([]securecellsintegration.SecureCellThreadDecisionStatus, 0, len(parts))
+	for _, part := range parts {
+		status, err := parseSecureCellDecisionStatus(part)
+		if err != nil {
+			return nil, err
+		}
+		statuses = append(statuses, status)
+	}
+	return statuses, nil
+}
+
+func parseSecureCellDecisionStatus(raw string) (securecellsintegration.SecureCellThreadDecisionStatus, error) {
+	switch securecellsintegration.SecureCellThreadDecisionStatus(strings.ToLower(strings.TrimSpace(raw))) {
+	case securecellsintegration.SecureCellThreadDecisionStatusOpen,
+		securecellsintegration.SecureCellThreadDecisionStatusApproved,
+		securecellsintegration.SecureCellThreadDecisionStatusQuorumFailed,
+		securecellsintegration.SecureCellThreadDecisionStatusQuarantined,
+		securecellsintegration.SecureCellThreadDecisionStatusClosed:
+		return securecellsintegration.SecureCellThreadDecisionStatus(strings.ToLower(strings.TrimSpace(raw))), nil
+	default:
+		return "", fmt.Errorf("invalid secure cell decision status %q", raw)
+	}
 }
 
 func parseSecureCellStatus(raw string) (securecellsintegration.SecureCellStatus, error) {

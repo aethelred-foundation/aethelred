@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -1660,6 +1661,165 @@ func TestSecureCellsHandlers_BearerThreadDecisionExplicitGovernanceConfiguration
 	}
 }
 
+func TestSecureCellsHandlers_BearerDecisionAutomationOperatorViews(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{29}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participantA.AgentID(), participantB.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{participantA.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	now := time.Now().UTC().Truncate(time.Second)
+	firstTierDueAt := now.Add(-15 * time.Minute)
+	secondTierDueAt := now.Add(45 * time.Minute)
+	resolutionDueAt := now.Add(90 * time.Minute)
+	ladderReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithEscalationLadder(t, owner, []securecellsintegration.SecureCellDecisionEscalationTier{
+		{
+			TierID:    "tier_1",
+			TargetDID: participantA.AgentID(),
+			DueAt:     &firstTierDueAt,
+			Reason:    "reviewer-a due",
+		},
+		{
+			TierID:    "tier_2",
+			TargetDID: participantB.AgentID(),
+			DueAt:     &secondTierDueAt,
+			Reason:    "reviewer-b due",
+		},
+	}, &resolutionDueAt, []string{owner.AgentID(), participantA.AgentID(), participantB.AgentID()}, map[string]string{"ticket": "SC-API-SLA-01"})))
+	ladderReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	ladderRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(ladderRec, ladderReq)
+	if ladderRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ladderRec.Code, ladderRec.Body.String())
+	}
+
+	var ladderResp secureCellResponse
+	if err := json.Unmarshal(ladderRec.Body.Bytes(), &ladderResp); err != nil {
+		t.Fatalf("unmarshal ladder decision response: %v", err)
+	}
+	ladderDecisionID := ladderResp.Result.Decisions[len(ladderResp.Result.Decisions)-1].ID
+
+	closeDueAt := now.Add(-5 * time.Minute)
+	closeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithExplicitGovernance(t, owner, "standard_review", "", nil, &closeDueAt, []string{owner.AgentID(), participantA.AgentID()}, map[string]string{"ticket": "SC-API-SLA-02"})))
+	closeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	closeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(closeRec, closeReq)
+	if closeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, closeRec.Code, closeRec.Body.String())
+	}
+
+	overdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decisions/overdue?cell_id="+cellID+"&before="+url.QueryEscape(now.Format(time.RFC3339Nano)), nil)
+	overdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueRec, overdueReq)
+	if overdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueRec.Code, overdueRec.Body.String())
+	}
+	var overdueResp secureCellOverdueDecisionListResponse
+	if err := json.Unmarshal(overdueRec.Body.Bytes(), &overdueResp); err != nil {
+		t.Fatalf("unmarshal overdue response: %v", err)
+	}
+	if len(overdueResp.Items) != 2 {
+		t.Fatalf("expected two overdue decisions, got %+v", overdueResp.Items)
+	}
+	if overdueResp.Items[0].DecisionID != ladderDecisionID || overdueResp.Items[0].TierID != "tier_1" {
+		t.Fatalf("expected ladder decision to surface as first overdue item, got %+v", overdueResp.Items)
+	}
+
+	overdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decisions/overdue/export?cell_id="+cellID+"&before="+url.QueryEscape(now.Format(time.RFC3339Nano))+"&format=csv", nil)
+	overdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueExportRec, overdueExportReq)
+	if overdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueExportRec.Code, overdueExportRec.Body.String())
+	}
+	if body := overdueExportRec.Body.String(); !strings.Contains(body, "decision_id") || !strings.Contains(body, ladderDecisionID) {
+		t.Fatalf("expected overdue csv export to include decision rows, got %s", body)
+	}
+
+	if _, err := app.secureCellService.SweepDecisionGovernance(context.Background(), now, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated decision governance sweep",
+		Metadata: map[string]string{"ticket": "SC-API-SLA-SWEEP"},
+	}); err != nil {
+		t.Fatalf("SweepDecisionGovernance failed: %v", err)
+	}
+
+	actionsReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decisions/automation-actions?cell_id="+cellID, nil)
+	actionsRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionsRec, actionsReq)
+	if actionsRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionsRec.Code, actionsRec.Body.String())
+	}
+	var actionsResp secureCellDecisionAutomationActionListResponse
+	if err := json.Unmarshal(actionsRec.Body.Bytes(), &actionsResp); err != nil {
+		t.Fatalf("unmarshal automation actions response: %v", err)
+	}
+	if len(actionsResp.Items) != 2 {
+		t.Fatalf("expected two automation actions, got %+v", actionsResp.Items)
+	}
+	if actionsResp.Items[0].TierID == "" && actionsResp.Items[1].TierID == "" {
+		t.Fatalf("expected at least one tiered automation action, got %+v", actionsResp.Items)
+	}
+
+	actionsExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decisions/automation-actions/export?cell_id="+cellID+"&format=csv", nil)
+	actionsExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionsExportRec, actionsExportReq)
+	if actionsExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionsExportRec.Code, actionsExportRec.Body.String())
+	}
+	if body := actionsExportRec.Body.String(); !strings.Contains(body, "transition_id") || !strings.Contains(body, "secure_cell.session_thread_decision_") {
+		t.Fatalf("expected automation csv export to include action rows, got %s", body)
+	}
+}
+
 func TestSecureCellsHandlers_BearerExpireQuarantineFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -2535,6 +2695,28 @@ func mustMarshalSecureCellThreadDecisionRequestWithExplicitGovernance(t *testing
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell thread decision explicit governance request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellThreadDecisionRequestWithEscalationLadder(t *testing.T, actor *agent.AgentIdentity, ladder []securecellsintegration.SecureCellDecisionEscalationTier, resolutionDueAt *time.Time, eligibleApproverDIDs []string, metadata map[string]string) []byte {
+	t.Helper()
+	approvalThreshold := 2
+	body, err := json.Marshal(secureCellThreadDecisionRequest{
+		ActorIdentity:        mustOptionalJSONRawMessage(t, actor),
+		Title:                "Tiered Decision Governance",
+		Summary:              "tiered sla and escalation ladder",
+		Classification:       "confidential",
+		GovernanceTemplate:   "standard_review",
+		ApprovalThreshold:    &approvalThreshold,
+		EligibleApproverDIDs: eligibleApproverDIDs,
+		EscalationLadder:     ladder,
+		ResolutionDueAt:      resolutionDueAt,
+		Reason:               "decision proposed",
+		Metadata:             metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell thread decision escalation ladder request: %v", err)
 	}
 	return body
 }

@@ -290,6 +290,17 @@ type SecureCellThreadDecisionDelegation struct {
 	Metadata          map[string]string                      `json:"metadata,omitempty"`
 }
 
+// SecureCellDecisionEscalationTier defines one timed escalation stage for a
+// governed decision.
+type SecureCellDecisionEscalationTier struct {
+	TierID    string                                 `json:"tier_id,omitempty"`
+	TargetDID string                                 `json:"target_did,omitempty"`
+	Mode      SecureCellThreadDecisionDelegationMode `json:"mode,omitempty"`
+	DueAt     *time.Time                             `json:"due_at,omitempty"`
+	Reason    string                                 `json:"reason,omitempty"`
+	Metadata  map[string]string                      `json:"metadata,omitempty"`
+}
+
 // SecureCellThreadDecisionOutcome is one portable outcome bundle emitted from
 // a governed decision after deliberation.
 type SecureCellThreadDecisionOutcome struct {
@@ -331,6 +342,7 @@ type SecureCellThreadDecision struct {
 	RejectorRoles         []string                             `json:"rejector_roles,omitempty"`
 	AbstainerRoles        []string                             `json:"abstainer_roles,omitempty"`
 	ReopenRoles           []string                             `json:"reopen_roles,omitempty"`
+	EscalationLadder      []SecureCellDecisionEscalationTier   `json:"escalation_ladder,omitempty"`
 	AutoEscalateToDID     string                               `json:"auto_escalate_to_did,omitempty"`
 	ApprovalVotes         []SecureCellThreadDecisionVote       `json:"approval_votes,omitempty"`
 	Comments              []SecureCellThreadDecisionComment    `json:"comments,omitempty"`
@@ -668,6 +680,7 @@ type SecureCellThreadDecisionRequest struct {
 	RejectorRoles         []string                             `json:"rejector_roles,omitempty"`
 	AbstainerRoles        []string                             `json:"abstainer_roles,omitempty"`
 	ReopenRoles           []string                             `json:"reopen_roles,omitempty"`
+	EscalationLadder      []SecureCellDecisionEscalationTier   `json:"escalation_ladder,omitempty"`
 	AutoEscalateToDID     string                               `json:"auto_escalate_to_did,omitempty"`
 	EscalationDueAt       *time.Time                           `json:"escalation_due_at,omitempty"`
 	ResolutionDueAt       *time.Time                           `json:"resolution_due_at,omitempty"`
@@ -769,12 +782,16 @@ type SecureCellExpirySweepResult struct {
 // SecureCellDecisionGovernanceSweepAction records one automated governance
 // action applied to a secure-cell decision.
 type SecureCellDecisionGovernanceSweepAction struct {
-	CellID     string    `json:"cell_id"`
-	SessionID  string    `json:"session_id"`
-	ThreadID   string    `json:"thread_id"`
-	DecisionID string    `json:"decision_id"`
-	Action     string    `json:"action"`
-	OccurredAt time.Time `json:"occurred_at"`
+	CellID     string     `json:"cell_id"`
+	SessionID  string     `json:"session_id"`
+	ThreadID   string     `json:"thread_id"`
+	DecisionID string     `json:"decision_id"`
+	Action     string     `json:"action"`
+	TierID     string     `json:"tier_id,omitempty"`
+	TargetDID  string     `json:"target_did,omitempty"`
+	DueAt      *time.Time `json:"due_at,omitempty"`
+	Trigger    string     `json:"trigger,omitempty"`
+	OccurredAt time.Time  `json:"occurred_at"`
 }
 
 // SecureCellDecisionGovernanceSweepResult summarizes one global decision
@@ -788,6 +805,80 @@ type SecureCellDecisionGovernanceSweepResult struct {
 	DecisionsClosed    int                                       `json:"decisions_closed"`
 	CellIDs            []string                                  `json:"cell_ids,omitempty"`
 	Actions            []SecureCellDecisionGovernanceSweepAction `json:"actions,omitempty"`
+}
+
+// SecureCellOverdueDecisionFilter narrows operator queries for overdue
+// decision automation work.
+type SecureCellOverdueDecisionFilter struct {
+	CellID         string                           `json:"cell_id,omitempty"`
+	Jurisdiction   string                           `json:"jurisdiction,omitempty"`
+	ParticipantDID string                           `json:"participant_did,omitempty"`
+	Statuses       []SecureCellThreadDecisionStatus `json:"statuses,omitempty"`
+	Before         *time.Time                       `json:"before,omitempty"`
+	Limit          int                              `json:"limit,omitempty"`
+}
+
+// SecureCellOverdueDecision is the operator-facing projection of one decision
+// that has crossed an automation deadline.
+type SecureCellOverdueDecision struct {
+	CellID             string                         `json:"cell_id"`
+	Name               string                         `json:"name"`
+	Jurisdiction       string                         `json:"jurisdiction"`
+	CellStatus         SecureCellStatus               `json:"cell_status"`
+	SessionID          string                         `json:"session_id"`
+	ThreadID           string                         `json:"thread_id"`
+	DecisionID         string                         `json:"decision_id"`
+	DecisionTitle      string                         `json:"decision_title"`
+	DecisionStatus     SecureCellThreadDecisionStatus `json:"decision_status"`
+	GovernanceTemplate string                         `json:"governance_template,omitempty"`
+	AutomationAction   string                         `json:"automation_action"`
+	OverdueReason      string                         `json:"overdue_reason"`
+	TierID             string                         `json:"tier_id,omitempty"`
+	TargetDID          string                         `json:"target_did,omitempty"`
+	DueAt              time.Time                      `json:"due_at"`
+	OverdueSeconds     int64                          `json:"overdue_seconds"`
+	EscalationDueAt    *time.Time                     `json:"escalation_due_at,omitempty"`
+	ResolutionDueAt    *time.Time                     `json:"resolution_due_at,omitempty"`
+	UpdatedAt          time.Time                      `json:"updated_at"`
+}
+
+// SecureCellDecisionAutomationActionFilter narrows operator queries over
+// automated decision actions already applied to secure cells.
+type SecureCellDecisionAutomationActionFilter struct {
+	CellID     string     `json:"cell_id,omitempty"`
+	SessionID  string     `json:"session_id,omitempty"`
+	ThreadID   string     `json:"thread_id,omitempty"`
+	DecisionID string     `json:"decision_id,omitempty"`
+	Action     string     `json:"action,omitempty"`
+	Since      *time.Time `json:"since,omitempty"`
+	Until      *time.Time `json:"until,omitempty"`
+	Limit      int        `json:"limit,omitempty"`
+}
+
+// SecureCellDecisionAutomationActionRecord projects one automated escalation
+// or closure action from the decision lifecycle trail.
+type SecureCellDecisionAutomationActionRecord struct {
+	CellID               string                         `json:"cell_id"`
+	Name                 string                         `json:"name"`
+	Jurisdiction         string                         `json:"jurisdiction"`
+	CellStatus           SecureCellStatus               `json:"cell_status"`
+	SessionID            string                         `json:"session_id,omitempty"`
+	ThreadID             string                         `json:"thread_id,omitempty"`
+	DecisionID           string                         `json:"decision_id,omitempty"`
+	DecisionTitle        string                         `json:"decision_title,omitempty"`
+	DecisionStatusBefore SecureCellThreadDecisionStatus `json:"decision_status_before,omitempty"`
+	DecisionStatusAfter  SecureCellThreadDecisionStatus `json:"decision_status_after,omitempty"`
+	Action               string                         `json:"action"`
+	TierID               string                         `json:"tier_id,omitempty"`
+	TargetDID            string                         `json:"target_did,omitempty"`
+	Trigger              string                         `json:"trigger,omitempty"`
+	DueAt                *time.Time                     `json:"due_at,omitempty"`
+	Actor                string                         `json:"actor"`
+	AutomatedActor       string                         `json:"automated_actor,omitempty"`
+	Reason               string                         `json:"reason,omitempty"`
+	TransitionID         string                         `json:"transition_id"`
+	OccurredAt           time.Time                      `json:"occurred_at"`
+	Metadata             map[string]string              `json:"metadata,omitempty"`
 }
 
 // SecureCellListFilter narrows collection queries over live secure cells.
@@ -1673,15 +1764,34 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		}
 	}
 	autoEscalateToDID := strings.TrimSpace(decision.AutoEscalateToDID)
+	escalationDueAt := cloneUTCTime(decision.EscalationDueAt)
+	resolutionDueAt := cloneUTCTime(decision.ResolutionDueAt)
+	escalationLadder, err := normalizeSecureCellDecisionEscalationLadder(decision.EscalationLadder, autoEscalateToDID, escalationDueAt)
+	if err != nil {
+		return nil, err
+	}
+	for _, tier := range escalationLadder {
+		if !secureCellDecisionParticipantAllowed(run, tier.TargetDID) {
+			return nil, fmt.Errorf("securecells/service: %w: escalation target %q is not permitted for thread %q", ErrPolicyDenied, tier.TargetDID, thread.ID)
+		}
+	}
+	if autoEscalateToDID == "" && len(escalationLadder) > 0 {
+		autoEscalateToDID = escalationLadder[0].TargetDID
+	}
+	if escalationDueAt == nil && len(escalationLadder) > 0 {
+		escalationDueAt = cloneUTCTime(escalationLadder[0].DueAt)
+	}
 	if autoEscalateToDID != "" && !secureCellDecisionParticipantAllowed(run, autoEscalateToDID) {
 		return nil, fmt.Errorf("securecells/service: %w: auto-escalation target %q is not permitted for thread %q", ErrPolicyDenied, autoEscalateToDID, thread.ID)
 	}
-	escalationDueAt := cloneUTCTime(decision.EscalationDueAt)
-	resolutionDueAt := cloneUTCTime(decision.ResolutionDueAt)
 	if escalationDueAt != nil && autoEscalateToDID == "" {
 		return nil, fmt.Errorf("securecells/service: auto-escalation target is required when escalation_due_at is set")
 	}
-	if escalationDueAt != nil && resolutionDueAt != nil && resolutionDueAt.Before(*escalationDueAt) {
+	lastEscalationDueAt := escalationDueAt
+	if len(escalationLadder) > 0 {
+		lastEscalationDueAt = cloneUTCTime(escalationLadder[len(escalationLadder)-1].DueAt)
+	}
+	if lastEscalationDueAt != nil && resolutionDueAt != nil && resolutionDueAt.Before(*lastEscalationDueAt) {
 		return nil, fmt.Errorf("securecells/service: resolution due time must be after escalation due time")
 	}
 	if len(eligibleApproverDIDs) > 0 && len(requiredApproverRoles) == 0 && approvalThreshold > len(eligibleApproverDIDs) {
@@ -1714,6 +1824,7 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		RejectorRoles:         rejectorRoles,
 		AbstainerRoles:        abstainerRoles,
 		ReopenRoles:           reopenRoles,
+		EscalationLadder:      escalationLadder,
 		AutoEscalateToDID:     autoEscalateToDID,
 		ProposedBy:            actorDID,
 		RelatedExchangeIDs:    relatedExchangeIDs,
@@ -1726,26 +1837,28 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 	}
 
 	evaluationMetadata := map[string]string{
-		"session_id":                    session.ID,
-		"thread_id":                     thread.ID,
-		"decision_id":                   item.ID,
-		"decision_title":                item.Title,
-		"decision_classification":       item.Classification,
-		"decision_governance_template":  item.GovernanceTemplate,
-		"decision_approval_threshold":   fmt.Sprintf("%d", item.ApprovalThreshold),
-		"decision_eligible_approvers":   strings.Join(item.EligibleApproverDIDs, ","),
-		"decision_required_roles":       strings.Join(item.RequiredApproverRoles, ","),
-		"decision_allowed_vote_choices": joinSecureCellDecisionVoteChoices(item.AllowedVoteChoices),
-		"decision_rejector_roles":       strings.Join(item.RejectorRoles, ","),
-		"decision_abstainer_roles":      strings.Join(item.AbstainerRoles, ","),
-		"decision_reopen_roles":         strings.Join(item.ReopenRoles, ","),
-		"decision_auto_escalate_to":     item.AutoEscalateToDID,
-		"decision_related_exchanges":    strings.Join(item.RelatedExchangeIDs, ","),
-		"decision_related_outputs":      strings.Join(item.RelatedOutputIDs, ","),
-		"thread_status_before":          string(thread.Status),
-		"session_status_before":         string(session.Status),
-		"cell_status_before":            string(run.result.Status),
-		"transition_reason":             strings.TrimSpace(decision.Reason),
+		"session_id":                         session.ID,
+		"thread_id":                          thread.ID,
+		"decision_id":                        item.ID,
+		"decision_title":                     item.Title,
+		"decision_classification":            item.Classification,
+		"decision_governance_template":       item.GovernanceTemplate,
+		"decision_approval_threshold":        fmt.Sprintf("%d", item.ApprovalThreshold),
+		"decision_eligible_approvers":        strings.Join(item.EligibleApproverDIDs, ","),
+		"decision_required_roles":            strings.Join(item.RequiredApproverRoles, ","),
+		"decision_allowed_vote_choices":      joinSecureCellDecisionVoteChoices(item.AllowedVoteChoices),
+		"decision_rejector_roles":            strings.Join(item.RejectorRoles, ","),
+		"decision_abstainer_roles":           strings.Join(item.AbstainerRoles, ","),
+		"decision_reopen_roles":              strings.Join(item.ReopenRoles, ","),
+		"decision_escalation_ladder_tiers":   strings.Join(secureCellDecisionEscalationTierIDs(item.EscalationLadder), ","),
+		"decision_escalation_ladder_targets": strings.Join(secureCellDecisionEscalationTierTargets(item.EscalationLadder), ","),
+		"decision_auto_escalate_to":          item.AutoEscalateToDID,
+		"decision_related_exchanges":         strings.Join(item.RelatedExchangeIDs, ","),
+		"decision_related_outputs":           strings.Join(item.RelatedOutputIDs, ","),
+		"thread_status_before":               string(thread.Status),
+		"session_status_before":              string(session.Status),
+		"cell_status_before":                 string(run.result.Status),
+		"transition_reason":                  strings.TrimSpace(decision.Reason),
 	}
 	if item.EscalationDueAt != nil {
 		evaluationMetadata["decision_escalation_due_at"] = item.EscalationDueAt.UTC().Format(time.RFC3339Nano)
@@ -3248,6 +3361,185 @@ func (s *Service) ListExpiringQuarantines(_ context.Context, before time.Time) (
 	return items, nil
 }
 
+// ListOverdueDecisions returns operator-facing projections for governed
+// decisions whose next automation milestone is overdue.
+func (s *Service) ListOverdueDecisions(_ context.Context, filter SecureCellOverdueDecisionFilter) ([]SecureCellOverdueDecision, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	at := time.Now().UTC()
+	if filter.Before != nil && !filter.Before.IsZero() {
+		at = filter.Before.UTC()
+	}
+	statuses := make(map[SecureCellThreadDecisionStatus]struct{}, len(filter.Statuses))
+	for _, status := range filter.Statuses {
+		if status == "" {
+			continue
+		}
+		statuses[status] = struct{}{}
+	}
+
+	cellID := strings.TrimSpace(filter.CellID)
+	jurisdiction := strings.TrimSpace(filter.Jurisdiction)
+	participantDID := strings.TrimSpace(filter.ParticipantDID)
+	items := make([]SecureCellOverdueDecision, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if cellID != "" && !strings.EqualFold(strings.TrimSpace(run.result.CellID), cellID) {
+			continue
+		}
+		if jurisdiction != "" && !strings.EqualFold(strings.TrimSpace(run.request.Jurisdiction), jurisdiction) {
+			continue
+		}
+		if participantDID != "" && !secureCellHasParticipant(run.result.Participants, participantDID) {
+			continue
+		}
+		for _, decision := range run.result.Decisions {
+			if len(statuses) > 0 {
+				if _, ok := statuses[decision.Status]; !ok {
+					continue
+				}
+			}
+			if participantDID != "" && !secureCellDecisionReferencesParticipant(decision, participantDID) {
+				continue
+			}
+			action, reason, tierID, targetDID, dueAt, ok := secureCellDecisionOverdueAction(decision, at)
+			if !ok {
+				continue
+			}
+			items = append(items, SecureCellOverdueDecision{
+				CellID:             run.result.CellID,
+				Name:               run.result.Name,
+				Jurisdiction:       run.request.Jurisdiction,
+				CellStatus:         run.result.Status,
+				SessionID:          decision.SessionID,
+				ThreadID:           decision.ThreadID,
+				DecisionID:         decision.ID,
+				DecisionTitle:      decision.Title,
+				DecisionStatus:     decision.Status,
+				GovernanceTemplate: decision.GovernanceTemplate,
+				AutomationAction:   action,
+				OverdueReason:      reason,
+				TierID:             tierID,
+				TargetDID:          targetDID,
+				DueAt:              dueAt.UTC(),
+				OverdueSeconds:     int64(at.Sub(dueAt).Seconds()),
+				EscalationDueAt:    cloneTimePtr(decision.EscalationDueAt),
+				ResolutionDueAt:    cloneTimePtr(decision.ResolutionDueAt),
+				UpdatedAt:          decision.UpdatedAt.UTC(),
+			})
+		}
+	}
+
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].DueAt.Equal(items[j].DueAt) {
+			if items[i].CellID == items[j].CellID {
+				return items[i].DecisionID < items[j].DecisionID
+			}
+			return items[i].CellID < items[j].CellID
+		}
+		return items[i].DueAt.Before(items[j].DueAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
+// ListDecisionAutomationActions returns automated decision actions already
+// applied by SLA sweeps.
+func (s *Service) ListDecisionAutomationActions(_ context.Context, filter SecureCellDecisionAutomationActionFilter) ([]SecureCellDecisionAutomationActionRecord, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	cellID := strings.TrimSpace(filter.CellID)
+	sessionID := strings.TrimSpace(filter.SessionID)
+	threadID := strings.TrimSpace(filter.ThreadID)
+	decisionID := strings.TrimSpace(filter.DecisionID)
+	action := strings.TrimSpace(filter.Action)
+	var since time.Time
+	if filter.Since != nil && !filter.Since.IsZero() {
+		since = filter.Since.UTC()
+	}
+	var until time.Time
+	if filter.Until != nil && !filter.Until.IsZero() {
+		until = filter.Until.UTC()
+	}
+
+	items := make([]SecureCellDecisionAutomationActionRecord, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if cellID != "" && !strings.EqualFold(strings.TrimSpace(run.result.CellID), cellID) {
+			continue
+		}
+		for _, transition := range run.result.Transitions {
+			if !secureCellTransitionAutomatedDecisionAction(transition) {
+				continue
+			}
+			if sessionID != "" && !strings.EqualFold(strings.TrimSpace(transition.SessionID), sessionID) {
+				continue
+			}
+			if threadID != "" && !strings.EqualFold(strings.TrimSpace(transition.ThreadID), threadID) {
+				continue
+			}
+			if decisionID != "" && !strings.EqualFold(strings.TrimSpace(transition.DecisionID), decisionID) {
+				continue
+			}
+			if action != "" && !strings.EqualFold(strings.TrimSpace(transition.Action), action) {
+				continue
+			}
+			occurredAt := transition.OccurredAt.UTC()
+			if !since.IsZero() && occurredAt.Before(since) {
+				continue
+			}
+			if !until.IsZero() && occurredAt.After(until) {
+				continue
+			}
+			items = append(items, SecureCellDecisionAutomationActionRecord{
+				CellID:               run.result.CellID,
+				Name:                 run.result.Name,
+				Jurisdiction:         run.request.Jurisdiction,
+				CellStatus:           run.result.Status,
+				SessionID:            transition.SessionID,
+				ThreadID:             transition.ThreadID,
+				DecisionID:           transition.DecisionID,
+				DecisionTitle:        secureCellDecisionTitle(run.result.Decisions, transition.DecisionID),
+				DecisionStatusBefore: transition.DecisionStatusBefore,
+				DecisionStatusAfter:  transition.DecisionStatusAfter,
+				Action:               transition.Action,
+				TierID:               strings.TrimSpace(transition.Metadata["automation_tier_id"]),
+				TargetDID:            firstNonEmpty(strings.TrimSpace(transition.Metadata["automation_target_did"]), strings.TrimSpace(transition.Metadata["decision_route_target"])),
+				Trigger:              firstNonEmpty(strings.TrimSpace(transition.Metadata["decision_sweep_trigger"]), strings.TrimSpace(transition.Metadata["decision_sweep_action"])),
+				DueAt:                parseSecureCellTransitionDueAt(transition.Metadata),
+				Actor:                transition.Actor,
+				AutomatedActor:       strings.TrimSpace(transition.Metadata["automated_actor"]),
+				Reason:               transition.Reason,
+				TransitionID:         transition.ID,
+				OccurredAt:           occurredAt,
+				Metadata:             cloneStringMap(transition.Metadata),
+			})
+		}
+	}
+
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].OccurredAt.Equal(items[j].OccurredAt) {
+			if items[i].CellID == items[j].CellID {
+				return items[i].TransitionID > items[j].TransitionID
+			}
+			return items[i].CellID < items[j].CellID
+		}
+		return items[i].OccurredAt.After(items[j].OccurredAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
 func (s *Service) transitionMemberState(
 	ctx context.Context,
 	cellID string,
@@ -3749,6 +4041,10 @@ func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lif
 			decisionID string
 			targetDID  string
 			action     string
+			tierID     string
+			trigger    string
+			dueAt      *time.Time
+			reason     string
 		}
 		pending := make([]pendingAction, 0)
 		for _, decision := range append([]SecureCellThreadDecision(nil), run.result.Decisions...) {
@@ -3761,16 +4057,23 @@ func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lif
 					threadID:   decision.ThreadID,
 					decisionID: decision.ID,
 					action:     "close",
+					trigger:    "resolution_due",
+					dueAt:      cloneUTCTime(decision.ResolutionDueAt),
+					reason:     "automated decision resolution deadline reached",
 				})
 				continue
 			}
-			if decision.EscalationDueAt != nil && decision.AutoEscalateToDID != "" && !decision.EscalationDueAt.After(at) && !secureCellDecisionHasDelegation(decision, SecureCellThreadDecisionDelegationModeEscalate, decision.AutoEscalateToDID) {
+			if tier, ok := secureCellDecisionNextDueEscalationTier(decision, at); ok {
 				pending = append(pending, pendingAction{
 					sessionID:  decision.SessionID,
 					threadID:   decision.ThreadID,
 					decisionID: decision.ID,
-					targetDID:  decision.AutoEscalateToDID,
+					targetDID:  tier.TargetDID,
 					action:     "escalate",
+					tierID:     tier.TierID,
+					trigger:    "escalation_tier_due",
+					dueAt:      cloneUTCTime(tier.DueAt),
+					reason:     firstNonEmpty(strings.TrimSpace(tier.Reason), "automated decision escalation deadline reached"),
 				})
 			}
 		}
@@ -3778,18 +4081,28 @@ func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lif
 		for _, action := range pending {
 			actorDID := run.request.OwnerIdentity.AgentID()
 			baseMetadata := mergeStringMaps(lifecycle.Metadata, map[string]string{
-				"decision_sweep_mode":   "automated",
-				"decision_sweep_action": action.action,
+				"decision_sweep_mode":    "automated",
+				"decision_sweep_action":  action.action,
+				"decision_sweep_trigger": action.trigger,
 			})
 			if automatedActor := strings.TrimSpace(lifecycle.ActorDID); automatedActor != "" && automatedActor != actorDID {
 				baseMetadata["automated_actor"] = automatedActor
+			}
+			if action.tierID != "" {
+				baseMetadata["automation_tier_id"] = action.tierID
+			}
+			if action.targetDID != "" {
+				baseMetadata["automation_target_did"] = action.targetDID
+			}
+			if action.dueAt != nil {
+				baseMetadata["decision_sweep_due_at"] = action.dueAt.UTC().Format(time.RFC3339Nano)
 			}
 			switch action.action {
 			case "escalate":
 				if _, err := s.EscalateThreadDecision(ctx, cellID, action.sessionID, action.threadID, action.decisionID, SecureCellThreadDecisionDelegationRequest{
 					ActorDID:  actorDID,
 					TargetDID: action.targetDID,
-					Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), "automated decision escalation deadline reached"),
+					Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), action.reason),
 					Metadata:  baseMetadata,
 				}); err != nil {
 					return nil, err
@@ -3798,7 +4111,7 @@ func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lif
 			case "close":
 				if _, err := s.CloseThreadDecision(ctx, cellID, action.sessionID, action.threadID, action.decisionID, SecureCellLifecycleRequest{
 					ActorDID: actorDID,
-					Reason:   firstNonEmpty(strings.TrimSpace(lifecycle.Reason), "automated decision resolution deadline reached"),
+					Reason:   firstNonEmpty(strings.TrimSpace(lifecycle.Reason), action.reason),
 					Metadata: baseMetadata,
 				}); err != nil {
 					return nil, err
@@ -3812,6 +4125,10 @@ func (s *Service) SweepDecisionGovernance(ctx context.Context, at time.Time, lif
 				ThreadID:   action.threadID,
 				DecisionID: action.decisionID,
 				Action:     action.action,
+				TierID:     action.tierID,
+				TargetDID:  action.targetDID,
+				DueAt:      cloneUTCTime(action.dueAt),
+				Trigger:    action.trigger,
 				OccurredAt: at.UTC(),
 			})
 		}
@@ -4294,6 +4611,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"rejector_roles":               strings.Join(decision.RejectorRoles, ","),
 			"abstainer_roles":              strings.Join(decision.AbstainerRoles, ","),
 			"reopen_roles":                 strings.Join(decision.ReopenRoles, ","),
+			"escalation_ladder_tier_ids":   strings.Join(secureCellDecisionEscalationTierIDs(decision.EscalationLadder), ","),
+			"escalation_ladder_targets":    strings.Join(secureCellDecisionEscalationTierTargets(decision.EscalationLadder), ","),
 			"auto_escalate_to_did":         decision.AutoEscalateToDID,
 			"related_exchange_ids":         strings.Join(decision.RelatedExchangeIDs, ","),
 			"related_output_ids":           strings.Join(decision.RelatedOutputIDs, ","),
@@ -5999,6 +6318,215 @@ func resolveSecureCellDecisionGovernance(template string, allowedChoices []Secur
 	abstainerRoles = firstNonEmptyDecisionRoles(abstainerRoles, defaultAbstainerRoles)
 	reopenRoles = firstNonEmptyDecisionRoles(reopenRoles, defaultReopenRoles)
 	return template, allowedChoices, rejectorRoles, abstainerRoles, reopenRoles, nil
+}
+
+func normalizeSecureCellDecisionEscalationLadder(ladder []SecureCellDecisionEscalationTier, fallbackTarget string, fallbackDueAt *time.Time) ([]SecureCellDecisionEscalationTier, error) {
+	normalized := make([]SecureCellDecisionEscalationTier, 0, len(ladder)+1)
+	seenTierIDs := make(map[string]struct{}, len(ladder))
+	for idx, tier := range ladder {
+		targetDID := strings.TrimSpace(tier.TargetDID)
+		if targetDID == "" {
+			return nil, fmt.Errorf("securecells/service: escalation ladder tier %d target_did is required", idx+1)
+		}
+		if tier.DueAt == nil || tier.DueAt.IsZero() {
+			return nil, fmt.Errorf("securecells/service: escalation ladder tier %d due_at is required", idx+1)
+		}
+		tierID := strings.TrimSpace(tier.TierID)
+		if tierID == "" {
+			tierID = fmt.Sprintf("tier_%d", idx+1)
+		}
+		if _, ok := seenTierIDs[tierID]; ok {
+			return nil, fmt.Errorf("securecells/service: duplicate escalation ladder tier_id %q", tierID)
+		}
+		seenTierIDs[tierID] = struct{}{}
+		dueAt := tier.DueAt.UTC()
+		mode := tier.Mode
+		if mode == "" {
+			mode = SecureCellThreadDecisionDelegationModeEscalate
+		}
+		if mode != SecureCellThreadDecisionDelegationModeEscalate && mode != SecureCellThreadDecisionDelegationModeDelegate {
+			return nil, fmt.Errorf("securecells/service: unsupported escalation ladder mode %q", mode)
+		}
+		normalized = append(normalized, SecureCellDecisionEscalationTier{
+			TierID:    tierID,
+			TargetDID: targetDID,
+			Mode:      mode,
+			DueAt:     &dueAt,
+			Reason:    strings.TrimSpace(tier.Reason),
+			Metadata:  cloneStringMap(tier.Metadata),
+		})
+	}
+	if len(normalized) == 0 && strings.TrimSpace(fallbackTarget) != "" && fallbackDueAt != nil && !fallbackDueAt.IsZero() {
+		dueAt := fallbackDueAt.UTC()
+		normalized = append(normalized, SecureCellDecisionEscalationTier{
+			TierID:    "tier_1",
+			TargetDID: strings.TrimSpace(fallbackTarget),
+			Mode:      SecureCellThreadDecisionDelegationModeEscalate,
+			DueAt:     &dueAt,
+		})
+	}
+	sort.SliceStable(normalized, func(i, j int) bool {
+		if normalized[i].DueAt.Equal(*normalized[j].DueAt) {
+			return normalized[i].TierID < normalized[j].TierID
+		}
+		return normalized[i].DueAt.Before(*normalized[j].DueAt)
+	})
+	for idx := 1; idx < len(normalized); idx++ {
+		if normalized[idx].DueAt.Before(*normalized[idx-1].DueAt) {
+			return nil, fmt.Errorf("securecells/service: escalation ladder due_at values must be increasing")
+		}
+	}
+	return normalized, nil
+}
+
+func secureCellDecisionEscalationTierIDs(ladder []SecureCellDecisionEscalationTier) []string {
+	out := make([]string, 0, len(ladder))
+	for _, tier := range ladder {
+		if trimmed := strings.TrimSpace(tier.TierID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
+func secureCellDecisionEscalationTierTargets(ladder []SecureCellDecisionEscalationTier) []string {
+	out := make([]string, 0, len(ladder))
+	for _, tier := range ladder {
+		if trimmed := strings.TrimSpace(tier.TargetDID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
+func secureCellDecisionHasEscalationTier(decision SecureCellThreadDecision, tier SecureCellDecisionEscalationTier) bool {
+	for _, delegation := range decision.Delegations {
+		if delegation.Mode != tier.Mode {
+			continue
+		}
+		if tierID := strings.TrimSpace(delegation.Metadata["automation_tier_id"]); tierID != "" {
+			if tierID == strings.TrimSpace(tier.TierID) {
+				return true
+			}
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(delegation.ToActorDID), strings.TrimSpace(tier.TargetDID)) {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellDecisionNextDueEscalationTier(decision SecureCellThreadDecision, at time.Time) (SecureCellDecisionEscalationTier, bool) {
+	for _, tier := range decision.EscalationLadder {
+		if tier.DueAt == nil || tier.DueAt.IsZero() || tier.DueAt.After(at) {
+			continue
+		}
+		if secureCellDecisionHasEscalationTier(decision, tier) {
+			continue
+		}
+		return tier, true
+	}
+	if decision.EscalationDueAt != nil && decision.AutoEscalateToDID != "" && !decision.EscalationDueAt.After(at) && !secureCellDecisionHasDelegation(decision, SecureCellThreadDecisionDelegationModeEscalate, decision.AutoEscalateToDID) {
+		return SecureCellDecisionEscalationTier{
+			TierID:    "tier_1",
+			TargetDID: decision.AutoEscalateToDID,
+			Mode:      SecureCellThreadDecisionDelegationModeEscalate,
+			DueAt:     cloneUTCTime(decision.EscalationDueAt),
+		}, true
+	}
+	return SecureCellDecisionEscalationTier{}, false
+}
+
+func secureCellDecisionOverdueAction(decision SecureCellThreadDecision, at time.Time) (action string, reason string, tierID string, targetDID string, dueAt time.Time, ok bool) {
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusQuorumFailed) {
+		return "", "", "", "", time.Time{}, false
+	}
+	if decision.ResolutionDueAt != nil && !decision.ResolutionDueAt.After(at) {
+		return "close", "resolution_due", "", "", decision.ResolutionDueAt.UTC(), true
+	}
+	if tier, found := secureCellDecisionNextDueEscalationTier(decision, at); found && tier.DueAt != nil {
+		return "escalate", "escalation_tier_due", strings.TrimSpace(tier.TierID), strings.TrimSpace(tier.TargetDID), tier.DueAt.UTC(), true
+	}
+	return "", "", "", "", time.Time{}, false
+}
+
+func secureCellDecisionReferencesParticipant(decision SecureCellThreadDecision, participantDID string) bool {
+	participantDID = strings.TrimSpace(participantDID)
+	if participantDID == "" {
+		return false
+	}
+	if strings.EqualFold(strings.TrimSpace(decision.ProposedBy), participantDID) ||
+		strings.EqualFold(strings.TrimSpace(decision.ApprovedBy), participantDID) ||
+		strings.EqualFold(strings.TrimSpace(decision.QuorumFailedBy), participantDID) ||
+		strings.EqualFold(strings.TrimSpace(decision.ClosedBy), participantDID) ||
+		strings.EqualFold(strings.TrimSpace(decision.AutoEscalateToDID), participantDID) {
+		return true
+	}
+	if secureCellStringSliceContains(decision.EligibleApproverDIDs, participantDID) || secureCellStringSliceContains(secureCellDecisionEscalationTierTargets(decision.EscalationLadder), participantDID) {
+		return true
+	}
+	for _, vote := range decision.ApprovalVotes {
+		if strings.EqualFold(strings.TrimSpace(vote.ActorDID), participantDID) {
+			return true
+		}
+	}
+	for _, comment := range decision.Comments {
+		if strings.EqualFold(strings.TrimSpace(comment.ActorDID), participantDID) {
+			return true
+		}
+	}
+	for _, delegation := range decision.Delegations {
+		if strings.EqualFold(strings.TrimSpace(delegation.FromActorDID), participantDID) || strings.EqualFold(strings.TrimSpace(delegation.ToActorDID), participantDID) {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellDecisionTitle(decisions []SecureCellThreadDecision, decisionID string) string {
+	decisionID = strings.TrimSpace(decisionID)
+	for _, decision := range decisions {
+		if strings.TrimSpace(decision.ID) == decisionID {
+			return decision.Title
+		}
+	}
+	return ""
+}
+
+func secureCellTransitionAutomatedDecisionAction(transition SecureCellTransition) bool {
+	if strings.TrimSpace(transition.DecisionID) == "" {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(transition.Metadata["decision_sweep_mode"]), "automated")
+}
+
+func parseSecureCellTransitionDueAt(metadata map[string]string) *time.Time {
+	if metadata == nil {
+		return nil
+	}
+	raw := strings.TrimSpace(metadata["decision_sweep_due_at"])
+	if raw == "" {
+		return nil
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		return nil
+	}
+	return &parsed
+}
+
+func secureCellStringSliceContains(values []string, target string) bool {
+	target = strings.TrimSpace(target)
+	if target == "" {
+		return false
+	}
+	for _, value := range values {
+		if strings.EqualFold(strings.TrimSpace(value), target) {
+			return true
+		}
+	}
+	return false
 }
 
 func firstNonEmptyDecisionRoles(primary []string, fallback []string) []string {
