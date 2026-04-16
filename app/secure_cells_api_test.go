@@ -559,6 +559,151 @@ func TestSecureCellsMutateHandler_AcceptsEnterprisePause(t *testing.T) {
 	}
 }
 
+func TestSecureCellsCollectionHandler_FiltersLifecycleState(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+
+	createA := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA}, nil)))
+	createA.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createARec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createARec, createA)
+	if createARec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createARec.Code, createARec.Body.String())
+	}
+
+	createB := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantB}, nil)))
+	createB.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createBRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createBRec, createB)
+	if createBRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createBRec.Code, createBRec.Body.String())
+	}
+
+	var createAResp secureCellResponse
+	var createBResp secureCellResponse
+	if err := json.Unmarshal(createARec.Body.Bytes(), &createAResp); err != nil {
+		t.Fatalf("unmarshal create A response: %v", err)
+	}
+	if err := json.Unmarshal(createBRec.Body.Bytes(), &createBResp); err != nil {
+		t.Fatalf("unmarshal create B response: %v", err)
+	}
+
+	pauseReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createAResp.Result.CellID+"/pause", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, nil, "incident bridge", nil, nil)))
+	pauseReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	pauseRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(pauseRec, pauseReq)
+	if pauseRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, pauseRec.Code, pauseRec.Body.String())
+	}
+
+	quarantineReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createBResp.Result.CellID+"/members/"+participantB.AgentID()+"/quarantine", bytes.NewReader(mustMarshalSecureCellMemberMutationRequest(t, nil, participantB.AgentID(), "containment", nil)))
+	quarantineReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineRec, quarantineReq)
+	if quarantineRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineRec.Code, quarantineRec.Body.String())
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"?status=paused&participant_did="+participantA.AgentID(), nil)
+	listRec := httptest.NewRecorder()
+	app.SecureCellsCollectionHandler().ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, listRec.Code, listRec.Body.String())
+	}
+
+	var listResp secureCellListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatalf("unmarshal list response: %v", err)
+	}
+	if len(listResp.Items) != 1 || listResp.Items[0].CellID != createAResp.Result.CellID {
+		t.Fatalf("expected paused cell listing, got %+v", listResp.Items)
+	}
+	if listResp.Items[0].PausedFromStatus != securecellsintegration.SecureCellStatusActive {
+		t.Fatalf("expected paused_from_status active, got %+v", listResp.Items[0])
+	}
+}
+
+func TestSecureCellsExpiringQuarantinesHandler_ListsExpiredMembers(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+
+	expiredAt := time.Now().UTC().Add(-20 * time.Minute)
+	futureAt := time.Now().UTC().Add(20 * time.Minute)
+	quarantineAReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createResp.Result.CellID+"/members/"+participantA.AgentID()+"/quarantine", bytes.NewReader(mustMarshalSecureCellMemberMutationRequestWithExpiry(t, nil, participantA.AgentID(), "expired hold", nil, &expiredAt)))
+	quarantineAReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineARec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineARec, quarantineAReq)
+	if quarantineARec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineARec.Code, quarantineARec.Body.String())
+	}
+
+	releaseReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createResp.Result.CellID+"/members/"+participantA.AgentID()+"/release", bytes.NewReader(mustMarshalSecureCellMemberMutationRequest(t, nil, participantA.AgentID(), "manual release", nil)))
+	releaseReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	releaseRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(releaseRec, releaseReq)
+	if releaseRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, releaseRec.Code, releaseRec.Body.String())
+	}
+
+	quarantineExpiredReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createResp.Result.CellID+"/members/"+participantA.AgentID()+"/quarantine", bytes.NewReader(mustMarshalSecureCellMemberMutationRequestWithExpiry(t, nil, participantA.AgentID(), "expired hold again", nil, &expiredAt)))
+	quarantineExpiredReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineExpiredRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineExpiredRec, quarantineExpiredReq)
+	if quarantineExpiredRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineExpiredRec.Code, quarantineExpiredRec.Body.String())
+	}
+
+	quarantineBReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+createResp.Result.CellID+"/members/"+participantB.AgentID()+"/quarantine", bytes.NewReader(mustMarshalSecureCellMemberMutationRequestWithExpiry(t, nil, participantB.AgentID(), "future hold", nil, &futureAt)))
+	quarantineBReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineBRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineBRec, quarantineBReq)
+	if quarantineBRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineBRec.Code, quarantineBRec.Body.String())
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/quarantine/expiring?before="+time.Now().UTC().Format(time.RFC3339Nano), nil)
+	listRec := httptest.NewRecorder()
+	app.SecureCellsExpiringQuarantinesHandler().ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, listRec.Code, listRec.Body.String())
+	}
+
+	var listResp secureCellQuarantineExpiryListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatalf("unmarshal expiry list response: %v", err)
+	}
+	if len(listResp.Items) != 1 || listResp.Items[0].ParticipantDID != participantA.AgentID() {
+		t.Fatalf("expected one expired quarantine entry for participant A, got %+v", listResp.Items)
+	}
+}
+
 func mustSecureCellAppIdentity(t *testing.T, label string, jurisdictions []string) *agent.AgentIdentity {
 	t.Helper()
 
