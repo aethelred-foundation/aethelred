@@ -9,6 +9,7 @@ import "../contracts/vault/StAETHEL.sol";
 import "../contracts/vault/VaultTEEVerifier.sol";
 import "../contracts/vault/PlatformVerifiers.sol";
 import "../contracts/vault/ICruzible.sol";
+import "./helpers/CruzibleCompat.sol";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Mock ERC20 (namespaced to avoid collision with Cruzible.t.sol)
@@ -55,6 +56,8 @@ contract MockAETHELInvariant {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 contract CruzibleHandler is Test {
+    using CruzibleCompat for Cruzible;
+
     Cruzible public vault;
     StAETHEL public stAethel;
     MockAETHELInvariant public aethel;
@@ -316,6 +319,8 @@ contract CruzibleHandler is Test {
  * Fuzz tests verify per-operation properties under random inputs.
  */
 contract CruzibleInvariantTest is StdInvariant, Test {
+    using CruzibleCompat for Cruzible;
+
     // ── Contracts ───────────────────────────────────────────────────────────
     Cruzible public vault;
     StAETHEL public stAethel;

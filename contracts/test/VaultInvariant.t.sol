@@ -9,6 +9,7 @@ import "../contracts/vault/StAETHEL.sol";
 import "../contracts/vault/VaultTEEVerifier.sol";
 import "../contracts/vault/PlatformVerifiers.sol";
 import "../contracts/vault/ICruzible.sol";
+import "./helpers/CruzibleCompat.sol";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Mock ERC20 (namespaced to avoid collision with other test files)
@@ -55,6 +56,8 @@ contract MockAETHELVault {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 contract VaultInvariantHandler is Test {
+    using CruzibleCompat for Cruzible;
+
     Cruzible public vault;
     StAETHEL public stAethel;
     MockAETHELVault public aethel;
@@ -327,6 +330,8 @@ contract VaultInvariantHandler is Test {
  *   5. invariant_epochMonotonicity - currentEpoch only increases
  */
 contract VaultInvariantTest is StdInvariant, Test {
+    using CruzibleCompat for Cruzible;
+
     // ── Contracts ───────────────────────────────────────────────────────────
     Cruzible public vault;
     StAETHEL public stAethel;

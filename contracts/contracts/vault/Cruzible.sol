@@ -140,30 +140,30 @@ contract Cruzible is
     // CONSTANTS & ROLES
     // =========================================================================
 
-    uint256 public constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
+    uint256 internal constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
 
-    bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 internal constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
+    bytes32 internal constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    bytes32 internal constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 internal constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     /// @notice Role for the native-chain keeper that bridges off-chain state
     ///         commitments (stake snapshots, universe hashes, delegation roots).
     ///         Separated from DEFAULT_ADMIN_ROLE so governance and the keeper
     ///         have independent trust boundaries.
-    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
+    bytes32 internal constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     /// @notice Minimum stake amount (32 AETHEL).
-    uint256 public constant MIN_STAKE = 32 ether;
+    uint256 internal constant MIN_STAKE = 32 ether;
 
     /// @notice Maximum stake per transaction to prevent whale manipulation.
-    uint256 public constant MAX_STAKE_PER_TX = 10_000_000 ether;
+    uint256 internal constant MAX_STAKE_PER_TX = 10_000_000 ether;
 
     /// @notice Minimum delay between delegation root commitment and its use
     ///         in distributeRewards().  This gives off-chain watchers time to
     ///         verify the keeper's commitment against native-chain delegation
     ///         state and request guardian revocation if fraud is detected.
-    uint256 public constant DELEGATION_CHALLENGE_PERIOD = 1 hours;
+    uint256 internal constant DELEGATION_CHALLENGE_PERIOD = 1 hours;
 
     /// @notice Maximum age of a delegation commitment before it becomes stale.
     ///         A stale commitment cannot be consumed by distributeRewards() — the
@@ -171,40 +171,40 @@ contract Cruzible is
     ///         a compromised keeper from committing a valid delegation root early
     ///         in the epoch and then altering native delegation state before
     ///         reward distribution, knowing the challenge period has already expired.
-    uint256 public constant DELEGATION_MAX_AGE = 6 hours;
+    uint256 internal constant DELEGATION_MAX_AGE = 6 hours;
 
     /// @notice Unbonding period (14 days in seconds).
-    uint256 public constant UNBONDING_PERIOD = 14 days;
+    uint256 internal constant UNBONDING_PERIOD = 14 days;
 
     /// @notice Maximum validator commission (10%).
-    uint256 public constant MAX_COMMISSION_BPS = 1000;
+    uint256 internal constant MAX_COMMISSION_BPS = 1000;
 
     /// @notice Protocol fee on rewards (5% — used for development and insurance).
-    uint256 public constant PROTOCOL_FEE_BPS = 500;
+    uint256 internal constant PROTOCOL_FEE_BPS = 500;
 
     /// @notice MEV redistribution: staker share (90%).
-    uint256 public constant MEV_STAKER_SHARE_BPS = 9000;
+    uint256 internal constant MEV_STAKER_SHARE_BPS = 9000;
 
     /// @notice Basis points denominator.
-    uint256 public constant BPS_DENOMINATOR = 10_000;
+    uint256 internal constant BPS_DENOMINATOR = 10_000;
 
     /// @notice Epoch duration (24 hours in seconds).
-    uint256 public constant EPOCH_DURATION = 24 hours;
+    uint256 internal constant EPOCH_DURATION = 24 hours;
 
     /// @notice Maximum withdrawal requests per user.
-    uint256 public constant MAX_WITHDRAWAL_REQUESTS = 100;
+    uint256 internal constant MAX_WITHDRAWAL_REQUESTS = 100;
 
     /// @notice Maximum active validators in the set.
-    uint256 public constant MAX_VALIDATORS = 200;
+    uint256 internal constant MAX_VALIDATORS = 200;
 
     /// @notice Minimum validators for the protocol to operate.
-    uint256 public constant MIN_VALIDATORS = 4;
+    uint256 internal constant MIN_VALIDATORS = 4;
 
     /// @notice Maximum batch withdraw size.
-    uint256 public constant MAX_BATCH_SIZE = 50;
+    uint256 internal constant MAX_BATCH_SIZE = 50;
 
     /// @notice Rate limit: maximum stake per epoch to prevent flash-loan attacks.
-    uint256 public constant MAX_STAKE_PER_EPOCH = 500_000_000 ether;
+    uint256 internal constant MAX_STAKE_PER_EPOCH = 500_000_000 ether;
 
     // =========================================================================
     // DELEGATION BRIDGE HARDENING — CONSTANTS
@@ -215,36 +215,36 @@ contract Cruzible is
     ///         connected to the native chain and their own TEE instance.
     ///         Separated from KEEPER_ROLE so the single-keeper direct-commit path
     ///         can coexist with the quorum path during migration.
-    bytes32 public constant DELEGATION_ATTESTOR_ROLE = keccak256("DELEGATION_ATTESTOR_ROLE");
+    bytes32 internal constant DELEGATION_ATTESTOR_ROLE = keccak256("DELEGATION_ATTESTOR_ROLE");
 
     /// @notice Minimum number of independent attestors that must agree on the
     ///         same delegation root before the commitment is accepted.
     ///         Distributes trust: no single keeper can fabricate delegation state.
-    uint256 public constant DELEGATION_QUORUM = 2;
+    uint256 internal constant DELEGATION_QUORUM = 2;
 
     /// @notice Minimum bond (in AETHEL) a keeper must deposit before calling
     ///         commitDelegationSnapshot() or submitDelegationVote().
     ///         The bond is slashable by the guardian if delegation fraud is proven,
     ///         creating an economic deterrent against false commitments.
-    uint256 public constant KEEPER_BOND_MINIMUM = 100_000 ether;
+    uint256 internal constant KEEPER_BOND_MINIMUM = 100_000 ether;
 
     /// @notice Number of independent challenge flags required to auto-revoke a
     ///         delegation commitment during the challenge period.
     ///         Permissionless: any address can flag (with a bond).  This
     ///         democratizes fraud detection beyond the single guardian.
-    uint256 public constant DELEGATION_CHALLENGE_THRESHOLD = 3;
+    uint256 internal constant DELEGATION_CHALLENGE_THRESHOLD = 3;
 
     /// @notice Bond (in AETHEL) that each challenger must post when flagging
     ///         a delegation commitment.  Refunded only if the guardian confirms
     ///         fraud via confirmDelegationFraud(); slashed to the treasury
     ///         otherwise.  Prevents Sybil-based liveness attacks.
-    uint256 public constant CHALLENGE_BOND = 10_000 ether;
+    uint256 internal constant CHALLENGE_BOND = 10_000 ether;
 
     /// @notice Time window after auto-revocation during which the guardian can
     ///         confirm that the revoked commitment was genuinely fraudulent.
     ///         If the guardian confirms within this period, challenger bonds are
     ///         refunded.  If not, bonds are slashed (presumption of validity).
-    uint256 public constant CHALLENGE_ADJUDICATION_PERIOD = 24 hours;
+    uint256 internal constant CHALLENGE_ADJUDICATION_PERIOD = 24 hours;
 
     // =========================================================================
     // STRUCTS
@@ -432,7 +432,7 @@ contract Cruzible is
     /// @notice Enumerable list of attestors who voted in each epoch's delegation
     ///         quorum.  Used by _freezeDelegationSubmitters() to freeze all
     ///         participating attestors on fraud determination.
-    mapping(uint256 => address[]) internal delegationEpochAttestors;
+    mapping(uint256 => address[]) public delegationEpochAttestors;
 
     /// @notice Address that committed the delegation snapshot via the single-keeper
     ///         path (commitDelegationSnapshot).  Used to lock their bond during the
@@ -1321,15 +1321,6 @@ contract Cruzible is
     // TEE ATTESTATION VERIFICATION
     // =========================================================================
 
-    /// @inheritdoc ICruzible
-    function verifyAttestation(bytes calldata attestation)
-        external
-        view
-        returns (bool valid, bytes memory payload, uint8 platform)
-    {
-        return teeVerifier.verifyAttestationView(attestation);
-    }
-
     // =========================================================================
     // VIEW FUNCTIONS
     // =========================================================================
@@ -1339,11 +1330,6 @@ contract Cruzible is
         uint256 totalShares = stAethelToken.getTotalShares();
         if (totalShares == 0) return 1e18;
         return (totalPooledAethel * 1e18) / totalShares;
-    }
-
-    /// @inheritdoc ICruzible
-    function getTotalPooledAethel() external view returns (uint256) {
-        return totalPooledAethel;
     }
 
     /// @inheritdoc ICruzible
@@ -1362,11 +1348,6 @@ contract Cruzible is
     }
 
     /// @inheritdoc ICruzible
-    function getCurrentEpoch() external view returns (uint256) {
-        return currentEpoch;
-    }
-
-    /// @inheritdoc ICruzible
     function getActiveValidatorCount() external view returns (uint256) {
         return activeValidators.length;
     }
@@ -1378,75 +1359,12 @@ contract Cruzible is
             && request.owner != address(0);
     }
 
-    /**
-     * @notice Get the effective APY based on last epoch's net staker yield.
-     * @dev Uses net amounts that actually accrued to stakers, excluding
-     *      protocol fees and MEV protocol share sent to treasury:
-     *        - Net rewards  = rewardsDistributed − protocolFee
-     *        - Net MEV      = mevRedistributed × MEV_STAKER_SHARE_BPS / BPS_DENOMINATOR
-     *      This prevents overstating yield by counting treasury cuts as user returns.
-     * @return apy Annual percentage yield scaled by 1e4 (e.g., 1000 = 10%).
-     */
-    function getEffectiveAPY() external view returns (uint256 apy) {
-        if (currentEpoch <= 1 || totalPooledAethel == 0) return 0;
-
-        EpochSnapshot storage lastEpoch = epochSnapshots[currentEpoch - 1];
-        if (!lastEpoch.finalized) return 0;
-
-        // Net staker yield = claimable rewards + auto-compounded MEV staker share.
-        uint256 netRewards = lastEpoch.rewardsDistributed - lastEpoch.protocolFee;
-        uint256 netMEV = (lastEpoch.mevRedistributed * MEV_STAKER_SHARE_BPS) / BPS_DENOMINATOR;
-        uint256 epochYield = netRewards + netMEV;
-
-        // APY = (epochYield / totalPooled) * 365 * 10000
-        uint256 dailyRate = (epochYield * 1e18) / lastEpoch.totalPooledAethel;
-        apy = (dailyRate * 365 * 10_000) / 1e18;
+    function getUserWithdrawalCount(address user) external view returns (uint256) {
+        return userWithdrawals[user].length;
     }
 
-    /**
-     * @notice Get a validator's full information.
-     */
-    function getValidator(address validatorAddress) external view returns (ValidatorInfo memory) {
-        return validators[validatorAddress];
-    }
-
-    /**
-     * @notice Get all active validator addresses.
-     */
-    function getActiveValidators() external view returns (address[] memory) {
-        return activeValidators;
-    }
-
-    /**
-     * @notice Get a user's pending withdrawal requests.
-     */
-    function getUserWithdrawals(address user) external view returns (uint256[] memory) {
-        return userWithdrawals[user];
-    }
-
-    /**
-     * @notice Get epoch snapshot for verification.
-     */
-    function getEpochSnapshot(uint256 epoch) external view returns (EpochSnapshot memory) {
-        return epochSnapshots[epoch];
-    }
-
-    /**
-     * @notice Get the list of attestors who voted in a given epoch's delegation quorum.
-     */
-    function getDelegationEpochAttestors(uint256 epoch) external view returns (address[] memory) {
-        return delegationEpochAttestors[epoch];
-    }
-
-    /**
-     * @notice Get the vault's available balance (excluding pending withdrawals
-     *         AND reserved-but-unclaimed Merkle reward claims).
-     */
-    function getAvailableBalance() external view returns (uint256) {
-        uint256 balance = aethelToken.balanceOf(address(this));
-        uint256 committed = totalPendingWithdrawals + totalReservedForClaims;
-        if (balance <= committed) return 0;
-        return balance - committed;
+    function getDelegationEpochAttestorCount(uint256 epoch) external view returns (uint256) {
+        return delegationEpochAttestors[epoch].length;
     }
 
     // =========================================================================
@@ -2311,10 +2229,6 @@ contract Cruzible is
         if (block.chainid != 31_337 && block.chainid != 1337) {
             revert ProductionInitializationRequiresTimelock();
         }
-    }
-
-    function version() external pure returns (string memory) {
-        return "1.0.0";
     }
 
     // =========================================================================

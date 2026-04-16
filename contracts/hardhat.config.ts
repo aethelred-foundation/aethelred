@@ -118,6 +118,32 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      // Size-optimized override for Cruzible to stay under EIP-170 without
+      // changing runtime behavior or ABI. This contract concentrates multiple
+      // staking and attestation flows, so we optimize deployment size rather
+      // than risk a late-stage logic split.
+      "contracts/vault/Cruzible.sol": {
+        version: "0.8.20",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1,
+            details: {
+              yul: true,
+              yulDetails: {
+                stackAllocation: true,
+              },
+            },
+          },
+          viaIR: true,
+          evmVersion: "paris",
+          metadata: {
+            bytecodeHash: "none",
+            useLiteralContent: false,
+            appendCBOR: false,
+          },
+        },
+      },
     },
   },
 
@@ -200,7 +226,7 @@ const config: HardhatUserConfig = {
     disambiguatePaths: false,
     runOnCompile: false,
     strict: true,
-    only: ["InstitutionalStablecoinBridge"],
+    only: ["InstitutionalStablecoinBridge", "Cruzible"],
   },
 
   // TypeChain Configuration

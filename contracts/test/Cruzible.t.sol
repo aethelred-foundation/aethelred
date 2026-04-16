@@ -9,6 +9,7 @@ import "../contracts/vault/VaultTEEVerifier.sol";
 import "../contracts/vault/PlatformVerifiers.sol";
 import "../contracts/vault/ICruzible.sol";
 import "../contracts/mocks/MockTimelockController.sol";
+import "./helpers/CruzibleCompat.sol";
 
 /**
  * @title MockAETHEL
@@ -76,6 +77,8 @@ contract MockAETHEL {
  * 12. Batch Operations
  */
 contract CruzibleTest is Test {
+    using CruzibleCompat for Cruzible;
+
     // =========================================================================
     // STATE
     // =========================================================================

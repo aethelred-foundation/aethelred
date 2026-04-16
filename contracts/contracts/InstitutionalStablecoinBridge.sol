@@ -1443,7 +1443,7 @@ contract InstitutionalStablecoinBridge is
      *      Prevents the deploy-time UPGRADER_ROLE holder from upgrading
      *      the implementation to bypass governance controls.
      */
-    function _authorizeUpgrade(address) internal override onlyRole(UPGRADER_ROLE) {
+    function _authorizeUpgrade(address) internal view override onlyRole(UPGRADER_ROLE) {
         if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
             revert TimelockRequired();
         }
