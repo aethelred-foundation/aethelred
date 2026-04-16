@@ -47,6 +47,18 @@ var (
 	// not permitted from the current thread posture.
 	ErrThreadImmutable = errors.New("secure cell thread is immutable")
 
+	// ErrDecisionNotFound indicates that a governed thread decision does not
+	// exist in the secure cell state.
+	ErrDecisionNotFound = errors.New("secure cell thread decision not found")
+
+	// ErrDecisionNotActive indicates that a governed thread decision is not
+	// currently in a mutable active posture.
+	ErrDecisionNotActive = errors.New("secure cell thread decision is not active")
+
+	// ErrDecisionImmutable indicates that a requested decision lifecycle
+	// mutation is not permitted from the current decision posture.
+	ErrDecisionImmutable = errors.New("secure cell thread decision is immutable")
+
 	// ErrCellImmutable indicates that the secure cell cannot be mutated from its
 	// current lifecycle status.
 	ErrCellImmutable = errors.New("secure cell is immutable")

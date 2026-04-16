@@ -139,6 +139,18 @@ type secureCellThreadMessageRequest struct {
 	Metadata       map[string]string           `json:"metadata,omitempty"`
 }
 
+type secureCellThreadDecisionRequest struct {
+	ActorIdentity      json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt      *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Title              string                      `json:"title,omitempty"`
+	Summary            string                      `json:"summary,omitempty"`
+	Classification     string                      `json:"classification,omitempty"`
+	RelatedExchangeIDs []string                    `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs   []string                    `json:"related_output_ids,omitempty"`
+	Reason             string                      `json:"reason,omitempty"`
+	Metadata           map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellSessionMemberMutationRequest struct {
 	ActorIdentity  json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt  *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -167,6 +179,7 @@ type secureCellArtifactsResponse struct {
 	Participants             []securecellsintegration.SecureCellParticipantState `json:"participants,omitempty"`
 	Sessions                 []securecellsintegration.SecureCellSession          `json:"sessions,omitempty"`
 	Threads                  []securecellsintegration.SecureCellSessionThread    `json:"threads,omitempty"`
+	Decisions                []securecellsintegration.SecureCellThreadDecision   `json:"decisions,omitempty"`
 	SharedOutputs            []securecellsintegration.SecureCellSharedOutput     `json:"shared_outputs,omitempty"`
 	SessionExchanges         []securecellsintegration.SecureCellSessionExchange  `json:"session_exchanges,omitempty"`
 	Transitions              []securecellsintegration.SecureCellTransition       `json:"transitions,omitempty"`
@@ -453,6 +466,7 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 				CellID:         strings.TrimSpace(r.URL.Query().Get("cell_id")),
 				ParticipantDID: strings.TrimSpace(r.URL.Query().Get("participant_did")),
 				ThreadID:       strings.TrimSpace(r.URL.Query().Get("thread_id")),
+				DecisionID:     strings.TrimSpace(r.URL.Query().Get("decision_id")),
 				Action:         strings.TrimSpace(r.URL.Query().Get("action")),
 				Actor:          strings.TrimSpace(r.URL.Query().Get("actor")),
 				SinceSequence:  cast.ToUint64(strings.TrimSpace(r.URL.Query().Get("since_sequence"))),
@@ -519,6 +533,92 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
+		case (strings.HasSuffix(r.URL.Path, "/approve") || strings.HasSuffix(r.URL.Path, "/resume") || strings.HasSuffix(r.URL.Path, "/quarantine") || strings.HasSuffix(r.URL.Path, "/close")) && strings.Contains(r.URL.Path, "/decisions/"):
+			cellID, sessionID, threadID, decisionID, action, err := parseSecureCellSessionThreadDecisionLifecycleActionPath(r.URL.Path)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread decision lifecycle request: "+err.Error())
+				return
+			}
+			var authCtx *secureCellAuthContext
+			switch action {
+			case "approve":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionApprove(r, cellID, sessionID, threadID, decisionID, &req)
+			case "resume":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionResume(r, cellID, sessionID, threadID, decisionID, &req)
+			case "quarantine":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionQuarantine(r, cellID, sessionID, threadID, decisionID, &req)
+			case "close":
+				authCtx, err = app.authorizeSecureCellSessionThreadDecisionClose(r, cellID, sessionID, threadID, decisionID, &req)
+			default:
+				err = fmt.Errorf("unsupported secure cell thread decision lifecycle action")
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			}
+			var result *securecellsintegration.SecureCellResult
+			switch action {
+			case "approve":
+				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "resume":
+				result, err = app.secureCellService.ResumeThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "quarantine":
+				result, err = app.secureCellService.QuarantineThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			case "close":
+				result, err = app.secureCellService.CloseThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/decisions") && strings.Contains(r.URL.Path, "/threads/"):
+			cellID, sessionID, threadID, err := parseSecureCellSessionThreadActionPath(r.URL.Path, "/decisions")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellThreadDecisionRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell thread decision request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionThreadDecisionCreate(r, cellID, sessionID, threadID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.CreateThreadDecision(r.Context(), cellID, securecellsintegration.SecureCellThreadDecisionRequest{
+				SessionID:          sessionID,
+				ThreadID:           threadID,
+				ActorDID:           safeSecureCellActorDID(authCtx),
+				Title:              req.Title,
+				Summary:            req.Summary,
+				Classification:     req.Classification,
+				RelatedExchangeIDs: req.RelatedExchangeIDs,
+				RelatedOutputIDs:   req.RelatedOutputIDs,
+				Reason:             req.Reason,
+				Metadata:           req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/messages") && strings.Contains(r.URL.Path, "/threads/"):
 			cellID, sessionID, threadID, err := parseSecureCellSessionThreadActionPath(r.URL.Path, "/messages")
 			if err != nil {
@@ -1105,6 +1205,7 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.Participants = append([]securecellsintegration.SecureCellParticipantState(nil), result.Participants...)
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
 	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
+	projection.Decisions = append([]securecellsintegration.SecureCellThreadDecision(nil), result.Decisions...)
 	projection.SharedOutputs = append([]securecellsintegration.SecureCellSharedOutput(nil), result.SharedOutputs...)
 	projection.SessionExchanges = append([]securecellsintegration.SecureCellSessionExchange(nil), result.SessionExchanges...)
 	projection.Transitions = append([]securecellsintegration.SecureCellTransition(nil), result.Transitions...)
@@ -1434,6 +1535,26 @@ func parseSecureCellSessionThreadLifecycleActionPath(path string) (cellID string
 	return cellID, sessionID, threadID, action, nil
 }
 
+func parseSecureCellSessionThreadDecisionLifecycleActionPath(path string) (cellID string, sessionID string, threadID string, decisionID string, action string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", "", "", "", fmt.Errorf("invalid secure cell thread decision lifecycle path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 8 || parts[1] != "sessions" || parts[3] != "threads" || parts[5] != "decisions" {
+		return "", "", "", "", "", fmt.Errorf("invalid secure cell thread decision lifecycle path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	threadID = strings.TrimSpace(parts[4])
+	decisionID = strings.TrimSpace(parts[6])
+	action = strings.TrimSpace(parts[7])
+	if cellID == "" || sessionID == "" || threadID == "" || decisionID == "" || action == "" {
+		return "", "", "", "", "", fmt.Errorf("invalid secure cell thread decision lifecycle path")
+	}
+	return cellID, sessionID, threadID, decisionID, action, nil
+}
+
 func secureCellErrorStatus(err error, fallback int) int {
 	switch {
 	case err == nil:
@@ -1463,6 +1584,12 @@ func secureCellErrorStatus(err error, fallback int) int {
 	case errors.Is(err, securecellsintegration.ErrThreadNotActive):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrThreadImmutable):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrDecisionNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, securecellsintegration.ErrDecisionNotActive):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrDecisionImmutable):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrCellImmutable):
 		return http.StatusConflict
