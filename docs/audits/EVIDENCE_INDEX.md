@@ -3,7 +3,7 @@
 > **Document owner:** Security & Compliance Lead
 > **Effective:** 2026-03-25
 > **Branch:** `ramesh/protocol-hardening-sweep-20260416`
-> **HEAD:** `9fb8dcf31a3490df97fa397dd0f454b5ac95f204`
+> **Review Surface:** PR `#141` latest branch head
 
 This document maps each audit scope area to specific repository paths, commit SHAs, evidence artifacts, and their collection status. It serves as the single index for auditors to locate all supporting evidence for the Aethelred L1 security audit.
 

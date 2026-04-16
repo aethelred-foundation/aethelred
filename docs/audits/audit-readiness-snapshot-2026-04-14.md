@@ -44,7 +44,7 @@ The branch under active protocol hardening review is:
 
 - Base `main` snapshot: `b66cb735c1`
 - Hardening branch: `ramesh/protocol-hardening-sweep-20260416`
-- Hardening head: `9fb8dcf31a3490df97fa397dd0f454b5ac95f204`
+- Hardening review surface: PR `#141` latest branch head
 - Evidence note: `docs/audits/protocol-hardening-sweep-2026-04-16.md`
 
 That branch adds the post-baseline hardening needed for current audit-facing

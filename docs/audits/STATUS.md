@@ -101,7 +101,7 @@ March 30 verified baseline.
 | Branch / PR | Scope | Current Head | Status | Evidence |
 |---|---|---|---|---|
 | `ramesh/broad-review-cleanup-20260416` / `#139` | Repo review-surface cleanup for TypeScript SDK and VSCode tooling | Branch head in PR | In Review | PR checks + local `npm run typecheck`, `npm run compile`, `npm run lint`, `npm test` |
-| `ramesh/protocol-hardening-sweep-20260416` / `#141` | Bridge relayer persistence and authority, fail-closed TEE/VM verification, governance bootstrap, Cruzible deployability | `9fb8dcf31a3490df97fa397dd0f454b5ac95f204` | In Review | `docs/audits/protocol-hardening-sweep-2026-04-16.md` |
+| `ramesh/protocol-hardening-sweep-20260416` / `#141` | Bridge relayer persistence and authority, burn nonce extraction, fail-closed TEE/VM verification, governance bootstrap, Cruzible deployability | Latest branch head in PR | In Review | `docs/audits/protocol-hardening-sweep-2026-04-16.md` |
 
 These branches are additive hardening tranches and do not reopen any finding
 that was already marked CLOSED on the March 30 baseline. They exist to reduce

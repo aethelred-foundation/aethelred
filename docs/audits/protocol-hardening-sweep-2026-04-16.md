@@ -9,7 +9,6 @@ This note records the focused protocol hardening tranche prepared on top of
 - Base branch at sweep start: `main`
 - Base branch commit: `b66cb735c1`
 - Hardening branch: `ramesh/protocol-hardening-sweep-20260416`
-- Current hardening head: `9fb8dcf31a3490df97fa397dd0f454b5ac95f204`
 - Primary review PR: `#141`
 
 ## Scope of This Tranche
@@ -27,6 +26,9 @@ already merged.
   defaulting privileged actions to a zero proposer.
 - Made placeholder vote generation, placeholder vote verification, and
   withdrawal submission paths fail closed instead of silently succeeding.
+- Required the Aethelred burn parser to extract the real burn nonce from chain
+  event attributes instead of fabricating `0`, preserving withdrawal-side
+  monitoring and deduplication semantics.
 
 ### 2. VM, attestation, and consensus verification
 
