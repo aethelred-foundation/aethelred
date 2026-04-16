@@ -23,6 +23,18 @@ var (
 	// not currently active.
 	ErrSessionNotActive = errors.New("secure cell session is not active")
 
+	// ErrSessionImmutable indicates that a requested session lifecycle mutation
+	// is not permitted from the current session posture.
+	ErrSessionImmutable = errors.New("secure cell session is immutable")
+
+	// ErrSessionParticipantExists indicates that a participant is already part
+	// of the requested collaboration session.
+	ErrSessionParticipantExists = errors.New("secure cell session participant already exists")
+
+	// ErrSessionParticipantNotFound indicates that a participant is not part of
+	// the requested collaboration session.
+	ErrSessionParticipantNotFound = errors.New("secure cell session participant not found")
+
 	// ErrCellImmutable indicates that the secure cell cannot be mutated from its
 	// current lifecycle status.
 	ErrCellImmutable = errors.New("secure cell is immutable")
