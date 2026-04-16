@@ -1,28 +1,33 @@
 //! # zkTensor - Zero-Knowledge Tensor Operations
 //!
-//! **"Every Matrix Multiply is a Provable Truth"**
+//! **"Proof-ready tensor workflows with explicit backend requirements."**
 //!
-//! zkTensors are tensors that automatically generate zero-knowledge proofs
-//! of computation. When you perform operations on zkTensors, the SDK
-//! generates SNARK proofs that the computation was performed correctly.
+//! zkTensors track computation graphs for future zero-knowledge proof
+//! generation. Tensor operations can mark a result as proof-bearing, but
+//! proof generation and verification fail closed until a proving backend
+//! is wired into the runtime.
 //!
 //! ## Example
 //!
 //! ```rust,ignore
-//! use aethelred_sdk::zktensor::ZkTensor;
+//! use aethelred_sdk::zktensor::{ProofStatus, ZkTensor, ZkTensorError};
 //!
 //! // Create tensors
 //! let a = ZkTensor::from_vec(vec![1.0, 2.0, 3.0, 4.0], &[2, 2]);
 //! let b = ZkTensor::from_vec(vec![5.0, 6.0, 7.0, 8.0], &[2, 2]);
 //!
-//! // Matrix multiply - proof generated automatically!
-//! let c = a.matmul(&b);
+//! // Matrix multiply - computation is tracked for later proving.
+//! let mut c = a.matmul(&b);
 //!
-//! // Verify the computation was correct
-//! assert!(c.verify().is_ok());
+//! assert_eq!(c.proof_status(), ProofStatus::Pending);
+//! assert!(matches!(
+//!     c.generate_proof(),
+//!     Err(ZkTensorError::ProofBackendUnavailable(_))
+//! ));
 //!
 //! // Export proof for on-chain verification
 //! let proof = c.export_proof();
+//! assert!(proof.is_none());
 //! ```
 
 use serde::{Deserialize, Serialize};
@@ -320,29 +325,19 @@ impl ZkTensor {
             return Err(ZkTensorError::NoProofRequired);
         }
 
-        // In production, this would use EZKL or similar
-        let proof = ZkProof {
-            proof_bytes: vec![0u8; 256], // Placeholder
-            public_inputs: self.data.values.iter().map(|&x| x as i64).collect(),
-            verifying_key: vec![0u8; 64],
-            circuit_hash: [0u8; 32],
-            prover_time_ms: 100,
-            proof_size_bytes: 256,
-        };
-
-        self.proof = Some(Arc::new(proof));
-        self.metadata.proof_status = ProofStatus::Generated;
-
-        Ok(self.proof.as_ref().unwrap())
+        self.metadata.proof_status = ProofStatus::Failed;
+        Err(ZkTensorError::ProofBackendUnavailable(
+            "proof generation requires a configured EZKL backend".to_string(),
+        ))
     }
 
     /// Verify the ZK proof
     pub fn verify(&self) -> Result<bool, ZkTensorError> {
         let _proof = self.proof.as_ref().ok_or(ZkTensorError::NoProof)?;
 
-        // In production, verify using EZKL verifier
-        // For now, always return true
-        Ok(true)
+        Err(ZkTensorError::ProofBackendUnavailable(
+            "proof verification requires a configured EZKL backend".to_string(),
+        ))
     }
 
     /// Export proof for on-chain verification
@@ -481,8 +476,9 @@ impl ProofVerifier {
             .get(&proof.circuit_hash)
             .ok_or_else(|| ZkTensorError::UnknownCircuit(hex::encode(proof.circuit_hash)))?;
 
-        // In production, use EZKL verifier
-        Ok(true)
+        Err(ZkTensorError::ProofBackendUnavailable(
+            "proof verifier requires a configured EZKL backend".to_string(),
+        ))
     }
 }
 
@@ -519,6 +515,10 @@ pub enum ZkTensorError {
     /// Proof verification failed
     #[error("Proof verification failed")]
     VerificationFailed,
+
+    /// Proof backend unavailable
+    #[error("Proof backend unavailable: {0}")]
+    ProofBackendUnavailable(String),
 
     /// Unknown circuit
     #[error("Unknown circuit: {0}")]
@@ -570,5 +570,52 @@ mod tests {
         let r = t.relu();
 
         assert_eq!(r.data(), &[0.0, 0.0, 1.0, 2.0]);
+    }
+
+    #[test]
+    fn test_generate_proof_fails_closed_without_backend() {
+        let a = ZkTensor::from_vec(vec![1.0, 2.0], &[2]);
+        let b = ZkTensor::from_vec(vec![3.0, 4.0], &[2]);
+        let mut c = a.add(&b);
+
+        let err = c.generate_proof().unwrap_err();
+        assert!(matches!(err, ZkTensorError::ProofBackendUnavailable(_)));
+        assert_eq!(c.proof_status(), ProofStatus::Failed);
+        assert!(c.export_proof().is_none());
+    }
+
+    #[test]
+    fn test_verify_fails_closed_without_backend() {
+        let mut tensor = ZkTensor::from_vec(vec![4.0, 6.0], &[2]);
+        tensor.metadata.requires_proof = true;
+        tensor.metadata.proof_status = ProofStatus::Generated;
+        tensor.proof = Some(Arc::new(ZkProof {
+            proof_bytes: vec![1u8; 32],
+            public_inputs: vec![4, 6],
+            verifying_key: vec![2u8; 32],
+            circuit_hash: [3u8; 32],
+            prover_time_ms: 1,
+            proof_size_bytes: 32,
+        }));
+
+        let err = tensor.verify().unwrap_err();
+        assert!(matches!(err, ZkTensorError::ProofBackendUnavailable(_)));
+    }
+
+    #[test]
+    fn test_proof_verifier_fails_closed_without_backend() {
+        let circuit_hash = [7u8; 32];
+        let mut verifier = ProofVerifier::new();
+        verifier.load_circuit(circuit_hash, vec![9u8; 48]);
+
+        let proof = ExportedProof {
+            proof_bytes: vec![1u8; 64],
+            public_inputs: vec![42],
+            verifying_key_hash: [8u8; 32],
+            circuit_hash,
+        };
+
+        let err = verifier.verify(&proof).unwrap_err();
+        assert!(matches!(err, ZkTensorError::ProofBackendUnavailable(_)));
     }
 }

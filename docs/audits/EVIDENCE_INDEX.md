@@ -205,6 +205,8 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Fail-closed backend regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_when_backend_missing` | COLLECTED | Incomplete SGX/Nitro/SEV backends now error explicitly |
 | TEE worker compile check | `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence` | COLLECTED | Current hardening branch compiles with fail-closed verifier changes |
 | Hybrid signer/verifier regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid` | COLLECTED | Real secp256k1 + Dilithium hybrid signing/verification on current hardening branch |
+| zk proof fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor` | COLLECTED | Worker zk proof generation/verification now errors explicitly instead of fabricating proof material |
+| Worker full-sdk compile check | `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk` | COLLECTED | Current hardening branch compiles cleanly with fail-closed zk proof hooks |
 | SGX/Nitro attestation flow E2E | `services/tee-worker/` integration tests | PENDING | Full attestation lifecycle |
 
 ---
@@ -224,6 +226,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Proof system tests | EZKL, Groth16, Halo2, Plonky2 backends | PENDING | Backend-specific proof tests |
 | Rust VM tests | `cargo test -p aethelred-vm test_invalid_attestation_response_does_not_satisfy_challenge`; `cargo test -p aethelred-vm test_valid_sgx_attestation_satisfies_challenge` | COLLECTED | Challenge-path and attestation-validation regressions on current hardening branch |
 | Rust VM compile check | `cargo check -p aethelred-vm` | COLLECTED | Current hardening branch compiles with fail-closed verification stubs |
+| zkTensor runtime contract | `services/tee-worker/nitro-sdk/src/zktensor/mod.rs` | COLLECTED | Worker zk proof paths fail closed until a real proving backend is configured |
 
 ---
 

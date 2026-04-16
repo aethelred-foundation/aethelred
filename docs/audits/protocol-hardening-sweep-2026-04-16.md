@@ -57,6 +57,19 @@ already merged.
   `sdk/aethelred-sdk/src/crypto/hybrid.rs` so the review surface no longer
   contains a stale placeholder copy of the same primitive.
 
+### 2b. zk proof backend hardening
+
+- Removed the placeholder zk proof generator in
+  `services/tee-worker/nitro-sdk/src/zktensor/mod.rs` so the worker runtime no
+  longer fabricates proof bytes, verifying keys, or circuit hashes.
+- Changed `ZkTensor::generate_proof()`, `ZkTensor::verify()`, and
+  `ProofVerifier::verify()` to return explicit backend-unavailable errors until
+  a real EZKL-backed prover/verifier is wired in.
+- Mirrored the same fail-closed proof contract in
+  `sdk/aethelred-sdk/src/zktensor/mod.rs` and updated the most visible SDK/docs
+  examples so the review surface no longer claims automatic proof generation
+  where no backend exists.
+
 ### 3. Production governance bootstrap
 
 - Restricted legacy direct-admin initializers to local-development chains for:
@@ -97,6 +110,8 @@ already merged.
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence`
 - `cargo check --manifest-path sdk/aethelred-sdk/Cargo.toml`
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid`
+- `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`
+- `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
 
 ### Solidity / Hardhat / Foundry
 
@@ -121,8 +136,12 @@ already merged.
 - This sweep is designed to reduce the risk of major findings in three areas
   auditors typically probe first: fail-open verifier behavior, direct-admin
   bootstrap windows, and bridge/relayer privilege ambiguity.
+- The worker `zktensor` surface now fails closed instead of manufacturing proof
+  material or returning verifier success without a backend, which removes a
+  particularly visible claim-vs-control mismatch in the SDK runtime.
 - The mirrored public SDK source was updated to match the hardened hybrid
-  signer/verifier path, but `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml
+  signer/verifier path and the fail-closed `zktensor` contract, but
+  `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml
   --features full-sdk --lib hybrid` still fails because of pre-existing
   full-SDK crate drift outside this change set (missing dependencies/stubs,
   `lib_full.rs` doc-comment layout issues, and unrelated serde coverage gaps).

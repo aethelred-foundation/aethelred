@@ -48,8 +48,8 @@ The branch under active protocol hardening review is:
 - Evidence note: `docs/audits/protocol-hardening-sweep-2026-04-16.md`
 
 That branch adds the post-baseline hardening needed for current audit-facing
-concerns in bridge relayer safety, fail-closed TEE/VM verification, governance
-bootstrap, and Cruzible mainnet deployability.
+concerns in bridge relayer safety, fail-closed zk proof and TEE/VM verification,
+governance bootstrap, and Cruzible mainnet deployability.
 
 ## Provenance Notes
 

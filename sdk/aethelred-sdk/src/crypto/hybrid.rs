@@ -29,14 +29,6 @@ impl DilithiumSecurityLevel {
         }
     }
 
-    fn secret_key_size(self) -> usize {
-        match self {
-            DilithiumSecurityLevel::Level2 => dilithium2::secret_key_bytes(),
-            DilithiumSecurityLevel::Level3 => dilithium3::secret_key_bytes(),
-            DilithiumSecurityLevel::Level5 => dilithium5::secret_key_bytes(),
-        }
-    }
-
     fn signature_size(self) -> usize {
         match self {
             DilithiumSecurityLevel::Level2 => dilithium2::signature_bytes(),
@@ -192,6 +184,7 @@ impl HybridKeypair {
         }
     }
 
+    #[cfg(test)]
     fn derive_ecdsa_public(secret: &[u8; 32], public: &mut [u8; 64]) {
         let signing_key =
             SigningKey::from_slice(secret).expect("deterministic test seed must be valid");
