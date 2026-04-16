@@ -555,6 +555,141 @@ func TestService_PauseResumeTerminateCellLifecycle(t *testing.T) {
 	}
 }
 
+func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	activeCell, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Active Cell",
+		Purpose:       "active review",
+		Resource:      "cell:active-review",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "bank_a_reviewer"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell active failed: %v", err)
+	}
+
+	quarantinedCell, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Quarantined Cell",
+		Purpose:       "containment review",
+		Resource:      "cell:quarantine-review",
+		Jurisdiction:  "UK",
+		Participants: []SecureCellParticipant{
+			{Identity: participantB, Role: "bank_b_reviewer"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell quarantined failed: %v", err)
+	}
+	if _, err := service.QuarantineMember(ctx, quarantinedCell.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		Reason:         "containment triggered",
+	}); err != nil {
+		t.Fatalf("QuarantineMember failed: %v", err)
+	}
+
+	if _, err := service.PauseCell(ctx, activeCell.CellID, SecureCellLifecycleRequest{Reason: "incident bridge"}); err != nil {
+		t.Fatalf("PauseCell failed: %v", err)
+	}
+
+	summaries, err := service.ListCells(ctx, SecureCellListFilter{
+		Statuses: []SecureCellStatus{SecureCellStatusQuarantined},
+	})
+	if err != nil {
+		t.Fatalf("ListCells failed: %v", err)
+	}
+	if len(summaries) != 1 || summaries[0].CellID != quarantinedCell.CellID {
+		t.Fatalf("expected only quarantined cell, got %+v", summaries)
+	}
+
+	summaries, err = service.ListCells(ctx, SecureCellListFilter{
+		Statuses:       []SecureCellStatus{SecureCellStatusPaused},
+		ParticipantDID: participantA.AgentID(),
+	})
+	if err != nil {
+		t.Fatalf("ListCells filtered failed: %v", err)
+	}
+	if len(summaries) != 1 || summaries[0].CellID != activeCell.CellID {
+		t.Fatalf("expected paused active cell summary, got %+v", summaries)
+	}
+	if summaries[0].PausedFromStatus != SecureCellStatusActive {
+		t.Fatalf("expected paused_from_status active, got %+v", summaries[0])
+	}
+}
+
+func TestService_ListExpiringQuarantinesReturnsExpiredMembers(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Expiry Cell",
+		Purpose:       "expiry review",
+		Resource:      "cell:expiry-review",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "bank_a_reviewer"},
+			{Identity: participantB, Role: "bank_b_reviewer"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	expiredAt := time.Now().UTC().Add(-15 * time.Minute)
+	futureAt := time.Now().UTC().Add(30 * time.Minute)
+	if _, err := service.QuarantineMember(ctx, result.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID:      participantA.AgentID(),
+		Reason:              "expired hold",
+		QuarantineExpiresAt: &expiredAt,
+	}); err != nil {
+		t.Fatalf("QuarantineMember A failed: %v", err)
+	}
+	if _, err := service.ReleaseMember(ctx, result.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID: participantA.AgentID(),
+		Reason:         "manual release",
+	}); err != nil {
+		t.Fatalf("ReleaseMember A failed: %v", err)
+	}
+	if _, err := service.QuarantineMember(ctx, result.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID:      participantA.AgentID(),
+		Reason:              "expired hold again",
+		QuarantineExpiresAt: &expiredAt,
+	}); err != nil {
+		t.Fatalf("second QuarantineMember A failed: %v", err)
+	}
+	if _, err := service.QuarantineMember(ctx, result.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID:      participantB.AgentID(),
+		Reason:              "future hold",
+		QuarantineExpiresAt: &futureAt,
+	}); err != nil {
+		t.Fatalf("QuarantineMember B failed: %v", err)
+	}
+
+	items, err := service.ListExpiringQuarantines(ctx, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("ListExpiringQuarantines failed: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 expiring quarantine, got %+v", items)
+	}
+	if items[0].ParticipantDID != participantA.AgentID() || items[0].CellID != result.CellID {
+		t.Fatalf("unexpected expiring quarantine projection: %+v", items[0])
+	}
+}
+
 func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
 

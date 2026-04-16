@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -177,6 +178,52 @@ type SecureCellMemberTransitionRequest struct {
 type SecureCellLifecycleRequest struct {
 	Reason   string            `json:"reason,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellListFilter narrows collection queries over live secure cells.
+type SecureCellListFilter struct {
+	Statuses       []SecureCellStatus `json:"statuses,omitempty"`
+	Jurisdiction   string             `json:"jurisdiction,omitempty"`
+	ParticipantDID string             `json:"participant_did,omitempty"`
+	UpdatedAfter   *time.Time         `json:"updated_after,omitempty"`
+	UpdatedBefore  *time.Time         `json:"updated_before,omitempty"`
+	Limit          int                `json:"limit,omitempty"`
+}
+
+// SecureCellSummary is the operator-facing projection used for collection
+// listings without returning the full artifact bundle.
+type SecureCellSummary struct {
+	CellID                      string           `json:"cell_id"`
+	Name                        string           `json:"name"`
+	Purpose                     string           `json:"purpose"`
+	Jurisdiction                string           `json:"jurisdiction"`
+	Status                      SecureCellStatus `json:"status"`
+	PausedFromStatus            SecureCellStatus `json:"paused_from_status,omitempty"`
+	ParticipantCount            int              `json:"participant_count"`
+	ActiveParticipantCount      int              `json:"active_participant_count"`
+	QuarantinedParticipantCount int              `json:"quarantined_participant_count"`
+	RevokedParticipantCount     int              `json:"revoked_participant_count"`
+	TransitionCount             int              `json:"transition_count"`
+	HasControlLedger            bool             `json:"has_control_ledger"`
+	HasPortablePackage          bool             `json:"has_portable_package"`
+	NextQuarantineExpiry        *time.Time       `json:"next_quarantine_expiry,omitempty"`
+	TerminatedAt                *time.Time       `json:"terminated_at,omitempty"`
+	CreatedAt                   time.Time        `json:"created_at"`
+	UpdatedAt                   time.Time        `json:"updated_at"`
+}
+
+// SecureCellQuarantineExpiry is the operator-facing projection for members who
+// are quarantined with explicit expiry windows.
+type SecureCellQuarantineExpiry struct {
+	CellID         string           `json:"cell_id"`
+	Name           string           `json:"name"`
+	Jurisdiction   string           `json:"jurisdiction"`
+	CellStatus     SecureCellStatus `json:"cell_status"`
+	ParticipantDID string           `json:"participant_did"`
+	Role           string           `json:"role"`
+	Reason         string           `json:"reason,omitempty"`
+	ExpiresAt      time.Time        `json:"expires_at"`
+	UpdatedAt      time.Time        `json:"updated_at"`
 }
 
 // ServiceConfig configures Secure Cells v1.
@@ -355,6 +402,103 @@ func (s *Service) GetCell(_ context.Context, cellID string) (*SecureCellResult, 
 		return nil, err
 	}
 	return cloneResult(run.result)
+}
+
+// ListCells returns operator-facing summaries for the current secure-cell set.
+func (s *Service) ListCells(_ context.Context, filter SecureCellListFilter) ([]SecureCellSummary, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	statuses := make(map[SecureCellStatus]struct{}, len(filter.Statuses))
+	for _, status := range filter.Statuses {
+		if status == "" {
+			continue
+		}
+		statuses[status] = struct{}{}
+	}
+	jurisdiction := strings.TrimSpace(filter.Jurisdiction)
+	participantDID := strings.TrimSpace(filter.ParticipantDID)
+	var summaries []SecureCellSummary
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if len(statuses) > 0 {
+			if _, ok := statuses[run.result.Status]; !ok {
+				continue
+			}
+		}
+		if jurisdiction != "" && !strings.EqualFold(strings.TrimSpace(run.request.Jurisdiction), jurisdiction) {
+			continue
+		}
+		if participantDID != "" && !secureCellHasParticipant(run.result.Participants, participantDID) {
+			continue
+		}
+		if filter.UpdatedAfter != nil && run.result.UpdatedAt.Before(filter.UpdatedAfter.UTC()) {
+			continue
+		}
+		if filter.UpdatedBefore != nil && run.result.UpdatedAt.After(filter.UpdatedBefore.UTC()) {
+			continue
+		}
+		summaries = append(summaries, secureCellSummaryFromRun(run))
+	}
+
+	sort.SliceStable(summaries, func(i, j int) bool {
+		if summaries[i].UpdatedAt.Equal(summaries[j].UpdatedAt) {
+			return summaries[i].CreatedAt.After(summaries[j].CreatedAt)
+		}
+		return summaries[i].UpdatedAt.After(summaries[j].UpdatedAt)
+	})
+	if filter.Limit > 0 && len(summaries) > filter.Limit {
+		summaries = summaries[:filter.Limit]
+	}
+	return summaries, nil
+}
+
+// ListExpiringQuarantines returns quarantined participants whose expiry is at
+// or before the provided cutoff.
+func (s *Service) ListExpiringQuarantines(_ context.Context, before time.Time) ([]SecureCellQuarantineExpiry, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if before.IsZero() {
+		before = time.Now().UTC()
+	}
+	var items []SecureCellQuarantineExpiry
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		for _, participant := range run.result.Participants {
+			if participant.Status != SecureCellParticipantStatusQuarantined || participant.QuarantineExpiresAt == nil {
+				continue
+			}
+			if participant.QuarantineExpiresAt.After(before) {
+				continue
+			}
+			items = append(items, SecureCellQuarantineExpiry{
+				CellID:         run.result.CellID,
+				Name:           run.result.Name,
+				Jurisdiction:   run.request.Jurisdiction,
+				CellStatus:     run.result.Status,
+				ParticipantDID: participant.ParticipantDID,
+				Role:           participant.Role,
+				Reason:         participant.Reason,
+				ExpiresAt:      participant.QuarantineExpiresAt.UTC(),
+				UpdatedAt:      participant.UpdatedAt.UTC(),
+			})
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].ExpiresAt.Equal(items[j].ExpiresAt) {
+			if items[i].CellID == items[j].CellID {
+				return items[i].ParticipantDID < items[j].ParticipantDID
+			}
+			return items[i].CellID < items[j].CellID
+		}
+		return items[i].ExpiresAt.Before(items[j].ExpiresAt)
+	})
+	return items, nil
 }
 
 func (s *Service) transitionMemberState(
@@ -1440,6 +1584,11 @@ func findParticipantState(states []SecureCellParticipantState, did string) (int,
 	return -1, nil
 }
 
+func secureCellHasParticipant(states []SecureCellParticipantState, did string) bool {
+	_, participant := findParticipantState(states, did)
+	return participant != nil
+}
+
 func activeOrQuarantinedParticipants(states []SecureCellParticipantState) []SecureCellParticipantState {
 	filtered := make([]SecureCellParticipantState, 0, len(states))
 	for _, state := range states {
@@ -1448,6 +1597,48 @@ func activeOrQuarantinedParticipants(states []SecureCellParticipantState) []Secu
 		}
 	}
 	return filtered
+}
+
+func secureCellSummaryFromRun(run *secureCellRun) SecureCellSummary {
+	if run == nil || run.result == nil {
+		return SecureCellSummary{}
+	}
+	active := len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusActive))
+	quarantined := len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusQuarantined))
+	revoked := len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusRevoked))
+	return SecureCellSummary{
+		CellID:                      run.result.CellID,
+		Name:                        run.result.Name,
+		Purpose:                     run.result.Purpose,
+		Jurisdiction:                run.request.Jurisdiction,
+		Status:                      run.result.Status,
+		PausedFromStatus:            run.result.PausedFromStatus,
+		ParticipantCount:            len(run.result.Participants),
+		ActiveParticipantCount:      active,
+		QuarantinedParticipantCount: quarantined,
+		RevokedParticipantCount:     revoked,
+		TransitionCount:             len(run.result.Transitions),
+		HasControlLedger:            run.result.ControlLedger != nil,
+		HasPortablePackage:          run.result.PortablePackage != nil,
+		NextQuarantineExpiry:        nextQuarantineExpiry(run.result.Participants),
+		TerminatedAt:                cloneTimePtr(run.result.TerminatedAt),
+		CreatedAt:                   run.result.CreatedAt.UTC(),
+		UpdatedAt:                   run.result.UpdatedAt.UTC(),
+	}
+}
+
+func nextQuarantineExpiry(states []SecureCellParticipantState) *time.Time {
+	var next *time.Time
+	for _, state := range states {
+		if state.Status != SecureCellParticipantStatusQuarantined || state.QuarantineExpiresAt == nil {
+			continue
+		}
+		expiresAt := state.QuarantineExpiresAt.UTC()
+		if next == nil || expiresAt.Before(*next) {
+			next = &expiresAt
+		}
+	}
+	return next
 }
 
 func participantsByStatus(states []SecureCellParticipantState, status SecureCellParticipantStatus) []SecureCellParticipantState {

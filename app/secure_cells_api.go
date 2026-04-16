@@ -96,6 +96,14 @@ type secureCellArtifactsResponse struct {
 	PortablePackageAnchored  bool                                                `json:"portable_package_anchored"`
 }
 
+type secureCellListResponse struct {
+	Items []securecellsintegration.SecureCellSummary `json:"items"`
+}
+
+type secureCellQuarantineExpiryListResponse struct {
+	Items []securecellsintegration.SecureCellQuarantineExpiry `json:"items"`
+}
+
 type appSecureCellSealer struct {
 	app         *AethelredApp
 	requestedBy string
@@ -272,6 +280,54 @@ func (app *AethelredApp) SecureCellsCreateHandler() http.Handler {
 			return
 		}
 		writeSecureCellJSON(w, http.StatusCreated, secureCellResponse{Result: result})
+	})
+}
+
+func (app *AethelredApp) SecureCellsCollectionHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeSecureCellAPIError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if app == nil || app.secureCellService == nil {
+			writeSecureCellAPIError(w, http.StatusServiceUnavailable, "secure cell service is unavailable")
+			return
+		}
+		filter, err := parseSecureCellListFilter(r)
+		if err != nil {
+			writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		items, err := app.secureCellService.ListCells(r.Context(), filter)
+		if err != nil {
+			writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeSecureCellJSON(w, http.StatusOK, secureCellListResponse{Items: items})
+	})
+}
+
+func (app *AethelredApp) SecureCellsExpiringQuarantinesHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeSecureCellAPIError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if app == nil || app.secureCellService == nil {
+			writeSecureCellAPIError(w, http.StatusServiceUnavailable, "secure cell service is unavailable")
+			return
+		}
+		before, err := parseSecureCellOptionalTime(r.URL.Query().Get("before"))
+		if err != nil {
+			writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		items, err := app.secureCellService.ListExpiringQuarantines(r.Context(), derefSecureCellTime(before))
+		if err != nil {
+			writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeSecureCellJSON(w, http.StatusOK, secureCellQuarantineExpiryListResponse{Items: items})
 	})
 }
 
@@ -517,6 +573,80 @@ func derefSecureCellTime(in *time.Time) time.Time {
 		return time.Time{}
 	}
 	return in.UTC()
+}
+
+func parseSecureCellListFilter(r *http.Request) (securecellsintegration.SecureCellListFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellListFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	statuses, err := parseSecureCellStatuses(query.Get("status"))
+	if err != nil {
+		return securecellsintegration.SecureCellListFilter{}, err
+	}
+	updatedAfter, err := parseSecureCellOptionalTime(query.Get("updated_after"))
+	if err != nil {
+		return securecellsintegration.SecureCellListFilter{}, err
+	}
+	updatedBefore, err := parseSecureCellOptionalTime(query.Get("updated_before"))
+	if err != nil {
+		return securecellsintegration.SecureCellListFilter{}, err
+	}
+	return securecellsintegration.SecureCellListFilter{
+		Statuses:       statuses,
+		Jurisdiction:   strings.TrimSpace(query.Get("jurisdiction")),
+		ParticipantDID: strings.TrimSpace(query.Get("participant_did")),
+		UpdatedAfter:   updatedAfter,
+		UpdatedBefore:  updatedBefore,
+		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellStatuses(raw string) ([]securecellsintegration.SecureCellStatus, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+	parts := strings.Split(raw, ",")
+	statuses := make([]securecellsintegration.SecureCellStatus, 0, len(parts))
+	for _, part := range parts {
+		status, err := parseSecureCellStatus(part)
+		if err != nil {
+			return nil, err
+		}
+		statuses = append(statuses, status)
+	}
+	return statuses, nil
+}
+
+func parseSecureCellStatus(raw string) (securecellsintegration.SecureCellStatus, error) {
+	switch securecellsintegration.SecureCellStatus(strings.ToLower(strings.TrimSpace(raw))) {
+	case securecellsintegration.SecureCellStatusActive,
+		securecellsintegration.SecureCellStatusPaused,
+		securecellsintegration.SecureCellStatusQuarantined,
+		securecellsintegration.SecureCellStatusRevoked,
+		securecellsintegration.SecureCellStatusTerminated,
+		securecellsintegration.SecureCellStatusRejected:
+		return securecellsintegration.SecureCellStatus(strings.ToLower(strings.TrimSpace(raw))), nil
+	default:
+		return "", fmt.Errorf("invalid secure cell status %q", raw)
+	}
+}
+
+func parseSecureCellOptionalTime(raw string) (*time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	var parsed time.Time
+	var err error
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		parsed, err = time.Parse(layout, raw)
+		if err == nil {
+			parsed = parsed.UTC()
+			return &parsed, nil
+		}
+	}
+	return nil, fmt.Errorf("invalid timestamp %q: %w", raw, err)
 }
 
 func resolveSecureCellControlLedgerDir(appOpts servertypes.AppOptions) string {

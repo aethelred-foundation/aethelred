@@ -827,6 +827,8 @@ func (app *AethelredApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.
 	apiSvr.Router.PathPrefix("/api/v1/finance/treasury/releases/").Handler(app.FinanceTreasuryReleaseGetHandler()).Methods("GET")
 	apiSvr.Router.PathPrefix("/api/v1/finance/treasury/releases/").Handler(app.FinanceTreasuryReleaseApproveHandler()).Methods("POST")
 	apiSvr.Router.Handle("/api/v1/secure-cells", app.SecureCellsCreateHandler()).Methods("POST")
+	apiSvr.Router.Handle("/api/v1/secure-cells", app.SecureCellsCollectionHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/secure-cells/quarantine/expiring", app.SecureCellsExpiringQuarantinesHandler()).Methods("GET")
 	apiSvr.Router.PathPrefix("/api/v1/secure-cells/").Handler(app.SecureCellsMutateHandler()).Methods("POST")
 	apiSvr.Router.PathPrefix("/api/v1/secure-cells/").Handler(app.SecureCellsGetHandler()).Methods("GET")
 	// Admin endpoint for deterministic pre-proposal consensus evidence auditing.
