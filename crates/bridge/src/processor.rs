@@ -14,7 +14,7 @@ use crate::types::*;
 /// Event processor
 pub struct EventProcessor {
     /// Configuration
-    _config: BridgeConfig,
+    config: BridgeConfig,
 
     /// Storage
     storage: Arc<BridgeStorage>,
@@ -31,7 +31,7 @@ impl EventProcessor {
         metrics: Arc<BridgeMetrics>,
     ) -> Self {
         Self {
-            _config: config,
+            config,
             storage,
             metrics,
         }
@@ -157,6 +157,8 @@ impl EventProcessor {
             .get_deposit(&deposit_id)?
             .ok_or_else(|| BridgeError::InvalidInput("Deposit not found".to_string()))?;
 
+        let proposer = self.config.identity.aethelred_address_bytes()?;
+
         // Update status
         self.storage
             .update_deposit_status(&deposit_id, DepositStatus::Confirmed)?;
@@ -172,7 +174,7 @@ impl EventProcessor {
         let proposal = MintProposal {
             proposal_id: deposit.generate_id(),
             deposit,
-            proposer: [0u8; 32], // Will be filled by consensus engine
+            proposer,
             votes: vec![],
             status: MintProposalStatus::Voting,
             created_at: now_secs,
@@ -268,6 +270,8 @@ impl EventProcessor {
             .get_burn(&burn_id)?
             .ok_or_else(|| BridgeError::InvalidInput("Burn not found".to_string()))?;
 
+        let proposer = self.config.identity.aethelred_address_bytes()?;
+
         // Update status
         self.storage
             .update_burn_status(&burn_id, WithdrawalStatus::Confirmed)?;
@@ -282,7 +286,7 @@ impl EventProcessor {
         let proposal = WithdrawalProposal {
             proposal_id: burn_id,
             burn,
-            proposer: [0u8; 32],
+            proposer,
             votes: vec![],
             status: WithdrawalProposalStatus::Voting,
             created_at: now_secs,
@@ -412,5 +416,51 @@ mod tests {
         let mut bad_deposit = deposit.clone();
         bad_deposit.aethelred_recipient = [0u8; 32];
         assert!(processor.validate_deposit(&bad_deposit).is_err());
+    }
+
+    #[tokio::test]
+    async fn test_finalized_deposit_uses_configured_proposer_address() {
+        let mut config = BridgeConfig::testnet();
+        config.identity.aethelred_address = Some(format!("0x{}", hex::encode([9u8; 32])));
+
+        let storage = Arc::new(BridgeStorage::open_temp().unwrap());
+        let metrics = Arc::new(BridgeMetrics::new());
+        let processor = EventProcessor::new(config, storage.clone(), metrics);
+
+        let deposit = create_test_deposit();
+        storage.store_pending_deposit(&deposit).unwrap();
+
+        processor
+            .handle_eth_deposit_finalized(deposit.deposit_id, deposit.block_number)
+            .await
+            .unwrap();
+
+        let proposal = storage
+            .get_mint_proposal(&deposit.generate_id())
+            .unwrap()
+            .expect("mint proposal should exist");
+        assert_eq!(proposal.proposer, [9u8; 32]);
+    }
+
+    #[tokio::test]
+    async fn test_finalized_deposit_requires_configured_proposer_address() {
+        let config = BridgeConfig::testnet();
+        let storage = Arc::new(BridgeStorage::open_temp().unwrap());
+        let metrics = Arc::new(BridgeMetrics::new());
+        let processor = EventProcessor::new(config, storage.clone(), metrics);
+
+        let deposit = create_test_deposit();
+        storage.store_pending_deposit(&deposit).unwrap();
+
+        let error = processor
+            .handle_eth_deposit_finalized(deposit.deposit_id, deposit.block_number)
+            .await
+            .expect_err("proposal creation should fail without configured proposer");
+
+        assert!(matches!(error, BridgeError::Config(_)));
+        assert_eq!(
+            storage.get_deposit_status(&deposit.deposit_id).unwrap(),
+            Some(DepositStatus::Pending)
+        );
     }
 }

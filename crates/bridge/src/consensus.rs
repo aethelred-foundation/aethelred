@@ -223,14 +223,15 @@ impl ConsensusEngine {
                 relayer_set.min_votes_required()
             );
 
-            // Update proposal status
+            // Submit withdrawal proposal to Ethereum
+            self.submit_withdrawal_to_ethereum(&proposal_id).await?;
+
+            // Only mark the proposal as submitted once the transaction backend
+            // reports success.
             self.storage.update_withdrawal_proposal_status(
                 &proposal_id,
                 WithdrawalProposalStatus::SubmittedToEthereum,
             )?;
-
-            // Submit withdrawal proposal to Ethereum
-            self.submit_withdrawal_to_ethereum(&proposal_id).await?;
         }
 
         Ok(())
@@ -274,55 +275,98 @@ impl ConsensusEngine {
 
     /// Check if we should vote for a mint proposal
     async fn should_vote_mint(&self, proposal: &MintProposal) -> Result<bool> {
-        // Verify the deposit exists and is valid
-        let _deposit = &proposal.deposit;
+        let stored_deposit = self
+            .storage
+            .get_deposit(&proposal.deposit.deposit_id)?
+            .ok_or_else(|| {
+                BridgeError::Consensus("Mint proposal deposit is missing".to_string())
+            })?;
 
-        // Verify deposit on Ethereum (in production, would query the chain)
-        // For now, assume valid if we have it in storage
-        Ok(true)
+        if stored_deposit.tx_hash != proposal.deposit.tx_hash
+            || stored_deposit.amount != proposal.deposit.amount
+            || stored_deposit.aethelred_recipient != proposal.deposit.aethelred_recipient
+        {
+            return Err(BridgeError::Consensus(
+                "Mint proposal deposit does not match stored deposit".to_string(),
+            ));
+        }
+
+        match self
+            .storage
+            .get_deposit_status(&proposal.deposit.deposit_id)?
+        {
+            Some(DepositStatus::Confirmed | DepositStatus::MintProposed) => Ok(true),
+            Some(status) => Err(BridgeError::Consensus(format!(
+                "Mint proposal deposit is not ready for voting: {status:?}"
+            ))),
+            None => Err(BridgeError::Consensus(
+                "Mint proposal deposit status is missing".to_string(),
+            )),
+        }
     }
 
     /// Check if we should vote for a withdrawal proposal
-    async fn should_vote_withdrawal(&self, _proposal: &WithdrawalProposal) -> Result<bool> {
-        // Verify the burn exists and is valid on Aethelred
-        // For now, assume valid if we have it in storage
-        Ok(true)
+    async fn should_vote_withdrawal(&self, proposal: &WithdrawalProposal) -> Result<bool> {
+        let stored_burn = self
+            .storage
+            .get_burn(&proposal.burn.burn_id)?
+            .ok_or_else(|| BridgeError::Consensus("Withdrawal burn is missing".to_string()))?;
+
+        if stored_burn.tx_hash != proposal.burn.tx_hash
+            || stored_burn.amount != proposal.burn.amount
+            || stored_burn.eth_recipient != proposal.burn.eth_recipient
+        {
+            return Err(BridgeError::Consensus(
+                "Withdrawal proposal burn does not match stored burn".to_string(),
+            ));
+        }
+
+        match self.storage.get_burn_status(&proposal.burn.burn_id)? {
+            Some(WithdrawalStatus::Confirmed | WithdrawalStatus::WithdrawalProposed) => Ok(true),
+            Some(status) => Err(BridgeError::Consensus(format!(
+                "Withdrawal burn is not ready for voting: {status:?}"
+            ))),
+            None => Err(BridgeError::Consensus(
+                "Withdrawal burn status is missing".to_string(),
+            )),
+        }
     }
 
     /// Create a vote for a mint proposal
     async fn create_mint_vote(&self, _proposal: &MintProposal) -> Result<RelayerVote> {
-        // In production, sign with relayer's private key
-        Ok(RelayerVote {
-            relayer: [0u8; 32], // Our relayer address
-            approve: true,
-            signature: vec![0u8; 64], // Signature
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        })
+        let relayer = self.require_local_identity()?;
+
+        Err(BridgeError::Signing(format!(
+            "Cryptographic mint-vote signing backend is not implemented for relayer {}",
+            hex::encode(&relayer[..8])
+        )))
     }
 
     /// Create a vote for a withdrawal proposal
     async fn create_withdrawal_vote(&self, _proposal: &WithdrawalProposal) -> Result<RelayerVote> {
-        Ok(RelayerVote {
-            relayer: [0u8; 32],
-            approve: true,
-            signature: vec![0u8; 64],
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        })
+        let relayer = self.require_local_identity()?;
+
+        Err(BridgeError::Signing(format!(
+            "Cryptographic withdrawal-vote signing backend is not implemented for relayer {}",
+            hex::encode(&relayer[..8])
+        )))
     }
 
     /// Verify a vote signature
     fn verify_vote_signature(&self, vote: &RelayerVote) -> Result<()> {
-        // In production, verify ECDSA/EdDSA signature
+        if vote.relayer == [0u8; 32] {
+            return Err(BridgeError::Verification(
+                "Vote relayer address is zero".to_string(),
+            ));
+        }
+
         if vote.signature.is_empty() {
             return Err(BridgeError::Verification("Empty signature".to_string()));
         }
-        Ok(())
+
+        Err(BridgeError::Verification(
+            "Cryptographic vote signature verification backend is not implemented".to_string(),
+        ))
     }
 
     /// Submit a mint transaction to Aethelred
@@ -332,13 +376,10 @@ impl ConsensusEngine {
             hex::encode(&proposal_id[..8])
         );
 
-        // In production:
-        // 1. Build the mint transaction
-        // 2. Sign with relayer key
-        // 3. Submit to Aethelred RPC
-        // 4. Wait for inclusion
-
-        Ok(())
+        Err(BridgeError::Aethelred(format!(
+            "Mint submission backend is not implemented for proposal {}",
+            hex::encode(&proposal_id[..8])
+        )))
     }
 
     /// Submit a withdrawal proposal to Ethereum
@@ -348,13 +389,15 @@ impl ConsensusEngine {
             hex::encode(&proposal_id[..8])
         );
 
-        // In production:
-        // 1. Build the proposeWithdrawal transaction
-        // 2. Estimate gas
-        // 3. Sign with relayer key
-        // 4. Submit to Ethereum
+        Err(BridgeError::Ethereum(format!(
+            "Withdrawal submission backend is not implemented for proposal {}",
+            hex::encode(&proposal_id[..8])
+        )))
+    }
 
-        Ok(())
+    fn require_local_identity(&self) -> Result<AethelredAddress> {
+        self.config.identity.require_private_key()?;
+        self.config.identity.aethelred_address_bytes()
     }
 }
 
@@ -365,6 +408,7 @@ impl ConsensusEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_consensus_threshold() {
@@ -406,5 +450,75 @@ mod tests {
         engine.update_relayer_set(relayer_set).await.unwrap();
 
         assert_eq!(engine.participant_count().await, 3);
+    }
+
+    #[tokio::test]
+    async fn test_process_pending_mints_fails_closed_without_signing_backend() {
+        let tempdir = tempdir().unwrap();
+        let key_path = tempdir.path().join("relayer.key");
+        std::fs::write(&key_path, b"placeholder").unwrap();
+
+        let mut config = BridgeConfig::testnet();
+        config.identity.private_key_path = key_path;
+        config.identity.aethelred_address = Some(format!("0x{}", hex::encode([7u8; 32])));
+
+        let storage = Arc::new(BridgeStorage::open_temp().unwrap());
+        let metrics = Arc::new(BridgeMetrics::new());
+        let engine = ConsensusEngine::new(config, storage.clone(), metrics);
+
+        let deposit = EthereumDeposit {
+            deposit_id: [1u8; 32],
+            depositor: [2u8; 20],
+            aethelred_recipient: [3u8; 32],
+            token: [0u8; 20],
+            amount: 100,
+            nonce: 1,
+            block_number: 10,
+            block_hash: [4u8; 32],
+            tx_hash: [5u8; 32],
+            log_index: 0,
+            timestamp: 1,
+        };
+        storage.store_deposit(&deposit).unwrap();
+        storage
+            .update_deposit_status(&deposit.deposit_id, DepositStatus::Confirmed)
+            .unwrap();
+
+        let proposal = MintProposal {
+            proposal_id: deposit.generate_id(),
+            deposit,
+            proposer: [7u8; 32],
+            votes: vec![],
+            status: MintProposalStatus::Voting,
+            created_at: 1,
+            updated_at: 1,
+        };
+        storage.store_mint_proposal(&proposal).unwrap();
+
+        let error = engine
+            .process_pending()
+            .await
+            .expect_err("automatic voting should fail closed until the signing backend exists");
+        assert!(matches!(error, BridgeError::Signing(_)));
+    }
+
+    #[test]
+    fn test_verify_vote_signature_fails_closed_without_crypto_backend() {
+        let config = BridgeConfig::testnet();
+        let storage = Arc::new(BridgeStorage::open_temp().unwrap());
+        let metrics = Arc::new(BridgeMetrics::new());
+        let engine = ConsensusEngine::new(config, storage, metrics);
+
+        let vote = RelayerVote {
+            relayer: [9u8; 32],
+            approve: true,
+            signature: vec![1; 64],
+            timestamp: 1,
+        };
+
+        let error = engine
+            .verify_vote_signature(&vote)
+            .expect_err("vote verification should fail closed without crypto backend");
+        assert!(matches!(error, BridgeError::Verification(_)));
     }
 }

@@ -172,6 +172,10 @@ impl BridgeStorage {
             .or_else(|| state.pending_deposits.get(deposit_id).cloned()))
     }
 
+    pub fn get_deposit_status(&self, deposit_id: &Hash) -> Result<Option<DepositStatus>> {
+        Ok(self.read_state()?.deposit_statuses.get(deposit_id).copied())
+    }
+
     pub fn store_pending_deposit(&self, deposit: &EthereumDeposit) -> Result<()> {
         self.mutate_state(|state| {
             state
@@ -234,6 +238,10 @@ impl BridgeStorage {
             .get(burn_id)
             .cloned()
             .or_else(|| state.pending_burns.get(burn_id).cloned()))
+    }
+
+    pub fn get_burn_status(&self, burn_id: &Hash) -> Result<Option<WithdrawalStatus>> {
+        Ok(self.read_state()?.burn_statuses.get(burn_id).copied())
     }
 
     pub fn store_pending_burn(&self, burn: &AethelredBurn) -> Result<()> {

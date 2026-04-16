@@ -150,6 +150,57 @@ impl Default for RelayerIdentityConfig {
     }
 }
 
+impl RelayerIdentityConfig {
+    /// Parse the configured Aethelred relayer address into its 32-byte runtime form.
+    pub fn aethelred_address_bytes(&self) -> crate::Result<[u8; 32]> {
+        let address = self.aethelred_address.as_ref().ok_or_else(|| {
+            crate::BridgeError::Config("Relayer Aethelred address is not configured".to_string())
+        })?;
+
+        Self::decode_fixed_hex::<32>(address, "relayer Aethelred address")
+    }
+
+    /// Ensure the relayer private key path is configured and present on disk.
+    pub fn require_private_key(&self) -> crate::Result<()> {
+        if self.private_key_path.as_os_str().is_empty() {
+            return Err(crate::BridgeError::Config(
+                "Relayer private key path is not configured".to_string(),
+            ));
+        }
+
+        if !self.private_key_path.exists() {
+            return Err(crate::BridgeError::Config(format!(
+                "Relayer private key file not found: {}",
+                self.private_key_path.display()
+            )));
+        }
+
+        Ok(())
+    }
+
+    fn decode_fixed_hex<const N: usize>(value: &str, field_name: &str) -> crate::Result<[u8; N]> {
+        let trimmed = value
+            .strip_prefix("0x")
+            .or_else(|| value.strip_prefix("0X"))
+            .unwrap_or(value);
+
+        let decoded = hex::decode(trimmed).map_err(|e| {
+            crate::BridgeError::Config(format!("Invalid {field_name} hex encoding: {e}"))
+        })?;
+
+        if decoded.len() != N {
+            return Err(crate::BridgeError::Config(format!(
+                "Invalid {field_name} length: expected {N} bytes, got {}",
+                decoded.len()
+            )));
+        }
+
+        let mut bytes = [0u8; N];
+        bytes.copy_from_slice(&decoded);
+        Ok(bytes)
+    }
+}
+
 /// Ethereum configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthereumConfig {
