@@ -727,6 +727,159 @@ func TestService_SharingRejectedForClosedSession(t *testing.T) {
 	}
 }
 
+func TestService_SessionGovernanceAndExchangeLifecycle(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Governed Session Cell",
+		Purpose:       "room-level governance",
+		Resource:      "cell:session-governance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Incident Pod",
+		Purpose:         "narrow incident room",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session, ok := mustSecureCellSession(t, started, started.Sessions[0].ID)
+	if !ok {
+		t.Fatalf("expected session in result, got %+v", started.Sessions)
+	}
+	if len(session.ParticipantDIDs) != 1 || session.ParticipantDIDs[0] != participantA.AgentID() {
+		t.Fatalf("expected single-member session, got %+v", session)
+	}
+
+	withMember, err := service.AddSessionMember(ctx, result.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "reviewer admitted",
+		Metadata:       map[string]string{"ticket": "SC-SESS-ADD-01"},
+	}, session.ID)
+	if err != nil {
+		t.Fatalf("AddSessionMember failed: %v", err)
+	}
+	session, ok = mustSecureCellSession(t, withMember, session.ID)
+	if !ok || len(session.ParticipantDIDs) != 2 {
+		t.Fatalf("expected two-member session, got %+v", session)
+	}
+
+	exchanged, err := service.RecordExchange(ctx, result.CellID, SecureCellSessionExchangeRequest{
+		ActorDID:       participantA.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Risk Note",
+		ExchangeType:   "message",
+		Classification: "decisioning",
+		Summary:        "live escalation note",
+		Recipients:     []string{participantB.AgentID()},
+		Reason:         "risk note sent",
+		Metadata:       map[string]string{"ticket": "SC-SESS-XCHG-01"},
+	})
+	if err != nil {
+		t.Fatalf("RecordExchange failed: %v", err)
+	}
+	if len(exchanged.SessionExchanges) != 1 {
+		t.Fatalf("expected 1 session exchange, got %+v", exchanged.SessionExchanges)
+	}
+	exchange := exchanged.SessionExchanges[0]
+	if exchange.SessionID != session.ID || exchange.PolicyReceiptID == "" || exchange.SealID == "" || exchange.TraceLinkID == "" {
+		t.Fatalf("expected evidence-bearing exchange, got %+v", exchange)
+	}
+	if !controlLedgerHasControl(exchanged.ControlLedger, "CELL-MSG-01") {
+		t.Fatalf("expected session exchange control in ledger, got %+v", exchanged.ControlLedger.Controls)
+	}
+
+	paused, err := service.PauseSession(ctx, result.CellID, session.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "room frozen",
+	})
+	if err != nil {
+		t.Fatalf("PauseSession failed: %v", err)
+	}
+	session, ok = mustSecureCellSession(t, paused, session.ID)
+	if !ok || session.Status != SecureCellSessionStatusPaused {
+		t.Fatalf("expected paused session, got %+v", session)
+	}
+
+	_, err = service.RecordExchange(ctx, result.CellID, SecureCellSessionExchangeRequest{
+		ActorDID:       participantA.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Late Note",
+		ExchangeType:   "message",
+		Classification: "decisioning",
+		Recipients:     []string{participantB.AgentID()},
+	})
+	if !errors.Is(err, ErrSessionNotActive) {
+		t.Fatalf("expected ErrSessionNotActive while paused, got %v", err)
+	}
+
+	resumed, err := service.ResumeSession(ctx, result.CellID, session.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "room reopened",
+	})
+	if err != nil {
+		t.Fatalf("ResumeSession failed: %v", err)
+	}
+	session, ok = mustSecureCellSession(t, resumed, session.ID)
+	if !ok || session.Status != SecureCellSessionStatusActive {
+		t.Fatalf("expected active session after resume, got %+v", session)
+	}
+
+	quarantined, err := service.QuarantineSession(ctx, result.CellID, session.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "session containment",
+	})
+	if err != nil {
+		t.Fatalf("QuarantineSession failed: %v", err)
+	}
+	session, ok = mustSecureCellSession(t, quarantined, session.ID)
+	if !ok || session.Status != SecureCellSessionStatusQuarantined || session.QuarantinedAt == nil {
+		t.Fatalf("expected quarantined session, got %+v", session)
+	}
+	if quarantined.Status != SecureCellStatusActive {
+		t.Fatalf("expected parent cell to remain active, got %s", quarantined.Status)
+	}
+
+	trimmed, err := service.RemoveSessionMember(ctx, result.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "reduce blast radius",
+		Metadata:       map[string]string{"ticket": "SC-SESS-RM-01"},
+	}, session.ID)
+	if err != nil {
+		t.Fatalf("RemoveSessionMember failed: %v", err)
+	}
+	session, ok = mustSecureCellSession(t, trimmed, session.ID)
+	if !ok || len(session.ParticipantDIDs) != 1 || session.ParticipantDIDs[0] != participantA.AgentID() {
+		t.Fatalf("expected session membership trimmed to participant A, got %+v", session)
+	}
+	last := trimmed.Transitions[len(trimmed.Transitions)-1]
+	if last.Action != "secure_cell.session_member_removed" {
+		t.Fatalf("expected session_member_removed transition, got %+v", last)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 

@@ -543,6 +543,132 @@ func TestSecureCellsHandlers_BearerSessionShareCloseFlow(t *testing.T) {
 	}
 }
 
+func TestSecureCellsHandlers_BearerSessionGovernanceFlow(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{29}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participantA.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+	if len(startResp.Result.Sessions[0].ParticipantDIDs) != 1 {
+		t.Fatalf("expected one session participant, got %+v", startResp.Result.Sessions[0])
+	}
+
+	memberReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/members", bytes.NewReader(mustMarshalSecureCellSessionMemberMutationRequest(t, owner, participantB.AgentID(), "admit to room", nil)))
+	memberReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	memberRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(memberRec, memberReq)
+	if memberRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, memberRec.Code, memberRec.Body.String())
+	}
+
+	exchangeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/exchange", bytes.NewReader(mustMarshalSecureCellSessionExchangeRequest(t, participantA, nil, []string{participantB.AgentID()})))
+	exchangeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	exchangeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(exchangeRec, exchangeReq)
+	if exchangeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, exchangeRec.Code, exchangeRec.Body.String())
+	}
+
+	pauseReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/pause", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, owner, "pause room", nil, nil)))
+	pauseReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	pauseRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(pauseRec, pauseReq)
+	if pauseRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, pauseRec.Code, pauseRec.Body.String())
+	}
+
+	resumeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/resume", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, owner, "resume room", nil, nil)))
+	resumeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	resumeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(resumeRec, resumeReq)
+	if resumeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, resumeRec.Code, resumeRec.Body.String())
+	}
+
+	quarantineReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/quarantine", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, owner, "contain room", nil, nil)))
+	quarantineReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineRec, quarantineReq)
+	if quarantineRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineRec.Code, quarantineRec.Body.String())
+	}
+
+	removeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/members/"+participantB.AgentID()+"/remove", bytes.NewReader(mustMarshalSecureCellSessionMemberMutationRequest(t, owner, participantB.AgentID(), "trim room", nil)))
+	removeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	removeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(removeRec, removeReq)
+	if removeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, removeRec.Code, removeRec.Body.String())
+	}
+
+	finalResumeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/resume", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, owner, "resume room again", nil, nil)))
+	finalResumeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	finalResumeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(finalResumeRec, finalResumeReq)
+	if finalResumeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, finalResumeRec.Code, finalResumeRec.Body.String())
+	}
+
+	artifactsReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/artifacts", nil)
+	artifactsRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(artifactsRec, artifactsReq)
+	if artifactsRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, artifactsRec.Code, artifactsRec.Body.String())
+	}
+
+	var artifactsResp secureCellArtifactsResponse
+	if err := json.Unmarshal(artifactsRec.Body.Bytes(), &artifactsResp); err != nil {
+		t.Fatalf("unmarshal artifact response: %v", err)
+	}
+	if len(artifactsResp.Sessions) != 1 || len(artifactsResp.SessionExchanges) != 1 {
+		t.Fatalf("expected session and session exchange in artifact projection, got %+v", artifactsResp)
+	}
+	if artifactsResp.Sessions[0].Status != securecellsintegration.SecureCellSessionStatusActive {
+		t.Fatalf("expected session to be active after final resume, got %+v", artifactsResp.Sessions[0])
+	}
+	if len(artifactsResp.Sessions[0].ParticipantDIDs) != 1 || artifactsResp.Sessions[0].ParticipantDIDs[0] != participantA.AgentID() {
+		t.Fatalf("expected session membership trimmed to participant A, got %+v", artifactsResp.Sessions[0])
+	}
+	if artifactsResp.SessionExchanges[0].SealID == "" || artifactsResp.SessionExchanges[0].TraceLinkID == "" {
+		t.Fatalf("expected evidence-bearing session exchange, got %+v", artifactsResp.SessionExchanges[0])
+	}
+}
+
 func TestSecureCellsHandlers_BearerExpireQuarantineFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1134,19 +1260,58 @@ func mustMarshalSecureCellLifecycleRequest(t *testing.T, actor *agent.AgentIdent
 }
 
 func mustMarshalSecureCellSessionStartRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	return mustMarshalSecureCellSessionStartRequestWithParticipants(t, actor, receipt, nil)
+}
+
+func mustMarshalSecureCellSessionStartRequestWithParticipants(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, participantDIDs []string) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellSessionStartRequest{
 		ActorIdentity:   mustOptionalJSONRawMessage(t, actor),
 		PolicyReceipt:   receipt,
 		Name:            "Morning Review Session",
 		Purpose:         "daily cross-bank review",
-		ParticipantDIDs: nil,
+		ParticipantDIDs: participantDIDs,
 		DataClasses:     []string{"confidential"},
 		Reason:          "session opened",
 		Metadata:        map[string]string{"ticket": "SC-SESSION-01"},
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell session start request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellSessionExchangeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, recipients []string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellSessionExchangeRequest{
+		ActorIdentity:  mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:  receipt,
+		Name:           "Live Risk Note",
+		ExchangeType:   "message",
+		Classification: "confidential",
+		Resource:       "secure-cell:session:exchange:note",
+		Summary:        "live room note",
+		Recipients:     recipients,
+		Reason:         "exchange sent",
+		Metadata:       map[string]string{"ticket": "SC-XCHG-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell session exchange request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellSessionMemberMutationRequest(t *testing.T, actor *agent.AgentIdentity, participantDID string, reason string, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellSessionMemberMutationRequest{
+		ActorIdentity:  mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:  receipt,
+		ParticipantDID: participantDID,
+		Reason:         reason,
+		Metadata:       map[string]string{"ticket": "SC-SESS-MEMBER-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell session member mutation request: %v", err)
 	}
 	return body
 }

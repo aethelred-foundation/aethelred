@@ -574,11 +574,11 @@ func parseSecureCellWebhookEndpoints(values []string) []string {
 
 func secureCellAuditClassification(action string) (pouwkeeper.AuditCategory, pouwkeeper.AuditSeverity) {
 	switch action {
-	case "secure_cell.member_quarantined":
+	case "secure_cell.member_quarantined", "secure_cell.session_quarantined":
 		return pouwkeeper.AuditCategorySecurity, pouwkeeper.AuditSeverityWarning
 	case "secure_cell.member_revoked":
 		return pouwkeeper.AuditCategorySecurity, pouwkeeper.AuditSeverityCritical
-	case "secure_cell.paused", "secure_cell.terminated":
+	case "secure_cell.paused", "secure_cell.terminated", "secure_cell.session_paused":
 		return pouwkeeper.AuditCategoryGovernance, pouwkeeper.AuditSeverityWarning
 	default:
 		return pouwkeeper.AuditCategoryGovernance, pouwkeeper.AuditSeverityInfo
@@ -596,6 +596,15 @@ func secureCellAuditDetails(event securecellsintegration.SecureCellLifecycleEven
 	details["cell_status"] = string(event.CellStatus)
 	if event.TargetDID != "" {
 		details["participant_did"] = event.TargetDID
+	}
+	if event.SessionID != "" {
+		details["session_id"] = event.SessionID
+	}
+	if event.SessionExchangeID != "" {
+		details["session_exchange_id"] = event.SessionExchangeID
+	}
+	if event.SharedOutputID != "" {
+		details["shared_output_id"] = event.SharedOutputID
 	}
 	if event.ControlLedgerID != "" {
 		details["control_ledger_id"] = event.ControlLedgerID
