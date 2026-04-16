@@ -345,6 +345,20 @@ func (app *AethelredApp) RegisterShutdownComponents() {
 		}
 	}
 
+	if app.secureCellExpirySweeper != nil {
+		app.shutdownManager.RegisterComponent(&secureCellStopAdapter{
+			name:    "SecureCellExpirySweeper",
+			stopper: app.secureCellExpirySweeper,
+		})
+	}
+
+	if app.secureCellRuntime != nil {
+		app.shutdownManager.RegisterComponent(&secureCellStopAdapter{
+			name:    "SecureCellRuntime",
+			stopper: app.secureCellRuntime,
+		})
+	}
+
 	app.Logger().Info("Shutdown components registered")
 }
 

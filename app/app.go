@@ -283,6 +283,14 @@ type AethelredApp struct {
 	// secureCellControlLedgerDir is the durable filesystem path used for secure
 	// cell control-ledger snapshots.
 	secureCellControlLedgerDir string
+
+	// secureCellRuntime publishes lifecycle audit records and asynchronous
+	// webhook deliveries for secure-cell transitions.
+	secureCellRuntime *secureCellLifecycleRuntime
+
+	// secureCellExpirySweeper automates quarantine-expiry release across all
+	// live secure cells.
+	secureCellExpirySweeper *secureCellExpirySweeper
 }
 
 // New returns a reference to an initialized AethelredApp.

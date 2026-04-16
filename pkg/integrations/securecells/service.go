@@ -65,6 +65,10 @@ type SecureCellPackageSigner func(ctx context.Context, pkg *evidence.PortableCon
 // SecureCellPackageAnchorer anchors a portable package into external audit or governance state.
 type SecureCellPackageAnchorer func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error
 
+// SecureCellEventPublisher publishes finalized lifecycle events after the
+// sealed evidence package has been regenerated successfully.
+type SecureCellEventPublisher func(ctx context.Context, event SecureCellLifecycleEvent)
+
 // SecureCellPolicy describes the governed collaboration policy enforced inside
 // the secure cell.
 type SecureCellPolicy struct {
@@ -158,9 +162,48 @@ type SecureCellTransition struct {
 	OccurredAt              time.Time                   `json:"occurred_at"`
 }
 
+// SecureCellLifecycleEvent is the canonical event payload emitted after a
+// secure-cell lifecycle mutation has been sealed and packaged successfully.
+type SecureCellLifecycleEvent struct {
+	EventID                     string                      `json:"event_id"`
+	CellID                      string                      `json:"cell_id"`
+	Name                        string                      `json:"name"`
+	Purpose                     string                      `json:"purpose"`
+	Jurisdiction                string                      `json:"jurisdiction,omitempty"`
+	Action                      string                      `json:"action"`
+	Actor                       string                      `json:"actor"`
+	TargetType                  string                      `json:"target_type,omitempty"`
+	TargetDID                   string                      `json:"target_did,omitempty"`
+	CellStatus                  SecureCellStatus            `json:"cell_status"`
+	CellStatusBefore            SecureCellStatus            `json:"cell_status_before,omitempty"`
+	CellStatusAfter             SecureCellStatus            `json:"cell_status_after,omitempty"`
+	ParticipantStatusBefore     SecureCellParticipantStatus `json:"participant_status_before,omitempty"`
+	ParticipantStatusAfter      SecureCellParticipantStatus `json:"participant_status_after,omitempty"`
+	TransitionID                string                      `json:"transition_id"`
+	TransitionCount             int                         `json:"transition_count"`
+	ParticipantCount            int                         `json:"participant_count"`
+	ActiveParticipantCount      int                         `json:"active_participant_count"`
+	QuarantinedParticipantCount int                         `json:"quarantined_participant_count"`
+	RevokedParticipantCount     int                         `json:"revoked_participant_count"`
+	PolicyReceiptID             string                      `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptContentHash    string                      `json:"policy_receipt_content_hash,omitempty"`
+	ReceiptChainHash            string                      `json:"receipt_chain_hash,omitempty"`
+	SealID                      string                      `json:"seal_id,omitempty"`
+	ControlLedgerID             string                      `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash    string                      `json:"control_ledger_content_hash,omitempty"`
+	PortablePackageHash         string                      `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned       bool                        `json:"portable_package_signed"`
+	PortablePackageAnchored     bool                        `json:"portable_package_anchored"`
+	Reason                      string                      `json:"reason,omitempty"`
+	Metadata                    map[string]string           `json:"metadata,omitempty"`
+	OccurredAt                  time.Time                   `json:"occurred_at"`
+	PublishedAt                 time.Time                   `json:"published_at"`
+}
+
 // SecureCellAdmissionRequest admits a new member into a live secure cell.
 type SecureCellAdmissionRequest struct {
 	Participant SecureCellParticipant `json:"participant"`
+	ActorDID    string                `json:"actor_did,omitempty"`
 	Reason      string                `json:"reason,omitempty"`
 	Metadata    map[string]string     `json:"metadata,omitempty"`
 }
@@ -169,6 +212,7 @@ type SecureCellAdmissionRequest struct {
 // member.
 type SecureCellMemberTransitionRequest struct {
 	ParticipantDID      string            `json:"participant_did"`
+	ActorDID            string            `json:"actor_did,omitempty"`
 	Reason              string            `json:"reason,omitempty"`
 	QuarantineExpiresAt *time.Time        `json:"quarantine_expires_at,omitempty"`
 	Metadata            map[string]string `json:"metadata,omitempty"`
@@ -176,8 +220,57 @@ type SecureCellMemberTransitionRequest struct {
 
 // SecureCellLifecycleRequest mutates the cell's own lifecycle posture.
 type SecureCellLifecycleRequest struct {
+	ActorDID string            `json:"actor_did,omitempty"`
 	Reason   string            `json:"reason,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellBulkMemberTransitionRequest applies one member lifecycle action to
+// multiple participants within the same cell.
+type SecureCellBulkMemberTransitionRequest struct {
+	ParticipantDIDs     []string          `json:"participant_dids,omitempty"`
+	ActorDID            string            `json:"actor_did,omitempty"`
+	Reason              string            `json:"reason,omitempty"`
+	QuarantineExpiresAt *time.Time        `json:"quarantine_expires_at,omitempty"`
+	Metadata            map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellBulkMemberTransitionItem is the per-participant outcome from a
+// bulk lifecycle operation.
+type SecureCellBulkMemberTransitionItem struct {
+	ParticipantDID string                      `json:"participant_did"`
+	Status         SecureCellParticipantStatus `json:"status,omitempty"`
+	Result         string                      `json:"result"`
+	Error          string                      `json:"error,omitempty"`
+}
+
+// SecureCellBulkMemberTransitionResult summarizes a bulk lifecycle action.
+type SecureCellBulkMemberTransitionResult struct {
+	CellID         string                               `json:"cell_id"`
+	Action         string                               `json:"action"`
+	RequestedCount int                                  `json:"requested_count"`
+	SucceededCount int                                  `json:"succeeded_count"`
+	FailedCount    int                                  `json:"failed_count"`
+	Results        []SecureCellBulkMemberTransitionItem `json:"results,omitempty"`
+	FinalState     *SecureCellResult                    `json:"final_state,omitempty"`
+}
+
+// SecureCellExpirySweepRelease records one participant released by an expiry
+// sweep.
+type SecureCellExpirySweepRelease struct {
+	CellID         string    `json:"cell_id"`
+	ParticipantDID string    `json:"participant_did"`
+	ReleasedAt     time.Time `json:"released_at"`
+}
+
+// SecureCellExpirySweepResult summarizes a global quarantine-expiry sweep.
+type SecureCellExpirySweepResult struct {
+	At                   time.Time                      `json:"at"`
+	CellsScanned         int                            `json:"cells_scanned"`
+	CellsMutated         int                            `json:"cells_mutated"`
+	ParticipantsReleased int                            `json:"participants_released"`
+	CellIDs              []string                       `json:"cell_ids,omitempty"`
+	Releases             []SecureCellExpirySweepRelease `json:"releases,omitempty"`
 }
 
 // SecureCellListFilter narrows collection queries over live secure cells.
@@ -243,6 +336,7 @@ type ServiceConfig struct {
 	PackageSigner           string
 	PackageSignerFunc       SecureCellPackageSigner
 	PackageAnchorer         SecureCellPackageAnchorer
+	EventPublisher          SecureCellEventPublisher
 	TrustAnchors            []evidence.PlatformTrustAnchor
 }
 
@@ -311,7 +405,7 @@ func (s *Service) CreateCell(ctx context.Context, req SecureCellRequest) (*Secur
 		return nil, err
 	}
 
-	createReceipt, err := s.evaluateStage(ctx, normalized, "create", "", nil)
+	createReceipt, err := s.evaluateStage(ctx, normalized, "create", "", nil, normalized.OwnerIdentity.AgentID())
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +438,7 @@ func (s *Service) CreateCell(ctx context.Context, req SecureCellRequest) (*Secur
 	}
 	result.Participants = participantStates
 
-	activationReceipt, err := s.evaluateStage(ctx, normalized, "activate", createReceipt.ContentHash, nil)
+	activationReceipt, err := s.evaluateStage(ctx, normalized, "activate", createReceipt.ContentHash, nil, normalized.OwnerIdentity.AgentID())
 	if err != nil {
 		s.markNegotiationsFailed(ctx, negotiationSessionIDs, err.Error())
 		return nil, err
@@ -546,6 +640,7 @@ func (s *Service) transitionMemberState(
 		}
 		transitionMetadata["quarantine_expires_at"] = mutation.QuarantineExpiresAt.UTC().Format(time.RFC3339Nano)
 	}
+	actorDID := firstNonEmpty(strings.TrimSpace(mutation.ActorDID), run.request.OwnerIdentity.AgentID())
 	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
 		"target_participant_did":    targetDID,
 		"target_role":               participant.Role,
@@ -554,7 +649,7 @@ func (s *Service) transitionMemberState(
 		"participant_status_after":  string(targetStatus),
 		"transition_reason":         strings.TrimSpace(mutation.Reason),
 		"quarantine_expires_at":     strings.TrimSpace(safeTimeString(mutation.QuarantineExpiresAt)),
-	})
+	}, actorDID)
 	if err != nil {
 		return nil, err
 	}
@@ -587,7 +682,7 @@ func (s *Service) transitionMemberState(
 	transition := SecureCellTransition{
 		ID:                      transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), targetDID),
 		Action:                  recordAction,
-		Actor:                   run.request.OwnerIdentity.AgentID(),
+		Actor:                   actorDID,
 		TargetType:              "participant",
 		TargetDID:               targetDID,
 		CellStatusBefore:        cellStatusBefore,
@@ -651,11 +746,12 @@ func (s *Service) transitionCellState(
 		}
 		transitionMetadata["paused_from_status"] = string(run.result.PausedFromStatus)
 	}
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
 	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
 		"cell_status_before": string(statusBefore),
 		"cell_status_after":  string(statusAfter),
 		"transition_reason":  strings.TrimSpace(lifecycle.Reason),
-	})
+	}, actorDID)
 	if err != nil {
 		return nil, err
 	}
@@ -680,7 +776,7 @@ func (s *Service) transitionCellState(
 	transition := SecureCellTransition{
 		ID:               transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), ""),
 		Action:           recordAction,
-		Actor:            run.request.OwnerIdentity.AgentID(),
+		Actor:            actorDID,
 		TargetType:       "cell",
 		CellStatusBefore: statusBefore,
 		CellStatusAfter:  run.result.Status,
@@ -753,6 +849,9 @@ func (s *Service) rebuildArtifacts(ctx context.Context, run *secureCellRun, late
 
 	run.result.ControlLedger = ledger
 	run.result.PortablePackage = portablePkg
+	if s.config.EventPublisher != nil {
+		s.config.EventPublisher(ctx, s.buildLifecycleEvent(run, transition))
+	}
 	return nil
 }
 
@@ -820,13 +919,14 @@ func (s *Service) AdmitMember(ctx context.Context, cellID string, admission Secu
 	newState.Reason = strings.TrimSpace(admission.Reason)
 	newState.Metadata = cloneStringMap(admission.Metadata)
 
+	actorDID := firstNonEmpty(strings.TrimSpace(admission.ActorDID), run.request.OwnerIdentity.AgentID())
 	receipt, err := s.evaluateStage(ctx, run.request, "admit_member", lastReceiptHash(run.result), map[string]string{
 		"target_participant_did":   admission.Participant.Identity.AgentID(),
 		"target_role":              newState.Role,
 		"cell_status_before":       string(run.result.Status),
 		"participant_status_after": string(newState.Status),
 		"transition_reason":        strings.TrimSpace(admission.Reason),
-	})
+	}, actorDID)
 	if err != nil {
 		s.markNegotiationsFailed(ctx, sessionIDs, err.Error())
 		return nil, err
@@ -843,7 +943,7 @@ func (s *Service) AdmitMember(ctx context.Context, cellID string, admission Secu
 	transition := SecureCellTransition{
 		ID:                      transitionID(run.request, "member_admitted", newState.ParticipantDID),
 		Action:                  "secure_cell.member_admitted",
-		Actor:                   run.request.OwnerIdentity.AgentID(),
+		Actor:                   actorDID,
 		TargetType:              "participant",
 		TargetDID:               newState.ParticipantDID,
 		CellStatusBefore:        SecureCellStatusActive,
@@ -899,6 +999,7 @@ func (s *Service) ExpireQuarantinedMembers(ctx context.Context, cellID string, a
 		}
 		result, err = s.transitionMemberState(ctx, cellID, SecureCellMemberTransitionRequest{
 			ParticipantDID: participant.ParticipantDID,
+			ActorDID:       lifecycle.ActorDID,
 			Reason:         firstNonEmpty(strings.TrimSpace(lifecycle.Reason), "quarantine expired"),
 			Metadata:       mergeStringMaps(lifecycle.Metadata, map[string]string{"release_mode": "expiry"}),
 		}, "expire_member", SecureCellParticipantStatusActive, "secure_cell.quarantine_expired", SecureCellParticipantStatusQuarantined)
@@ -910,6 +1011,75 @@ func (s *Service) ExpireQuarantinedMembers(ctx context.Context, cellID string, a
 		return result, nil
 	}
 	return s.GetCell(ctx, cellID)
+}
+
+// SweepExpiredQuarantines releases quarantined members whose expiry windows
+// have elapsed across every secure cell currently managed by the service.
+func (s *Service) SweepExpiredQuarantines(ctx context.Context, at time.Time, lifecycle SecureCellLifecycleRequest) (*SecureCellExpirySweepResult, error) {
+	if at.IsZero() {
+		at = time.Now().UTC()
+	}
+	items, err := s.ListExpiringQuarantines(ctx, at)
+	if err != nil {
+		return nil, err
+	}
+	report := &SecureCellExpirySweepResult{
+		At:           at.UTC(),
+		CellsScanned: s.runCount(),
+	}
+	if len(items) == 0 {
+		return report, nil
+	}
+
+	uniqueCells := make(map[string]struct{}, len(items))
+	releases := make([]SecureCellExpirySweepRelease, 0, len(items))
+	for _, item := range items {
+		uniqueCells[item.CellID] = struct{}{}
+		releases = append(releases, SecureCellExpirySweepRelease{
+			CellID:         item.CellID,
+			ParticipantDID: item.ParticipantDID,
+			ReleasedAt:     at.UTC(),
+		})
+	}
+	cellIDs := make([]string, 0, len(uniqueCells))
+	for cellID := range uniqueCells {
+		cellIDs = append(cellIDs, cellID)
+	}
+	sort.Strings(cellIDs)
+
+	for _, cellID := range cellIDs {
+		if _, err := s.ExpireQuarantinedMembers(ctx, cellID, at, lifecycle); err != nil {
+			return nil, err
+		}
+	}
+
+	report.CellsMutated = len(cellIDs)
+	report.ParticipantsReleased = len(releases)
+	report.CellIDs = cellIDs
+	report.Releases = releases
+	return report, nil
+}
+
+// BulkQuarantineMembers quarantines multiple participants under one operator
+// request while preserving per-participant evidence chains.
+func (s *Service) BulkQuarantineMembers(ctx context.Context, cellID string, bulk SecureCellBulkMemberTransitionRequest) (*SecureCellBulkMemberTransitionResult, error) {
+	return s.bulkTransitionMembers(ctx, cellID, "secure_cell.member_quarantined", bulk, func(ctx context.Context, cellID string, mutation SecureCellMemberTransitionRequest) (*SecureCellResult, error) {
+		return s.QuarantineMember(ctx, cellID, mutation)
+	})
+}
+
+// BulkReleaseMembers releases multiple quarantined participants in sequence.
+func (s *Service) BulkReleaseMembers(ctx context.Context, cellID string, bulk SecureCellBulkMemberTransitionRequest) (*SecureCellBulkMemberTransitionResult, error) {
+	return s.bulkTransitionMembers(ctx, cellID, "secure_cell.member_released", bulk, func(ctx context.Context, cellID string, mutation SecureCellMemberTransitionRequest) (*SecureCellResult, error) {
+		return s.ReleaseMember(ctx, cellID, mutation)
+	})
+}
+
+// BulkRevokeMembers revokes multiple participants under one operator request.
+func (s *Service) BulkRevokeMembers(ctx context.Context, cellID string, bulk SecureCellBulkMemberTransitionRequest) (*SecureCellBulkMemberTransitionResult, error) {
+	return s.bulkTransitionMembers(ctx, cellID, "secure_cell.member_revoked", bulk, func(ctx context.Context, cellID string, mutation SecureCellMemberTransitionRequest) (*SecureCellResult, error) {
+		return s.RevokeMember(ctx, cellID, mutation)
+	})
 }
 
 // PauseCell pauses collaboration activity while preserving the prior active or
@@ -1352,9 +1522,10 @@ func (s *Service) buildExecutionSeal(cellID string, activationReceipt *policy.Si
 	}
 }
 
-func (s *Service) evaluateStage(ctx context.Context, req SecureCellRequest, stage string, previousReceiptHash string, extraMetadata map[string]string) (*policy.SignedPolicyReceipt, error) {
+func (s *Service) evaluateStage(ctx context.Context, req SecureCellRequest, stage string, previousReceiptHash string, extraMetadata map[string]string, actorDID string) (*policy.SignedPolicyReceipt, error) {
+	actorDID = firstNonEmpty(strings.TrimSpace(actorDID), req.OwnerIdentity.AgentID())
 	evalReq := &policy.EvaluationRequest{
-		Actor:    req.OwnerIdentity.AgentID(),
+		Actor:    actorDID,
 		Action:   actionForStage(stage),
 		Resource: req.Resource,
 		Context: map[string]string{
@@ -1371,6 +1542,55 @@ func (s *Service) evaluateStage(ctx context.Context, req SecureCellRequest, stag
 		return nil, fmt.Errorf("securecells/service: verify %s stage receipt: %w", stage, err)
 	}
 	return receipt, nil
+}
+
+func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellTransition) SecureCellLifecycleEvent {
+	event := SecureCellLifecycleEvent{
+		EventID:                     firstNonEmpty(strings.TrimSpace(transition.ID), fmt.Sprintf("%s-event", run.result.CellID)),
+		CellID:                      run.result.CellID,
+		Name:                        run.result.Name,
+		Purpose:                     run.result.Purpose,
+		Jurisdiction:                run.request.Jurisdiction,
+		Action:                      transition.Action,
+		Actor:                       transition.Actor,
+		TargetType:                  transition.TargetType,
+		TargetDID:                   transition.TargetDID,
+		CellStatus:                  run.result.Status,
+		CellStatusBefore:            transition.CellStatusBefore,
+		CellStatusAfter:             transition.CellStatusAfter,
+		ParticipantStatusBefore:     transition.ParticipantStatusBefore,
+		ParticipantStatusAfter:      transition.ParticipantStatusAfter,
+		TransitionID:                transition.ID,
+		TransitionCount:             len(run.result.Transitions),
+		ParticipantCount:            len(run.result.Participants),
+		ActiveParticipantCount:      len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusActive)),
+		QuarantinedParticipantCount: len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusQuarantined)),
+		RevokedParticipantCount:     len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusRevoked)),
+		Reason:                      strings.TrimSpace(transition.Reason),
+		Metadata:                    cloneStringMap(transition.Metadata),
+		OccurredAt:                  transition.OccurredAt.UTC(),
+		PublishedAt:                 time.Now().UTC(),
+	}
+	if transition.PolicyReceipt != nil {
+		event.PolicyReceiptID = transition.PolicyReceipt.ID
+		event.PolicyReceiptContentHash = transition.PolicyReceipt.ContentHash
+	}
+	if run.result.ReceiptChain != nil {
+		event.ReceiptChainHash = run.result.ReceiptChain.ChainHash
+	}
+	if run.result.ExecutionSeal != nil {
+		event.SealID = run.result.ExecutionSeal.SealID
+	}
+	if run.result.ControlLedger != nil && run.result.ControlLedger.Bundle != nil {
+		event.ControlLedgerID = run.result.ControlLedger.Bundle.ID
+		event.ControlLedgerContentHash = run.result.ControlLedger.Bundle.ContentHash
+	}
+	if run.result.PortablePackage != nil {
+		event.PortablePackageHash = run.result.PortablePackage.PackageHash
+		event.PortablePackageSigned = run.result.PortablePackage.Signature != nil
+		event.PortablePackageAnchored = run.result.PortablePackage.AuditAnchor != nil
+	}
+	return event
 }
 
 func (s *Service) cellClaims(req SecureCellRequest, participant SecureCellParticipant) []agent.Claim {
@@ -1531,6 +1751,12 @@ func (s *Service) getRun(id string) (*secureCellRun, error) {
 	return run, nil
 }
 
+func (s *Service) runCount() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.runs)
+}
+
 func (s *Service) setRun(run *secureCellRun) {
 	if run == nil || run.result == nil {
 		return
@@ -1538,6 +1764,58 @@ func (s *Service) setRun(run *secureCellRun) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.runs[run.result.CellID] = run
+}
+
+func (s *Service) bulkTransitionMembers(
+	ctx context.Context,
+	cellID string,
+	action string,
+	bulk SecureCellBulkMemberTransitionRequest,
+	fn func(context.Context, string, SecureCellMemberTransitionRequest) (*SecureCellResult, error),
+) (*SecureCellBulkMemberTransitionResult, error) {
+	participantDIDs := uniqueTrimmedStrings(bulk.ParticipantDIDs)
+	if len(participantDIDs) == 0 {
+		return nil, fmt.Errorf("securecells/service: at least one participant DID is required")
+	}
+	result := &SecureCellBulkMemberTransitionResult{
+		CellID:         strings.TrimSpace(cellID),
+		Action:         action,
+		RequestedCount: len(participantDIDs),
+		Results:        make([]SecureCellBulkMemberTransitionItem, 0, len(participantDIDs)),
+	}
+	for _, participantDID := range participantDIDs {
+		run, err := fn(ctx, cellID, SecureCellMemberTransitionRequest{
+			ParticipantDID:      participantDID,
+			ActorDID:            bulk.ActorDID,
+			Reason:              bulk.Reason,
+			QuarantineExpiresAt: bulk.QuarantineExpiresAt,
+			Metadata:            bulk.Metadata,
+		})
+		item := SecureCellBulkMemberTransitionItem{
+			ParticipantDID: participantDID,
+		}
+		if err != nil {
+			item.Result = "failed"
+			item.Error = err.Error()
+			result.FailedCount++
+		} else {
+			item.Result = "applied"
+			if state, ok := participantStateForResult(run, participantDID); ok {
+				item.Status = state.Status
+			}
+			result.SucceededCount++
+			result.FinalState = run
+		}
+		result.Results = append(result.Results, item)
+	}
+	if result.FinalState == nil {
+		run, err := s.GetCell(ctx, cellID)
+		if err != nil {
+			return result, nil
+		}
+		result.FinalState = run
+	}
+	return result, nil
 }
 
 func lastReceiptHash(result *SecureCellResult) string {
@@ -1746,6 +2024,38 @@ func participantStatusAllowed(current SecureCellParticipantStatus, allowed ...Se
 		}
 	}
 	return false
+}
+
+func participantStateForResult(result *SecureCellResult, participantDID string) (SecureCellParticipantState, bool) {
+	if result == nil {
+		return SecureCellParticipantState{}, false
+	}
+	for _, participant := range result.Participants {
+		if strings.TrimSpace(participant.ParticipantDID) == strings.TrimSpace(participantDID) {
+			return participant, true
+		}
+	}
+	return SecureCellParticipantState{}, false
+}
+
+func uniqueTrimmedStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		out = append(out, trimmed)
+	}
+	return out
 }
 
 func firstNonEmpty(values ...string) string {

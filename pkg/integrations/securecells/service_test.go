@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +20,25 @@ import (
 
 type mockSecureCellSealer struct {
 	count int
+}
+
+type capturingSecureCellEvents struct {
+	mu     sync.Mutex
+	events []SecureCellLifecycleEvent
+}
+
+func (c *capturingSecureCellEvents) Publish(_ context.Context, event SecureCellLifecycleEvent) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.events = append(c.events, event)
+}
+
+func (c *capturingSecureCellEvents) Events() []SecureCellLifecycleEvent {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]SecureCellLifecycleEvent, len(c.events))
+	copy(out, c.events)
+	return out
 }
 
 func (m *mockSecureCellSealer) CreateSeal(_ context.Context, req sdk.SealRequest) (*sdk.SealResponse, error) {
@@ -690,7 +710,204 @@ func TestService_ListExpiringQuarantinesReturnsExpiredMembers(t *testing.T) {
 	}
 }
 
+func TestService_PublishesLifecycleEventsWithTruthfulActors(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	publisher := &capturingSecureCellEvents{}
+	service, _, owner, participantA, participantB := newTestSecureCellServiceWithPublisher(t, publisher.Publish)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Evented Cell",
+		Purpose:       "event publication",
+		Resource:      "cell:evented",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+	if got := len(publisher.Events()); got != 1 {
+		t.Fatalf("expected 1 published event after create, got %d", got)
+	}
+
+	operatorDID := "did:aethelred:ops-analyst"
+	admitted, err := service.AdmitMember(ctx, result.CellID, SecureCellAdmissionRequest{
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "reviewer_b",
+		},
+		ActorDID: operatorDID,
+		Reason:   "evidence-bearing onboarding",
+	})
+	if err != nil {
+		t.Fatalf("AdmitMember failed: %v", err)
+	}
+
+	events := publisher.Events()
+	if got := len(events); got != 2 {
+		t.Fatalf("expected 2 published events after admit, got %d", got)
+	}
+	last := events[len(events)-1]
+	if last.Action != "secure_cell.member_admitted" || last.Actor != operatorDID {
+		t.Fatalf("unexpected published event: %+v", last)
+	}
+	if last.ControlLedgerID == "" || last.PortablePackageHash == "" || !last.PortablePackageSigned || !last.PortablePackageAnchored {
+		t.Fatalf("expected packaged event metadata, got %+v", last)
+	}
+	if transition := admitted.Transitions[len(admitted.Transitions)-1]; transition.Actor != operatorDID {
+		t.Fatalf("expected truthful transition actor %q, got %+v", operatorDID, transition)
+	}
+}
+
+func TestService_BulkContainmentTransitionsReturnPartialResults(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Bulk Cell",
+		Purpose:       "bulk incident response",
+		Resource:      "cell:bulk-response",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	expiry := time.Now().UTC().Add(10 * time.Minute)
+	bulk, err := service.BulkQuarantineMembers(ctx, result.CellID, SecureCellBulkMemberTransitionRequest{
+		ParticipantDIDs:     []string{participantA.AgentID(), participantB.AgentID(), participantB.AgentID(), "did:aethelred:missing"},
+		ActorDID:            "did:aethelred:incident-commander",
+		Reason:              "bulk containment",
+		QuarantineExpiresAt: &expiry,
+		Metadata:            map[string]string{"playbook": "SC-BULK-01"},
+	})
+	if err != nil {
+		t.Fatalf("BulkQuarantineMembers failed: %v", err)
+	}
+	if bulk.RequestedCount != 3 || bulk.SucceededCount != 2 || bulk.FailedCount != 1 {
+		t.Fatalf("unexpected bulk containment result: %+v", bulk)
+	}
+	if bulk.FinalState == nil || bulk.FinalState.Status != SecureCellStatusQuarantined {
+		t.Fatalf("expected quarantined final state, got %+v", bulk.FinalState)
+	}
+	stateA := mustSecureCellParticipantState(t, bulk.FinalState, participantA.AgentID())
+	stateB := mustSecureCellParticipantState(t, bulk.FinalState, participantB.AgentID())
+	if stateA.Status != SecureCellParticipantStatusQuarantined || stateB.Status != SecureCellParticipantStatusQuarantined {
+		t.Fatalf("expected both participants quarantined, got %+v %+v", stateA, stateB)
+	}
+
+	released, err := service.BulkReleaseMembers(ctx, result.CellID, SecureCellBulkMemberTransitionRequest{
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		ActorDID:        "did:aethelred:incident-commander",
+		Reason:          "bulk release",
+	})
+	if err != nil {
+		t.Fatalf("BulkReleaseMembers failed: %v", err)
+	}
+	if released.SucceededCount != 2 || released.FinalState == nil || released.FinalState.Status != SecureCellStatusActive {
+		t.Fatalf("unexpected bulk release result: %+v", released)
+	}
+}
+
+func TestService_SweepExpiredQuarantinesUsesAutomatedActor(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+	automatedActor := "system:secure-cells-expiry-sweeper"
+
+	cellA, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Expiry Sweep A",
+		Purpose:       "expiry automation",
+		Resource:      "cell:sweep-a",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell A failed: %v", err)
+	}
+	cellB, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Expiry Sweep B",
+		Purpose:       "expiry automation",
+		Resource:      "cell:sweep-b",
+		Jurisdiction:  "UK",
+		Participants: []SecureCellParticipant{
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell B failed: %v", err)
+	}
+
+	expiredAt := time.Now().UTC().Add(-time.Minute)
+	if _, err := service.QuarantineMember(ctx, cellA.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID:      participantA.AgentID(),
+		Reason:              "expired containment A",
+		QuarantineExpiresAt: &expiredAt,
+	}); err != nil {
+		t.Fatalf("QuarantineMember A failed: %v", err)
+	}
+	if _, err := service.QuarantineMember(ctx, cellB.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID:      participantB.AgentID(),
+		Reason:              "expired containment B",
+		QuarantineExpiresAt: &expiredAt,
+	}); err != nil {
+		t.Fatalf("QuarantineMember B failed: %v", err)
+	}
+
+	report, err := service.SweepExpiredQuarantines(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
+		ActorDID: automatedActor,
+		Reason:   "automated quarantine expiry sweep",
+		Metadata: map[string]string{"mode": "automated"},
+	})
+	if err != nil {
+		t.Fatalf("SweepExpiredQuarantines failed: %v", err)
+	}
+	if report.CellsMutated != 2 || report.ParticipantsReleased != 2 {
+		t.Fatalf("unexpected sweep report: %+v", report)
+	}
+
+	reloadedA, err := service.GetCell(ctx, cellA.CellID)
+	if err != nil {
+		t.Fatalf("GetCell A failed: %v", err)
+	}
+	reloadedB, err := service.GetCell(ctx, cellB.CellID)
+	if err != nil {
+		t.Fatalf("GetCell B failed: %v", err)
+	}
+	if reloadedA.Status != SecureCellStatusActive || reloadedB.Status != SecureCellStatusActive {
+		t.Fatalf("expected both cells active after sweep, got %+v %+v", reloadedA.Status, reloadedB.Status)
+	}
+	if got := reloadedA.Transitions[len(reloadedA.Transitions)-1].Actor; got != automatedActor {
+		t.Fatalf("expected automated actor on expiry transition, got %q", got)
+	}
+}
+
 func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
+	t.Helper()
+	return newTestSecureCellServiceWithPublisher(t, nil)
+}
+
+func newTestSecureCellServiceWithPublisher(t *testing.T, publisher SecureCellEventPublisher) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
 
 	policySignerKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -724,6 +941,7 @@ func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerSto
 			pkg.AuditAnchor = anchor
 			return nil
 		},
+		EventPublisher: publisher,
 	})
 	if err != nil {
 		t.Fatalf("NewService failed: %v", err)

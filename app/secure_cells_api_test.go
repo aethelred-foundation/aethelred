@@ -10,9 +10,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -704,6 +707,159 @@ func TestSecureCellsExpiringQuarantinesHandler_ListsExpiredMembers(t *testing.T)
 	}
 }
 
+func TestSecureCellsHandlers_BulkMutationEventsAndWebhookDeliveries(t *testing.T) {
+	var (
+		webhookMu      sync.Mutex
+		webhookBodies  [][]byte
+		webhookHeaders []http.Header
+	)
+	webhookServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		webhookMu.Lock()
+		webhookBodies = append(webhookBodies, body)
+		webhookHeaders = append(webhookHeaders, r.Header.Clone())
+		webhookMu.Unlock()
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer webhookServer.Close()
+
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                           "simulated",
+		"aethelred.secure_cells.api.write_token":       "secure-cells-secret",
+		"aethelred.secure_cells.webhook_urls":          webhookServer.URL,
+		"aethelred.secure_cells.webhook_hmac_secret":   "secure-cells-hmac",
+		"aethelred.secure_cells.webhook_workers":       "1",
+		"aethelred.secure_cells.webhook_retry_backoff": "10ms",
+		"aethelred.secure_cells.expiry_sweep_interval": "off",
+		flags.FlagHome: t.TempDir(),
+	})
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	bulkReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/members/bulk/quarantine", bytes.NewReader(mustMarshalSecureCellBulkMutationRequest(t, nil, []string{participantA.AgentID(), participantB.AgentID()}, "bulk containment", nil, nil)))
+	bulkReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	bulkRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(bulkRec, bulkReq)
+	if bulkRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, bulkRec.Code, bulkRec.Body.String())
+	}
+
+	var bulkResp secureCellBulkMutationResponse
+	if err := json.Unmarshal(bulkRec.Body.Bytes(), &bulkResp); err != nil {
+		t.Fatalf("unmarshal bulk response: %v", err)
+	}
+	if bulkResp.Result == nil || bulkResp.Result.SucceededCount != 2 || bulkResp.Result.FinalState == nil || bulkResp.Result.FinalState.Status != securecellsintegration.SecureCellStatusQuarantined {
+		t.Fatalf("unexpected bulk mutation response: %+v", bulkResp.Result)
+	}
+
+	waitForSecureCellWebhookDeliveries(t, app, 3)
+
+	eventsReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/events?cell_id="+cellID, nil)
+	eventsRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(eventsRec, eventsReq)
+	if eventsRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, eventsRec.Code, eventsRec.Body.String())
+	}
+
+	var eventsResp secureCellEventListResponse
+	if err := json.Unmarshal(eventsRec.Body.Bytes(), &eventsResp); err != nil {
+		t.Fatalf("unmarshal events response: %v", err)
+	}
+	if len(eventsResp.Items) < 3 {
+		t.Fatalf("expected at least 3 secure-cell audit events, got %+v", eventsResp.Items)
+	}
+
+	deliveriesReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/webhook-deliveries?cell_id="+cellID+"&status=succeeded", nil)
+	deliveriesRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(deliveriesRec, deliveriesReq)
+	if deliveriesRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, deliveriesRec.Code, deliveriesRec.Body.String())
+	}
+
+	var deliveriesResp secureCellWebhookDeliveryListResponse
+	if err := json.Unmarshal(deliveriesRec.Body.Bytes(), &deliveriesResp); err != nil {
+		t.Fatalf("unmarshal deliveries response: %v", err)
+	}
+	if len(deliveriesResp.Items) < 3 {
+		t.Fatalf("expected successful webhook deliveries, got %+v", deliveriesResp.Items)
+	}
+
+	webhookMu.Lock()
+	defer webhookMu.Unlock()
+	if len(webhookBodies) < 3 {
+		t.Fatalf("expected webhook deliveries to reach test server, got %d", len(webhookBodies))
+	}
+	if got := webhookHeaders[len(webhookHeaders)-1].Get("X-Aethelred-Signature"); !strings.HasPrefix(got, "sha256=") {
+		t.Fatalf("expected signed webhook delivery, got headers %+v", webhookHeaders[len(webhookHeaders)-1])
+	}
+}
+
+func TestSecureCellsAutomatedExpirySweeperReleasesExpiredMembers(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                           "simulated",
+		"aethelred.secure_cells.api.write_token":       "secure-cells-secret",
+		"aethelred.secure_cells.expiry_sweep_interval": "20ms",
+		flags.FlagHome:                                 t.TempDir(),
+	})
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	participant := mustSecureCellAppIdentity(t, "reviewer", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participant}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+	expiredAt := time.Now().UTC().Add(-time.Minute)
+	quarantineReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/members/"+participant.AgentID()+"/quarantine", bytes.NewReader(mustMarshalSecureCellMemberMutationRequestWithExpiry(t, nil, participant.AgentID(), "timed hold", nil, &expiredAt)))
+	quarantineReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	quarantineRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(quarantineRec, quarantineReq)
+	if quarantineRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineRec.Code, quarantineRec.Body.String())
+	}
+
+	waitForSecureCellCondition(t, 2*time.Second, func() bool {
+		getReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID, nil)
+		getRec := httptest.NewRecorder()
+		app.SecureCellsGetHandler().ServeHTTP(getRec, getReq)
+		if getRec.Code != http.StatusOK {
+			return false
+		}
+		var getResp secureCellResponse
+		if err := json.Unmarshal(getRec.Body.Bytes(), &getResp); err != nil || getResp.Result == nil {
+			return false
+		}
+		return getResp.Result.Status == securecellsintegration.SecureCellStatusActive &&
+			getResp.Result.Transitions[len(getResp.Result.Transitions)-1].Action == "secure_cell.quarantine_expired" &&
+			getResp.Result.Transitions[len(getResp.Result.Transitions)-1].Actor == secureCellAutomatedSweepActor
+	})
+}
+
 func mustSecureCellAppIdentity(t *testing.T, label string, jurisdictions []string) *agent.AgentIdentity {
 	t.Helper()
 
@@ -850,6 +1006,22 @@ func mustMarshalSecureCellMemberMutationRequestWithExpiry(t *testing.T, actor *a
 	return body
 }
 
+func mustMarshalSecureCellBulkMutationRequest(t *testing.T, actor *agent.AgentIdentity, participantDIDs []string, reason string, receipt *policy.SignedPolicyReceipt, expiresAt *time.Time) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellBulkMemberMutationRequest{
+		ActorIdentity:       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:       receipt,
+		ParticipantDIDs:     participantDIDs,
+		Reason:              reason,
+		QuarantineExpiresAt: expiresAt,
+		Metadata:            map[string]string{"ticket": "SC-BULK-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell bulk mutation request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellLifecycleRequest(t *testing.T, actor *agent.AgentIdentity, reason string, receipt *policy.SignedPolicyReceipt, effectiveAt *time.Time) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellLifecycleRequest{
@@ -902,4 +1074,27 @@ func mustOptionalJSONRawMessage(t *testing.T, value any) json.RawMessage {
 		return nil
 	}
 	return mustJSONRawMessage(t, value)
+}
+
+func waitForSecureCellWebhookDeliveries(t *testing.T, app *AethelredApp, minSucceeded int) {
+	t.Helper()
+	waitForSecureCellCondition(t, 2*time.Second, func() bool {
+		if app == nil || app.secureCellRuntime == nil {
+			return false
+		}
+		items := app.secureCellRuntime.ListDeliveries(secureCellWebhookDeliveryFilter{Status: secureCellWebhookDeliverySucceeded})
+		return len(items) >= minSucceeded
+	})
+}
+
+func waitForSecureCellCondition(t *testing.T, timeout time.Duration, condition func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if condition() {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("condition was not satisfied before timeout")
 }
