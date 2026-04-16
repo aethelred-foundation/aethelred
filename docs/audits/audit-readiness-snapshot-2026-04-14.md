@@ -34,6 +34,22 @@ The current mainline includes the recent hardening chain:
 
 - PR `#121` merged at commit `c4f0f7b7147415e06fa2abcf4973c7ffb915c381`
 - PR `#122` merged at commit `6423bc59b8f3341e514ef5058d2fa84c73b53ad0`
+- PR `#123` merged at commit `f55932264fcd879516c01283c7164c2c4c872639`
+- PR `#138` merged at commit `b66cb735c1`
+
+## Current Pre-Audit Candidate
+
+The current deep-review candidate is no longer the April 14 baseline alone.
+The branch under active protocol hardening review is:
+
+- Base `main` snapshot: `b66cb735c1`
+- Hardening branch: `ramesh/protocol-hardening-sweep-20260416`
+- Hardening head: `9fb8dcf31a3490df97fa397dd0f454b5ac95f204`
+- Evidence note: `docs/audits/protocol-hardening-sweep-2026-04-16.md`
+
+That branch adds the post-baseline hardening needed for current audit-facing
+concerns in bridge relayer safety, fail-closed TEE/VM verification, governance
+bootstrap, and Cruzible mainnet deployability.
 
 ## Provenance Notes
 

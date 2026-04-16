@@ -2,10 +2,14 @@
 
 > **Document owner:** Security & Compliance Lead
 > **Effective:** 2026-03-25
-> **Branch:** `feat/dapps-protocol-updates-2026-03-16`
-> **HEAD:** `bf5e3740`
+> **Branch:** `ramesh/protocol-hardening-sweep-20260416`
+> **HEAD:** `9fb8dcf31a3490df97fa397dd0f454b5ac95f204`
 
 This document maps each audit scope area to specific repository paths, commit SHAs, evidence artifacts, and their collection status. It serves as the single index for auditors to locate all supporting evidence for the Aethelred L1 security audit.
+
+The current evidence branch is a pre-audit hardening candidate on top of
+`main` commit `b66cb735c1`. The tranche summary is recorded in
+`docs/audits/protocol-hardening-sweep-2026-04-16.md`.
 
 ---
 
@@ -82,6 +86,7 @@ This document maps each audit scope area to specific repository paths, commit SH
 | E2E Go workflow | `test-results/e2e-go-workflow-20260325-113209.txt` | COLLECTED | Full Go E2E workflow |
 | Load test results | `loadtest-results/loadtest-report-20260325-113719.json` | COLLECTED | Throughput / latency benchmarks |
 | Benchmark topology | `loadtest-results/BENCHMARK_TOPOLOGY.md` | COLLECTED | Test infrastructure description |
+| Pre-audit hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Current branch summary and verification log |
 
 ---
 
@@ -97,6 +102,7 @@ This document maps each audit scope area to specific repository paths, commit SH
 | Source code | `x/verify/` | COLLECTED | ZK + TEE proof verification |
 | Unit tests | `x/pouw/` (`*_test.go`) | COLLECTED | Module keeper tests |
 | Unit tests | `x/verify/` (`*_test.go`) | COLLECTED | Verifier logic tests |
+| Rust consensus verification regression | `cargo test -p aethelred-consensus test_verification_engine*` | COLLECTED | Work-result binding, allowlist, and tamper rejection on current hardening branch |
 | Benchmarks | `make bench` | PENDING | PoUW and verify benchmarks |
 | Coverage report | `make test-coverage` -> `coverage.out` | PENDING | Part of unified Go coverage |
 
@@ -135,10 +141,11 @@ This document maps each audit scope area to specific repository paths, commit SH
 | Certora configuration | `contracts/certora/conf/` | COLLECTED | Prover configuration |
 | Static analysis config | `contracts/slither.config.json` | COLLECTED | Slither configuration |
 | Fuzz results (Foundry) | `forge test` (256 runs default, 100 CI) | PENDING | Foundry fuzz corpus |
-| Rust relayer tests | `cargo test -p aethelred-bridge` | PENDING | Relayer logic tests |
+| Rust relayer tests | `cargo test -p aethelred-bridge` | COLLECTED | Persistence, authority-path, and quorum regressions on current hardening branch |
 | Circuit breaker tests | `contracts/test/sovereign.circuit.breaker.module.test.ts` | COLLECTED | CB module tests |
 | Institutional integration | `contracts/test/institutional.stablecoin.integration.test.ts` | COLLECTED | ISB integration tests |
 | Keeper tests | `contracts/test/institutional.reserve.automation.keeper.test.ts` | COLLECTED | Keeper automation tests |
+| Current hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Bridge relayer persistence and authority tightening summary |
 
 ---
 
@@ -176,6 +183,7 @@ This document maps each audit scope area to specific repository paths, commit SH
 | Formal verification (Certora) | `contracts/certora/specs/SovereignGovernanceTimelock.spec` | COLLECTED | Timelock safety properties |
 | Cruzible dApp tests | `contracts/test/Cruzible.t.sol` | COLLECTED | Governance UI interaction tests |
 | Cruzible invariants | `contracts/test/CruzibleInvariant.t.sol` | COLLECTED | Cruzible invariant fuzzing |
+| Production bootstrap hardening | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Timelock-first initialization across bridge, token, vesting, vault, and institutional surfaces |
 
 ---
 
@@ -194,6 +202,8 @@ This document maps each audit scope area to specific repository paths, commit SH
 | Unit tests | `internal/tee/` (`*_test.go`) | PARTIAL | Core logic covered, edge cases pending |
 | Attestation evidence tests | `cargo test --features attestation-evidence` | COLLECTED | SGX/Nitro attestation flow |
 | Nitro SDK quote-type fix | M-07 regression (see Remediation Register) | COLLECTED | Feature-gated attestation test |
+| Fail-closed backend regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_when_backend_missing` | COLLECTED | Incomplete SGX/Nitro/SEV backends now error explicitly |
+| TEE worker compile check | `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence` | COLLECTED | Current hardening branch compiles with fail-closed verifier changes |
 | SGX/Nitro attestation flow E2E | `services/tee-worker/` integration tests | PENDING | Full attestation lifecycle |
 
 ---
@@ -211,7 +221,8 @@ This document maps each audit scope area to specific repository paths, commit SH
 | WASM + zkML precompiles | `crates/vm/` | COLLECTED | VM precompile implementations |
 | Unit tests | `internal/zkml/` (`*_test.go`) | PARTIAL | Core verification paths covered |
 | Proof system tests | EZKL, Groth16, Halo2, Plonky2 backends | PENDING | Backend-specific proof tests |
-| Rust VM tests | `cargo test -p aethelred-vm` | PENDING | WASM precompile tests |
+| Rust VM tests | `cargo test -p aethelred-vm test_invalid_attestation_response_does_not_satisfy_challenge`; `cargo test -p aethelred-vm test_valid_sgx_attestation_satisfies_challenge` | COLLECTED | Challenge-path and attestation-validation regressions on current hardening branch |
+| Rust VM compile check | `cargo check -p aethelred-vm` | COLLECTED | Current hardening branch compiles with fail-closed verification stubs |
 
 ---
 
@@ -267,7 +278,7 @@ This document maps each audit scope area to specific repository paths, commit SH
 | PQC integration in app | `app/pqc.go` | COLLECTED | Go-side PQC bridge |
 | VRF timing fix (RS-01) | `crates/consensus/src/vrf.rs` lines 457-496 | COLLECTED | RFC 9380 constant-time SWU |
 | Rust core tests | `cargo test -p aethelred-core` | PENDING | PQC primitive tests |
-| Rust consensus tests | `cargo test -p aethelred-consensus` | PENDING | VRF + reputation tests |
+| Rust consensus tests | `cargo test -p aethelred-consensus` | PARTIAL | Targeted verification-engine and TEE-binding regressions collected on current hardening branch |
 | Benchmarks | `crates/benchmarks/` | PENDING | Cryptographic operation benchmarks |
 
 ---

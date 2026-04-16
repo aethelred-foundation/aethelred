@@ -2,7 +2,7 @@
 
 > **Document owner:** Security & Compliance Lead
 > **Effective:** 2026-03-25
-> **Last reviewed:** 2026-03-30
+> **Last reviewed:** 2026-04-16
 > **Purpose:** Track the remediation lifecycle for every audit finding across all engagements, categorized by subsystem.
 
 ---
@@ -155,6 +155,24 @@ Status: In Progress (started 2026-02-14)
 | Finding ID | Source | Severity | Category | Description | Status | Owner | PR / Commit | Verification | Date | Verified |
 |------------|--------|----------|----------|-------------|--------|-------|-------------|--------------|------|----------|
 | _Findings will be added as the audit report is delivered_ | | | | | | | | | | |
+
+---
+
+## Pending Merge Hardening Tranche (2026-04-16)
+
+These items are already implemented on public review branches but are not yet
+part of the `main`-branch CLOSED statistics below.
+
+| Tracking ID | Severity | Area | Description | Branch / Commit | Verification |
+|-------------|----------|------|-------------|-----------------|--------------|
+| HS-2026-04-16-01 | High | Bridge (Rust) | Persist relayer state across restarts, ceil-round quorum thresholds, fail closed on placeholder voting and submission paths | `ramesh/protocol-hardening-sweep-20260416` @ `9fb8dcf3` | `cargo test -p aethelred-bridge` |
+| HS-2026-04-16-02 | High | Consensus / VM | Bind TEE attestations to work-result hashes, enforce allowlists, reject invalid challenge responses, and fail closed in WASM verification stubs | `ramesh/protocol-hardening-sweep-20260416` @ `9fb8dcf3` | `cargo test -p aethelred-vm ...`; `cargo test -p aethelred-consensus ...`; `cargo check -p aethelred-vm` |
+| HS-2026-04-16-03 | High | TEE | Make incomplete SGX/Nitro/SEV verifier backends return explicit errors instead of placeholder success | `ramesh/protocol-hardening-sweep-20260416` @ `9fb8dcf3` | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_when_backend_missing`; `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence` |
+| HS-2026-04-16-04 | High | Smart Contract | Require timelock-first production initialization across bridge, token, vesting, vault, and institutional bridge surfaces | `ramesh/protocol-hardening-sweep-20260416` @ `9fb8dcf3` | `forge test --match-path test/AethelredVesting.t.sol`; `npx hardhat test test/institutional.stablecoin.integration.test.ts` |
+| HS-2026-04-16-05 | Medium | Smart Contract | Return Cruzible to mainnet-deployable size without weakening core staking or verifier logic | `ramesh/protocol-hardening-sweep-20260416` @ `9fb8dcf3` | `npx hardhat size-contracts`; `forge test --match-path test/Cruzible.t.sol`; `forge test --match-path test/CruzibleInvariant.t.sol`; `forge test --match-path test/VaultInvariant.t.sol` |
+
+See `docs/audits/protocol-hardening-sweep-2026-04-16.md` for the detailed
+scope and verification record.
 
 ---
 

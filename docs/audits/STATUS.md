@@ -1,6 +1,6 @@
 # Audit Status Tracker
 
-Updated: 2026-03-30
+Updated: 2026-04-16
 
 Mainnet Gate: `BLOCKED` until all required scopes below are `Completed` with signed reports.
 
@@ -92,6 +92,20 @@ Updated: 2026-03-02
 - **G7 Production config**: Three-layer enforcement: (1) `DefaultParams().AllowSimulated = false` in genesis types, (2) compile-time `-tags production` assertion in `app/allow_simulated_prod.go`, (3) runtime override in `app/readiness.go`.
 - **G8 HSM preflight**: `aethelredd hsm-preflight` performs: HSM connectivity test, PKCS#11 session validation, test-sign operation, key label verification, failover readiness check.
 - **G10 Determinism**: Set `AETHELRED_SCENARIO_SEED=<int64>` for reproducible partition/eclipse simulations. Each scenario runner creates a dedicated `math/rand.Rand` from the seed.
+
+## Active Pre-Audit Hardening Branches
+
+The current external review window includes additional hardening on top of the
+March 30 verified baseline.
+
+| Branch / PR | Scope | Current Head | Status | Evidence |
+|---|---|---|---|---|
+| `ramesh/broad-review-cleanup-20260416` / `#139` | Repo review-surface cleanup for TypeScript SDK and VSCode tooling | Branch head in PR | In Review | PR checks + local `npm run typecheck`, `npm run compile`, `npm run lint`, `npm test` |
+| `ramesh/protocol-hardening-sweep-20260416` / `#141` | Bridge relayer persistence and authority, fail-closed TEE/VM verification, governance bootstrap, Cruzible deployability | `9fb8dcf31a3490df97fa397dd0f454b5ac95f204` | In Review | `docs/audits/protocol-hardening-sweep-2026-04-16.md` |
+
+These branches are additive hardening tranches and do not reopen any finding
+that was already marked CLOSED on the March 30 baseline. They exist to reduce
+residual reviewer risk before the next external audit pass.
 
 ## Notes
 
