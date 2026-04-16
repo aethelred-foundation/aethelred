@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -105,10 +106,11 @@ const (
 type SecureCellThreadDecisionStatus string
 
 const (
-	SecureCellThreadDecisionStatusOpen        SecureCellThreadDecisionStatus = "open"
-	SecureCellThreadDecisionStatusApproved    SecureCellThreadDecisionStatus = "approved"
-	SecureCellThreadDecisionStatusQuarantined SecureCellThreadDecisionStatus = "quarantined"
-	SecureCellThreadDecisionStatusClosed      SecureCellThreadDecisionStatus = "closed"
+	SecureCellThreadDecisionStatusOpen         SecureCellThreadDecisionStatus = "open"
+	SecureCellThreadDecisionStatusApproved     SecureCellThreadDecisionStatus = "approved"
+	SecureCellThreadDecisionStatusQuorumFailed SecureCellThreadDecisionStatus = "quorum_failed"
+	SecureCellThreadDecisionStatusQuarantined  SecureCellThreadDecisionStatus = "quarantined"
+	SecureCellThreadDecisionStatusClosed       SecureCellThreadDecisionStatus = "closed"
 )
 
 // SecureCellArtifactContainmentStatus tracks containment posture for outputs
@@ -330,11 +332,13 @@ type SecureCellThreadDecision struct {
 	OutcomeIDs            []string                             `json:"outcome_ids,omitempty"`
 	ProposedBy            string                               `json:"proposed_by,omitempty"`
 	ApprovedBy            string                               `json:"approved_by,omitempty"`
+	QuorumFailedBy        string                               `json:"quorum_failed_by,omitempty"`
 	ClosedBy              string                               `json:"closed_by,omitempty"`
 	RelatedExchangeIDs    []string                             `json:"related_exchange_ids,omitempty"`
 	RelatedOutputIDs      []string                             `json:"related_output_ids,omitempty"`
 	ProposedAt            time.Time                            `json:"proposed_at"`
 	ApprovedAt            *time.Time                           `json:"approved_at,omitempty"`
+	QuorumFailedAt        *time.Time                           `json:"quorum_failed_at,omitempty"`
 	QuarantinedAt         *time.Time                           `json:"quarantined_at,omitempty"`
 	ClosedAt              *time.Time                           `json:"closed_at,omitempty"`
 	UpdatedAt             time.Time                            `json:"updated_at"`
@@ -518,6 +522,7 @@ type SecureCellLifecycleEvent struct {
 	DecisionCount               int                            `json:"decision_count"`
 	OpenDecisionCount           int                            `json:"open_decision_count"`
 	ApprovedDecisionCount       int                            `json:"approved_decision_count"`
+	QuorumFailedDecisionCount   int                            `json:"quorum_failed_decision_count"`
 	QuarantinedDecisionCount    int                            `json:"quarantined_decision_count"`
 	SharedOutputCount           int                            `json:"shared_output_count"`
 	SessionExchangeCount        int                            `json:"session_exchange_count"`
@@ -2240,7 +2245,7 @@ func (s *Service) transitionThreadDecisionArtifacts(
 	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
 		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
 	}
-	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined) {
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined, SecureCellThreadDecisionStatusQuorumFailed) {
 		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot mutate related artifacts while %s", ErrDecisionImmutable, decisionID, decision.Status)
 	}
 
@@ -2435,7 +2440,7 @@ func (s *Service) voteThreadDecision(
 		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
 	}
 	if decision.Status != SecureCellThreadDecisionStatusOpen {
-		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot accept approval votes while %s", ErrDecisionImmutable, decisionID, decision.Status)
+		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot accept votes while %s", ErrDecisionImmutable, decisionID, decision.Status)
 	}
 
 	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
@@ -2513,9 +2518,20 @@ func (s *Service) voteThreadDecision(
 		recordAction = "secure_cell.session_thread_decision_approved"
 		run.result.Decisions[decisionIdx].ApprovedBy = actorDID
 		run.result.Decisions[decisionIdx].ApprovedAt = &updatedAt
+		run.result.Decisions[decisionIdx].QuorumFailedBy = ""
+		run.result.Decisions[decisionIdx].QuorumFailedAt = nil
 		transitionMetadata["approval_threshold_satisfied"] = "true"
+		transitionMetadata["approval_quorum_reachable"] = "true"
+	} else if !secureCellDecisionApprovalReachable(run, *thread, run.result.Decisions[decisionIdx]) {
+		statusAfter = SecureCellThreadDecisionStatusQuorumFailed
+		recordAction = "secure_cell.session_thread_decision_quorum_failed"
+		run.result.Decisions[decisionIdx].QuorumFailedBy = actorDID
+		run.result.Decisions[decisionIdx].QuorumFailedAt = &updatedAt
+		transitionMetadata["approval_threshold_satisfied"] = "false"
+		transitionMetadata["approval_quorum_reachable"] = "false"
 	} else {
 		transitionMetadata["approval_threshold_satisfied"] = "false"
+		transitionMetadata["approval_quorum_reachable"] = "true"
 	}
 
 	run.result.Decisions[decisionIdx].Status = statusAfter
@@ -2558,10 +2574,28 @@ func (s *Service) voteThreadDecision(
 	return cloneResult(run.result)
 }
 
+// VoteThreadDecision records one governed decision vote with an explicit
+// approve, reject, or abstain choice.
+func (s *Service) VoteThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest, choice SecureCellThreadDecisionVoteChoice) (*SecureCellResult, error) {
+	return s.voteThreadDecision(ctx, cellID, sessionID, threadID, decisionID, lifecycle, choice)
+}
+
 // ApproveThreadDecision records one approval vote and only marks the decision
 // approved once its threshold and required-role quorum are both satisfied.
 func (s *Service) ApproveThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
-	return s.voteThreadDecision(ctx, cellID, sessionID, threadID, decisionID, lifecycle, SecureCellThreadDecisionVoteChoiceApprove)
+	return s.VoteThreadDecision(ctx, cellID, sessionID, threadID, decisionID, lifecycle, SecureCellThreadDecisionVoteChoiceApprove)
+}
+
+// RejectThreadDecision records one explicit reject vote and may mark the
+// decision quorum-failed if approval is no longer reachable.
+func (s *Service) RejectThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.VoteThreadDecision(ctx, cellID, sessionID, threadID, decisionID, lifecycle, SecureCellThreadDecisionVoteChoiceReject)
+}
+
+// AbstainThreadDecision records one abstain vote and preserves the decision
+// unless approval quorum becomes unreachable.
+func (s *Service) AbstainThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.VoteThreadDecision(ctx, cellID, sessionID, threadID, decisionID, lifecycle, SecureCellThreadDecisionVoteChoiceAbstain)
 }
 
 // CommentThreadDecision records one evidence-bearing decision comment.
@@ -2591,7 +2625,7 @@ func (s *Service) CommentThreadDecision(ctx context.Context, cellID string, sess
 	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
 		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
 	}
-	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved) {
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuorumFailed) {
 		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot be commented on while %s", ErrDecisionImmutable, decisionID, decision.Status)
 	}
 
@@ -2736,7 +2770,7 @@ func (s *Service) routeThreadDecision(
 	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
 		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
 	}
-	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved) {
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuorumFailed) {
 		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot route actors while %s", ErrDecisionImmutable, decisionID, decision.Status)
 	}
 
@@ -2796,6 +2830,14 @@ func (s *Service) routeThreadDecision(
 	}
 	run.result.Decisions[decisionIdx].Delegations = append(run.result.Decisions[decisionIdx].Delegations, delegation)
 	run.result.Decisions[decisionIdx].EligibleApproverDIDs = uniqueSecureCellStrings(append(run.result.Decisions[decisionIdx].EligibleApproverDIDs, targetDID))
+	statusBefore := decision.Status
+	statusAfter := decision.Status
+	if decision.Status == SecureCellThreadDecisionStatusQuorumFailed && secureCellDecisionApprovalReachable(run, *thread, run.result.Decisions[decisionIdx]) {
+		statusAfter = SecureCellThreadDecisionStatusOpen
+		run.result.Decisions[decisionIdx].Status = statusAfter
+		run.result.Decisions[decisionIdx].QuorumFailedBy = ""
+		run.result.Decisions[decisionIdx].QuorumFailedAt = nil
+	}
 	run.result.Decisions[decisionIdx].UpdatedAt = updatedAt
 	run.result.Threads[threadIdx].UpdatedAt = updatedAt
 	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
@@ -2810,6 +2852,7 @@ func (s *Service) routeThreadDecision(
 	transitionMetadata["decision_route_target"] = targetDID
 	transitionMetadata["decision_route_role"] = targetRole
 	transitionMetadata["decision_delegations_total"] = fmt.Sprintf("%d", len(run.result.Decisions[decisionIdx].Delegations))
+	transitionMetadata["decision_quorum_reopened"] = strconv.FormatBool(statusBefore == SecureCellThreadDecisionStatusQuorumFailed && statusAfter == SecureCellThreadDecisionStatusOpen)
 
 	transition := SecureCellTransition{
 		ID:                   transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), delegation.ID),
@@ -2824,8 +2867,8 @@ func (s *Service) routeThreadDecision(
 		SessionStatusAfter:   session.Status,
 		ThreadStatusBefore:   thread.Status,
 		ThreadStatusAfter:    thread.Status,
-		DecisionStatusBefore: decision.Status,
-		DecisionStatusAfter:  decision.Status,
+		DecisionStatusBefore: statusBefore,
+		DecisionStatusAfter:  statusAfter,
 		CellStatusBefore:     run.result.Status,
 		CellStatusAfter:      run.result.Status,
 		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
@@ -3002,12 +3045,12 @@ func (s *Service) ResumeThreadDecision(ctx context.Context, cellID string, sessi
 
 // QuarantineThreadDecision contains one decision object without freezing the whole thread.
 func (s *Service) QuarantineThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
-	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "quarantine_thread_decision", SecureCellThreadDecisionStatusQuarantined, "secure_cell.session_thread_decision_quarantined", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved)
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "quarantine_thread_decision", SecureCellThreadDecisionStatusQuarantined, "secure_cell.session_thread_decision_quarantined", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuorumFailed)
 }
 
 // CloseThreadDecision closes one decision object while preserving its portable evidence.
 func (s *Service) CloseThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
-	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "close_thread_decision", SecureCellThreadDecisionStatusClosed, "secure_cell.session_thread_decision_closed", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined)
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "close_thread_decision", SecureCellThreadDecisionStatusClosed, "secure_cell.session_thread_decision_closed", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined, SecureCellThreadDecisionStatusQuorumFailed)
 }
 
 // ListCells returns operator-facing summaries for the current secure-cell set.
@@ -3735,6 +3778,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("decisions_total", fmt.Sprintf("%d", len(run.result.Decisions)))
 	ledger.WithMetadata("decisions_open", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))))
 	ledger.WithMetadata("decisions_approved", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))))
+	ledger.WithMetadata("decisions_quorum_failed", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuorumFailed))))
 	ledger.WithMetadata("decisions_quarantined", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))))
 	ledger.WithMetadata("decisions_closed", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))))
 	ledger.WithMetadata("decision_approval_votes_total", fmt.Sprintf("%d", secureCellDecisionVoteTotal(run.result.Decisions)))
@@ -4051,6 +4095,12 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if decision.ApprovedAt != nil {
 			data["approved_at"] = decision.ApprovedAt.UTC().Format(time.RFC3339Nano)
 		}
+		if decision.QuorumFailedBy != "" {
+			data["quorum_failed_by"] = decision.QuorumFailedBy
+		}
+		if decision.QuorumFailedAt != nil {
+			data["quorum_failed_at"] = decision.QuorumFailedAt.UTC().Format(time.RFC3339Nano)
+		}
 		if decision.QuarantinedAt != nil {
 			data["quarantined_at"] = decision.QuarantinedAt.UTC().Format(time.RFC3339Nano)
 		}
@@ -4067,7 +4117,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			ID:        recordID,
 			Type:      "governance",
 			Action:    "secure_cell.thread_decision_state",
-			Actor:     firstNonEmpty(decision.ClosedBy, decision.ContainedBy, decision.ApprovedBy, decision.ProposedBy, req.OwnerIdentity.AgentID()),
+			Actor:     firstNonEmpty(decision.ClosedBy, decision.ContainedBy, decision.ApprovedBy, decision.QuorumFailedBy, decision.ProposedBy, req.OwnerIdentity.AgentID()),
 			Timestamp: decision.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
@@ -4499,6 +4549,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"decisions_total":            fmt.Sprintf("%d", len(run.result.Decisions)),
 				"decisions_open":             fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))),
 				"decisions_approved":         fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))),
+				"decisions_quorum_failed":    fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuorumFailed))),
 				"decisions_quarantined":      fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))),
 				"decisions_closed":           fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))),
 				"decision_votes_total":       fmt.Sprintf("%d", secureCellDecisionVoteTotal(run.result.Decisions)),
@@ -4779,6 +4830,7 @@ func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellT
 		DecisionCount:               len(run.result.Decisions),
 		OpenDecisionCount:           len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen)),
 		ApprovedDecisionCount:       len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved)),
+		QuorumFailedDecisionCount:   len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuorumFailed)),
 		QuarantinedDecisionCount:    len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined)),
 		SharedOutputCount:           len(run.result.SharedOutputs),
 		SessionExchangeCount:        len(run.result.SessionExchanges),
@@ -5185,7 +5237,7 @@ func transitionRecordType(action string) string {
 		return "governance"
 	case "secure_cell.member_admitted":
 		return "trust"
-	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
+	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
 	case "secure_cell.session_shared", "secure_cell.session_exchange", "secure_cell.session_thread_message", "secure_cell.session_thread_decision_outcome_published":
 		return "exchange"
@@ -5213,6 +5265,8 @@ func transitionStageForAction(action string) string {
 	case "secure_cell.session_thread_decision_voted":
 		return "approve_thread_decision"
 	case "secure_cell.session_thread_decision_approved":
+		return "approve_thread_decision"
+	case "secure_cell.session_thread_decision_quorum_failed":
 		return "approve_thread_decision"
 	case "secure_cell.session_thread_decision_commented":
 		return "comment_thread_decision"
@@ -5446,6 +5500,74 @@ func secureCellDecisionVoteTotal(decisions []SecureCellThreadDecision) int {
 		total += len(decision.ApprovalVotes)
 	}
 	return total
+}
+
+func secureCellDecisionApprovalReachable(run *secureCellRun, thread SecureCellSessionThread, decision SecureCellThreadDecision) bool {
+	if secureCellDecisionApprovalSatisfied(decision) {
+		return true
+	}
+	approveVotes := 0
+	for _, vote := range decision.ApprovalVotes {
+		if vote.Choice == SecureCellThreadDecisionVoteChoiceApprove {
+			approveVotes++
+		}
+	}
+	remainingApproves := 0
+	remainingRoles := make(map[string]struct{})
+	candidateApprovers := map[string]struct{}{}
+	if run != nil && run.request.OwnerIdentity != nil {
+		candidateApprovers[run.request.OwnerIdentity.AgentID()] = struct{}{}
+	}
+	for _, actorDID := range thread.ParticipantDIDs {
+		if trimmed := strings.TrimSpace(actorDID); trimmed != "" {
+			candidateApprovers[trimmed] = struct{}{}
+		}
+	}
+	for _, actorDID := range decision.EligibleApproverDIDs {
+		if trimmed := strings.TrimSpace(actorDID); trimmed != "" {
+			candidateApprovers[trimmed] = struct{}{}
+		}
+	}
+	for _, delegation := range decision.Delegations {
+		if trimmed := strings.TrimSpace(delegation.ToActorDID); trimmed != "" {
+			candidateApprovers[trimmed] = struct{}{}
+		}
+	}
+	requiredRoles := uniqueSecureCellDecisionRoles(decision.RequiredApproverRoles)
+	if len(requiredRoles) > 0 && run != nil && run.result != nil {
+		for _, participant := range run.result.Participants {
+			if participant.Status != SecureCellParticipantStatusActive {
+				continue
+			}
+			for _, requiredRole := range requiredRoles {
+				if strings.TrimSpace(participant.Role) == requiredRole {
+					candidateApprovers[strings.TrimSpace(participant.ParticipantDID)] = struct{}{}
+					break
+				}
+			}
+		}
+	}
+	for actorDID := range candidateApprovers {
+		if secureCellDecisionHasApprovalVote(decision, actorDID) {
+			continue
+		}
+		if !secureCellDecisionApproverAllowed(run, thread, decision, actorDID) {
+			continue
+		}
+		remainingApproves++
+		if actorRole := secureCellActorRole(run, actorDID); actorRole != "" {
+			remainingRoles[actorRole] = struct{}{}
+		}
+	}
+	if approveVotes+remainingApproves < decisionApprovalThreshold(decision) {
+		return false
+	}
+	for _, requiredRole := range secureCellDecisionMissingRequiredRoles(decision) {
+		if _, ok := remainingRoles[requiredRole]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func secureCellDecisionCommentTotal(decisions []SecureCellThreadDecision) int {
