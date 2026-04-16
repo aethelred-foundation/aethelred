@@ -1485,6 +1485,181 @@ func TestSecureCellsHandlers_BearerThreadDecisionRejectAbstainAndQueryRoutes(t *
 	}
 }
 
+func TestSecureCellsHandlers_BearerThreadDecisionGovernanceFieldsPassthrough(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{47}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participant := mustSecureCellAppIdentity(t, "reviewer", []string{"UAE", "UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participant}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participant.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{participant.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	deadlineAt := time.Now().UTC().Add(48 * time.Hour).Truncate(time.Second)
+	autoEscalation := true
+	decisionReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithGovernance(t, owner, &deadlineAt, "board-reviewed-template", &autoEscalation, []string{owner.AgentID(), participant.AgentID()}, map[string]string{"ticket": "SC-DEC-GOV-01"})))
+	decisionReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	decisionRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(decisionRec, decisionReq)
+	if decisionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, decisionRec.Code, decisionRec.Body.String())
+	}
+
+	var decisionResp secureCellResponse
+	if err := json.Unmarshal(decisionRec.Body.Bytes(), &decisionResp); err != nil {
+		t.Fatalf("unmarshal decision response: %v", err)
+	}
+	if decisionResp.Result == nil || len(decisionResp.Result.Decisions) != 1 {
+		t.Fatalf("expected one decision result, got %+v", decisionResp.Result)
+	}
+	decision := decisionResp.Result.Decisions[0]
+	if decision.Metadata["decision_deadline_at"] != deadlineAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("expected deadline passthrough in metadata, got %+v", decision.Metadata)
+	}
+	if decision.Metadata["decision_policy_template"] != "board-reviewed-template" {
+		t.Fatalf("expected policy template passthrough in metadata, got %+v", decision.Metadata)
+	}
+	if decision.Metadata["decision_auto_escalation_enabled"] != "true" {
+		t.Fatalf("expected auto escalation passthrough in metadata, got %+v", decision.Metadata)
+	}
+}
+
+func TestSecureCellsHandlers_BearerThreadDecisionExplicitGovernanceConfiguration(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{23}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participantA.AgentID(), participantB.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{participantA.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	escalationDueAt := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Second)
+	resolutionDueAt := escalationDueAt.Add(3 * time.Hour)
+	decisionReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithExplicitGovernance(t, owner, "dual_control", participantB.AgentID(), &escalationDueAt, &resolutionDueAt, []string{owner.AgentID(), participantA.AgentID()}, map[string]string{"ticket": "SC-DEC-GOV-API-01"})))
+	decisionReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	decisionRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(decisionRec, decisionReq)
+	if decisionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, decisionRec.Code, decisionRec.Body.String())
+	}
+
+	var decisionResp secureCellResponse
+	if err := json.Unmarshal(decisionRec.Body.Bytes(), &decisionResp); err != nil {
+		t.Fatalf("unmarshal decision response: %v", err)
+	}
+	if decisionResp.Result == nil || len(decisionResp.Result.Decisions) != 1 {
+		t.Fatalf("expected one decision result, got %+v", decisionResp.Result)
+	}
+	decision := decisionResp.Result.Decisions[0]
+	if decision.GovernanceTemplate != "dual_control" {
+		t.Fatalf("expected explicit governance template to reach service, got %+v", decision)
+	}
+	if len(decision.AllowedVoteChoices) != 2 || decision.AllowedVoteChoices[0] != securecellsintegration.SecureCellThreadDecisionVoteChoiceApprove || decision.AllowedVoteChoices[1] != securecellsintegration.SecureCellThreadDecisionVoteChoiceReject {
+		t.Fatalf("expected explicit vote-choice policy, got %+v", decision.AllowedVoteChoices)
+	}
+	if len(decision.RejectorRoles) != 1 || decision.RejectorRoles[0] != "owner" {
+		t.Fatalf("expected explicit rejector roles, got %+v", decision.RejectorRoles)
+	}
+	if decision.AutoEscalateToDID != participantB.AgentID() || decision.EscalationDueAt == nil || decision.ResolutionDueAt == nil {
+		t.Fatalf("expected explicit automation fields on decision, got %+v", decision)
+	}
+	if !decision.EscalationDueAt.Equal(escalationDueAt) || !decision.ResolutionDueAt.Equal(resolutionDueAt) {
+		t.Fatalf("expected explicit due times to survive API mapping, got %+v", decision)
+	}
+}
+
 func TestSecureCellsHandlers_BearerExpireQuarantineFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -1898,6 +2073,53 @@ func TestSecureCellsAutomatedExpirySweeperReleasesExpiredMembers(t *testing.T) {
 	})
 }
 
+type secureCellDecisionGovernanceSweepStub struct {
+	called    bool
+	at        time.Time
+	lifecycle securecellsintegration.SecureCellLifecycleRequest
+}
+
+func (s *secureCellDecisionGovernanceSweepStub) SweepDecisionGovernance(_ context.Context, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (string, error) {
+	s.called = true
+	s.at = at.UTC()
+	s.lifecycle = lifecycle
+	return "decision-governance-sweep-complete", nil
+}
+
+func TestInvokeSecureCellDecisionGovernanceSweep_UsesOptionalServiceMethod(t *testing.T) {
+	stub := &secureCellDecisionGovernanceSweepStub{}
+	at := time.Date(2026, 4, 16, 8, 0, 0, 0, time.UTC)
+	lifecycle := securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: secureCellAutomatedSweepActor,
+		Reason:   "automated decision governance sweep",
+		Metadata: map[string]string{
+			"sweep_mode":      "automated",
+			"workflow":        "secure_cell",
+			"automation_mode": "decision_governance",
+		},
+	}
+
+	result, ok, err := invokeSecureCellDecisionGovernanceSweep(stub, at, lifecycle)
+	if err != nil {
+		t.Fatalf("invokeSecureCellDecisionGovernanceSweep returned error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected sweep hook to report a callable method")
+	}
+	if !stub.called {
+		t.Fatal("expected sweep stub to be invoked")
+	}
+	if stub.at != at {
+		t.Fatalf("expected sweep at %s, got %s", at, stub.at)
+	}
+	if stub.lifecycle.ActorDID != secureCellAutomatedSweepActor || stub.lifecycle.Reason != lifecycle.Reason {
+		t.Fatalf("unexpected lifecycle passed to sweep hook: %+v", stub.lifecycle)
+	}
+	if result != "decision-governance-sweep-complete" {
+		t.Fatalf("unexpected sweep result: %#v", result)
+	}
+}
+
 func mustSecureCellAppIdentity(t *testing.T, label string, jurisdictions []string) *agent.AgentIdentity {
 	t.Helper()
 
@@ -2262,6 +2484,57 @@ func mustMarshalSecureCellThreadDecisionRequestWithOptions(t *testing.T, actor *
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell thread decision request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellThreadDecisionRequestWithGovernance(t *testing.T, actor *agent.AgentIdentity, deadlineAt *time.Time, policyTemplate string, autoEscalation *bool, eligibleApproverDIDs []string, metadata map[string]string) []byte {
+	t.Helper()
+	approvalThreshold := 2
+	body, err := json.Marshal(secureCellThreadDecisionRequest{
+		ActorIdentity:        mustOptionalJSONRawMessage(t, actor),
+		Title:                "Decision Governance",
+		Summary:              "governance-aware decision request",
+		Classification:       "confidential",
+		ApprovalThreshold:    &approvalThreshold,
+		EligibleApproverDIDs: eligibleApproverDIDs,
+		DeadlineAt:           deadlineAt,
+		PolicyTemplate:       policyTemplate,
+		AutoEscalation:       autoEscalation,
+		Reason:               "decision proposed",
+		Metadata:             metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell thread decision governance request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellThreadDecisionRequestWithExplicitGovernance(t *testing.T, actor *agent.AgentIdentity, governanceTemplate string, autoEscalateToDID string, escalationDueAt *time.Time, resolutionDueAt *time.Time, eligibleApproverDIDs []string, metadata map[string]string) []byte {
+	t.Helper()
+	approvalThreshold := 2
+	body, err := json.Marshal(secureCellThreadDecisionRequest{
+		ActorIdentity:        mustOptionalJSONRawMessage(t, actor),
+		Title:                "Decision Governance",
+		Summary:              "explicit governance-aware decision request",
+		Classification:       "confidential",
+		GovernanceTemplate:   governanceTemplate,
+		ApprovalThreshold:    &approvalThreshold,
+		EligibleApproverDIDs: eligibleApproverDIDs,
+		AllowedVoteChoices: []securecellsintegration.SecureCellThreadDecisionVoteChoice{
+			securecellsintegration.SecureCellThreadDecisionVoteChoiceApprove,
+			securecellsintegration.SecureCellThreadDecisionVoteChoiceReject,
+		},
+		RejectorRoles:     []string{"owner"},
+		ReopenRoles:       []string{"owner"},
+		AutoEscalateToDID: autoEscalateToDID,
+		EscalationDueAt:   escalationDueAt,
+		ResolutionDueAt:   resolutionDueAt,
+		Reason:            "decision proposed",
+		Metadata:          metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell thread decision explicit governance request: %v", err)
 	}
 	return body
 }

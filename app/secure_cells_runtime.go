@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -269,24 +270,101 @@ func (s *secureCellExpirySweeper) runSweep() {
 	if s == nil || s.service == nil {
 		return
 	}
-	report, err := s.service.SweepExpiredQuarantines(context.Background(), time.Now().UTC(), securecellsintegration.SecureCellLifecycleRequest{
+	now := time.Now().UTC()
+	lifecycle := securecellsintegration.SecureCellLifecycleRequest{
 		ActorDID: secureCellAutomatedSweepActor,
 		Reason:   "automated quarantine expiry sweep",
 		Metadata: map[string]string{
 			"sweep_mode": "automated",
 		},
+	}
+	report, err := s.service.SweepExpiredQuarantines(context.Background(), now, lifecycle)
+	if err != nil {
+		if s.app != nil {
+			s.app.Logger().Error("Secure Cells automated quarantine-expiry sweep failed", "error", err)
+		}
+	} else if report != nil && report.ParticipantsReleased > 0 {
+		if s.app != nil {
+			s.app.Logger().Info("Secure Cells automated quarantine-expiry sweep completed",
+				"cells_mutated", report.CellsMutated,
+				"participants_released", report.ParticipantsReleased,
+			)
+		}
+	}
+	s.runDecisionGovernanceSweep(now)
+}
+
+func (s *secureCellExpirySweeper) runDecisionGovernanceSweep(at time.Time) {
+	if s == nil {
+		return
+	}
+	result, ok, err := invokeSecureCellDecisionGovernanceSweep(s.service, at, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: secureCellAutomatedSweepActor,
+		Reason:   "automated decision governance sweep",
+		Metadata: map[string]string{
+			"sweep_mode":      "automated",
+			"workflow":        "secure_cell",
+			"automation_mode": "decision_governance",
+		},
 	})
 	if err != nil {
-		s.app.Logger().Error("Secure Cells automated quarantine-expiry sweep failed", "error", err)
+		if s.app != nil {
+			s.app.Logger().Error("Secure Cells automated decision-governance sweep failed", "error", err)
+		}
 		return
 	}
-	if report == nil || report.ParticipantsReleased == 0 {
+	if !ok {
 		return
 	}
-	s.app.Logger().Info("Secure Cells automated quarantine-expiry sweep completed",
-		"cells_mutated", report.CellsMutated,
-		"participants_released", report.ParticipantsReleased,
-	)
+	if s.app != nil {
+		s.app.Logger().Info("Secure Cells automated decision-governance sweep completed", "result", result)
+	}
+}
+
+func invokeSecureCellDecisionGovernanceSweep(service any, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (any, bool, error) {
+	if service == nil {
+		return nil, false, nil
+	}
+	value := reflect.ValueOf(service)
+	if !value.IsValid() {
+		return nil, false, nil
+	}
+	var method reflect.Value
+	for _, name := range []string{"SweepDecisionGovernance", "SweepAutomatedDecisionGovernance", "SweepDecisionAutomation"} {
+		method = value.MethodByName(name)
+		if method.IsValid() {
+			break
+		}
+	}
+	if !method.IsValid() {
+		return nil, false, nil
+	}
+	in := []reflect.Value{
+		reflect.ValueOf(context.Background()),
+		reflect.ValueOf(at.UTC()),
+		reflect.ValueOf(lifecycle),
+	}
+	out := method.Call(in)
+	switch len(out) {
+	case 0:
+		return nil, true, nil
+	case 1:
+		if err, ok := out[0].Interface().(error); ok && err != nil {
+			return nil, true, err
+		}
+		return out[0].Interface(), true, nil
+	default:
+		var result any
+		if out[0].IsValid() {
+			result = out[0].Interface()
+		}
+		if len(out) > 1 {
+			if err, ok := out[1].Interface().(error); ok && err != nil {
+				return result, true, err
+			}
+		}
+		return result, true, nil
+	}
 }
 
 func (r *secureCellLifecycleRuntime) deliveryLoop() {

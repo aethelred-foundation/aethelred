@@ -1740,6 +1740,260 @@ func TestService_VoteThreadDecisionHandlesDissentAndQuorumRecovery(t *testing.T)
 	}
 }
 
+func TestService_CreateThreadDecisionAppliesExplicitGovernanceRules(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Governance Rules Cell",
+		Purpose:       "explicit decision governance",
+		Resource:      "cell:governance-rules",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Governance Session",
+		Purpose:         "decision rule enforcement",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Governance Thread",
+		Purpose:         "dual-control deliberation",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	escalationDueAt := time.Now().UTC().Add(1 * time.Hour).Truncate(time.Second)
+	resolutionDueAt := escalationDueAt.Add(2 * time.Hour)
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Freeze Exposure",
+		Summary:              "dual-control decision with explicit automation fields",
+		Classification:       "confidential",
+		GovernanceTemplate:   "dual_control",
+		ApprovalThreshold:    2,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		AutoEscalateToDID:    participantB.AgentID(),
+		EscalationDueAt:      &escalationDueAt,
+		ResolutionDueAt:      &resolutionDueAt,
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DEC-GOV-RULES-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+	if decision.GovernanceTemplate != "dual_control" {
+		t.Fatalf("expected dual_control template, got %+v", decision)
+	}
+	if len(decision.AllowedVoteChoices) != 2 || decision.AllowedVoteChoices[0] != SecureCellThreadDecisionVoteChoiceApprove || decision.AllowedVoteChoices[1] != SecureCellThreadDecisionVoteChoiceReject {
+		t.Fatalf("expected dual-control vote choices, got %+v", decision.AllowedVoteChoices)
+	}
+	if len(decision.RejectorRoles) != 1 || decision.RejectorRoles[0] != "owner" {
+		t.Fatalf("expected owner-only rejectors, got %+v", decision.RejectorRoles)
+	}
+	if len(decision.ReopenRoles) != 1 || decision.ReopenRoles[0] != "owner" {
+		t.Fatalf("expected owner-only reopen roles, got %+v", decision.ReopenRoles)
+	}
+	if decision.AutoEscalateToDID != participantB.AgentID() || decision.EscalationDueAt == nil || decision.ResolutionDueAt == nil {
+		t.Fatalf("expected explicit automation fields on decision, got %+v", decision)
+	}
+
+	if _, err := service.AbstainThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "abstain should be blocked by template",
+	}); !errors.Is(err, ErrPolicyDenied) {
+		t.Fatalf("expected abstain to be denied by dual-control template, got %v", err)
+	}
+
+	if _, err := service.RejectThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "non-owner reject should be blocked",
+	}); !errors.Is(err, ErrPolicyDenied) {
+		t.Fatalf("expected reviewer reject to be denied by role policy, got %v", err)
+	}
+
+	rejected, err := service.RejectThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "owner reject collapses dual-control quorum",
+	})
+	if err != nil {
+		t.Fatalf("RejectThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, rejected, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusQuorumFailed || decision.QuorumFailedBy != owner.AgentID() || len(decision.ApprovalVotes) != 1 {
+		t.Fatalf("expected quorum-failed decision after owner reject, got %+v", decision)
+	}
+	if decision.ApprovalVotes[0].Choice != SecureCellThreadDecisionVoteChoiceReject {
+		t.Fatalf("expected persisted reject vote, got %+v", decision.ApprovalVotes)
+	}
+}
+
+func TestService_SweepDecisionGovernanceEscalatesAndClosesExpiredDecisions(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Governance Automation Cell",
+		Purpose:       "deadline automation",
+		Resource:      "cell:governance-automation",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Automation Session",
+		Purpose:         "deadline-managed decisions",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Automation Thread",
+		Purpose:         "deadline automation path",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	now := time.Now().UTC().Truncate(time.Second)
+	escalationDueAt := now.Add(-5 * time.Minute)
+	resolutionDueAt := now.Add(45 * time.Minute)
+	escalationDecisionResult, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Escalate Exposure Review",
+		Summary:              "should auto-escalate to reviewer_b",
+		Classification:       "confidential",
+		ApprovalThreshold:    1,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID(), participantB.AgentID()},
+		AutoEscalateToDID:    participantB.AgentID(),
+		EscalationDueAt:      &escalationDueAt,
+		ResolutionDueAt:      &resolutionDueAt,
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DEC-SWEEP-ESCALATE"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision escalate case failed: %v", err)
+	}
+	escalationDecisionID := escalationDecisionResult.Decisions[len(escalationDecisionResult.Decisions)-1].ID
+
+	closeDueAt := now.Add(-2 * time.Minute)
+	closureDecisionResult, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Close Stale Review",
+		Summary:              "should auto-close after resolution due time",
+		Classification:       "confidential",
+		ApprovalThreshold:    1,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		ResolutionDueAt:      &closeDueAt,
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DEC-SWEEP-CLOSE"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision close case failed: %v", err)
+	}
+	closureDecisionID := closureDecisionResult.Decisions[len(closureDecisionResult.Decisions)-1].ID
+
+	sweepActor := "did:aethelred:automation-sweeper"
+	report, err := service.SweepDecisionGovernance(ctx, now, SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated decision governance sweep",
+		Metadata: map[string]string{"ticket": "SC-DEC-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepDecisionGovernance failed: %v", err)
+	}
+	if report.CellsScanned != 1 || report.DecisionsScanned != 2 || report.DecisionsEscalated != 1 || report.DecisionsClosed != 1 || report.CellsMutated != 1 {
+		t.Fatalf("unexpected sweep report: %+v", report)
+	}
+	if len(report.Actions) != 2 {
+		t.Fatalf("expected two sweep actions, got %+v", report.Actions)
+	}
+
+	after, err := service.GetCell(ctx, result.CellID)
+	if err != nil {
+		t.Fatalf("GetCell failed: %v", err)
+	}
+
+	escalatedDecision, ok := mustSecureCellDecision(t, after, escalationDecisionID)
+	if !ok {
+		t.Fatalf("expected escalated decision in state, got %+v", after.Decisions)
+	}
+	if len(escalatedDecision.Delegations) != 1 || escalatedDecision.Delegations[0].Mode != SecureCellThreadDecisionDelegationModeEscalate || escalatedDecision.Delegations[0].ToActorDID != participantB.AgentID() {
+		t.Fatalf("expected automated escalation delegation, got %+v", escalatedDecision.Delegations)
+	}
+	if escalatedDecision.Delegations[0].Metadata["automated_actor"] != sweepActor || escalatedDecision.Delegations[0].Metadata["decision_sweep_action"] != "escalate" {
+		t.Fatalf("expected automated escalation metadata, got %+v", escalatedDecision.Delegations[0].Metadata)
+	}
+
+	closedDecision, ok := mustSecureCellDecision(t, after, closureDecisionID)
+	if !ok {
+		t.Fatalf("expected closed decision in state, got %+v", after.Decisions)
+	}
+	if closedDecision.Status != SecureCellThreadDecisionStatusClosed || closedDecision.ClosedAt == nil || closedDecision.ClosedBy != owner.AgentID() {
+		t.Fatalf("expected automated close to finalize stale decision, got %+v", closedDecision)
+	}
+	last := after.Transitions[len(after.Transitions)-1]
+	if last.Action != "secure_cell.session_thread_decision_closed" && last.Action != "secure_cell.session_thread_decision_escalated" {
+		t.Fatalf("expected automated decision transitions in audit trail, got %+v", last)
+	}
+}
+
 func TestService_ListExpiringQuarantinesReturnsExpiredMembers(t *testing.T) {
 	t.Parallel()
 
