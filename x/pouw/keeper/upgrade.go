@@ -271,6 +271,25 @@ func PreUpgradeValidation(ctx sdk.Context, k Keeper) []string {
 		warnings = append(warnings, "WARNING: AllowSimulated is true - this should be false on production chains before upgrade")
 	}
 
+	// Check 5: Enterprise trust registry, if configured, should already be
+	// normalized into governance-managed protocol state.
+	trustStatus, err := k.GetEnterpriseAuditTrustRegistryStatus(ctx)
+	if err != nil {
+		warnings = append(warnings, fmt.Sprintf(
+			"WARNING: failed to retrieve enterprise audit trust registry status: %v", err,
+		))
+	} else if trustStatus.Configured {
+		if trustStatus.Source != "pouw_governance" {
+			warnings = append(warnings, fmt.Sprintf(
+				"WARNING: enterprise audit trust registry source is %q - expected pouw_governance before upgrade",
+				trustStatus.Source,
+			))
+		}
+		if trustStatus.ActivePolicySignerCount == 0 {
+			warnings = append(warnings, "WARNING: enterprise audit trust registry has zero active policy signers")
+		}
+	}
+
 	return warnings
 }
 
@@ -305,6 +324,20 @@ func PostUpgradeValidation(ctx sdk.Context, k Keeper) error {
 	})
 	if storedCount != actualCount {
 		return fmt.Errorf("job count mismatch after upgrade: stored=%d, actual=%d", storedCount, actualCount)
+	}
+
+	// Verify enterprise trust registry protocol state if it is configured.
+	trustStatus, err := k.GetEnterpriseAuditTrustRegistryStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to read enterprise audit trust registry status after upgrade: %w", err)
+	}
+	if trustStatus.Configured {
+		if trustStatus.Source != "pouw_governance" {
+			return fmt.Errorf("enterprise audit trust registry source invalid after upgrade: got %q, want pouw_governance", trustStatus.Source)
+		}
+		if trustStatus.ActivePolicySignerCount == 0 {
+			return fmt.Errorf("enterprise audit trust registry invalid after upgrade: zero active policy signers")
+		}
 	}
 
 	ctx.Logger().Info("post-upgrade validation passed",

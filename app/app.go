@@ -77,6 +77,9 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/aethelred/aethelred/pkg/audit"
+	financeintegration "github.com/aethelred/aethelred/pkg/integrations/finance"
+	securecellsintegration "github.com/aethelred/aethelred/pkg/integrations/securecells"
 	// Aethelred custom modules
 	sovereigncrisiskeeper "github.com/aethelred/aethelred/x/crisis/keeper"
 	sovereigncrisistypes "github.com/aethelred/aethelred/x/crisis/types"
@@ -246,6 +249,40 @@ type AethelredApp struct {
 	// encryptedMempoolBridge handles decryption of encrypted mempool transactions
 	// during PrepareProposal to prevent front-running and censorship.
 	encryptedMempoolBridge *EncryptedMempoolBridge
+
+	// auditStudio provides a queryable view over the PoUW structured audit log.
+	auditStudio *audit.Studio
+
+	// auditServer exposes the structured audit and control-ledger APIs.
+	auditServer *audit.AuditServer
+
+	// auditControlLedgerDir is the durable filesystem path used for persisted
+	// control-ledger snapshots.
+	auditControlLedgerDir string
+
+	// financeTreasuryReleaseWorkflow exposes the first regulated finance workflow
+	// product surface on top of the trust kernel.
+	financeTreasuryReleaseWorkflow *financeintegration.TreasuryReleaseWorkflow
+
+	// financeTreasuryReleaseAuth authorizes treasury-release initiation and
+	// approval mutations before they reach the finance workflow.
+	financeTreasuryReleaseAuth financeTreasuryReleaseRequestAuthorizer
+
+	// financeControlLedgerDir is the durable filesystem path used for finance
+	// workflow control-ledger snapshots.
+	financeControlLedgerDir string
+
+	// secureCellService exposes regulated multi-party collaboration on top of
+	// the trust kernel.
+	secureCellService *securecellsintegration.Service
+
+	// secureCellAuth authorizes secure-cell create mutations before they reach
+	// the service.
+	secureCellAuth secureCellRequestAuthorizer
+
+	// secureCellControlLedgerDir is the durable filesystem path used for secure
+	// cell control-ledger snapshots.
+	secureCellControlLedgerDir string
 }
 
 // New returns a reference to an initialized AethelredApp.
@@ -347,6 +384,9 @@ func New(
 
 	// Initialize Aethelred custom module keepers
 	app.initAethelredKeepers(keys, appCodec)
+	app.initAuditInfrastructure(appOpts)
+	app.initFinanceInfrastructure(appOpts)
+	app.initSecureCellsInfrastructure(appOpts)
 
 	// Create module manager with all modules
 	app.setupModuleManager()
@@ -407,6 +447,8 @@ func New(
 			panic(err) // This panic is intentional - state corruption is unrecoverable
 		}
 	}
+
+	app.retryAuditBootstrapAfterStateReady(appOpts)
 
 	return app
 }
@@ -771,8 +813,27 @@ func (app *AethelredApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.
 	apiSvr.Router.Handle("/metrics/aethelred", app.MetricsHandler()).Methods("GET")
 	// Aethelred-specific health endpoint (component-level)
 	apiSvr.Router.Handle("/health/aethelred", app.HealthHandler()).Methods("GET")
+	// Public PoUW operator status endpoint for CLI and dashboards.
+	apiSvr.Router.Handle("/api/v1/pouw/module-status", app.PouwModuleStatusHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/trust-registry", app.PouwTrustRegistryHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/trust-registry/history", app.PouwTrustRegistryHistoryHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/control-ledger-packages/anchors", app.PouwControlLedgerPackageAnchorsHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/control-ledger-packages/verify", app.PouwPortableControlLedgerPackageVerifyHandler()).Methods("POST")
+	apiSvr.Router.Handle("/api/v1/pouw/trust-registry/compliance-export/anchors", app.PouwTrustComplianceExportAnchorsHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/trust-registry/compliance-export", app.PouwTrustComplianceExportHandler()).Methods("GET")
+	apiSvr.Router.Handle("/api/v1/pouw/trust-registry/compliance-export/verify", app.PouwTrustCompliancePackageVerifyHandler()).Methods("POST")
+	apiSvr.Router.Handle("/api/v1/finance/treasury/settlement-quote", app.FinanceTreasurySettlementQuoteHandler()).Methods("POST")
+	apiSvr.Router.Handle("/api/v1/finance/treasury/releases", app.FinanceTreasuryReleaseInitiateHandler()).Methods("POST")
+	apiSvr.Router.PathPrefix("/api/v1/finance/treasury/releases/").Handler(app.FinanceTreasuryReleaseGetHandler()).Methods("GET")
+	apiSvr.Router.PathPrefix("/api/v1/finance/treasury/releases/").Handler(app.FinanceTreasuryReleaseApproveHandler()).Methods("POST")
+	apiSvr.Router.Handle("/api/v1/secure-cells", app.SecureCellsCreateHandler()).Methods("POST")
+	apiSvr.Router.PathPrefix("/api/v1/secure-cells/").Handler(app.SecureCellsMutateHandler()).Methods("POST")
+	apiSvr.Router.PathPrefix("/api/v1/secure-cells/").Handler(app.SecureCellsGetHandler()).Methods("GET")
 	// Admin endpoint for deterministic pre-proposal consensus evidence auditing.
 	apiSvr.Router.Handle("/admin/consensus/evidence/audit", app.ConsensusEvidenceAuditHandler()).Methods("POST")
+	if app.auditServer != nil {
+		apiSvr.Router.PathPrefix("/api/v1/audit/").Handler(app.auditServer.Handler())
+	}
 }
 
 // GetMaccPerms returns a copy of the module account permissions

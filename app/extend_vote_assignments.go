@@ -239,7 +239,7 @@ func mapTEEAttestation(result *verify.TEEVerificationResult) *TEEAttestationData
 			chain = append(chain, doc.Certificate)
 		}
 		if len(doc.CABundle) > 0 {
-			chain = append(chain, doc.CABundle)
+			chain = append(chain, doc.CABundle...)
 		}
 		data.CertificateChain = chain
 	}
@@ -301,7 +301,7 @@ type nitroQuote struct {
 	Digest      string          `json:"digest"`
 	PCRs        []nitroQuotePCR `json:"pcrs"`
 	Certificate []byte          `json:"certificate,omitempty"`
-	CABundle    []byte          `json:"cabundle,omitempty"`
+	CABundle    [][]byte        `json:"cabundle,omitempty"`
 	PublicKey   []byte          `json:"public_key,omitempty"`
 	UserData    []byte          `json:"user_data,omitempty"`
 	Nonce       []byte          `json:"nonce,omitempty"`

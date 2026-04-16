@@ -166,12 +166,19 @@ func (q queryServer) IsPCR0Registered(goCtx context.Context, req *types.QueryIsP
 // QueryModuleStatusResponse provides a comprehensive module status for
 // operator dashboards and monitoring.
 type QueryModuleStatusResponse struct {
-	Params               *types.Params `json:"params"`
-	JobCount             uint64        `json:"job_count"`
-	PendingJobCount      int           `json:"pending_job_count"`
-	ValidatorCount       int           `json:"validator_count"`
-	OnlineValidatorCount int           `json:"online_validator_count"`
-	BlockHeight          int64         `json:"block_height"`
+	Params                            *types.Params `json:"params"`
+	JobCount                          uint64        `json:"job_count"`
+	PendingJobCount                   int           `json:"pending_job_count"`
+	CurrentEpoch                      uint64        `json:"current_epoch"`
+	TotalUWU                          uint64        `json:"total_uwu"`
+	ValidatorCount                    int           `json:"validator_count"`
+	OnlineValidatorCount              int           `json:"online_validator_count"`
+	EnterpriseTrustRegistryConfigured bool          `json:"enterprise_trust_registry_configured"`
+	EnterpriseTrustRegistryVersion    string        `json:"enterprise_trust_registry_version,omitempty"`
+	EnterpriseTrustRegistrySource     string        `json:"enterprise_trust_registry_source,omitempty"`
+	EnterpriseTrustPolicySignerCount  int           `json:"enterprise_trust_policy_signer_count"`
+	EnterpriseTrustActiveSignerCount  int           `json:"enterprise_trust_active_signer_count"`
+	BlockHeight                       int64         `json:"block_height"`
 }
 
 // GetModuleStatus returns a comprehensive module status snapshot.
@@ -191,6 +198,16 @@ func (k Keeper) GetModuleStatus(ctx context.Context) (*QueryModuleStatusResponse
 
 	pendingJobs := k.GetPendingJobs(ctx)
 
+	currentEpoch, err := k.CurrentEpoch.Get(ctx)
+	if err != nil {
+		currentEpoch = 0
+	}
+
+	totalUWU, err := k.TotalUWU.Get(ctx)
+	if err != nil {
+		totalUWU = 0
+	}
+
 	// Count validators and online validators
 	totalValidators := 0
 	onlineValidators := 0
@@ -202,12 +219,24 @@ func (k Keeper) GetModuleStatus(ctx context.Context) (*QueryModuleStatusResponse
 		return false, nil
 	})
 
+	trustStatus, err := k.GetEnterpriseAuditTrustRegistryStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &QueryModuleStatusResponse{
-		Params:               params,
-		JobCount:             jobCount,
-		PendingJobCount:      len(pendingJobs),
-		ValidatorCount:       totalValidators,
-		OnlineValidatorCount: onlineValidators,
-		BlockHeight:          sdkCtx.BlockHeight(),
+		Params:                            params,
+		JobCount:                          jobCount,
+		PendingJobCount:                   len(pendingJobs),
+		CurrentEpoch:                      currentEpoch,
+		TotalUWU:                          totalUWU,
+		ValidatorCount:                    totalValidators,
+		OnlineValidatorCount:              onlineValidators,
+		EnterpriseTrustRegistryConfigured: trustStatus.Configured,
+		EnterpriseTrustRegistryVersion:    trustStatus.Version,
+		EnterpriseTrustRegistrySource:     trustStatus.Source,
+		EnterpriseTrustPolicySignerCount:  trustStatus.PolicySignerCount,
+		EnterpriseTrustActiveSignerCount:  trustStatus.ActivePolicySignerCount,
+		BlockHeight:                       sdkCtx.BlockHeight(),
 	}, nil
 }
