@@ -15,6 +15,14 @@ var (
 	// secure cell state.
 	ErrParticipantExists = errors.New("secure cell participant already exists")
 
+	// ErrSessionNotFound indicates that a collaboration session with the
+	// requested ID does not exist in the secure cell state.
+	ErrSessionNotFound = errors.New("secure cell session not found")
+
+	// ErrSessionNotActive indicates that a requested collaboration session is
+	// not currently active.
+	ErrSessionNotActive = errors.New("secure cell session is not active")
+
 	// ErrCellImmutable indicates that the secure cell cannot be mutated from its
 	// current lifecycle status.
 	ErrCellImmutable = errors.New("secure cell is immutable")

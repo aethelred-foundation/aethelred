@@ -75,6 +75,31 @@ type secureCellLifecycleRequest struct {
 	Metadata      map[string]string           `json:"metadata,omitempty"`
 }
 
+type secureCellSessionStartRequest struct {
+	ActorIdentity   json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt   *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Name            string                      `json:"name,omitempty"`
+	Purpose         string                      `json:"purpose,omitempty"`
+	ParticipantDIDs []string                    `json:"participant_dids,omitempty"`
+	DataClasses     []string                    `json:"data_classes,omitempty"`
+	Reason          string                      `json:"reason,omitempty"`
+	Metadata        map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellSessionShareRequest struct {
+	ActorIdentity  json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt  *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Name           string                      `json:"name,omitempty"`
+	ArtifactType   string                      `json:"artifact_type,omitempty"`
+	Classification string                      `json:"classification,omitempty"`
+	Resource       string                      `json:"resource,omitempty"`
+	Summary        string                      `json:"summary,omitempty"`
+	SharedWith     []string                    `json:"shared_with,omitempty"`
+	IntegrityHash  string                      `json:"integrity_hash,omitempty"`
+	Reason         string                      `json:"reason,omitempty"`
+	Metadata       map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellBulkMemberMutationRequest struct {
 	ActorIdentity       json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt       *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -93,6 +118,8 @@ type secureCellArtifactsResponse struct {
 	CellID                   string                                              `json:"cell_id"`
 	Status                   securecellsintegration.SecureCellStatus             `json:"status"`
 	Participants             []securecellsintegration.SecureCellParticipantState `json:"participants,omitempty"`
+	Sessions                 []securecellsintegration.SecureCellSession          `json:"sessions,omitempty"`
+	SharedOutputs            []securecellsintegration.SecureCellSharedOutput     `json:"shared_outputs,omitempty"`
 	Transitions              []securecellsintegration.SecureCellTransition       `json:"transitions,omitempty"`
 	CreationReceipt          *policy.SignedPolicyReceipt                         `json:"creation_receipt,omitempty"`
 	ActivationReceipt        *policy.SignedPolicyReceipt                         `json:"activation_receipt,omitempty"`
@@ -442,6 +469,102 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/sessions"):
+			cellID, err := parseSecureCellID(r.URL.Path, "/sessions")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellSessionStartRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell session start request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionStart(r, cellID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.StartSession(r.Context(), cellID, securecellsintegration.SecureCellSessionStartRequest{
+				ActorDID:        safeSecureCellActorDID(authCtx),
+				Name:            req.Name,
+				Purpose:         req.Purpose,
+				ParticipantDIDs: req.ParticipantDIDs,
+				DataClasses:     req.DataClasses,
+				Reason:          req.Reason,
+				Metadata:        req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/share"):
+			cellID, sessionID, err := parseSecureCellSessionActionPath(r.URL.Path, "/share")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellSessionShareRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell session share request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionShare(r, cellID, sessionID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.ShareOutput(r.Context(), cellID, securecellsintegration.SecureCellSessionShareRequest{
+				ActorDID:       safeSecureCellActorDID(authCtx),
+				SessionID:      sessionID,
+				Name:           req.Name,
+				ArtifactType:   req.ArtifactType,
+				Classification: req.Classification,
+				Resource:       req.Resource,
+				Summary:        req.Summary,
+				SharedWith:     req.SharedWith,
+				IntegrityHash:  req.IntegrityHash,
+				Reason:         req.Reason,
+				Metadata:       req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/close"):
+			cellID, sessionID, err := parseSecureCellSessionActionPath(r.URL.Path, "/close")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell session close request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellSessionClose(r, cellID, sessionID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.CloseSession(r.Context(), cellID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			}, sessionID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/members"):
 			cellID, err := parseSecureCellID(r.URL.Path, "/members")
 			if err != nil {
@@ -669,6 +792,8 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.CellID = result.CellID
 	projection.Status = result.Status
 	projection.Participants = append([]securecellsintegration.SecureCellParticipantState(nil), result.Participants...)
+	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
+	projection.SharedOutputs = append([]securecellsintegration.SecureCellSharedOutput(nil), result.SharedOutputs...)
 	projection.Transitions = append([]securecellsintegration.SecureCellTransition(nil), result.Transitions...)
 	projection.CreationReceipt = result.CreationReceipt
 	projection.ActivationReceipt = result.ActivationReceipt
@@ -888,6 +1013,29 @@ func parseSecureCellLifecycleActionPath(path string) (cellID string, action stri
 	return cellID, action, nil
 }
 
+func parseSecureCellSessionActionPath(path string, suffix string) (cellID string, sessionID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", fmt.Errorf("invalid secure cell session path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", fmt.Errorf("invalid secure cell session action path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 3 || parts[1] != "sessions" {
+		return "", "", fmt.Errorf("invalid secure cell session action path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	if cellID == "" || sessionID == "" {
+		return "", "", fmt.Errorf("invalid secure cell session action path")
+	}
+	return cellID, sessionID, nil
+}
+
 func secureCellErrorStatus(err error, fallback int) int {
 	switch {
 	case err == nil:
@@ -901,6 +1049,10 @@ func secureCellErrorStatus(err error, fallback int) int {
 	case errors.Is(err, securecellsintegration.ErrParticipantNotFound):
 		return http.StatusNotFound
 	case errors.Is(err, securecellsintegration.ErrParticipantExists):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrSessionNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, securecellsintegration.ErrSessionNotActive):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrCellImmutable):
 		return http.StatusConflict

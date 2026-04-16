@@ -21,6 +21,9 @@ import (
 const (
 	secureCellsAuthDefaultResource      = "cell:regulated-collaboration"
 	secureCellsAuthRequestAction        = "secure_cells.create"
+	secureCellsAuthSessionStartAction   = "secure_cells.session.start"
+	secureCellsAuthSessionShareAction   = "secure_cells.session.share"
+	secureCellsAuthSessionCloseAction   = "secure_cells.session.close"
 	secureCellsAuthAdmitAction          = "secure_cells.member.admit"
 	secureCellsAuthReleaseAction        = "secure_cells.member.release"
 	secureCellsAuthQuarantineAction     = "secure_cells.member.quarantine"
@@ -53,6 +56,9 @@ type secureCellAuthContext struct {
 
 type secureCellRequestAuthorizer interface {
 	AuthorizeCreate(r *http.Request, req *secureCellCreateRequest) (*secureCellAuthContext, error)
+	AuthorizeStart(r *http.Request, cellID string, req *secureCellSessionStartRequest) (*secureCellAuthContext, error)
+	AuthorizeShare(r *http.Request, cellID string, sessionID string, req *secureCellSessionShareRequest) (*secureCellAuthContext, error)
+	AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeAdmit(r *http.Request, cellID string, req *secureCellAdmitMemberRequest) (*secureCellAuthContext, error)
 	AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeQuarantine(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
@@ -79,6 +85,18 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeCreate(r *http.Request, _ 
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeAdmit(r *http.Request, _ string, _ *secureCellAdmitMemberRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeCreate(r, nil)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeStart(r *http.Request, _ string, _ *secureCellSessionStartRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeCreate(r, nil)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeShare(r *http.Request, _ string, _ string, _ *secureCellSessionShareRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeCreate(r, nil)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeClose(r *http.Request, _ string, _ string, _ *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.AuthorizeCreate(r, nil)
 }
 
@@ -133,6 +151,24 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeCreate(r *http.Request, req 
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeAdmit(r *http.Request, cellID string, req *secureCellAdmitMemberRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeAdmit(r, cellID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeStart(r *http.Request, cellID string, req *secureCellSessionStartRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeStart(r, cellID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeShare(r *http.Request, cellID string, sessionID string, req *secureCellSessionShareRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeShare(r, cellID, sessionID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeClose(r, cellID, sessionID, req)
 	})
 }
 
@@ -274,6 +310,41 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeAdmit(r *http.Request, 
 	)
 }
 
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeStart(r *http.Request, cellID string, req *secureCellSessionStartRequest) (*secureCellAuthContext, error) {
+	return a.authorizeSessionMutation(r, cellID, "", req, secureCellsAuthSessionStartAction)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeShare(r *http.Request, cellID string, sessionID string, req *secureCellSessionShareRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(sessionID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell and session IDs are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell session share request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthSessionShareAction,
+		resourceCandidatesForSecureCellSessionShare(cellID, sessionID),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorizeSessionMutation(r, cellID, sessionID, req, secureCellsAuthSessionCloseAction)
+}
+
 func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error) {
 	return a.authorizeMemberMutation(r, cellID, req, secureCellsAuthReleaseAction, resourceCandidatesForSecureCellMemberAction)
 }
@@ -332,6 +403,60 @@ func (a *secureCellEnterpriseRequestAuthorizer) authorizeMemberMutation(
 		requiredAction,
 		resourceFn(cellID, strings.TrimSpace(req.ParticipantDID), memberActionFromRequiredAction(requiredAction)),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) authorizeSessionMutation(
+	r *http.Request,
+	cellID string,
+	sessionID string,
+	req any,
+	requiredAction string,
+) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID is required", audit.ErrInvalidInput)
+	}
+	var (
+		actorIdentity *agent.AgentIdentity
+		receipt       *policy.SignedPolicyReceipt
+		err           error
+	)
+	switch typed := req.(type) {
+	case *secureCellSessionStartRequest:
+		if typed == nil {
+			return nil, fmt.Errorf("securecells/auth: %w: secure cell session start request is required", audit.ErrInvalidInput)
+		}
+		actorIdentity, err = decodeFinanceAgentIdentity(typed.ActorIdentity)
+		receipt = typed.PolicyReceipt
+	case *secureCellLifecycleRequest:
+		if typed == nil {
+			return nil, fmt.Errorf("securecells/auth: %w: secure cell session lifecycle request is required", audit.ErrInvalidInput)
+		}
+		actorIdentity, err = decodeFinanceAgentIdentity(typed.ActorIdentity)
+		receipt = typed.PolicyReceipt
+	default:
+		return nil, fmt.Errorf("securecells/auth: %w: unsupported session request type", audit.ErrInvalidInput)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if receipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	resourceCandidates := resourceCandidatesForSecureCellSessionLifecycle(cellID, sessionID, sessionLifecycleActionFromRequiredAction(requiredAction))
+	if requiredAction == secureCellsAuthSessionStartAction {
+		resourceCandidates = resourceCandidatesForSecureCellSessionStart(cellID)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		receipt,
+		requiredAction,
+		resourceCandidates,
+		resolveSecureCellAuthJurisdiction("", actorIdentity, receipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
 
@@ -718,6 +843,27 @@ func (app *AethelredApp) authorizeSecureCellCreate(r *http.Request, req *secureC
 	return app.secureCellAuth.AuthorizeCreate(r, req)
 }
 
+func (app *AethelredApp) authorizeSecureCellSessionStart(r *http.Request, cellID string, req *secureCellSessionStartRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeStart(r, cellID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionShare(r *http.Request, cellID string, sessionID string, req *secureCellSessionShareRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeShare(r, cellID, sessionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellSessionClose(r *http.Request, cellID string, sessionID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeClose(r, cellID, sessionID, req)
+}
+
 func (app *AethelredApp) authorizeSecureCellAdmit(r *http.Request, cellID string, req *secureCellAdmitMemberRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, nil
@@ -854,6 +1000,39 @@ func resourceCandidatesForSecureCellAdmit(cellID, participantDID string) []strin
 	return candidates
 }
 
+func resourceCandidatesForSecureCellSessionStart(cellID string) []string {
+	cellID = strings.TrimSpace(cellID)
+	return []string{
+		cellID,
+		"secure-cell:" + cellID,
+		secureCellsItemPrefix + cellID + "/sessions",
+		"secure-cell:" + cellID + ":session:start",
+	}
+}
+
+func resourceCandidatesForSecureCellSessionLifecycle(cellID, sessionID, action string) []string {
+	cellID = strings.TrimSpace(cellID)
+	sessionID = strings.TrimSpace(sessionID)
+	action = strings.TrimSpace(action)
+	base := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		"secure-cell:" + cellID + ":session:" + sessionID,
+		sessionID,
+	}
+	if sessionID != "" && action != "" {
+		base = append(base,
+			secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/"+action,
+			"secure-cell:"+cellID+":session:"+sessionID+":"+action,
+		)
+	}
+	return base
+}
+
+func resourceCandidatesForSecureCellSessionShare(cellID, sessionID string) []string {
+	return resourceCandidatesForSecureCellSessionLifecycle(cellID, sessionID, "share")
+}
+
 func resourceCandidatesForSecureCellMemberAction(cellID, participantDID, action string) []string {
 	cellID = strings.TrimSpace(cellID)
 	participantDID = strings.TrimSpace(participantDID)
@@ -985,6 +1164,17 @@ func lifecycleActionFromRequiredAction(requiredAction string) string {
 		return "expire"
 	default:
 		return "lifecycle"
+	}
+}
+
+func sessionLifecycleActionFromRequiredAction(requiredAction string) string {
+	switch strings.TrimSpace(requiredAction) {
+	case secureCellsAuthSessionStartAction:
+		return "start"
+	case secureCellsAuthSessionCloseAction:
+		return "close"
+	default:
+		return "session"
 	}
 }
 
