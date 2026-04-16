@@ -41,31 +41,36 @@ const (
 )
 
 const (
-	secureCellTool                          = "secure_cells"
-	secureCellCreateAction                  = "secure_cells.create"
-	secureCellActivateAction                = "secure_cells.activate"
-	secureCellSessionStartAction            = "secure_cells.session.start"
-	secureCellSessionThreadStartAction      = "secure_cells.session.thread.start"
-	secureCellSessionThreadMessageAction    = "secure_cells.session.thread.message"
-	secureCellSessionShareAction            = "secure_cells.session.share"
-	secureCellSessionExchangeAction         = "secure_cells.session.exchange"
-	secureCellSessionCloseAction            = "secure_cells.session.close"
-	secureCellSessionPauseAction            = "secure_cells.session.pause"
-	secureCellSessionResumeAction           = "secure_cells.session.resume"
-	secureCellSessionQuarantineAction       = "secure_cells.session.quarantine"
-	secureCellSessionThreadCloseAction      = "secure_cells.session.thread.close"
-	secureCellSessionThreadResumeAction     = "secure_cells.session.thread.resume"
-	secureCellSessionThreadQuarantineAction = "secure_cells.session.thread.quarantine"
-	secureCellSessionMemberAdmitAction      = "secure_cells.session.member.admit"
-	secureCellSessionMemberRemoveAction     = "secure_cells.session.member.remove"
-	secureCellMemberAdmitAction             = "secure_cells.member.admit"
-	secureCellMemberReleaseAction           = "secure_cells.member.release"
-	secureCellMemberQuarantineAction        = "secure_cells.member.quarantine"
-	secureCellMemberRevokeAction            = "secure_cells.member.revoke"
-	secureCellQuarantineExpireAction        = "secure_cells.quarantine.expire"
-	secureCellPauseAction                   = "secure_cells.pause"
-	secureCellResumeAction                  = "secure_cells.resume"
-	secureCellTerminateAction               = "secure_cells.terminate"
+	secureCellTool                                  = "secure_cells"
+	secureCellCreateAction                          = "secure_cells.create"
+	secureCellActivateAction                        = "secure_cells.activate"
+	secureCellSessionStartAction                    = "secure_cells.session.start"
+	secureCellSessionThreadStartAction              = "secure_cells.session.thread.start"
+	secureCellSessionThreadMessageAction            = "secure_cells.session.thread.message"
+	secureCellSessionThreadDecisionCreateAction     = "secure_cells.session.thread.decision.create"
+	secureCellSessionThreadDecisionApproveAction    = "secure_cells.session.thread.decision.approve"
+	secureCellSessionThreadDecisionQuarantineAction = "secure_cells.session.thread.decision.quarantine"
+	secureCellSessionThreadDecisionResumeAction     = "secure_cells.session.thread.decision.resume"
+	secureCellSessionThreadDecisionCloseAction      = "secure_cells.session.thread.decision.close"
+	secureCellSessionShareAction                    = "secure_cells.session.share"
+	secureCellSessionExchangeAction                 = "secure_cells.session.exchange"
+	secureCellSessionCloseAction                    = "secure_cells.session.close"
+	secureCellSessionPauseAction                    = "secure_cells.session.pause"
+	secureCellSessionResumeAction                   = "secure_cells.session.resume"
+	secureCellSessionQuarantineAction               = "secure_cells.session.quarantine"
+	secureCellSessionThreadCloseAction              = "secure_cells.session.thread.close"
+	secureCellSessionThreadResumeAction             = "secure_cells.session.thread.resume"
+	secureCellSessionThreadQuarantineAction         = "secure_cells.session.thread.quarantine"
+	secureCellSessionMemberAdmitAction              = "secure_cells.session.member.admit"
+	secureCellSessionMemberRemoveAction             = "secure_cells.session.member.remove"
+	secureCellMemberAdmitAction                     = "secure_cells.member.admit"
+	secureCellMemberReleaseAction                   = "secure_cells.member.release"
+	secureCellMemberQuarantineAction                = "secure_cells.member.quarantine"
+	secureCellMemberRevokeAction                    = "secure_cells.member.revoke"
+	secureCellQuarantineExpireAction                = "secure_cells.quarantine.expire"
+	secureCellPauseAction                           = "secure_cells.pause"
+	secureCellResumeAction                          = "secure_cells.resume"
+	secureCellTerminateAction                       = "secure_cells.terminate"
 )
 
 // SecureCellSessionStatus tracks one governed collaboration session inside a
@@ -87,6 +92,17 @@ const (
 	SecureCellThreadStatusActive      SecureCellThreadStatus = "active"
 	SecureCellThreadStatusQuarantined SecureCellThreadStatus = "quarantined"
 	SecureCellThreadStatusClosed      SecureCellThreadStatus = "closed"
+)
+
+// SecureCellThreadDecisionStatus tracks one governed decision object inside a
+// collaboration thread.
+type SecureCellThreadDecisionStatus string
+
+const (
+	SecureCellThreadDecisionStatusOpen        SecureCellThreadDecisionStatus = "open"
+	SecureCellThreadDecisionStatusApproved    SecureCellThreadDecisionStatus = "approved"
+	SecureCellThreadDecisionStatusQuarantined SecureCellThreadDecisionStatus = "quarantined"
+	SecureCellThreadDecisionStatusClosed      SecureCellThreadDecisionStatus = "closed"
 )
 
 // SecureCellSealer creates execution seals for secure cells.
@@ -175,6 +191,7 @@ type SecureCellSessionThread struct {
 	DataClasses     []string               `json:"data_classes,omitempty"`
 	StartedBy       string                 `json:"started_by,omitempty"`
 	ClosedBy        string                 `json:"closed_by,omitempty"`
+	DecisionIDs     []string               `json:"decision_ids,omitempty"`
 	ExchangeIDs     []string               `json:"exchange_ids,omitempty"`
 	OpenedAt        time.Time              `json:"opened_at"`
 	QuarantinedAt   *time.Time             `json:"quarantined_at,omitempty"`
@@ -182,6 +199,31 @@ type SecureCellSessionThread struct {
 	UpdatedAt       time.Time              `json:"updated_at"`
 	ContainedBy     string                 `json:"contained_by,omitempty"`
 	Metadata        map[string]string      `json:"metadata,omitempty"`
+}
+
+// SecureCellThreadDecision is one evidence-bearing decision object inside a
+// governed collaboration thread.
+type SecureCellThreadDecision struct {
+	ID                    string                         `json:"id"`
+	SessionID             string                         `json:"session_id"`
+	ThreadID              string                         `json:"thread_id"`
+	Title                 string                         `json:"title"`
+	Summary               string                         `json:"summary,omitempty"`
+	Classification        string                         `json:"classification,omitempty"`
+	Status                SecureCellThreadDecisionStatus `json:"status"`
+	QuarantinedFromStatus SecureCellThreadDecisionStatus `json:"quarantined_from_status,omitempty"`
+	ProposedBy            string                         `json:"proposed_by,omitempty"`
+	ApprovedBy            string                         `json:"approved_by,omitempty"`
+	ClosedBy              string                         `json:"closed_by,omitempty"`
+	RelatedExchangeIDs    []string                       `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs      []string                       `json:"related_output_ids,omitempty"`
+	ProposedAt            time.Time                      `json:"proposed_at"`
+	ApprovedAt            *time.Time                     `json:"approved_at,omitempty"`
+	QuarantinedAt         *time.Time                     `json:"quarantined_at,omitempty"`
+	ClosedAt              *time.Time                     `json:"closed_at,omitempty"`
+	UpdatedAt             time.Time                      `json:"updated_at"`
+	ContainedBy           string                         `json:"contained_by,omitempty"`
+	Metadata              map[string]string              `json:"metadata,omitempty"`
 }
 
 // SecureCellSessionExchange captures one message or exchange artifact inside a
@@ -252,6 +294,7 @@ type SecureCellResult struct {
 	Participants      []SecureCellParticipantState           `json:"participants,omitempty"`
 	Sessions          []SecureCellSession                    `json:"sessions,omitempty"`
 	Threads           []SecureCellSessionThread              `json:"threads,omitempty"`
+	Decisions         []SecureCellThreadDecision             `json:"decisions,omitempty"`
 	SharedOutputs     []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
 	SessionExchanges  []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
 	CreationReceipt   *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
@@ -270,83 +313,93 @@ type SecureCellResult struct {
 // SecureCellTransition captures one evidence-bearing lifecycle mutation after
 // the cell is provisioned.
 type SecureCellTransition struct {
-	ID                      string                      `json:"id"`
-	Action                  string                      `json:"action"`
-	Actor                   string                      `json:"actor"`
-	TargetType              string                      `json:"target_type,omitempty"`
-	TargetDID               string                      `json:"target_did,omitempty"`
-	SessionID               string                      `json:"session_id,omitempty"`
-	ThreadID                string                      `json:"thread_id,omitempty"`
-	SharedOutputID          string                      `json:"shared_output_id,omitempty"`
-	SessionExchangeID       string                      `json:"session_exchange_id,omitempty"`
-	SessionStatusBefore     SecureCellSessionStatus     `json:"session_status_before,omitempty"`
-	SessionStatusAfter      SecureCellSessionStatus     `json:"session_status_after,omitempty"`
-	ThreadStatusBefore      SecureCellThreadStatus      `json:"thread_status_before,omitempty"`
-	ThreadStatusAfter       SecureCellThreadStatus      `json:"thread_status_after,omitempty"`
-	CellStatusBefore        SecureCellStatus            `json:"cell_status_before,omitempty"`
-	CellStatusAfter         SecureCellStatus            `json:"cell_status_after,omitempty"`
-	ParticipantStatusBefore SecureCellParticipantStatus `json:"participant_status_before,omitempty"`
-	ParticipantStatusAfter  SecureCellParticipantStatus `json:"participant_status_after,omitempty"`
-	NegotiationID           string                      `json:"negotiation_id,omitempty"`
-	CredentialID            string                      `json:"credential_id,omitempty"`
-	PolicyReceipt           *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	ExecutionSeal           *evidence.Seal              `json:"execution_seal,omitempty"`
-	TraceLink               *evidence.TraceLink         `json:"trace_link,omitempty"`
-	Reason                  string                      `json:"reason,omitempty"`
-	Metadata                map[string]string           `json:"metadata,omitempty"`
-	OccurredAt              time.Time                   `json:"occurred_at"`
+	ID                      string                         `json:"id"`
+	Action                  string                         `json:"action"`
+	Actor                   string                         `json:"actor"`
+	TargetType              string                         `json:"target_type,omitempty"`
+	TargetDID               string                         `json:"target_did,omitempty"`
+	SessionID               string                         `json:"session_id,omitempty"`
+	ThreadID                string                         `json:"thread_id,omitempty"`
+	DecisionID              string                         `json:"decision_id,omitempty"`
+	SharedOutputID          string                         `json:"shared_output_id,omitempty"`
+	SessionExchangeID       string                         `json:"session_exchange_id,omitempty"`
+	SessionStatusBefore     SecureCellSessionStatus        `json:"session_status_before,omitempty"`
+	SessionStatusAfter      SecureCellSessionStatus        `json:"session_status_after,omitempty"`
+	ThreadStatusBefore      SecureCellThreadStatus         `json:"thread_status_before,omitempty"`
+	ThreadStatusAfter       SecureCellThreadStatus         `json:"thread_status_after,omitempty"`
+	DecisionStatusBefore    SecureCellThreadDecisionStatus `json:"decision_status_before,omitempty"`
+	DecisionStatusAfter     SecureCellThreadDecisionStatus `json:"decision_status_after,omitempty"`
+	CellStatusBefore        SecureCellStatus               `json:"cell_status_before,omitempty"`
+	CellStatusAfter         SecureCellStatus               `json:"cell_status_after,omitempty"`
+	ParticipantStatusBefore SecureCellParticipantStatus    `json:"participant_status_before,omitempty"`
+	ParticipantStatusAfter  SecureCellParticipantStatus    `json:"participant_status_after,omitempty"`
+	NegotiationID           string                         `json:"negotiation_id,omitempty"`
+	CredentialID            string                         `json:"credential_id,omitempty"`
+	PolicyReceipt           *policy.SignedPolicyReceipt    `json:"policy_receipt,omitempty"`
+	ExecutionSeal           *evidence.Seal                 `json:"execution_seal,omitempty"`
+	TraceLink               *evidence.TraceLink            `json:"trace_link,omitempty"`
+	Reason                  string                         `json:"reason,omitempty"`
+	Metadata                map[string]string              `json:"metadata,omitempty"`
+	OccurredAt              time.Time                      `json:"occurred_at"`
 }
 
 // SecureCellLifecycleEvent is the canonical event payload emitted after a
 // secure-cell lifecycle mutation has been sealed and packaged successfully.
 type SecureCellLifecycleEvent struct {
-	EventID                     string                      `json:"event_id"`
-	CellID                      string                      `json:"cell_id"`
-	Name                        string                      `json:"name"`
-	Purpose                     string                      `json:"purpose"`
-	Jurisdiction                string                      `json:"jurisdiction,omitempty"`
-	Action                      string                      `json:"action"`
-	Actor                       string                      `json:"actor"`
-	TargetType                  string                      `json:"target_type,omitempty"`
-	TargetDID                   string                      `json:"target_did,omitempty"`
-	SessionID                   string                      `json:"session_id,omitempty"`
-	ThreadID                    string                      `json:"thread_id,omitempty"`
-	SharedOutputID              string                      `json:"shared_output_id,omitempty"`
-	SessionExchangeID           string                      `json:"session_exchange_id,omitempty"`
-	SessionStatusBefore         SecureCellSessionStatus     `json:"session_status_before,omitempty"`
-	SessionStatusAfter          SecureCellSessionStatus     `json:"session_status_after,omitempty"`
-	ThreadStatusBefore          SecureCellThreadStatus      `json:"thread_status_before,omitempty"`
-	ThreadStatusAfter           SecureCellThreadStatus      `json:"thread_status_after,omitempty"`
-	CellStatus                  SecureCellStatus            `json:"cell_status"`
-	CellStatusBefore            SecureCellStatus            `json:"cell_status_before,omitempty"`
-	CellStatusAfter             SecureCellStatus            `json:"cell_status_after,omitempty"`
-	ParticipantStatusBefore     SecureCellParticipantStatus `json:"participant_status_before,omitempty"`
-	ParticipantStatusAfter      SecureCellParticipantStatus `json:"participant_status_after,omitempty"`
-	TransitionID                string                      `json:"transition_id"`
-	TransitionCount             int                         `json:"transition_count"`
-	ParticipantCount            int                         `json:"participant_count"`
-	SessionCount                int                         `json:"session_count"`
-	ActiveSessionCount          int                         `json:"active_session_count"`
-	ThreadCount                 int                         `json:"thread_count"`
-	ActiveThreadCount           int                         `json:"active_thread_count"`
-	SharedOutputCount           int                         `json:"shared_output_count"`
-	SessionExchangeCount        int                         `json:"session_exchange_count"`
-	ActiveParticipantCount      int                         `json:"active_participant_count"`
-	QuarantinedParticipantCount int                         `json:"quarantined_participant_count"`
-	RevokedParticipantCount     int                         `json:"revoked_participant_count"`
-	PolicyReceiptID             string                      `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptContentHash    string                      `json:"policy_receipt_content_hash,omitempty"`
-	ReceiptChainHash            string                      `json:"receipt_chain_hash,omitempty"`
-	SealID                      string                      `json:"seal_id,omitempty"`
-	ControlLedgerID             string                      `json:"control_ledger_id,omitempty"`
-	ControlLedgerContentHash    string                      `json:"control_ledger_content_hash,omitempty"`
-	PortablePackageHash         string                      `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned       bool                        `json:"portable_package_signed"`
-	PortablePackageAnchored     bool                        `json:"portable_package_anchored"`
-	Reason                      string                      `json:"reason,omitempty"`
-	Metadata                    map[string]string           `json:"metadata,omitempty"`
-	OccurredAt                  time.Time                   `json:"occurred_at"`
-	PublishedAt                 time.Time                   `json:"published_at"`
+	EventID                     string                         `json:"event_id"`
+	CellID                      string                         `json:"cell_id"`
+	Name                        string                         `json:"name"`
+	Purpose                     string                         `json:"purpose"`
+	Jurisdiction                string                         `json:"jurisdiction,omitempty"`
+	Action                      string                         `json:"action"`
+	Actor                       string                         `json:"actor"`
+	TargetType                  string                         `json:"target_type,omitempty"`
+	TargetDID                   string                         `json:"target_did,omitempty"`
+	SessionID                   string                         `json:"session_id,omitempty"`
+	ThreadID                    string                         `json:"thread_id,omitempty"`
+	DecisionID                  string                         `json:"decision_id,omitempty"`
+	SharedOutputID              string                         `json:"shared_output_id,omitempty"`
+	SessionExchangeID           string                         `json:"session_exchange_id,omitempty"`
+	SessionStatusBefore         SecureCellSessionStatus        `json:"session_status_before,omitempty"`
+	SessionStatusAfter          SecureCellSessionStatus        `json:"session_status_after,omitempty"`
+	ThreadStatusBefore          SecureCellThreadStatus         `json:"thread_status_before,omitempty"`
+	ThreadStatusAfter           SecureCellThreadStatus         `json:"thread_status_after,omitempty"`
+	DecisionStatusBefore        SecureCellThreadDecisionStatus `json:"decision_status_before,omitempty"`
+	DecisionStatusAfter         SecureCellThreadDecisionStatus `json:"decision_status_after,omitempty"`
+	CellStatus                  SecureCellStatus               `json:"cell_status"`
+	CellStatusBefore            SecureCellStatus               `json:"cell_status_before,omitempty"`
+	CellStatusAfter             SecureCellStatus               `json:"cell_status_after,omitempty"`
+	ParticipantStatusBefore     SecureCellParticipantStatus    `json:"participant_status_before,omitempty"`
+	ParticipantStatusAfter      SecureCellParticipantStatus    `json:"participant_status_after,omitempty"`
+	TransitionID                string                         `json:"transition_id"`
+	TransitionCount             int                            `json:"transition_count"`
+	ParticipantCount            int                            `json:"participant_count"`
+	SessionCount                int                            `json:"session_count"`
+	ActiveSessionCount          int                            `json:"active_session_count"`
+	ThreadCount                 int                            `json:"thread_count"`
+	ActiveThreadCount           int                            `json:"active_thread_count"`
+	DecisionCount               int                            `json:"decision_count"`
+	OpenDecisionCount           int                            `json:"open_decision_count"`
+	ApprovedDecisionCount       int                            `json:"approved_decision_count"`
+	QuarantinedDecisionCount    int                            `json:"quarantined_decision_count"`
+	SharedOutputCount           int                            `json:"shared_output_count"`
+	SessionExchangeCount        int                            `json:"session_exchange_count"`
+	ActiveParticipantCount      int                            `json:"active_participant_count"`
+	QuarantinedParticipantCount int                            `json:"quarantined_participant_count"`
+	RevokedParticipantCount     int                            `json:"revoked_participant_count"`
+	PolicyReceiptID             string                         `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptContentHash    string                         `json:"policy_receipt_content_hash,omitempty"`
+	ReceiptChainHash            string                         `json:"receipt_chain_hash,omitempty"`
+	SealID                      string                         `json:"seal_id,omitempty"`
+	ControlLedgerID             string                         `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash    string                         `json:"control_ledger_content_hash,omitempty"`
+	PortablePackageHash         string                         `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned       bool                           `json:"portable_package_signed"`
+	PortablePackageAnchored     bool                           `json:"portable_package_anchored"`
+	Reason                      string                         `json:"reason,omitempty"`
+	Metadata                    map[string]string              `json:"metadata,omitempty"`
+	OccurredAt                  time.Time                      `json:"occurred_at"`
+	PublishedAt                 time.Time                      `json:"published_at"`
 }
 
 // SecureCellAdmissionRequest admits a new member into a live secure cell.
@@ -446,6 +499,21 @@ type SecureCellThreadMessageRequest struct {
 	IntegrityHash  string            `json:"integrity_hash,omitempty"`
 	Reason         string            `json:"reason,omitempty"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellThreadDecisionRequest creates one governed decision object inside
+// a collaboration thread.
+type SecureCellThreadDecisionRequest struct {
+	ActorDID           string            `json:"actor_did,omitempty"`
+	SessionID          string            `json:"session_id,omitempty"`
+	ThreadID           string            `json:"thread_id,omitempty"`
+	Title              string            `json:"title,omitempty"`
+	Summary            string            `json:"summary,omitempty"`
+	Classification     string            `json:"classification,omitempty"`
+	RelatedExchangeIDs []string          `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs   []string          `json:"related_output_ids,omitempty"`
+	Reason             string            `json:"reason,omitempty"`
+	Metadata           map[string]string `json:"metadata,omitempty"`
 }
 
 // SecureCellSessionMemberTransitionRequest mutates one session's explicit
@@ -1319,6 +1387,131 @@ func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message 
 	return cloneResult(run.result)
 }
 
+// CreateThreadDecision creates one governed decision object inside an active
+// collaboration thread.
+func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decision SecureCellThreadDecisionRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	if run.result.Status != SecureCellStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: secure cell %q does not permit thread decisions while %s", ErrCellImmutable, run.result.CellID, run.result.Status)
+	}
+
+	threadIdx, thread := findSecureCellThread(run.result.Threads, decision.ThreadID)
+	if thread == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, decision.ThreadID)
+	}
+	sessionID := firstNonEmpty(strings.TrimSpace(decision.SessionID), thread.SessionID)
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, decision.ThreadID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	if thread.Status != SecureCellThreadStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q is not active", ErrThreadNotActive, decision.ThreadID)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(decision.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to create decisions in thread %q", ErrPolicyDenied, actorDID, thread.ID)
+	}
+	title := strings.TrimSpace(decision.Title)
+	if title == "" {
+		return nil, fmt.Errorf("securecells/service: thread decision title is required")
+	}
+	classification, err := secureCellResolveThreadDecisionClassification(*thread, decision.Classification)
+	if err != nil {
+		return nil, err
+	}
+	relatedExchangeIDs, err := secureCellResolveThreadDecisionExchangeRefs(*session, *thread, run.result.SessionExchanges, decision.RelatedExchangeIDs)
+	if err != nil {
+		return nil, err
+	}
+	relatedOutputIDs, err := secureCellResolveThreadDecisionOutputRefs(*session, run.result.SharedOutputs, decision.RelatedOutputIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	item := SecureCellThreadDecision{
+		ID:                 secureCellThreadDecisionID(run.request, *session, *thread, title, actorDID, run.result.Decisions),
+		SessionID:          session.ID,
+		ThreadID:           thread.ID,
+		Title:              title,
+		Summary:            strings.TrimSpace(decision.Summary),
+		Classification:     classification,
+		Status:             SecureCellThreadDecisionStatusOpen,
+		ProposedBy:         actorDID,
+		RelatedExchangeIDs: relatedExchangeIDs,
+		RelatedOutputIDs:   relatedOutputIDs,
+		ProposedAt:         time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
+		Metadata:           cloneStringMap(decision.Metadata),
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "create_thread_decision", lastReceiptHash(run.result), map[string]string{
+		"session_id":                 session.ID,
+		"thread_id":                  thread.ID,
+		"decision_id":                item.ID,
+		"decision_title":             item.Title,
+		"decision_classification":    item.Classification,
+		"decision_related_exchanges": strings.Join(item.RelatedExchangeIDs, ","),
+		"decision_related_outputs":   strings.Join(item.RelatedOutputIDs, ","),
+		"thread_status_before":       string(thread.Status),
+		"session_status_before":      string(session.Status),
+		"cell_status_before":         string(run.result.Status),
+		"transition_reason":          strings.TrimSpace(decision.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	run.result.Decisions = append(run.result.Decisions, item)
+	run.result.Threads[threadIdx].DecisionIDs = append(run.result.Threads[threadIdx].DecisionIDs, item.ID)
+	run.result.Threads[threadIdx].UpdatedAt = item.UpdatedAt
+	run.result.Sessions[sessionIdx].UpdatedAt = item.UpdatedAt
+	run.result.UpdatedAt = item.UpdatedAt
+
+	transition := SecureCellTransition{
+		ID:                   transitionID(run.request, "session_thread_decision_created", item.ID),
+		Action:               "secure_cell.session_thread_decision_created",
+		Actor:                actorDID,
+		TargetType:           "thread_decision",
+		TargetDID:            item.ID,
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		DecisionID:           item.ID,
+		SessionStatusBefore:  session.Status,
+		SessionStatusAfter:   session.Status,
+		ThreadStatusBefore:   thread.Status,
+		ThreadStatusAfter:    thread.Status,
+		DecisionStatusBefore: "",
+		DecisionStatusAfter:  item.Status,
+		CellStatusBefore:     run.result.Status,
+		CellStatusAfter:      run.result.Status,
+		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
+		Reason:               strings.TrimSpace(decision.Reason),
+		Metadata:             cloneStringMap(decision.Metadata),
+		OccurredAt:           receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
 // AddSessionMember adds an active cell participant into one existing secure
 // collaboration session.
 func (s *Service) AddSessionMember(ctx context.Context, cellID string, mutation SecureCellSessionMemberTransitionRequest, sessionID string) (*SecureCellResult, error) {
@@ -1656,6 +1849,132 @@ func (s *Service) transitionThreadState(
 	return cloneResult(run.result)
 }
 
+func (s *Service) transitionThreadDecisionState(
+	ctx context.Context,
+	cellID string,
+	sessionID string,
+	threadID string,
+	decisionID string,
+	lifecycle SecureCellLifecycleRequest,
+	stage string,
+	targetStatus SecureCellThreadDecisionStatus,
+	recordAction string,
+	allowedStatuses ...SecureCellThreadDecisionStatus,
+) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	threadIdx, thread := findSecureCellThread(run.result.Threads, threadID)
+	if thread == nil || thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, threadID)
+	}
+	if !threadStatusAllowed(thread.Status, SecureCellThreadStatusActive, SecureCellThreadStatusQuarantined) {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q cannot mutate decisions while %s", ErrThreadImmutable, threadID, thread.Status)
+	}
+	decisionIdx, decision := findSecureCellThreadDecision(run.result.Decisions, decisionID)
+	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
+	}
+	if !decisionStatusAllowed(decision.Status, allowedStatuses...) {
+		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot transition from %s via %s", ErrDecisionImmutable, decisionID, decision.Status, stage)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to mutate decision %q", ErrPolicyDenied, actorDID, decisionID)
+	}
+
+	transitionMetadata := cloneStringMap(lifecycle.Metadata)
+	resumedStatus := targetStatus
+	if stage == "resume_thread_decision" {
+		resumedStatus = firstNonEmptyDecisionStatus(decision.QuarantinedFromStatus, SecureCellThreadDecisionStatusOpen)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
+		"session_id":             session.ID,
+		"thread_id":              thread.ID,
+		"decision_id":            decision.ID,
+		"decision_title":         decision.Title,
+		"decision_status_before": string(decision.Status),
+		"decision_status_after":  string(resumedStatus),
+		"thread_status_before":   string(thread.Status),
+		"session_status_before":  string(session.Status),
+		"cell_status_before":     string(run.result.Status),
+		"transition_reason":      strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	statusBefore := decision.Status
+	updatedAt := time.Now().UTC()
+	run.result.Decisions[decisionIdx].Status = resumedStatus
+	run.result.Decisions[decisionIdx].UpdatedAt = updatedAt
+	switch stage {
+	case "approve_thread_decision":
+		run.result.Decisions[decisionIdx].ApprovedBy = actorDID
+		run.result.Decisions[decisionIdx].ApprovedAt = &updatedAt
+	case "quarantine_thread_decision":
+		run.result.Decisions[decisionIdx].QuarantinedAt = &updatedAt
+		run.result.Decisions[decisionIdx].ContainedBy = actorDID
+		run.result.Decisions[decisionIdx].QuarantinedFromStatus = statusBefore
+		if transitionMetadata == nil {
+			transitionMetadata = make(map[string]string)
+		}
+		transitionMetadata["containment_mode"] = "thread_decision"
+	case "resume_thread_decision":
+		run.result.Decisions[decisionIdx].QuarantinedAt = nil
+		run.result.Decisions[decisionIdx].ContainedBy = ""
+		run.result.Decisions[decisionIdx].QuarantinedFromStatus = ""
+	case "close_thread_decision":
+		run.result.Decisions[decisionIdx].ClosedBy = actorDID
+		run.result.Decisions[decisionIdx].ClosedAt = &updatedAt
+	}
+	run.result.Threads[threadIdx].UpdatedAt = updatedAt
+	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
+	run.result.UpdatedAt = updatedAt
+
+	transition := SecureCellTransition{
+		ID:                   transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), decision.ID),
+		Action:               recordAction,
+		Actor:                actorDID,
+		TargetType:           "thread_decision",
+		TargetDID:            decision.ID,
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		DecisionID:           decision.ID,
+		SessionStatusBefore:  session.Status,
+		SessionStatusAfter:   session.Status,
+		ThreadStatusBefore:   thread.Status,
+		ThreadStatusAfter:    thread.Status,
+		DecisionStatusBefore: statusBefore,
+		DecisionStatusAfter:  resumedStatus,
+		CellStatusBefore:     run.result.Status,
+		CellStatusAfter:      run.result.Status,
+		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
+		Reason:               strings.TrimSpace(lifecycle.Reason),
+		Metadata:             transitionMetadata,
+		OccurredAt:           receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
 // PauseSession pauses one room without pausing the parent secure cell.
 func (s *Service) PauseSession(ctx context.Context, cellID string, sessionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
 	return s.transitionSessionState(ctx, cellID, sessionID, lifecycle, "pause_session", SecureCellSessionStatusPaused, "secure_cell.session_paused", SecureCellSessionStatusActive)
@@ -1686,6 +2005,26 @@ func (s *Service) ResumeThread(ctx context.Context, cellID string, sessionID str
 // QuarantineThread contains one thread without freezing the whole session.
 func (s *Service) QuarantineThread(ctx context.Context, cellID string, sessionID string, threadID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
 	return s.transitionThreadState(ctx, cellID, sessionID, threadID, lifecycle, "quarantine_session_thread", SecureCellThreadStatusQuarantined, "secure_cell.session_thread_quarantined", SecureCellThreadStatusActive)
+}
+
+// ApproveThreadDecision approves one governed decision object.
+func (s *Service) ApproveThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "approve_thread_decision", SecureCellThreadDecisionStatusApproved, "secure_cell.session_thread_decision_approved", SecureCellThreadDecisionStatusOpen)
+}
+
+// ResumeThreadDecision resumes one quarantined decision back to its last live status.
+func (s *Service) ResumeThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "resume_thread_decision", SecureCellThreadDecisionStatusOpen, "secure_cell.session_thread_decision_resumed", SecureCellThreadDecisionStatusQuarantined)
+}
+
+// QuarantineThreadDecision contains one decision object without freezing the whole thread.
+func (s *Service) QuarantineThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "quarantine_thread_decision", SecureCellThreadDecisionStatusQuarantined, "secure_cell.session_thread_decision_quarantined", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved)
+}
+
+// CloseThreadDecision closes one decision object while preserving its portable evidence.
+func (s *Service) CloseThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "close_thread_decision", SecureCellThreadDecisionStatusClosed, "secure_cell.session_thread_decision_closed", SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined)
 }
 
 // ListCells returns operator-facing summaries for the current secure-cell set.
@@ -2410,6 +2749,11 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("threads_active", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusActive))))
 	ledger.WithMetadata("threads_quarantined", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusQuarantined))))
 	ledger.WithMetadata("threads_closed", fmt.Sprintf("%d", len(threadsByStatus(run.result.Threads, SecureCellThreadStatusClosed))))
+	ledger.WithMetadata("decisions_total", fmt.Sprintf("%d", len(run.result.Decisions)))
+	ledger.WithMetadata("decisions_open", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))))
+	ledger.WithMetadata("decisions_approved", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))))
+	ledger.WithMetadata("decisions_quarantined", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))))
+	ledger.WithMetadata("decisions_closed", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))))
 	ledger.WithMetadata("shared_outputs_total", fmt.Sprintf("%d", len(run.result.SharedOutputs)))
 	ledger.WithMetadata("session_exchanges_total", fmt.Sprintf("%d", len(run.result.SessionExchanges)))
 	if run.result.PausedFromStatus != "" {
@@ -2439,6 +2783,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	threadLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
+	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
+	decisionEvidenceRecordIDs := make([]string, 0, len(run.result.Decisions))
 	sessionExchangeRecordIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangePolicyReceiptIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangeSealIDs := make([]string, 0, len(run.result.SessionExchanges))
@@ -2502,6 +2848,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.ThreadStatusAfter != "" {
 			data["thread_status_after"] = string(transition.ThreadStatusAfter)
 		}
+		if transition.DecisionID != "" {
+			data["decision_id"] = transition.DecisionID
+		}
+		if transition.DecisionStatusBefore != "" {
+			data["decision_status_before"] = string(transition.DecisionStatusBefore)
+		}
+		if transition.DecisionStatusAfter != "" {
+			data["decision_status_after"] = string(transition.DecisionStatusAfter)
+		}
 		if transition.PolicyReceipt != nil {
 			data["policy_receipt_id"] = transition.PolicyReceipt.ID
 			receiptEvidence, err := evidence.NewPolicyReceiptEvidence(transition.PolicyReceipt)
@@ -2554,6 +2909,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.session_thread_started" || transition.Action == "secure_cell.session_thread_closed" || transition.Action == "secure_cell.session_thread_resumed" || transition.Action == "secure_cell.session_thread_quarantined" {
 			threadLifecycleRecordIDs = append(threadLifecycleRecordIDs, recordID)
 		}
+		if transition.Action == "secure_cell.session_thread_decision_created" || transition.Action == "secure_cell.session_thread_decision_approved" || transition.Action == "secure_cell.session_thread_decision_resumed" || transition.Action == "secure_cell.session_thread_decision_closed" || transition.Action == "secure_cell.session_thread_decision_quarantined" {
+			decisionLifecycleRecordIDs = append(decisionLifecycleRecordIDs, recordID)
+		}
 		if transition.Action == "secure_cell.session_shared" && transition.SharedOutputID != "" {
 			sharedOutputTransitions[transition.SharedOutputID] = transition
 		}
@@ -2566,12 +2924,16 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.session_thread_quarantined" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
 		}
+		if transition.Action == "secure_cell.session_thread_decision_quarantined" {
+			containmentRecordIDs = append(containmentRecordIDs, recordID)
+		}
 	}
 
 	for _, session := range run.result.Sessions {
 		recordID := fmt.Sprintf("%s-session-%x", cellID(req), sha256.Sum256([]byte(session.ID)))
 		sessionEvidenceRecordIDs = append(sessionEvidenceRecordIDs, recordID)
 		sessionThreads := threadsForSession(run.result.Threads, session.ID)
+		sessionDecisions := decisionsForSession(run.result.Decisions, session.ID)
 		data := map[string]string{
 			"session_id":          session.ID,
 			"session_name":        session.Name,
@@ -2585,6 +2947,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"exchange_count":      fmt.Sprintf("%d", len(session.ExchangeIDs)),
 			"thread_count":        fmt.Sprintf("%d", len(sessionThreads)),
 			"active_thread_count": fmt.Sprintf("%d", len(threadsByStatus(sessionThreads, SecureCellThreadStatusActive))),
+			"decision_count":      fmt.Sprintf("%d", len(sessionDecisions)),
 		}
 		if session.PausedFromStatus != "" {
 			data["paused_from_status"] = string(session.PausedFromStatus)
@@ -2614,6 +2977,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	for _, thread := range run.result.Threads {
 		recordID := fmt.Sprintf("%s-thread-%x", cellID(req), sha256.Sum256([]byte(thread.ID)))
 		threadEvidenceRecordIDs = append(threadEvidenceRecordIDs, recordID)
+		threadDecisions := decisionsForThread(run.result.Decisions, thread.ID)
 		data := map[string]string{
 			"thread_id":        thread.ID,
 			"session_id":       thread.SessionID,
@@ -2623,6 +2987,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"participant_dids": strings.Join(thread.ParticipantDIDs, ","),
 			"data_classes":     strings.Join(thread.DataClasses, ","),
 			"started_by":       thread.StartedBy,
+			"decision_ids":     strings.Join(thread.DecisionIDs, ","),
+			"decision_count":   fmt.Sprintf("%d", len(threadDecisions)),
 			"exchange_ids":     strings.Join(thread.ExchangeIDs, ","),
 			"exchange_count":   fmt.Sprintf("%d", len(thread.ExchangeIDs)),
 		}
@@ -2644,6 +3010,54 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Action:    "secure_cell.session_thread_state",
 			Actor:     firstNonEmpty(thread.ClosedBy, thread.ContainedBy, thread.StartedBy, req.OwnerIdentity.AgentID()),
 			Timestamp: thread.UpdatedAt.UTC().Format(time.RFC3339Nano),
+			Data:      data,
+		})
+	}
+
+	for _, decision := range run.result.Decisions {
+		recordID := fmt.Sprintf("%s-decision-%x", cellID(req), sha256.Sum256([]byte(decision.ID)))
+		decisionEvidenceRecordIDs = append(decisionEvidenceRecordIDs, recordID)
+		data := map[string]string{
+			"decision_id":             decision.ID,
+			"session_id":              decision.SessionID,
+			"thread_id":               decision.ThreadID,
+			"decision_title":          decision.Title,
+			"decision_status":         string(decision.Status),
+			"decision_classification": decision.Classification,
+			"proposed_by":             decision.ProposedBy,
+			"related_exchange_ids":    strings.Join(decision.RelatedExchangeIDs, ","),
+			"related_output_ids":      strings.Join(decision.RelatedOutputIDs, ","),
+		}
+		if decision.Summary != "" {
+			data["decision_summary"] = decision.Summary
+		}
+		if decision.QuarantinedFromStatus != "" {
+			data["quarantined_from_status"] = string(decision.QuarantinedFromStatus)
+		}
+		if decision.ApprovedBy != "" {
+			data["approved_by"] = decision.ApprovedBy
+		}
+		if decision.ApprovedAt != nil {
+			data["approved_at"] = decision.ApprovedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if decision.QuarantinedAt != nil {
+			data["quarantined_at"] = decision.QuarantinedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if decision.ContainedBy != "" {
+			data["contained_by"] = decision.ContainedBy
+		}
+		if decision.ClosedBy != "" {
+			data["closed_by"] = decision.ClosedBy
+		}
+		if decision.ClosedAt != nil {
+			data["closed_at"] = decision.ClosedAt.UTC().Format(time.RFC3339Nano)
+		}
+		ledger.AddRecord(evidence.Record{
+			ID:        recordID,
+			Type:      "governance",
+			Action:    "secure_cell.thread_decision_state",
+			Actor:     firstNonEmpty(decision.ClosedBy, decision.ContainedBy, decision.ApprovedBy, decision.ProposedBy, req.OwnerIdentity.AgentID()),
+			Timestamp: decision.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
 	}
@@ -2917,6 +3331,26 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			return nil, err
 		}
 	}
+	if len(decisionEvidenceRecordIDs) > 0 || len(decisionLifecycleRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-DECIDE-01",
+			ControlName: "Governed Thread Decisions",
+			Description: "Thread-level decisions are created, approved, contained, resumed, and closed under explicit policy-bound lifecycle evidence.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append(append([]string(nil), decisionEvidenceRecordIDs...), decisionLifecycleRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"decisions_total":       fmt.Sprintf("%d", len(run.result.Decisions)),
+				"decisions_open":        fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))),
+				"decisions_approved":    fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))),
+				"decisions_quarantined": fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))),
+				"decisions_closed":      fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
 	if len(sessionExchangeRecordIDs) > 0 {
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-MSG-01",
@@ -3081,12 +3515,15 @@ func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellT
 		TargetDID:                   transition.TargetDID,
 		SessionID:                   transition.SessionID,
 		ThreadID:                    transition.ThreadID,
+		DecisionID:                  transition.DecisionID,
 		SharedOutputID:              transition.SharedOutputID,
 		SessionExchangeID:           transition.SessionExchangeID,
 		SessionStatusBefore:         transition.SessionStatusBefore,
 		SessionStatusAfter:          transition.SessionStatusAfter,
 		ThreadStatusBefore:          transition.ThreadStatusBefore,
 		ThreadStatusAfter:           transition.ThreadStatusAfter,
+		DecisionStatusBefore:        transition.DecisionStatusBefore,
+		DecisionStatusAfter:         transition.DecisionStatusAfter,
 		CellStatus:                  run.result.Status,
 		CellStatusBefore:            transition.CellStatusBefore,
 		CellStatusAfter:             transition.CellStatusAfter,
@@ -3099,6 +3536,10 @@ func (s *Service) buildLifecycleEvent(run *secureCellRun, transition SecureCellT
 		ActiveSessionCount:          len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive)),
 		ThreadCount:                 len(run.result.Threads),
 		ActiveThreadCount:           len(threadsByStatus(run.result.Threads, SecureCellThreadStatusActive)),
+		DecisionCount:               len(run.result.Decisions),
+		OpenDecisionCount:           len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen)),
+		ApprovedDecisionCount:       len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved)),
+		QuarantinedDecisionCount:    len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined)),
 		SharedOutputCount:           len(run.result.SharedOutputs),
 		SessionExchangeCount:        len(run.result.SessionExchanges),
 		ActiveParticipantCount:      len(participantsByStatus(run.result.Participants, SecureCellParticipantStatusActive)),
@@ -3504,11 +3945,11 @@ func transitionRecordType(action string) string {
 		return "governance"
 	case "secure_cell.member_admitted":
 		return "trust"
-	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed":
+	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
 	case "secure_cell.session_shared", "secure_cell.session_exchange", "secure_cell.session_thread_message":
 		return "exchange"
-	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined":
+	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined", "secure_cell.session_thread_decision_quarantined":
 		return "containment"
 	default:
 		return "governance"
@@ -3527,6 +3968,16 @@ func transitionStageForAction(action string) string {
 		return "start_session_thread"
 	case "secure_cell.session_thread_message":
 		return "message_session_thread"
+	case "secure_cell.session_thread_decision_created":
+		return "create_thread_decision"
+	case "secure_cell.session_thread_decision_approved":
+		return "approve_thread_decision"
+	case "secure_cell.session_thread_decision_resumed":
+		return "resume_thread_decision"
+	case "secure_cell.session_thread_decision_quarantined":
+		return "quarantine_thread_decision"
+	case "secure_cell.session_thread_decision_closed":
+		return "close_thread_decision"
 	case "secure_cell.session_exchange":
 		return "exchange_session_message"
 	case "secure_cell.session_shared":
@@ -3620,6 +4071,18 @@ func threadStatusAllowed(current SecureCellThreadStatus, allowed ...SecureCellTh
 	return false
 }
 
+func decisionStatusAllowed(current SecureCellThreadDecisionStatus, allowed ...SecureCellThreadDecisionStatus) bool {
+	if len(allowed) == 0 {
+		return true
+	}
+	for _, status := range allowed {
+		if current == status {
+			return true
+		}
+	}
+	return false
+}
+
 func participantStateForResult(result *SecureCellResult, participantDID string) (SecureCellParticipantState, bool) {
 	if result == nil {
 		return SecureCellParticipantState{}, false
@@ -3647,6 +4110,16 @@ func findSecureCellThread(threads []SecureCellSessionThread, threadID string) (i
 	for idx := range threads {
 		if strings.TrimSpace(threads[idx].ID) == threadID {
 			return idx, &threads[idx]
+		}
+	}
+	return -1, nil
+}
+
+func findSecureCellThreadDecision(decisions []SecureCellThreadDecision, decisionID string) (int, *SecureCellThreadDecision) {
+	decisionID = strings.TrimSpace(decisionID)
+	for idx := range decisions {
+		if strings.TrimSpace(decisions[idx].ID) == decisionID {
+			return idx, &decisions[idx]
 		}
 	}
 	return -1, nil
@@ -3688,6 +4161,44 @@ func threadsForSession(threads []SecureCellSessionThread, sessionID string) []Se
 	for _, thread := range threads {
 		if strings.TrimSpace(thread.SessionID) == sessionID {
 			filtered = append(filtered, thread)
+		}
+	}
+	return filtered
+}
+
+func decisionsByStatus(decisions []SecureCellThreadDecision, status SecureCellThreadDecisionStatus) []SecureCellThreadDecision {
+	filtered := make([]SecureCellThreadDecision, 0, len(decisions))
+	for _, decision := range decisions {
+		if decision.Status == status {
+			filtered = append(filtered, decision)
+		}
+	}
+	return filtered
+}
+
+func decisionsForSession(decisions []SecureCellThreadDecision, sessionID string) []SecureCellThreadDecision {
+	sessionID = strings.TrimSpace(sessionID)
+	if sessionID == "" {
+		return nil
+	}
+	filtered := make([]SecureCellThreadDecision, 0, len(decisions))
+	for _, decision := range decisions {
+		if strings.TrimSpace(decision.SessionID) == sessionID {
+			filtered = append(filtered, decision)
+		}
+	}
+	return filtered
+}
+
+func decisionsForThread(decisions []SecureCellThreadDecision, threadID string) []SecureCellThreadDecision {
+	threadID = strings.TrimSpace(threadID)
+	if threadID == "" {
+		return nil
+	}
+	filtered := make([]SecureCellThreadDecision, 0, len(decisions))
+	for _, decision := range decisions {
+		if strings.TrimSpace(decision.ThreadID) == threadID {
+			filtered = append(filtered, decision)
 		}
 	}
 	return filtered
@@ -3930,6 +4441,10 @@ func secureCellResolveThreadClassification(thread SecureCellSessionThread, class
 	return "", fmt.Errorf("securecells/service: thread classification %q is not permitted in thread %q", classification, thread.ID)
 }
 
+func secureCellResolveThreadDecisionClassification(thread SecureCellSessionThread, classification string) (string, error) {
+	return secureCellResolveThreadClassification(thread, classification)
+}
+
 func secureCellResolveThreadRecipients(states []SecureCellParticipantState, thread SecureCellSessionThread, requested []string) ([]string, error) {
 	threadSet := make(map[string]struct{}, len(thread.ParticipantDIDs))
 	activeSet := make(map[string]struct{}, len(states))
@@ -3954,6 +4469,49 @@ func secureCellResolveThreadRecipients(states []SecureCellParticipantState, thre
 		}
 		if _, ok := activeSet[participantDID]; !ok {
 			return nil, fmt.Errorf("securecells/service: participant %q is not active in thread %q", participantDID, thread.ID)
+		}
+	}
+	return requested, nil
+}
+
+func secureCellResolveThreadDecisionExchangeRefs(session SecureCellSession, thread SecureCellSessionThread, exchanges []SecureCellSessionExchange, requested []string) ([]string, error) {
+	requested = uniqueTrimmedStrings(requested)
+	if len(requested) == 0 {
+		return nil, nil
+	}
+	allowed := make(map[string]struct{}, len(exchanges))
+	for _, exchange := range exchanges {
+		if strings.TrimSpace(exchange.SessionID) != strings.TrimSpace(session.ID) {
+			continue
+		}
+		if strings.TrimSpace(exchange.ThreadID) != strings.TrimSpace(thread.ID) {
+			continue
+		}
+		allowed[strings.TrimSpace(exchange.ID)] = struct{}{}
+	}
+	for _, exchangeID := range requested {
+		if _, ok := allowed[exchangeID]; !ok {
+			return nil, fmt.Errorf("securecells/service: thread exchange %q is not part of thread %q", exchangeID, thread.ID)
+		}
+	}
+	return requested, nil
+}
+
+func secureCellResolveThreadDecisionOutputRefs(session SecureCellSession, outputs []SecureCellSharedOutput, requested []string) ([]string, error) {
+	requested = uniqueTrimmedStrings(requested)
+	if len(requested) == 0 {
+		return nil, nil
+	}
+	allowed := make(map[string]struct{}, len(outputs))
+	for _, output := range outputs {
+		if strings.TrimSpace(output.SessionID) != strings.TrimSpace(session.ID) {
+			continue
+		}
+		allowed[strings.TrimSpace(output.ID)] = struct{}{}
+	}
+	for _, outputID := range requested {
+		if _, ok := allowed[outputID]; !ok {
+			return nil, fmt.Errorf("securecells/service: shared output %q is not part of session %q", outputID, session.ID)
 		}
 	}
 	return requested, nil
@@ -4052,6 +4610,36 @@ func secureCellThreadMessageID(req SecureCellRequest, session SecureCellSession,
 		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	return fmt.Sprintf("thread-message-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
+func secureCellThreadDecisionID(req SecureCellRequest, session SecureCellSession, thread SecureCellSessionThread, title, actorDID string, existing []SecureCellThreadDecision) string {
+	fingerprint := struct {
+		CellID    string `json:"cell_id"`
+		SessionID string `json:"session_id"`
+		ThreadID  string `json:"thread_id"`
+		Sequence  int    `json:"sequence"`
+		Title     string `json:"title"`
+		ActorDID  string `json:"actor_did"`
+		Timestamp string `json:"timestamp"`
+	}{
+		CellID:    cellID(req),
+		SessionID: session.ID,
+		ThreadID:  thread.ID,
+		Sequence:  len(existing) + 1,
+		Title:     strings.TrimSpace(title),
+		ActorDID:  strings.TrimSpace(actorDID),
+		Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	return fmt.Sprintf("thread-decision-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
+func firstNonEmptyDecisionStatus(values ...SecureCellThreadDecisionStatus) SecureCellThreadDecisionStatus {
+	for _, value := range values {
+		if strings.TrimSpace(string(value)) != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func secureCellResolveOutputIntegrityHash(share SecureCellSessionShareRequest, outputID, sessionID, actorDID string, sharedWith []string) string {
@@ -4214,6 +4802,11 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellSessionStartAction,
 				secureCellSessionThreadStartAction,
 				secureCellSessionThreadMessageAction,
+				secureCellSessionThreadDecisionCreateAction,
+				secureCellSessionThreadDecisionApproveAction,
+				secureCellSessionThreadDecisionResumeAction,
+				secureCellSessionThreadDecisionQuarantineAction,
+				secureCellSessionThreadDecisionCloseAction,
 				secureCellSessionExchangeAction,
 				secureCellSessionShareAction,
 				secureCellSessionCloseAction,
@@ -4307,6 +4900,51 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_session_thread_message_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "message_session_thread"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_create_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "create_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_approve_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "approve_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_resume_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "resume_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_quarantine_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "quarantine_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_close_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "close_thread_decision"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -4474,6 +5112,16 @@ func actionForStage(stage string) string {
 		return secureCellSessionThreadStartAction
 	case "message_session_thread":
 		return secureCellSessionThreadMessageAction
+	case "create_thread_decision":
+		return secureCellSessionThreadDecisionCreateAction
+	case "approve_thread_decision":
+		return secureCellSessionThreadDecisionApproveAction
+	case "resume_thread_decision":
+		return secureCellSessionThreadDecisionResumeAction
+	case "quarantine_thread_decision":
+		return secureCellSessionThreadDecisionQuarantineAction
+	case "close_thread_decision":
+		return secureCellSessionThreadDecisionCloseAction
 	case "exchange_session_message":
 		return secureCellSessionExchangeAction
 	case "share_session_output":

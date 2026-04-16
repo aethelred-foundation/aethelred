@@ -1036,6 +1036,156 @@ func TestService_SessionThreadLifecycleAndExchangeContainment(t *testing.T) {
 	}
 }
 
+func TestService_ThreadDecisionLifecyclePreservesEvidence(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Decision Cell",
+		Purpose:       "thread decision lifecycle",
+		Resource:      "cell:thread-decision-governance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Decision Room",
+		Purpose:         "decision session",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"confidential", "decisioning"},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Approval Thread",
+		Purpose:         "decision workstream",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	messaged, err := service.PostThreadMessage(ctx, result.CellID, SecureCellThreadMessageRequest{
+		SessionID:      session.ID,
+		ThreadID:       thread.ID,
+		ActorDID:       participantA.AgentID(),
+		Name:           "Decision Input",
+		ExchangeType:   "message",
+		Classification: "decisioning",
+		Summary:        "risk threshold breached",
+		Recipients:     []string{participantA.AgentID()},
+		Reason:         "supporting evidence submitted",
+	})
+	if err != nil {
+		t.Fatalf("PostThreadMessage failed: %v", err)
+	}
+	exchange := messaged.SessionExchanges[0]
+
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:          session.ID,
+		ThreadID:           thread.ID,
+		ActorDID:           participantA.AgentID(),
+		Title:              "Freeze Counterparty Exposure",
+		Summary:            "breach requires temporary trading freeze",
+		Classification:     "decisioning",
+		RelatedExchangeIDs: []string{exchange.ID},
+		Reason:             "decision proposed",
+		Metadata:           map[string]string{"ticket": "SC-DECIDE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+	if decision.Status != SecureCellThreadDecisionStatusOpen || len(decision.RelatedExchangeIDs) != 1 || decision.RelatedExchangeIDs[0] != exchange.ID {
+		t.Fatalf("expected open linked decision, got %+v", decision)
+	}
+	thread, ok = mustSecureCellThread(t, created, thread.ID)
+	if !ok || len(thread.DecisionIDs) != 1 || thread.DecisionIDs[0] != decision.ID {
+		t.Fatalf("expected thread decision linkage, got %+v", thread)
+	}
+	if !controlLedgerHasControl(created.ControlLedger, "CELL-DECIDE-01") {
+		t.Fatalf("expected decision control in ledger, got %+v", created.ControlLedger.Controls)
+	}
+
+	approved, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "decision approved",
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, approved, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusApproved || decision.ApprovedAt == nil {
+		t.Fatalf("expected approved decision, got %+v", decision)
+	}
+
+	quarantined, err := service.QuarantineThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "decision contained",
+	})
+	if err != nil {
+		t.Fatalf("QuarantineThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, quarantined, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusQuarantined || decision.QuarantinedAt == nil {
+		t.Fatalf("expected quarantined decision, got %+v", decision)
+	}
+
+	resumed, err := service.ResumeThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "decision restored",
+	})
+	if err != nil {
+		t.Fatalf("ResumeThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, resumed, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusApproved {
+		t.Fatalf("expected approved decision after resume, got %+v", decision)
+	}
+
+	closed, err := service.CloseThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "decision finalized",
+	})
+	if err != nil {
+		t.Fatalf("CloseThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, closed, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusClosed || decision.ClosedAt == nil {
+		t.Fatalf("expected closed decision, got %+v", decision)
+	}
+	last := closed.Transitions[len(closed.Transitions)-1]
+	if last.Action != "secure_cell.session_thread_decision_closed" || last.DecisionID != decision.ID {
+		t.Fatalf("expected thread decision close transition, got %+v", last)
+	}
+}
+
 func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	t.Parallel()
 
@@ -1500,4 +1650,17 @@ func mustSecureCellThread(t *testing.T, result *SecureCellResult, threadID strin
 		}
 	}
 	return SecureCellSessionThread{}, false
+}
+
+func mustSecureCellDecision(t *testing.T, result *SecureCellResult, decisionID string) (SecureCellThreadDecision, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, decision := range result.Decisions {
+		if decision.ID == decisionID {
+			return decision, true
+		}
+	}
+	return SecureCellThreadDecision{}, false
 }

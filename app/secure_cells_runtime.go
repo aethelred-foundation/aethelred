@@ -79,6 +79,7 @@ type secureCellAuditEventFilter struct {
 	CellID         string
 	ParticipantDID string
 	ThreadID       string
+	DecisionID     string
 	Action         string
 	Actor          string
 	SinceSequence  uint64
@@ -98,6 +99,7 @@ type secureCellAuditEventRecord struct {
 	EventID           string                   `json:"event_id,omitempty"`
 	ParticipantDID    string                   `json:"participant_did,omitempty"`
 	ThreadID          string                   `json:"thread_id,omitempty"`
+	DecisionID        string                   `json:"decision_id,omitempty"`
 	CellStatus        string                   `json:"cell_status,omitempty"`
 	ControlLedgerID   string                   `json:"control_ledger_id,omitempty"`
 	PortablePackageID string                   `json:"portable_package_hash,omitempty"`
@@ -576,7 +578,7 @@ func parseSecureCellWebhookEndpoints(values []string) []string {
 
 func secureCellAuditClassification(action string) (pouwkeeper.AuditCategory, pouwkeeper.AuditSeverity) {
 	switch action {
-	case "secure_cell.member_quarantined", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined":
+	case "secure_cell.member_quarantined", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined", "secure_cell.session_thread_decision_quarantined":
 		return pouwkeeper.AuditCategorySecurity, pouwkeeper.AuditSeverityWarning
 	case "secure_cell.member_revoked":
 		return pouwkeeper.AuditCategorySecurity, pouwkeeper.AuditSeverityCritical
@@ -604,6 +606,9 @@ func secureCellAuditDetails(event securecellsintegration.SecureCellLifecycleEven
 	}
 	if event.ThreadID != "" {
 		details["thread_id"] = event.ThreadID
+	}
+	if event.DecisionID != "" {
+		details["decision_id"] = event.DecisionID
 	}
 	if event.SessionExchangeID != "" {
 		details["session_exchange_id"] = event.SessionExchangeID
@@ -651,6 +656,9 @@ func listSecureCellAuditEvents(app *AethelredApp, filter secureCellAuditEventFil
 		if filter.ThreadID != "" && !strings.EqualFold(strings.TrimSpace(record.Details["thread_id"]), strings.TrimSpace(filter.ThreadID)) {
 			continue
 		}
+		if filter.DecisionID != "" && !strings.EqualFold(strings.TrimSpace(record.Details["decision_id"]), strings.TrimSpace(filter.DecisionID)) {
+			continue
+		}
 		if filter.Action != "" && !strings.EqualFold(strings.TrimSpace(record.Action), strings.TrimSpace(filter.Action)) {
 			continue
 		}
@@ -670,6 +678,7 @@ func listSecureCellAuditEvents(app *AethelredApp, filter secureCellAuditEventFil
 			EventID:           record.Details["event_id"],
 			ParticipantDID:    record.Details["participant_did"],
 			ThreadID:          record.Details["thread_id"],
+			DecisionID:        record.Details["decision_id"],
 			CellStatus:        record.Details["cell_status"],
 			ControlLedgerID:   record.Details["control_ledger_id"],
 			PortablePackageID: record.Details["portable_package_hash"],
