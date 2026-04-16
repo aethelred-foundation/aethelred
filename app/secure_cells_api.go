@@ -223,6 +223,25 @@ type secureCellBulkMutationResponse struct {
 	Result *securecellsintegration.SecureCellBulkMemberTransitionResult `json:"result,omitempty"`
 }
 
+type secureCellDecisionListResponse struct {
+	Items []securecellsintegration.SecureCellThreadDecision `json:"items"`
+}
+
+type secureCellDecisionQueryResponse struct {
+	Result *securecellsintegration.SecureCellThreadDecision `json:"result,omitempty"`
+}
+
+type secureCellDecisionDeliberationResponse struct {
+	Result           *securecellsintegration.SecureCellThreadDecision         `json:"result,omitempty"`
+	DecisionOutcomes []securecellsintegration.SecureCellThreadDecisionOutcome `json:"decision_outcomes,omitempty"`
+	SharedOutputs    []securecellsintegration.SecureCellSharedOutput          `json:"shared_outputs,omitempty"`
+	SessionExchanges []securecellsintegration.SecureCellSessionExchange       `json:"session_exchanges,omitempty"`
+}
+
+type secureCellDecisionOutcomeListResponse struct {
+	Items []securecellsintegration.SecureCellThreadDecisionOutcome `json:"items"`
+}
+
 type secureCellEventListResponse struct {
 	Items []secureCellAuditEventRecord `json:"items"`
 }
@@ -509,6 +528,82 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if strings.HasSuffix(r.URL.Path, "/status") && strings.Contains(r.URL.Path, "/decisions/") {
+			cellID, sessionID, threadID, decisionID, err := parseSecureCellSessionThreadDecisionLookupPath(r.URL.Path, "/status")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			decision, ok := secureCellDecisionFromResult(result, sessionID, threadID, decisionID)
+			if !ok {
+				writeSecureCellAPIError(w, http.StatusNotFound, "secure cell decision not found")
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellDecisionQueryResponse{Result: decision})
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/deliberation") && strings.Contains(r.URL.Path, "/decisions/") {
+			cellID, sessionID, threadID, decisionID, err := parseSecureCellSessionThreadDecisionLookupPath(r.URL.Path, "/deliberation")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			response, ok := secureCellDecisionDeliberationProjection(result, sessionID, threadID, decisionID)
+			if !ok {
+				writeSecureCellAPIError(w, http.StatusNotFound, "secure cell decision not found")
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, response)
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/outcomes") && strings.Contains(r.URL.Path, "/decisions/") {
+			cellID, sessionID, threadID, decisionID, err := parseSecureCellSessionThreadDecisionLookupPath(r.URL.Path, "/outcomes")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			decision, ok := secureCellDecisionFromResult(result, sessionID, threadID, decisionID)
+			if !ok {
+				writeSecureCellAPIError(w, http.StatusNotFound, "secure cell decision not found")
+				return
+			}
+			outcomes := secureCellDecisionOutcomesForDecision(result, decision)
+			writeSecureCellJSON(w, http.StatusOK, secureCellDecisionOutcomeListResponse{Items: outcomes})
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/decisions") && strings.Contains(r.URL.Path, "/threads/") {
+			cellID, sessionID, threadID, err := parseSecureCellSessionThreadActionPath(r.URL.Path, "/decisions")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellDecisionListResponse{Items: secureCellDecisionsForThread(result, sessionID, threadID)})
+			return
+		}
+
 		if strings.HasSuffix(r.URL.Path, "/artifacts") {
 			cellID, err := parseSecureCellID(r.URL.Path, "/artifacts")
 			if err != nil {
@@ -629,16 +724,20 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			var result *securecellsintegration.SecureCellResult
 			switch action {
 			case "vote":
+				if req.ApprovalThreshold != nil && *req.ApprovalThreshold <= 0 {
+					writeSecureCellAPIError(w, http.StatusBadRequest, "approval_threshold must be greater than zero")
+					return
+				}
 				voteChoice := strings.TrimSpace(firstNonEmpty(req.VoteChoice, req.ApprovalVote))
 				if voteChoice == "" {
 					voteChoice = "approve"
 				}
-				if !strings.EqualFold(voteChoice, "approve") {
-					writeSecureCellAPIError(w, http.StatusNotImplemented, "only approve votes are supported until the secure cell service exposes alternative vote handling")
+				if !secureCellDecisionVoteChoiceAllowed(voteChoice) {
+					writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell decision vote choice")
 					return
 				}
 				lifecycle.Metadata = secureCellDecisionVoteMetadata(lifecycle.Metadata, req.ApprovalThreshold, voteChoice, req.VoteRole, req.Comment)
-				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
+				result, err = app.secureCellService.VoteThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle, securecellsintegration.SecureCellThreadDecisionVoteChoice(strings.ToLower(voteChoice)))
 			case "approve":
 				if req.ApprovalThreshold != nil && *req.ApprovalThreshold <= 0 {
 					writeSecureCellAPIError(w, http.StatusBadRequest, "approval_threshold must be greater than zero")
@@ -647,6 +746,10 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				voteChoice := strings.TrimSpace(firstNonEmpty(req.VoteChoice, req.ApprovalVote))
 				if voteChoice == "" {
 					voteChoice = "approve"
+				}
+				if !strings.EqualFold(voteChoice, "approve") {
+					writeSecureCellAPIError(w, http.StatusBadRequest, "approve route only accepts approve votes")
+					return
 				}
 				lifecycle.Metadata = secureCellDecisionVoteMetadata(lifecycle.Metadata, req.ApprovalThreshold, voteChoice, req.VoteRole, req.Comment)
 				result, err = app.secureCellService.ApproveThreadDecision(r.Context(), cellID, sessionID, threadID, decisionID, lifecycle)
@@ -1361,6 +1464,118 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	return projection
 }
 
+func secureCellDecisionVoteChoiceAllowed(raw string) bool {
+	switch securecellsintegration.SecureCellThreadDecisionVoteChoice(strings.ToLower(strings.TrimSpace(raw))) {
+	case securecellsintegration.SecureCellThreadDecisionVoteChoiceApprove,
+		securecellsintegration.SecureCellThreadDecisionVoteChoiceReject,
+		securecellsintegration.SecureCellThreadDecisionVoteChoiceAbstain:
+		return true
+	default:
+		return false
+	}
+}
+
+func secureCellDecisionFromResult(result *securecellsintegration.SecureCellResult, sessionID string, threadID string, decisionID string) (*securecellsintegration.SecureCellThreadDecision, bool) {
+	if result == nil {
+		return nil, false
+	}
+	for _, decision := range result.Decisions {
+		if strings.TrimSpace(decision.SessionID) != strings.TrimSpace(sessionID) {
+			continue
+		}
+		if strings.TrimSpace(decision.ThreadID) != strings.TrimSpace(threadID) {
+			continue
+		}
+		if strings.TrimSpace(decision.ID) != strings.TrimSpace(decisionID) {
+			continue
+		}
+		clone := decision
+		return &clone, true
+	}
+	return nil, false
+}
+
+func secureCellDecisionsForThread(result *securecellsintegration.SecureCellResult, sessionID string, threadID string) []securecellsintegration.SecureCellThreadDecision {
+	if result == nil {
+		return nil
+	}
+	items := make([]securecellsintegration.SecureCellThreadDecision, 0)
+	for _, decision := range result.Decisions {
+		if strings.TrimSpace(decision.SessionID) != strings.TrimSpace(sessionID) {
+			continue
+		}
+		if strings.TrimSpace(decision.ThreadID) != strings.TrimSpace(threadID) {
+			continue
+		}
+		items = append(items, decision)
+	}
+	return items
+}
+
+func secureCellDecisionDeliberationProjection(result *securecellsintegration.SecureCellResult, sessionID string, threadID string, decisionID string) (secureCellDecisionDeliberationResponse, bool) {
+	decision, ok := secureCellDecisionFromResult(result, sessionID, threadID, decisionID)
+	if !ok {
+		return secureCellDecisionDeliberationResponse{}, false
+	}
+	return secureCellDecisionDeliberationResponse{
+		Result:           decision,
+		DecisionOutcomes: secureCellDecisionOutcomesForDecision(result, decision),
+		SharedOutputs:    secureCellSharedOutputsForDecision(result, decision),
+		SessionExchanges: secureCellSessionExchangesForDecision(result, decision),
+	}, true
+}
+
+func secureCellDecisionOutcomesForDecision(result *securecellsintegration.SecureCellResult, decision *securecellsintegration.SecureCellThreadDecision) []securecellsintegration.SecureCellThreadDecisionOutcome {
+	if result == nil || decision == nil {
+		return nil
+	}
+	decisionID := strings.TrimSpace(decision.ID)
+	if decisionID == "" {
+		return nil
+	}
+	items := make([]securecellsintegration.SecureCellThreadDecisionOutcome, 0)
+	for _, outcome := range result.DecisionOutcomes {
+		if strings.TrimSpace(outcome.DecisionID) == decisionID {
+			items = append(items, outcome)
+		}
+	}
+	return items
+}
+
+func secureCellSharedOutputsForDecision(result *securecellsintegration.SecureCellResult, decision *securecellsintegration.SecureCellThreadDecision) []securecellsintegration.SecureCellSharedOutput {
+	if result == nil || decision == nil {
+		return nil
+	}
+	decisionID := strings.TrimSpace(decision.ID)
+	if decisionID == "" {
+		return nil
+	}
+	items := make([]securecellsintegration.SecureCellSharedOutput, 0)
+	for _, output := range result.SharedOutputs {
+		if strings.TrimSpace(output.ContainmentDecisionID) == decisionID || containsString(decision.RelatedOutputIDs, output.ID) {
+			items = append(items, output)
+		}
+	}
+	return items
+}
+
+func secureCellSessionExchangesForDecision(result *securecellsintegration.SecureCellResult, decision *securecellsintegration.SecureCellThreadDecision) []securecellsintegration.SecureCellSessionExchange {
+	if result == nil || decision == nil {
+		return nil
+	}
+	decisionID := strings.TrimSpace(decision.ID)
+	if decisionID == "" {
+		return nil
+	}
+	items := make([]securecellsintegration.SecureCellSessionExchange, 0)
+	for _, exchange := range result.SessionExchanges {
+		if strings.TrimSpace(exchange.ContainmentDecisionID) == decisionID || containsString(decision.RelatedExchangeIDs, exchange.ID) {
+			items = append(items, exchange)
+		}
+	}
+	return items
+}
+
 func derefSecureCellTime(in *time.Time) time.Time {
 	if in == nil {
 		return time.Time{}
@@ -1709,6 +1924,31 @@ func parseSecureCellSessionThreadDecisionOutcomeBundleFetchPath(path string) (ce
 	return cellID, sessionID, threadID, decisionID, nil
 }
 
+func parseSecureCellSessionThreadDecisionLookupPath(path string, suffix string) (cellID string, sessionID string, threadID string, decisionID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", "", "", fmt.Errorf("invalid secure cell thread decision path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 7 || parts[1] != "sessions" || parts[3] != "threads" || parts[5] != "decisions" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	sessionID = strings.TrimSpace(parts[2])
+	threadID = strings.TrimSpace(parts[4])
+	decisionID = strings.TrimSpace(parts[6])
+	if cellID == "" || sessionID == "" || threadID == "" || decisionID == "" {
+		return "", "", "", "", fmt.Errorf("invalid secure cell thread decision path")
+	}
+	return cellID, sessionID, threadID, decisionID, nil
+}
+
 func cloneStringMap(values map[string]string) map[string]string {
 	if len(values) == 0 {
 		return nil
@@ -1718,6 +1958,19 @@ func cloneStringMap(values map[string]string) map[string]string {
 		out[key] = value
 	}
 	return out
+}
+
+func containsString(values []string, target string) bool {
+	target = strings.TrimSpace(target)
+	if target == "" {
+		return false
+	}
+	for _, value := range values {
+		if strings.TrimSpace(value) == target {
+			return true
+		}
+	}
+	return false
 }
 
 func secureCellDecisionMutationMetadata(metadata map[string]string, decisionID, comment string, relatedOutputIDs []string, approvalThreshold *int, approvalVote string) map[string]string {

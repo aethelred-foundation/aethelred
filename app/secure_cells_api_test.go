@@ -1197,7 +1197,7 @@ func TestSecureCellsHandlers_BearerThreadDecisionVoteDelegationAndOutcomeBundleR
 	threadID := threadStartResp.Result.Threads[0].ID
 
 	threshold := 2
-	decisionCreateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithOptions(t, owner, nil, nil, nil, &threshold, []string{owner.AgentID(), participantA.AgentID()})))
+	decisionCreateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithOptions(t, owner, nil, nil, nil, &threshold, []string{owner.AgentID(), participantA.AgentID(), participantB.AgentID()})))
 	decisionCreateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
 	decisionCreateRec := httptest.NewRecorder()
 	app.SecureCellsMutateHandler().ServeHTTP(decisionCreateRec, decisionCreateReq)
@@ -1299,6 +1299,189 @@ func TestSecureCellsHandlers_BearerThreadDecisionVoteDelegationAndOutcomeBundleR
 	}
 	if outcomeBundleFetchResp.Result == nil || len(outcomeBundleFetchResp.Result.DecisionOutcomes) == 0 {
 		t.Fatalf("expected fetched decision outcome bundle in result, got %+v", outcomeBundleFetchResp.Result)
+	}
+}
+
+func TestSecureCellsHandlers_BearerThreadDecisionRejectAbstainAndQueryRoutes(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{43}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA, participantB}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{participantA.AgentID(), participantB.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{participantA.AgentID(), participantB.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	threshold := 2
+	decisionCreateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithOptions(t, owner, nil, nil, nil, &threshold, []string{owner.AgentID(), participantA.AgentID(), participantB.AgentID()})))
+	decisionCreateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	decisionCreateRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(decisionCreateRec, decisionCreateReq)
+	if decisionCreateRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, decisionCreateRec.Code, decisionCreateRec.Body.String())
+	}
+
+	var decisionCreateResp secureCellResponse
+	if err := json.Unmarshal(decisionCreateRec.Body.Bytes(), &decisionCreateResp); err != nil {
+		t.Fatalf("unmarshal decision create response: %v", err)
+	}
+	if decisionCreateResp.Result == nil || len(decisionCreateResp.Result.Decisions) != 1 {
+		t.Fatalf("expected one created decision, got %+v", decisionCreateResp.Result)
+	}
+	decisionID := decisionCreateResp.Result.Decisions[0].ID
+
+	abstainReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/vote", bytes.NewReader(mustMarshalSecureCellDecisionVoteRequest(t, participantA, "abstain deliberation", nil, nil, &threshold, "abstain", "secondary_reviewer", "abstain pending escalation", map[string]string{"ticket": "SC-THREAD-VOTE-ABSTAIN"})))
+	abstainReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	abstainRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(abstainRec, abstainReq)
+	if abstainRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, abstainRec.Code, abstainRec.Body.String())
+	}
+
+	var abstainResp secureCellResponse
+	if err := json.Unmarshal(abstainRec.Body.Bytes(), &abstainResp); err != nil {
+		t.Fatalf("unmarshal abstain response: %v", err)
+	}
+	if abstainResp.Result == nil || abstainResp.Result.Decisions[0].Status != securecellsintegration.SecureCellThreadDecisionStatusOpen || len(abstainResp.Result.Decisions[0].ApprovalVotes) != 1 {
+		t.Fatalf("expected open decision with one abstain vote, got %+v", abstainResp.Result)
+	}
+	if abstainResp.Result.Decisions[0].ApprovalVotes[0].Choice != securecellsintegration.SecureCellThreadDecisionVoteChoiceAbstain {
+		t.Fatalf("expected persisted abstain vote, got %+v", abstainResp.Result.Decisions[0].ApprovalVotes)
+	}
+
+	rejectReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/vote", bytes.NewReader(mustMarshalSecureCellDecisionVoteRequest(t, owner, "reject deliberation", nil, nil, &threshold, "reject", "primary_reviewer", "reject the proposal", map[string]string{"ticket": "SC-THREAD-VOTE-REJECT"})))
+	rejectReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	rejectRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(rejectRec, rejectReq)
+	if rejectRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rejectRec.Code, rejectRec.Body.String())
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", nil)
+	listRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, listRec.Code, listRec.Body.String())
+	}
+
+	var listResp secureCellDecisionListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatalf("unmarshal decision list response: %v", err)
+	}
+	if len(listResp.Items) != 1 || listResp.Items[0].ID != decisionID {
+		t.Fatalf("expected one decision in list response, got %+v", listResp.Items)
+	}
+
+	statusReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/status", nil)
+	statusRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(statusRec, statusReq)
+	if statusRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, statusRec.Code, statusRec.Body.String())
+	}
+
+	var statusResp secureCellDecisionQueryResponse
+	if err := json.Unmarshal(statusRec.Body.Bytes(), &statusResp); err != nil {
+		t.Fatalf("unmarshal decision status response: %v", err)
+	}
+	if statusResp.Result == nil || statusResp.Result.Status != securecellsintegration.SecureCellThreadDecisionStatusQuorumFailed || len(statusResp.Result.ApprovalVotes) != 2 {
+		t.Fatalf("expected quorum-failed decision status with two persisted explicit votes, got %+v", statusResp.Result)
+	}
+	if statusResp.Result.QuorumFailedAt == nil || statusResp.Result.QuorumFailedBy != owner.AgentID() {
+		t.Fatalf("expected quorum failure metadata to be persisted, got %+v", statusResp.Result)
+	}
+
+	deliberationReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/deliberation", nil)
+	deliberationRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(deliberationRec, deliberationReq)
+	if deliberationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, deliberationRec.Code, deliberationRec.Body.String())
+	}
+
+	var deliberationResp secureCellDecisionDeliberationResponse
+	if err := json.Unmarshal(deliberationRec.Body.Bytes(), &deliberationResp); err != nil {
+		t.Fatalf("unmarshal deliberation response: %v", err)
+	}
+	if deliberationResp.Result == nil || deliberationResp.Result.Status != securecellsintegration.SecureCellThreadDecisionStatusQuorumFailed || len(deliberationResp.Result.ApprovalVotes) != 2 || len(deliberationResp.DecisionOutcomes) != 0 {
+		t.Fatalf("expected deliberation projection with persisted dissent and no outcomes, got %+v", deliberationResp)
+	}
+	if deliberationResp.Result.ApprovalVotes[0].Choice != securecellsintegration.SecureCellThreadDecisionVoteChoiceAbstain || deliberationResp.Result.ApprovalVotes[1].Choice != securecellsintegration.SecureCellThreadDecisionVoteChoiceReject {
+		t.Fatalf("expected abstain then reject votes in deliberation projection, got %+v", deliberationResp.Result.ApprovalVotes)
+	}
+
+	outcomesReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions/"+decisionID+"/outcomes", nil)
+	outcomesRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(outcomesRec, outcomesReq)
+	if outcomesRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, outcomesRec.Code, outcomesRec.Body.String())
+	}
+
+	var outcomesResp secureCellDecisionOutcomeListResponse
+	if err := json.Unmarshal(outcomesRec.Body.Bytes(), &outcomesResp); err != nil {
+		t.Fatalf("unmarshal outcomes response: %v", err)
+	}
+	if len(outcomesResp.Items) != 0 {
+		t.Fatalf("expected no decision outcomes yet, got %+v", outcomesResp.Items)
+	}
+
+	artifactsReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/artifacts", nil)
+	artifactsRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(artifactsRec, artifactsReq)
+	if artifactsRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, artifactsRec.Code, artifactsRec.Body.String())
+	}
+
+	var artifactsResp secureCellArtifactsResponse
+	if err := json.Unmarshal(artifactsRec.Body.Bytes(), &artifactsResp); err != nil {
+		t.Fatalf("unmarshal artifacts response: %v", err)
+	}
+	if len(artifactsResp.Decisions) != 1 || artifactsResp.Decisions[0].Status != securecellsintegration.SecureCellThreadDecisionStatusQuorumFailed || len(artifactsResp.Decisions[0].ApprovalVotes) != 2 {
+		t.Fatalf("expected decision dissent to remain queryable via artifacts projection, got %+v", artifactsResp.Decisions)
 	}
 }
 

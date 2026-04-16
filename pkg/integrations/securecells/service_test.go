@@ -1615,6 +1615,131 @@ func TestService_ListCellsFiltersByLifecycleState(t *testing.T) {
 	}
 }
 
+func TestService_VoteThreadDecisionHandlesDissentAndQuorumRecovery(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Dissent Cell",
+		Purpose:       "deliberation recovery",
+		Resource:      "cell:dissent-recovery",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+			{Identity: participantB, Role: "reviewer_b"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Dissent Session",
+		Purpose:         "quorum recovery",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Dissent Thread",
+		Purpose:         "decision recovery",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Freeze Exposure",
+		Summary:              "records explicit dissent and quorum recovery",
+		Classification:       "confidential",
+		ApprovalThreshold:    1,
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DELIB-DISSENT-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+
+	abstained, err := service.AbstainThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "need escalation context",
+		Metadata: map[string]string{"ticket": "SC-DELIB-DISSENT-02"},
+	})
+	if err != nil {
+		t.Fatalf("AbstainThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, abstained, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusOpen || len(decision.ApprovalVotes) != 1 || decision.ApprovalVotes[0].Choice != SecureCellThreadDecisionVoteChoiceAbstain {
+		t.Fatalf("expected open decision after abstain, got %+v", decision)
+	}
+
+	rejected, err := service.RejectThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "owner rejects pending escalation",
+		Metadata: map[string]string{"ticket": "SC-DELIB-DISSENT-03"},
+	})
+	if err != nil {
+		t.Fatalf("RejectThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, rejected, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusQuorumFailed || decision.QuorumFailedAt == nil || decision.QuorumFailedBy != owner.AgentID() || len(decision.ApprovalVotes) != 2 {
+		t.Fatalf("expected quorum-failed decision after reject, got %+v", decision)
+	}
+	if decision.ApprovalVotes[1].Choice != SecureCellThreadDecisionVoteChoiceReject {
+		t.Fatalf("expected reject vote to persist, got %+v", decision.ApprovalVotes)
+	}
+
+	reopened, err := service.EscalateThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellThreadDecisionDelegationRequest{
+		ActorDID:  owner.AgentID(),
+		TargetDID: participantB.AgentID(),
+		Reason:    "escalate to fresh approver",
+		Metadata:  map[string]string{"ticket": "SC-DELIB-DISSENT-04"},
+	})
+	if err != nil {
+		t.Fatalf("EscalateThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, reopened, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusOpen || decision.QuorumFailedAt != nil || decision.QuorumFailedBy != "" {
+		t.Fatalf("expected decision to reopen after escalation restores quorum, got %+v", decision)
+	}
+
+	approved, err := service.ApproveThreadDecision(ctx, result.CellID, session.ID, thread.ID, decision.ID, SecureCellLifecycleRequest{
+		ActorDID: participantB.AgentID(),
+		Reason:   "escalated approver approved",
+		Metadata: map[string]string{"ticket": "SC-DELIB-DISSENT-05"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveThreadDecision failed: %v", err)
+	}
+	decision, ok = mustSecureCellDecision(t, approved, decision.ID)
+	if !ok || decision.Status != SecureCellThreadDecisionStatusApproved || decision.ApprovedAt == nil || len(decision.ApprovalVotes) != 3 {
+		t.Fatalf("expected approved decision after quorum recovery, got %+v", decision)
+	}
+}
+
 func TestService_ListExpiringQuarantinesReturnsExpiredMembers(t *testing.T) {
 	t.Parallel()
 
