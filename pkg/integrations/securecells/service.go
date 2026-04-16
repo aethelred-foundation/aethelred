@@ -49,7 +49,10 @@ const (
 	secureCellSessionThreadMessageAction            = "secure_cells.session.thread.message"
 	secureCellSessionThreadDecisionCreateAction     = "secure_cells.session.thread.decision.create"
 	secureCellSessionThreadDecisionApproveAction    = "secure_cells.session.thread.decision.approve"
+	secureCellSessionThreadDecisionCommentAction    = "secure_cells.session.thread.decision.comment"
+	secureCellSessionThreadDecisionContainAction    = "secure_cells.session.thread.decision.contain_outputs"
 	secureCellSessionThreadDecisionQuarantineAction = "secure_cells.session.thread.decision.quarantine"
+	secureCellSessionThreadDecisionReleaseAction    = "secure_cells.session.thread.decision.release_outputs"
 	secureCellSessionThreadDecisionResumeAction     = "secure_cells.session.thread.decision.resume"
 	secureCellSessionThreadDecisionCloseAction      = "secure_cells.session.thread.decision.close"
 	secureCellSessionShareAction                    = "secure_cells.session.share"
@@ -103,6 +106,23 @@ const (
 	SecureCellThreadDecisionStatusApproved    SecureCellThreadDecisionStatus = "approved"
 	SecureCellThreadDecisionStatusQuarantined SecureCellThreadDecisionStatus = "quarantined"
 	SecureCellThreadDecisionStatusClosed      SecureCellThreadDecisionStatus = "closed"
+)
+
+// SecureCellArtifactContainmentStatus tracks containment posture for outputs
+// and exchanges bound to a governed decision.
+type SecureCellArtifactContainmentStatus string
+
+const (
+	SecureCellArtifactContainmentStatusActive    SecureCellArtifactContainmentStatus = "active"
+	SecureCellArtifactContainmentStatusContained SecureCellArtifactContainmentStatus = "contained"
+	SecureCellArtifactContainmentStatusReleased  SecureCellArtifactContainmentStatus = "released"
+)
+
+// SecureCellThreadDecisionVoteChoice tracks one approval vote outcome.
+type SecureCellThreadDecisionVoteChoice string
+
+const (
+	SecureCellThreadDecisionVoteChoiceApprove SecureCellThreadDecisionVoteChoice = "approve"
 )
 
 // SecureCellSealer creates execution seals for secure cells.
@@ -203,72 +223,126 @@ type SecureCellSessionThread struct {
 
 // SecureCellThreadDecision is one evidence-bearing decision object inside a
 // governed collaboration thread.
+type SecureCellThreadDecisionVote struct {
+	ID                string                             `json:"id"`
+	DecisionID        string                             `json:"decision_id"`
+	ActorDID          string                             `json:"actor_did"`
+	Choice            SecureCellThreadDecisionVoteChoice `json:"choice"`
+	Reason            string                             `json:"reason,omitempty"`
+	PolicyReceiptID   string                             `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                             `json:"policy_receipt_hash,omitempty"`
+	SealID            string                             `json:"seal_id,omitempty"`
+	TraceLinkID       string                             `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time                          `json:"created_at"`
+	Metadata          map[string]string                  `json:"metadata,omitempty"`
+}
+
+// SecureCellThreadDecisionComment is one evidence-bearing collaboration note
+// attached to a governed thread decision.
+type SecureCellThreadDecisionComment struct {
+	ID                string            `json:"id"`
+	DecisionID        string            `json:"decision_id"`
+	ActorDID          string            `json:"actor_did"`
+	Comment           string            `json:"comment"`
+	Reason            string            `json:"reason,omitempty"`
+	PolicyReceiptID   string            `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string            `json:"policy_receipt_hash,omitempty"`
+	SealID            string            `json:"seal_id,omitempty"`
+	TraceLinkID       string            `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time         `json:"created_at"`
+	Metadata          map[string]string `json:"metadata,omitempty"`
+}
+
 type SecureCellThreadDecision struct {
-	ID                    string                         `json:"id"`
-	SessionID             string                         `json:"session_id"`
-	ThreadID              string                         `json:"thread_id"`
-	Title                 string                         `json:"title"`
-	Summary               string                         `json:"summary,omitempty"`
-	Classification        string                         `json:"classification,omitempty"`
-	Status                SecureCellThreadDecisionStatus `json:"status"`
-	QuarantinedFromStatus SecureCellThreadDecisionStatus `json:"quarantined_from_status,omitempty"`
-	ProposedBy            string                         `json:"proposed_by,omitempty"`
-	ApprovedBy            string                         `json:"approved_by,omitempty"`
-	ClosedBy              string                         `json:"closed_by,omitempty"`
-	RelatedExchangeIDs    []string                       `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs      []string                       `json:"related_output_ids,omitempty"`
-	ProposedAt            time.Time                      `json:"proposed_at"`
-	ApprovedAt            *time.Time                     `json:"approved_at,omitempty"`
-	QuarantinedAt         *time.Time                     `json:"quarantined_at,omitempty"`
-	ClosedAt              *time.Time                     `json:"closed_at,omitempty"`
-	UpdatedAt             time.Time                      `json:"updated_at"`
-	ContainedBy           string                         `json:"contained_by,omitempty"`
-	Metadata              map[string]string              `json:"metadata,omitempty"`
+	ID                    string                            `json:"id"`
+	SessionID             string                            `json:"session_id"`
+	ThreadID              string                            `json:"thread_id"`
+	Title                 string                            `json:"title"`
+	Summary               string                            `json:"summary,omitempty"`
+	Classification        string                            `json:"classification,omitempty"`
+	Status                SecureCellThreadDecisionStatus    `json:"status"`
+	QuarantinedFromStatus SecureCellThreadDecisionStatus    `json:"quarantined_from_status,omitempty"`
+	ApprovalThreshold     int                               `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs  []string                          `json:"eligible_approver_dids,omitempty"`
+	ApprovalVotes         []SecureCellThreadDecisionVote    `json:"approval_votes,omitempty"`
+	Comments              []SecureCellThreadDecisionComment `json:"comments,omitempty"`
+	ProposedBy            string                            `json:"proposed_by,omitempty"`
+	ApprovedBy            string                            `json:"approved_by,omitempty"`
+	ClosedBy              string                            `json:"closed_by,omitempty"`
+	RelatedExchangeIDs    []string                          `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs      []string                          `json:"related_output_ids,omitempty"`
+	ProposedAt            time.Time                         `json:"proposed_at"`
+	ApprovedAt            *time.Time                        `json:"approved_at,omitempty"`
+	QuarantinedAt         *time.Time                        `json:"quarantined_at,omitempty"`
+	ClosedAt              *time.Time                        `json:"closed_at,omitempty"`
+	UpdatedAt             time.Time                         `json:"updated_at"`
+	ContainedBy           string                            `json:"contained_by,omitempty"`
+	Metadata              map[string]string                 `json:"metadata,omitempty"`
 }
 
 // SecureCellSessionExchange captures one message or exchange artifact inside a
 // governed collaboration session.
 type SecureCellSessionExchange struct {
-	ID                string                  `json:"id"`
-	SessionID         string                  `json:"session_id"`
-	ThreadID          string                  `json:"thread_id,omitempty"`
-	Name              string                  `json:"name"`
-	ExchangeType      string                  `json:"exchange_type,omitempty"`
-	Classification    string                  `json:"classification,omitempty"`
-	Resource          string                  `json:"resource,omitempty"`
-	Summary           string                  `json:"summary,omitempty"`
-	SentBy            string                  `json:"sent_by,omitempty"`
-	Recipients        []string                `json:"recipients,omitempty"`
-	IntegrityHash     string                  `json:"integrity_hash"`
-	PolicyReceiptID   string                  `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash string                  `json:"policy_receipt_hash,omitempty"`
-	SealID            string                  `json:"seal_id,omitempty"`
-	TraceLinkID       string                  `json:"trace_link_id,omitempty"`
-	ChainOfCustody    []evidence.CustodyEntry `json:"chain_of_custody,omitempty"`
-	CreatedAt         time.Time               `json:"created_at"`
-	Metadata          map[string]string       `json:"metadata,omitempty"`
+	ID                     string                              `json:"id"`
+	SessionID              string                              `json:"session_id"`
+	ThreadID               string                              `json:"thread_id,omitempty"`
+	Name                   string                              `json:"name"`
+	ExchangeType           string                              `json:"exchange_type,omitempty"`
+	Classification         string                              `json:"classification,omitempty"`
+	Resource               string                              `json:"resource,omitempty"`
+	Summary                string                              `json:"summary,omitempty"`
+	SentBy                 string                              `json:"sent_by,omitempty"`
+	Recipients             []string                            `json:"recipients,omitempty"`
+	IntegrityHash          string                              `json:"integrity_hash"`
+	PolicyReceiptID        string                              `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                              `json:"policy_receipt_hash,omitempty"`
+	SealID                 string                              `json:"seal_id,omitempty"`
+	TraceLinkID            string                              `json:"trace_link_id,omitempty"`
+	ContainmentStatus      SecureCellArtifactContainmentStatus `json:"containment_status,omitempty"`
+	ContainmentDecisionID  string                              `json:"containment_decision_id,omitempty"`
+	ContainmentReceiptID   string                              `json:"containment_receipt_id,omitempty"`
+	ContainmentReceiptHash string                              `json:"containment_receipt_hash,omitempty"`
+	ContainmentSealID      string                              `json:"containment_seal_id,omitempty"`
+	ContainmentTraceLinkID string                              `json:"containment_trace_link_id,omitempty"`
+	ContainedBy            string                              `json:"contained_by,omitempty"`
+	ContainedAt            *time.Time                          `json:"contained_at,omitempty"`
+	ReleasedBy             string                              `json:"released_by,omitempty"`
+	ReleasedAt             *time.Time                          `json:"released_at,omitempty"`
+	ChainOfCustody         []evidence.CustodyEntry             `json:"chain_of_custody,omitempty"`
+	CreatedAt              time.Time                           `json:"created_at"`
+	Metadata               map[string]string                   `json:"metadata,omitempty"`
 }
 
 // SecureCellSharedOutput captures one policy-bound data exchange inside a
 // session, including provenance-bearing custody details.
 type SecureCellSharedOutput struct {
-	ID                string                  `json:"id"`
-	SessionID         string                  `json:"session_id"`
-	Name              string                  `json:"name"`
-	ArtifactType      string                  `json:"artifact_type,omitempty"`
-	Classification    string                  `json:"classification,omitempty"`
-	Resource          string                  `json:"resource,omitempty"`
-	Summary           string                  `json:"summary,omitempty"`
-	ProducedBy        string                  `json:"produced_by,omitempty"`
-	SharedWith        []string                `json:"shared_with,omitempty"`
-	IntegrityHash     string                  `json:"integrity_hash"`
-	PolicyReceiptID   string                  `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash string                  `json:"policy_receipt_hash,omitempty"`
-	SealID            string                  `json:"seal_id,omitempty"`
-	TraceLinkID       string                  `json:"trace_link_id,omitempty"`
-	ChainOfCustody    []evidence.CustodyEntry `json:"chain_of_custody,omitempty"`
-	CreatedAt         time.Time               `json:"created_at"`
-	Metadata          map[string]string       `json:"metadata,omitempty"`
+	ID                     string                              `json:"id"`
+	SessionID              string                              `json:"session_id"`
+	Name                   string                              `json:"name"`
+	ArtifactType           string                              `json:"artifact_type,omitempty"`
+	Classification         string                              `json:"classification,omitempty"`
+	Resource               string                              `json:"resource,omitempty"`
+	Summary                string                              `json:"summary,omitempty"`
+	ProducedBy             string                              `json:"produced_by,omitempty"`
+	SharedWith             []string                            `json:"shared_with,omitempty"`
+	IntegrityHash          string                              `json:"integrity_hash"`
+	PolicyReceiptID        string                              `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                              `json:"policy_receipt_hash,omitempty"`
+	SealID                 string                              `json:"seal_id,omitempty"`
+	TraceLinkID            string                              `json:"trace_link_id,omitempty"`
+	ContainmentStatus      SecureCellArtifactContainmentStatus `json:"containment_status,omitempty"`
+	ContainmentDecisionID  string                              `json:"containment_decision_id,omitempty"`
+	ContainmentReceiptID   string                              `json:"containment_receipt_id,omitempty"`
+	ContainmentReceiptHash string                              `json:"containment_receipt_hash,omitempty"`
+	ContainmentSealID      string                              `json:"containment_seal_id,omitempty"`
+	ContainmentTraceLinkID string                              `json:"containment_trace_link_id,omitempty"`
+	ContainedBy            string                              `json:"contained_by,omitempty"`
+	ContainedAt            *time.Time                          `json:"contained_at,omitempty"`
+	ReleasedBy             string                              `json:"released_by,omitempty"`
+	ReleasedAt             *time.Time                          `json:"released_at,omitempty"`
+	ChainOfCustody         []evidence.CustodyEntry             `json:"chain_of_custody,omitempty"`
+	CreatedAt              time.Time                           `json:"created_at"`
+	Metadata               map[string]string                   `json:"metadata,omitempty"`
 }
 
 // SecureCellRequest creates a new regulated collaboration cell.
@@ -504,16 +578,27 @@ type SecureCellThreadMessageRequest struct {
 // SecureCellThreadDecisionRequest creates one governed decision object inside
 // a collaboration thread.
 type SecureCellThreadDecisionRequest struct {
-	ActorDID           string            `json:"actor_did,omitempty"`
-	SessionID          string            `json:"session_id,omitempty"`
-	ThreadID           string            `json:"thread_id,omitempty"`
-	Title              string            `json:"title,omitempty"`
-	Summary            string            `json:"summary,omitempty"`
-	Classification     string            `json:"classification,omitempty"`
-	RelatedExchangeIDs []string          `json:"related_exchange_ids,omitempty"`
-	RelatedOutputIDs   []string          `json:"related_output_ids,omitempty"`
-	Reason             string            `json:"reason,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
+	ActorDID             string            `json:"actor_did,omitempty"`
+	SessionID            string            `json:"session_id,omitempty"`
+	ThreadID             string            `json:"thread_id,omitempty"`
+	Title                string            `json:"title,omitempty"`
+	Summary              string            `json:"summary,omitempty"`
+	Classification       string            `json:"classification,omitempty"`
+	ApprovalThreshold    int               `json:"approval_threshold,omitempty"`
+	EligibleApproverDIDs []string          `json:"eligible_approver_dids,omitempty"`
+	RelatedExchangeIDs   []string          `json:"related_exchange_ids,omitempty"`
+	RelatedOutputIDs     []string          `json:"related_output_ids,omitempty"`
+	Reason               string            `json:"reason,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellThreadDecisionCommentRequest records one evidence-bearing comment
+// inside an active governed decision flow.
+type SecureCellThreadDecisionCommentRequest struct {
+	ActorDID string            `json:"actor_did,omitempty"`
+	Comment  string            `json:"comment,omitempty"`
+	Reason   string            `json:"reason,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // SecureCellSessionMemberTransitionRequest mutates one session's explicit
@@ -1013,18 +1098,19 @@ func (s *Service) ShareOutput(ctx context.Context, cellID string, share SecureCe
 
 	outputID := secureCellSharedOutputID(run.request, *session, share.Name, actorDID, run.result.SharedOutputs)
 	output := SecureCellSharedOutput{
-		ID:             outputID,
-		SessionID:      session.ID,
-		Name:           firstNonEmpty(strings.TrimSpace(share.Name), fmt.Sprintf("%s Output %d", session.Name, len(session.SharedOutputIDs)+1)),
-		ArtifactType:   firstNonEmpty(strings.TrimSpace(share.ArtifactType), "decision_packet"),
-		Classification: classification,
-		Resource:       firstNonEmpty(strings.TrimSpace(share.Resource), fmt.Sprintf("secure-cell:%s:session:%s:output:%s", run.result.CellID, session.ID, outputID)),
-		Summary:        strings.TrimSpace(share.Summary),
-		ProducedBy:     actorDID,
-		SharedWith:     sharedWith,
-		IntegrityHash:  secureCellResolveOutputIntegrityHash(share, outputID, session.ID, actorDID, sharedWith),
-		CreatedAt:      time.Now().UTC(),
-		Metadata:       cloneStringMap(share.Metadata),
+		ID:                outputID,
+		SessionID:         session.ID,
+		Name:              firstNonEmpty(strings.TrimSpace(share.Name), fmt.Sprintf("%s Output %d", session.Name, len(session.SharedOutputIDs)+1)),
+		ArtifactType:      firstNonEmpty(strings.TrimSpace(share.ArtifactType), "decision_packet"),
+		Classification:    classification,
+		Resource:          firstNonEmpty(strings.TrimSpace(share.Resource), fmt.Sprintf("secure-cell:%s:session:%s:output:%s", run.result.CellID, session.ID, outputID)),
+		Summary:           strings.TrimSpace(share.Summary),
+		ProducedBy:        actorDID,
+		SharedWith:        sharedWith,
+		IntegrityHash:     secureCellResolveOutputIntegrityHash(share, outputID, session.ID, actorDID, sharedWith),
+		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
+		CreatedAt:         time.Now().UTC(),
+		Metadata:          cloneStringMap(share.Metadata),
 	}
 	custody, err := secureCellBuildOutputCustody(output.ProducedBy, output.SharedWith)
 	if err != nil {
@@ -1186,18 +1272,19 @@ func (s *Service) RecordExchange(ctx context.Context, cellID string, exchange Se
 
 	exchangeID := secureCellSessionExchangeID(run.request, *session, exchange.Name, actorDID, run.result.SessionExchanges)
 	item := SecureCellSessionExchange{
-		ID:             exchangeID,
-		SessionID:      session.ID,
-		Name:           firstNonEmpty(strings.TrimSpace(exchange.Name), fmt.Sprintf("%s Exchange %d", session.Name, len(session.ExchangeIDs)+1)),
-		ExchangeType:   firstNonEmpty(strings.TrimSpace(exchange.ExchangeType), "message"),
-		Classification: classification,
-		Resource:       firstNonEmpty(strings.TrimSpace(exchange.Resource), fmt.Sprintf("secure-cell:%s:session:%s:exchange:%s", run.result.CellID, session.ID, exchangeID)),
-		Summary:        strings.TrimSpace(exchange.Summary),
-		SentBy:         actorDID,
-		Recipients:     recipients,
-		IntegrityHash:  secureCellResolveExchangeIntegrityHash(exchange, exchangeID, session.ID, actorDID, recipients),
-		CreatedAt:      time.Now().UTC(),
-		Metadata:       cloneStringMap(exchange.Metadata),
+		ID:                exchangeID,
+		SessionID:         session.ID,
+		Name:              firstNonEmpty(strings.TrimSpace(exchange.Name), fmt.Sprintf("%s Exchange %d", session.Name, len(session.ExchangeIDs)+1)),
+		ExchangeType:      firstNonEmpty(strings.TrimSpace(exchange.ExchangeType), "message"),
+		Classification:    classification,
+		Resource:          firstNonEmpty(strings.TrimSpace(exchange.Resource), fmt.Sprintf("secure-cell:%s:session:%s:exchange:%s", run.result.CellID, session.ID, exchangeID)),
+		Summary:           strings.TrimSpace(exchange.Summary),
+		SentBy:            actorDID,
+		Recipients:        recipients,
+		IntegrityHash:     secureCellResolveExchangeIntegrityHash(exchange, exchangeID, session.ID, actorDID, recipients),
+		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
+		CreatedAt:         time.Now().UTC(),
+		Metadata:          cloneStringMap(exchange.Metadata),
 	}
 	custody, err := secureCellBuildOutputCustody(item.SentBy, item.Recipients)
 	if err != nil {
@@ -1306,19 +1393,20 @@ func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message 
 
 	exchangeID := secureCellThreadMessageID(run.request, *session, *thread, message.Name, actorDID, run.result.SessionExchanges)
 	item := SecureCellSessionExchange{
-		ID:             exchangeID,
-		SessionID:      session.ID,
-		ThreadID:       thread.ID,
-		Name:           firstNonEmpty(strings.TrimSpace(message.Name), fmt.Sprintf("%s Message %d", thread.Name, len(thread.ExchangeIDs)+1)),
-		ExchangeType:   firstNonEmpty(strings.TrimSpace(message.ExchangeType), "thread_message"),
-		Classification: classification,
-		Resource:       firstNonEmpty(strings.TrimSpace(message.Resource), fmt.Sprintf("secure-cell:%s:session:%s:thread:%s:message:%s", run.result.CellID, session.ID, thread.ID, exchangeID)),
-		Summary:        strings.TrimSpace(message.Summary),
-		SentBy:         actorDID,
-		Recipients:     recipients,
-		IntegrityHash:  secureCellResolveThreadMessageIntegrityHash(message, exchangeID, session.ID, thread.ID, actorDID, recipients),
-		CreatedAt:      time.Now().UTC(),
-		Metadata:       cloneStringMap(message.Metadata),
+		ID:                exchangeID,
+		SessionID:         session.ID,
+		ThreadID:          thread.ID,
+		Name:              firstNonEmpty(strings.TrimSpace(message.Name), fmt.Sprintf("%s Message %d", thread.Name, len(thread.ExchangeIDs)+1)),
+		ExchangeType:      firstNonEmpty(strings.TrimSpace(message.ExchangeType), "thread_message"),
+		Classification:    classification,
+		Resource:          firstNonEmpty(strings.TrimSpace(message.Resource), fmt.Sprintf("secure-cell:%s:session:%s:thread:%s:message:%s", run.result.CellID, session.ID, thread.ID, exchangeID)),
+		Summary:           strings.TrimSpace(message.Summary),
+		SentBy:            actorDID,
+		Recipients:        recipients,
+		IntegrityHash:     secureCellResolveThreadMessageIntegrityHash(message, exchangeID, session.ID, thread.ID, actorDID, recipients),
+		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
+		CreatedAt:         time.Now().UTC(),
+		Metadata:          cloneStringMap(message.Metadata),
 	}
 	custody, err := secureCellBuildOutputCustody(item.SentBy, item.Recipients)
 	if err != nil {
@@ -1440,35 +1528,49 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 	if err != nil {
 		return nil, err
 	}
+	approvalThreshold := normalizeSecureCellThreshold(decision.ApprovalThreshold)
+	eligibleApproverDIDs := uniqueSecureCellStrings(decision.EligibleApproverDIDs)
+	if len(eligibleApproverDIDs) > 0 && approvalThreshold > len(eligibleApproverDIDs) {
+		return nil, fmt.Errorf("securecells/service: thread decision approval threshold %d exceeds eligible approver count %d", approvalThreshold, len(eligibleApproverDIDs))
+	}
+	for _, eligibleDID := range eligibleApproverDIDs {
+		if !secureCellThreadActorAllowed(run, *thread, eligibleDID) {
+			return nil, fmt.Errorf("securecells/service: %w: decision approver %q is not permitted for thread %q", ErrPolicyDenied, eligibleDID, thread.ID)
+		}
+	}
 
 	item := SecureCellThreadDecision{
-		ID:                 secureCellThreadDecisionID(run.request, *session, *thread, title, actorDID, run.result.Decisions),
-		SessionID:          session.ID,
-		ThreadID:           thread.ID,
-		Title:              title,
-		Summary:            strings.TrimSpace(decision.Summary),
-		Classification:     classification,
-		Status:             SecureCellThreadDecisionStatusOpen,
-		ProposedBy:         actorDID,
-		RelatedExchangeIDs: relatedExchangeIDs,
-		RelatedOutputIDs:   relatedOutputIDs,
-		ProposedAt:         time.Now().UTC(),
-		UpdatedAt:          time.Now().UTC(),
-		Metadata:           cloneStringMap(decision.Metadata),
+		ID:                   secureCellThreadDecisionID(run.request, *session, *thread, title, actorDID, run.result.Decisions),
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		Title:                title,
+		Summary:              strings.TrimSpace(decision.Summary),
+		Classification:       classification,
+		Status:               SecureCellThreadDecisionStatusOpen,
+		ApprovalThreshold:    approvalThreshold,
+		EligibleApproverDIDs: eligibleApproverDIDs,
+		ProposedBy:           actorDID,
+		RelatedExchangeIDs:   relatedExchangeIDs,
+		RelatedOutputIDs:     relatedOutputIDs,
+		ProposedAt:           time.Now().UTC(),
+		UpdatedAt:            time.Now().UTC(),
+		Metadata:             cloneStringMap(decision.Metadata),
 	}
 
 	receipt, err := s.evaluateStage(ctx, run.request, "create_thread_decision", lastReceiptHash(run.result), map[string]string{
-		"session_id":                 session.ID,
-		"thread_id":                  thread.ID,
-		"decision_id":                item.ID,
-		"decision_title":             item.Title,
-		"decision_classification":    item.Classification,
-		"decision_related_exchanges": strings.Join(item.RelatedExchangeIDs, ","),
-		"decision_related_outputs":   strings.Join(item.RelatedOutputIDs, ","),
-		"thread_status_before":       string(thread.Status),
-		"session_status_before":      string(session.Status),
-		"cell_status_before":         string(run.result.Status),
-		"transition_reason":          strings.TrimSpace(decision.Reason),
+		"session_id":                  session.ID,
+		"thread_id":                   thread.ID,
+		"decision_id":                 item.ID,
+		"decision_title":              item.Title,
+		"decision_classification":     item.Classification,
+		"decision_approval_threshold": fmt.Sprintf("%d", item.ApprovalThreshold),
+		"decision_eligible_approvers": strings.Join(item.EligibleApproverDIDs, ","),
+		"decision_related_exchanges":  strings.Join(item.RelatedExchangeIDs, ","),
+		"decision_related_outputs":    strings.Join(item.RelatedOutputIDs, ","),
+		"thread_status_before":        string(thread.Status),
+		"session_status_before":       string(session.Status),
+		"cell_status_before":          string(run.result.Status),
+		"transition_reason":           strings.TrimSpace(decision.Reason),
 	}, actorDID)
 	if err != nil {
 		return nil, err
@@ -2007,9 +2109,477 @@ func (s *Service) QuarantineThread(ctx context.Context, cellID string, sessionID
 	return s.transitionThreadState(ctx, cellID, sessionID, threadID, lifecycle, "quarantine_session_thread", SecureCellThreadStatusQuarantined, "secure_cell.session_thread_quarantined", SecureCellThreadStatusActive)
 }
 
-// ApproveThreadDecision approves one governed decision object.
+func (s *Service) transitionThreadDecisionArtifacts(
+	ctx context.Context,
+	cellID string,
+	sessionID string,
+	threadID string,
+	decisionID string,
+	lifecycle SecureCellLifecycleRequest,
+	stage string,
+	recordAction string,
+	targetStatus SecureCellArtifactContainmentStatus,
+) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	threadIdx, thread := findSecureCellThread(run.result.Threads, threadID)
+	if thread == nil || thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, threadID)
+	}
+	if !threadStatusAllowed(thread.Status, SecureCellThreadStatusActive, SecureCellThreadStatusQuarantined) {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q cannot mutate decision artifacts while %s", ErrThreadImmutable, threadID, thread.Status)
+	}
+	decisionIdx, decision := findSecureCellThreadDecision(run.result.Decisions, decisionID)
+	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
+	}
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved, SecureCellThreadDecisionStatusQuarantined) {
+		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot mutate related artifacts while %s", ErrDecisionImmutable, decisionID, decision.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to mutate decision %q artifacts", ErrPolicyDenied, actorDID, decisionID)
+	}
+
+	outputIdxs := make([]int, 0, len(decision.RelatedOutputIDs))
+	exchangeIdxs := make([]int, 0, len(decision.RelatedExchangeIDs))
+	for _, outputID := range decision.RelatedOutputIDs {
+		idx := findSecureCellSharedOutputIndex(run.result.SharedOutputs, outputID)
+		if idx < 0 || run.result.SharedOutputs[idx].SessionID != session.ID {
+			continue
+		}
+		output := run.result.SharedOutputs[idx]
+		if targetStatus == SecureCellArtifactContainmentStatusContained && output.ContainmentStatus == SecureCellArtifactContainmentStatusContained && output.ContainmentDecisionID != "" && output.ContainmentDecisionID != decision.ID {
+			return nil, fmt.Errorf("securecells/service: %w: shared output %q is already contained by decision %q", ErrDecisionImmutable, outputID, output.ContainmentDecisionID)
+		}
+		if targetStatus == SecureCellArtifactContainmentStatusReleased && !(output.ContainmentStatus == SecureCellArtifactContainmentStatusContained && output.ContainmentDecisionID == decision.ID) {
+			continue
+		}
+		outputIdxs = append(outputIdxs, idx)
+	}
+	for _, exchangeID := range decision.RelatedExchangeIDs {
+		idx := findSecureCellSessionExchangeIndex(run.result.SessionExchanges, exchangeID)
+		if idx < 0 || run.result.SessionExchanges[idx].SessionID != session.ID || run.result.SessionExchanges[idx].ThreadID != thread.ID {
+			continue
+		}
+		item := run.result.SessionExchanges[idx]
+		if targetStatus == SecureCellArtifactContainmentStatusContained && item.ContainmentStatus == SecureCellArtifactContainmentStatusContained && item.ContainmentDecisionID != "" && item.ContainmentDecisionID != decision.ID {
+			return nil, fmt.Errorf("securecells/service: %w: session exchange %q is already contained by decision %q", ErrDecisionImmutable, exchangeID, item.ContainmentDecisionID)
+		}
+		if targetStatus == SecureCellArtifactContainmentStatusReleased && !(item.ContainmentStatus == SecureCellArtifactContainmentStatusContained && item.ContainmentDecisionID == decision.ID) {
+			continue
+		}
+		exchangeIdxs = append(exchangeIdxs, idx)
+	}
+	if len(outputIdxs) == 0 && len(exchangeIdxs) == 0 {
+		return nil, fmt.Errorf("securecells/service: %w: decision %q has no related artifacts eligible for %s", ErrDecisionImmutable, decisionID, stage)
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, stage, lastReceiptHash(run.result), map[string]string{
+		"session_id":                       session.ID,
+		"thread_id":                        thread.ID,
+		"decision_id":                      decision.ID,
+		"decision_title":                   decision.Title,
+		"decision_status_before":           string(decision.Status),
+		"decision_artifact_action":         string(targetStatus),
+		"decision_related_outputs_total":   fmt.Sprintf("%d", len(outputIdxs)),
+		"decision_related_exchanges_total": fmt.Sprintf("%d", len(exchangeIdxs)),
+		"decision_related_output_ids":      strings.Join(decision.RelatedOutputIDs, ","),
+		"decision_related_exchange_ids":    strings.Join(decision.RelatedExchangeIDs, ","),
+		"thread_status_before":             string(thread.Status),
+		"session_status_before":            string(session.Status),
+		"cell_status_before":               string(run.result.Status),
+		"transition_reason":                strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	updatedAt := time.Now().UTC()
+	outputIDs := make([]string, 0, len(outputIdxs))
+	exchangeIDs := make([]string, 0, len(exchangeIdxs))
+	for _, idx := range outputIdxs {
+		run.result.SharedOutputs[idx].ContainmentStatus = targetStatus
+		run.result.SharedOutputs[idx].ContainmentDecisionID = decision.ID
+		run.result.SharedOutputs[idx].ContainmentReceiptID = receipt.ID
+		run.result.SharedOutputs[idx].ContainmentReceiptHash = receipt.ContentHash
+		run.result.SharedOutputs[idx].ContainmentSealID = ""
+		run.result.SharedOutputs[idx].ContainmentTraceLinkID = ""
+		if targetStatus == SecureCellArtifactContainmentStatusContained {
+			run.result.SharedOutputs[idx].ContainedBy = actorDID
+			run.result.SharedOutputs[idx].ContainedAt = &updatedAt
+			run.result.SharedOutputs[idx].ReleasedBy = ""
+			run.result.SharedOutputs[idx].ReleasedAt = nil
+		} else {
+			run.result.SharedOutputs[idx].ReleasedBy = actorDID
+			run.result.SharedOutputs[idx].ReleasedAt = &updatedAt
+		}
+		outputIDs = append(outputIDs, run.result.SharedOutputs[idx].ID)
+	}
+	for _, idx := range exchangeIdxs {
+		run.result.SessionExchanges[idx].ContainmentStatus = targetStatus
+		run.result.SessionExchanges[idx].ContainmentDecisionID = decision.ID
+		run.result.SessionExchanges[idx].ContainmentReceiptID = receipt.ID
+		run.result.SessionExchanges[idx].ContainmentReceiptHash = receipt.ContentHash
+		run.result.SessionExchanges[idx].ContainmentSealID = ""
+		run.result.SessionExchanges[idx].ContainmentTraceLinkID = ""
+		if targetStatus == SecureCellArtifactContainmentStatusContained {
+			run.result.SessionExchanges[idx].ContainedBy = actorDID
+			run.result.SessionExchanges[idx].ContainedAt = &updatedAt
+			run.result.SessionExchanges[idx].ReleasedBy = ""
+			run.result.SessionExchanges[idx].ReleasedAt = nil
+		} else {
+			run.result.SessionExchanges[idx].ReleasedBy = actorDID
+			run.result.SessionExchanges[idx].ReleasedAt = &updatedAt
+		}
+		exchangeIDs = append(exchangeIDs, run.result.SessionExchanges[idx].ID)
+	}
+	run.result.Decisions[decisionIdx].UpdatedAt = updatedAt
+	run.result.Threads[threadIdx].UpdatedAt = updatedAt
+	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
+	run.result.UpdatedAt = updatedAt
+
+	transitionMetadata := cloneStringMap(lifecycle.Metadata)
+	if transitionMetadata == nil {
+		transitionMetadata = make(map[string]string)
+	}
+	transitionMetadata["decision_output_ids"] = strings.Join(outputIDs, ",")
+	transitionMetadata["decision_exchange_ids"] = strings.Join(exchangeIDs, ",")
+	transitionMetadata["decision_output_count"] = fmt.Sprintf("%d", len(outputIDs))
+	transitionMetadata["decision_exchange_count"] = fmt.Sprintf("%d", len(exchangeIDs))
+	transitionMetadata["containment_mode"] = "thread_decision_artifacts"
+	transitionMetadata["containment_status"] = string(targetStatus)
+
+	transition := SecureCellTransition{
+		ID:                   transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), decision.ID+"-"+string(targetStatus)),
+		Action:               recordAction,
+		Actor:                actorDID,
+		TargetType:           "thread_decision_artifacts",
+		TargetDID:            decision.ID,
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		DecisionID:           decision.ID,
+		SessionStatusBefore:  session.Status,
+		SessionStatusAfter:   session.Status,
+		ThreadStatusBefore:   thread.Status,
+		ThreadStatusAfter:    thread.Status,
+		DecisionStatusBefore: decision.Status,
+		DecisionStatusAfter:  decision.Status,
+		CellStatusBefore:     run.result.Status,
+		CellStatusAfter:      run.result.Status,
+		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
+		Reason:               strings.TrimSpace(lifecycle.Reason),
+		Metadata:             transitionMetadata,
+		OccurredAt:           receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	if lastTransition := lastSecureCellTransition(run.result); lastTransition != nil && lastTransition.DecisionID == decision.ID && lastTransition.Action == recordAction {
+		for _, idx := range outputIdxs {
+			run.result.SharedOutputs[idx].ContainmentSealID = safeString(lastTransition.ExecutionSeal, func(in *evidence.Seal) string { return in.SealID })
+			run.result.SharedOutputs[idx].ContainmentTraceLinkID = safeString(lastTransition.TraceLink, func(in *evidence.TraceLink) string { return in.ID })
+		}
+		for _, idx := range exchangeIdxs {
+			run.result.SessionExchanges[idx].ContainmentSealID = safeString(lastTransition.ExecutionSeal, func(in *evidence.Seal) string { return in.SealID })
+			run.result.SessionExchanges[idx].ContainmentTraceLinkID = safeString(lastTransition.TraceLink, func(in *evidence.TraceLink) string { return in.ID })
+		}
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// ApproveThreadDecision records one approval vote and only marks the decision
+// approved once its threshold is satisfied.
 func (s *Service) ApproveThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
-	return s.transitionThreadDecisionState(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "approve_thread_decision", SecureCellThreadDecisionStatusApproved, "secure_cell.session_thread_decision_approved", SecureCellThreadDecisionStatusOpen)
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	threadIdx, thread := findSecureCellThread(run.result.Threads, threadID)
+	if thread == nil || thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, threadID)
+	}
+	if thread.Status != SecureCellThreadStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q is not active", ErrThreadNotActive, threadID)
+	}
+	decisionIdx, decision := findSecureCellThreadDecision(run.result.Decisions, decisionID)
+	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
+	}
+	if decision.Status != SecureCellThreadDecisionStatusOpen {
+		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot accept approval votes while %s", ErrDecisionImmutable, decisionID, decision.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to mutate decision %q", ErrPolicyDenied, actorDID, decisionID)
+	}
+	if !secureCellDecisionApproverAllowed(*thread, *decision, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not an eligible approver for decision %q", ErrPolicyDenied, actorDID, decisionID)
+	}
+	if secureCellDecisionHasApprovalVote(*decision, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q already voted on decision %q", ErrDecisionImmutable, actorDID, decisionID)
+	}
+
+	threshold := decisionApprovalThreshold(*decision)
+	votesBefore := len(decision.ApprovalVotes)
+	receipt, err := s.evaluateStage(ctx, run.request, "approve_thread_decision", lastReceiptHash(run.result), map[string]string{
+		"session_id":                  session.ID,
+		"thread_id":                   thread.ID,
+		"decision_id":                 decision.ID,
+		"decision_title":              decision.Title,
+		"decision_status_before":      string(decision.Status),
+		"decision_status_after":       string(decision.Status),
+		"decision_approval_threshold": fmt.Sprintf("%d", threshold),
+		"decision_votes_before":       fmt.Sprintf("%d", votesBefore),
+		"decision_votes_after":        fmt.Sprintf("%d", votesBefore+1),
+		"decision_eligible_approvers": strings.Join(decision.EligibleApproverDIDs, ","),
+		"thread_status_before":        string(thread.Status),
+		"session_status_before":       string(session.Status),
+		"cell_status_before":          string(run.result.Status),
+		"transition_reason":           strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	updatedAt := time.Now().UTC()
+	vote := SecureCellThreadDecisionVote{
+		ID:                secureCellThreadDecisionVoteID(run.request, *decision, actorDID, votesBefore),
+		DecisionID:        decision.ID,
+		ActorDID:          actorDID,
+		Choice:            SecureCellThreadDecisionVoteChoiceApprove,
+		Reason:            strings.TrimSpace(lifecycle.Reason),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         updatedAt,
+		Metadata:          cloneStringMap(lifecycle.Metadata),
+	}
+	run.result.Decisions[decisionIdx].ApprovalVotes = append(run.result.Decisions[decisionIdx].ApprovalVotes, vote)
+
+	statusBefore := decision.Status
+	statusAfter := statusBefore
+	recordAction := "secure_cell.session_thread_decision_voted"
+	transitionMetadata := cloneStringMap(lifecycle.Metadata)
+	if transitionMetadata == nil {
+		transitionMetadata = make(map[string]string)
+	}
+	transitionMetadata["approval_vote_id"] = vote.ID
+	transitionMetadata["approval_vote_choice"] = string(vote.Choice)
+	transitionMetadata["approval_threshold"] = fmt.Sprintf("%d", threshold)
+	transitionMetadata["approval_votes_total"] = fmt.Sprintf("%d", len(run.result.Decisions[decisionIdx].ApprovalVotes))
+
+	if len(run.result.Decisions[decisionIdx].ApprovalVotes) >= threshold {
+		statusAfter = SecureCellThreadDecisionStatusApproved
+		recordAction = "secure_cell.session_thread_decision_approved"
+		run.result.Decisions[decisionIdx].ApprovedBy = actorDID
+		run.result.Decisions[decisionIdx].ApprovedAt = &updatedAt
+		transitionMetadata["approval_threshold_satisfied"] = "true"
+	} else {
+		transitionMetadata["approval_threshold_satisfied"] = "false"
+	}
+
+	run.result.Decisions[decisionIdx].Status = statusAfter
+	run.result.Decisions[decisionIdx].UpdatedAt = updatedAt
+	run.result.Threads[threadIdx].UpdatedAt = updatedAt
+	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
+	run.result.UpdatedAt = updatedAt
+
+	transition := SecureCellTransition{
+		ID:                   transitionID(run.request, strings.TrimPrefix(recordAction, "secure_cell."), vote.ID),
+		Action:               recordAction,
+		Actor:                actorDID,
+		TargetType:           "thread_decision",
+		TargetDID:            decision.ID,
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		DecisionID:           decision.ID,
+		SessionStatusBefore:  session.Status,
+		SessionStatusAfter:   session.Status,
+		ThreadStatusBefore:   thread.Status,
+		ThreadStatusAfter:    thread.Status,
+		DecisionStatusBefore: statusBefore,
+		DecisionStatusAfter:  statusAfter,
+		CellStatusBefore:     run.result.Status,
+		CellStatusAfter:      run.result.Status,
+		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
+		Reason:               strings.TrimSpace(lifecycle.Reason),
+		Metadata:             transitionMetadata,
+		OccurredAt:           receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	if lastTransition := lastSecureCellTransition(run.result); lastTransition != nil && lastTransition.DecisionID == decision.ID && lastTransition.Action == recordAction {
+		lastVoteIdx := len(run.result.Decisions[decisionIdx].ApprovalVotes) - 1
+		run.result.Decisions[decisionIdx].ApprovalVotes[lastVoteIdx].SealID = safeString(lastTransition.ExecutionSeal, func(in *evidence.Seal) string { return in.SealID })
+		run.result.Decisions[decisionIdx].ApprovalVotes[lastVoteIdx].TraceLinkID = safeString(lastTransition.TraceLink, func(in *evidence.TraceLink) string { return in.ID })
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// CommentThreadDecision records one evidence-bearing decision comment.
+func (s *Service) CommentThreadDecision(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, req SecureCellThreadDecisionCommentRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	sessionIdx, session := findSecureCellSession(run.result.Sessions, sessionID)
+	if session == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrSessionNotFound, sessionID)
+	}
+	if session.Status != SecureCellSessionStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: session %q is not active", ErrSessionNotActive, sessionID)
+	}
+	threadIdx, thread := findSecureCellThread(run.result.Threads, threadID)
+	if thread == nil || thread.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrThreadNotFound, threadID)
+	}
+	if thread.Status != SecureCellThreadStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: thread %q is not active", ErrThreadNotActive, threadID)
+	}
+	decisionIdx, decision := findSecureCellThreadDecision(run.result.Decisions, decisionID)
+	if decision == nil || decision.ThreadID != thread.ID || decision.SessionID != session.ID {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrDecisionNotFound, decisionID)
+	}
+	if !decisionStatusAllowed(decision.Status, SecureCellThreadDecisionStatusOpen, SecureCellThreadDecisionStatusApproved) {
+		return nil, fmt.Errorf("securecells/service: %w: decision %q cannot be commented on while %s", ErrDecisionImmutable, decisionID, decision.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to comment on decision %q", ErrPolicyDenied, actorDID, decisionID)
+	}
+	commentText := strings.TrimSpace(req.Comment)
+	if commentText == "" {
+		return nil, fmt.Errorf("securecells/service: decision comment is required")
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "comment_thread_decision", lastReceiptHash(run.result), map[string]string{
+		"session_id":                    session.ID,
+		"thread_id":                     thread.ID,
+		"decision_id":                   decision.ID,
+		"decision_title":                decision.Title,
+		"decision_status_before":        string(decision.Status),
+		"decision_status_after":         string(decision.Status),
+		"decision_comment_length":       fmt.Sprintf("%d", len(commentText)),
+		"decision_comment_count_before": fmt.Sprintf("%d", len(decision.Comments)),
+		"decision_comment_count_after":  fmt.Sprintf("%d", len(decision.Comments)+1),
+		"thread_status_before":          string(thread.Status),
+		"session_status_before":         string(session.Status),
+		"cell_status_before":            string(run.result.Status),
+		"transition_reason":             strings.TrimSpace(req.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	updatedAt := time.Now().UTC()
+	comment := SecureCellThreadDecisionComment{
+		ID:                secureCellThreadDecisionCommentID(run.request, *decision, actorDID, commentText, len(decision.Comments)),
+		DecisionID:        decision.ID,
+		ActorDID:          actorDID,
+		Comment:           commentText,
+		Reason:            strings.TrimSpace(req.Reason),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         updatedAt,
+		Metadata:          cloneStringMap(req.Metadata),
+	}
+	run.result.Decisions[decisionIdx].Comments = append(run.result.Decisions[decisionIdx].Comments, comment)
+	run.result.Decisions[decisionIdx].UpdatedAt = updatedAt
+	run.result.Threads[threadIdx].UpdatedAt = updatedAt
+	run.result.Sessions[sessionIdx].UpdatedAt = updatedAt
+	run.result.UpdatedAt = updatedAt
+
+	transitionMetadata := cloneStringMap(req.Metadata)
+	if transitionMetadata == nil {
+		transitionMetadata = make(map[string]string)
+	}
+	transitionMetadata["decision_comment_id"] = comment.ID
+	transitionMetadata["decision_comment_count"] = fmt.Sprintf("%d", len(run.result.Decisions[decisionIdx].Comments))
+
+	transition := SecureCellTransition{
+		ID:                   transitionID(run.request, "session_thread_decision_commented", comment.ID),
+		Action:               "secure_cell.session_thread_decision_commented",
+		Actor:                actorDID,
+		TargetType:           "thread_decision",
+		TargetDID:            decision.ID,
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		DecisionID:           decision.ID,
+		SessionStatusBefore:  session.Status,
+		SessionStatusAfter:   session.Status,
+		ThreadStatusBefore:   thread.Status,
+		ThreadStatusAfter:    thread.Status,
+		DecisionStatusBefore: decision.Status,
+		DecisionStatusAfter:  decision.Status,
+		CellStatusBefore:     run.result.Status,
+		CellStatusAfter:      run.result.Status,
+		PolicyReceipt:        cloneSignedPolicyReceipt(receipt),
+		Reason:               strings.TrimSpace(req.Reason),
+		Metadata:             transitionMetadata,
+		OccurredAt:           receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	if lastTransition := lastSecureCellTransition(run.result); lastTransition != nil && lastTransition.DecisionID == decision.ID && lastTransition.Action == "secure_cell.session_thread_decision_commented" {
+		lastCommentIdx := len(run.result.Decisions[decisionIdx].Comments) - 1
+		run.result.Decisions[decisionIdx].Comments[lastCommentIdx].SealID = safeString(lastTransition.ExecutionSeal, func(in *evidence.Seal) string { return in.SealID })
+		run.result.Decisions[decisionIdx].Comments[lastCommentIdx].TraceLinkID = safeString(lastTransition.TraceLink, func(in *evidence.TraceLink) string { return in.ID })
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// ContainThreadDecisionOutputs contains all decision-linked outputs and thread
+// exchanges without freezing the whole thread.
+func (s *Service) ContainThreadDecisionOutputs(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionArtifacts(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "contain_thread_decision_outputs", "secure_cell.session_thread_decision_outputs_contained", SecureCellArtifactContainmentStatusContained)
+}
+
+// ReleaseThreadDecisionOutputs releases all decision-linked outputs and thread
+// exchanges previously contained by this decision.
+func (s *Service) ReleaseThreadDecisionOutputs(ctx context.Context, cellID string, sessionID string, threadID string, decisionID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	return s.transitionThreadDecisionArtifacts(ctx, cellID, sessionID, threadID, decisionID, lifecycle, "release_thread_decision_outputs", "secure_cell.session_thread_decision_outputs_released", SecureCellArtifactContainmentStatusReleased)
 }
 
 // ResumeThreadDecision resumes one quarantined decision back to its last live status.
@@ -2754,8 +3324,12 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("decisions_approved", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))))
 	ledger.WithMetadata("decisions_quarantined", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))))
 	ledger.WithMetadata("decisions_closed", fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))))
+	ledger.WithMetadata("decision_approval_votes_total", fmt.Sprintf("%d", secureCellDecisionVoteTotal(run.result.Decisions)))
+	ledger.WithMetadata("decision_comments_total", fmt.Sprintf("%d", secureCellDecisionCommentTotal(run.result.Decisions)))
 	ledger.WithMetadata("shared_outputs_total", fmt.Sprintf("%d", len(run.result.SharedOutputs)))
 	ledger.WithMetadata("session_exchanges_total", fmt.Sprintf("%d", len(run.result.SessionExchanges)))
+	ledger.WithMetadata("contained_shared_outputs_total", fmt.Sprintf("%d", secureCellContainedSharedOutputTotal(run.result.SharedOutputs)))
+	ledger.WithMetadata("contained_session_exchanges_total", fmt.Sprintf("%d", secureCellContainedSessionExchangeTotal(run.result.SessionExchanges)))
 	if run.result.PausedFromStatus != "" {
 		ledger.WithMetadata("paused_from_status", string(run.result.PausedFromStatus))
 	}
@@ -2785,6 +3359,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	decisionEvidenceRecordIDs := make([]string, 0, len(run.result.Decisions))
+	decisionVoteRecordIDs := make([]string, 0, len(run.result.Decisions))
+	decisionCommentRecordIDs := make([]string, 0, len(run.result.Decisions))
+	decisionArtifactContainmentRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionExchangeRecordIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangePolicyReceiptIDs := make([]string, 0, len(run.result.SessionExchanges))
 	sessionExchangeSealIDs := make([]string, 0, len(run.result.SessionExchanges))
@@ -2909,7 +3486,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.session_thread_started" || transition.Action == "secure_cell.session_thread_closed" || transition.Action == "secure_cell.session_thread_resumed" || transition.Action == "secure_cell.session_thread_quarantined" {
 			threadLifecycleRecordIDs = append(threadLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.session_thread_decision_created" || transition.Action == "secure_cell.session_thread_decision_approved" || transition.Action == "secure_cell.session_thread_decision_resumed" || transition.Action == "secure_cell.session_thread_decision_closed" || transition.Action == "secure_cell.session_thread_decision_quarantined" {
+		if transition.Action == "secure_cell.session_thread_decision_created" || transition.Action == "secure_cell.session_thread_decision_voted" || transition.Action == "secure_cell.session_thread_decision_approved" || transition.Action == "secure_cell.session_thread_decision_commented" || transition.Action == "secure_cell.session_thread_decision_resumed" || transition.Action == "secure_cell.session_thread_decision_closed" || transition.Action == "secure_cell.session_thread_decision_quarantined" || transition.Action == "secure_cell.session_thread_decision_outputs_contained" || transition.Action == "secure_cell.session_thread_decision_outputs_released" {
 			decisionLifecycleRecordIDs = append(decisionLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.session_shared" && transition.SharedOutputID != "" {
@@ -2926,6 +3503,10 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if transition.Action == "secure_cell.session_thread_decision_quarantined" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.session_thread_decision_outputs_contained" || transition.Action == "secure_cell.session_thread_decision_outputs_released" {
+			containmentRecordIDs = append(containmentRecordIDs, recordID)
+			decisionArtifactContainmentRecordIDs = append(decisionArtifactContainmentRecordIDs, recordID)
 		}
 	}
 
@@ -3017,6 +3598,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	for _, decision := range run.result.Decisions {
 		recordID := fmt.Sprintf("%s-decision-%x", cellID(req), sha256.Sum256([]byte(decision.ID)))
 		decisionEvidenceRecordIDs = append(decisionEvidenceRecordIDs, recordID)
+		containedOutputIDs := secureCellDecisionContainedSharedOutputIDs(run.result.SharedOutputs, decision.ID)
+		containedExchangeIDs := secureCellDecisionContainedSessionExchangeIDs(run.result.SessionExchanges, decision.ID)
 		data := map[string]string{
 			"decision_id":             decision.ID,
 			"session_id":              decision.SessionID,
@@ -3024,9 +3607,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"decision_title":          decision.Title,
 			"decision_status":         string(decision.Status),
 			"decision_classification": decision.Classification,
+			"approval_threshold":      fmt.Sprintf("%d", decisionApprovalThreshold(decision)),
+			"approval_vote_count":     fmt.Sprintf("%d", len(decision.ApprovalVotes)),
+			"comment_count":           fmt.Sprintf("%d", len(decision.Comments)),
 			"proposed_by":             decision.ProposedBy,
+			"eligible_approver_dids":  strings.Join(decision.EligibleApproverDIDs, ","),
 			"related_exchange_ids":    strings.Join(decision.RelatedExchangeIDs, ","),
 			"related_output_ids":      strings.Join(decision.RelatedOutputIDs, ","),
+			"contained_output_ids":    strings.Join(containedOutputIDs, ","),
+			"contained_exchange_ids":  strings.Join(containedExchangeIDs, ","),
 		}
 		if decision.Summary != "" {
 			data["decision_summary"] = decision.Summary
@@ -3060,22 +3649,66 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Timestamp: decision.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
+		for _, vote := range decision.ApprovalVotes {
+			voteRecordID := fmt.Sprintf("%s-decision-vote-%x", cellID(req), sha256.Sum256([]byte(vote.ID)))
+			decisionVoteRecordIDs = append(decisionVoteRecordIDs, voteRecordID)
+			ledger.AddRecord(evidence.Record{
+				ID:        voteRecordID,
+				Type:      "governance",
+				Action:    "secure_cell.thread_decision_vote",
+				Actor:     vote.ActorDID,
+				Timestamp: vote.CreatedAt.UTC().Format(time.RFC3339Nano),
+				Data: map[string]string{
+					"decision_id":         decision.ID,
+					"vote_id":             vote.ID,
+					"vote_choice":         string(vote.Choice),
+					"vote_reason":         vote.Reason,
+					"policy_receipt_id":   vote.PolicyReceiptID,
+					"policy_receipt_hash": vote.PolicyReceiptHash,
+					"seal_id":             vote.SealID,
+					"trace_link_id":       vote.TraceLinkID,
+				},
+			})
+		}
+		for _, comment := range decision.Comments {
+			commentRecordID := fmt.Sprintf("%s-decision-comment-%x", cellID(req), sha256.Sum256([]byte(comment.ID)))
+			decisionCommentRecordIDs = append(decisionCommentRecordIDs, commentRecordID)
+			ledger.AddRecord(evidence.Record{
+				ID:        commentRecordID,
+				Type:      "collaboration",
+				Action:    "secure_cell.thread_decision_comment",
+				Actor:     comment.ActorDID,
+				Timestamp: comment.CreatedAt.UTC().Format(time.RFC3339Nano),
+				Data: map[string]string{
+					"decision_id":         decision.ID,
+					"comment_id":          comment.ID,
+					"comment":             comment.Comment,
+					"comment_reason":      comment.Reason,
+					"policy_receipt_id":   comment.PolicyReceiptID,
+					"policy_receipt_hash": comment.PolicyReceiptHash,
+					"seal_id":             comment.SealID,
+					"trace_link_id":       comment.TraceLinkID,
+				},
+			})
+		}
 	}
 
 	for _, output := range run.result.SharedOutputs {
 		recordID := fmt.Sprintf("%s-output-%x", cellID(req), sha256.Sum256([]byte(output.ID)))
 		sharedOutputRecordIDs = append(sharedOutputRecordIDs, recordID)
 		data := map[string]string{
-			"shared_output_id":      output.ID,
-			"session_id":            output.SessionID,
-			"name":                  output.Name,
-			"artifact_type":         output.ArtifactType,
-			"classification":        output.Classification,
-			"resource":              output.Resource,
-			"integrity_hash":        output.IntegrityHash,
-			"produced_by":           output.ProducedBy,
-			"shared_with":           strings.Join(output.SharedWith, ","),
-			"custody_entries_total": fmt.Sprintf("%d", len(output.ChainOfCustody)),
+			"shared_output_id":        output.ID,
+			"session_id":              output.SessionID,
+			"name":                    output.Name,
+			"artifact_type":           output.ArtifactType,
+			"classification":          output.Classification,
+			"resource":                output.Resource,
+			"integrity_hash":          output.IntegrityHash,
+			"produced_by":             output.ProducedBy,
+			"shared_with":             strings.Join(output.SharedWith, ","),
+			"custody_entries_total":   fmt.Sprintf("%d", len(output.ChainOfCustody)),
+			"containment_status":      string(firstNonEmptyArtifactContainmentStatus(output.ContainmentStatus, SecureCellArtifactContainmentStatusActive)),
+			"containment_decision_id": output.ContainmentDecisionID,
 		}
 		if output.Summary != "" {
 			data["summary"] = output.Summary
@@ -3100,6 +3733,28 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if len(output.ChainOfCustody) > 0 {
 			data["custody_head_hash"] = output.ChainOfCustody[len(output.ChainOfCustody)-1].Hash
 		}
+		if output.ContainmentReceiptID != "" {
+			data["containment_receipt_id"] = output.ContainmentReceiptID
+			data["containment_receipt_hash"] = output.ContainmentReceiptHash
+		}
+		if output.ContainmentSealID != "" {
+			data["containment_seal_id"] = output.ContainmentSealID
+		}
+		if output.ContainmentTraceLinkID != "" {
+			data["containment_trace_link_id"] = output.ContainmentTraceLinkID
+		}
+		if output.ContainedBy != "" {
+			data["contained_by"] = output.ContainedBy
+		}
+		if output.ContainedAt != nil {
+			data["contained_at"] = output.ContainedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if output.ReleasedBy != "" {
+			data["released_by"] = output.ReleasedBy
+		}
+		if output.ReleasedAt != nil {
+			data["released_at"] = output.ReleasedAt.UTC().Format(time.RFC3339Nano)
+		}
 		ledger.AddRecord(evidence.Record{
 			ID:        recordID,
 			Type:      "exchange",
@@ -3114,17 +3769,19 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		recordID := fmt.Sprintf("%s-exchange-%x", cellID(req), sha256.Sum256([]byte(item.ID)))
 		sessionExchangeRecordIDs = append(sessionExchangeRecordIDs, recordID)
 		data := map[string]string{
-			"session_exchange_id":   item.ID,
-			"session_id":            item.SessionID,
-			"thread_id":             item.ThreadID,
-			"name":                  item.Name,
-			"exchange_type":         item.ExchangeType,
-			"classification":        item.Classification,
-			"resource":              item.Resource,
-			"integrity_hash":        item.IntegrityHash,
-			"sent_by":               item.SentBy,
-			"recipients":            strings.Join(item.Recipients, ","),
-			"custody_entries_total": fmt.Sprintf("%d", len(item.ChainOfCustody)),
+			"session_exchange_id":     item.ID,
+			"session_id":              item.SessionID,
+			"thread_id":               item.ThreadID,
+			"name":                    item.Name,
+			"exchange_type":           item.ExchangeType,
+			"classification":          item.Classification,
+			"resource":                item.Resource,
+			"integrity_hash":          item.IntegrityHash,
+			"sent_by":                 item.SentBy,
+			"recipients":              strings.Join(item.Recipients, ","),
+			"custody_entries_total":   fmt.Sprintf("%d", len(item.ChainOfCustody)),
+			"containment_status":      string(firstNonEmptyArtifactContainmentStatus(item.ContainmentStatus, SecureCellArtifactContainmentStatusActive)),
+			"containment_decision_id": item.ContainmentDecisionID,
 		}
 		if item.Summary != "" {
 			data["summary"] = item.Summary
@@ -3148,6 +3805,28 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if len(item.ChainOfCustody) > 0 {
 			data["custody_head_hash"] = item.ChainOfCustody[len(item.ChainOfCustody)-1].Hash
+		}
+		if item.ContainmentReceiptID != "" {
+			data["containment_receipt_id"] = item.ContainmentReceiptID
+			data["containment_receipt_hash"] = item.ContainmentReceiptHash
+		}
+		if item.ContainmentSealID != "" {
+			data["containment_seal_id"] = item.ContainmentSealID
+		}
+		if item.ContainmentTraceLinkID != "" {
+			data["containment_trace_link_id"] = item.ContainmentTraceLinkID
+		}
+		if item.ContainedBy != "" {
+			data["contained_by"] = item.ContainedBy
+		}
+		if item.ContainedAt != nil {
+			data["contained_at"] = item.ContainedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if item.ReleasedBy != "" {
+			data["released_by"] = item.ReleasedBy
+		}
+		if item.ReleasedAt != nil {
+			data["released_at"] = item.ReleasedAt.UTC().Format(time.RFC3339Nano)
 		}
 		ledger.AddRecord(evidence.Record{
 			ID:        recordID,
@@ -3341,11 +4020,62 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				RecordIDs: append(append([]string(nil), decisionEvidenceRecordIDs...), decisionLifecycleRecordIDs...),
 			},
 			Metadata: map[string]string{
-				"decisions_total":       fmt.Sprintf("%d", len(run.result.Decisions)),
-				"decisions_open":        fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))),
-				"decisions_approved":    fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))),
-				"decisions_quarantined": fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))),
-				"decisions_closed":      fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))),
+				"decisions_total":         fmt.Sprintf("%d", len(run.result.Decisions)),
+				"decisions_open":          fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusOpen))),
+				"decisions_approved":      fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusApproved))),
+				"decisions_quarantined":   fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusQuarantined))),
+				"decisions_closed":        fmt.Sprintf("%d", len(decisionsByStatus(run.result.Decisions, SecureCellThreadDecisionStatusClosed))),
+				"decision_votes_total":    fmt.Sprintf("%d", secureCellDecisionVoteTotal(run.result.Decisions)),
+				"decision_comments_total": fmt.Sprintf("%d", secureCellDecisionCommentTotal(run.result.Decisions)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(decisionVoteRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-DECIDE-VOTE-01",
+			ControlName: "Thresholded Decision Approval Votes",
+			Description: "Decision approvals are accumulated as explicit, actor-bound votes until the configured threshold is satisfied.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: decisionVoteRecordIDs,
+			},
+			Metadata: map[string]string{
+				"decision_votes_total": fmt.Sprintf("%d", len(decisionVoteRecordIDs)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(decisionCommentRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-DECIDE-COMMENT-01",
+			ControlName: "Evidence-Bearing Decision Commentary",
+			Description: "Decision comments are preserved as policy-bound collaboration evidence with named actors and chain integrity.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: decisionCommentRecordIDs,
+			},
+			Metadata: map[string]string{
+				"decision_comments_total": fmt.Sprintf("%d", len(decisionCommentRecordIDs)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(decisionArtifactContainmentRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-DECIDE-CONT-01",
+			ControlName: "Decision-Scoped Output Containment",
+			Description: "Decision-linked outputs and exchanges can be contained and released independently from the rest of the collaboration thread.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: decisionArtifactContainmentRecordIDs,
+			},
+			Metadata: map[string]string{
+				"contained_shared_outputs_total":    fmt.Sprintf("%d", secureCellContainedSharedOutputTotal(run.result.SharedOutputs)),
+				"contained_session_exchanges_total": fmt.Sprintf("%d", secureCellContainedSessionExchangeTotal(run.result.SessionExchanges)),
 			},
 		}); err != nil {
 			return nil, err
@@ -3945,11 +4675,11 @@ func transitionRecordType(action string) string {
 		return "governance"
 	case "secure_cell.member_admitted":
 		return "trust"
-	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
+	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
 	case "secure_cell.session_shared", "secure_cell.session_exchange", "secure_cell.session_thread_message":
 		return "exchange"
-	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined", "secure_cell.session_thread_decision_quarantined":
+	case "secure_cell.member_quarantined", "secure_cell.member_revoked", "secure_cell.member_released", "secure_cell.quarantine_expired", "secure_cell.session_quarantined", "secure_cell.session_thread_quarantined", "secure_cell.session_thread_decision_quarantined", "secure_cell.session_thread_decision_outputs_contained", "secure_cell.session_thread_decision_outputs_released":
 		return "containment"
 	default:
 		return "governance"
@@ -3970,12 +4700,20 @@ func transitionStageForAction(action string) string {
 		return "message_session_thread"
 	case "secure_cell.session_thread_decision_created":
 		return "create_thread_decision"
+	case "secure_cell.session_thread_decision_voted":
+		return "approve_thread_decision"
 	case "secure_cell.session_thread_decision_approved":
 		return "approve_thread_decision"
+	case "secure_cell.session_thread_decision_commented":
+		return "comment_thread_decision"
 	case "secure_cell.session_thread_decision_resumed":
 		return "resume_thread_decision"
 	case "secure_cell.session_thread_decision_quarantined":
 		return "quarantine_thread_decision"
+	case "secure_cell.session_thread_decision_outputs_contained":
+		return "contain_thread_decision_outputs"
+	case "secure_cell.session_thread_decision_outputs_released":
+		return "release_thread_decision_outputs"
 	case "secure_cell.session_thread_decision_closed":
 		return "close_thread_decision"
 	case "secure_cell.session_exchange":
@@ -4123,6 +4861,124 @@ func findSecureCellThreadDecision(decisions []SecureCellThreadDecision, decision
 		}
 	}
 	return -1, nil
+}
+
+func findSecureCellSharedOutputIndex(outputs []SecureCellSharedOutput, outputID string) int {
+	outputID = strings.TrimSpace(outputID)
+	for idx := range outputs {
+		if strings.TrimSpace(outputs[idx].ID) == outputID {
+			return idx
+		}
+	}
+	return -1
+}
+
+func findSecureCellSessionExchangeIndex(exchanges []SecureCellSessionExchange, exchangeID string) int {
+	exchangeID = strings.TrimSpace(exchangeID)
+	for idx := range exchanges {
+		if strings.TrimSpace(exchanges[idx].ID) == exchangeID {
+			return idx
+		}
+	}
+	return -1
+}
+
+func decisionApprovalThreshold(decision SecureCellThreadDecision) int {
+	return normalizeSecureCellThreshold(decision.ApprovalThreshold)
+}
+
+func secureCellDecisionApproverAllowed(thread SecureCellSessionThread, decision SecureCellThreadDecision, actorDID string) bool {
+	actorDID = strings.TrimSpace(actorDID)
+	if actorDID == "" {
+		return false
+	}
+	eligible := uniqueTrimmedStrings(decision.EligibleApproverDIDs)
+	if len(eligible) == 0 {
+		return true
+	}
+	for _, eligibleDID := range eligible {
+		if eligibleDID == actorDID {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellDecisionHasApprovalVote(decision SecureCellThreadDecision, actorDID string) bool {
+	actorDID = strings.TrimSpace(actorDID)
+	for _, vote := range decision.ApprovalVotes {
+		if strings.TrimSpace(vote.ActorDID) == actorDID {
+			return true
+		}
+	}
+	return false
+}
+
+func secureCellDecisionVoteTotal(decisions []SecureCellThreadDecision) int {
+	total := 0
+	for _, decision := range decisions {
+		total += len(decision.ApprovalVotes)
+	}
+	return total
+}
+
+func secureCellDecisionCommentTotal(decisions []SecureCellThreadDecision) int {
+	total := 0
+	for _, decision := range decisions {
+		total += len(decision.Comments)
+	}
+	return total
+}
+
+func secureCellContainedSharedOutputTotal(outputs []SecureCellSharedOutput) int {
+	total := 0
+	for _, output := range outputs {
+		if output.ContainmentStatus == SecureCellArtifactContainmentStatusContained {
+			total++
+		}
+	}
+	return total
+}
+
+func secureCellContainedSessionExchangeTotal(exchanges []SecureCellSessionExchange) int {
+	total := 0
+	for _, item := range exchanges {
+		if item.ContainmentStatus == SecureCellArtifactContainmentStatusContained {
+			total++
+		}
+	}
+	return total
+}
+
+func secureCellDecisionContainedSharedOutputIDs(outputs []SecureCellSharedOutput, decisionID string) []string {
+	decisionID = strings.TrimSpace(decisionID)
+	ids := make([]string, 0)
+	for _, output := range outputs {
+		if strings.TrimSpace(output.ContainmentDecisionID) == decisionID && output.ContainmentStatus == SecureCellArtifactContainmentStatusContained {
+			ids = append(ids, output.ID)
+		}
+	}
+	return ids
+}
+
+func secureCellDecisionContainedSessionExchangeIDs(exchanges []SecureCellSessionExchange, decisionID string) []string {
+	decisionID = strings.TrimSpace(decisionID)
+	ids := make([]string, 0)
+	for _, item := range exchanges {
+		if strings.TrimSpace(item.ContainmentDecisionID) == decisionID && item.ContainmentStatus == SecureCellArtifactContainmentStatusContained {
+			ids = append(ids, item.ID)
+		}
+	}
+	return ids
+}
+
+func firstNonEmptyArtifactContainmentStatus(values ...SecureCellArtifactContainmentStatus) SecureCellArtifactContainmentStatus {
+	for _, value := range values {
+		if strings.TrimSpace(string(value)) != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func lastSecureCellTransition(result *SecureCellResult) *SecureCellTransition {
@@ -4633,6 +5489,42 @@ func secureCellThreadDecisionID(req SecureCellRequest, session SecureCellSession
 	return fmt.Sprintf("thread-decision-%x", sha256.Sum256(mustJSON(fingerprint)))
 }
 
+func secureCellThreadDecisionVoteID(req SecureCellRequest, decision SecureCellThreadDecision, actorDID string, existingCount int) string {
+	fingerprint := struct {
+		CellID     string `json:"cell_id"`
+		DecisionID string `json:"decision_id"`
+		Sequence   int    `json:"sequence"`
+		ActorDID   string `json:"actor_did"`
+		Timestamp  string `json:"timestamp"`
+	}{
+		CellID:     cellID(req),
+		DecisionID: decision.ID,
+		Sequence:   existingCount + 1,
+		ActorDID:   strings.TrimSpace(actorDID),
+		Timestamp:  time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	return fmt.Sprintf("thread-decision-vote-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
+func secureCellThreadDecisionCommentID(req SecureCellRequest, decision SecureCellThreadDecision, actorDID, comment string, existingCount int) string {
+	fingerprint := struct {
+		CellID     string `json:"cell_id"`
+		DecisionID string `json:"decision_id"`
+		Sequence   int    `json:"sequence"`
+		ActorDID   string `json:"actor_did"`
+		Comment    string `json:"comment"`
+		Timestamp  string `json:"timestamp"`
+	}{
+		CellID:     cellID(req),
+		DecisionID: decision.ID,
+		Sequence:   existingCount + 1,
+		ActorDID:   strings.TrimSpace(actorDID),
+		Comment:    strings.TrimSpace(comment),
+		Timestamp:  time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	return fmt.Sprintf("thread-decision-comment-%x", sha256.Sum256(mustJSON(fingerprint)))
+}
+
 func firstNonEmptyDecisionStatus(values ...SecureCellThreadDecisionStatus) SecureCellThreadDecisionStatus {
 	for _, value := range values {
 		if strings.TrimSpace(string(value)) != "" {
@@ -4775,6 +5667,17 @@ func uniqueTrimmedStrings(values []string) []string {
 	return out
 }
 
+func uniqueSecureCellStrings(values []string) []string {
+	return uniqueTrimmedStrings(values)
+}
+
+func normalizeSecureCellThreshold(value int) int {
+	if value <= 0 {
+		return 1
+	}
+	return value
+}
+
 func firstNonEmpty(values ...string) string {
 	for _, value := range values {
 		if strings.TrimSpace(value) != "" {
@@ -4804,8 +5707,11 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellSessionThreadMessageAction,
 				secureCellSessionThreadDecisionCreateAction,
 				secureCellSessionThreadDecisionApproveAction,
+				secureCellSessionThreadDecisionCommentAction,
+				secureCellSessionThreadDecisionContainAction,
 				secureCellSessionThreadDecisionResumeAction,
 				secureCellSessionThreadDecisionQuarantineAction,
+				secureCellSessionThreadDecisionReleaseAction,
 				secureCellSessionThreadDecisionCloseAction,
 				secureCellSessionExchangeAction,
 				secureCellSessionShareAction,
@@ -4925,6 +5831,15 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
 				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
 			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_comment_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "comment_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
 			policy.NewAllowRule("secure_cell_session_thread_decision_resume_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "resume_thread_decision"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
@@ -4936,6 +5851,24 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_session_thread_decision_quarantine_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "quarantine_thread_decision"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_contain_outputs_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "contain_thread_decision_outputs"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_session_thread_decision_release_outputs_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "release_thread_decision_outputs"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -5116,10 +6049,16 @@ func actionForStage(stage string) string {
 		return secureCellSessionThreadDecisionCreateAction
 	case "approve_thread_decision":
 		return secureCellSessionThreadDecisionApproveAction
+	case "comment_thread_decision":
+		return secureCellSessionThreadDecisionCommentAction
+	case "contain_thread_decision_outputs":
+		return secureCellSessionThreadDecisionContainAction
 	case "resume_thread_decision":
 		return secureCellSessionThreadDecisionResumeAction
 	case "quarantine_thread_decision":
 		return secureCellSessionThreadDecisionQuarantineAction
+	case "release_thread_decision_outputs":
+		return secureCellSessionThreadDecisionReleaseAction
 	case "close_thread_decision":
 		return secureCellSessionThreadDecisionCloseAction
 	case "exchange_session_message":
