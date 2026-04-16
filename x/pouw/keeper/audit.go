@@ -466,7 +466,7 @@ func (al *AuditLogger) AuditFeeDistributed(ctx sdk.Context, jobID, totalFee, val
 	al.Record(ctx, AuditCategoryEconomics, AuditSeverityInfo, "fee_distributed", "system", map[string]string{
 		"job_id":           jobID,
 		"total_fee":        totalFee,
-		"validator_reward":  validatorReward,
+		"validator_reward": validatorReward,
 		"treasury":         treasury,
 		"burned":           burned,
 		"insurance":        insurance,
@@ -489,4 +489,28 @@ func (al *AuditLogger) AuditSecurityAlert(ctx sdk.Context, alertType, descriptio
 	details["alert_type"] = alertType
 	details["description"] = description
 	al.Record(ctx, AuditCategorySecurity, AuditSeverityCritical, "security_alert", "system", details)
+}
+
+// AuditTrustComplianceExport records the creation of a packaged PoUW trust
+// compliance export so package hashes are anchored into the audit chain.
+func (al *AuditLogger) AuditTrustComplianceExport(ctx sdk.Context, actor string, details map[string]string) *AuditRecord {
+	if details == nil {
+		details = make(map[string]string)
+	}
+	if actor == "" {
+		actor = "system"
+	}
+	return al.Record(ctx, AuditCategoryGovernance, AuditSeverityInfo, "trust_compliance_export_anchored", actor, details)
+}
+
+// AuditControlLedgerPackage records the anchoring of a portable control-ledger
+// package so auditor package hashes become part of governed audit history.
+func (al *AuditLogger) AuditControlLedgerPackage(ctx sdk.Context, actor string, details map[string]string) *AuditRecord {
+	if details == nil {
+		details = make(map[string]string)
+	}
+	if actor == "" {
+		actor = "system"
+	}
+	return al.Record(ctx, AuditCategoryGovernance, AuditSeverityInfo, "control_ledger_package_anchored", actor, details)
 }

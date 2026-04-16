@@ -344,3 +344,14 @@ func UpdateParamsForTest(k Keeper, goCtx context.Context, msg *MsgUpdateParams) 
 	ms := msgServer{Keeper: k}
 	return ms.UpdateParams(goCtx, msg)
 }
+
+// UpdateEnterpriseAuditTrustRegistryForTest exposes the governance-controlled
+// trust-registry handler via the unexported msgServer for external tests.
+func UpdateEnterpriseAuditTrustRegistryForTest(
+	k Keeper,
+	goCtx context.Context,
+	msg *MsgUpdateEnterpriseAuditTrustRegistry,
+) (*MsgUpdateEnterpriseAuditTrustRegistryResponse, error) {
+	ms := msgServer{Keeper: k}
+	return ms.UpdateEnterpriseAuditTrustRegistry(goCtx, msg)
+}
