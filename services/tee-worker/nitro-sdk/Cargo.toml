@@ -22,6 +22,9 @@ uuid = { version = "1", features = ["v4"] }
 hex = "0.4"
 base64 = "0.21"
 rand = "0.9.3"
+k256 = { version = "0.13", features = ["ecdsa", "sha256"] }
+pqcrypto-dilithium = "0.5"
+pqcrypto-traits = "0.3"
 blake3 = "1"
 ring = "0.17"
 zeroize = { version = "1", features = ["zeroize_derive"] }

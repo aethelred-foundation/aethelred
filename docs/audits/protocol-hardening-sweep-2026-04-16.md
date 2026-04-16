@@ -43,6 +43,20 @@ already merged.
   in `services/tee-worker/nitro-sdk/src/attestation/` and mirrored the same
   fail-closed behavior in `sdk/aethelred-sdk/src/attestation/`.
 
+### 2a. Hybrid signature runtime hardening
+
+- Replaced the live placeholder hybrid signer/verifier logic in
+  `services/tee-worker/nitro-sdk/src/crypto/hybrid.rs` with real
+  secp256k1 ECDSA signing/verification and real Dilithium detached
+  signing/verification for Levels 2, 3, and 5.
+- Updated key and signature length handling to use the underlying Dilithium
+  library sizes instead of stale hard-coded constants.
+- Restricted deterministic `from_seed(...)` helpers to test builds so a
+  pseudo-deterministic helper cannot be mistaken for a production key path.
+- Mirrored the same signer/verifier logic in
+  `sdk/aethelred-sdk/src/crypto/hybrid.rs` so the review surface no longer
+  contains a stale placeholder copy of the same primitive.
+
 ### 3. Production governance bootstrap
 
 - Restricted legacy direct-admin initializers to local-development chains for:
@@ -82,6 +96,7 @@ already merged.
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_when_backend_missing`
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence`
 - `cargo check --manifest-path sdk/aethelred-sdk/Cargo.toml`
+- `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid`
 
 ### Solidity / Hardhat / Foundry
 
@@ -106,3 +121,8 @@ already merged.
 - This sweep is designed to reduce the risk of major findings in three areas
   auditors typically probe first: fail-open verifier behavior, direct-admin
   bootstrap windows, and bridge/relayer privilege ambiguity.
+- The mirrored public SDK source was updated to match the hardened hybrid
+  signer/verifier path, but `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml
+  --features full-sdk --lib hybrid` still fails because of pre-existing
+  full-SDK crate drift outside this change set (missing dependencies/stubs,
+  `lib_full.rs` doc-comment layout issues, and unrelated serde coverage gaps).

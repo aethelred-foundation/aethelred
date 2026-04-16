@@ -204,6 +204,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Nitro SDK quote-type fix | M-07 regression (see Remediation Register) | COLLECTED | Feature-gated attestation test |
 | Fail-closed backend regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_when_backend_missing` | COLLECTED | Incomplete SGX/Nitro/SEV backends now error explicitly |
 | TEE worker compile check | `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence` | COLLECTED | Current hardening branch compiles with fail-closed verifier changes |
+| Hybrid signer/verifier regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid` | COLLECTED | Real secp256k1 + Dilithium hybrid signing/verification on current hardening branch |
 | SGX/Nitro attestation flow E2E | `services/tee-worker/` integration tests | PENDING | Full attestation lifecycle |
 
 ---
