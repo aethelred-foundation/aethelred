@@ -75,6 +75,15 @@ type secureCellLifecycleRequest struct {
 	Metadata      map[string]string           `json:"metadata,omitempty"`
 }
 
+type secureCellBulkMemberMutationRequest struct {
+	ActorIdentity       json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt       *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	ParticipantDIDs     []string                    `json:"participant_dids,omitempty"`
+	Reason              string                      `json:"reason,omitempty"`
+	QuarantineExpiresAt *time.Time                  `json:"quarantine_expires_at,omitempty"`
+	Metadata            map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellResponse struct {
 	Result *securecellsintegration.SecureCellResult `json:"result,omitempty"`
 	Error  string                                   `json:"error,omitempty"`
@@ -102,6 +111,18 @@ type secureCellListResponse struct {
 
 type secureCellQuarantineExpiryListResponse struct {
 	Items []securecellsintegration.SecureCellQuarantineExpiry `json:"items"`
+}
+
+type secureCellBulkMutationResponse struct {
+	Result *securecellsintegration.SecureCellBulkMemberTransitionResult `json:"result,omitempty"`
+}
+
+type secureCellEventListResponse struct {
+	Items []secureCellAuditEventRecord `json:"items"`
+}
+
+type secureCellWebhookDeliveryListResponse struct {
+	Items []secureCellWebhookDeliveryRecord `json:"items"`
 }
 
 type appSecureCellSealer struct {
@@ -174,6 +195,8 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 		return
 	}
 
+	webhookConfig := resolveSecureCellWebhookConfig(appOpts)
+	secureCellRuntime := newSecureCellLifecycleRuntime(app, webhookConfig)
 	service, err := securecellsintegration.NewService(securecellsintegration.ServiceConfig{
 		PolicySignerKey:     policySignerKey,
 		PolicySigner:        policySigner,
@@ -200,9 +223,10 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 			pkg.AuditAnchor = anchor
 			return nil
 		},
+		EventPublisher: secureCellRuntime.Publish,
 	})
 	if err != nil {
-		app.Logger().Error("Secure Cells API initialization failed while constructing the service", "error", err)
+		app.Logger().Error("Secure Cells API initialization failed while constructing the lifecycle runtime-backed service", "error", err)
 		return
 	}
 
@@ -210,6 +234,8 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 	secureCellAuth, authMode, authMessage := resolveSecureCellAuthorizer(app, appOpts)
 	app.secureCellAuth = secureCellAuth
 	app.secureCellControlLedgerDir = controlLedgerDir
+	app.secureCellRuntime = secureCellRuntime
+	app.secureCellExpirySweeper = newSecureCellExpirySweeper(app, service, resolveSecureCellExpirySweepInterval(appOpts))
 	if signerMode == "ephemeral" {
 		app.Logger().Warn("Secure Cells API initialized with an ephemeral policy signer",
 			"control_ledger_dir", controlLedgerDir,
@@ -218,6 +244,8 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 			"policy_signer_message", signerMessage,
 			"write_auth_mode", authMode,
 			"write_auth_message", authMessage,
+			"webhook_endpoints", len(webhookConfig.Endpoints),
+			"expiry_sweep_interval", resolveSecureCellExpirySweepInterval(appOpts),
 		)
 		return
 	}
@@ -228,6 +256,8 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 		"policy_signer_message", signerMessage,
 		"write_auth_mode", authMode,
 		"write_auth_message", authMessage,
+		"webhook_endpoints", len(webhookConfig.Endpoints),
+		"expiry_sweep_interval", resolveSecureCellExpirySweepInterval(appOpts),
 	)
 }
 
@@ -342,6 +372,35 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsItemPrefix+"events" || r.URL.Path == secureCellsCollectionRoute+"/events" {
+			filter := secureCellAuditEventFilter{
+				CellID:         strings.TrimSpace(r.URL.Query().Get("cell_id")),
+				ParticipantDID: strings.TrimSpace(r.URL.Query().Get("participant_did")),
+				Action:         strings.TrimSpace(r.URL.Query().Get("action")),
+				Actor:          strings.TrimSpace(r.URL.Query().Get("actor")),
+				SinceSequence:  cast.ToUint64(strings.TrimSpace(r.URL.Query().Get("since_sequence"))),
+				Limit:          cast.ToInt(strings.TrimSpace(r.URL.Query().Get("limit"))),
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellEventListResponse{Items: listSecureCellAuditEvents(app, filter)})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/webhook-deliveries" {
+			if app.secureCellRuntime == nil {
+				writeSecureCellJSON(w, http.StatusOK, secureCellWebhookDeliveryListResponse{Items: nil})
+				return
+			}
+			filter := secureCellWebhookDeliveryFilter{
+				CellID:   strings.TrimSpace(r.URL.Query().Get("cell_id")),
+				EventID:  strings.TrimSpace(r.URL.Query().Get("event_id")),
+				Endpoint: strings.TrimSpace(r.URL.Query().Get("endpoint")),
+				Status:   secureCellWebhookDeliveryStatus(strings.ToLower(strings.TrimSpace(r.URL.Query().Get("status")))),
+				Limit:    cast.ToInt(strings.TrimSpace(r.URL.Query().Get("limit"))),
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellWebhookDeliveryListResponse{Items: app.secureCellRuntime.ListDeliveries(filter)})
+			return
+		}
+
 		if strings.HasSuffix(r.URL.Path, "/artifacts") {
 			cellID, err := parseSecureCellID(r.URL.Path, "/artifacts")
 			if err != nil {
@@ -402,6 +461,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.AdmitMember(r.Context(), cellID, securecellsintegration.SecureCellAdmissionRequest{
 				Participant: req.Participant,
+				ActorDID:    safeSecureCellActorDID(authCtx),
 				Reason:      req.Reason,
 				Metadata:    req.Metadata,
 			})
@@ -410,6 +470,62 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				return
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/members/bulk/quarantine"), strings.HasSuffix(r.URL.Path, "/members/bulk/release"), strings.HasSuffix(r.URL.Path, "/members/bulk/revoke"):
+			cellID, action, err := parseSecureCellBulkMemberActionPath(r.URL.Path)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellBulkMemberMutationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell bulk mutation request: "+err.Error())
+				return
+			}
+			authProbe := &secureCellMemberMutationRequest{
+				ActorIdentity:       req.ActorIdentity,
+				PolicyReceipt:       req.PolicyReceipt,
+				Reason:              req.Reason,
+				QuarantineExpiresAt: req.QuarantineExpiresAt,
+				Metadata:            req.Metadata,
+			}
+			var authCtx *secureCellAuthContext
+			switch action {
+			case "quarantine":
+				authCtx, err = app.authorizeSecureCellQuarantine(r, cellID, authProbe)
+			case "release":
+				authCtx, err = app.authorizeSecureCellRelease(r, cellID, authProbe)
+			case "revoke":
+				authCtx, err = app.authorizeSecureCellRevoke(r, cellID, authProbe)
+			default:
+				err = fmt.Errorf("unsupported secure cell bulk action")
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			bulk := securecellsintegration.SecureCellBulkMemberTransitionRequest{
+				ParticipantDIDs:     req.ParticipantDIDs,
+				ActorDID:            safeSecureCellActorDID(authCtx),
+				Reason:              req.Reason,
+				QuarantineExpiresAt: req.QuarantineExpiresAt,
+				Metadata:            req.Metadata,
+			}
+			var result *securecellsintegration.SecureCellBulkMemberTransitionResult
+			switch action {
+			case "quarantine":
+				result, err = app.secureCellService.BulkQuarantineMembers(r.Context(), cellID, bulk)
+			case "release":
+				result, err = app.secureCellService.BulkReleaseMembers(r.Context(), cellID, bulk)
+			case "revoke":
+				result, err = app.secureCellService.BulkRevokeMembers(r.Context(), cellID, bulk)
+			}
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellBulkMutationResponse{Result: result})
 			return
 		case strings.HasSuffix(r.URL.Path, "/quarantine/expire"):
 			cellID, err := parseSecureCellID(r.URL.Path, "/quarantine/expire")
@@ -429,6 +545,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.ExpireQuarantinedMembers(r.Context(), cellID, derefSecureCellTime(req.EffectiveAt), securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
 			})
@@ -466,6 +583,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			lifecycle := securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
 			}
@@ -516,6 +634,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			mutation := securecellsintegration.SecureCellMemberTransitionRequest{
 				ParticipantDID:      req.ParticipantDID,
+				ActorDID:            safeSecureCellActorDID(authCtx),
 				Reason:              req.Reason,
 				QuarantineExpiresAt: req.QuarantineExpiresAt,
 				Metadata:            req.Metadata,
@@ -735,6 +854,23 @@ func parseSecureCellMemberActionPath(path string) (cellID string, participantDID
 	return cellID, participantDID, action, nil
 }
 
+func parseSecureCellBulkMemberActionPath(path string) (cellID string, action string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", fmt.Errorf("invalid secure cell bulk mutation path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 4 || parts[1] != "members" || parts[2] != "bulk" {
+		return "", "", fmt.Errorf("invalid secure cell bulk mutation path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	action = strings.TrimSpace(parts[3])
+	if cellID == "" || action == "" {
+		return "", "", fmt.Errorf("invalid secure cell bulk mutation path")
+	}
+	return cellID, action, nil
+}
+
 func parseSecureCellLifecycleActionPath(path string) (cellID string, action string, err error) {
 	if !strings.HasPrefix(path, secureCellsItemPrefix) {
 		return "", "", fmt.Errorf("invalid secure cell lifecycle path")
@@ -773,6 +909,13 @@ func secureCellErrorStatus(err error, fallback int) int {
 	default:
 		return fallback
 	}
+}
+
+func safeSecureCellActorDID(authCtx *secureCellAuthContext) string {
+	if authCtx == nil {
+		return ""
+	}
+	return strings.TrimSpace(authCtx.ActorDID)
 }
 
 func writeSecureCellAPIError(w http.ResponseWriter, status int, message string) {
