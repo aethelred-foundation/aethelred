@@ -78,6 +78,12 @@ pub struct JobConfig {
     /// Enterprise mode: when true, settlement requires Hybrid verification
     /// with both TEE attestation and zkML proof present
     pub enterprise_mode: bool,
+
+    /// Require real cryptographic verification backends for TEE and zk proof
+    /// validation. Mainnet and testnet must fail closed when a precompile
+    /// rejects, errors, or lacks a compiled backend; only devnet may tolerate
+    /// the legacy soft path for scaffolding.
+    pub require_cryptographic_verification: bool,
 }
 
 impl JobConfig {
@@ -95,6 +101,7 @@ impl JobConfig {
             max_jobs_per_requester: 100,
             max_active_jobs: 100_000,
             enterprise_mode: false,
+            require_cryptographic_verification: true,
         }
     }
 
@@ -112,6 +119,7 @@ impl JobConfig {
             max_jobs_per_requester: 1000,
             max_active_jobs: 1_000_000,
             enterprise_mode: false,
+            require_cryptographic_verification: true,
         }
     }
 
@@ -129,6 +137,7 @@ impl JobConfig {
             max_jobs_per_requester: u32::MAX,
             max_active_jobs: u64::MAX,
             enterprise_mode: false,
+            require_cryptographic_verification: false,
         }
     }
 
@@ -401,6 +410,10 @@ impl JobRegistry {
     /// Returns whether enterprise mode is active.
     pub fn is_enterprise_mode(&self) -> bool {
         self.enterprise_mode
+    }
+
+    fn requires_cryptographic_verification(&self) -> bool {
+        self.enterprise_mode || self.config.require_cryptographic_verification
     }
 
     /// Set the enterprise zkML configuration.
@@ -959,9 +972,10 @@ impl JobRegistry {
                     });
 
                     #[cfg(not(feature = "sgx"))]
-                    if self.enterprise_mode {
+                    if self.requires_cryptographic_verification() {
                         return Err(SystemContractError::TeeVerificationFailed {
-                            reason: "Enterprise mode: TEE precompile rejected attestation".into(),
+                            reason: "TEE precompile rejected attestation in fail-closed mode"
+                                .into(),
                         });
                     }
                 }
@@ -975,9 +989,9 @@ impl JobRegistry {
                 });
 
                 #[cfg(not(feature = "sgx"))]
-                if self.enterprise_mode {
+                if self.requires_cryptographic_verification() {
                     return Err(SystemContractError::TeeVerificationFailed {
-                        reason: format!("Enterprise mode: TEE precompile error: {}", _e),
+                        reason: format!("TEE precompile error in fail-closed mode: {}", _e),
                     });
                 }
             }
@@ -991,9 +1005,9 @@ impl JobRegistry {
                 });
 
                 #[cfg(not(feature = "sgx"))]
-                if self.enterprise_mode {
+                if self.requires_cryptographic_verification() {
                     return Err(SystemContractError::TeeVerificationFailed {
-                        reason: "Enterprise mode: TEE precompile panicked during verification"
+                        reason: "TEE precompile panicked during verification in fail-closed mode"
                             .into(),
                     });
                 }
@@ -1145,6 +1159,12 @@ impl JobRegistry {
             return Err(SystemContractError::ZkVerificationFailed {
                 reason: "Enterprise mode: 0x0300 precompile reported an invalid proof (hard-fail)"
                     .into(),
+            });
+        }
+
+        if self.config.require_cryptographic_verification && !precompile_valid {
+            return Err(SystemContractError::ZkVerificationFailed {
+                reason: "0x0300 precompile reported an invalid proof in fail-closed mode".into(),
             });
         }
 
@@ -1438,6 +1458,25 @@ mod tests {
         (registry, bank, ctx)
     }
 
+    fn setup_mainnet() -> (JobRegistry, Bank, BlockContext) {
+        let registry = JobRegistry::new(JobConfig::mainnet());
+        let mut bank = Bank::new(BankConfig::default());
+
+        bank.mint([1u8; 32], 1_000_000_000_000_000_000_000_000)
+            .expect("mint should succeed");
+
+        let ctx = BlockContext {
+            height: 100,
+            timestamp: 1000,
+            slot: 100,
+            proposer: [10u8; 32],
+            gas_limit: 30_000_000,
+            gas_used: 0,
+        };
+
+        (registry, bank, ctx)
+    }
+
     fn submit_params() -> SubmitJobParams {
         SubmitJobParams {
             requester: [1u8; 32],
@@ -1455,6 +1494,13 @@ mod tests {
             required_compliance: vec![],
             jurisdiction: None,
         }
+    }
+
+    fn submit_params_for_config(config: &JobConfig) -> SubmitJobParams {
+        let mut params = submit_params();
+        params.max_bid = config.min_bid;
+        params.bid_amount = config.min_bid;
+        params
     }
 
     fn staking_manager() -> StakingManager {
@@ -2470,6 +2516,29 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_mainnet_tee_hardfails_without_compiled_backend() {
+        let (mut reg, mut bank, ctx) = setup_mainnet();
+        let params = submit_params_for_config(&JobConfig::mainnet());
+        let sr = reg.submit_job(params, &ctx, &mut bank).unwrap();
+        let p = [20u8; 32];
+        reg.assign_job(sr.job_id, p, &ctx).unwrap();
+        let job = reg.get_job(&sr.job_id).unwrap().clone();
+
+        let att = TeeAttestation {
+            tee_type: TeeType::IntelSgx,
+            attestation: vec![0xAA; 128],
+            measurement: job.model_hash,
+            timestamp: job.submitted_at + 1,
+        };
+
+        let result = reg.verify_tee_attestation(&att, &job);
+        assert!(
+            result.is_err(),
+            "Mainnet config must fail closed when the TEE precompile cannot cryptographically verify"
+        );
+    }
+
     // =========================================================================
     // SQ04 — ENTERPRISE ZKML HARD-FAIL TESTS
     // =========================================================================
@@ -2722,6 +2791,33 @@ mod tests {
             result.is_ok(),
             "Non-enterprise mode must accept proofs without enterprise guards, got: {:?}",
             result.unwrap_err()
+        );
+    }
+
+    #[test]
+    fn test_mainnet_zkml_hardfails_on_invalid_precompile_result() {
+        let (mut registry, mut bank, ctx) = setup_mainnet();
+        let config = JobConfig::mainnet();
+        let mut params = submit_params_for_config(&config);
+        params.verification_method = VerificationMethod::ZkProof;
+
+        let submit_result = registry.submit_job(params, &ctx, &mut bank).unwrap();
+        registry
+            .assign_job(submit_result.job_id, [20u8; 32], &ctx)
+            .unwrap();
+        let job = registry.get_job(&submit_result.job_id).unwrap().clone();
+
+        let zk_proof = ZkProof {
+            system: ZkSystem::Ezkl,
+            proof: vec![0xAA; 256],
+            public_inputs: vec![job.model_hash, job.input_hash, [4u8; 32]],
+            vk_hash: [5u8; 32],
+        };
+
+        let result = registry.verify_zk_proof(&zk_proof, &job);
+        assert!(
+            result.is_err(),
+            "Mainnet config must fail closed when the zk precompile reports an invalid proof"
         );
     }
 }

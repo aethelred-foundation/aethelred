@@ -183,6 +183,19 @@ already merged.
   transaction path instead of mock signature blobs, and added a regression that
   proves tampering the serialized signature causes admission to fail.
 
+### 3e. VM job-registry verification fail-closed enforcement
+
+- Tightened `crates/vm/src/system_contracts/job_registry.rs` so the VM job
+  registry no longer soft-accepts invalid TEE or zk verification precompile
+  results on normal mainnet and testnet configuration paths.
+- Added an explicit `require_cryptographic_verification` config gate to
+  `JobConfig`, enabled by default for mainnet and testnet and disabled only
+  for devnet scaffolding, so non-dev deployments now hard-fail when compiled
+  verification backends reject, error, or are unavailable.
+- Preserved the existing devnet-only permissive path for local scaffolding,
+  while adding regressions that prove mainnet/testnet configs fail closed and
+  the devnet compatibility lane still behaves intentionally.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -211,6 +224,7 @@ already merged.
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
 - `cargo test -p aethelred-mempool`
+- `cargo test -p aethelred-vm job_registry`
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
 
@@ -246,6 +260,9 @@ already merged.
 - The active mempool signature middleware no longer admits transactions based
   on hybrid signature shape alone; it now performs real hybrid verification and
   sender binding against the serialized signed transaction body.
+- The VM job registry now treats TEE and zk precompile failures as hard
+  failures on mainnet/testnet config paths instead of silently downgrading to a
+  structural-only acceptance path outside devnet.
 - The mirrored public SDK source was updated to match the hardened hybrid
   signer/verifier path and the fail-closed `zktensor` contract, but
   `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml

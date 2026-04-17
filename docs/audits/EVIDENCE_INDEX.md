@@ -229,6 +229,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Unit tests | `internal/zkml/` (`*_test.go`) | PARTIAL | Core verification paths covered |
 | Proof system tests | EZKL, Groth16, Halo2, Plonky2 backends | PENDING | Backend-specific proof tests |
 | Rust VM tests | `cargo test -p aethelred-vm test_invalid_attestation_response_does_not_satisfy_challenge`; `cargo test -p aethelred-vm test_valid_sgx_attestation_satisfies_challenge` | COLLECTED | Challenge-path and attestation-validation regressions on current hardening branch |
+| VM job registry fail-closed regressions | `cargo test -p aethelred-vm job_registry` | COLLECTED | Mainnet/testnet configs now hard-fail on invalid or unavailable TEE/zk precompile verification while devnet keeps an explicit permissive lane |
 | Rust VM compile check | `cargo check -p aethelred-vm` | COLLECTED | Current hardening branch compiles with fail-closed verification stubs |
 | zkTensor runtime contract | `services/tee-worker/nitro-sdk/src/zktensor/mod.rs` | COLLECTED | Worker zk proof paths fail closed until a real proving backend is configured |
 
