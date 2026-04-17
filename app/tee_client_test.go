@@ -1,0 +1,92 @@
+package app
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"cosmossdk.io/log"
+)
+
+func TestNitroEnclaveClient_SimulatedPlatformIdentity(t *testing.T) {
+	t.Parallel()
+
+	client, err := NewNitroEnclaveClient(log.NewNopLogger(), "simulated://nitro")
+	if err != nil {
+		t.Fatalf("expected simulated nitro client, got %v", err)
+	}
+
+	caps := client.GetCapabilities()
+	if caps.Platform != "nitro-simulated" {
+		t.Fatalf("expected nitro-simulated platform, got %q", caps.Platform)
+	}
+}
+
+func TestNitroEnclaveClient_SimulatedExecutionProducesValidArtifacts(t *testing.T) {
+	t.Parallel()
+
+	client, err := NewNitroEnclaveClient(log.NewNopLogger(), "simulated://nitro")
+	if err != nil {
+		t.Fatalf("expected simulated nitro client, got %v", err)
+	}
+
+	req := &TEEExecutionRequest{
+		JobID:          "job-tee-client-sim",
+		ModelHash:      make([]byte, 32),
+		InputHash:      bytes32(0x42),
+		RequireZKProof: true,
+		Timeout:        time.Second,
+	}
+
+	result, err := client.Execute(context.Background(), req)
+	if err != nil {
+		t.Fatalf("expected execute success, got %v", err)
+	}
+	if !result.Success {
+		t.Fatalf("expected success result, got %#v", result)
+	}
+	if result.Attestation == nil {
+		t.Fatalf("expected attestation")
+	}
+	if result.Attestation.Platform != "nitro-simulated" {
+		t.Fatalf("expected nitro-simulated attestation, got %q", result.Attestation.Platform)
+	}
+	if err := result.Attestation.Validate(); err != nil {
+		t.Fatalf("expected valid simulated attestation, got %v", err)
+	}
+	if err := validateTEEQuoteSchema(result.Attestation); err != nil {
+		t.Fatalf("expected schema-valid simulated nitro quote, got %v", err)
+	}
+	if result.ZKProof == nil {
+		t.Fatalf("expected zk proof")
+	}
+	if err := result.ZKProof.Validate(); err != nil {
+		t.Fatalf("expected valid simulated zk proof, got %v", err)
+	}
+}
+
+func TestBuildFullOrchestratorConfig_UsesSimulatedNitroConfig(t *testing.T) {
+	t.Parallel()
+
+	client, err := NewNitroEnclaveClient(log.NewNopLogger(), "simulated://nitro")
+	if err != nil {
+		t.Fatalf("expected simulated nitro client, got %v", err)
+	}
+
+	app := &AethelredApp{teeClient: client}
+	cfg := app.buildFullOrchestratorConfig()
+	if cfg.NitroConfig == nil {
+		t.Fatalf("expected nitro config")
+	}
+	if !cfg.NitroConfig.AllowSimulated {
+		t.Fatalf("expected simulated nitro config to allow simulated mode")
+	}
+}
+
+func bytes32(fill byte) []byte {
+	out := make([]byte, 32)
+	for i := range out {
+		out[i] = fill
+	}
+	return out
+}

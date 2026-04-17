@@ -88,6 +88,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Load test results | `loadtest-results/loadtest-report-20260325-113719.json` | COLLECTED | Throughput / latency benchmarks |
 | Benchmark topology | `loadtest-results/BENCHMARK_TOPOLOGY.md` | COLLECTED | Test infrastructure description |
 | TEE startup fail-closed regression | `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'` | COLLECTED | Safe init now treats real remote/Nitro TEE modes as critical startup dependencies instead of degradable simulation fallbacks |
+| Simulated Nitro client regression | `go test ./app` | COLLECTED | Simulated Nitro app client now reports `nitro-simulated`, emits schema-consistent Nitro quote JSON, generates valid zk proof artifacts, and keeps orchestrator wiring on the simulated path |
 | Pre-audit hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Current branch summary and verification log |
 
 ---

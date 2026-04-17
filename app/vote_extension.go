@@ -618,17 +618,19 @@ func (ta *TEEAttestationData) validate(mode ValidationMode) error {
 	}
 
 	// ── Strict mode: reject simulated TEE platform ──
-	if mode == ValidationModeStrict && ta.Platform == "simulated" {
+	if mode == ValidationModeStrict && isSimulatedTEEPlatform(ta.Platform) {
 		return fmt.Errorf("SECURITY: simulated TEE platform is rejected in production mode")
 	}
 
 	validPlatforms := map[string]bool{
-		"aws-nitro":     true,
-		"intel-sgx":     true,
-		"intel-tdx":     true,
-		"amd-sev":       true,
-		"arm-trustzone": true,
-		"simulated":     true, // testnet only - production validators MUST use real TEE
+		"aws-nitro":       true,
+		"intel-sgx":       true,
+		"intel-tdx":       true,
+		"amd-sev":         true,
+		"arm-trustzone":   true,
+		"nitro-simulated": true,
+		"mock-tee":        true,
+		"simulated":       true, // testnet only - production validators MUST use real TEE
 	}
 
 	if !validPlatforms[ta.Platform] {
@@ -671,6 +673,15 @@ func (ta *TEEAttestationData) validate(mode ValidationMode) error {
 	}
 
 	return nil
+}
+
+func isSimulatedTEEPlatform(platform string) bool {
+	switch platform {
+	case "simulated", "nitro-simulated", "mock-tee":
+		return true
+	default:
+		return false
+	}
 }
 
 // Validate performs validation of ZKProofData

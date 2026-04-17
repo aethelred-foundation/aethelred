@@ -276,6 +276,22 @@ already merged.
   intentionally while real TEE modes without a usable verifier endpoint now
   return critical startup errors.
 
+### 3j. Simulated Nitro client identity and artifact hardening
+
+- Tightened `app/tee_client.go`, where the explicit `nitro-simulated` client
+  previously identified itself as `aws-nitro`, emitted a quote format that did
+  not match the app's Nitro schema validator, and generated zk proof bytes too
+  short to satisfy the app's own proof-validation rules.
+- The simulated Nitro client now identifies itself as `nitro-simulated`,
+  produces schema-consistent simulated Nitro quote JSON with a simulation-only
+  signature field, emits zk proof transcripts that satisfy app-layer proof
+  validation, and reports simulated capabilities that keep
+  `buildFullOrchestratorConfig()` on the intended simulated-verifier path.
+- Updated the vote-extension and schema validation layer so explicit simulated
+  platforms (`simulated`, `nitro-simulated`, `mock-tee`) are accepted only in
+  permissive/dev validation lanes and are rejected consistently in strict
+  production validation.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -312,6 +328,7 @@ already merged.
 - `go test ./x/validator/keeper`
 - `go test ./x/seal/keeper`
 - `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
+- `go test ./app`
 
 ### Solidity / Hardhat / Foundry
 
@@ -375,6 +392,10 @@ already merged.
   degradable startup failures. If a deployment is configured for a real TEE
   verifier path, initialization now fails closed unless that path can be
   constructed successfully.
+- The simulated Nitro app client no longer masquerades as real `aws-nitro`
+  while emitting artifacts that violate the app's own schema and proof rules.
+  It now carries an explicit simulated platform identity and stays aligned with
+  the orchestrator's simulated wiring path.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
