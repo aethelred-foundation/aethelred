@@ -20,6 +20,7 @@ import (
 func TestEZKLProverService(t *testing.T) {
 	t.Run("Proof generation", testProofGeneration)
 	t.Run("Proof verification", testProofVerification)
+	t.Run("Proof tamper rejection", testProofVerificationRejectsTampering)
 	t.Run("Circuit caching", testCircuitCaching)
 	t.Run("Concurrent proofs", testConcurrentProofs)
 }
@@ -104,6 +105,54 @@ func testProofVerification(t *testing.T) {
 	}
 
 	t.Log("Proof verification passed")
+}
+
+func testProofVerificationRejectsTampering(t *testing.T) {
+	logger := log.NewNopLogger()
+	config := ezkl.DefaultProverConfig()
+	config.AllowSimulated = true
+	proverService := ezkl.NewProverService(logger, config)
+
+	ctx := context.Background()
+	req := &ezkl.ProofRequest{
+		RequestID:        "test-verify-tamper-1",
+		ModelHash:        randomHash(),
+		CircuitHash:      randomHash(),
+		InputHash:        randomHash(),
+		OutputHash:       randomHash(),
+		VerifyingKeyHash: randomHash(),
+	}
+
+	result, err := proverService.GenerateProof(ctx, req)
+	if err != nil {
+		t.Fatalf("Proof generation failed: %v", err)
+	}
+	if !result.Success {
+		t.Fatalf("Proof generation failed: %s", result.Error)
+	}
+
+	tamperedProof := append([]byte{}, result.Proof...)
+	tamperedProof[len(tamperedProof)-1] ^= 0x01
+
+	verified, err := proverService.VerifyProof(ctx, tamperedProof, result.PublicInputs, nil)
+	if err == nil {
+		t.Fatal("expected tampered proof to be rejected")
+	}
+	if verified {
+		t.Fatal("expected tampered proof verification to fail")
+	}
+
+	tamperedInputs := *result.PublicInputs
+	tamperedInputs.OutputCommitment = append([]byte{}, result.PublicInputs.OutputCommitment...)
+	tamperedInputs.OutputCommitment[0] ^= 0x01
+
+	verified, err = proverService.VerifyProof(ctx, result.Proof, &tamperedInputs, nil)
+	if err == nil {
+		t.Fatal("expected tampered public inputs to be rejected")
+	}
+	if verified {
+		t.Fatal("expected verification to fail for tampered public inputs")
+	}
 }
 
 func testCircuitCaching(t *testing.T) {

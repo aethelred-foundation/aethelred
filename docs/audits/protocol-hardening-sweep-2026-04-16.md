@@ -73,6 +73,18 @@ already merged.
   examples so the review surface no longer claims automatic proof generation
   where no backend exists.
 
+### 2d. Simulated EZKL verifier integrity hardening
+
+- Strengthened the local simulated EZKL verifier in
+  `x/verify/ezkl/prover.go`, which previously accepted any well-formed
+  `SimulatedEZKLProof` JSON payload after only shallow structural checks.
+- Changed simulated proof generation and verification to share a deterministic
+  proof transcript derived from `PublicInputs` and optional verifying-key
+  material, then reject proofs whose commitments, evaluations, or challenges do
+  not match that recomputed transcript.
+- Added regression coverage proving that tampered simulated proofs and tampered
+  public inputs now fail verification instead of silently succeeding.
+
 ### 2c. Keeper-side simulated attestation hardening
 
 - Replaced the keeper's simulated TEE attestation success path in
