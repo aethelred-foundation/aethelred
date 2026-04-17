@@ -133,6 +133,27 @@ already merged.
   the keeper immediately after deployment and the deployer cannot retain
   bootstrap authority.
 
+### 3b. Deployment authority fail-closed hardening
+
+- Centralized deployment authority resolution in
+  `contracts/scripts/lib/deployment-governance.ts` so local-network fallbacks
+  and non-local explicit-authority requirements are enforced consistently
+  across protocol deployment scripts.
+- Updated `contracts/scripts/deploy.ts` so non-local bridge deployments now
+  require an explicit `ADMIN_ADDRESS`, and they can no longer silently backfill
+  timelock proposers or executors from the deployer/admin path when a fresh
+  governance timelock must be created.
+- Updated `contracts/scripts/deploy-institutional-automation-keeper.ts` so
+  non-local keeper deployments require an explicit `KEEPER_OWNER_ADDRESS`
+  instead of defaulting to the deployer.
+- Updated `contracts/scripts/deploy-cruzible.ts` so non-local deployments
+  require explicit `ADMIN_ADDRESS`, `UPGRADER_TIMELOCK_ADDRESS`, and
+  `TREASURY_ADDRESS`, matching the hardened timelock-first governance posture
+  already enforced in the contracts themselves.
+- Added targeted governance-config regression coverage proving the local
+  fallback behavior remains available only for local deployments while
+  non-local deployments fail closed when authority configuration is missing.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -174,6 +195,7 @@ already merged.
 - `forge test --match-path test/CruzibleInvariant.t.sol` -> `13 passed`
 - `forge test --match-path test/VaultInvariant.t.sol` -> `14 passed`
 - `npx hardhat test test/institutional.reserve.automation.keeper.test.ts` -> `3 passing`
+- `npx hardhat test test/deployment.governance.config.test.ts test/institutional.reserve.automation.keeper.test.ts` -> `9 passing`
 
 ## Reviewer Notes
 

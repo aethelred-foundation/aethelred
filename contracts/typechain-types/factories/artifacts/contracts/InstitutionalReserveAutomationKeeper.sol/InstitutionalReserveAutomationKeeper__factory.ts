@@ -426,22 +426,26 @@ export class InstitutionalReserveAutomationKeeper__factory extends ContractFacto
   override getDeployTransaction(
     bridgeAddress: AddressLike,
     initialAssets: BytesLike[],
+    initialOwner: AddressLike,
     overrides?: NonPayableOverrides & { from?: string }
   ): Promise<ContractDeployTransaction> {
     return super.getDeployTransaction(
       bridgeAddress,
       initialAssets,
+      initialOwner,
       overrides || {}
     );
   }
   override deploy(
     bridgeAddress: AddressLike,
     initialAssets: BytesLike[],
+    initialOwner: AddressLike,
     overrides?: NonPayableOverrides & { from?: string }
   ) {
     return super.deploy(
       bridgeAddress,
       initialAssets,
+      initialOwner,
       overrides || {}
     ) as Promise<
       InstitutionalReserveAutomationKeeper & {

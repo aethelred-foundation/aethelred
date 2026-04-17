@@ -16,7 +16,11 @@
  *   AETHEL_TOKEN_ADDRESS  — AETHEL token contract address
  */
 
-import { ethers, upgrades } from "hardhat";
+import { ethers, network, upgrades } from "hardhat";
+import {
+  isLocalDeploymentNetwork,
+  resolveDeploymentAddress,
+} from "./lib/deployment-governance";
 
 interface DeploymentAddresses {
   vaultTEEVerifier: string;
@@ -38,14 +42,14 @@ interface DeploymentAddresses {
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const network = await ethers.provider.getNetwork();
-  const chainId = Number(network.chainId);
+  const networkInfo = await ethers.provider.getNetwork();
+  const chainId = Number(networkInfo.chainId);
 
   console.log("╔══════════════════════════════════════════════════════════╗");
   console.log("║           CRUZIBLE DEPLOYMENT                       ║");
   console.log("║           Liquid Staking with TEE Verification          ║");
   console.log("╠══════════════════════════════════════════════════════════╣");
-  console.log(`║  Network:  ${network.name} (chain ID: ${chainId})`);
+  console.log(`║  Network:  ${networkInfo.name} (chain ID: ${chainId})`);
   console.log(`║  Deployer: ${deployer.address}`);
   console.log(
     `║  Balance:  ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} ETH`,
@@ -53,24 +57,30 @@ async function main() {
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
   // Resolve addresses
-  const isLocal = chainId === 31337 || chainId === 1337;
-  const admin = isLocal ? deployer.address : process.env.ADMIN_ADDRESS;
-  const upgraderTimelock = isLocal
-    ? deployer.address
-    : process.env.UPGRADER_TIMELOCK_ADDRESS;
-  const treasury = process.env.TREASURY_ADDRESS || deployer.address;
+  const isLocal = isLocalDeploymentNetwork({
+    networkName: network.name,
+    chainId,
+  });
+  const admin = resolveDeploymentAddress({
+    envName: "ADMIN_ADDRESS",
+    envValue: process.env.ADMIN_ADDRESS,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
+  const upgraderTimelock = resolveDeploymentAddress({
+    envName: "UPGRADER_TIMELOCK_ADDRESS",
+    envValue: process.env.UPGRADER_TIMELOCK_ADDRESS,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
+  const treasury = resolveDeploymentAddress({
+    envName: "TREASURY_ADDRESS",
+    envValue: process.env.TREASURY_ADDRESS,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
 
   let aethelTokenAddr = process.env.AETHEL_TOKEN_ADDRESS;
-
-  if (!admin) {
-    throw new Error("ADMIN_ADDRESS required for non-local networks");
-  }
-
-  if (!upgraderTimelock) {
-    throw new Error(
-      "UPGRADER_TIMELOCK_ADDRESS required for non-local networks",
-    );
-  }
 
   // Deploy mock AETHEL token for local/test networks
   if (!aethelTokenAddr && isLocal) {
@@ -220,7 +230,7 @@ async function main() {
     upgraderTimelock,
     treasury,
     aethelToken: aethelTokenAddr,
-    network: network.name,
+    network: networkInfo.name,
     chainId,
     blockNumber,
     timestamp: new Date().toISOString(),

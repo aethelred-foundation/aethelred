@@ -1,4 +1,8 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import {
+  isLocalDeploymentNetwork,
+  resolveDeploymentAddress,
+} from "./lib/deployment-governance";
 
 const DEFAULT_MAX_ASSETS_PER_RUN = 16n;
 
@@ -27,7 +31,17 @@ async function main() {
   const grantPauserRole = process.env.GRANT_PAUSER_ROLE_TO_KEEPER !== "false";
 
   const [deployer] = await ethers.getSigners();
-  const initialOwner = ownerAddress ?? deployer.address;
+  const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const isLocal = isLocalDeploymentNetwork({
+    networkName: network.name,
+    chainId,
+  });
+  const initialOwner = resolveDeploymentAddress({
+    envName: "KEEPER_OWNER_ADDRESS",
+    envValue: ownerAddress,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
   console.log("Deployer:", deployer.address);
   console.log("Institutional bridge:", bridgeAddress);
   console.log("Tracked assets:", assetIds.length);

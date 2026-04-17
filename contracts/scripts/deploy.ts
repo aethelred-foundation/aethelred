@@ -11,7 +11,7 @@
  *
  * Environment Variables Required:
  *   - DEPLOYER_PRIVATE_KEY: Private key of deployer account
- *   - ADMIN_ADDRESS: Address to receive admin role (defaults to deployer)
+ *   - ADMIN_ADDRESS: Address to receive admin role (required for non-local networks)
  *   - RELAYER_ADDRESSES: Comma-separated list of relayer addresses
  *   - CONSENSUS_THRESHOLD_BPS: Consensus threshold in basis points (default: 6700)
  *
@@ -23,6 +23,11 @@ import { ethers, upgrades, network } from "hardhat";
 import { AethelredBridge } from "../typechain-types";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  isLocalDeploymentNetwork,
+  resolveDeploymentAddress,
+  resolveTimelockParticipants,
+} from "./lib/deployment-governance";
 
 // ============================================================================
 // Configuration Types
@@ -107,6 +112,7 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   const networkName = network.name;
   const chainId = network.config.chainId ?? 31337;
   const [deployer] = await ethers.getSigners();
+  const isLocal = isLocalDeploymentNetwork({ networkName, chainId });
 
   console.log(
     `\n📋 Preparing deployment configuration for network: ${networkName} (chainId: ${chainId})`,
@@ -115,8 +121,12 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   // Get network-specific defaults
   const networkConfig = NETWORK_CONFIGS[networkName] ?? {};
 
-  // Admin address (defaults to deployer)
-  const adminAddress = process.env.ADMIN_ADDRESS ?? deployer.address;
+  const adminAddress = resolveDeploymentAddress({
+    envName: "ADMIN_ADDRESS",
+    envValue: process.env.ADMIN_ADDRESS,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
   console.log(`   Admin: ${adminAddress}`);
 
   // Relayer addresses
@@ -173,7 +183,14 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
     process.env.TIMELOCK_ADMIN_ADDRESS ?? adminAddress;
   const timelockProposers = parseAddressList(process.env.TIMELOCK_PROPOSERS);
   const timelockExecutors = parseAddressList(process.env.TIMELOCK_EXECUTORS);
-  const upgraderTimelockAddress = process.env.UPGRADER_TIMELOCK_ADDRESS?.trim();
+  const resolvedTimelock = resolveTimelockParticipants({
+    explicitTimelockAddress: process.env.UPGRADER_TIMELOCK_ADDRESS,
+    proposers: timelockProposers,
+    executors: timelockExecutors,
+    fallbackAddress: adminAddress,
+    isLocal,
+  });
+  const upgraderTimelockAddress = resolvedTimelock.timelockAddress;
   const upgraderTimelockMinDelaySeconds = process.env
     .UPGRADER_TIMELOCK_MIN_DELAY_SECONDS
     ? parseInt(process.env.UPGRADER_TIMELOCK_MIN_DELAY_SECONDS, 10)
@@ -185,30 +202,21 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
     );
   }
 
-  if (!upgraderTimelockAddress) {
-    if (timelockProposers.length === 0) {
-      timelockProposers.push(adminAddress);
-    }
-    if (timelockExecutors.length === 0) {
-      timelockExecutors.push(adminAddress);
-    }
-  }
-
   console.log(
     `   Upgrader Timelock: ${upgraderTimelockAddress ?? "(deploy new)"}`,
   );
   console.log(`   Timelock Delay: ${upgraderTimelockMinDelaySeconds}s`);
   console.log(`   Timelock Admin: ${timelockAdminAddress}`);
-  console.log(`   Timelock Proposers (${timelockProposers.length})`);
-  console.log(`   Timelock Executors (${timelockExecutors.length})`);
+  console.log(`   Timelock Proposers (${resolvedTimelock.proposers.length})`);
+  console.log(`   Timelock Executors (${resolvedTimelock.executors.length})`);
 
   return {
     adminAddress,
     relayerAddresses,
     consensusThresholdBps,
     upgraderTimelockAddress,
-    timelockProposers,
-    timelockExecutors,
+    timelockProposers: resolvedTimelock.proposers,
+    timelockExecutors: resolvedTimelock.executors,
     timelockAdminAddress,
     upgraderTimelockMinDelaySeconds,
     networkName,
