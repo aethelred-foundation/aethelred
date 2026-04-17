@@ -256,6 +256,52 @@ func TestSealVerifierFailsClosedWithoutZkBackend(t *testing.T) {
 	}
 }
 
+func TestSealVerifierFailsClosedWithoutSignatureBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := makeValidSealForVerifier(16)
+	seal.TeeAttestations[0].Signature = []byte{0xAA}
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "signatures") {
+		t.Fatalf("expected signatures check to fail without a verifier backend")
+	}
+	if check, ok := findCheck(result, "signatures"); !ok || check.Message != "No signature verifier backend configured" {
+		t.Fatalf("expected explicit backend-missing signature failure, got %+v (present=%v)", check, ok)
+	}
+}
+
+func TestSealVerifierRejectsInvalidAttestationSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	cfg.SignatureVerifier = func(att *types.TEEAttestation) bool {
+		return bytes.Equal(att.Signature, []byte("good"))
+	}
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := makeValidSealForVerifier(17)
+	seal.TeeAttestations[0].Signature = []byte("bad")
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "signatures") {
+		t.Fatalf("expected signatures check to fail on invalid signature")
+	}
+}
+
 func TestSealVerifierComplianceAuditRequiredNoEvidence(t *testing.T) {
 	k := NewKeeper(nil, nil, "authority")
 	cfg := DefaultVerifierConfig()

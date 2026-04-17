@@ -305,6 +305,19 @@ already merged.
   encryption contract is actually available, instead of pretending plaintext has
   been protected.
 
+### 3l. Seal signature verification fail-closed hardening
+
+- Tightened `x/seal/keeper/verifier.go`, where the `signatures` check
+  previously treated the mere presence of signature bytes as successful
+  cryptographic verification.
+- The seal verifier now follows the same backend discipline as the TEE and zkML
+  checks: when signatures are present, verification fails closed unless an
+  explicit signature verifier backend or an opt-in insecure test fallback is
+  configured.
+- Existing unsigned seal flows remain explicit and reviewable: if no
+  attestation signatures are present, the verifier reports that there are no
+  signatures to verify instead of pretending verification occurred.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -343,6 +356,7 @@ already merged.
 - `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
 - `go test ./app`
 - `go test ./x/verify/tee ./services/tee-worker/l1-verifier`
+- `go test ./x/seal/keeper`
 
 ### Solidity / Hardhat / Foundry
 
@@ -413,6 +427,9 @@ already merged.
 - Nitro payload protection no longer uses base64-as-encryption in the verifier
   packages. Simulated Nitro now uses authenticated encryption, while remote
   Nitro encryption fails closed until a real attested enclave key path exists.
+- Seal verification no longer equates signature presence with cryptographic
+  verification. Signed attestations now require an explicit verifier backend or
+  an opt-in insecure local fallback path.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

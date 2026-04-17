@@ -24,6 +24,8 @@ type TEEAttestationVerifier func(attestation *types.TEEAttestation, expectedOutp
 
 type ZKMLProofVerifier func(proof *types.ZKMLProof) bool
 
+type AttestationSignatureVerifier func(attestation *types.TEEAttestation) bool
+
 // VerifierConfig contains configuration for seal verification
 type VerifierConfig struct {
 	// VerifyTEEAttestations enables TEE attestation verification
@@ -57,6 +59,12 @@ type VerifierConfig struct {
 	// are explicitly enabled for tests or local development.
 	ZKMLProofVerifier ZKMLProofVerifier
 
+	// SignatureVerifier performs cryptographic verification of attestation
+	// signatures. When unset, signature verification must fail closed unless
+	// insecure fallback checks are explicitly enabled for tests or local
+	// development.
+	SignatureVerifier AttestationSignatureVerifier
+
 	// AllowInsecureFallbackVerification enables legacy structural-only checks for
 	// TEE attestations and zk proofs. This is intended for tests and local
 	// development only and must remain disabled in production-facing configs.
@@ -75,6 +83,7 @@ func DefaultVerifierConfig() VerifierConfig {
 		RequireCompliance:                 true,
 		TEEAttestationVerifier:            nil,
 		ZKMLProofVerifier:                 nil,
+		SignatureVerifier:                 nil,
 		AllowInsecureFallbackVerification: false,
 	}
 }
@@ -509,20 +518,60 @@ func (sv *SealVerifier) checkSignatures(seal *types.DigitalSeal, result *SealVer
 		Required: false,
 	}
 
-	// Verify attestation signatures
-	signedCount := 0
+	hasSignedAttestation := false
 	for _, attestation := range seal.TeeAttestations {
 		if attestation != nil && len(attestation.Signature) > 0 {
-			signedCount++
+			hasSignedAttestation = true
+			break
 		}
 	}
 
-	if signedCount > 0 {
-		check.Passed = true
-		check.Message = fmt.Sprintf("%d signatures present", signedCount)
-	} else {
+	if !hasSignedAttestation {
 		check.Passed = true
 		check.Message = "No signatures to verify"
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	if sv.config.SignatureVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No signature verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	validCount := 0
+	invalidCount := 0
+	for _, attestation := range seal.TeeAttestations {
+		if attestation == nil || len(attestation.Signature) == 0 {
+			invalidCount++
+			continue
+		}
+		if sv.config.SignatureVerifier != nil {
+			if sv.config.SignatureVerifier(attestation) {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			continue
+		}
+		validCount++
+	}
+
+	if invalidCount == 0 && validCount > 0 {
+		check.Passed = true
+		if sv.config.SignatureVerifier != nil {
+			check.Message = fmt.Sprintf("%d/%d signatures verified", validCount, len(seal.TeeAttestations))
+		} else {
+			check.Message = fmt.Sprintf("%d/%d signatures passed insecure fallback checks", validCount, len(seal.TeeAttestations))
+		}
+	} else {
+		check.Passed = false
+		check.Message = fmt.Sprintf("%d/%d signatures verified", validCount, len(seal.TeeAttestations))
+		result.FailedChecks = append(result.FailedChecks, check.Name)
 	}
 
 	check.TimeMs = time.Since(startTime).Milliseconds()
