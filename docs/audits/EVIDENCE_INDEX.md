@@ -347,6 +347,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Full remediation bundle | `bash scripts/run-audit-remediation-evidence-bundle.sh .` | CI logs / local output |
 | Contract regression tests | `forge test` + `npx hardhat test` | `contracts/test/` |
 | Deployment governance regression | `npx hardhat test test/deployment.governance.config.test.ts test/institutional.reserve.automation.keeper.test.ts` | `contracts/test/deployment.governance.config.test.ts` |
+| Seal verifier regression | `go test ./x/seal/keeper/...` | `x/seal/keeper/` |
 | Guard scripts | `scripts/validate-compose-security.sh`, `scripts/validate-pouw-medium-guards.sh`, `scripts/validate-low-findings-guards.sh`, `scripts/validate-devnet-genesis.py` | Script output |
 | Rust attestation evidence | `cargo test --features attestation-evidence` | `services/tee-worker/nitro-sdk/` |
 | Security scans | `.github/workflows/security-scans.yml` | CI artifacts |

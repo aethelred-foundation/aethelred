@@ -233,7 +233,9 @@ func TestSDKHelperProofExportAndReference(t *testing.T) {
 	seal := makeTestSeal(4, "fraud_detection")
 	require.NoError(t, k.CreateSeal(ctx, seal))
 
-	verifier := NewSealVerifier(log.NewNopLogger(), &k, DefaultVerifierConfig())
+	cfg := DefaultVerifierConfig()
+	cfg.AllowInsecureFallbackVerification = true
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
 	exporter := NewSealExporter(log.NewNopLogger(), &k, verifier)
 	helper := NewSDKHelper(log.NewNopLogger(), &k, verifier, exporter)
 

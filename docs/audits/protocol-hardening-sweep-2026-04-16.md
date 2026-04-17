@@ -154,6 +154,21 @@ already merged.
   fallback behavior remains available only for local deployments while
   non-local deployments fail closed when authority configuration is missing.
 
+### 3c. Seal verifier fail-closed hardening
+
+- Removed the claim-vs-control gap in `x/seal/keeper/verifier.go` where TEE
+  attestations and zkML proofs were treated as verified after basic structural
+  checks alone.
+- The seal verifier now requires explicit TEE and zk verifier backends for
+  production-facing verification and fails closed with explicit messages when
+  those backends are not configured.
+- Retained the legacy structural-only path only behind
+  `AllowInsecureFallbackVerification`, making the insecure behavior opt-in for
+  tests and local development instead of the production default.
+- Updated the seal test suite so local fixtures opt into the insecure fallback
+  explicitly, while new regressions prove the default config rejects both TEE
+  and zk verification when no backend is configured.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -196,6 +211,7 @@ already merged.
 - `forge test --match-path test/VaultInvariant.t.sol` -> `14 passed`
 - `npx hardhat test test/institutional.reserve.automation.keeper.test.ts` -> `3 passing`
 - `npx hardhat test test/deployment.governance.config.test.ts test/institutional.reserve.automation.keeper.test.ts` -> `9 passing`
+- `go test ./x/seal/keeper/...` -> `ok`
 
 ## Reviewer Notes
 

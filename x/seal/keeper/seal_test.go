@@ -40,6 +40,12 @@ func (m *MockContext) ChainID() string {
 	return m.chainID
 }
 
+func defaultVerifierConfigForSealTest() keeper.VerifierConfig {
+	cfg := keeper.DefaultVerifierConfig()
+	cfg.AllowInsecureFallbackVerification = true
+	return cfg
+}
+
 // TestSealCreation tests basic seal creation
 func TestSealCreation(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
@@ -261,7 +267,7 @@ func TestSealSerialization(t *testing.T) {
 // TestSealVerifier tests seal verification
 func TestSealVerifier(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
-	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, keeper.DefaultVerifierConfig())
+	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, defaultVerifierConfigForSealTest())
 
 	ctx := context.Background()
 
@@ -286,7 +292,7 @@ func TestSealVerifier(t *testing.T) {
 // TestSealVerifierRevokedSeal tests verification of revoked seal
 func TestSealVerifierRevokedSeal(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
-	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, keeper.DefaultVerifierConfig())
+	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, defaultVerifierConfigForSealTest())
 
 	ctx := context.Background()
 
@@ -471,7 +477,7 @@ func TestSealQuery(t *testing.T) {
 // TestSDKHelper tests SDK helper functions
 func TestSDKHelper(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
-	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, keeper.DefaultVerifierConfig())
+	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, defaultVerifierConfigForSealTest())
 	exporter := keeper.NewSealExporter(log.NewNopLogger(), &k, verifier)
 	helper := keeper.NewSDKHelper(log.NewNopLogger(), &k, verifier, exporter)
 
@@ -525,7 +531,7 @@ func TestSDKHelper(t *testing.T) {
 // TestBatchVerify tests batch verification
 func TestBatchVerify(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
-	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, keeper.DefaultVerifierConfig())
+	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, defaultVerifierConfigForSealTest())
 	exporter := keeper.NewSealExporter(log.NewNopLogger(), &k, verifier)
 	helper := keeper.NewSDKHelper(log.NewNopLogger(), &k, verifier, exporter)
 
@@ -563,7 +569,7 @@ func TestBatchVerify(t *testing.T) {
 // TestSealExporter tests seal export
 func TestSealExporter(t *testing.T) {
 	k := keeper.NewKeeper(nil, nil, "")
-	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, keeper.DefaultVerifierConfig())
+	verifier := keeper.NewSealVerifier(log.NewNopLogger(), &k, defaultVerifierConfigForSealTest())
 	exporter := keeper.NewSealExporter(log.NewNopLogger(), &k, verifier)
 
 	ctx := sdkTestContext()
@@ -672,10 +678,10 @@ func createTestDigitalSeal() *types.DigitalSeal {
 			},
 		},
 		RegulatoryInfo: &types.RegulatoryInfo{
-			ComplianceFrameworks: []string{"FCRA", "Basel_III"},
-			DataClassification:   "confidential",
-			AuditRequired:        true,
-			RetentionPeriod:      durationpb.New(7 * 365 * 24 * time.Hour),
+			ComplianceFrameworks:     []string{"FCRA", "Basel_III"},
+			DataClassification:       "confidential",
+			AuditRequired:            true,
+			RetentionPeriod:          durationpb.New(7 * 365 * 24 * time.Hour),
 			JurisdictionRestrictions: []string{"US"},
 		},
 	}

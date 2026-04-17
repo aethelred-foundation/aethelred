@@ -90,7 +90,9 @@ func TestSealExporterExportVerifyFailure(t *testing.T) {
 	seal.Status = types.SealStatusPending
 	_ = k.SetSeal(context.Background(), seal)
 
-	verifier := NewSealVerifier(log.NewNopLogger(), &k, DefaultVerifierConfig())
+	cfg := DefaultVerifierConfig()
+	cfg.AllowInsecureFallbackVerification = true
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
 	exporter := NewSealExporter(log.NewNopLogger(), &k, verifier)
 	options := DefaultExportOptions()
 	options.VerifyBeforeExport = true

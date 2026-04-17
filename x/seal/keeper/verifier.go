@@ -20,6 +20,10 @@ type SealVerifier struct {
 	config VerifierConfig
 }
 
+type TEEAttestationVerifier func(attestation *types.TEEAttestation, expectedOutput []byte) bool
+
+type ZKMLProofVerifier func(proof *types.ZKMLProof) bool
+
 // VerifierConfig contains configuration for seal verification
 type VerifierConfig struct {
 	// VerifyTEEAttestations enables TEE attestation verification
@@ -42,18 +46,36 @@ type VerifierConfig struct {
 
 	// RequireCompliance requires compliance checks
 	RequireCompliance bool
+
+	// TEEAttestationVerifier performs platform-specific attestation verification.
+	// When unset, verification must fail closed unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	TEEAttestationVerifier TEEAttestationVerifier
+
+	// ZKMLProofVerifier performs proof-system-specific zkML verification.
+	// When unset, verification must fail closed unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	ZKMLProofVerifier ZKMLProofVerifier
+
+	// AllowInsecureFallbackVerification enables legacy structural-only checks for
+	// TEE attestations and zk proofs. This is intended for tests and local
+	// development only and must remain disabled in production-facing configs.
+	AllowInsecureFallbackVerification bool
 }
 
 // DefaultVerifierConfig returns default configuration
 func DefaultVerifierConfig() VerifierConfig {
 	return VerifierConfig{
-		VerifyTEEAttestations: true,
-		VerifyZKMLProofs:      true,
-		VerifyConsensus:       true,
-		VerifySignatures:      true,
-		AllowExpiredSeals:     false,
-		MaxAuditTrailSize:     1000,
-		RequireCompliance:     true,
+		VerifyTEEAttestations:             true,
+		VerifyZKMLProofs:                  true,
+		VerifyConsensus:                   true,
+		VerifySignatures:                  true,
+		AllowExpiredSeals:                 false,
+		MaxAuditTrailSize:                 1000,
+		RequireCompliance:                 true,
+		TEEAttestationVerifier:            nil,
+		ZKMLProofVerifier:                 nil,
+		AllowInsecureFallbackVerification: false,
 	}
 }
 
@@ -348,6 +370,15 @@ func (sv *SealVerifier) checkTEEAttestations(ctx context.Context, seal *types.Di
 		return
 	}
 
+	if sv.config.TEEAttestationVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No TEE attestation verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
 	// Verify each attestation
 	validCount := 0
 	for i, attestation := range seal.TeeAttestations {
@@ -381,8 +412,16 @@ func (sv *SealVerifier) checkTEEAttestations(ctx context.Context, seal *types.Di
 
 // verifyTEEAttestation verifies a single TEE attestation
 func (sv *SealVerifier) verifyTEEAttestation(attestation *types.TEEAttestation, expectedOutput []byte) bool {
+	if sv.config.TEEAttestationVerifier != nil {
+		return sv.config.TEEAttestationVerifier(attestation, expectedOutput)
+	}
+	if !sv.config.AllowInsecureFallbackVerification {
+		return false
+	}
+
 	// In production: verify attestation signature, certificate chain, PCRs
-	// For MVP: basic validation
+	// Legacy fallback: basic structural validation only. This path is disabled
+	// by default and must only be enabled explicitly for tests/dev.
 	if len(attestation.Quote) == 0 {
 		return false
 	}
@@ -413,6 +452,15 @@ func (sv *SealVerifier) checkZKMLProof(ctx context.Context, seal *types.DigitalS
 		return
 	}
 
+	if sv.config.ZKMLProofVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No zkML verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
 	// Verify the proof
 	if sv.verifyZKMLProof(seal.ZkProof) {
 		check.Passed = true
@@ -429,8 +477,16 @@ func (sv *SealVerifier) checkZKMLProof(ctx context.Context, seal *types.DigitalS
 
 // verifyZKMLProof verifies a zkML proof
 func (sv *SealVerifier) verifyZKMLProof(proof *types.ZKMLProof) bool {
+	if sv.config.ZKMLProofVerifier != nil {
+		return sv.config.ZKMLProofVerifier(proof)
+	}
+	if !sv.config.AllowInsecureFallbackVerification {
+		return false
+	}
+
 	// In production: call EZKL/RISC0 verifier
-	// For MVP: basic validation
+	// Legacy fallback: basic structural validation only. This path is disabled
+	// by default and must only be enabled explicitly for tests/dev.
 	if len(proof.ProofBytes) == 0 {
 		return false
 	}
