@@ -404,6 +404,7 @@ func ValidateParamChangeProposal(proposal ParamChangeProposal) ParamChangeValida
 			result.Warnings = append(result.Warnings,
 				fmt.Sprintf("LOCKED PARAMETER CHANGE: %s → %s", proposal.OldValue, proposal.NewValue),
 				fmt.Sprintf("Elevated quorum required: %d%%", entry.MinQuorum),
+				"Generic UpdateParams execution is fail-closed; a dedicated override path is required for runtime application",
 				entry.Reason,
 			)
 
@@ -571,6 +572,17 @@ func CheckParameterCompatibility(ctx sdk.Context, k Keeper, proposed *types.Para
 
 	// Check each change for compatibility
 	for _, change := range result.Changes {
+		if entry, ok := mainnetParamLockEntry(change.Field); ok && entry.Status == ParamLocked {
+			if change.Field == "allow_simulated" && current.AllowSimulated && !proposed.AllowSimulated {
+				// One-way disable remains compatible and desirable.
+			} else {
+				result.Compatible = false
+				result.Blockers = append(result.Blockers,
+					fmt.Sprintf("%s is locked by the mainnet registry and requires a dedicated elevated-governance execution path", change.Field))
+				continue
+			}
+		}
+
 		switch change.Field {
 		case "consensus_threshold":
 			// Lowering below 67 is a blocker

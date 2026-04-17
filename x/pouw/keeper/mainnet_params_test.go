@@ -186,6 +186,7 @@ func TestParamChangeProposal_LockedWithOverride(t *testing.T) {
 	require.Equal(t, keeper.ParamLocked, result.LockStatus)
 	require.GreaterOrEqual(t, result.RequiredQuorum, 80)
 	require.NotEmpty(t, result.Warnings, "locked param changes should generate warnings")
+	require.Contains(t, strings.Join(result.Warnings, " | "), "dedicated override path")
 }
 
 func TestParamChangeProposal_PermanentlyLocked(t *testing.T) {
@@ -352,6 +353,19 @@ func TestParamCompatibility_UnsafeConsensusThreshold(t *testing.T) {
 	require.NotEmpty(t, result.Blockers)
 }
 
+func TestParamCompatibility_LockedConsensusThresholdRequiresDedicatedPath(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	proposed := types.DefaultParams()
+	proposed.ConsensusThreshold = 80
+
+	result := keeper.CheckParameterCompatibility(ctx, k, proposed)
+	require.False(t, result.Compatible,
+		"locked consensus_threshold changes should require a dedicated runtime override path")
+	require.NotEmpty(t, result.Blockers)
+	require.Contains(t, strings.Join(result.Blockers, " | "), "dedicated elevated-governance execution path")
+}
+
 func TestParamCompatibility_OneWayGateBlocker(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 
@@ -362,6 +376,23 @@ func TestParamCompatibility_OneWayGateBlocker(t *testing.T) {
 	require.False(t, result.Compatible,
 		"re-enabling AllowSimulated should be incompatible")
 	require.NotEmpty(t, result.Blockers)
+}
+
+func TestParamCompatibility_AllowSimulatedDisableRemainsCompatible(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	current, err := k.GetParams(ctx)
+	require.NoError(t, err)
+	current.AllowSimulated = true
+	require.NoError(t, k.SetParams(ctx, current))
+
+	proposed := *current
+	proposed.AllowSimulated = false
+
+	result := keeper.CheckParameterCompatibility(ctx, k, &proposed)
+	require.True(t, result.Compatible,
+		"one-way disabling AllowSimulated should remain compatible")
+	require.Empty(t, result.Blockers)
 }
 
 func TestParamCompatibility_ReducingMaxJobsWarning(t *testing.T) {

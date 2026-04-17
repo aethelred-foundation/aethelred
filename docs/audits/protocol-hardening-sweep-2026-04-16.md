@@ -407,6 +407,10 @@ already merged.
   chains can permanently tighten policy, but any other locked-parameter change
   now requires a dedicated elevated-governance execution path rather than the
   generic handler.
+- Tightened `x/pouw/keeper/mainnet_params.go` so compatibility analysis and
+  proposal-validation warnings now reflect the same fail-closed runtime truth:
+  locked parameter changes are treated as requiring a dedicated override path,
+  while one-way disabling `AllowSimulated` remains compatible.
 - Added focused keeper regressions proving locked-parameter updates are
   rejected at runtime while mutable fields like `verification_reward` continue
   to update successfully.
