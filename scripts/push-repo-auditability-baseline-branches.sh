@@ -12,15 +12,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 declare -a REPOS=(
-  "/tmp/aethelred-core-audit|codex/repo-authority-aeth-mr-001-20260224"
-  "${REPO_ROOT}|codex/repo-authority-aeth-mr-001-20260224"
-  "/tmp/aethelred-rust-node-audit|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/services/tee-worker|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/contracts|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/sdk|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/tools|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/integrations|codex/aeth-mr-003-auditability-baseline-20260224"
-  "${REPO_ROOT}/frontend|codex/aeth-mr-003-auditability-baseline-20260224"
+  "/tmp/aethelred-core-audit|governance/repo-authority-aeth-mr-001-20260224"
+  "${REPO_ROOT}|governance/repo-authority-aeth-mr-001-20260224"
+  "/tmp/aethelred-rust-node-audit|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/services/tee-worker|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/contracts|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/sdk|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/tools|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/integrations|audit/aeth-mr-003-auditability-baseline-20260224"
+  "${REPO_ROOT}/frontend|audit/aeth-mr-003-auditability-baseline-20260224"
 )
 
 for entry in "${REPOS[@]}"; do

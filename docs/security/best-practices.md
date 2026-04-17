@@ -44,7 +44,7 @@ Before deploying to production, ensure:
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ │
 │ □ Code Security Audit │
-│ □ Third-party audit completed (NCC Group, Trail of Bits, etc.) │
+│ □ Third-party audit completed by an independent external security reviewer │
 │ □ All critical and high findings remediated │
 │ □ Medium findings have mitigation plan │
 │ □ Audit report reviewed by security team │
