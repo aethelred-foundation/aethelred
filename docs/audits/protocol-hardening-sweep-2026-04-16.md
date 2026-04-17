@@ -352,6 +352,18 @@ already merged.
   that there are no enhanced signatures to verify instead of silently implying
   they were checked.
 
+### 3p. Seal import provenance verification hardening
+
+- Tightened `x/seal/keeper/export.go`, where `ImportFromBase64(...)`
+  previously trusted decoded seal exports without verifying either the stored
+  content hash or any attached export signature.
+- Imported exports now re-compute the canonical content hash of the seal
+  payload and reject tampering instead of silently accepting mutated audit
+  artifacts.
+- Signed exports now fail closed on import unless an explicit export signature
+  verifier backend is configured, which makes export signing a real round-trip
+  provenance control instead of a one-way decoration.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -473,6 +485,9 @@ already merged.
 - Enhanced seal verification no longer ignores envelope signatures when they
   are present. Signed enhanced bundles now require an explicit verifier backend
   or an opt-in insecure local fallback path.
+- Imported seal exports no longer trust encoded payloads blindly. Content hashes
+  are re-checked on import, and signed exports now require an explicit
+  signature-verifier backend before they are accepted.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

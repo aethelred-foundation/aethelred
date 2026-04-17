@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -17,13 +18,15 @@ import (
 
 // SealExporter handles seal export in various formats
 type SealExporter struct {
-	logger   log.Logger
-	keeper   *Keeper
-	verifier *SealVerifier
-	signer   ExportSigner
+	logger            log.Logger
+	keeper            *Keeper
+	verifier          *SealVerifier
+	signer            ExportSigner
+	signatureVerifier ExportSignatureVerifier
 }
 
 type ExportSigner func(payload []byte) (algorithm string, signature []byte, err error)
+type ExportSignatureVerifier func(payload []byte, algorithm string, signature []byte, signerAddress string) bool
 
 // ExportFormat represents supported export formats
 type ExportFormat string
@@ -286,6 +289,10 @@ func (se *SealExporter) SetExportSigner(signer ExportSigner) {
 	se.signer = signer
 }
 
+func (se *SealExporter) SetExportSignatureVerifier(verifier ExportSignatureVerifier) {
+	se.signatureVerifier = verifier
+}
+
 // Export exports a seal in the specified format
 func (se *SealExporter) Export(ctx context.Context, sealID string, options ExportOptions) (*ExportedSeal, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -338,7 +345,10 @@ func (se *SealExporter) Export(ctx context.Context, sealID string, options Expor
 	}
 
 	// Compute content hash
-	contentBytes, _ := json.Marshal(sealData)
+	contentBytes, err := canonicalJSON(sealData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to canonicalize export payload: %w", err)
+	}
 	contentHash := sha256.Sum256(contentBytes)
 	export.Metadata.ContentHash = hex.EncodeToString(contentHash[:])
 
@@ -561,6 +571,48 @@ func (se *SealExporter) ImportFromBase64(data string) (*ExportedSeal, error) {
 		return nil, fmt.Errorf("failed to unmarshal export: %w", err)
 	}
 
+	if export.Metadata == nil {
+		return nil, fmt.Errorf("imported export missing metadata")
+	}
+	if export.Metadata.ContentHash == "" {
+		return nil, fmt.Errorf("imported export missing content hash")
+	}
+
+	contentBytes, err := canonicalJSON(export.Seal)
+	if err != nil {
+		return nil, fmt.Errorf("failed to canonicalize imported seal payload: %w", err)
+	}
+	contentHash := sha256.Sum256(contentBytes)
+	if hex.EncodeToString(contentHash[:]) != export.Metadata.ContentHash {
+		return nil, fmt.Errorf("imported export content hash mismatch")
+	}
+
+	if export.Signature != nil {
+		if export.Signature.SignerAddress == "" {
+			return nil, fmt.Errorf("imported signed export missing signer address")
+		}
+		if export.Signature.Algorithm == "" {
+			return nil, fmt.Errorf("imported signed export missing signature algorithm")
+		}
+		signatureBytes, err := base64.StdEncoding.DecodeString(export.Signature.Signature)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode export signature: %w", err)
+		}
+		if len(signatureBytes) == 0 {
+			return nil, fmt.Errorf("imported signed export missing signature bytes")
+		}
+		if se.signatureVerifier == nil {
+			return nil, fmt.Errorf("imported signed export requires an export signature verifier backend")
+		}
+		signaturePayload, err := exportSignaturePayload(&export)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build import signature payload: %w", err)
+		}
+		if !se.signatureVerifier(signaturePayload, export.Signature.Algorithm, signatureBytes, export.Signature.SignerAddress) {
+			return nil, fmt.Errorf("export signature verification failed")
+		}
+	}
+
 	return &export, nil
 }
 
@@ -579,11 +631,28 @@ func exportSignaturePayload(export *ExportedSeal) ([]byte, error) {
 		Metadata     *ExportMetadata         `json:"metadata"`
 	}
 
-	return json.Marshal(signableExport{
+	return canonicalJSON(signableExport{
 		Version:      export.Version,
 		Format:       export.Format,
 		Seal:         export.Seal,
 		Verification: export.Verification,
 		Metadata:     export.Metadata,
 	})
+}
+
+func canonicalJSON(value interface{}) ([]byte, error) {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+
+	var normalized interface{}
+	if err := decoder.Decode(&normalized); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(normalized)
 }

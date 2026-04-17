@@ -94,6 +94,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Seal export provenance regression | `go test ./x/seal/keeper` | COLLECTED | Export signing no longer relies on a dead option flag; signed exports now require an explicit signer backend and bind deterministic export payloads |
 | PQC readiness availability regression | `go test ./app` | COLLECTED | PQC startup availability checks now reflect the requested mode and actual CIRCL backend support instead of a placeholder always-available signal |
 | Enhanced seal signature regression | `go test ./x/seal/keeper` | COLLECTED | Enhanced seal verification no longer ignores envelope signatures when present; signed enhanced bundles require an explicit verifier backend or insecure local fallback |
+| Seal import provenance regression | `go test ./x/seal/keeper` | COLLECTED | Imported seal exports now re-check canonical content hashes and reject signed exports unless an explicit signature verifier backend validates the attached provenance |
 | Pre-audit hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Current branch summary and verification log |
 
 ---
