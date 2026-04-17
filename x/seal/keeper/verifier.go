@@ -26,6 +26,8 @@ type ZKMLProofVerifier func(proof *types.ZKMLProof) bool
 
 type AttestationSignatureVerifier func(attestation *types.TEEAttestation) bool
 
+type EnhancedSealSignatureVerifier func(signature types.SealSignature, seal *types.EnhancedDigitalSeal) bool
+
 // VerifierConfig contains configuration for seal verification
 type VerifierConfig struct {
 	// VerifyTEEAttestations enables TEE attestation verification
@@ -65,6 +67,12 @@ type VerifierConfig struct {
 	// development.
 	SignatureVerifier AttestationSignatureVerifier
 
+	// EnhancedSignatureVerifier performs cryptographic verification of
+	// EnhancedDigitalSeal envelope signatures. When unset, verification must fail
+	// closed if enhanced signatures are present unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	EnhancedSignatureVerifier EnhancedSealSignatureVerifier
+
 	// AllowInsecureFallbackVerification enables legacy structural-only checks for
 	// TEE attestations and zk proofs. This is intended for tests and local
 	// development only and must remain disabled in production-facing configs.
@@ -84,6 +92,7 @@ func DefaultVerifierConfig() VerifierConfig {
 		TEEAttestationVerifier:            nil,
 		ZKMLProofVerifier:                 nil,
 		SignatureVerifier:                 nil,
+		EnhancedSignatureVerifier:         nil,
 		AllowInsecureFallbackVerification: false,
 	}
 }
@@ -671,6 +680,9 @@ func (sv *SealVerifier) VerifyEnhancedSeal(ctx context.Context, seal *types.Enha
 	// Verify verification bundle
 	sv.checkVerificationBundle(seal, result)
 
+	// Verify enhanced signatures when present
+	sv.checkEnhancedSignatures(seal, result)
+
 	// Verify audit trail chain
 	sv.checkEnhancedAuditTrail(seal, result)
 
@@ -807,6 +819,57 @@ func (sv *SealVerifier) checkEnhancedAuditTrail(seal *types.EnhancedDigitalSeal,
 	} else {
 		check.Passed = false
 		check.Message = "Audit trail integrity compromised"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+	}
+
+	result.Checks = append(result.Checks, check)
+}
+
+func (sv *SealVerifier) checkEnhancedSignatures(seal *types.EnhancedDigitalSeal, result *SealVerificationResult) {
+	check := VerificationCheck{
+		Name:     "enhanced_signatures",
+		Required: false,
+	}
+
+	if len(seal.Signatures) == 0 {
+		check.Passed = true
+		check.Message = "No enhanced signatures to verify"
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	if sv.config.EnhancedSignatureVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No enhanced signature verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	validCount := 0
+	for _, sig := range seal.Signatures {
+		if len(sig.Signature) == 0 {
+			continue
+		}
+		if sv.config.EnhancedSignatureVerifier != nil {
+			if sv.config.EnhancedSignatureVerifier(sig, seal) {
+				validCount++
+			}
+			continue
+		}
+		validCount++
+	}
+
+	if validCount == len(seal.Signatures) {
+		check.Passed = true
+		if sv.config.EnhancedSignatureVerifier != nil {
+			check.Message = fmt.Sprintf("%d/%d enhanced signatures verified", validCount, len(seal.Signatures))
+		} else {
+			check.Message = fmt.Sprintf("%d/%d enhanced signatures passed insecure fallback checks", validCount, len(seal.Signatures))
+		}
+	} else {
+		check.Passed = false
+		check.Message = fmt.Sprintf("%d/%d enhanced signatures verified", validCount, len(seal.Signatures))
 		result.FailedChecks = append(result.FailedChecks, check.Name)
 	}
 

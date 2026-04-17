@@ -435,3 +435,54 @@ func TestSealVerifierEnhancedSealHashMismatch(t *testing.T) {
 		t.Fatalf("expected seal_hash check to fail")
 	}
 }
+
+func TestSealVerifierEnhancedFailsClosedWithoutSignatureBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := newEnhancedSealForVerifier(13)
+	seal.Signatures = append(seal.Signatures, types.SealSignature{
+		SignerAddress: testAccAddress(30),
+		Algorithm:     "ed25519",
+		Signature:     []byte("sig"),
+		Timestamp:     time.Now().UTC(),
+	})
+	seal.SealHash = seal.ComputeSealHash()
+
+	result, err := verifier.VerifyEnhancedSeal(context.Background(), seal)
+	if err != nil {
+		t.Fatalf("expected verify enhanced seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "enhanced_signatures") {
+		t.Fatalf("expected enhanced_signatures check to fail without backend")
+	}
+}
+
+func TestSealVerifierEnhancedRejectsInvalidSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.EnhancedSignatureVerifier = func(sig types.SealSignature, seal *types.EnhancedDigitalSeal) bool {
+		return bytes.Equal(sig.Signature, []byte("good"))
+	}
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := newEnhancedSealForVerifier(14)
+	seal.Signatures = append(seal.Signatures, types.SealSignature{
+		SignerAddress: testAccAddress(31),
+		Algorithm:     "ed25519",
+		Signature:     []byte("bad"),
+		Timestamp:     time.Now().UTC(),
+	})
+	seal.SealHash = seal.ComputeSealHash()
+
+	result, err := verifier.VerifyEnhancedSeal(context.Background(), seal)
+	if err != nil {
+		t.Fatalf("expected verify enhanced seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "enhanced_signatures") {
+		t.Fatalf("expected enhanced_signatures check to fail on invalid signature")
+	}
+}

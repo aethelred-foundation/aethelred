@@ -190,6 +190,7 @@ part of the `main`-branch CLOSED statistics below.
 | HS-2026-04-16-23 | Medium | Seal / Signatures | Make seal signature checks fail closed when signatures are present but no verifier backend exists, instead of treating the presence of signature bytes as successful cryptographic verification | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `go test ./x/seal/keeper` |
 | HS-2026-04-16-24 | Medium | Seal / Export Provenance | Make seal export signing fail closed unless a real export signer backend is configured, instead of exposing `AddExportSignature` as a non-enforced provenance control | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `go test ./x/seal/keeper` |
 | HS-2026-04-16-25 | Medium | App / PQC Readiness | Replace the placeholder PQC availability check with mode-aware backend validation so production and hybrid PQC startup requests reflect actual CIRCL availability instead of unconditional success | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `go test ./app` |
+| HS-2026-04-16-26 | Medium | Seal / Enhanced Provenance | Make enhanced seal verification fail closed when envelope signatures are present but no enhanced-signature verifier backend exists, instead of ignoring the richer signature surface entirely | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `go test ./x/seal/keeper` |
 
 See `docs/audits/protocol-hardening-sweep-2026-04-16.md` for the detailed
 scope and verification record.

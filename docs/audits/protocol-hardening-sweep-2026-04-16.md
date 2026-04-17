@@ -340,6 +340,18 @@ already merged.
 - The graceful fallback behavior remains intact, but it no longer relies on a
   fake availability signal to get there.
 
+### 3o. Enhanced seal signature fail-closed hardening
+
+- Tightened `x/seal/keeper/verifier.go`, where `VerifyEnhancedSeal(...)`
+  previously ignored the `EnhancedDigitalSeal.Signatures` surface entirely.
+- Enhanced seal verification now fails closed when envelope signatures are
+  present but no enhanced-signature verifier backend is configured, following
+  the same backend discipline as the basic seal signature, TEE, and zk proof
+  checks.
+- Unsigned enhanced seals remain explicit and reviewable: the verifier reports
+  that there are no enhanced signatures to verify instead of silently implying
+  they were checked.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -458,6 +470,9 @@ already merged.
 - PQC startup availability checks no longer claim backend readiness
   unconditionally. Production and hybrid requests now reflect actual backend
   availability instead of a placeholder success signal.
+- Enhanced seal verification no longer ignores envelope signatures when they
+  are present. Signed enhanced bundles now require an explicit verifier backend
+  or an opt-in insecure local fallback path.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
