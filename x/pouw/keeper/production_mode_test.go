@@ -44,7 +44,7 @@ func makeProductionExtension(t *testing.T, mutate func(*keeper.VoteExtensionWire
 		Verifications:    []keeper.VerificationWire{},
 		Timestamp:        time.Now().UTC(),
 		Signature:        json.RawMessage(`"c2lnbmF0dXJl"`), // non-empty base64
-		ExtensionHash:    json.RawMessage(`"aGFzaA=="`),      // non-empty base64
+		ExtensionHash:    json.RawMessage(`"aGFzaA=="`),     // non-empty base64
 	}
 	if mutate != nil {
 		mutate(ext)
@@ -146,7 +146,7 @@ func TestProduction_RejectsSimulatedTEEPlatform(t *testing.T) {
 		InputHash:       randomHash(),
 		OutputHash:      outputHash,
 		AttestationType: "tee",
-		TEEAttestation:  makeTEEAttestation(func(a *teeAttestationBuilder) {
+		TEEAttestation: makeTEEAttestation(func(a *teeAttestationBuilder) {
 			a.Platform = "simulated"
 		}, outputHash),
 		ExecutionTimeMs: 150,
@@ -168,6 +168,40 @@ func TestProduction_RejectsSimulatedTEEPlatform(t *testing.T) {
 	t.Logf("OK: correctly rejected simulated TEE: %v", err)
 }
 
+func TestProduction_RejectsAllSimulatedTEEPlatformAliases(t *testing.T) {
+	platforms := []string{"simulated", "nitro-simulated", "mock-tee"}
+
+	for _, platform := range platforms {
+		t.Run(platform, func(t *testing.T) {
+			ch := makeProductionHandler()
+			ctx := sdkCtxForHeight(100)
+
+			outputHash := randomHash()
+			v := keeper.VerificationWire{
+				JobID:           "test-prod-tee-" + platform,
+				ModelHash:       randomHash(),
+				InputHash:       randomHash(),
+				OutputHash:      outputHash,
+				AttestationType: "tee",
+				TEEAttestation: makeTEEAttestation(func(a *teeAttestationBuilder) {
+					a.Platform = platform
+				}, outputHash),
+				ExecutionTimeMs: 150,
+				Success:         true,
+				Nonce:           randomBytes(32),
+			}
+
+			err := ch.ValidateTEEAttestationWireStrictForTest(ctx, &v)
+			if err == nil {
+				t.Fatal("POLICY VIOLATION: production mode must reject simulated TEE aliases")
+			}
+			if !strings.Contains(err.Error(), "simulated TEE platform rejected") {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestProduction_RejectsSimulatedTEEInHybrid(t *testing.T) {
 	ch := makeProductionHandler()
 	ctx := sdkCtxForHeight(100)
@@ -179,7 +213,7 @@ func TestProduction_RejectsSimulatedTEEInHybrid(t *testing.T) {
 		InputHash:       randomHash(),
 		OutputHash:      outputHash,
 		AttestationType: "hybrid",
-		TEEAttestation:  makeTEEAttestation(func(a *teeAttestationBuilder) {
+		TEEAttestation: makeTEEAttestation(func(a *teeAttestationBuilder) {
 			a.Platform = "simulated"
 		}, outputHash),
 		ZKProof:         makeZKProof(nil),

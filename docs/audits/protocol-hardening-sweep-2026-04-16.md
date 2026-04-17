@@ -364,6 +364,18 @@ already merged.
   verifier backend is configured, which makes export signing a real round-trip
   provenance control instead of a one-way decoration.
 
+### 3q. TEE platform taxonomy alignment hardening
+
+- Tightened `x/pouw/keeper/consensus.go`, where keeper-side vote-extension
+  validation still treated only plain `simulated` as a simulated TEE platform
+  and classified `nitro-simulated` or `mock-tee` as unknown.
+- Production-mode keeper validation now treats all simulated TEE aliases as the
+  same simulated class, so the app layer and PoUW keeper enforce one consistent
+  production policy instead of drifting on platform naming.
+- Tightened `app/vote_extension_signing.go` to reuse the canonical permissive
+  `TEEAttestationData` validation rules, which means the application-level
+  signature verifier no longer accepts arbitrary non-empty TEE platform names.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -398,6 +410,7 @@ already merged.
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
 - `go test ./x/validator/keeper`
+- `go test ./x/pouw/keeper`
 - `go test ./x/seal/keeper`
 - `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
 - `go test ./app`
@@ -488,6 +501,9 @@ already merged.
 - Imported seal exports no longer trust encoded payloads blindly. Content hashes
   are re-checked on import, and signed exports now require an explicit
   signature-verifier backend before they are accepted.
+- TEE platform validation is now consistent across the app signer/verifier layer
+  and the PoUW keeper. `nitro-simulated` and `mock-tee` are treated as
+  simulated-only aliases instead of unknown or accidentally looser cases.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
