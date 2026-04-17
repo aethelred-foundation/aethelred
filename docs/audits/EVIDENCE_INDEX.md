@@ -91,9 +91,9 @@ The current evidence branch is a pre-audit hardening candidate on top of
 
 ---
 
-## 2. Cosmos SDK Modules -- `x/pouw/`, `x/verify/`
+## 2. Cosmos SDK Modules -- `x/pouw/`, `x/verify/`, `x/validator/`
 
-**Scope:** Proof-of-Useful-Work module and ZK/TEE verification module
+**Scope:** Proof-of-Useful-Work module, validator control paths, and ZK/TEE verification module
 **Audit engagement:** AUD-2026-002
 **Latest commit:** `ed40b6ee`
 
@@ -101,8 +101,10 @@ The current evidence branch is a pre-audit hardening candidate on top of
 |---------------|----------------|--------|-------|
 | Source code | `x/pouw/` | COLLECTED | PoUW job submission, VRF scheduling, rewards |
 | Source code | `x/verify/` | COLLECTED | ZK + TEE proof verification |
+| Source code | `x/validator/` | COLLECTED | Validator registry, slashing, and control-plane logic |
 | Unit tests | `x/pouw/` (`*_test.go`) | COLLECTED | Module keeper tests |
 | Unit tests | `x/verify/` (`*_test.go`) | COLLECTED | Verifier logic tests |
+| Validator slashing regression | `go test ./x/validator/keeper` | COLLECTED | Validator keeper now requires real staking slash/jail hooks when configured and fails closed if the economic penalty path cannot be resolved |
 | Rust consensus verification regression | `cargo test -p aethelred-consensus test_verification_engine*` | COLLECTED | Work-result binding, allowlist, and tamper rejection on current hardening branch |
 | Benchmarks | `make bench` | PENDING | PoUW and verify benchmarks |
 | Coverage report | `make test-coverage` -> `coverage.out` | PENDING | Part of unified Go coverage |

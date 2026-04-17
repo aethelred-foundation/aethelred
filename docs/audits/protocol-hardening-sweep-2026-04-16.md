@@ -85,6 +85,23 @@ already merged.
 - Added regression coverage proving that tampered simulated proofs and tampered
   public inputs now fail verification instead of silently succeeding.
 
+### 2e. Validator slashing economic-penalty enforcement
+
+- Tightened `x/validator/keeper/slashing.go`, where validator slashing
+  previously updated only local slashing records, reputation, jail metadata,
+  and tombstone state while leaving real economic slashing as a commented
+  production follow-up.
+- Added an explicit economic-penalty path that, when a staking keeper is
+  configured, resolves the validator's consensus address and calls the real
+  staking slash and jail hooks before any local slashing record is written.
+- Made the keeper fail closed when that economic penalty cannot be resolved or
+  applied, so invalid operator addresses, missing validators, missing
+  consensus-address support, or slash/jail hook failures now abort the
+  slashing flow instead of recording a misleading local-only penalty.
+- Added regression coverage proving the keeper now invokes real slash/jail
+  hooks when configured and preserves validator state when economic penalties
+  cannot be applied.
+
 ### 2c. Keeper-side simulated attestation hardening
 
 - Replaced the keeper's simulated TEE attestation success path in
@@ -263,6 +280,7 @@ already merged.
 - `cargo test -p aethelred-vm precompiles::tee::tests`
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
+- `go test ./x/validator/keeper`
 
 ### Solidity / Hardhat / Foundry
 
@@ -314,6 +332,10 @@ already merged.
   encrypted payloads, required access reasons are enforced, UAE sovereign
   defaults now require a TEE privacy level, and private data rejects debug-mode
   or unacceptable-TCB enclave reports.
+- The validator slashing keeper no longer records reputation-only or
+  tombstone-only penalties as if they were full slashes when a staking keeper
+  is present. It now applies real staking slash/jail hooks first and aborts
+  cleanly if the economic penalty path cannot be resolved.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

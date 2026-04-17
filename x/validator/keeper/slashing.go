@@ -62,6 +62,10 @@ var TombstoneConditions = map[SlashingCondition]bool{
 
 const downtimeJailDuration = time.Hour
 
+type consensusAddressProvider interface {
+	GetConsAddr() ([]byte, error)
+}
+
 // SlashingParams contains parameters for slashing
 type SlashingParams struct {
 	// MinReportsForSlashing is the minimum reports needed before slashing
@@ -209,6 +213,10 @@ func (k Keeper) SlashValidator(
 	shouldJail := JailableConditions[condition]
 	shouldTombstone := TombstoneConditions[condition]
 
+	if err := k.applyEconomicPenalty(ctx, validatorAddr, fraction, shouldJail); err != nil {
+		return err
+	}
+
 	// Record the slashing
 	record := &types.SlashingRecord{
 		ValidatorAddress: validatorAddr,
@@ -256,9 +264,6 @@ func (k Keeper) SlashValidator(
 		_ = k.ValidatorJailUntil.Remove(ctx, validatorAddr)
 	}
 
-	// In production: call staking/slashing keeper to actually slash tokens
-	// For MVP, we just record the event and update reputation
-
 	k.logger.Error("Validator slashed",
 		"validator", validatorAddr,
 		"condition", condition,
@@ -280,6 +285,50 @@ func (k Keeper) SlashValidator(
 			sdk.NewAttribute("job_id", jobID),
 		),
 	)
+
+	return nil
+}
+
+func (k Keeper) applyEconomicPenalty(
+	ctx context.Context,
+	validatorAddr string,
+	fraction sdkmath.LegacyDec,
+	shouldJail bool,
+) error {
+	if k.stakingKeeper == nil {
+		return nil
+	}
+
+	valAddr, err := sdk.ValAddressFromBech32(validatorAddr)
+	if err != nil {
+		return fmt.Errorf("cannot apply staking penalty for validator %s: invalid operator address: %w", validatorAddr, err)
+	}
+
+	validator, err := k.stakingKeeper.GetValidator(ctx, valAddr)
+	if err != nil {
+		return fmt.Errorf("cannot apply staking penalty for validator %s: %w", validatorAddr, err)
+	}
+
+	consProvider, ok := validator.(consensusAddressProvider)
+	if !ok {
+		return fmt.Errorf("cannot apply staking penalty for validator %s: validator does not expose consensus address", validatorAddr)
+	}
+
+	consAddrBz, err := consProvider.GetConsAddr()
+	if err != nil {
+		return fmt.Errorf("cannot apply staking penalty for validator %s: failed to resolve consensus address: %w", validatorAddr, err)
+	}
+
+	consAddr := sdk.ConsAddress(consAddrBz)
+	if err := k.stakingKeeper.Slash(ctx, consAddr, fraction); err != nil {
+		return fmt.Errorf("cannot apply staking penalty for validator %s: slash failed: %w", validatorAddr, err)
+	}
+
+	if shouldJail {
+		if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
+			return fmt.Errorf("cannot jail validator %s after slash: %w", validatorAddr, err)
+		}
+	}
 
 	return nil
 }
