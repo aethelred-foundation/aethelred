@@ -2,7 +2,7 @@
 
 > **Document owner:** Security & Compliance Lead
 > **Effective:** 2026-03-25
-> **Last reviewed:** 2026-04-16
+> **Last reviewed:** 2026-04-17
 > **Purpose:** Track the remediation lifecycle for every audit finding across all engagements, categorized by subsystem.
 
 ---
@@ -172,6 +172,7 @@ part of the `main`-branch CLOSED statistics below.
 | HS-2026-04-16-05 | Medium | Smart Contract | Return Cruzible to mainnet-deployable size without weakening core staking or verifier logic | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `npx hardhat size-contracts`; `forge test --match-path test/Cruzible.t.sol`; `forge test --match-path test/CruzibleInvariant.t.sol`; `forge test --match-path test/VaultInvariant.t.sol` |
 | HS-2026-04-16-06 | High | Cryptographic / TEE | Replace live placeholder hybrid secp256k1 + Dilithium signing/verification in the worker runtime, align Dilithium wire sizes to the backing library, and move deterministic seed helpers out of production builds | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid` |
 | HS-2026-04-16-07 | High | zkML / TEE | Remove placeholder zk proof generation from the worker runtime and make zk proof generation/verification fail closed until a real EZKL backend is configured | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`; `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk` |
+| HS-2026-04-16-08 | High | Verify Keeper / TEE | Replace keeper-side simulated TEE attestation success-by-structure with an authenticated quote envelope keyed by explicit simulation verifier material, and reject tampered or unsigned simulated attestations | `ramesh/protocol-hardening-sweep-20260416` / PR `#141` | `go test ./x/verify/keeper/...`; `go test ./x/verify/...` |
 
 See `docs/audits/protocol-hardening-sweep-2026-04-16.md` for the detailed
 scope and verification record.

@@ -74,6 +74,7 @@ func setupTEEBenchEnv(b *testing.B, platform vtypes.TEEPlatform, quoteSize int) 
 	b.Helper()
 
 	k, ctx := createBenchKeeper(b)
+	simulationVerifierKey := sha256.Sum256([]byte(fmt.Sprintf("bench-sim-key-%s", platform.String())))
 
 	// Set params: simulated mode ON.
 	params := vtypes.DefaultParams()
@@ -90,6 +91,7 @@ func setupTEEBenchEnv(b *testing.B, platform vtypes.TEEPlatform, quoteSize int) 
 		IsActive:            true,
 		MaxQuoteAge:         durationpb.New(24 * time.Hour),
 		TrustedMeasurements: [][]byte{measurement[:]},
+		RootCertificate:     simulationVerifierKey[:],
 	}
 	if err := k.TEEConfigs.Set(ctx, platform.String(), teeConfig); err != nil {
 		b.Fatalf("TEEConfigs.Set: %v", err)
@@ -106,11 +108,15 @@ func setupTEEBenchEnv(b *testing.B, platform vtypes.TEEPlatform, quoteSize int) 
 
 	attestation := &vtypes.TEEAttestation{
 		Platform:    platform,
-		Quote:       quote,
 		Measurement: measurement[:],
 		Timestamp:   timestamppb.New(ctx.BlockTime().Add(-1 * time.Minute)),
 		Nonce:       nonce,
 	}
+	wrappedQuote, err := buildSimulatedAttestationQuote(attestation, simulationVerifierKey[:], quote)
+	if err != nil {
+		b.Fatalf("buildSimulatedAttestationQuote: %v", err)
+	}
+	attestation.Quote = wrappedQuote
 
 	return k, ctx, attestation
 }
@@ -134,6 +140,7 @@ func BenchmarkTEEVerification(b *testing.B) {
 	for _, tc := range platforms {
 		b.Run(tc.name, func(b *testing.B) {
 			k, ctx, _ := setupTEEBenchEnv(b, tc.platform, tc.quoteSize)
+			simulationVerifierKey := sha256.Sum256([]byte(fmt.Sprintf("bench-sim-key-%s", tc.platform.String())))
 
 			// Pre-generate unique quotes/nonces for each iteration to avoid
 			// replay detection (each quote hash must be unique).
@@ -161,11 +168,15 @@ func BenchmarkTEEVerification(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				att := &vtypes.TEEAttestation{
 					Platform:    tc.platform,
-					Quote:       quotes[i],
 					Measurement: measurement[:],
 					Timestamp:   timestamppb.New(ctx.BlockTime().Add(-1 * time.Minute)),
 					Nonce:       nonces[i],
 				}
+				wrappedQuote, err := buildSimulatedAttestationQuote(att, simulationVerifierKey[:], quotes[i])
+				if err != nil {
+					b.Fatalf("buildSimulatedAttestationQuote: %v", err)
+				}
+				att.Quote = wrappedQuote
 				// Fresh event manager each iteration to avoid accumulation.
 				iterCtx := ctx.WithEventManager(sdk.NewEventManager())
 				result, err := k.VerifyTEEAttestation(iterCtx, att)

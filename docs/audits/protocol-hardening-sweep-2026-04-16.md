@@ -73,6 +73,25 @@ already merged.
   examples so the review surface no longer claims automatic proof generation
   where no backend exists.
 
+### 2c. Keeper-side simulated attestation hardening
+
+- Replaced the keeper's simulated TEE attestation success path in
+  `x/verify/keeper/tee_verification_path.go`, which previously accepted
+  platform-specific size checks as sufficient verification whenever
+  `AllowSimulated=true`.
+- Introduced an authenticated simulated-attestation quote envelope stored in
+  `TEEAttestation.Quote`, keyed by an explicitly configured simulation verifier
+  secret (`TEEConfig.RootCertificate`) in development and test environments.
+- Bound the simulated attestation MAC to the attestation platform, enclave ID,
+  measurement, user data, timestamp, certificate chain, nonce, and raw quote
+  body so tampering any of those fields now invalidates verification.
+- Preserved fail-closed production behavior: if `AllowSimulated=false`, the
+  keeper still requires a configured remote attestation verifier endpoint and
+  will not silently fall back to local success.
+- Added regression coverage proving the keeper now rejects tampered simulated
+  quotes and unconfigured simulation verifier keys while preserving replay
+  protection and the normal dev/test success path.
+
 ### 3. Production governance bootstrap
 
 - Restricted legacy direct-admin initializers to local-development chains for:
@@ -115,6 +134,8 @@ already merged.
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid`
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
+- `go test ./x/verify/keeper/...`
+- `go test ./x/verify/...`
 
 ### Solidity / Hardhat / Foundry
 
