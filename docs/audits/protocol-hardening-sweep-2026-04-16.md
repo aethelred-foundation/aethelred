@@ -292,6 +292,19 @@ already merged.
   permissive/dev validation lanes and are rejected consistently in strict
   production validation.
 
+### 3k. Nitro payload encryption fail-closed hardening
+
+- Tightened `x/verify/tee/nitro.go` and
+  `services/tee-worker/l1-verifier/nitro.go`, where `EncryptForEnclave(...)`
+  previously returned base64-wrapped plaintext while presenting itself as an
+  enclave-encryption primitive.
+- The simulated Nitro path now derives a real symmetric key from the configured
+  simulation attestation secret and uses AES-GCM with bound associated data for
+  authenticated encryption instead of a reversible encoding wrapper.
+- The remote Nitro path now fails closed unless an attested enclave public-key
+  encryption contract is actually available, instead of pretending plaintext has
+  been protected.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -329,6 +342,7 @@ already merged.
 - `go test ./x/seal/keeper`
 - `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
 - `go test ./app`
+- `go test ./x/verify/tee ./services/tee-worker/l1-verifier`
 
 ### Solidity / Hardhat / Foundry
 
@@ -396,6 +410,9 @@ already merged.
   while emitting artifacts that violate the app's own schema and proof rules.
   It now carries an explicit simulated platform identity and stays aligned with
   the orchestrator's simulated wiring path.
+- Nitro payload protection no longer uses base64-as-encryption in the verifier
+  packages. Simulated Nitro now uses authenticated encryption, while remote
+  Nitro encryption fails closed until a real attested enclave key path exists.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

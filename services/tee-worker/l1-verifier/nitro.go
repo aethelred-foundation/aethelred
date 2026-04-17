@@ -3,10 +3,11 @@ package tee
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -707,13 +708,51 @@ func (nes *NitroEnclaveService) AttestationBreaker() *circuitbreaker.Breaker {
 
 // EncryptForEnclave encrypts data for the enclave's public key
 func (nes *NitroEnclaveService) EncryptForEnclave(plaintext []byte) ([]byte, error) {
-	// In production: use enclave's public key from attestation
-	// For MVP: simulate encryption with base64 encoding
-	return []byte(base64.StdEncoding.EncodeToString(plaintext)), nil
+	if len(plaintext) == 0 {
+		return nil, fmt.Errorf("plaintext cannot be empty")
+	}
+
+	if nes.enclaveID == "nitro-simulated" || (nes.config.AllowSimulated && nes.config.ExecutorEndpoint == "") {
+		key, err := nes.simulatedNitroEncryptionKey()
+		if err != nil {
+			return nil, err
+		}
+		return encryptSimulatedNitroPayload(key, plaintext)
+	}
+
+	return nil, fmt.Errorf("remote nitro encryption requires an attested enclave public key")
 }
 
 // sha256Hash computes SHA-256 hash
 func sha256Hash(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+func (nes *NitroEnclaveService) simulatedNitroEncryptionKey() ([]byte, error) {
+	if err := nes.ensureSimulatedAttestationKey(); err != nil {
+		return nil, err
+	}
+	seed := append([]byte("aethelred_nitro_encrypt_v1:"), nes.config.SimulatedAttestationKey...)
+	key := sha256.Sum256(seed)
+	return key[:], nil
+}
+
+func encryptSimulatedNitroPayload(key []byte, plaintext []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize simulated nitro cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize simulated nitro AEAD: %w", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, fmt.Errorf("failed to generate simulated nitro nonce: %w", err)
+	}
+
+	return gcm.Seal(nonce, nonce, plaintext, []byte("aethelred:nitro:simulated:v1")), nil
 }
