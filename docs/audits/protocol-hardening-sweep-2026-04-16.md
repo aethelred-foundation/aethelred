@@ -119,6 +119,20 @@ already merged.
 - Updated deployment scripts to emit governance calldata where post-deploy role
   mutation must happen through governance rather than a deployer key.
 
+### 3a. Automation keeper governance hardening
+
+- Eliminated the deployer-owned bootstrap window in
+  `contracts/contracts/InstitutionalReserveAutomationKeeper.sol`.
+- The reserve automation keeper now takes its final owner at deployment instead
+  of defaulting to the deployer and relying on a later ownership transfer.
+- Updated `contracts/scripts/deploy-institutional-automation-keeper.ts` so the
+  owner address is wired into constructor deployment directly, avoiding a
+  post-deploy direct-admin window on a contract that can trigger reserve
+  monitoring through pause-adjacent bridge roles.
+- Added regression coverage proving that a configured governance owner controls
+  the keeper immediately after deployment and the deployer cannot retain
+  bootstrap authority.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -159,6 +173,7 @@ already merged.
 - `forge test --match-path test/Cruzible.t.sol` -> `188 passed`
 - `forge test --match-path test/CruzibleInvariant.t.sol` -> `13 passed`
 - `forge test --match-path test/VaultInvariant.t.sol` -> `14 passed`
+- `npx hardhat test test/institutional.reserve.automation.keeper.test.ts` -> `3 passing`
 
 ## Reviewer Notes
 

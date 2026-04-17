@@ -27,14 +27,16 @@ async function main() {
   const grantPauserRole = process.env.GRANT_PAUSER_ROLE_TO_KEEPER !== "false";
 
   const [deployer] = await ethers.getSigners();
+  const initialOwner = ownerAddress ?? deployer.address;
   console.log("Deployer:", deployer.address);
   console.log("Institutional bridge:", bridgeAddress);
   console.log("Tracked assets:", assetIds.length);
+  console.log("Keeper owner:", initialOwner);
 
   const Factory = await ethers.getContractFactory(
     "InstitutionalReserveAutomationKeeper",
   );
-  const keeper = await Factory.deploy(bridgeAddress, assetIds);
+  const keeper = await Factory.deploy(bridgeAddress, assetIds, initialOwner);
   await keeper.waitForDeployment();
 
   const keeperAddress = await keeper.getAddress();
@@ -42,14 +44,6 @@ async function main() {
 
   if (maxAssetsPerRun !== DEFAULT_MAX_ASSETS_PER_RUN) {
     await (await keeper.setMaxAssetsPerRun(maxAssetsPerRun)).wait();
-  }
-
-  if (
-    ownerAddress &&
-    ownerAddress.toLowerCase() !== deployer.address.toLowerCase()
-  ) {
-    console.log("Transferring keeper ownership to:", ownerAddress);
-    await (await keeper.transferOwnership(ownerAddress)).wait();
   }
 
   const bridge = await ethers.getContractAt(
@@ -86,7 +80,7 @@ async function main() {
         keeperAddress,
         bridgeAddress,
         trackedAssets: assetIds,
-        owner: ownerAddress ?? deployer.address,
+        owner: initialOwner,
         maxAssetsPerRun: maxAssetsPerRun.toString(),
       },
       null,

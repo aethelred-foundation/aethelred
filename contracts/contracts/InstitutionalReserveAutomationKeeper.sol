@@ -58,9 +58,9 @@ contract InstitutionalReserveAutomationKeeper is AutomationCompatibleInterface {
         _;
     }
 
-    constructor(address bridgeAddress, bytes32[] memory initialAssets) {
-        if (bridgeAddress == address(0)) revert InvalidAddress();
-        owner = msg.sender;
+    constructor(address bridgeAddress, bytes32[] memory initialAssets, address initialOwner) {
+        if (bridgeAddress == address(0) || initialOwner == address(0)) revert InvalidAddress();
+        owner = initialOwner;
         bridge = IInstitutionalStablecoinBridgeMonitor(bridgeAddress);
 
         for (uint256 i = 0; i < initialAssets.length; i++) {

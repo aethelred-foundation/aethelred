@@ -184,6 +184,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Cruzible dApp tests | `contracts/test/Cruzible.t.sol` | COLLECTED | Governance UI interaction tests |
 | Cruzible invariants | `contracts/test/CruzibleInvariant.t.sol` | COLLECTED | Cruzible invariant fuzzing |
 | Production bootstrap hardening | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Timelock-first initialization across bridge, token, vesting, vault, and institutional surfaces |
+| Reserve automation keeper ownership regression | `npx hardhat test test/institutional.reserve.automation.keeper.test.ts` | COLLECTED | Automation keeper now binds final governance owner at deployment instead of retaining deployer bootstrap authority |
 
 ---
 
