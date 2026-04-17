@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -15,12 +16,13 @@ import (
 )
 
 const (
-	nitroPlatformPrefix        = "aws-nitro"
-	sgxPlatformPrefix          = "intel-sgx"
-	nitroPlatformPCR0Prefix    = "aws-nitro:pcr0="
-	sgxPlatformMRENCLAVEPrefix = "intel-sgx:mrenclave="
-	measurementHexLength       = 64 // 32-byte measurement hash encoded as hex
-	fakeAttestationSlashRatio  = "1.00"
+	nitroPlatformPrefix             = "aws-nitro"
+	sgxPlatformPrefix               = "intel-sgx"
+	nitroPlatformPCR0Prefix         = "aws-nitro:pcr0="
+	sgxPlatformMRENCLAVEPrefix      = "intel-sgx:mrenclave="
+	measurementHexLength            = 64 // 32-byte measurement hash encoded as hex
+	fakeAttestationSlashRatio       = "1.00"
+	minEmergencyRevocationApprovals = 2
 )
 
 // TrustedMeasurementRegistration represents a parsed platform-qualified
@@ -28,6 +30,25 @@ const (
 type TrustedMeasurementRegistration struct {
 	Platform       string
 	MeasurementHex string
+}
+
+type trustedMeasurementRevocationStatus string
+
+const (
+	trustedMeasurementRevocationPending  trustedMeasurementRevocationStatus = "pending"
+	trustedMeasurementRevocationExecuted trustedMeasurementRevocationStatus = "executed"
+)
+
+type trustedMeasurementRevocationState struct {
+	RequestID         string                             `json:"request_id"`
+	Platform          string                             `json:"platform"`
+	MeasurementHex    string                             `json:"measurement_hex"`
+	RequestedBy       string                             `json:"requested_by"`
+	Approvals         []string                           `json:"approvals"`
+	ApprovalThreshold int                                `json:"approval_threshold"`
+	Status            trustedMeasurementRevocationStatus `json:"status"`
+	CreatedAtHeight   int64                              `json:"created_at_height"`
+	ExecutedAtHeight  int64                              `json:"executed_at_height,omitempty"`
 }
 
 func canonicalizePlatform(platform string) (string, error) {
@@ -276,10 +297,22 @@ func (k Keeper) RevokeTrustedMeasurementBySecurityCommittee(
 	platform string,
 	measurementHex string,
 ) error {
-	if !k.isSecurityCommitteeMember(ctx, requester) {
+	requester = normalizeCommitteeAddress(requester)
+	committeeMembers, err := k.securityCommitteeMembers(ctx)
+	if err != nil {
+		return err
+	}
+	if !committeeContainsRequester(requester, committeeMembers) {
 		return fmt.Errorf("requester is not in security committee")
 	}
-
+	sdkCtx, ok := unwrapSDKContext(ctx)
+	if !ok {
+		return fmt.Errorf("sdk context unavailable for trusted measurement revocation")
+	}
+	approvalThreshold, err := trustedMeasurementRevocationApprovalThreshold(len(committeeMembers))
+	if err != nil {
+		return err
+	}
 	normalizedPlatform, err := canonicalizePlatform(platform)
 	if err != nil {
 		return err
@@ -295,21 +328,74 @@ func (k Keeper) RevokeTrustedMeasurementBySecurityCommittee(
 		return fmt.Errorf("failed to query trusted measurement registry: %w", err)
 	}
 
-	registryResult := "revoked"
+	legacyPCR0Result := "not_applicable"
+	legacyRegistered := false
+	if normalizedPlatform == nitroPlatformPrefix {
+		legacyRegistered, err = k.RegisteredPCR0Set.Has(ctx, normalizedMeasurement)
+		if err != nil {
+			return fmt.Errorf("failed to query legacy nitro registry: %w", err)
+		}
+		legacyPCR0Result = "revoked"
+	}
+
+	if !registered && !legacyRegistered {
+		return fmt.Errorf("trusted %s measurement not registered: %s", normalizedPlatform, normalizedMeasurement)
+	}
+
+	requestKey := key
+	state, found, err := k.getTrustedMeasurementRevocationState(ctx, requestKey)
+	if err != nil {
+		return err
+	}
+	isNewRequest := !found || state.Status == trustedMeasurementRevocationExecuted
+	if isNewRequest {
+		state = &trustedMeasurementRevocationState{
+			RequestID:         trustedMeasurementRevocationRequestID(normalizedPlatform, normalizedMeasurement, sdkCtx.BlockHeight()),
+			Platform:          normalizedPlatform,
+			MeasurementHex:    normalizedMeasurement,
+			RequestedBy:       requester,
+			Approvals:         []string{requester},
+			ApprovalThreshold: approvalThreshold,
+			Status:            trustedMeasurementRevocationPending,
+			CreatedAtHeight:   sdkCtx.BlockHeight(),
+		}
+	} else {
+		if revocationStateHasApprover(state, requester) {
+			return fmt.Errorf("security committee member %s already approved revocation for %s", requester, requestKey)
+		}
+		state.Approvals = append(state.Approvals, requester)
+		state.ApprovalThreshold = approvalThreshold
+	}
+
+	if len(state.Approvals) < state.ApprovalThreshold {
+		if err := k.setTrustedMeasurementRevocationState(ctx, requestKey, state); err != nil {
+			return err
+		}
+		k.recordTrustedMeasurementRevocationApproval(
+			ctx,
+			requester,
+			state,
+			revocationApprovalOperation(isNewRequest, false),
+		)
+		return nil
+	}
+
+	k.recordTrustedMeasurementRevocationApproval(
+		ctx,
+		requester,
+		state,
+		revocationApprovalOperation(isNewRequest, true),
+	)
+
+	registryResult := "already_absent"
 	if registered {
 		if err := k.RegisteredMeasurements.Remove(ctx, key); err != nil {
 			return err
 		}
-	} else {
-		registryResult = "already_absent"
+		registryResult = "revoked"
 	}
 
-	legacyPCR0Result := "not_applicable"
 	if normalizedPlatform == nitroPlatformPrefix {
-		legacyRegistered, err := k.RegisteredPCR0Set.Has(ctx, normalizedMeasurement)
-		if err != nil {
-			return fmt.Errorf("failed to query legacy nitro registry: %w", err)
-		}
 		legacyPCR0Result = "already_absent"
 		if legacyRegistered {
 			if err := k.RegisteredPCR0Set.Remove(ctx, normalizedMeasurement); err != nil {
@@ -317,10 +403,6 @@ func (k Keeper) RevokeTrustedMeasurementBySecurityCommittee(
 			}
 			legacyPCR0Result = "revoked"
 		}
-	}
-
-	if registryResult == "already_absent" && legacyPCR0Result == "already_absent" {
-		return fmt.Errorf("trusted %s measurement not registered: %s", normalizedPlatform, normalizedMeasurement)
 	}
 
 	k.recordTrustedMeasurementMutation(
@@ -336,6 +418,12 @@ func (k Keeper) RevokeTrustedMeasurementBySecurityCommittee(
 		registryResult,
 		legacyPCR0Result,
 	)
+
+	state.Status = trustedMeasurementRevocationExecuted
+	state.ExecutedAtHeight = sdkCtx.BlockHeight()
+	if err := k.setTrustedMeasurementRevocationState(ctx, requestKey, state); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -391,6 +479,27 @@ func normalizeCommitteeAddress(address string) string {
 	return strings.TrimSpace(address)
 }
 
+func trustedMeasurementRevocationApprovalThreshold(committeeSize int) (int, error) {
+	if committeeSize < minEmergencyRevocationApprovals {
+		return 0, fmt.Errorf("security committee quorum unavailable: need at least %d bonded validators", minEmergencyRevocationApprovals)
+	}
+	return minEmergencyRevocationApprovals, nil
+}
+
+func revocationApprovalOperation(isNewRequest bool, thresholdReached bool) string {
+	if thresholdReached {
+		return "approval_threshold_reached"
+	}
+	if isNewRequest {
+		return "request_created"
+	}
+	return "approval_recorded"
+}
+
+func trustedMeasurementRevocationRequestID(platform, measurementHex string, blockHeight int64) string {
+	return fmt.Sprintf("%s:%s:%d", platform, measurementHex, blockHeight)
+}
+
 func isRequesterMatchValidator(requester string, validator stakingtypes.Validator) bool {
 	req := normalizeCommitteeAddress(requester)
 	if req == "" {
@@ -408,35 +517,140 @@ func isRequesterMatchValidator(requester string, validator stakingtypes.Validato
 }
 
 func (k Keeper) isSecurityCommitteeMember(ctx context.Context, requester string) bool {
-	if k.stakingKeeper == nil {
+	validators, err := k.securityCommitteeMembers(ctx)
+	if err != nil {
 		return false
+	}
+	return committeeContainsRequester(requester, validators)
+}
+
+func (k Keeper) securityCommitteeMembers(ctx context.Context) ([]stakingtypes.Validator, error) {
+	if k.stakingKeeper == nil {
+		return nil, fmt.Errorf("staking keeper unavailable for security committee lookup")
 	}
 
 	validators, err := k.stakingKeeper.GetAllValidators(ctx)
 	if err != nil || len(validators) == 0 {
-		return false
+		if err != nil {
+			return nil, fmt.Errorf("failed to load security committee validators: %w", err)
+		}
+		return nil, fmt.Errorf("security committee is empty")
 	}
 
-	sort.Slice(validators, func(i, j int) bool {
-		left := validators[i].GetBondedTokens()
-		right := validators[j].GetBondedTokens()
+	bondedValidators := make([]stakingtypes.Validator, 0, len(validators))
+	for _, validator := range validators {
+		if validator.Status == stakingtypes.Bonded {
+			bondedValidators = append(bondedValidators, validator)
+		}
+	}
+	if len(bondedValidators) == 0 {
+		return nil, fmt.Errorf("security committee is empty")
+	}
+
+	sort.Slice(bondedValidators, func(i, j int) bool {
+		left := bondedValidators[i].GetBondedTokens()
+		right := bondedValidators[j].GetBondedTokens()
 		if !left.Equal(right) {
 			return left.GT(right)
 		}
-		return validators[i].GetOperator() < validators[j].GetOperator()
+		return bondedValidators[i].GetOperator() < bondedValidators[j].GetOperator()
 	})
 
 	committeeSize := 10
-	if len(validators) < committeeSize {
-		committeeSize = len(validators)
+	if len(bondedValidators) < committeeSize {
+		committeeSize = len(bondedValidators)
 	}
 
-	for i := 0; i < committeeSize; i++ {
-		if isRequesterMatchValidator(requester, validators[i]) {
+	return append([]stakingtypes.Validator(nil), bondedValidators[:committeeSize]...), nil
+}
+
+func committeeContainsRequester(requester string, validators []stakingtypes.Validator) bool {
+	for _, validator := range validators {
+		if isRequesterMatchValidator(requester, validator) {
 			return true
 		}
 	}
 	return false
+}
+
+func (k Keeper) getTrustedMeasurementRevocationState(ctx context.Context, requestKey string) (*trustedMeasurementRevocationState, bool, error) {
+	found, err := k.TrustedMeasurementRevocations.Has(ctx, requestKey)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to query trusted measurement revocation state: %w", err)
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	raw, err := k.TrustedMeasurementRevocations.Get(ctx, requestKey)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to load trusted measurement revocation state: %w", err)
+	}
+
+	var state trustedMeasurementRevocationState
+	if err := json.Unmarshal([]byte(raw), &state); err != nil {
+		return nil, false, fmt.Errorf("failed to decode trusted measurement revocation state: %w", err)
+	}
+	return &state, true, nil
+}
+
+func (k Keeper) setTrustedMeasurementRevocationState(ctx context.Context, requestKey string, state *trustedMeasurementRevocationState) error {
+	encoded, err := json.Marshal(state)
+	if err != nil {
+		return fmt.Errorf("failed to encode trusted measurement revocation state: %w", err)
+	}
+	return k.TrustedMeasurementRevocations.Set(ctx, requestKey, string(encoded))
+}
+
+func revocationStateHasApprover(state *trustedMeasurementRevocationState, approver string) bool {
+	for _, existing := range state.Approvals {
+		if existing == approver {
+			return true
+		}
+	}
+	return false
+}
+
+func (k Keeper) recordTrustedMeasurementRevocationApproval(
+	ctx context.Context,
+	actor string,
+	state *trustedMeasurementRevocationState,
+	operation string,
+) {
+	sdkCtx, ok := unwrapSDKContext(ctx)
+	if !ok {
+		return
+	}
+
+	approvalCount := fmt.Sprintf("%d", len(state.Approvals))
+	approvalThreshold := fmt.Sprintf("%d", state.ApprovalThreshold)
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"trusted_tee_measurement_revocation_approval_recorded",
+			sdk.NewAttribute("actor", actor),
+			sdk.NewAttribute("actor_role", "security_committee"),
+			sdk.NewAttribute("operation", operation),
+			sdk.NewAttribute("request_id", state.RequestID),
+			sdk.NewAttribute("platform", state.Platform),
+			sdk.NewAttribute("measurement", state.MeasurementHex),
+			sdk.NewAttribute("approval_count", approvalCount),
+			sdk.NewAttribute("approval_threshold", approvalThreshold),
+			sdk.NewAttribute("status", string(state.Status)),
+		),
+	)
+
+	if k.auditLogger != nil {
+		k.auditLogger.Record(sdkCtx, AuditCategorySecurity, AuditSeverityWarning, "trusted_measurement_revocation_approval_recorded", actor, map[string]string{
+			"actor_role":         "security_committee",
+			"operation":          operation,
+			"request_id":         state.RequestID,
+			"platform":           state.Platform,
+			"measurement":        state.MeasurementHex,
+			"approval_count":     approvalCount,
+			"approval_threshold": approvalThreshold,
+			"status":             string(state.Status),
+		})
+	}
 }
 
 // ExtractTEETrustedMeasurementsFromPlatforms parses platform strings and returns

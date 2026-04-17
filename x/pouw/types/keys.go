@@ -75,6 +75,9 @@ var (
 
 	// RegisteredMeasurementKeyPrefix stores platform-qualified trusted measurement membership.
 	RegisteredMeasurementKeyPrefix = []byte{0x0F}
+
+	// TrustedMeasurementRevocationKeyPrefix stores persisted emergency revocation request state.
+	TrustedMeasurementRevocationKeyPrefix = []byte{0x10}
 )
 
 // JobKey returns the store key for a job with the given ID
@@ -125,4 +128,9 @@ func ValidatorMeasurementKey(validatorPlatformKey string) []byte {
 // RegisteredMeasurementKey returns the key for global platform measurement registry membership.
 func RegisteredMeasurementKey(platformMeasurementKey string) []byte {
 	return append(RegisteredMeasurementKeyPrefix, []byte(platformMeasurementKey)...)
+}
+
+// TrustedMeasurementRevocationKey returns the key for emergency revocation request state.
+func TrustedMeasurementRevocationKey(requestKey string) []byte {
+	return append(TrustedMeasurementRevocationKeyPrefix, []byte(requestKey)...)
 }

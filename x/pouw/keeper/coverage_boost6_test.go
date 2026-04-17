@@ -12,8 +12,8 @@ import (
 
 	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -504,13 +504,13 @@ func TestCB6_AggregateVoteExtensions_ZeroPowerSimulated(t *testing.T) {
 		"validator_address": json.RawMessage(valAddr),
 		"verifications": []map[string]interface{}{
 			{
-				"job_id":           "job-1",
-				"success":          true,
-				"output_hash":      outputHash[:],
-				"model_hash":       modelHash[:],
-				"nonce":            nonce[:],
+				"job_id":            "job-1",
+				"success":           true,
+				"output_hash":       outputHash[:],
+				"model_hash":        modelHash[:],
+				"nonce":             nonce[:],
 				"execution_time_ms": int64(100),
-				"attestation_type": "tee",
+				"attestation_type":  "tee",
 			},
 		},
 	}
@@ -843,8 +843,8 @@ func TestCB6_UpdateParams_BoolFlagMissing_RequireTee(t *testing.T) {
 	params.RequireTeeAttestation = !params.RequireTeeAttestation // flip
 
 	resp, err := keeper.UpdateParamsForTest(k, ctx, &keeper.MsgUpdateParams{
-		Authority:                 authority,
-		Params:                    params,
+		Authority:                authority,
+		Params:                   params,
 		HasRequireTeeAttestation: false, // not set - should error
 	})
 	require.Error(t, err)
@@ -880,8 +880,8 @@ func TestCB6_UpdateParams_BoolFlagMissing_AllowSimulated(t *testing.T) {
 	params.AllowSimulated = !params.AllowSimulated // flip
 
 	resp, err := keeper.UpdateParamsForTest(k, ctx, &keeper.MsgUpdateParams{
-		Authority:        authority,
-		Params:           params,
+		Authority:         authority,
+		Params:            params,
 		HasAllowSimulated: false,
 	})
 	require.Error(t, err)
@@ -904,8 +904,8 @@ func TestCB6_UpdateParams_OneWayGate_AllowSimulated(t *testing.T) {
 	params.AllowSimulated = true
 
 	resp, err := keeper.UpdateParamsForTest(k, ctx, &keeper.MsgUpdateParams{
-		Authority:        authority,
-		Params:           params,
+		Authority:         authority,
+		Params:            params,
 		HasAllowSimulated: true,
 	})
 	require.Error(t, err)
@@ -1099,7 +1099,7 @@ func TestCB6_IsRegisteredMeasurement_Success(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestCB6_RevokeMeasurement_NotCommitteeMember(t *testing.T) {
-	k, ctx := newTestKeeper(t)
+	k, ctx := newCommitteeTestKeeper(t, defaultCommitteeValidators())
 
 	validHex := "abababababababababababababababababababababababababababababababababab"
 	err := k.RevokeTrustedMeasurementBySecurityCommittee(ctx, "not-a-member", "aws-nitro", validHex)
@@ -1892,11 +1892,11 @@ func TestCB6_CanonicalMilestones_AllCovered(t *testing.T) {
 
 func TestCB6_RenderLaunchReviewReport_AllCategories(t *testing.T) {
 	result := &keeper.LaunchReviewResult{
-		ChainID:      "aethelred-test",
-		BlockHeight:  100,
-		ReviewedAt:   "2025-06-15T12:00:00Z",
-		OverallScore: 80,
-		Decision:     "GO",
+		ChainID:          "aethelred-test",
+		BlockHeight:      100,
+		ReviewedAt:       "2025-06-15T12:00:00Z",
+		OverallScore:     80,
+		Decision:         "GO",
 		SecurityScore:    90,
 		PerformanceScore: 85,
 		EconomicsScore:   80,

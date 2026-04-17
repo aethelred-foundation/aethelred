@@ -42,17 +42,18 @@ type Keeper struct {
 	auditLogger *AuditLogger
 
 	// State collections
-	Jobs                   collections.Map[string, types.ComputeJob]
-	PendingJobs            collections.Map[string, types.ComputeJob]
-	RegisteredModels       collections.Map[string, types.RegisteredModel]
-	ValidatorStats         collections.Map[string, types.ValidatorStats]
-	ValidatorCapabilities  collections.Map[string, types.ValidatorCapability]
-	ValidatorPCR0Mappings  collections.Map[string, string]
-	RegisteredPCR0Set      collections.KeySet[string]
-	ValidatorMeasurements  collections.Map[string, string]
-	RegisteredMeasurements collections.KeySet[string]
-	JobCount               collections.Item[uint64]
-	Params                 collections.Item[types.Params]
+	Jobs                          collections.Map[string, types.ComputeJob]
+	PendingJobs                   collections.Map[string, types.ComputeJob]
+	RegisteredModels              collections.Map[string, types.RegisteredModel]
+	ValidatorStats                collections.Map[string, types.ValidatorStats]
+	ValidatorCapabilities         collections.Map[string, types.ValidatorCapability]
+	ValidatorPCR0Mappings         collections.Map[string, string]
+	RegisteredPCR0Set             collections.KeySet[string]
+	ValidatorMeasurements         collections.Map[string, string]
+	RegisteredMeasurements        collections.KeySet[string]
+	TrustedMeasurementRevocations collections.Map[string, string]
+	JobCount                      collections.Item[uint64]
+	Params                        collections.Item[types.Params]
 }
 
 // StakingKeeper defines the expected staking keeper interface
@@ -157,6 +158,13 @@ func NewKeeper(
 			collections.NewPrefix(types.RegisteredMeasurementKeyPrefix),
 			"registered_measurements_set",
 			collections.StringKey,
+		),
+		TrustedMeasurementRevocations: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.TrustedMeasurementRevocationKeyPrefix),
+			"trusted_measurement_revocations",
+			collections.StringKey,
+			collections.StringValue,
 		),
 		JobCount: collections.NewItem(
 			sb,

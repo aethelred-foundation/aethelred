@@ -467,6 +467,26 @@ already merged.
   is enforced in the self-audit path and that the clean-state audit surface
   remains green.
 
+### 3w. Trusted-measurement emergency revocation quorum enforcement
+
+- Tightened `x/pouw/keeper/attestation_registry.go`, where a single
+  security-committee member could still execute a trusted-measurement
+  revocation immediately once they were inside the committee set.
+- Emergency trusted-measurement revocation now uses a persisted request
+  workflow: the first committee member creates the request and records an
+  approval, duplicate approvals from the same committee member are rejected,
+  and the registry mutation executes only after a second independent bonded
+  committee member approves the same platform-qualified measurement.
+- The committee set used for that workflow is now derived only from bonded
+  validators, matching the documented "top bonded validators" authority model
+  instead of loosely sorting the full validator list.
+- Small or misconfigured committees fail closed: if fewer than two bonded
+  committee members exist, emergency trusted-measurement revocation aborts
+  instead of degrading to a unilateral kill switch.
+- Added focused regressions proving request creation, duplicate-approval
+  rejection, final approval execution, and single-member committee rejection
+  all behave deterministically and emit a truthful runtime audit trail.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -614,6 +634,10 @@ already merged.
   records that distinguish fresh registrations, legacy Nitro index
   reconciliation, full revocations, and absent-measurement failures instead of
   leaving authority-level trust-root changes ambiguous in the runtime trail.
+- Emergency trusted-measurement revocation no longer degrades to a
+  single-member kill switch. The runtime now persists approval state, requires
+  two bonded committee approvals for execution, and refuses to operate when
+  the committee cannot satisfy that quorum safely.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
