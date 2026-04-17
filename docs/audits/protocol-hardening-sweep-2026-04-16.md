@@ -217,6 +217,19 @@ already merged.
   enterprise TEE verification without a real backend while the explicit devnet
   constructor still preserves the intended local-only permissive lane.
 
+### 3g. Keeper-side simulated zk proof binding hardening
+
+- Tightened `x/verify/keeper/zk_verification_path.go`, where the keeper’s
+  simulated zk verification path previously accepted any proof blob that met a
+  proof-system-specific minimum length when `AllowSimulated=true`.
+- Replaced that shape-only acceptance with a deterministic simulated proof
+  transcript bound to the proof system, public inputs, verifying key material,
+  and circuit hash, so simulated proofs now fail if the proof bytes or public
+  inputs are tampered.
+- Updated `x/verify/keeper/registry_and_paths_test.go` to generate bound
+  simulated proofs for the success path and to assert that both proof tampering
+  and public-input tampering are rejected.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -290,6 +303,10 @@ already merged.
   structural-only and placeholder platform paths are isolated behind explicit
   devnet-only construction helpers instead of being reachable through runtime
   defaults.
+- The keeper’s simulated zk verification lane no longer treats proof length as
+  a sufficient stand-in for verification. Even in dev/test mode, simulated
+  proofs are now bound to their verifying key and public inputs so tampering
+  produces deterministic failure instead of silent success.
 - The mirrored public SDK source was updated to match the hardened hybrid
   signer/verifier path and the fail-closed `zktensor` contract, but
   `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml

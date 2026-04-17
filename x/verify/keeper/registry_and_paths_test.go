@@ -406,12 +406,12 @@ func TestVerifyZKMLProofPath(t *testing.T) {
 
 	proof := &vtypes.ZKMLProof{
 		ProofSystem:      "ezkl",
-		ProofBytes:       append([]byte("EZKL"), bytes.Repeat([]byte{0x11}, 252)...),
 		PublicInputs:     bytes.Repeat([]byte{0x22}, 96),
 		VerifyingKeyHash: vkHash[:],
 		CircuitHash:      bytes.Repeat([]byte{0x33}, 32),
 		Timestamp:        timestamppb.New(ctx.BlockTime()),
 	}
+	proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
 	result, err := k.VerifyZKMLProof(ctx, proof)
 	require.NoError(t, err)
 	require.True(t, result.Success)
@@ -597,7 +597,7 @@ func TestVerifyAttestationInternalRejectsUnauthenticatedSimulationQuotes(t *test
 
 func TestVerifyProofInternalBranches(t *testing.T) {
 	k, ctx := createVerifyKeeper(t)
-	vk := &vtypes.VerifyingKey{IsActive: true}
+	vk := &vtypes.VerifyingKey{IsActive: true, KeyBytes: []byte("simulated-vk")}
 	params := vtypes.DefaultParams()
 	params.AllowSimulated = true
 
@@ -618,11 +618,18 @@ func TestVerifyProofInternalBranches(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := k.verifyProofInternal(ctx, &vtypes.ZKMLProof{
+			proof := &vtypes.ZKMLProof{
 				ProofSystem:  tc.system,
-				ProofBytes:   bytes.Repeat([]byte{0xCD}, tc.proofSize),
 				PublicInputs: bytes.Repeat([]byte{0xEF}, 96),
-			}, vk, params)
+				CircuitHash:  bytes.Repeat([]byte{0xAC}, 32),
+			}
+			if tc.wantOK {
+				proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, tc.proofSize)
+			} else {
+				proof.ProofBytes = bytes.Repeat([]byte{0xCD}, tc.proofSize)
+			}
+
+			ok, err := k.verifyProofInternal(ctx, proof, vk, params)
 			if tc.wantOK {
 				require.NoError(t, err)
 				require.True(t, ok)
@@ -633,10 +640,38 @@ func TestVerifyProofInternalBranches(t *testing.T) {
 		})
 	}
 
+	t.Run("tampered public inputs", func(t *testing.T) {
+		proof := &vtypes.ZKMLProof{
+			ProofSystem:  "ezkl",
+			PublicInputs: bytes.Repeat([]byte{0xEE}, 96),
+			CircuitHash:  bytes.Repeat([]byte{0xBC}, 32),
+		}
+		proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
+		proof.PublicInputs[0] ^= 0x01
+
+		ok, err := k.verifyProofInternal(ctx, proof, vk, params)
+		require.ErrorContains(t, err, "binding mismatch")
+		require.False(t, ok)
+	})
+
+	t.Run("tampered proof bytes", func(t *testing.T) {
+		proof := &vtypes.ZKMLProof{
+			ProofSystem:  "ezkl",
+			PublicInputs: bytes.Repeat([]byte{0xEF}, 96),
+			CircuitHash:  bytes.Repeat([]byte{0xBD}, 32),
+		}
+		proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
+		proof.ProofBytes[len(proof.ProofBytes)-1] ^= 0x01
+
+		ok, err := k.verifyProofInternal(ctx, proof, vk, params)
+		require.ErrorContains(t, err, "binding mismatch")
+		require.False(t, ok)
+	})
+
 	params.AllowSimulated = false
 	ok, err := k.verifyProofInternal(ctx, &vtypes.ZKMLProof{
 		ProofSystem:  "ezkl",
-		ProofBytes:   bytes.Repeat([]byte{0xCC}, 256),
+		ProofBytes:   buildSimulatedZKProofBytes(&vtypes.ZKMLProof{ProofSystem: "ezkl", PublicInputs: bytes.Repeat([]byte{0xEE}, 96)}, vk, 256),
 		PublicInputs: bytes.Repeat([]byte{0xEE}, 96),
 	}, vk, params)
 	require.ErrorContains(t, err, "SECURITY")
