@@ -3,13 +3,17 @@ package tee
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -79,6 +83,11 @@ type NitroConfig struct {
 
 	// AllowSimulated enables simulated execution/attestation (dev/test only)
 	AllowSimulated bool
+
+	// SimulatedAttestationKey signs simulated attestation documents so they
+	// remain cryptographically bound in dev/test mode instead of being accepted
+	// on structure alone.
+	SimulatedAttestationKey []byte
 }
 
 // DefaultNitroConfig returns default Nitro configuration
@@ -133,6 +142,9 @@ type NitroAttestationDocument struct {
 
 	// Nonce to prevent replay attacks
 	Nonce []byte `json:"nonce,omitempty"`
+
+	// Signature authenticates simulated attestation documents in dev/test mode.
+	Signature []byte `json:"signature,omitempty"`
 }
 
 // EnclaveExecutionRequest represents a request to execute in the enclave
@@ -214,6 +226,9 @@ func (nes *NitroEnclaveService) Initialize(ctx context.Context) error {
 	if nes.config.ExecutorEndpoint != "" {
 		nes.enclaveID = "nitro-remote"
 	} else {
+		if err := nes.ensureSimulatedAttestationKey(); err != nil {
+			return err
+		}
 		nes.enclaveID = "nitro-simulated"
 	}
 	nes.enclaveReady = true
@@ -351,6 +366,11 @@ func (nes *NitroEnclaveService) generateAttestation(outputHash, nonce []byte) (*
 		doc.PCRs[2] = sha256Hash([]byte("aethelred_pcr2"))
 	}
 
+	if err := nes.ensureSimulatedAttestationKey(); err != nil {
+		return nil, err
+	}
+	doc.Signature = SignSimulatedNitroAttestation(doc, nes.config.SimulatedAttestationKey)
+
 	nes.metrics.mutex.Lock()
 	nes.metrics.TotalAttestations++
 	nes.metrics.mutex.Unlock()
@@ -402,8 +422,16 @@ func (nes *NitroEnclaveService) VerifyAttestation(ctx context.Context, doc *Nitr
 		if !nes.config.AllowSimulated {
 			return nil, fmt.Errorf("attestation verifier endpoint not configured and simulation disabled")
 		}
-		// Simulated verification (dev/test only)
-		result.CertificateChainValid = true
+		if err := nes.ensureSimulatedAttestationKey(); err != nil {
+			return nil, err
+		}
+		if err := VerifySimulatedNitroAttestation(doc, nes.config.SimulatedAttestationKey); err != nil {
+			result.Valid = false
+			result.Errors = append(result.Errors, err.Error())
+			result.CertificateChainValid = false
+		} else {
+			result.CertificateChainValid = true
+		}
 	}
 
 	result.PCRsVerified = true
@@ -415,6 +443,74 @@ func (nes *NitroEnclaveService) VerifyAttestation(ctx context.Context, doc *Nitr
 	)
 
 	return result, nil
+}
+
+func (nes *NitroEnclaveService) ensureSimulatedAttestationKey() error {
+	if !nes.config.AllowSimulated || len(nes.config.SimulatedAttestationKey) > 0 {
+		return nil
+	}
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return fmt.Errorf("failed to initialize simulated attestation key: %w", err)
+	}
+	nes.config.SimulatedAttestationKey = key
+	return nil
+}
+
+// SignSimulatedNitroAttestation computes a simulation-only MAC for a Nitro
+// attestation document so local verification remains cryptographically bound.
+func SignSimulatedNitroAttestation(doc *NitroAttestationDocument, key []byte) []byte {
+	mac := hmac.New(sha256.New, key)
+	mac.Write(simulatedNitroAttestationPayload(doc))
+	return mac.Sum(nil)
+}
+
+// VerifySimulatedNitroAttestation rejects unsigned or tampered simulated Nitro
+// attestation documents.
+func VerifySimulatedNitroAttestation(doc *NitroAttestationDocument, key []byte) error {
+	if len(doc.Signature) == 0 {
+		return fmt.Errorf("simulated attestation signature is required")
+	}
+	expected := SignSimulatedNitroAttestation(doc, key)
+	if !hmac.Equal(doc.Signature, expected) {
+		return fmt.Errorf("simulated attestation signature mismatch")
+	}
+	return nil
+}
+
+func simulatedNitroAttestationPayload(doc *NitroAttestationDocument) []byte {
+	var buf bytes.Buffer
+	writeString := func(v string) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.WriteString(v)
+	}
+	writeBytes := func(v []byte) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.Write(v)
+	}
+
+	writeString(doc.ModuleID)
+	_ = binary.Write(&buf, binary.BigEndian, doc.Timestamp.UTC().UnixNano())
+	writeString(doc.Digest)
+
+	pcrIndexes := make([]int, 0, len(doc.PCRs))
+	for idx := range doc.PCRs {
+		pcrIndexes = append(pcrIndexes, idx)
+	}
+	sort.Ints(pcrIndexes)
+	_ = binary.Write(&buf, binary.BigEndian, uint32(len(pcrIndexes)))
+	for _, idx := range pcrIndexes {
+		_ = binary.Write(&buf, binary.BigEndian, int32(idx))
+		writeBytes(doc.PCRs[idx])
+	}
+
+	writeBytes(doc.Certificate)
+	writeBytes(doc.CABundle)
+	writeBytes(doc.PublicKey)
+	writeBytes(doc.UserData)
+	writeBytes(doc.Nonce)
+
+	return buf.Bytes()
 }
 
 // callRemoteExecutor invokes a remote enclave worker for execution.

@@ -81,6 +81,97 @@ func TestSimulatedEnclaveExecuteAndVerify(t *testing.T) {
 	}
 }
 
+func TestSimulatedVerifyRejectsTamperedAttestation(t *testing.T) {
+	s := &server{
+		cfg: config{
+			AllowSimulated:    true,
+			Platform:          "aws-nitro",
+			EnclaveID:         "enclave-1",
+			MaxAttestationAge: 5 * time.Minute,
+		},
+	}
+	reqBody, _ := json.Marshal(tee.EnclaveExecutionRequest{
+		RequestID:           "req-2",
+		ModelHash:           []byte("model"),
+		InputHash:           []byte("input"),
+		InputData:           []byte("payload"),
+		GenerateAttestation: true,
+		Nonce:               []byte("nonce"),
+	})
+
+	execRec := httptest.NewRecorder()
+	execReq := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	s.handleExecute(execRec, execReq)
+	if execRec.Code != http.StatusOK {
+		t.Fatalf("expected execute status %d, got %d", http.StatusOK, execRec.Code)
+	}
+
+	var execResp tee.EnclaveExecutionResult
+	if err := json.Unmarshal(execRec.Body.Bytes(), &execResp); err != nil {
+		t.Fatalf("failed to decode execute response: %v", err)
+	}
+	if execResp.AttestationDocument == nil {
+		t.Fatalf("expected attestation document")
+	}
+	execResp.AttestationDocument.UserData = []byte("tampered")
+
+	verifyBody, _ := json.Marshal(execResp.AttestationDocument)
+	verifyRec := httptest.NewRecorder()
+	verifyReq := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	s.handleVerify(verifyRec, verifyReq)
+	if verifyRec.Code != http.StatusOK {
+		t.Fatalf("expected verify status %d, got %d", http.StatusOK, verifyRec.Code)
+	}
+
+	var verifyResp map[string]any
+	if err := json.Unmarshal(verifyRec.Body.Bytes(), &verifyResp); err != nil {
+		t.Fatalf("failed to decode verify response: %v", err)
+	}
+	if verified, ok := verifyResp["verified"].(bool); !ok || verified {
+		t.Fatalf("expected verified=false, got %v", verifyResp["verified"])
+	}
+	if verifyResp["error"] == nil {
+		t.Fatalf("expected verification error for tampered attestation")
+	}
+}
+
+func TestSimulatedVerifyRejectsUnsignedAttestation(t *testing.T) {
+	s := &server{
+		cfg: config{
+			AllowSimulated:    true,
+			Platform:          "aws-nitro",
+			EnclaveID:         "enclave-1",
+			MaxAttestationAge: 5 * time.Minute,
+		},
+	}
+	doc := tee.NitroAttestationDocument{
+		ModuleID:  "enclave-1",
+		Timestamp: time.Now().UTC(),
+		Digest:    "SHA256",
+		PCRs: map[int][]byte{
+			0: []byte("pcr0"),
+		},
+		UserData: []byte("user-data"),
+		Nonce:    []byte("nonce"),
+	}
+
+	verifyBody, _ := json.Marshal(doc)
+	verifyRec := httptest.NewRecorder()
+	verifyReq := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	s.handleVerify(verifyRec, verifyReq)
+	if verifyRec.Code != http.StatusOK {
+		t.Fatalf("expected verify status %d, got %d", http.StatusOK, verifyRec.Code)
+	}
+
+	var verifyResp map[string]any
+	if err := json.Unmarshal(verifyRec.Body.Bytes(), &verifyResp); err != nil {
+		t.Fatalf("failed to decode verify response: %v", err)
+	}
+	if verified, ok := verifyResp["verified"].(bool); !ok || verified {
+		t.Fatalf("expected verified=false, got %v", verifyResp["verified"])
+	}
+}
+
 func TestSimulatedAppExecute(t *testing.T) {
 	s := &server{
 		cfg: config{

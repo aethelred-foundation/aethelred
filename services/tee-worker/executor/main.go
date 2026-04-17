@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +34,7 @@ type config struct {
 	MinRequestInterval time.Duration
 	Timeout            time.Duration
 	SupportsZKProofGen bool
+	SimulationKey      []byte
 }
 
 type server struct {
@@ -40,6 +43,7 @@ type server struct {
 
 	rateMu         sync.Mutex
 	lastRequestByK map[string]time.Time
+	simKeyMu       sync.Mutex
 }
 
 type appExecutionRequest struct {
@@ -171,6 +175,7 @@ func loadConfig() config {
 		MinRequestInterval: envDurationOrDefault("AETHELRED_TEE_MIN_REQUEST_INTERVAL", 200*time.Millisecond),
 		Timeout:            timeout,
 		SupportsZKProofGen: envBool("AETHELRED_TEE_SUPPORTS_ZKML"),
+		SimulationKey:      envHex("AETHELRED_TEE_SIMULATION_KEY_HEX"),
 	}
 }
 
@@ -197,6 +202,18 @@ func envDurationOrDefault(key string, fallback time.Duration) time.Duration {
 		}
 	}
 	return fallback
+}
+
+func envHex(key string) []byte {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return nil
+	}
+	decoded, err := hex.DecodeString(v)
+	if err != nil || len(decoded) == 0 {
+		return nil
+	}
+	return decoded
 }
 
 func (s *server) rateLimitKey(r *http.Request, endpoint string) string {
@@ -390,6 +407,26 @@ func looksLikeEnclaveRequest(body []byte) (bool, error) {
 	return false, nil
 }
 
+func (s *server) simulatedAttestationKey() ([]byte, error) {
+	if !s.cfg.AllowSimulated {
+		return nil, errors.New("simulation disabled")
+	}
+
+	s.simKeyMu.Lock()
+	defer s.simKeyMu.Unlock()
+
+	if len(s.cfg.SimulationKey) > 0 {
+		return s.cfg.SimulationKey, nil
+	}
+
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return nil, fmt.Errorf("failed to initialize simulated attestation key: %w", err)
+	}
+	s.cfg.SimulationKey = key
+	return s.cfg.SimulationKey, nil
+}
+
 func (s *server) simulateEnclaveExecution(req *tee.EnclaveExecutionRequest) *tee.EnclaveExecutionResult {
 	start := time.Now()
 	requestID := req.RequestID
@@ -424,6 +461,15 @@ func (s *server) simulateEnclaveExecution(req *tee.EnclaveExecutionRequest) *tee
 	}
 	if !req.GenerateAttestation {
 		result.AttestationDocument = nil
+	} else {
+		key, err := s.simulatedAttestationKey()
+		if err != nil {
+			result.Success = false
+			result.Error = err.Error()
+			result.AttestationDocument = nil
+			return result
+		}
+		result.AttestationDocument.Signature = tee.SignSimulatedNitroAttestation(result.AttestationDocument, key)
 	}
 	return result
 }
@@ -488,6 +534,13 @@ func (s *server) verifyAttestation(doc *tee.NitroAttestationDocument) (bool, str
 	}
 	if age > s.cfg.MaxAttestationAge {
 		return false, "attestation outside allowed age window"
+	}
+	key, err := s.simulatedAttestationKey()
+	if err != nil {
+		return false, err.Error()
+	}
+	if err := tee.VerifySimulatedNitroAttestation(doc, key); err != nil {
+		return false, err.Error()
 	}
 	return true, ""
 }
