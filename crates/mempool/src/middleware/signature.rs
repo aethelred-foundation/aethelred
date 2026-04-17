@@ -10,6 +10,13 @@
 //! - Public key to address derivation verification
 
 use super::{Middleware, MiddlewareAction, MiddlewareContext, MiddlewareResult, ParsedTransaction};
+use aethelred_core::{
+    crypto::{
+        hash::transaction_hash,
+        hybrid::{HybridPublicKey, HybridSignature, VerifierConfig},
+    },
+    types::Address,
+};
 
 /// Signature verification middleware
 pub struct SignatureMiddleware {
@@ -146,23 +153,19 @@ impl SignatureMiddleware {
     }
 
     /// Verify hybrid signature
-    fn verify_signature(
-        &self,
-        tx_bytes: &[u8],
-        quantum_threat_level: u8,
-    ) -> Result<bool, &'static str> {
+    fn verify_signature(&self, tx_bytes: &[u8], quantum_threat_level: u8) -> Result<bool, String> {
         // In signed transaction format:
         // [tx_len:4][tx_bytes:tx_len][sig_len:4][signature:sig_len][pk_len:4][public_key:pk_len]
 
         if tx_bytes.len() < 8 {
-            return Err("Transaction too short");
+            return Err("Transaction too short".into());
         }
 
         let tx_len =
             u32::from_le_bytes([tx_bytes[0], tx_bytes[1], tx_bytes[2], tx_bytes[3]]) as usize;
 
         if tx_bytes.len() < 4 + tx_len + 4 {
-            return Err("Invalid transaction format");
+            return Err("Invalid transaction format".into());
         }
 
         let sig_offset = 4 + tx_len;
@@ -174,7 +177,7 @@ impl SignatureMiddleware {
         ]) as usize;
 
         if tx_bytes.len() < sig_offset + 4 + sig_len + 4 {
-            return Err("Invalid signature section");
+            return Err("Invalid signature section".into());
         }
 
         let pk_offset = sig_offset + 4 + sig_len;
@@ -186,47 +189,65 @@ impl SignatureMiddleware {
         ]) as usize;
 
         if tx_bytes.len() < pk_offset + 4 + pk_len {
-            return Err("Invalid public key section");
+            return Err("Invalid public key section".into());
         }
 
         // Extract components
-        let _tx_data = &tx_bytes[4..4 + tx_len];
+        let tx_data = &tx_bytes[4..4 + tx_len];
         let signature = &tx_bytes[sig_offset + 4..sig_offset + 4 + sig_len];
         let public_key = &tx_bytes[pk_offset + 4..pk_offset + 4 + pk_len];
 
-        // Verify signature format
-        // Hybrid signature: [marker:1][ecdsa:64][sep:1][dilithium:3293]
-        if signature.len() < 66 {
-            return Err("Signature too short");
+        if tx_data.len() < 23 {
+            return Err("Transaction body too short".into());
         }
 
-        let marker = signature[0];
-        if marker != 0x03 {
-            // Not a hybrid signature
-            return Err("Invalid signature marker (expected hybrid)");
+        let signer = HybridPublicKey::from_bytes(public_key)
+            .map_err(|e| format!("Invalid hybrid public key: {e}"))?;
+        let signature = HybridSignature::from_bytes(signature)
+            .map_err(|e| format!("Invalid hybrid signature: {e}"))?;
+
+        let expected_sender = &tx_data[2..23];
+        let derived_sender = Address::from_public_key(&signer).serialize();
+        if derived_sender.as_slice() != expected_sender {
+            return Ok(false);
         }
 
-        // In production, this would call the actual verification logic
-        // from crates/core/src/crypto/hybrid.rs
-
-        // For MVP, simulate verification based on format
-        let has_ecdsa = signature.len() >= 65;
-        let has_dilithium = signature.len() >= 66 + 3293;
-
-        // Quantum threat level affects verification
-        let valid = match quantum_threat_level {
-            0..=2 => has_ecdsa && has_dilithium, // Both required
-            3..=4 => has_dilithium,              // Dilithium required
-            _ => has_dilithium,                  // Q-Day: only quantum
-        };
-
-        // Verify public key matches sender
-        if public_key.len() < 34 {
-            return Err("Public key too short");
+        let chain_id_offset = 47;
+        if tx_data.len() < chain_id_offset + 8 {
+            return Err("Transaction body missing chain id".into());
         }
+        let chain_id = u64::from_le_bytes(
+            tx_data[chain_id_offset..chain_id_offset + 8]
+                .try_into()
+                .map_err(|_| "Invalid chain id encoding".to_string())?,
+        );
 
-        Ok(valid)
+        let verifier_config = verifier_config(chain_id, quantum_threat_level);
+
+        let tx_hash = transaction_hash(tx_data);
+        signature
+            .verify(tx_hash.as_bytes(), &signer, &verifier_config)
+            .map(|_| true)
     }
+}
+
+fn verifier_config(chain_id: u64, quantum_threat_level: u8) -> VerifierConfig {
+    let mut config = match chain_id {
+        9999 => VerifierConfig::devnet(),
+        2 => VerifierConfig::testnet(),
+        1 => VerifierConfig::mainnet(),
+        _ => {
+            let mut config = VerifierConfig::default();
+            config.chain_id = chain_id;
+            config
+        }
+    };
+
+    if quantum_threat_level >= 5 {
+        config.enter_panic_mode();
+    }
+
+    config
 }
 
 impl Default for SignatureMiddleware {
@@ -367,6 +388,10 @@ impl BatchSignatureVerifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aethelred_core::{
+        crypto::hybrid::HybridKeyPair,
+        types::{Address, AddressType, Transaction},
+    };
     use std::sync::Arc;
 
     fn create_test_context(tx_bytes: Vec<u8>) -> MiddlewareContext {
@@ -374,53 +399,22 @@ mod tests {
         MiddlewareContext::new(tx_bytes, config)
     }
 
-    fn create_mock_transaction() -> Vec<u8> {
-        // Create a mock signed transaction with proper format
-        let mut tx = Vec::new();
+    fn create_signed_transaction() -> Vec<u8> {
+        let keypair = HybridKeyPair::generate().unwrap();
+        let sender = Address::from_public_key(keypair.public_key());
+        let recipient = Address::from_bytes([0x42; 20], AddressType::User);
 
-        // Transaction body
-        let mut body = Vec::new();
-        body.push(1); // version
-        body.push(0x01); // type (transfer)
-        body.extend_from_slice(&[0u8; 21]); // sender
-        body.extend_from_slice(&0u64.to_le_bytes()); // nonce
-        body.extend_from_slice(&1u64.to_le_bytes()); // gas_price
-        body.extend_from_slice(&21000u64.to_le_bytes()); // gas_limit
-        body.extend_from_slice(&1u64.to_le_bytes()); // chain_id
-        body.extend_from_slice(&0u64.to_le_bytes()); // expiry
-        body.extend_from_slice(&[0u8; 50]); // payload
-
-        // tx_len
-        tx.extend_from_slice(&(body.len() as u32).to_le_bytes());
-        tx.extend_from_slice(&body);
-
-        // Signature (mock hybrid)
-        let mut sig = Vec::new();
-        sig.push(0x03); // hybrid marker
-        sig.extend_from_slice(&[0u8; 64]); // ECDSA
-        sig.push(0xFF); // separator
-        sig.extend_from_slice(&[0u8; 3293]); // Dilithium
-
-        tx.extend_from_slice(&(sig.len() as u32).to_le_bytes());
-        tx.extend_from_slice(&sig);
-
-        // Public key (mock hybrid)
-        let mut pk = Vec::new();
-        pk.push(0x03); // hybrid marker
-        pk.extend_from_slice(&[0u8; 33]); // ECDSA compressed
-        pk.push(0xFF); // separator
-        pk.extend_from_slice(&[0u8; 1952]); // Dilithium
-
-        tx.extend_from_slice(&(pk.len() as u32).to_le_bytes());
-        tx.extend_from_slice(&pk);
-
-        tx
+        Transaction::transfer(sender, recipient, 1_000, 0)
+            .with_chain_id(1)
+            .sign(&keypair)
+            .unwrap()
+            .to_bytes()
     }
 
     #[test]
     fn test_signature_middleware() {
         let middleware = SignatureMiddleware::new();
-        let tx = create_mock_transaction();
+        let tx = create_signed_transaction();
         let mut ctx = create_test_context(tx);
 
         let action = middleware.process(&mut ctx).unwrap();
@@ -461,7 +455,7 @@ mod tests {
     #[test]
     fn test_batch_verifier() {
         let mut batch = BatchSignatureVerifier::new(100);
-        let tx = create_mock_transaction();
+        let tx = create_signed_transaction();
 
         assert!(batch.add(tx.clone()));
         assert!(batch.add(tx.clone()));
@@ -469,8 +463,25 @@ mod tests {
 
         let results = batch.verify_all(0);
         assert_eq!(results.len(), 2);
+        assert!(results.into_iter().all(|valid| valid));
 
         batch.clear();
         assert!(batch.is_empty());
+    }
+
+    #[test]
+    fn test_reject_tampered_signature() {
+        let middleware = SignatureMiddleware::new();
+        let mut tx = create_signed_transaction();
+        let sig_offset = 4 + u32::from_le_bytes(tx[0..4].try_into().unwrap()) as usize;
+        let sig_len =
+            u32::from_le_bytes(tx[sig_offset..sig_offset + 4].try_into().unwrap()) as usize;
+        let sig_start = sig_offset + 4;
+        tx[sig_start + sig_len - 1] ^= 0x01;
+
+        let mut ctx = create_test_context(tx);
+        let action = middleware.process(&mut ctx).unwrap();
+
+        assert!(matches!(action, MiddlewareAction::Reject(_)));
     }
 }

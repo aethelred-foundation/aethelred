@@ -169,6 +169,20 @@ already merged.
   explicitly, while new regressions prove the default config rejects both TEE
   and zk verification when no backend is configured.
 
+### 3d. Mempool admission signature enforcement
+
+- Replaced format-only hybrid signature acceptance in
+  `crates/mempool/src/middleware/signature.rs`, where the live signature
+  middleware previously treated structural signature markers and length checks
+  as sufficient verification.
+- The mempool now parses real hybrid public keys and signatures from serialized
+  signed transactions, derives the sender from the presented public key, binds
+  that sender to the signed transaction body, and verifies the transaction hash
+  with the chain-aware hybrid verifier configuration from `aethelred-core`.
+- Updated the mempool test suite to use real signed transactions from the core
+  transaction path instead of mock signature blobs, and added a regression that
+  proves tampering the serialized signature causes admission to fail.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -196,6 +210,7 @@ already merged.
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid`
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
+- `cargo test -p aethelred-mempool`
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
 
@@ -228,6 +243,9 @@ already merged.
 - The worker `zktensor` surface now fails closed instead of manufacturing proof
   material or returning verifier success without a backend, which removes a
   particularly visible claim-vs-control mismatch in the SDK runtime.
+- The active mempool signature middleware no longer admits transactions based
+  on hybrid signature shape alone; it now performs real hybrid verification and
+  sender binding against the serialized signed transaction body.
 - The mirrored public SDK source was updated to match the hardened hybrid
   signer/verifier path and the fail-closed `zktensor` contract, but
   `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml

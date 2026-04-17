@@ -75,6 +75,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Unit tests | `app/health_test.go` | COLLECTED | Health check tests |
 | Integration tests | `app/process_proposal_integration_test.go` | COLLECTED | Full proposal lifecycle |
 | Integration tests | `app/extend_vote_assignments_crisis_test.go` | COLLECTED | Crisis-mode vote extension |
+| Mempool signature regression | `cargo test -p aethelred-mempool` | COLLECTED | Active mempool middleware now performs real hybrid signature verification, sender binding, and tamper rejection on serialized signed transactions |
 | Fuzz tests | `app/vote_extension_fuzz_test.go` | COLLECTED | Vote extension fuzzing |
 | Coverage report | `make test-coverage` -> `coverage.out` | PENDING | Target: >=95% critical paths |
 | Critical path coverage | `make coverage-critical` | PENDING | Enforced >=95% on consensus/verification |
