@@ -91,6 +91,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Simulated Nitro client regression | `go test ./app` | COLLECTED | Simulated Nitro app client now reports `nitro-simulated`, emits schema-consistent Nitro quote JSON, generates valid zk proof artifacts, and keeps orchestrator wiring on the simulated path |
 | Nitro payload confidentiality regression | `go test ./x/verify/tee ./services/tee-worker/l1-verifier` | COLLECTED | Nitro verifier packages no longer treat base64 as encryption; simulated Nitro uses authenticated encryption and remote Nitro fails closed without an attested enclave key path |
 | Seal signature verification regression | `go test ./x/seal/keeper` | COLLECTED | Seal verification no longer treats signature presence as successful cryptographic verification; signed attestations require an explicit verifier backend or insecure local fallback |
+| Seal export provenance regression | `go test ./x/seal/keeper` | COLLECTED | Export signing no longer relies on a dead option flag; signed exports now require an explicit signer backend and bind deterministic export payloads |
 | Pre-audit hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Current branch summary and verification log |
 
 ---

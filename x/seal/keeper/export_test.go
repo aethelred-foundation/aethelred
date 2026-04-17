@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"strings"
 	"testing"
@@ -135,5 +136,62 @@ func TestSealExporterBatchAndBase64(t *testing.T) {
 	}
 	if imported.Format != ExportFormatJSON {
 		t.Fatalf("expected json format in import")
+	}
+}
+
+func TestSealExporterFailsClosedWithoutExportSigner(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	ctx := newSDKContext()
+	seal := newSealForTest(6)
+	_ = k.SetSeal(context.Background(), seal)
+
+	exporter := NewSealExporter(log.NewNopLogger(), &k, nil)
+	options := DefaultExportOptions()
+	options.VerifyBeforeExport = false
+	options.AddExportSignature = true
+	options.ExporterAddress = testAccAddress(7)
+
+	_, err := exporter.Export(ctx, seal.Id, options)
+	if err == nil || !strings.Contains(err.Error(), "no export signer backend configured") {
+		t.Fatalf("expected export signer backend failure, got %v", err)
+	}
+}
+
+func TestSealExporterAddsConfiguredExportSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	ctx := newSDKContext()
+	seal := newSealForTest(8)
+	_ = k.SetSeal(context.Background(), seal)
+
+	exporter := NewSealExporter(log.NewNopLogger(), &k, nil)
+	exporter.SetExportSigner(func(payload []byte) (string, []byte, error) {
+		sum := sha256.Sum256(payload)
+		return "sha256-test", sum[:], nil
+	})
+
+	options := DefaultExportOptions()
+	options.VerifyBeforeExport = false
+	options.AddExportSignature = true
+	options.ExporterAddress = testAccAddress(9)
+
+	export, err := exporter.Export(ctx, seal.Id, options)
+	if err != nil {
+		t.Fatalf("expected signed export success, got %v", err)
+	}
+	if export.Signature == nil {
+		t.Fatalf("expected export signature")
+	}
+	if export.Signature.SignerAddress != options.ExporterAddress {
+		t.Fatalf("unexpected signer address: %s", export.Signature.SignerAddress)
+	}
+	if export.Signature.Algorithm != "sha256-test" {
+		t.Fatalf("unexpected algorithm: %s", export.Signature.Algorithm)
+	}
+	sigBytes, err := base64.StdEncoding.DecodeString(export.Signature.Signature)
+	if err != nil {
+		t.Fatalf("expected base64 signature, got %v", err)
+	}
+	if len(sigBytes) != sha256.Size {
+		t.Fatalf("unexpected signature size: %d", len(sigBytes))
 	}
 }

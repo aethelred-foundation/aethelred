@@ -318,6 +318,17 @@ already merged.
   attestation signatures are present, the verifier reports that there are no
   signatures to verify instead of pretending verification occurred.
 
+### 3m. Seal export provenance fail-closed hardening
+
+- Tightened `x/seal/keeper/export.go`, where `ExportOptions.AddExportSignature`
+  previously exposed a signed-export control that was never actually enforced by
+  the exporter implementation.
+- Export signing now fails closed unless both an exporter address and an
+  explicit export signer backend are configured.
+- When a signer is configured, the exporter signs a deterministic payload that
+  binds the exported seal content, verification summary, and export metadata
+  instead of emitting an unsigned package with provenance-looking fields.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -430,6 +441,9 @@ already merged.
 - Seal verification no longer equates signature presence with cryptographic
   verification. Signed attestations now require an explicit verifier backend or
   an opt-in insecure local fallback path.
+- Seal export provenance no longer depends on an unenforced boolean option.
+  Signed exports now require a real signer backend, and signing requests fail
+  closed instead of silently producing unsigned exports.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

@@ -20,7 +20,10 @@ type SealExporter struct {
 	logger   log.Logger
 	keeper   *Keeper
 	verifier *SealVerifier
+	signer   ExportSigner
 }
+
+type ExportSigner func(payload []byte) (algorithm string, signature []byte, err error)
 
 // ExportFormat represents supported export formats
 type ExportFormat string
@@ -192,28 +195,28 @@ type PortableSealCompliance struct {
 // AuditExport is a detailed export for audit purposes
 type AuditExport struct {
 	// Seal information
-	SealID           string `json:"seal_id"`
-	JobID            string `json:"job_id,omitempty"`
-	ModelHash        string `json:"model_hash"`
-	InputHash        string `json:"input_hash"`
-	OutputHash       string `json:"output_hash"`
+	SealID     string `json:"seal_id"`
+	JobID      string `json:"job_id,omitempty"`
+	ModelHash  string `json:"model_hash"`
+	InputHash  string `json:"input_hash"`
+	OutputHash string `json:"output_hash"`
 
 	// Verification details
-	VerificationType string                    `json:"verification_type"`
-	TEEAttestations  []AuditTEEAttestation     `json:"tee_attestations"`
-	ZKMLProof        *AuditZKMLProof           `json:"zkml_proof,omitempty"`
+	VerificationType string                `json:"verification_type"`
+	TEEAttestations  []AuditTEEAttestation `json:"tee_attestations"`
+	ZKMLProof        *AuditZKMLProof       `json:"zkml_proof,omitempty"`
 
 	// Consensus details
-	Consensus        *AuditConsensus           `json:"consensus,omitempty"`
+	Consensus *AuditConsensus `json:"consensus,omitempty"`
 
 	// Compliance
-	Compliance       AuditCompliance           `json:"compliance"`
+	Compliance AuditCompliance `json:"compliance"`
 
 	// Audit trail
-	AuditTrail       []AuditTrailEntry         `json:"audit_trail"`
+	AuditTrail []AuditTrailEntry `json:"audit_trail"`
 
 	// Chain info
-	ChainInfo        AuditChainInfo            `json:"chain_info"`
+	ChainInfo AuditChainInfo `json:"chain_info"`
 }
 
 // AuditTEEAttestation for audit export
@@ -237,12 +240,12 @@ type AuditZKMLProof struct {
 
 // AuditConsensus for audit export
 type AuditConsensus struct {
-	Height              int64  `json:"height"`
-	TotalValidators     int    `json:"total_validators"`
-	ParticipatingCount  int    `json:"participating_count"`
-	AgreementCount      int    `json:"agreement_count"`
-	ConsensusThreshold  int    `json:"consensus_threshold"`
-	Timestamp           string `json:"timestamp"`
+	Height             int64  `json:"height"`
+	TotalValidators    int    `json:"total_validators"`
+	ParticipatingCount int    `json:"participating_count"`
+	AgreementCount     int    `json:"agreement_count"`
+	ConsensusThreshold int    `json:"consensus_threshold"`
+	Timestamp          string `json:"timestamp"`
 }
 
 // AuditCompliance for audit export
@@ -277,6 +280,10 @@ func NewSealExporter(logger log.Logger, keeper *Keeper, verifier *SealVerifier) 
 		keeper:   keeper,
 		verifier: verifier,
 	}
+}
+
+func (se *SealExporter) SetExportSigner(signer ExportSigner) {
+	se.signer = signer
 }
 
 // Export exports a seal in the specified format
@@ -334,6 +341,35 @@ func (se *SealExporter) Export(ctx context.Context, sealID string, options Expor
 	contentBytes, _ := json.Marshal(sealData)
 	contentHash := sha256.Sum256(contentBytes)
 	export.Metadata.ContentHash = hex.EncodeToString(contentHash[:])
+
+	if options.AddExportSignature {
+		if options.ExporterAddress == "" {
+			return nil, fmt.Errorf("export signing requires exporter address")
+		}
+		if se.signer == nil {
+			return nil, fmt.Errorf("export signing requested but no export signer backend configured")
+		}
+		signaturePayload, err := exportSignaturePayload(export)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build export signing payload: %w", err)
+		}
+		algorithm, signature, err := se.signer(signaturePayload)
+		if err != nil {
+			return nil, fmt.Errorf("failed to sign export: %w", err)
+		}
+		if algorithm == "" {
+			return nil, fmt.Errorf("export signer returned empty algorithm")
+		}
+		if len(signature) == 0 {
+			return nil, fmt.Errorf("export signer returned empty signature")
+		}
+		export.Signature = &ExportSignature{
+			SignerAddress: options.ExporterAddress,
+			Algorithm:     algorithm,
+			Signature:     base64.StdEncoding.EncodeToString(signature),
+			Timestamp:     time.Now().UTC(),
+		}
+	}
 
 	// Record export event
 	sdkCtx.EventManager().EmitEvent(
@@ -438,8 +474,8 @@ func (se *SealExporter) toAuditExport(seal *types.DigitalSeal, sdkCtx sdk.Contex
 		OutputHash:       hex.EncodeToString(seal.OutputCommitment),
 		VerificationType: seal.GetVerificationType(),
 		TEEAttestations:  make([]AuditTEEAttestation, 0),
-		Compliance:      compliance,
-		AuditTrail: make([]AuditTrailEntry, 0),
+		Compliance:       compliance,
+		AuditTrail:       make([]AuditTrailEntry, 0),
 		ChainInfo: AuditChainInfo{
 			ChainID:     sdkCtx.ChainID(),
 			BlockHeight: seal.BlockHeight,
@@ -532,4 +568,22 @@ func (se *SealExporter) ImportFromBase64(data string) (*ExportedSeal, error) {
 func sha256Hash(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+func exportSignaturePayload(export *ExportedSeal) ([]byte, error) {
+	type signableExport struct {
+		Version      string                  `json:"version"`
+		Format       ExportFormat            `json:"format"`
+		Seal         interface{}             `json:"seal"`
+		Verification *SealVerificationResult `json:"verification,omitempty"`
+		Metadata     *ExportMetadata         `json:"metadata"`
+	}
+
+	return json.Marshal(signableExport{
+		Version:      export.Version,
+		Format:       export.Format,
+		Seal:         export.Seal,
+		Verification: export.Verification,
+		Metadata:     export.Metadata,
+	})
 }
