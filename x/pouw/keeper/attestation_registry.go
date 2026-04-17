@@ -223,15 +223,47 @@ func (k Keeper) AppendTrustedMeasurementByAuthority(
 	}
 
 	key := measurementRegistryKey(normalizedPlatform, normalizedMeasurement)
-	if err := k.RegisteredMeasurements.Set(ctx, key); err != nil {
-		return err
+	alreadyRegistered, err := k.RegisteredMeasurements.Has(ctx, key)
+	if err != nil {
+		return fmt.Errorf("failed to query trusted measurement registry: %w", err)
 	}
 
-	if normalizedPlatform == nitroPlatformPrefix {
-		if err := k.RegisteredPCR0Set.Set(ctx, normalizedMeasurement); err != nil {
+	registryResult := "already_registered"
+	if !alreadyRegistered {
+		if err := k.RegisteredMeasurements.Set(ctx, key); err != nil {
 			return err
 		}
+		registryResult = "registered"
 	}
+
+	legacyPCR0Result := "not_applicable"
+	if normalizedPlatform == nitroPlatformPrefix {
+		legacyRegistered, err := k.RegisteredPCR0Set.Has(ctx, normalizedMeasurement)
+		if err != nil {
+			return fmt.Errorf("failed to query legacy nitro registry: %w", err)
+		}
+		legacyPCR0Result = "already_registered"
+		if !legacyRegistered {
+			if err := k.RegisteredPCR0Set.Set(ctx, normalizedMeasurement); err != nil {
+				return err
+			}
+			legacyPCR0Result = "registered"
+		}
+	}
+
+	k.recordTrustedMeasurementMutation(
+		ctx,
+		AuditCategoryGovernance,
+		AuditSeverityWarning,
+		"trusted_measurement_appended",
+		"append",
+		"authority",
+		strings.TrimSpace(authority),
+		normalizedPlatform,
+		normalizedMeasurement,
+		registryResult,
+		legacyPCR0Result,
+	)
 
 	return nil
 }
@@ -258,15 +290,96 @@ func (k Keeper) RevokeTrustedMeasurementBySecurityCommittee(
 	}
 
 	key := measurementRegistryKey(normalizedPlatform, normalizedMeasurement)
-	if err := k.RegisteredMeasurements.Remove(ctx, key); err != nil {
-		return err
+	registered, err := k.RegisteredMeasurements.Has(ctx, key)
+	if err != nil {
+		return fmt.Errorf("failed to query trusted measurement registry: %w", err)
 	}
 
-	if normalizedPlatform == nitroPlatformPrefix {
-		_ = k.RegisteredPCR0Set.Remove(ctx, normalizedMeasurement)
+	registryResult := "revoked"
+	if registered {
+		if err := k.RegisteredMeasurements.Remove(ctx, key); err != nil {
+			return err
+		}
+	} else {
+		registryResult = "already_absent"
 	}
+
+	legacyPCR0Result := "not_applicable"
+	if normalizedPlatform == nitroPlatformPrefix {
+		legacyRegistered, err := k.RegisteredPCR0Set.Has(ctx, normalizedMeasurement)
+		if err != nil {
+			return fmt.Errorf("failed to query legacy nitro registry: %w", err)
+		}
+		legacyPCR0Result = "already_absent"
+		if legacyRegistered {
+			if err := k.RegisteredPCR0Set.Remove(ctx, normalizedMeasurement); err != nil {
+				return err
+			}
+			legacyPCR0Result = "revoked"
+		}
+	}
+
+	if registryResult == "already_absent" && legacyPCR0Result == "already_absent" {
+		return fmt.Errorf("trusted %s measurement not registered: %s", normalizedPlatform, normalizedMeasurement)
+	}
+
+	k.recordTrustedMeasurementMutation(
+		ctx,
+		AuditCategorySecurity,
+		AuditSeverityCritical,
+		"trusted_measurement_revoked",
+		"revoke",
+		"security_committee",
+		normalizeCommitteeAddress(requester),
+		normalizedPlatform,
+		normalizedMeasurement,
+		registryResult,
+		legacyPCR0Result,
+	)
 
 	return nil
+}
+
+func (k Keeper) recordTrustedMeasurementMutation(
+	ctx context.Context,
+	category AuditCategory,
+	severity AuditSeverity,
+	action string,
+	operation string,
+	actorRole string,
+	actor string,
+	platform string,
+	measurement string,
+	registryResult string,
+	legacyPCR0Result string,
+) {
+	sdkCtx, ok := unwrapSDKContext(ctx)
+	if !ok {
+		return
+	}
+
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"trusted_tee_measurement_registry_updated",
+			sdk.NewAttribute("actor", actor),
+			sdk.NewAttribute("actor_role", actorRole),
+			sdk.NewAttribute("operation", operation),
+			sdk.NewAttribute("platform", platform),
+			sdk.NewAttribute("measurement", measurement),
+			sdk.NewAttribute("registry_result", registryResult),
+			sdk.NewAttribute("legacy_pcr0_result", legacyPCR0Result),
+		),
+	)
+
+	if k.auditLogger != nil {
+		k.auditLogger.Record(sdkCtx, category, severity, action, actor, map[string]string{
+			"actor_role":         actorRole,
+			"platform":           platform,
+			"measurement":        measurement,
+			"registry_result":    registryResult,
+			"legacy_pcr0_result": legacyPCR0Result,
+		})
+	}
 }
 
 // IsRegisteredPCR0 checks global registry membership for a measurement hash.

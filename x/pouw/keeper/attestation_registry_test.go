@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	storemetrics "cosmossdk.io/store/metrics"
 	"cosmossdk.io/store/rootmulti"
 	storetypes "cosmossdk.io/store/types"
@@ -43,10 +44,12 @@ func (registryBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Co
 	return sdk.NewCoins()
 }
 
-type registryStakingKeeper struct{}
+type registryStakingKeeper struct {
+	validators []stakingtypes.Validator
+}
 
-func (registryStakingKeeper) GetAllValidators(context.Context) ([]stakingtypes.Validator, error) {
-	return nil, nil
+func (m registryStakingKeeper) GetAllValidators(context.Context) ([]stakingtypes.Validator, error) {
+	return m.validators, nil
 }
 
 func (registryStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stakingtypes.Validator, error) {
@@ -54,6 +57,10 @@ func (registryStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stak
 }
 
 func newRegistryTestKeeper(t *testing.T) (Keeper, sdk.Context) {
+	return newRegistryTestKeeperWithValidators(t, nil)
+}
+
+func newRegistryTestKeeperWithValidators(t *testing.T, validators []stakingtypes.Validator) (Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
@@ -75,7 +82,7 @@ func newRegistryTestKeeper(t *testing.T) (Keeper, sdk.Context) {
 	k := NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
-		registryStakingKeeper{},
+		registryStakingKeeper{validators: validators},
 		registryBankKeeper{},
 		sealkeeper.Keeper{},
 		verifykeeper.Keeper{},
@@ -85,6 +92,43 @@ func newRegistryTestKeeper(t *testing.T) (Keeper, sdk.Context) {
 	require.NoError(t, k.JobCount.Set(ctx, 0))
 
 	return k, ctx
+}
+
+func findEvent(t *testing.T, ctx sdk.Context, eventType string) sdk.Event {
+	t.Helper()
+	var matched sdk.Event
+	found := false
+	for _, event := range ctx.EventManager().Events() {
+		if event.Type == eventType {
+			matched = event
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("event %q not found", eventType)
+	}
+	return matched
+}
+
+func eventAttr(t *testing.T, event sdk.Event, key string) string {
+	t.Helper()
+	for _, attr := range event.Attributes {
+		if string(attr.Key) == key {
+			return string(attr.Value)
+		}
+	}
+	t.Fatalf("attribute %q not found on event %q", key, event.Type)
+	return ""
+}
+
+func makeCommitteeValidator(seed string, tokens int64) stakingtypes.Validator {
+	raw := make([]byte, 20)
+	copy(raw, []byte(seed))
+	return stakingtypes.Validator{
+		OperatorAddress: sdk.ValAddress(raw).String(),
+		Status:          stakingtypes.Bonded,
+		Tokens:          sdkmath.NewInt(tokens),
+	}
 }
 
 func TestAttestationRegistry_RegisterAndValidatePCR0(t *testing.T) {
@@ -179,4 +223,81 @@ func TestAttestationRegistry_UntrustedSlashUpdatesValidatorStats(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, stats.SlashingEvents)
 	require.Less(t, stats.ReputationScore, int64(50))
+}
+
+func TestAttestationRegistry_AppendTrustedMeasurement_AuditsAndReconcilesLegacyNitroIndex(t *testing.T) {
+	k, ctx := newRegistryTestKeeper(t)
+
+	measurement := sha256.Sum256([]byte("trusted-nitro-authority"))
+	measurementHex := hex.EncodeToString(measurement[:])
+	key := measurementRegistryKey(nitroPlatformPrefix, measurementHex)
+
+	require.NoError(t, k.RegisteredMeasurements.Set(ctx, key))
+	require.NoError(t, k.AppendTrustedMeasurementByAuthority(ctx, "authority", "aws-nitro", measurementHex))
+
+	registered, err := k.RegisteredPCR0Set.Has(ctx, measurementHex)
+	require.NoError(t, err)
+	require.True(t, registered)
+
+	event := findEvent(t, ctx, "trusted_tee_measurement_registry_updated")
+	require.Equal(t, "authority", eventAttr(t, event, "actor"))
+	require.Equal(t, "authority", eventAttr(t, event, "actor_role"))
+	require.Equal(t, "append", eventAttr(t, event, "operation"))
+	require.Equal(t, "aws-nitro", eventAttr(t, event, "platform"))
+	require.Equal(t, measurementHex, eventAttr(t, event, "measurement"))
+	require.Equal(t, "already_registered", eventAttr(t, event, "registry_result"))
+	require.Equal(t, "registered", eventAttr(t, event, "legacy_pcr0_result"))
+
+	records := k.AuditLogger().GetRecords()
+	require.NotEmpty(t, records)
+	last := records[len(records)-1]
+	require.Equal(t, "trusted_measurement_appended", last.Action)
+	require.Equal(t, "authority", last.Actor)
+	require.Equal(t, "authority", last.Details["actor_role"])
+	require.Equal(t, "already_registered", last.Details["registry_result"])
+	require.Equal(t, "registered", last.Details["legacy_pcr0_result"])
+}
+
+func TestAttestationRegistry_RevokeTrustedMeasurementBySecurityCommittee_AuditsAndRemovesIndexes(t *testing.T) {
+	committee := makeCommitteeValidator("committee-member-1", 1_000_000)
+	k, ctx := newRegistryTestKeeperWithValidators(t, []stakingtypes.Validator{committee})
+
+	measurement := sha256.Sum256([]byte("revoked-nitro-measurement"))
+	measurementHex := hex.EncodeToString(measurement[:])
+
+	require.NoError(t, k.AppendTrustedMeasurementByAuthority(ctx, "authority", "aws-nitro", measurementHex))
+	require.NoError(t, k.RevokeTrustedMeasurementBySecurityCommittee(ctx, committee.OperatorAddress, "aws-nitro", measurementHex))
+
+	registered, err := k.RegisteredMeasurements.Has(ctx, measurementRegistryKey(nitroPlatformPrefix, measurementHex))
+	require.NoError(t, err)
+	require.False(t, registered)
+
+	legacyRegistered, err := k.RegisteredPCR0Set.Has(ctx, measurementHex)
+	require.NoError(t, err)
+	require.False(t, legacyRegistered)
+
+	event := findEvent(t, ctx, "trusted_tee_measurement_registry_updated")
+	require.Equal(t, committee.OperatorAddress, eventAttr(t, event, "actor"))
+	require.Equal(t, "security_committee", eventAttr(t, event, "actor_role"))
+	require.Equal(t, "revoke", eventAttr(t, event, "operation"))
+	require.Equal(t, "revoked", eventAttr(t, event, "registry_result"))
+	require.Equal(t, "revoked", eventAttr(t, event, "legacy_pcr0_result"))
+
+	records := k.AuditLogger().GetRecords()
+	require.Len(t, records, 2)
+	last := records[len(records)-1]
+	require.Equal(t, "trusted_measurement_revoked", last.Action)
+	require.Equal(t, string(AuditSeverityCritical), string(last.Severity))
+	require.Equal(t, committee.OperatorAddress, last.Actor)
+	require.Equal(t, "revoked", last.Details["registry_result"])
+	require.Equal(t, "revoked", last.Details["legacy_pcr0_result"])
+}
+
+func TestAttestationRegistry_RevokeTrustedMeasurementBySecurityCommittee_RejectsUnknownMeasurement(t *testing.T) {
+	committee := makeCommitteeValidator("committee-member-2", 1_000_000)
+	k, ctx := newRegistryTestKeeperWithValidators(t, []stakingtypes.Validator{committee})
+
+	measurement := sha256.Sum256([]byte("unknown-nitro-measurement"))
+	err := k.RevokeTrustedMeasurementBySecurityCommittee(ctx, committee.OperatorAddress, "aws-nitro", hex.EncodeToString(measurement[:]))
+	require.ErrorContains(t, err, "not registered")
 }

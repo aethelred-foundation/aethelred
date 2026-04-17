@@ -431,6 +431,24 @@ already merged.
   checklist now reflect runtime enforcement rather than lock-registry metadata
   alone.
 
+### 3u. Trusted-measurement registry mutation auditability
+
+- Tightened `x/pouw/keeper/attestation_registry.go`, where privileged trust
+  registry mutations previously updated the global TEE measurement registry
+  without emitting a domain-specific event, without writing a structured audit
+  record, and without distinguishing new registrations from duplicate or
+  cleanup-only operations.
+- Governance-authority appends now record whether the global registry entry was
+  newly registered or already present, and Nitro appends also reconcile the
+  legacy PCR0 compatibility index instead of silently leaving it stale.
+- Security-committee revocations now fail closed only when neither the global
+  registry nor the legacy Nitro compatibility index contains the measurement,
+  and otherwise record the exact revocation or cleanup results for both
+  indexes.
+- Added focused registry regressions proving authority-driven appends reconcile
+  legacy Nitro indexing, emergency committee revocations remove both trust
+  indexes, and unknown revocations no longer report false success.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -573,6 +591,11 @@ already merged.
 - The PoUW audit-facing compliance and checklist surfaces now verify that
   runtime lock enforcement is actually present instead of inferring governance
   safety from the existence of registry metadata alone.
+- Privileged trusted-measurement mutations now emit explicit
+  `trusted_tee_measurement_registry_updated` events and structured audit-log
+  records that distinguish fresh registrations, legacy Nitro index
+  reconciliation, full revocations, and absent-measurement failures instead of
+  leaving authority-level trust-root changes ambiguous in the runtime trail.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
