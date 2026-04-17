@@ -301,40 +301,16 @@ func (v *Verifier) addG1(p1, p2 *G1Point) *G1Point {
 
 // verifyPairing performs the Groth16 pairing check
 func (v *Verifier) verifyPairing(proof *Proof, vk *VerifyingKey, vkX *G1Point) (bool, error) {
-	// In production, this would perform:
+	// A production verifier must perform:
 	// e(π_A, π_B) = e(α, β) * e(vk_x, γ) * e(π_C, δ)
 	//
 	// Using multi-pairing for efficiency:
 	// e(π_A, π_B) * e(-α, β) * e(-vk_x, γ) * e(-π_C, δ) = 1
 	//
-	// This requires integration with a BN254 pairing library like:
-	// - cloudflare/bn256
-	// - consensys/gnark-crypto
-	// - ethereum/go-ethereum/crypto/bn256
-
-	// For now, perform structural validation only
-	// Real implementation would call the pairing check
-
-	// Placeholder: compute a deterministic hash to simulate verification
-	h := sha256.New()
-	h.Write(proof.A.X.Bytes())
-	h.Write(proof.A.Y.Bytes())
-	h.Write(proof.B.X[0].Bytes())
-	h.Write(proof.B.X[1].Bytes())
-	h.Write(proof.B.Y[0].Bytes())
-	h.Write(proof.B.Y[1].Bytes())
-	h.Write(proof.C.X.Bytes())
-	h.Write(proof.C.Y.Bytes())
-	h.Write(vkX.X.Bytes())
-	h.Write(vkX.Y.Bytes())
-	h.Write(vk.Alpha.X.Bytes())
-	h.Write(vk.Beta.X[0].Bytes())
-	h.Write(vk.Gamma.X[0].Bytes())
-	h.Write(vk.Delta.X[0].Bytes())
-
-	// In simulation mode, always return true if structure is valid
-	// In production mode, this would perform actual pairing verification
-	return true, nil
+	// This requires integration with a real BN254 pairing backend.
+	// Failing closed here is safer than structurally accepting proofs.
+	_, _, _ = proof, vk, vkX
+	return false, ErrPairingBackendUnavailable
 }
 
 // hashVK computes a hash of the verifying key
