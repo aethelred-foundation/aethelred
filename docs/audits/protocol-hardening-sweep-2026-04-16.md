@@ -376,6 +376,22 @@ already merged.
   `TEEAttestationData` validation rules, which means the application-level
   signature verifier no longer accepts arbitrary non-empty TEE platform names.
 
+### 3r. ABCI vote-extension request binding hardening
+
+- Tightened `app/abci.go`, where `VerifyVoteExtensionHandler()` previously
+  trusted the vote extension's embedded validator address and height before
+  cross-checking them against the authoritative consensus request.
+- The ABCI ingress path now rejects vote extensions when the embedded
+  `ValidatorAddress` does not exactly match `RequestVerifyVoteExtension`
+  validator identity, preventing a mismatched extension from reaching staking
+  lookup or signature verification under the wrong consensus identity.
+- The ABCI ingress path now also rejects vote extensions whose embedded
+  `Height` does not exactly match the consensus request height, closing another
+  request-to-payload drift path before later aggregation logic.
+- Tightened the test harness in `app/process_proposal_integration_test.go` so
+  the lightweight app fixture now carries the PoUW KV-store key mapping needed
+  for deterministic vote-extension time validation in focused ABCI tests.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -416,6 +432,7 @@ already merged.
 - `go test ./app`
 - `go test ./x/verify/tee ./services/tee-worker/l1-verifier`
 - `go test ./x/seal/keeper`
+- `go test ./app -run 'TestVerifyVoteExtensionHandlerRejects(MismatchedValidatorAddress|MismatchedHeight)$'`
 
 ### Solidity / Hardhat / Foundry
 
@@ -504,6 +521,10 @@ already merged.
 - TEE platform validation is now consistent across the app signer/verifier layer
   and the PoUW keeper. `nitro-simulated` and `mock-tee` are treated as
   simulated-only aliases instead of unknown or accidentally looser cases.
+- The ABCI vote-extension ingress path now binds the embedded vote-extension
+  identity to the authoritative consensus request earlier, so validator-address
+  or height drift is rejected before staking lookup and signature verification
+  rather than relying on later keeper-side aggregation checks.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
