@@ -325,7 +325,7 @@ impl PrecompileRegistry {
         use std::sync::Arc as StdArc;
         use tee::{MeasurementRegistry, TeeVerifierConfig};
 
-        let config = TeeVerifierConfig::default();
+        let config = TeeVerifierConfig::enterprise();
         let registry = StdArc::new(MeasurementRegistry::new());
 
         // Register unified TEE precompile at primary 0x0400 address

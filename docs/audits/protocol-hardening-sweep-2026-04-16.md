@@ -196,6 +196,27 @@ already merged.
   while adding regressions that prove mainnet/testnet configs fail closed and
   the devnet compatibility lane still behaves intentionally.
 
+### 3f. TEE precompile secure-by-default registry hardening
+
+- Tightened `crates/vm/src/precompiles/tee.rs`,
+  `crates/vm/src/precompiles/mod.rs`, and
+  `crates/vm/src/precompiles/registry.rs` so the live VM precompile registry no
+  longer wires in permissive TEE verifier defaults for mainnet-style runtime
+  use.
+- Changed the TEE verifier defaults to hardened enterprise presets and made the
+  runtime registry explicitly install enterprise TEE precompile configurations
+  instead of relying on softer helper defaults.
+- Preserved an explicit `with_devnet()` constructor path for scaffolding tests
+  so development-only structural verification behavior is isolated and no
+  longer masquerades as the default runtime posture.
+- Made the SGX, Nitro, and SEV platform-specific precompiles fail closed when
+  real cryptographic verification backends are unavailable, eliminating
+  placeholder success paths and signature-less SEV acceptance in the
+  platform-specific addresses that sit alongside the universal TEE precompile.
+- Added regression coverage proving the default precompile registry now rejects
+  enterprise TEE verification without a real backend while the explicit devnet
+  constructor still preserves the intended local-only permissive lane.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -225,6 +246,7 @@ already merged.
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
 - `cargo test -p aethelred-mempool`
 - `cargo test -p aethelred-vm job_registry`
+- `cargo test -p aethelred-vm precompiles::tee::tests`
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
 
@@ -263,6 +285,11 @@ already merged.
 - The VM job registry now treats TEE and zk precompile failures as hard
   failures on mainnet/testnet config paths instead of silently downgrading to a
   structural-only acceptance path outside devnet.
+- The live VM TEE precompile registry is now secure-by-default: mainnet-style
+  runtime registration uses hardened enterprise TEE configs, while the old
+  structural-only and placeholder platform paths are isolated behind explicit
+  devnet-only construction helpers instead of being reachable through runtime
+  defaults.
 - The mirrored public SDK source was updated to match the hardened hybrid
   signer/verifier path and the fail-closed `zktensor` contract, but
   `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml

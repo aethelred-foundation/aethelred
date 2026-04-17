@@ -90,7 +90,7 @@ pub struct PlatformConfig {
 
 impl Default for TeeVerifierConfig {
     fn default() -> Self {
-        Self::mainnet()
+        Self::enterprise()
     }
 }
 
@@ -131,7 +131,7 @@ impl TeeVerifierConfig {
                 sev_snp_enabled: true,
                 sgx_tcb_recovery_mode: true,
             },
-            enterprise_mode: false,
+            enterprise_mode: true,
         }
     }
 
@@ -151,15 +151,13 @@ impl TeeVerifierConfig {
                 sev_snp_enabled: true,
                 sgx_tcb_recovery_mode: false,
             },
-            enterprise_mode: false,
+            enterprise_mode: true,
         }
     }
 
     /// Enterprise configuration (hardened, based on mainnet)
     pub fn enterprise() -> Self {
-        let mut config = Self::mainnet();
-        config.enterprise_mode = true;
-        config
+        Self::mainnet()
     }
 }
 
@@ -736,6 +734,14 @@ impl SgxDcapVerifyPrecompile {
         )
     }
 
+    /// Create with explicit devnet configuration
+    pub fn with_devnet() -> Self {
+        Self::new(
+            TeeVerifierConfig::devnet(),
+            Arc::new(MeasurementRegistry::new()),
+        )
+    }
+
     /// Parse SGX DCAP Quote v3
     fn parse_dcap_quote(&self, quote_bytes: &[u8]) -> Result<SgxDcapQuote, PrecompileError> {
         // Minimum quote size: header (48) + report body (384) + signature length (4)
@@ -992,6 +998,12 @@ impl SgxDcapVerifyPrecompile {
         quote: &SgxDcapQuote,
         _quote_bytes: &[u8],
     ) -> Result<VerificationStatus, PrecompileError> {
+        if self.config.enterprise_mode {
+            return Err(PrecompileError::VerificationFailed(
+                "SGX DCAP cryptographic verification backend required in enterprise mode".into(),
+            ));
+        }
+
         // In mock mode, perform structural validation only
 
         // Verify quote version
@@ -1361,6 +1373,14 @@ impl NitroVerifyPrecompile {
         )
     }
 
+    /// Create with explicit devnet configuration
+    pub fn with_devnet() -> Self {
+        Self::new(
+            TeeVerifierConfig::devnet(),
+            Arc::new(MeasurementRegistry::new()),
+        )
+    }
+
     /// Set AWS Nitro Root CA certificate
     pub fn set_root_ca(&mut self, ca_cert: Vec<u8>) {
         self.root_ca = Some(ca_cert);
@@ -1455,14 +1475,19 @@ impl NitroVerifyPrecompile {
 
         #[cfg(feature = "mock-tee")]
         {
+            if self.config.enterprise_mode {
+                return Err(PrecompileError::VerificationFailed(
+                    "Nitro cryptographic verification backend required in enterprise mode".into(),
+                ));
+            }
             return Ok(true);
         }
 
         #[cfg(not(feature = "mock-tee"))]
         {
-            // Verify certificate chain
-            // Verify ECDSA signature
-            Ok(true) // Placeholder
+            Err(PrecompileError::VerificationFailed(
+                "Nitro COSE signature verification backend is not implemented".into(),
+            ))
         }
     }
 
@@ -1679,6 +1704,14 @@ impl SevSnpVerifyPrecompile {
         )
     }
 
+    /// Create with explicit devnet configuration
+    pub fn with_devnet() -> Self {
+        Self::new(
+            TeeVerifierConfig::devnet(),
+            Arc::new(MeasurementRegistry::new()),
+        )
+    }
+
     /// Parse SEV-SNP attestation report
     fn parse_report(&self, report: &[u8]) -> Result<SevSnpReport, PrecompileError> {
         // SEV-SNP report is 1184 bytes (header + body + signature)
@@ -1874,6 +1907,17 @@ impl Precompile for SevSnpVerifyPrecompile {
             }
         };
 
+        if report.signature.is_empty() {
+            return Ok(ExecutionResult::success(
+                self.build_output(
+                    false,
+                    VerificationStatus::InvalidSignature,
+                    &report.measurement,
+                ),
+                gas,
+            ));
+        }
+
         // Verify report data hash
         if report.report_data[0..32] != expected_data_hash {
             return Ok(ExecutionResult::success(
@@ -1910,8 +1954,18 @@ impl Precompile for SevSnpVerifyPrecompile {
             }
         }
 
-        // Signature verification would happen here
-        // For production, verify ECDSA P-384 signature against AMD signing key chain
+        // Fail closed in hardened modes until the SEV-SNP signature backend is
+        // implemented. Devnet may still use structural parsing for scaffolding.
+        if self.config.enterprise_mode {
+            return Ok(ExecutionResult::success(
+                self.build_output(
+                    false,
+                    VerificationStatus::InvalidSignature,
+                    &report.measurement,
+                ),
+                gas,
+            ));
+        }
 
         Ok(ExecutionResult::success(
             self.build_output(true, VerificationStatus::Ok, &report.measurement),
@@ -1953,6 +2007,13 @@ impl UniversalTeeVerifyPrecompile {
     /// Create with default configuration
     pub fn with_defaults() -> Self {
         let config = TeeVerifierConfig::default();
+        let registry = Arc::new(MeasurementRegistry::new());
+        Self::new(config, registry)
+    }
+
+    /// Create with explicit devnet configuration
+    pub fn with_devnet() -> Self {
+        let config = TeeVerifierConfig::devnet();
         let registry = Arc::new(MeasurementRegistry::new());
         Self::new(config, registry)
     }
@@ -2135,11 +2196,16 @@ mod tests {
         let testnet = TeeVerifierConfig::testnet();
         assert!(!testnet.allow_debug_enclaves);
         assert!(testnet.strict_mode);
+        assert!(testnet.enterprise_mode);
 
         let mainnet = TeeVerifierConfig::mainnet();
         assert!(!mainnet.allow_debug_enclaves);
         assert!(mainnet.strict_mode);
         assert!(mainnet.require_fresh_collateral);
+        assert!(mainnet.enterprise_mode);
+
+        let default_cfg = TeeVerifierConfig::default();
+        assert!(default_cfg.enterprise_mode);
     }
 
     #[test]
@@ -2541,7 +2607,7 @@ mod tests {
 
     #[test]
     fn test_devnet_precompile_allows_mock_verification() {
-        let precompile = UniversalTeeVerifyPrecompile::with_defaults();
+        let precompile = UniversalTeeVerifyPrecompile::with_devnet();
         assert!(!precompile.is_enterprise_mode());
         // Devnet precompile should not reject based on enterprise_mode.
         // The mock verifier may panic on malformed data, so use catch_unwind.
@@ -2563,5 +2629,18 @@ mod tests {
             }
             Err(_) => {} // panic from mock verifier overflow - acceptable in devnet
         }
+    }
+
+    #[test]
+    fn test_default_registry_uses_enterprise_tee_verifier() {
+        let registry = crate::precompiles::PrecompileRegistry::new();
+        let mut input = vec![0x02]; // SGX DCAP platform byte
+        input.extend_from_slice(&vec![0xAA; 500]);
+
+        let result = registry.execute(addresses::TEE_VERIFY, &input, 1_000_000);
+        assert!(
+            result.is_err(),
+            "default registry should fail closed on enterprise TEE verification without a real backend"
+        );
     }
 }
