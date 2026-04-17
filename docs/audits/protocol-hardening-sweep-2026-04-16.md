@@ -255,6 +255,7 @@ already merged.
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence`
 - `cargo check --manifest-path sdk/aethelred-sdk/Cargo.toml`
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk hybrid`
+- `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk lib_full::sovereign::`
 - `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk zktensor`
 - `cargo check --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk`
 - `cargo test -p aethelred-mempool`
@@ -307,6 +308,16 @@ already merged.
   a sufficient stand-in for verification. Even in dev/test mode, simulated
   proofs are now bound to their verifying key and public inputs so tampering
   produces deterministic failure instead of silent success.
+- The worker sovereign-data path now uses real owner-bound authenticated
+  encryption for protected/private/secret payloads instead of storing plaintext
+  bytes behind encrypted-looking metadata. Ownerless access fails closed for
+  encrypted payloads, required access reasons are enforced, UAE sovereign
+  defaults now require a TEE privacy level, and private data rejects debug-mode
+  or unacceptable-TCB enclave reports.
+- The mirrored public SDK sovereign module has not yet been brought to the same
+  owner-bound encryption contract in this tranche. The worker/runtime path is
+  now the hardened source of truth; the public SDK mirror should be aligned in
+  a follow-on pass rather than left to drift indefinitely.
 - The mirrored public SDK source was updated to match the hardened hybrid
   signer/verifier path and the fail-closed `zktensor` contract, but
   `cargo test --manifest-path sdk/aethelred-sdk/Cargo.toml

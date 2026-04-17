@@ -6,6 +6,7 @@
 use super::*;
 use crate::crypto::{HybridKeypair, HybridPublicKey};
 use std::marker::PhantomData;
+use zeroize::Zeroize;
 
 /// Builder for creating Sovereign data instances
 ///
@@ -93,6 +94,7 @@ where
     pub fn uae_sovereign(mut self) -> Self {
         self.jurisdiction = Jurisdiction::UAE;
         self.hardware = HardwareType::IntelSGX; // Default to SGX for UAE
+        self.privacy_level = PrivacyLevel::Private;
         self.compliance.push(ComplianceRequirement {
             regulation: Regulation::UAEDataProtection,
             requirements: vec![
@@ -310,48 +312,73 @@ where
 
         // Get or generate owner
         let owner = self.owner.unwrap_or_else(HybridKeypair::generate);
+        let owner_public = owner.public_key();
+
+        // Create stable sovereign metadata before encrypting the payload so the
+        // encryption context is bound to the sovereign identity.
+        let id = SovereignId::new();
+        let created_at = SystemTime::now();
+        let metadata_bytes =
+            Self::metadata_bytes(&id, &self.jurisdiction, &self.hardware, &created_at);
+        let encryption_aad = Self::encryption_aad(
+            &id,
+            &self.jurisdiction,
+            &self.hardware,
+            &created_at,
+            self.privacy_level,
+            &owner_public,
+        );
+        let metadata_signature = owner.sign(&metadata_bytes);
 
         // Serialize and encrypt data
-        let serialized = bincode::serialize(&self.data)
-            .map_err(|e| SovereignError::DecryptionFailed(e.to_string()))?;
+        let mut serialized = bincode::serialize(&self.data)
+            .map_err(|e| SovereignError::EncryptionFailed(e.to_string()))?;
 
-        // Generate encryption metadata
-        let nonce = Self::generate_nonce(self.encryption);
         let salt = Self::generate_salt();
+        let key_derivation = KeyDerivationInfo {
+            algorithm: KdfAlgorithm::HkdfSha256,
+            salt,
+            info: format!("sovereign:{}:payload", self.jurisdiction.code()),
+            iterations: None,
+        };
+
+        let aad_hash = crate::crypto::sha256(&encryption_aad);
+
+        let encrypted_payload;
+        let nonce;
+        if self.privacy_level.requires_encryption() {
+            let payload_key =
+                Self::derive_owner_payload_key(&owner, &key_derivation, &encryption_aad)?;
+            let encrypted = crate::crypto::encrypt(
+                &payload_key,
+                &serialized,
+                &encryption_aad,
+                self.encryption.as_crypto_algorithm(),
+            )
+            .map_err(|e| SovereignError::EncryptionFailed(e.to_string()))?;
+            serialized.zeroize();
+            encrypted_payload = encrypted.ciphertext;
+            nonce = encrypted.nonce;
+        } else {
+            encrypted_payload = serialized;
+            nonce = Vec::new();
+        }
 
         let encryption_meta = EncryptionMetadata {
             algorithm: self.encryption,
             nonce,
-            key_derivation: KeyDerivationInfo {
-                algorithm: KdfAlgorithm::HkdfSha256,
-                salt,
-                info: format!("sovereign:{}", self.jurisdiction.code()),
-                iterations: None,
-            },
-            aad_hash: Self::compute_aad_hash(&self.jurisdiction, &self.hardware),
+            key_derivation,
+            aad_hash,
         };
-
-        // In production, encrypt the data here
-        // For now, we just store serialized (would be encrypted)
-        let encrypted_payload = serialized;
 
         // Create access control list
         let acl = AccessControlList {
-            owner: owner.public_key().clone(),
+            owner: owner_public.clone(),
             readers: self.readers,
             writers: self.writers,
             require_multi_party: self.require_multi_party,
             min_approvers: self.min_approvers,
         };
-
-        // Create the sovereign instance
-        let id = SovereignId::new();
-        let created_at = SystemTime::now();
-
-        // Sign metadata
-        let metadata_bytes =
-            Self::metadata_bytes(&id, &self.jurisdiction, &self.hardware, &created_at);
-        let signature = owner.sign(&metadata_bytes);
 
         Ok(Sovereign {
             id,
@@ -368,8 +395,8 @@ where
             access_control: acl,
             audit_config: self.audit,
             created_at,
-            creator: owner.public_key().clone(),
-            metadata_signature: signature,
+            creator: owner_public,
+            metadata_signature,
             _phantom: PhantomData,
         })
     }
@@ -394,33 +421,12 @@ where
         Ok(())
     }
 
-    fn generate_nonce(algorithm: EncryptionAlgorithm) -> Vec<u8> {
-        use rand::RngCore;
-        let size = match algorithm {
-            EncryptionAlgorithm::Aes256Gcm => 12,
-            EncryptionAlgorithm::ChaCha20Poly1305 => 12,
-            EncryptionAlgorithm::Aes256GcmSiv => 12,
-        };
-        let mut nonce = vec![0u8; size];
-        let mut rng = rand::rng();
-        rng.fill_bytes(&mut nonce);
-        nonce
-    }
-
     fn generate_salt() -> Vec<u8> {
         use rand::RngCore;
         let mut salt = vec![0u8; 32];
         let mut rng = rand::rng();
         rng.fill_bytes(&mut salt);
         salt
-    }
-
-    fn compute_aad_hash(jurisdiction: &Jurisdiction, hardware: &HardwareType) -> [u8; 32] {
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(jurisdiction.code().as_bytes());
-        hasher.update(&[*hardware as u8]);
-        hasher.finalize().into()
     }
 
     fn metadata_bytes(
@@ -439,6 +445,61 @@ where
             .as_secs();
         bytes.extend_from_slice(&ts.to_le_bytes());
         bytes
+    }
+
+    fn encryption_aad(
+        id: &SovereignId,
+        jurisdiction: &Jurisdiction,
+        hardware: &HardwareType,
+        created_at: &SystemTime,
+        privacy_level: PrivacyLevel,
+        creator: &HybridPublicKey,
+    ) -> Vec<u8> {
+        let mut bytes = Self::metadata_bytes(id, jurisdiction, hardware, created_at);
+        bytes.push(Self::privacy_level_tag(privacy_level));
+
+        let creator_bytes = creator.to_bytes();
+        bytes.extend_from_slice(&(creator_bytes.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(&creator_bytes);
+        bytes
+    }
+
+    fn privacy_level_tag(level: PrivacyLevel) -> u8 {
+        match level {
+            PrivacyLevel::Public => 0,
+            PrivacyLevel::Protected => 1,
+            PrivacyLevel::Private => 2,
+            PrivacyLevel::Secret => 3,
+        }
+    }
+
+    fn derive_owner_payload_key(
+        owner: &HybridKeypair,
+        key_derivation: &KeyDerivationInfo,
+        aad: &[u8],
+    ) -> Result<[u8; 32], SovereignError> {
+        let master_secret = owner.key_derivation_secret();
+        let mut info = key_derivation.info.as_bytes().to_vec();
+        info.extend_from_slice(aad);
+        let derived = match key_derivation.algorithm {
+            KdfAlgorithm::HkdfSha256 => {
+                crate::crypto::hkdf_sha256(&master_secret, &key_derivation.salt, &info, 32)
+            }
+            KdfAlgorithm::HkdfSha384 => {
+                crate::crypto::hkdf_sha384(&master_secret, &key_derivation.salt, &info, 32)
+            }
+            KdfAlgorithm::Pbkdf2Sha256 => crate::crypto::pbkdf2_sha256(
+                &master_secret,
+                &key_derivation.salt,
+                key_derivation.iterations.unwrap_or(100_000),
+                32,
+            ),
+        }
+        .map_err(|e| SovereignError::EncryptionFailed(e.to_string()))?;
+
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&derived);
+        Ok(key)
     }
 }
 
@@ -505,5 +566,30 @@ mod tests {
             .build();
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_protected_payload_is_encrypted() {
+        let sovereign = SovereignBuilder::new("sensitive".to_string())
+            .privacy(PrivacyLevel::Protected)
+            .hardware(HardwareType::IntelSGX)
+            .build()
+            .expect("protected sovereign should build");
+
+        let serialized = bincode::serialize(&"sensitive".to_string()).expect("serialize payload");
+        assert_ne!(sovereign.encrypted_payload, serialized);
+        assert!(!sovereign.encryption_meta.nonce.is_empty());
+    }
+
+    #[test]
+    fn test_public_payload_remains_plaintext() {
+        let sovereign = SovereignBuilder::new("public".to_string())
+            .privacy(PrivacyLevel::Public)
+            .build()
+            .expect("public sovereign should build");
+
+        let serialized = bincode::serialize(&"public".to_string()).expect("serialize payload");
+        assert_eq!(sovereign.encrypted_payload, serialized);
+        assert!(sovereign.encryption_meta.nonce.is_empty());
     }
 }

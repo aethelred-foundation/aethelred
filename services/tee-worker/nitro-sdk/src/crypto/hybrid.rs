@@ -24,6 +24,15 @@ pub enum DilithiumSecurityLevel {
 }
 
 impl DilithiumSecurityLevel {
+    #[cfg(test)]
+    fn secret_key_size(self) -> usize {
+        match self {
+            DilithiumSecurityLevel::Level2 => dilithium2::secret_key_bytes(),
+            DilithiumSecurityLevel::Level3 => dilithium3::secret_key_bytes(),
+            DilithiumSecurityLevel::Level5 => dilithium5::secret_key_bytes(),
+        }
+    }
+
     fn public_key_size(self) -> usize {
         match self {
             DilithiumSecurityLevel::Level2 => dilithium2::public_key_bytes(),
@@ -167,6 +176,22 @@ impl HybridKeypair {
     /// Sign a message (async-friendly)
     pub async fn sign_async(&self, message: &[u8]) -> HybridSignature {
         self.sign(message)
+    }
+
+    /// Derive a deterministic secret suitable for symmetric key derivation.
+    ///
+    /// This never exposes the raw component private keys directly, but still
+    /// gives higher-level modules a stable, owner-bound secret they can feed
+    /// into HKDF or other KDFs for authenticated encryption workflows.
+    pub(crate) fn key_derivation_secret(&self) -> [u8; 32] {
+        use sha2::{Digest, Sha256};
+
+        let mut hasher = Sha256::new();
+        hasher.update(b"aethelred:hybrid:kdf");
+        hasher.update(&self.ecdsa_secret);
+        hasher.update(&self.dilithium_secret);
+        hasher.update([self.level as u8]);
+        hasher.finalize().into()
     }
 
     // ========================================================================
