@@ -206,7 +206,7 @@ var AttackSurfaces = []AttackSurface{
 		Module: "pouw/governance", Attacker: "ATK-04", Boundary: "TB-04",
 		Vector:       "Governance proposal to set AllowSimulated=true after it was disabled in production.",
 		Impact:       "critical",
-		Mitigation:   "MergeParams enforces one-way gate: if current AllowSimulated=false and update.AllowSimulated=true, the update is silently rejected. This is not bypassable via governance.",
+		Mitigation:   "UpdateParams enforces the one-way gate and returns an error if a proposal would re-enable AllowSimulated after it has been disabled. Runtime governance-lock checks and compliance reporting now verify that re-enablement is blocked in the live handler path.",
 		Status:       "mitigated",
 		TestCoverage: "TestTokenomics_MergeParams_OneWayGate*, TestGovernance_AllowSimulated*",
 	},
@@ -215,7 +215,7 @@ var AttackSurfaces = []AttackSurface{
 		Module: "pouw/governance", Attacker: "ATK-04", Boundary: "TB-04",
 		Vector:       "Governance proposal to lower ConsensusThreshold below 51%, enabling minority consensus.",
 		Impact:       "critical",
-		Mitigation:   "ValidateParams enforces ConsensusThreshold in range [51, 100]. Any value < 51 is rejected.",
+		Mitigation:   "ValidateParams rejects thresholds below the absolute BFT floor, while the mainnet lock registry and UpdateParams handler now fail closed on runtime threshold changes in the hardened production path.",
 		Status:       "mitigated",
 		TestCoverage: "TestTokenomics_ValidateParams_*",
 	},
@@ -313,7 +313,7 @@ var AttackSurfaces = []AttackSurface{
 		Module: "app/abci", Attacker: "ATK-05", Boundary: "TB-01",
 		Vector:       "Vote extensions are not ed25519-signed, allowing network-level forgery.",
 		Impact:       "high",
-		Mitigation:   "TODO in app/abci.go line 47. CometBFT's VoteExtension mechanism provides implicit signing at the consensus layer, but application-level signing adds defense-in-depth.",
+		Mitigation:   "App-layer vote-extension signing and verification are implemented in app/abci.go and app/vote_extension.go, and production mode rejects unsigned or invalid extensions. Remaining rollout work is operational consistency, not absence of the signing control itself.",
 		Status:       "partial",
 		TestCoverage: "TestByzantine_UnsignedExtension (validates rejection in production mode)",
 	},
@@ -347,7 +347,7 @@ var SecurityProperties = []SecurityProperty{
 	{
 		ID: "SP-01", Category: "safety", Name: "Consensus Integrity",
 		Statement: "No compute result is marked as consensus-verified unless ≥ ConsensusThreshold% of validators independently produced the same output hash.",
-		Mechanism: "AggregateVoteExtensions counting + ConsensusThreshold param (min 51%).",
+		Mechanism: "AggregateVoteExtensions counting + hardened production governance policy that keeps the live consensus threshold at or above the 67% supermajority floor.",
 	},
 	{
 		ID: "SP-02", Category: "safety", Name: "Fee Conservation",
@@ -362,7 +362,7 @@ var SecurityProperties = []SecurityProperty{
 	{
 		ID: "SP-04", Category: "safety", Name: "One-Way Security Gate",
 		Statement: "Once AllowSimulated is set to false, no governance action can re-enable it.",
-		Mechanism: "MergeParams one-way gate check. UpdateParams silently rejects re-enablement.",
+		Mechanism: "UpdateParams one-way gate check plus runtime governance-lock enforcement. Re-enablement attempts fail closed with an explicit error.",
 	},
 	{
 		ID: "SP-05", Category: "safety", Name: "Attestation Authenticity",

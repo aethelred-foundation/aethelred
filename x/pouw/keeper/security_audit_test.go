@@ -204,6 +204,26 @@ func TestAuditRunner_BadParams_LowConsensusThreshold(t *testing.T) {
 	require.True(t, foundCritical, "must detect low consensus threshold as critical")
 }
 
+func TestAuditRunner_BadParams_BelowProductionConsensusFloor(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	params := types.DefaultParams()
+	params.ConsensusThreshold = 60
+	require.NoError(t, k.SetParams(ctx, params))
+
+	report := keeper.RunSecurityAudit(ctx, k)
+
+	found := false
+	for _, f := range report.Findings {
+		if f.ID == "PARAM-03" && !f.Passed {
+			found = true
+			require.Equal(t, keeper.FindingCritical, f.Severity)
+			require.Contains(t, f.Remediation, "[67, 100]")
+		}
+	}
+	require.True(t, found, "must detect threshold below the hardened production floor")
+}
+
 func TestAuditRunner_BadParams_AllowSimulatedTrue(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 
@@ -329,7 +349,7 @@ func TestAuditRunner_MultipleFindings(t *testing.T) {
 	params := types.DefaultParams()
 	params.ConsensusThreshold = 30 // BFT unsafe
 	params.AllowSimulated = true   // Production unsafe
-	params.SlashingPenalty = ""     // No deterrence
+	params.SlashingPenalty = ""    // No deterrence
 	params.MinValidators = 0       // No redundancy
 	require.NoError(t, k.SetParams(ctx, params))
 

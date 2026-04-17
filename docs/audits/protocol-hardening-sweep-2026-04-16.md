@@ -449,6 +449,24 @@ already merged.
   legacy Nitro indexing, emergency committee revocations remove both trust
   indexes, and unknown revocations no longer report false success.
 
+### 3v. Security audit and threat-model truth alignment
+
+- Tightened `x/pouw/keeper/security_audit.go`, where the built-in audit runner
+  still described the older `[51,100]` consensus-threshold range even though
+  the hardened production posture and governance controls now require the
+  stronger `67%+` supermajority floor.
+- The audit runner now treats `ConsensusThreshold < 67` as a critical
+  production finding, which aligns the repo’s self-audit surface with the
+  actual mainnet governance posture instead of leaving auditors to reconcile
+  conflicting thresholds across different internal reports.
+- Tightened `x/pouw/keeper/threat_model.go` so the governance and vote
+  extension attack surfaces now describe the real `UpdateParams` one-way gate,
+  live runtime governance-lock enforcement, and the implemented app-layer vote
+  extension signing path instead of older `MergeParams` or `TODO` narratives.
+- Added focused audit-runner regressions proving the stricter production floor
+  is enforced in the self-audit path and that the clean-state audit surface
+  remains green.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -596,6 +614,10 @@ already merged.
   records that distinguish fresh registrations, legacy Nitro index
   reconciliation, full revocations, and absent-measurement failures instead of
   leaving authority-level trust-root changes ambiguous in the runtime trail.
+- The built-in security audit and threat model now describe the same hardened
+  governance posture the runtime enforces, which removes an internal
+  claim-vs-control mismatch around consensus threshold policy, one-way
+  simulation gating, and app-layer vote-extension signing.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

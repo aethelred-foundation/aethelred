@@ -176,13 +176,15 @@ func auditParamsRanges(ctx sdk.Context, k Keeper) []AuditFinding {
 		Remediation: "Set MinValidators >= 1 via governance",
 	})
 
-	// ConsensusThreshold: must be 51-100
+	// ConsensusThreshold: production posture requires 67-100. The broader
+	// BFT floor remains checked separately, but the audit runner should reflect
+	// the hardened mainnet-governed range reviewers will expect.
 	findings = append(findings, AuditFinding{
 		ID: "PARAM-03", CheckName: "consensus_threshold_range",
 		Severity:    FindingCritical,
 		Description: fmt.Sprintf("ConsensusThreshold = %d", params.ConsensusThreshold),
-		Passed:      params.ConsensusThreshold >= 51 && params.ConsensusThreshold <= 100,
-		Remediation: "ConsensusThreshold must be in [51, 100] for BFT safety",
+		Passed:      params.ConsensusThreshold >= 67 && params.ConsensusThreshold <= 100,
+		Remediation: "ConsensusThreshold must be in [67, 100] for hardened production deployment",
 	})
 
 	// MaxJobsPerBlock: must be > 0 and <= 4096 (reasonable cap that still
