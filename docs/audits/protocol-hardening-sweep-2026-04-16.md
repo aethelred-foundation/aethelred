@@ -329,6 +329,17 @@ already merged.
   binds the exported seal content, verification summary, and export metadata
   instead of emitting an unsigned package with provenance-looking fields.
 
+### 3n. PQC backend readiness honesty hardening
+
+- Tightened `app/init_safe.go` and `app/pqc.go`, where the PQC availability
+  check previously returned a placeholder `true` regardless of the requested
+  PQC mode.
+- Startup now distinguishes between simulated mode, which is allowed in the
+  current build, and production or hybrid PQC modes, which honestly report the
+  lack of a CIRCL-backed backend when it is not present.
+- The graceful fallback behavior remains intact, but it no longer relies on a
+  fake availability signal to get there.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -444,6 +455,9 @@ already merged.
 - Seal export provenance no longer depends on an unenforced boolean option.
   Signed exports now require a real signer backend, and signing requests fail
   closed instead of silently producing unsigned exports.
+- PQC startup availability checks no longer claim backend readiness
+  unconditionally. Production and hybrid requests now reflect actual backend
+  availability instead of a placeholder success signal.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

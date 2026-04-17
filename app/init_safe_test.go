@@ -5,6 +5,8 @@ import (
 
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/testutil/sims"
+
+	"github.com/aethelred/aethelred/crypto/pqc"
 )
 
 func TestTeeModeRequiresHealthyVerifier(t *testing.T) {
@@ -65,5 +67,54 @@ func TestSafeInitTEEClient_AllowsExplicitSimulatedMode(t *testing.T) {
 	}
 	if app.teeClient == nil {
 		t.Fatalf("expected tee client to be installed for simulated mode")
+	}
+}
+
+func TestCheckPQCAvailability_RequiresCirclForProductionModes(t *testing.T) {
+	if pqc.IsCirclAvailable() {
+		t.Skip("this test expects the non-circl build")
+	}
+
+	productionOpts := sims.AppOptionsMap{
+		"aethelred.pqc.mode": "production",
+	}
+	if checkPQCAvailability(productionOpts) {
+		t.Fatalf("expected production PQC mode to report unavailable without circl")
+	}
+
+	hybridOpts := sims.AppOptionsMap{
+		"aethelred.pqc.mode": "hybrid",
+	}
+	if checkPQCAvailability(hybridOpts) {
+		t.Fatalf("expected hybrid PQC mode to report unavailable without circl")
+	}
+
+	simulatedOpts := sims.AppOptionsMap{
+		"aethelred.pqc.mode": "simulated",
+	}
+	if !checkPQCAvailability(simulatedOpts) {
+		t.Fatalf("expected simulated PQC mode to remain available")
+	}
+}
+
+func TestSafeInitPQCMode_FallsBackWhenRequestedBackendUnavailable(t *testing.T) {
+	if pqc.IsCirclAvailable() {
+		t.Skip("this test expects the non-circl build")
+	}
+
+	previousMode := pqc.GetPQCMode()
+	defer pqc.SetPQCMode(previousMode)
+	pqc.SetPQCMode(pqc.PQCModeSimulated)
+
+	opts := sims.AppOptionsMap{
+		"aethelred.pqc.enabled": true,
+		"aethelred.pqc.mode":    "production",
+	}
+
+	if err := SafeInitPQCMode(log.NewNopLogger(), opts); err != nil {
+		t.Fatalf("expected graceful PQC fallback, got %v", err)
+	}
+	if pqc.GetPQCMode() != pqc.PQCModeSimulated {
+		t.Fatalf("expected fallback to preserve simulated PQC mode, got %s", pqc.GetPQCMode().String())
 	}
 }
