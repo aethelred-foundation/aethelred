@@ -333,6 +333,8 @@ type SecureCellThreadDecision struct {
 	Summary               string                               `json:"summary,omitempty"`
 	Classification        string                               `json:"classification,omitempty"`
 	GovernanceTemplate    string                               `json:"governance_template,omitempty"`
+	SLATemplate           string                               `json:"sla_template,omitempty"`
+	SectorPolicyPack      string                               `json:"sector_policy_pack,omitempty"`
 	Status                SecureCellThreadDecisionStatus       `json:"status"`
 	QuarantinedFromStatus SecureCellThreadDecisionStatus       `json:"quarantined_from_status,omitempty"`
 	ApprovalThreshold     int                                  `json:"approval_threshold,omitempty"`
@@ -673,6 +675,8 @@ type SecureCellThreadDecisionRequest struct {
 	Summary               string                               `json:"summary,omitempty"`
 	Classification        string                               `json:"classification,omitempty"`
 	GovernanceTemplate    string                               `json:"governance_template,omitempty"`
+	SLATemplate           string                               `json:"sla_template,omitempty"`
+	SectorPolicyPack      string                               `json:"sector_policy_pack,omitempty"`
 	ApprovalThreshold     int                                  `json:"approval_threshold,omitempty"`
 	EligibleApproverDIDs  []string                             `json:"eligible_approver_dids,omitempty"`
 	RequiredApproverRoles []string                             `json:"required_approver_roles,omitempty"`
@@ -810,12 +814,14 @@ type SecureCellDecisionGovernanceSweepResult struct {
 // SecureCellOverdueDecisionFilter narrows operator queries for overdue
 // decision automation work.
 type SecureCellOverdueDecisionFilter struct {
-	CellID         string                           `json:"cell_id,omitempty"`
-	Jurisdiction   string                           `json:"jurisdiction,omitempty"`
-	ParticipantDID string                           `json:"participant_did,omitempty"`
-	Statuses       []SecureCellThreadDecisionStatus `json:"statuses,omitempty"`
-	Before         *time.Time                       `json:"before,omitempty"`
-	Limit          int                              `json:"limit,omitempty"`
+	CellID           string                           `json:"cell_id,omitempty"`
+	Jurisdiction     string                           `json:"jurisdiction,omitempty"`
+	ParticipantDID   string                           `json:"participant_did,omitempty"`
+	SLATemplate      string                           `json:"sla_template,omitempty"`
+	SectorPolicyPack string                           `json:"sector_policy_pack,omitempty"`
+	Statuses         []SecureCellThreadDecisionStatus `json:"statuses,omitempty"`
+	Before           *time.Time                       `json:"before,omitempty"`
+	Limit            int                              `json:"limit,omitempty"`
 }
 
 // SecureCellOverdueDecision is the operator-facing projection of one decision
@@ -831,6 +837,8 @@ type SecureCellOverdueDecision struct {
 	DecisionTitle      string                         `json:"decision_title"`
 	DecisionStatus     SecureCellThreadDecisionStatus `json:"decision_status"`
 	GovernanceTemplate string                         `json:"governance_template,omitempty"`
+	SLATemplate        string                         `json:"sla_template,omitempty"`
+	SectorPolicyPack   string                         `json:"sector_policy_pack,omitempty"`
 	AutomationAction   string                         `json:"automation_action"`
 	OverdueReason      string                         `json:"overdue_reason"`
 	TierID             string                         `json:"tier_id,omitempty"`
@@ -845,14 +853,16 @@ type SecureCellOverdueDecision struct {
 // SecureCellDecisionAutomationActionFilter narrows operator queries over
 // automated decision actions already applied to secure cells.
 type SecureCellDecisionAutomationActionFilter struct {
-	CellID     string     `json:"cell_id,omitempty"`
-	SessionID  string     `json:"session_id,omitempty"`
-	ThreadID   string     `json:"thread_id,omitempty"`
-	DecisionID string     `json:"decision_id,omitempty"`
-	Action     string     `json:"action,omitempty"`
-	Since      *time.Time `json:"since,omitempty"`
-	Until      *time.Time `json:"until,omitempty"`
-	Limit      int        `json:"limit,omitempty"`
+	CellID           string     `json:"cell_id,omitempty"`
+	SessionID        string     `json:"session_id,omitempty"`
+	ThreadID         string     `json:"thread_id,omitempty"`
+	DecisionID       string     `json:"decision_id,omitempty"`
+	SLATemplate      string     `json:"sla_template,omitempty"`
+	SectorPolicyPack string     `json:"sector_policy_pack,omitempty"`
+	Action           string     `json:"action,omitempty"`
+	Since            *time.Time `json:"since,omitempty"`
+	Until            *time.Time `json:"until,omitempty"`
+	Limit            int        `json:"limit,omitempty"`
 }
 
 // SecureCellDecisionAutomationActionRecord projects one automated escalation
@@ -866,6 +876,9 @@ type SecureCellDecisionAutomationActionRecord struct {
 	ThreadID             string                         `json:"thread_id,omitempty"`
 	DecisionID           string                         `json:"decision_id,omitempty"`
 	DecisionTitle        string                         `json:"decision_title,omitempty"`
+	GovernanceTemplate   string                         `json:"governance_template,omitempty"`
+	SLATemplate          string                         `json:"sla_template,omitempty"`
+	SectorPolicyPack     string                         `json:"sector_policy_pack,omitempty"`
 	DecisionStatusBefore SecureCellThreadDecisionStatus `json:"decision_status_before,omitempty"`
 	DecisionStatusAfter  SecureCellThreadDecisionStatus `json:"decision_status_after,omitempty"`
 	Action               string                         `json:"action"`
@@ -946,6 +959,7 @@ type ServiceConfig struct {
 	PackageAnchorer         SecureCellPackageAnchorer
 	EventPublisher          SecureCellEventPublisher
 	TrustAnchors            []evidence.PlatformTrustAnchor
+	DecisionSLATemplates    []SecureCellDecisionSLATemplate
 }
 
 type secureCellRun struct {
@@ -957,8 +971,9 @@ type secureCellRun struct {
 type Service struct {
 	config ServiceConfig
 
-	mu   sync.RWMutex
-	runs map[string]*secureCellRun
+	mu                   sync.RWMutex
+	runs                 map[string]*secureCellRun
+	decisionSLATemplates []SecureCellDecisionSLATemplate
 }
 
 // NewService creates a new secure-cell service.
@@ -999,10 +1014,15 @@ func NewService(config ServiceConfig) (*Service, error) {
 	if err := config.PolicyEngine.RegisterPolicySet(config.PolicySet); err != nil {
 		return nil, fmt.Errorf("securecells/service: register policy set: %w", err)
 	}
+	decisionSLATemplates, err := normalizeSecureCellDecisionSLATemplates(config.DecisionSLATemplates)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/service: normalize decision SLA templates: %w", err)
+	}
 
 	return &Service{
-		config: config,
-		runs:   make(map[string]*secureCellRun),
+		config:               config,
+		runs:                 make(map[string]*secureCellRun),
+		decisionSLATemplates: decisionSLATemplates,
 	}, nil
 }
 
@@ -1730,6 +1750,7 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 	if thread.Status != SecureCellThreadStatusActive {
 		return nil, fmt.Errorf("securecells/service: %w: thread %q is not active", ErrThreadNotActive, decision.ThreadID)
 	}
+	proposedAt := time.Now().UTC()
 
 	actorDID := firstNonEmpty(strings.TrimSpace(decision.ActorDID), run.request.OwnerIdentity.AgentID())
 	if !secureCellThreadActorAllowed(run, *thread, actorDID) {
@@ -1748,6 +1769,10 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		return nil, err
 	}
 	relatedOutputIDs, err := secureCellResolveThreadDecisionOutputRefs(*session, run.result.SharedOutputs, decision.RelatedOutputIDs)
+	if err != nil {
+		return nil, err
+	}
+	decision, appliedSLATemplate, hasSLATemplate, err := s.applyDecisionSLATemplate(run, *thread, proposedAt, decision)
 	if err != nil {
 		return nil, err
 	}
@@ -1816,6 +1841,8 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		Summary:               strings.TrimSpace(decision.Summary),
 		Classification:        classification,
 		GovernanceTemplate:    governanceTemplate,
+		SLATemplate:           strings.TrimSpace(decision.SLATemplate),
+		SectorPolicyPack:      strings.TrimSpace(decision.SectorPolicyPack),
 		Status:                SecureCellThreadDecisionStatusOpen,
 		ApprovalThreshold:     approvalThreshold,
 		EligibleApproverDIDs:  eligibleApproverDIDs,
@@ -1829,10 +1856,10 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		ProposedBy:            actorDID,
 		RelatedExchangeIDs:    relatedExchangeIDs,
 		RelatedOutputIDs:      relatedOutputIDs,
-		ProposedAt:            time.Now().UTC(),
+		ProposedAt:            proposedAt,
 		EscalationDueAt:       escalationDueAt,
 		ResolutionDueAt:       resolutionDueAt,
-		UpdatedAt:             time.Now().UTC(),
+		UpdatedAt:             proposedAt,
 		Metadata:              cloneStringMap(decision.Metadata),
 	}
 
@@ -1843,6 +1870,8 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		"decision_title":                     item.Title,
 		"decision_classification":            item.Classification,
 		"decision_governance_template":       item.GovernanceTemplate,
+		"decision_sla_template":              item.SLATemplate,
+		"decision_sector_policy_pack":        item.SectorPolicyPack,
 		"decision_approval_threshold":        fmt.Sprintf("%d", item.ApprovalThreshold),
 		"decision_eligible_approvers":        strings.Join(item.EligibleApproverDIDs, ","),
 		"decision_required_roles":            strings.Join(item.RequiredApproverRoles, ","),
@@ -1859,6 +1888,10 @@ func (s *Service) CreateThreadDecision(ctx context.Context, cellID string, decis
 		"session_status_before":              string(session.Status),
 		"cell_status_before":                 string(run.result.Status),
 		"transition_reason":                  strings.TrimSpace(decision.Reason),
+	}
+	if hasSLATemplate {
+		evaluationMetadata["decision_sla_template_name"] = appliedSLATemplate.Name
+		evaluationMetadata["decision_sla_template_sector"] = appliedSLATemplate.Sector
 	}
 	if item.EscalationDueAt != nil {
 		evaluationMetadata["decision_escalation_due_at"] = item.EscalationDueAt.UTC().Format(time.RFC3339Nano)
@@ -3382,6 +3415,8 @@ func (s *Service) ListOverdueDecisions(_ context.Context, filter SecureCellOverd
 	cellID := strings.TrimSpace(filter.CellID)
 	jurisdiction := strings.TrimSpace(filter.Jurisdiction)
 	participantDID := strings.TrimSpace(filter.ParticipantDID)
+	slaTemplate := strings.TrimSpace(strings.ToLower(filter.SLATemplate))
+	sectorPolicyPack := strings.TrimSpace(strings.ToLower(filter.SectorPolicyPack))
 	items := make([]SecureCellOverdueDecision, 0)
 	for _, run := range s.runs {
 		if run == nil || run.result == nil {
@@ -3397,6 +3432,12 @@ func (s *Service) ListOverdueDecisions(_ context.Context, filter SecureCellOverd
 			continue
 		}
 		for _, decision := range run.result.Decisions {
+			if slaTemplate != "" && !strings.EqualFold(strings.TrimSpace(decision.SLATemplate), slaTemplate) {
+				continue
+			}
+			if sectorPolicyPack != "" && !strings.EqualFold(strings.TrimSpace(decision.SectorPolicyPack), sectorPolicyPack) {
+				continue
+			}
 			if len(statuses) > 0 {
 				if _, ok := statuses[decision.Status]; !ok {
 					continue
@@ -3420,6 +3461,8 @@ func (s *Service) ListOverdueDecisions(_ context.Context, filter SecureCellOverd
 				DecisionTitle:      decision.Title,
 				DecisionStatus:     decision.Status,
 				GovernanceTemplate: decision.GovernanceTemplate,
+				SLATemplate:        decision.SLATemplate,
+				SectorPolicyPack:   decision.SectorPolicyPack,
 				AutomationAction:   action,
 				OverdueReason:      reason,
 				TierID:             tierID,
@@ -3458,6 +3501,8 @@ func (s *Service) ListDecisionAutomationActions(_ context.Context, filter Secure
 	sessionID := strings.TrimSpace(filter.SessionID)
 	threadID := strings.TrimSpace(filter.ThreadID)
 	decisionID := strings.TrimSpace(filter.DecisionID)
+	slaTemplate := strings.TrimSpace(strings.ToLower(filter.SLATemplate))
+	sectorPolicyPack := strings.TrimSpace(strings.ToLower(filter.SectorPolicyPack))
 	action := strings.TrimSpace(filter.Action)
 	var since time.Time
 	if filter.Since != nil && !filter.Since.IsZero() {
@@ -3499,6 +3544,17 @@ func (s *Service) ListDecisionAutomationActions(_ context.Context, filter Secure
 			if !until.IsZero() && occurredAt.After(until) {
 				continue
 			}
+			decision, _ := secureCellDecisionLookup(run.result.Decisions, transition.DecisionID)
+			if slaTemplate != "" {
+				if decision == nil || !strings.EqualFold(strings.TrimSpace(decision.SLATemplate), slaTemplate) {
+					continue
+				}
+			}
+			if sectorPolicyPack != "" {
+				if decision == nil || !strings.EqualFold(strings.TrimSpace(decision.SectorPolicyPack), sectorPolicyPack) {
+					continue
+				}
+			}
 			items = append(items, SecureCellDecisionAutomationActionRecord{
 				CellID:               run.result.CellID,
 				Name:                 run.result.Name,
@@ -3508,6 +3564,9 @@ func (s *Service) ListDecisionAutomationActions(_ context.Context, filter Secure
 				ThreadID:             transition.ThreadID,
 				DecisionID:           transition.DecisionID,
 				DecisionTitle:        secureCellDecisionTitle(run.result.Decisions, transition.DecisionID),
+				GovernanceTemplate:   safeString(decision, func(item *SecureCellThreadDecision) string { return item.GovernanceTemplate }),
+				SLATemplate:          safeString(decision, func(item *SecureCellThreadDecision) string { return item.SLATemplate }),
+				SectorPolicyPack:     safeString(decision, func(item *SecureCellThreadDecision) string { return item.SectorPolicyPack }),
 				DecisionStatusBefore: transition.DecisionStatusBefore,
 				DecisionStatusAfter:  transition.DecisionStatusAfter,
 				Action:               transition.Action,
@@ -6492,6 +6551,19 @@ func secureCellDecisionTitle(decisions []SecureCellThreadDecision, decisionID st
 		}
 	}
 	return ""
+}
+
+func secureCellDecisionLookup(decisions []SecureCellThreadDecision, decisionID string) (*SecureCellThreadDecision, bool) {
+	decisionID = strings.TrimSpace(decisionID)
+	if decisionID == "" {
+		return nil, false
+	}
+	for idx := range decisions {
+		if strings.TrimSpace(decisions[idx].ID) == decisionID {
+			return &decisions[idx], true
+		}
+	}
+	return nil, false
 }
 
 func secureCellTransitionAutomatedDecisionAction(transition SecureCellTransition) bool {

@@ -1859,6 +1859,110 @@ func TestService_CreateThreadDecisionAppliesExplicitGovernanceRules(t *testing.T
 	}
 }
 
+func TestService_CreateThreadDecisionAppliesSectorSLATemplate(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+	compliance := mustSecureCellIdentity(t, "participant-c", []string{"UAE"})
+
+	result, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Treasury Review Cell",
+		Purpose:       "regulated payment release",
+		Resource:      "cell:treasury-release",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "treasury_reviewer"},
+			{Identity: participantB, Role: "treasury_manager"},
+			{Identity: compliance, Role: "compliance_officer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "payment"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, result.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Treasury Approval",
+		Purpose:         "release review",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		Reason:          "session opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[0]
+
+	threaded, err := service.StartThread(ctx, result.CellID, SecureCellSessionThreadStartRequest{
+		SessionID:       session.ID,
+		ActorDID:        owner.AgentID(),
+		Name:            "Release Thread",
+		Purpose:         "govern payment release",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "thread opened",
+	})
+	if err != nil {
+		t.Fatalf("StartThread failed: %v", err)
+	}
+	thread := threaded.Threads[0]
+
+	created, err := service.CreateThreadDecision(ctx, result.CellID, SecureCellThreadDecisionRequest{
+		SessionID:            session.ID,
+		ThreadID:             thread.ID,
+		ActorDID:             owner.AgentID(),
+		Title:                "Release Treasury Payment",
+		Summary:              "use finance pack defaults",
+		Classification:       "confidential",
+		SectorPolicyPack:     "finance",
+		EligibleApproverDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		Reason:               "decision proposed",
+		Metadata:             map[string]string{"ticket": "SC-DEC-SLA-FIN-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateThreadDecision failed: %v", err)
+	}
+	decision, ok := mustSecureCellDecision(t, created, created.Decisions[0].ID)
+	if !ok {
+		t.Fatalf("expected created decision, got %+v", created.Decisions)
+	}
+	if decision.GovernanceTemplate != "dual_control" || decision.SLATemplate != "finance_payment_release" || decision.SectorPolicyPack != "finance" {
+		t.Fatalf("expected finance SLA template to resolve onto decision, got %+v", decision)
+	}
+	if decision.ApprovalThreshold != 2 {
+		t.Fatalf("expected finance pack approval threshold, got %+v", decision)
+	}
+	if len(decision.RequiredApproverRoles) != 1 || decision.RequiredApproverRoles[0] != "treasury_reviewer" {
+		t.Fatalf("expected finance pack required roles, got %+v", decision.RequiredApproverRoles)
+	}
+	if len(decision.EscalationLadder) != 2 {
+		t.Fatalf("expected two finance escalation tiers, got %+v", decision.EscalationLadder)
+	}
+	if decision.EscalationLadder[0].TargetDID != participantB.AgentID() || decision.EscalationLadder[1].TargetDID != compliance.AgentID() {
+		t.Fatalf("expected ladder to resolve manager/compliance targets, got %+v", decision.EscalationLadder)
+	}
+	if decision.ResolutionDueAt == nil || !decision.ResolutionDueAt.After(decision.ProposedAt) {
+		t.Fatalf("expected SLA-derived resolution deadline, got %+v", decision)
+	}
+
+	templates, err := service.ListDecisionSLATemplates(ctx, SecureCellDecisionSLATemplateFilter{SectorPolicyPack: "finance"})
+	if err != nil {
+		t.Fatalf("ListDecisionSLATemplates failed: %v", err)
+	}
+	if len(templates) < 2 {
+		t.Fatalf("expected finance template catalog entries, got %+v", templates)
+	}
+	if templates[0].SectorPolicyPack != "finance" {
+		t.Fatalf("expected finance pack catalog entries, got %+v", templates)
+	}
+}
+
 func TestService_SweepDecisionGovernanceEscalatesAndClosesExpiredDecisions(t *testing.T) {
 	t.Parallel()
 

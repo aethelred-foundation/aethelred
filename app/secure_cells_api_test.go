@@ -1820,6 +1820,121 @@ func TestSecureCellsHandlers_BearerDecisionAutomationOperatorViews(t *testing.T)
 	}
 }
 
+func TestSecureCellsHandlers_BearerDecisionSLATemplateCatalogAndFinancePack(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{31}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE"})
+	reviewer := mustSecureCellAppIdentity(t, "treasury-reviewer", []string{"UAE"})
+	manager := mustSecureCellAppIdentity(t, "treasury-manager", []string{"UAE"})
+	compliance := mustSecureCellAppIdentity(t, "compliance-officer", []string{"UAE"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequestWithParticipantRoles(t, owner, []securecellsintegration.SecureCellParticipant{
+		{Identity: reviewer, Role: "treasury_reviewer"},
+		{Identity: manager, Role: "treasury_manager"},
+		{Identity: compliance, Role: "compliance_officer"},
+	}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	catalogReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decision-sla-templates?sector_policy_pack=finance", nil)
+	catalogRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(catalogRec, catalogReq)
+	if catalogRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, catalogRec.Code, catalogRec.Body.String())
+	}
+	var catalogResp secureCellDecisionSLATemplateListResponse
+	if err := json.Unmarshal(catalogRec.Body.Bytes(), &catalogResp); err != nil {
+		t.Fatalf("unmarshal SLA template catalog response: %v", err)
+	}
+	if len(catalogResp.Items) < 2 || catalogResp.Items[0].SectorPolicyPack != "finance" {
+		t.Fatalf("expected finance SLA catalog entries, got %+v", catalogResp.Items)
+	}
+	if catalogResp.Items[0].ID != "finance_payment_release" {
+		t.Fatalf("expected finance payment release template first, got %+v", catalogResp.Items[0])
+	}
+
+	catalogExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/decision-sla-templates/export?sector_policy_pack=finance&format=csv", nil)
+	catalogExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(catalogExportRec, catalogExportReq)
+	if catalogExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, catalogExportRec.Code, catalogExportRec.Body.String())
+	}
+	if body := catalogExportRec.Body.String(); !strings.Contains(body, "finance_payment_release") || !strings.Contains(body, "sector_policy_pack") {
+		t.Fatalf("expected SLA template csv export to include finance template rows, got %s", body)
+	}
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, nil, nil, []string{reviewer.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session start response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[0].ID
+
+	threadStartReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads", bytes.NewReader(mustMarshalSecureCellSessionThreadStartRequest(t, owner, nil, []string{reviewer.AgentID()})))
+	threadStartReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	threadStartRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(threadStartRec, threadStartReq)
+	if threadStartRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, threadStartRec.Code, threadStartRec.Body.String())
+	}
+
+	var threadStartResp secureCellResponse
+	if err := json.Unmarshal(threadStartRec.Body.Bytes(), &threadStartResp); err != nil {
+		t.Fatalf("unmarshal thread start response: %v", err)
+	}
+	threadID := threadStartResp.Result.Threads[0].ID
+
+	decisionReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/threads/"+threadID+"/decisions", bytes.NewReader(mustMarshalSecureCellThreadDecisionRequestWithSLATemplate(t, owner, "", "finance", []string{owner.AgentID(), reviewer.AgentID()}, map[string]string{"ticket": "SC-API-SLA-PACK-01"})))
+	decisionReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	decisionRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(decisionRec, decisionReq)
+	if decisionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, decisionRec.Code, decisionRec.Body.String())
+	}
+
+	var decisionResp secureCellResponse
+	if err := json.Unmarshal(decisionRec.Body.Bytes(), &decisionResp); err != nil {
+		t.Fatalf("unmarshal SLA-pack decision response: %v", err)
+	}
+	if decisionResp.Result == nil || len(decisionResp.Result.Decisions) != 1 {
+		t.Fatalf("expected one decision result, got %+v", decisionResp.Result)
+	}
+	decision := decisionResp.Result.Decisions[0]
+	if decision.GovernanceTemplate != "dual_control" || decision.SLATemplate != "finance_payment_release" || decision.SectorPolicyPack != "finance" {
+		t.Fatalf("expected finance SLA pack defaults to reach the decision, got %+v", decision)
+	}
+	if len(decision.EscalationLadder) != 2 || decision.EscalationLadder[0].TargetDID != manager.AgentID() || decision.EscalationLadder[1].TargetDID != compliance.AgentID() {
+		t.Fatalf("expected finance SLA escalation targets to resolve, got %+v", decision.EscalationLadder)
+	}
+	if decision.ResolutionDueAt == nil || !decision.ResolutionDueAt.After(decision.ProposedAt) {
+		t.Fatalf("expected SLA-derived resolution deadline, got %+v", decision)
+	}
+}
+
 func TestSecureCellsHandlers_BearerExpireQuarantineFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -2721,6 +2836,25 @@ func mustMarshalSecureCellThreadDecisionRequestWithEscalationLadder(t *testing.T
 	return body
 }
 
+func mustMarshalSecureCellThreadDecisionRequestWithSLATemplate(t *testing.T, actor *agent.AgentIdentity, slaTemplate string, sectorPolicyPack string, eligibleApproverDIDs []string, metadata map[string]string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellThreadDecisionRequest{
+		ActorIdentity:        mustOptionalJSONRawMessage(t, actor),
+		Title:                "Treasury Release Decision",
+		Summary:              "use sector SLA defaults",
+		Classification:       "confidential",
+		SLATemplate:          slaTemplate,
+		SectorPolicyPack:     sectorPolicyPack,
+		EligibleApproverDIDs: eligibleApproverDIDs,
+		Reason:               "decision proposed",
+		Metadata:             metadata,
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell thread decision SLA-template request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellSessionMemberMutationRequest(t *testing.T, actor *agent.AgentIdentity, participantDID string, reason string, receipt *policy.SignedPolicyReceipt) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellSessionMemberMutationRequest{
@@ -2783,6 +2917,30 @@ func mustMarshalSecureCellCreateRequest(t *testing.T, owner *agent.AgentIdentity
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell create request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellCreateRequestWithParticipantRoles(t *testing.T, owner *agent.AgentIdentity, participants []securecellsintegration.SecureCellParticipant, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+
+	requireConfidentialCompute := true
+	body, err := json.Marshal(secureCellCreateRequest{
+		Identity:      mustJSONRawMessage(t, owner),
+		PolicyReceipt: receipt,
+		Name:          "Joint Review Cell",
+		Purpose:       "regulated collaboration",
+		Resource:      secureCellsAuthDefaultResource,
+		Jurisdiction:  "UAE",
+		Participants:  append([]securecellsintegration.SecureCellParticipant(nil), participants...),
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: &requireConfidentialCompute,
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell create request with participant roles: %v", err)
 	}
 	return body
 }

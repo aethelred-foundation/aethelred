@@ -162,6 +162,8 @@ type secureCellThreadDecisionRequest struct {
 	Summary               string                                                      `json:"summary,omitempty"`
 	Classification        string                                                      `json:"classification,omitempty"`
 	GovernanceTemplate    string                                                      `json:"governance_template,omitempty"`
+	SLATemplate           string                                                      `json:"sla_template,omitempty"`
+	SectorPolicyPack      string                                                      `json:"sector_policy_pack,omitempty"`
 	ApprovalThreshold     *int                                                        `json:"approval_threshold,omitempty"`
 	EligibleApproverDIDs  []string                                                    `json:"eligible_approver_dids,omitempty"`
 	RequiredApproverRoles []string                                                    `json:"required_approver_roles,omitempty"`
@@ -271,6 +273,10 @@ type secureCellOverdueDecisionListResponse struct {
 
 type secureCellDecisionAutomationActionListResponse struct {
 	Items []securecellsintegration.SecureCellDecisionAutomationActionRecord `json:"items"`
+}
+
+type secureCellDecisionSLATemplateListResponse struct {
+	Items []securecellsintegration.SecureCellDecisionSLATemplateSummary `json:"items"`
 }
 
 type appSecureCellSealer struct {
@@ -517,6 +523,30 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 		if app == nil || app.secureCellService == nil {
 			writeSecureCellAPIError(w, http.StatusServiceUnavailable, "secure cell service is unavailable")
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decision-sla-templates" {
+			filter := parseSecureCellDecisionSLATemplateFilter(r)
+			items, err := app.secureCellService.ListDecisionSLATemplates(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellDecisionSLATemplateListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/decision-sla-templates/export" {
+			filter := parseSecureCellDecisionSLATemplateFilter(r)
+			items, err := app.secureCellService.ListDecisionSLATemplates(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellDecisionSLATemplateExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
 			return
 		}
 
@@ -933,6 +963,8 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				Summary:               req.Summary,
 				Classification:        req.Classification,
 				GovernanceTemplate:    secureCellDecisionServiceGovernanceTemplate(req),
+				SLATemplate:           secureCellDecisionServiceSLATemplate(req),
+				SectorPolicyPack:      secureCellDecisionServiceSectorPolicyPack(req),
 				ApprovalThreshold:     safeSecureCellOptionalInt(req.ApprovalThreshold),
 				EligibleApproverDIDs:  req.EligibleApproverDIDs,
 				RequiredApproverRoles: req.RequiredApproverRoles,
@@ -1723,12 +1755,14 @@ func parseSecureCellOverdueDecisionFilter(r *http.Request) (securecellsintegrati
 		return securecellsintegration.SecureCellOverdueDecisionFilter{}, err
 	}
 	return securecellsintegration.SecureCellOverdueDecisionFilter{
-		CellID:         strings.TrimSpace(query.Get("cell_id")),
-		Jurisdiction:   strings.TrimSpace(query.Get("jurisdiction")),
-		ParticipantDID: strings.TrimSpace(query.Get("participant_did")),
-		Statuses:       statuses,
-		Before:         before,
-		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+		CellID:           strings.TrimSpace(query.Get("cell_id")),
+		Jurisdiction:     strings.TrimSpace(query.Get("jurisdiction")),
+		ParticipantDID:   strings.TrimSpace(query.Get("participant_did")),
+		SLATemplate:      strings.TrimSpace(query.Get("sla_template")),
+		SectorPolicyPack: strings.TrimSpace(query.Get("sector_policy_pack")),
+		Statuses:         statuses,
+		Before:           before,
+		Limit:            cast.ToInt(strings.TrimSpace(query.Get("limit"))),
 	}, nil
 }
 
@@ -1746,15 +1780,30 @@ func parseSecureCellDecisionAutomationActionFilter(r *http.Request) (securecells
 		return securecellsintegration.SecureCellDecisionAutomationActionFilter{}, err
 	}
 	return securecellsintegration.SecureCellDecisionAutomationActionFilter{
-		CellID:     strings.TrimSpace(query.Get("cell_id")),
-		SessionID:  strings.TrimSpace(query.Get("session_id")),
-		ThreadID:   strings.TrimSpace(query.Get("thread_id")),
-		DecisionID: strings.TrimSpace(query.Get("decision_id")),
-		Action:     strings.TrimSpace(query.Get("action")),
-		Since:      since,
-		Until:      until,
-		Limit:      cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+		CellID:           strings.TrimSpace(query.Get("cell_id")),
+		SessionID:        strings.TrimSpace(query.Get("session_id")),
+		ThreadID:         strings.TrimSpace(query.Get("thread_id")),
+		DecisionID:       strings.TrimSpace(query.Get("decision_id")),
+		SLATemplate:      strings.TrimSpace(query.Get("sla_template")),
+		SectorPolicyPack: strings.TrimSpace(query.Get("sector_policy_pack")),
+		Action:           strings.TrimSpace(query.Get("action")),
+		Since:            since,
+		Until:            until,
+		Limit:            cast.ToInt(strings.TrimSpace(query.Get("limit"))),
 	}, nil
+}
+
+func parseSecureCellDecisionSLATemplateFilter(r *http.Request) securecellsintegration.SecureCellDecisionSLATemplateFilter {
+	if r == nil {
+		return securecellsintegration.SecureCellDecisionSLATemplateFilter{}
+	}
+	query := r.URL.Query()
+	return securecellsintegration.SecureCellDecisionSLATemplateFilter{
+		Sector:             strings.TrimSpace(query.Get("sector")),
+		SectorPolicyPack:   strings.TrimSpace(query.Get("sector_policy_pack")),
+		GovernanceTemplate: strings.TrimSpace(query.Get("governance_template")),
+		Limit:              cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}
 }
 
 func parseSecureCellStatuses(raw string) ([]securecellsintegration.SecureCellStatus, error) {
@@ -2444,6 +2493,20 @@ func secureCellDecisionServiceGovernanceTemplate(req secureCellThreadDecisionReq
 	default:
 		return ""
 	}
+}
+
+func secureCellDecisionServiceSLATemplate(req secureCellThreadDecisionRequest) string {
+	if template := strings.TrimSpace(req.SLATemplate); template != "" {
+		return strings.ToLower(template)
+	}
+	return ""
+}
+
+func secureCellDecisionServiceSectorPolicyPack(req secureCellThreadDecisionRequest) string {
+	if pack := strings.TrimSpace(req.SectorPolicyPack); pack != "" {
+		return strings.ToLower(pack)
+	}
+	return ""
 }
 
 func writeSecureCellAPIError(w http.ResponseWriter, status int, message string) {
