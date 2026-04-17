@@ -247,6 +247,23 @@ already merged.
   simulated proofs for the success path and to assert that both proof tampering
   and public-input tampering are rejected.
 
+### 3h. Seal revocation workflow hardening
+
+- Tightened `x/seal/keeper/revocation.go`, where revocation approval and
+  execution previously treated request IDs as trusted inputs and allowed
+  approval/execution flows to proceed without stored request state, dispute
+  tracking, or approval-threshold enforcement.
+- Added explicit in-manager request state so revocation requests are recorded,
+  approvals are deduplicated per authority, approval thresholds are enforced,
+  disputes transition the request into a blocked state, and dispute resolution
+  deterministically restores or cancels the request.
+- Made `ExecuteRevocation()` fail closed unless a stored request exists, the
+  request is approved, the dispute window has elapsed, no unresolved disputes
+  remain, and the target seal can still be revoked.
+- Updated the seal keeper tests to exercise the full request -> approve ->
+  execute and request -> dispute -> resolve paths instead of the former
+  event-only placeholder flow.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -281,6 +298,7 @@ already merged.
 - `go test ./x/verify/keeper/...`
 - `go test ./x/verify/...`
 - `go test ./x/validator/keeper`
+- `go test ./x/seal/keeper`
 
 ### Solidity / Hardhat / Foundry
 
@@ -336,6 +354,10 @@ already merged.
   tombstone-only penalties as if they were full slashes when a staking keeper
   is present. It now applies real staking slash/jail hooks first and aborts
   cleanly if the economic penalty path cannot be resolved.
+- The seal revocation manager no longer treats request IDs as sufficient
+  authority to approve or execute revocation. Requests now have real lifecycle
+  state, authority-threshold enforcement, dispute blocking, and fail-closed
+  execution semantics.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

@@ -22,6 +22,10 @@ type RevocationManager struct {
 	// Revocation authority addresses
 	authorities map[string]RevocationAuthority
 
+	// Pending and historical revocation requests
+	requests     map[string]*RevocationRequest
+	requestMutex sync.RWMutex
+
 	// Pending disputes
 	disputes     map[string]*RevocationDispute
 	disputeMutex sync.RWMutex
@@ -84,10 +88,10 @@ type RevocationAuthority struct {
 type AuthorityLevel int
 
 const (
-	AuthorityLevelUser       AuthorityLevel = 1 // Can revoke own seals
-	AuthorityLevelOperator   AuthorityLevel = 2 // Can revoke seals for their purpose
-	AuthorityLevelAdmin      AuthorityLevel = 3 // Can revoke any seal
-	AuthorityLevelEmergency  AuthorityLevel = 4 // Can force revoke without dispute
+	AuthorityLevelUser      AuthorityLevel = 1 // Can revoke own seals
+	AuthorityLevelOperator  AuthorityLevel = 2 // Can revoke seals for their purpose
+	AuthorityLevelAdmin     AuthorityLevel = 3 // Can revoke any seal
+	AuthorityLevelEmergency AuthorityLevel = 4 // Can force revoke without dispute
 )
 
 // RevocationRequest represents a request to revoke a seal
@@ -133,17 +137,17 @@ type RevocationRequest struct {
 type RevocationReason string
 
 const (
-	RevocationReasonUserRequest   RevocationReason = "user_request"
-	RevocationReasonInvalidOutput RevocationReason = "invalid_output"
-	RevocationReasonFraud         RevocationReason = "fraud_detected"
-	RevocationReasonModelCompromised RevocationReason = "model_compromised"
-	RevocationReasonPrivacyBreach RevocationReason = "privacy_breach"
+	RevocationReasonUserRequest         RevocationReason = "user_request"
+	RevocationReasonInvalidOutput       RevocationReason = "invalid_output"
+	RevocationReasonFraud               RevocationReason = "fraud_detected"
+	RevocationReasonModelCompromised    RevocationReason = "model_compromised"
+	RevocationReasonPrivacyBreach       RevocationReason = "privacy_breach"
 	RevocationReasonComplianceViolation RevocationReason = "compliance_violation"
-	RevocationReasonTEECompromised RevocationReason = "tee_compromised"
-	RevocationReasonLegalOrder    RevocationReason = "legal_order"
-	RevocationReasonExpired       RevocationReason = "expired"
-	RevocationReasonReplaced      RevocationReason = "replaced"
-	RevocationReasonOther         RevocationReason = "other"
+	RevocationReasonTEECompromised      RevocationReason = "tee_compromised"
+	RevocationReasonLegalOrder          RevocationReason = "legal_order"
+	RevocationReasonExpired             RevocationReason = "expired"
+	RevocationReasonReplaced            RevocationReason = "replaced"
+	RevocationReasonOther               RevocationReason = "other"
 )
 
 // RevocationRequestStatus represents the status of a revocation request
@@ -183,10 +187,10 @@ type RevocationEvidence struct {
 type EvidenceType string
 
 const (
-	EvidenceTypeDocument   EvidenceType = "document"
-	EvidenceTypeProof      EvidenceType = "proof"
+	EvidenceTypeDocument    EvidenceType = "document"
+	EvidenceTypeProof       EvidenceType = "proof"
 	EvidenceTypeAttestation EvidenceType = "attestation"
-	EvidenceTypeAuditLog   EvidenceType = "audit_log"
+	EvidenceTypeAuditLog    EvidenceType = "audit_log"
 	EvidenceTypeExternalRef EvidenceType = "external_ref"
 )
 
@@ -248,11 +252,11 @@ type RevocationDispute struct {
 type DisputeStatus string
 
 const (
-	DisputeStatusOpen      DisputeStatus = "open"
+	DisputeStatusOpen        DisputeStatus = "open"
 	DisputeStatusUnderReview DisputeStatus = "under_review"
-	DisputeStatusUpheld    DisputeStatus = "upheld"    // Revocation cancelled
-	DisputeStatusRejected  DisputeStatus = "rejected"  // Revocation proceeds
-	DisputeStatusClosed    DisputeStatus = "closed"
+	DisputeStatusUpheld      DisputeStatus = "upheld"   // Revocation cancelled
+	DisputeStatusRejected    DisputeStatus = "rejected" // Revocation proceeds
+	DisputeStatusClosed      DisputeStatus = "closed"
 )
 
 // RevocationResult contains the result of a revocation operation
@@ -291,6 +295,7 @@ func NewRevocationManager(logger log.Logger, keeper *Keeper, config RevocationCo
 		logger:      logger,
 		keeper:      keeper,
 		authorities: make(map[string]RevocationAuthority),
+		requests:    make(map[string]*RevocationRequest),
 		disputes:    make(map[string]*RevocationDispute),
 		config:      config,
 	}
@@ -349,13 +354,26 @@ func (rm *RevocationManager) RequestRevocation(ctx context.Context, req *Revocat
 		}
 	}
 
-	// If user has high enough authority, auto-approve
+	// If the requester is an authority, record their approval immediately and
+	// mark the request approved only once the configured threshold is met.
 	if hasAuthority && authority.Level >= AuthorityLevelAdmin {
-		req.Status = RevocationStatusApproved
-		now := time.Now().UTC()
-		req.ProcessedAt = &now
-		req.ProcessedBy = req.Requester
+		req.Approvals = append(req.Approvals, RevocationApproval{
+			Authority: req.Requester,
+			Approved:  true,
+			Comments:  "requester authority approval",
+			Timestamp: req.CreatedAt,
+		})
+		if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+			req.Status = RevocationStatusApproved
+			now := req.CreatedAt
+			req.ProcessedAt = &now
+			req.ProcessedBy = req.Requester
+		}
 	}
+
+	rm.requestMutex.Lock()
+	rm.requests[req.RequestID] = cloneRevocationRequest(req)
+	rm.requestMutex.Unlock()
 
 	// Emit event
 	sdkCtx.EventManager().EmitEvent(
@@ -387,18 +405,45 @@ func (rm *RevocationManager) ApproveRevocation(ctx context.Context, requestID, a
 	if !hasAuthority {
 		return fmt.Errorf("not a registered authority")
 	}
+	if !authority.Active {
+		return fmt.Errorf("authority is inactive")
+	}
 
 	if authority.Level < AuthorityLevelOperator {
 		return fmt.Errorf("insufficient authority level")
 	}
 
-	// In production, get request from store
-	// For MVP, just log and emit event
+	rm.requestMutex.Lock()
+	defer rm.requestMutex.Unlock()
+
+	req, exists := rm.requests[requestID]
+	if !exists {
+		return fmt.Errorf("revocation request not found")
+	}
+
+	switch req.Status {
+	case RevocationStatusExecuted, RevocationStatusCancelled, RevocationStatusRejected:
+		return fmt.Errorf("revocation request %s is no longer approvable", requestID)
+	case RevocationStatusDisputed:
+		return fmt.Errorf("revocation request %s is under dispute", requestID)
+	}
+
+	if rm.requestHasApproval(req, approver) {
+		return fmt.Errorf("authority %s already approved request %s", approver, requestID)
+	}
+
 	approval := RevocationApproval{
 		Authority: approver,
 		Approved:  true,
 		Comments:  comments,
 		Timestamp: time.Now().UTC(),
+	}
+	req.Approvals = append(req.Approvals, approval)
+	if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+		req.Status = RevocationStatusApproved
+		now := approval.Timestamp
+		req.ProcessedAt = &now
+		req.ProcessedBy = approver
 	}
 
 	sdkCtx.EventManager().EmitEvent(
@@ -422,11 +467,71 @@ func (rm *RevocationManager) ApproveRevocation(ctx context.Context, requestID, a
 func (rm *RevocationManager) ExecuteRevocation(ctx context.Context, requestID string) (*RevocationResult, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// In production, get request from store and validate it's approved
-	// For MVP, we'll accept the request ID and look up the seal
+	rm.requestMutex.Lock()
+	req, exists := rm.requests[requestID]
+	if !exists {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("revocation request not found")
+	}
+
+	if req.Status != RevocationStatusApproved {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("revocation request %s is not approved", requestID)
+	}
+
+	if time.Now().UTC().Before(req.DisputeDeadline) {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("revocation request %s is still in dispute period until %s", requestID, req.DisputeDeadline.Format(time.RFC3339))
+	}
+
+	rm.disputeMutex.RLock()
+	for _, dispute := range rm.disputes {
+		if dispute.RequestID != requestID {
+			continue
+		}
+		switch dispute.Status {
+		case DisputeStatusOpen, DisputeStatusUnderReview, DisputeStatusUpheld:
+			rm.disputeMutex.RUnlock()
+			rm.requestMutex.Unlock()
+			return nil, fmt.Errorf("revocation request %s has an unresolved dispute", requestID)
+		}
+	}
+	rm.disputeMutex.RUnlock()
+
+	seal, err := rm.keeper.GetSeal(ctx, req.SealID)
+	if err != nil {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("seal not found: %w", err)
+	}
+
+	if seal.Status == types.SealStatusRevoked {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("seal is already revoked")
+	}
+
+	seal.Revoke()
+	if err := rm.keeper.SetSeal(ctx, seal); err != nil {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("failed to update seal: %w", err)
+	}
+
+	now := time.Now().UTC()
+	req.Status = RevocationStatusExecuted
+	req.ProcessedAt = &now
+	if req.ProcessedBy == "" {
+		req.ProcessedBy = "revocation_manager"
+	}
+	revokedBy := req.ProcessedBy
+	sealID := req.SealID
+	reason := req.Reason
+	rm.requestMutex.Unlock()
 
 	result := &RevocationResult{
+		Success:     true,
+		SealID:      sealID,
 		RequestID:   requestID,
+		Reason:      reason,
+		RevokedBy:   revokedBy,
 		RevokedAt:   time.Now().UTC(),
 		BlockHeight: sdkCtx.BlockHeight(),
 	}
@@ -436,6 +541,7 @@ func (rm *RevocationManager) ExecuteRevocation(ctx context.Context, requestID st
 		sdk.NewEvent(
 			"seal_revoked",
 			sdk.NewAttribute("request_id", requestID),
+			sdk.NewAttribute("seal_id", result.SealID),
 			sdk.NewAttribute("block_height", fmt.Sprintf("%d", result.BlockHeight)),
 		),
 	)
@@ -445,7 +551,6 @@ func (rm *RevocationManager) ExecuteRevocation(ctx context.Context, requestID st
 		"block_height", result.BlockHeight,
 	)
 
-	result.Success = true
 	return result, nil
 }
 
@@ -521,6 +626,24 @@ func (rm *RevocationManager) RevokeSeal(ctx context.Context, sealID, revoker str
 func (rm *RevocationManager) FileDispute(ctx context.Context, requestID, disputant, reason string) (*RevocationDispute, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	rm.requestMutex.Lock()
+	req, exists := rm.requests[requestID]
+	if !exists {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("revocation request not found")
+	}
+	if req.Status == RevocationStatusExecuted || req.Status == RevocationStatusCancelled {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("revocation request %s can no longer be disputed", requestID)
+	}
+	if time.Now().UTC().After(req.DisputeDeadline) {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("dispute deadline has passed for request %s", requestID)
+	}
+	req.Status = RevocationStatusDisputed
+	sealID := req.SealID
+	rm.requestMutex.Unlock()
+
 	rm.disputeMutex.Lock()
 	defer rm.disputeMutex.Unlock()
 
@@ -528,6 +651,7 @@ func (rm *RevocationManager) FileDispute(ctx context.Context, requestID, disputa
 	dispute := &RevocationDispute{
 		DisputeID: rm.generateDisputeID(requestID, disputant),
 		RequestID: requestID,
+		SealID:    sealID,
 		Disputant: disputant,
 		Reason:    reason,
 		Status:    DisputeStatusOpen,
@@ -561,16 +685,17 @@ func (rm *RevocationManager) ResolveDispute(ctx context.Context, disputeID, reso
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	rm.disputeMutex.Lock()
-	defer rm.disputeMutex.Unlock()
 
 	dispute, exists := rm.disputes[disputeID]
 	if !exists {
+		rm.disputeMutex.Unlock()
 		return fmt.Errorf("dispute not found")
 	}
 
 	// Check resolver authority
 	authority, hasAuthority := rm.authorities[resolver]
-	if !hasAuthority || authority.Level < AuthorityLevelAdmin {
+	if !hasAuthority || !authority.Active || authority.Level < AuthorityLevelAdmin {
+		rm.disputeMutex.Unlock()
 		return fmt.Errorf("not authorized to resolve disputes")
 	}
 
@@ -584,6 +709,20 @@ func (rm *RevocationManager) ResolveDispute(ctx context.Context, disputeID, reso
 	} else {
 		dispute.Status = DisputeStatusRejected
 	}
+	requestID := dispute.RequestID
+	rm.disputeMutex.Unlock()
+
+	rm.requestMutex.Lock()
+	if req, exists := rm.requests[requestID]; exists {
+		if upheld {
+			req.Status = RevocationStatusCancelled
+		} else if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+			req.Status = RevocationStatusApproved
+		} else {
+			req.Status = RevocationStatusPending
+		}
+	}
+	rm.requestMutex.Unlock()
 
 	// Emit event
 	sdkCtx.EventManager().EmitEvent(
@@ -617,6 +756,19 @@ func (rm *RevocationManager) GetDispute(disputeID string) (*RevocationDispute, e
 	return dispute, nil
 }
 
+// GetRequest returns a revocation request by ID.
+func (rm *RevocationManager) GetRequest(requestID string) (*RevocationRequest, error) {
+	rm.requestMutex.RLock()
+	defer rm.requestMutex.RUnlock()
+
+	req, exists := rm.requests[requestID]
+	if !exists {
+		return nil, fmt.Errorf("revocation request not found")
+	}
+
+	return cloneRevocationRequest(req), nil
+}
+
 // GetDisputesByRequest returns all disputes for a revocation request
 func (rm *RevocationManager) GetDisputesByRequest(requestID string) []*RevocationDispute {
 	rm.disputeMutex.RLock()
@@ -636,7 +788,7 @@ func (rm *RevocationManager) GetDisputesByRequest(requestID string) []*Revocatio
 func (rm *RevocationManager) EmergencyRevoke(ctx context.Context, sealID, revoker string, reason RevocationReason, justification string) (*RevocationResult, error) {
 	// Check emergency authority
 	authority, hasAuthority := rm.authorities[revoker]
-	if !hasAuthority || authority.Level < AuthorityLevelEmergency {
+	if !hasAuthority || !authority.Active || authority.Level < AuthorityLevelEmergency {
 		return nil, fmt.Errorf("not authorized for emergency revocation")
 	}
 
@@ -734,4 +886,38 @@ func GetRevocationReasons() []RevocationReason {
 		RevocationReasonReplaced,
 		RevocationReasonOther,
 	}
+}
+
+func (rm *RevocationManager) countApprovedAuthorities(req *RevocationRequest) int {
+	approved := 0
+	for _, approval := range req.Approvals {
+		if approval.Approved {
+			approved++
+		}
+	}
+	return approved
+}
+
+func (rm *RevocationManager) requestHasApproval(req *RevocationRequest, authority string) bool {
+	for _, approval := range req.Approvals {
+		if approval.Authority == authority {
+			return true
+		}
+	}
+	return false
+}
+
+func cloneRevocationRequest(req *RevocationRequest) *RevocationRequest {
+	if req == nil {
+		return nil
+	}
+
+	reqCopy := *req
+	if req.Evidence != nil {
+		reqCopy.Evidence = append([]RevocationEvidence(nil), req.Evidence...)
+	}
+	if req.Approvals != nil {
+		reqCopy.Approvals = append([]RevocationApproval(nil), req.Approvals...)
+	}
+	return &reqCopy
 }

@@ -370,7 +370,23 @@ func TestDisputeFiling(t *testing.T) {
 
 	ctx := sdkTestContext()
 
-	dispute, err := rm.FileDispute(ctx, "req-123", testAccAddress(4), "Revocation is unjustified")
+	seal := createTestDigitalSeal()
+	seal.Id = "seal-dispute"
+	seal.RequestedBy = testAccAddress(3)
+	if err := k.SetSeal(ctx, seal); err != nil {
+		t.Fatalf("failed to seed seal: %v", err)
+	}
+
+	req, err := rm.RequestRevocation(ctx, &keeper.RevocationRequest{
+		SealID:    seal.Id,
+		Requester: seal.RequestedBy,
+		Reason:    keeper.RevocationReasonUserRequest,
+	})
+	if err != nil {
+		t.Fatalf("failed to create revocation request: %v", err)
+	}
+
+	dispute, err := rm.FileDispute(ctx, req.RequestID, testAccAddress(4), "Revocation is unjustified")
 	if err != nil {
 		t.Errorf("Failed to file dispute: %v", err)
 	}
@@ -379,7 +395,7 @@ func TestDisputeFiling(t *testing.T) {
 		t.Errorf("Expected open status, got %s", dispute.Status)
 	}
 
-	if dispute.RequestID != "req-123" {
+	if dispute.RequestID != req.RequestID {
 		t.Errorf("Request ID mismatch")
 	}
 }
