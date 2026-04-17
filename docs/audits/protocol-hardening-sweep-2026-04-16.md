@@ -415,6 +415,22 @@ already merged.
   rejected at runtime while mutable fields like `verification_reward` continue
   to update successfully.
 
+### 3t. Governance compliance reporting alignment
+
+- Tightened `x/pouw/keeper/security_compliance.go`, where the audit-facing
+  verification policy and checklist previously treated the existence of the
+  lock registry as sufficient evidence of governance change control.
+- Compliance reporting now probes the live runtime governance lock policy and
+  records success only when the generic update path actually rejects a locked
+  parameter change, which aligns the audit surface with the fail-closed runtime
+  enforcement added in the governance handler.
+- Updated the audit checklist wording for parameter validation bounds so the
+  documented consensus-threshold range now matches the code-enforced
+  production bound of `[67,100]` instead of an outdated lower threshold.
+- Added focused compliance regressions proving the policy assessment and audit
+  checklist now reflect runtime enforcement rather than lock-registry metadata
+  alone.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -457,6 +473,7 @@ already merged.
 - `go test ./x/seal/keeper`
 - `go test ./app -run 'TestVerifyVoteExtensionHandlerRejects(MismatchedValidatorAddress|MismatchedHeight)$'`
 - `go test ./x/pouw/keeper -run 'Test(UpdateParams|CB7_UpdateParams|ParamChangeProposal|Mainnet)'`
+- `go test ./x/pouw/keeper -run 'Test(EvaluateVerificationPolicy|AuditChecklist|FullSecurityComplianceFlow|SecurityComplianceWithCorruptedState)'`
 
 ### Solidity / Hardhat / Foundry
 
@@ -553,6 +570,9 @@ already merged.
   execution path instead of existing only as advisory policy metadata. Locked
   governance fields fail closed at runtime unless and until a separately
   attestable elevated-governance override path exists.
+- The PoUW audit-facing compliance and checklist surfaces now verify that
+  runtime lock enforcement is actually present instead of inferring governance
+  safety from the existence of registry metadata alone.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
