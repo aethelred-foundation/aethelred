@@ -87,6 +87,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | E2E Go workflow | `test-results/e2e-go-workflow-20260325-113209.txt` | COLLECTED | Full Go E2E workflow |
 | Load test results | `loadtest-results/loadtest-report-20260325-113719.json` | COLLECTED | Throughput / latency benchmarks |
 | Benchmark topology | `loadtest-results/BENCHMARK_TOPOLOGY.md` | COLLECTED | Test infrastructure description |
+| TEE startup fail-closed regression | `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'` | COLLECTED | Safe init now treats real remote/Nitro TEE modes as critical startup dependencies instead of degradable simulation fallbacks |
 | Pre-audit hardening tranche | `docs/audits/protocol-hardening-sweep-2026-04-16.md` | COLLECTED | Current branch summary and verification log |
 
 ---

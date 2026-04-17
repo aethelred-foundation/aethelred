@@ -264,6 +264,18 @@ already merged.
   execute and request -> dispute -> resolve paths instead of the former
   event-only placeholder flow.
 
+### 3i. TEE startup fail-closed hardening
+
+- Tightened `app/init_safe.go`, where the safe-initialization helper previously
+  treated only literal `production` and `mainnet` TEE modes as critical.
+- Real verifier-backed TEE modes such as `remote`, `http`, `nitro`, and
+  `aws-nitro` now fail closed when client initialization cannot complete,
+  instead of being classified as degradable and continuing under a misleading
+  "simulation_mode" fallback posture.
+- Added targeted regressions proving explicit simulated modes still initialize
+  intentionally while real TEE modes without a usable verifier endpoint now
+  return critical startup errors.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -299,6 +311,7 @@ already merged.
 - `go test ./x/verify/...`
 - `go test ./x/validator/keeper`
 - `go test ./x/seal/keeper`
+- `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
 
 ### Solidity / Hardhat / Foundry
 
@@ -358,6 +371,10 @@ already merged.
   authority to approve or execute revocation. Requests now have real lifecycle
   state, authority-threshold enforcement, dispute blocking, and fail-closed
   execution semantics.
+- The safe app-initialization path no longer treats real remote TEE modes as
+  degradable startup failures. If a deployment is configured for a real TEE
+  verifier path, initialization now fails closed unless that path can be
+  constructed successfully.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in
