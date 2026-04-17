@@ -392,6 +392,25 @@ already merged.
   the lightweight app fixture now carries the PoUW KV-store key mapping needed
   for deterministic vote-extension time validation in focused ABCI tests.
 
+### 3s. Runtime governance lock enforcement hardening
+
+- Tightened `x/pouw/keeper/governance.go`, where `UpdateParams(...)`
+  previously enforced only the `AllowSimulated` one-way gate even though the
+  mainnet lock registry already described several other fields as locked or
+  elevated-quorum-only.
+- The generic runtime parameter-update path now fails closed on locked
+  mainnet-governance fields such as `consensus_threshold`,
+  `require_tee_attestation`, `allowed_proof_types`, and
+  `slashing_penalty` instead of silently allowing authority-level updates that
+  exceeded the guarantees described by the lock registry.
+- The one-way disable path for `AllowSimulated` remains allowed so production
+  chains can permanently tighten policy, but any other locked-parameter change
+  now requires a dedicated elevated-governance execution path rather than the
+  generic handler.
+- Added focused keeper regressions proving locked-parameter updates are
+  rejected at runtime while mutable fields like `verification_reward` continue
+  to update successfully.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -433,6 +452,7 @@ already merged.
 - `go test ./x/verify/tee ./services/tee-worker/l1-verifier`
 - `go test ./x/seal/keeper`
 - `go test ./app -run 'TestVerifyVoteExtensionHandlerRejects(MismatchedValidatorAddress|MismatchedHeight)$'`
+- `go test ./x/pouw/keeper -run 'Test(UpdateParams|CB7_UpdateParams|ParamChangeProposal|Mainnet)'`
 
 ### Solidity / Hardhat / Foundry
 
@@ -525,6 +545,10 @@ already merged.
   identity to the authoritative consensus request earlier, so validator-address
   or height drift is rejected before staking lookup and signature verification
   rather than relying on later keeper-side aggregation checks.
+- The PoUW mainnet lock registry is now enforced by the live `UpdateParams`
+  execution path instead of existing only as advisory policy metadata. Locked
+  governance fields fail closed at runtime unless and until a separately
+  attestable elevated-governance override path exists.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

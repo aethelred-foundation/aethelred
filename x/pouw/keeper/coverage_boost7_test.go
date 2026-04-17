@@ -1008,7 +1008,7 @@ func TestCB7_UpdateParams_Unauthorized(t *testing.T) {
 func TestCB7_UpdateParams_Success(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	params := types.DefaultParams()
-	params.ConsensusThreshold = 80
+	params.VerificationReward = "200uaethel"
 	msg := &keeper.MsgUpdateParams{Authority: k.GetAuthority(), Params: *params}
 	_, err := keeper.UpdateParamsForTest(k, ctx, msg)
 	require.NoError(t, err)

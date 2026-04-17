@@ -404,6 +404,44 @@ func FormatParamChangeEvent(changes []ParamFieldChange) sdk.Events {
 	}
 }
 
+func mainnetParamLockEntry(field string) (ParamLockEntry, bool) {
+	for _, entry := range MainnetParamLockRegistry() {
+		if entry.Field == field {
+			return entry, true
+		}
+	}
+	return ParamLockEntry{}, false
+}
+
+func enforceRuntimeParamLockPolicy(current, proposed *types.Params) error {
+	for _, change := range DiffParams(current, proposed) {
+		entry, ok := mainnetParamLockEntry(change.Field)
+		if !ok {
+			continue
+		}
+
+		switch entry.Status {
+		case ParamDeprecated:
+			return fmt.Errorf(
+				"deprecated parameter %q cannot be changed via UpdateParams: %s",
+				change.Field, entry.Reason,
+			)
+		case ParamLocked:
+			// SECURITY: AllowSimulated is a one-way gate. Disabling it is allowed,
+			// but any other runtime change remains forbidden.
+			if change.Field == "allow_simulated" && current.AllowSimulated && !proposed.AllowSimulated {
+				continue
+			}
+			return fmt.Errorf(
+				"locked parameter %q cannot be changed via UpdateParams without a separately enforced elevated-governance execution path: %s",
+				change.Field, entry.Reason,
+			)
+		}
+	}
+
+	return nil
+}
+
 // ---------------------------------------------------------------------------
 // UpdateParams handler (on msgServer)
 // ---------------------------------------------------------------------------
@@ -415,9 +453,13 @@ func FormatParamChangeEvent(changes []ParamFieldChange) sdk.Events {
 // in msg.Params overwrite the current values. Bool fields are applied only
 // when their corresponding msg.Has* flag is true (field-mask semantics).
 //
-// SECURITY: Enabling AllowSimulated is a one-way gate. Once disabled in
-// production, it cannot be re-enabled through governance to prevent accidental
-// or malicious activation of simulated proofs on a live network.
+// SECURITY:
+//   - AllowSimulated is a one-way gate. Once disabled in production, it cannot
+//     be re-enabled through governance.
+//   - Mainnet-locked parameters must not be changed through this generic
+//     handler, because the elevated-quorum override semantics in the lock
+//     registry are not directly attestable at execution time here. Runtime
+//     enforcement therefore fails closed until a dedicated override path exists.
 func (k msgServer) UpdateParams(goCtx context.Context, msg *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -479,12 +521,20 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *MsgUpdateParams) (*M
 		)
 	}
 
-	// Step 6: Persist the updated parameters.
+	// Step 6: SECURITY CHECK -- lock-registry enforcement.
+	// Runtime execution cannot verify elevated governance quorum, so any locked
+	// parameter change must fail closed here unless it is the one-way disable of
+	// AllowSimulated.
+	if err := enforceRuntimeParamLockPolicy(currentParams, mergedParams); err != nil {
+		return nil, err
+	}
+
+	// Step 7: Persist the updated parameters.
 	if err := k.Keeper.SetParams(ctx, mergedParams); err != nil {
 		return nil, fmt.Errorf("failed to save params: %w", err)
 	}
 
-	// Step 7: Compute diff and emit events for observability.
+	// Step 8: Compute diff and emit events for observability.
 	changes := DiffParams(currentParams, mergedParams)
 
 	// Build and emit the audit record as SDK events.
