@@ -632,6 +632,178 @@ func TestSecureCellsHandlers_FederatedContractsRestrictSessionScope(t *testing.T
 	}
 }
 
+func TestSecureCellsHandlers_BearerFederationContractRenewAndRevokeFlow(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{17}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startFirstReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, owner, nil, []string{participantA.AgentID()})))
+	startFirstReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startFirstRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startFirstRec, startFirstReq)
+	if startFirstRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startFirstRec.Code, startFirstRec.Body.String())
+	}
+	var startFirstResp secureCellResponse
+	if err := json.Unmarshal(startFirstRec.Body.Bytes(), &startFirstResp); err != nil {
+		t.Fatalf("unmarshal first session response: %v", err)
+	}
+	firstSessionID := startFirstResp.Result.Sessions[len(startFirstResp.Result.Sessions)-1].ID
+
+	startSecondReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, owner, nil, []string{participantA.AgentID()})))
+	startSecondReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startSecondRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startSecondRec, startSecondReq)
+	if startSecondRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startSecondRec.Code, startSecondRec.Body.String())
+	}
+	var startSecondResp secureCellResponse
+	if err := json.Unmarshal(startSecondRec.Body.Bytes(), &startSecondResp); err != nil {
+		t.Fatalf("unmarshal second session response: %v", err)
+	}
+	secondSessionID := startSecondResp.Result.Sessions[len(startSecondResp.Result.Sessions)-1].ID
+
+	inviteReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations", bytes.NewReader(mustMarshalSecureCellFederationInviteRequestWithOptions(t, nil, participantB, nil, []string{firstSessionID, secondSessionID}, []string{"confidential"}, []string{"uae-enclave"}, []string{"share_output", "session_exchange"})))
+	inviteReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	inviteRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(inviteRec, inviteReq)
+	if inviteRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, inviteRec.Code, inviteRec.Body.String())
+	}
+	var inviteResp secureCellResponse
+	if err := json.Unmarshal(inviteRec.Body.Bytes(), &inviteResp); err != nil {
+		t.Fatalf("unmarshal invite response: %v", err)
+	}
+	invitationID := inviteResp.Result.FederationInvitations[len(inviteResp.Result.FederationInvitations)-1].ID
+
+	acceptReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations/"+invitationID+"/accept", bytes.NewReader(mustMarshalSecureCellFederationAcceptRequestWithOptions(t, participantB, invitationID, participantB, nil, []string{firstSessionID}, []string{"confidential"}, nil, []string{"share_output"})))
+	acceptReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	acceptRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(acceptRec, acceptReq)
+	if acceptRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, acceptRec.Code, acceptRec.Body.String())
+	}
+	var acceptResp secureCellResponse
+	if err := json.Unmarshal(acceptRec.Body.Bytes(), &acceptResp); err != nil {
+		t.Fatalf("unmarshal accept response: %v", err)
+	}
+	if len(acceptResp.Result.FederationContracts) != 1 || acceptResp.Result.FederationContracts[0].Revision != 1 {
+		t.Fatalf("expected revision 1 contract after accept, got %+v", acceptResp.Result.FederationContracts)
+	}
+	initialContractID := acceptResp.Result.FederationContracts[0].ID
+
+	for _, sessionID := range []string{firstSessionID, secondSessionID} {
+		memberReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+sessionID+"/members", bytes.NewReader(mustMarshalSecureCellSessionMemberMutationRequest(t, owner, participantB.AgentID(), "admit federated participant", nil)))
+		memberReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+		memberRec := httptest.NewRecorder()
+		app.SecureCellsMutateHandler().ServeHTTP(memberRec, memberReq)
+		if memberRec.Code != http.StatusOK {
+			t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, memberRec.Code, memberRec.Body.String())
+		}
+	}
+
+	renewReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/contracts/"+initialContractID+"/renew", bytes.NewReader(mustMarshalSecureCellFederationContractRenewRequest(t, nil, nil, []string{firstSessionID, secondSessionID}, []string{"confidential"}, []string{"uae-enclave"}, []string{"share_output", "session_exchange"}, []string{secondSessionID}, []string{"confidential"}, nil, []string{"session_exchange"})))
+	renewReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	renewRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(renewRec, renewReq)
+	if renewRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, renewRec.Code, renewRec.Body.String())
+	}
+	var renewResp secureCellResponse
+	if err := json.Unmarshal(renewRec.Body.Bytes(), &renewResp); err != nil {
+		t.Fatalf("unmarshal renew response: %v", err)
+	}
+	var activeContract securecellsintegration.SecureCellFederationContract
+	for _, contract := range renewResp.Result.FederationContracts {
+		if contract.Status == securecellsintegration.SecureCellFederationContractStatusActive {
+			activeContract = contract
+		}
+	}
+	if activeContract.ID == "" || activeContract.Revision != 2 || activeContract.SupersedesContractID != initialContractID {
+		t.Fatalf("expected revision 2 active contract after renewal, got %+v", renewResp.Result.FederationContracts)
+	}
+	if len(activeContract.NegotiationDiffs) == 0 || len(activeContract.SessionScopeIDs) != 1 || activeContract.SessionScopeIDs[0] != secondSessionID {
+		t.Fatalf("expected renewed scope and diffs, got %+v", activeContract)
+	}
+
+	contractBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/contracts/"+activeContract.ID, nil)
+	contractBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(contractBundleRec, contractBundleReq)
+	if contractBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, contractBundleRec.Code, contractBundleRec.Body.String())
+	}
+	var contractBundleResp secureCellFederationContractBundleResponse
+	if err := json.Unmarshal(contractBundleRec.Body.Bytes(), &contractBundleResp); err != nil {
+		t.Fatalf("unmarshal contract bundle response: %v", err)
+	}
+	if contractBundleResp.Result == nil || contractBundleResp.Result.Contract.Revision != 2 || contractBundleResp.Result.Contract.SupersedesContractID != initialContractID {
+		t.Fatalf("expected contract bundle to reflect renewed revision, got %+v", contractBundleResp.Result)
+	}
+	if len(contractBundleResp.Result.Contract.NegotiationDiffs) == 0 {
+		t.Fatalf("expected contract bundle negotiation diffs, got %+v", contractBundleResp.Result.Contract)
+	}
+
+	contractExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/contracts/"+activeContract.ID+"/export?format=csv", nil)
+	contractExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(contractExportRec, contractExportReq)
+	if contractExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, contractExportRec.Code, contractExportRec.Body.String())
+	}
+	exportBody := contractExportRec.Body.String()
+	if !strings.Contains(exportBody, initialContractID) || !strings.Contains(exportBody, "session_exchange") {
+		t.Fatalf("expected federation contract export to include renewal lineage and narrowed action, got %s", exportBody)
+	}
+
+	allowedExchangeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+secondSessionID+"/exchange", bytes.NewReader(mustMarshalSecureCellSessionExchangeRequest(t, participantB, nil, []string{participantA.AgentID()})))
+	allowedExchangeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	allowedExchangeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(allowedExchangeRec, allowedExchangeReq)
+	if allowedExchangeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, allowedExchangeRec.Code, allowedExchangeRec.Body.String())
+	}
+
+	revokeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/contracts/"+activeContract.ID+"/revoke", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, nil, "revoke renewed contract", nil, nil)))
+	revokeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	revokeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(revokeRec, revokeReq)
+	if revokeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, revokeRec.Code, revokeRec.Body.String())
+	}
+
+	blockedExchangeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions/"+secondSessionID+"/exchange", bytes.NewReader(mustMarshalSecureCellSessionExchangeRequest(t, participantB, nil, []string{participantA.AgentID()})))
+	blockedExchangeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	blockedExchangeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(blockedExchangeRec, blockedExchangeReq)
+	if blockedExchangeRec.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusConflict, blockedExchangeRec.Code, blockedExchangeRec.Body.String())
+	}
+	if body := blockedExchangeRec.Body.String(); !strings.Contains(body, "federation contract is required") {
+		t.Fatalf("expected revoked federation contract denial, got %s", body)
+	}
+}
+
 func TestSecureCellsCreateHandler_AcceptsEnterprisePolicyReceipt(t *testing.T) {
 	policySignerKey := mustSecureCellPolicySignerKey(t)
 	policySignerDID := "did:aethelred:secure-cells-policy"
@@ -3127,6 +3299,76 @@ func mustMarshalSecureCellFederationAcceptRequest(t *testing.T, actor *agent.Age
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell federation accept request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationInviteRequestWithOptions(t *testing.T, actor *agent.AgentIdentity, participant *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, sessionScopeIDs, dataClasses, computeZones, allowedActions []string) []byte {
+	t.Helper()
+	jurisdiction := ""
+	if len(participant.JurisdictionTags) > 0 {
+		jurisdiction = participant.JurisdictionTags[0]
+	}
+	body, err := json.Marshal(secureCellFederationInviteRequest{
+		ActorIdentity:    mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:    receipt,
+		SponsorOfRecord:  participant.Liability.SponsorOfRecord,
+		OrganizationName: participant.Liability.BusinessUnit,
+		Jurisdiction:     jurisdiction,
+		ExpectedDID:      participant.AgentID(),
+		Role:             "federated_participant",
+		SessionScopeIDs:  append([]string(nil), sessionScopeIDs...),
+		DataClasses:      append([]string(nil), dataClasses...),
+		ComputeZones:     append([]string(nil), computeZones...),
+		AllowedActions:   append([]string(nil), allowedActions...),
+		Reason:           "cross-org collaboration invite",
+		Metadata:         map[string]string{"ticket": "SC-FED-API-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation invite request with options: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationAcceptRequestWithOptions(t *testing.T, actor *agent.AgentIdentity, invitationID string, participant *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, offeredSessionScopeIDs, offeredDataClasses, offeredComputeZones, offeredActions []string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationAcceptRequest{
+		ActorIdentity:          mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:          receipt,
+		InvitationID:           invitationID,
+		Participant:            securecellsintegration.SecureCellParticipant{Identity: participant, Role: "federated_participant", Metadata: map[string]string{"bank": "federated"}},
+		OfferedSessionScopeIDs: append([]string(nil), offeredSessionScopeIDs...),
+		OfferedDataClasses:     append([]string(nil), offeredDataClasses...),
+		OfferedComputeZones:    append([]string(nil), offeredComputeZones...),
+		OfferedActions:         append([]string(nil), offeredActions...),
+		Reason:                 "join approved secure cell",
+		Metadata:               map[string]string{"ticket": "SC-FED-API-02"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation accept request with options: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationContractRenewRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, sessionScopeIDs, dataClasses, computeZones, allowedActions, offeredSessionScopeIDs, offeredDataClasses, offeredComputeZones, offeredActions []string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationContractRenewRequest{
+		ActorIdentity:          mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:          receipt,
+		SessionScopeIDs:        append([]string(nil), sessionScopeIDs...),
+		DataClasses:            append([]string(nil), dataClasses...),
+		ComputeZones:           append([]string(nil), computeZones...),
+		AllowedActions:         append([]string(nil), allowedActions...),
+		OfferedSessionScopeIDs: append([]string(nil), offeredSessionScopeIDs...),
+		OfferedDataClasses:     append([]string(nil), offeredDataClasses...),
+		OfferedComputeZones:    append([]string(nil), offeredComputeZones...),
+		OfferedActions:         append([]string(nil), offeredActions...),
+		Resource:               "secure-cell:federation-contract:renewed",
+		Reason:                 "renew cross-org contract",
+		Metadata:               map[string]string{"ticket": "SC-FED-API-RENEW-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation contract renew request: %v", err)
 	}
 	return body
 }

@@ -69,33 +69,39 @@ type SecureCellFederationOrganizationSummary struct {
 // SecureCellFederationInvitationSummary is the operator-facing summary of one
 // federation invitation.
 type SecureCellFederationInvitationSummary struct {
-	CellID                  string                               `json:"cell_id"`
-	CellName                string                               `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                     `json:"cell_status"`
-	Jurisdiction            string                               `json:"jurisdiction,omitempty"`
-	InvitationID            string                               `json:"invitation_id"`
-	OrganizationID          string                               `json:"organization_id"`
-	SponsorOfRecord         string                               `json:"sponsor_of_record,omitempty"`
-	OrganizationName        string                               `json:"organization_name,omitempty"`
-	Status                  SecureCellFederationInvitationStatus `json:"status"`
-	ExpectedDID             string                               `json:"expected_did,omitempty"`
-	Role                    string                               `json:"role,omitempty"`
-	SessionScopeCount       int                                  `json:"session_scope_count"`
-	DataClassCount          int                                  `json:"data_class_count"`
-	ComputeZoneCount        int                                  `json:"compute_zone_count"`
-	Resource                string                               `json:"resource,omitempty"`
-	CreatedBy               string                               `json:"created_by,omitempty"`
-	AcceptedBy              string                               `json:"accepted_by,omitempty"`
-	RevokedBy               string                               `json:"revoked_by,omitempty"`
-	Reason                  string                               `json:"reason,omitempty"`
-	ControlLedgerID         string                               `json:"control_ledger_id,omitempty"`
-	PortablePackageHash     string                               `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                 `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                 `json:"portable_package_anchored"`
-	CreatedAt               time.Time                            `json:"created_at,omitempty"`
-	AcceptedAt              *time.Time                           `json:"accepted_at,omitempty"`
-	RevokedAt               *time.Time                           `json:"revoked_at,omitempty"`
-	UpdatedAt               time.Time                            `json:"updated_at,omitempty"`
+	CellID                   string                               `json:"cell_id"`
+	CellName                 string                               `json:"cell_name,omitempty"`
+	CellStatus               SecureCellStatus                     `json:"cell_status"`
+	Jurisdiction             string                               `json:"jurisdiction,omitempty"`
+	InvitationID             string                               `json:"invitation_id"`
+	OrganizationID           string                               `json:"organization_id"`
+	SponsorOfRecord          string                               `json:"sponsor_of_record,omitempty"`
+	OrganizationName         string                               `json:"organization_name,omitempty"`
+	Status                   SecureCellFederationInvitationStatus `json:"status"`
+	ExpectedDID              string                               `json:"expected_did,omitempty"`
+	Role                     string                               `json:"role,omitempty"`
+	SessionScopeCount        int                                  `json:"session_scope_count"`
+	OfferedSessionScopeCount int                                  `json:"offered_session_scope_count"`
+	DataClassCount           int                                  `json:"data_class_count"`
+	OfferedDataClassCount    int                                  `json:"offered_data_class_count"`
+	ComputeZoneCount         int                                  `json:"compute_zone_count"`
+	OfferedComputeZoneCount  int                                  `json:"offered_compute_zone_count"`
+	AllowedActionCount       int                                  `json:"allowed_action_count"`
+	OfferedActionCount       int                                  `json:"offered_action_count"`
+	NegotiationDiffCount     int                                  `json:"negotiation_diff_count"`
+	Resource                 string                               `json:"resource,omitempty"`
+	CreatedBy                string                               `json:"created_by,omitempty"`
+	AcceptedBy               string                               `json:"accepted_by,omitempty"`
+	RevokedBy                string                               `json:"revoked_by,omitempty"`
+	Reason                   string                               `json:"reason,omitempty"`
+	ControlLedgerID          string                               `json:"control_ledger_id,omitempty"`
+	PortablePackageHash      string                               `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned    bool                                 `json:"portable_package_signed"`
+	PortablePackageAnchored  bool                                 `json:"portable_package_anchored"`
+	CreatedAt                time.Time                            `json:"created_at,omitempty"`
+	AcceptedAt               *time.Time                           `json:"accepted_at,omitempty"`
+	RevokedAt                *time.Time                           `json:"revoked_at,omitempty"`
+	UpdatedAt                time.Time                            `json:"updated_at,omitempty"`
 }
 
 // SecureCellFederationOperatorSurface documents one buyer- or operator-facing
@@ -467,29 +473,35 @@ func secureCellFederationOrganizationSummaryFromRun(run *secureCellRun, org Secu
 
 func secureCellFederationInvitationSummaryFromRun(run *secureCellRun, invitation SecureCellFederationInvitation) SecureCellFederationInvitationSummary {
 	summary := SecureCellFederationInvitationSummary{
-		CellID:            safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
-		CellName:          safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
-		CellStatus:        safeSecureCellStatus(run),
-		Jurisdiction:      firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
-		InvitationID:      strings.TrimSpace(invitation.ID),
-		OrganizationID:    strings.TrimSpace(invitation.OrganizationID),
-		SponsorOfRecord:   strings.TrimSpace(invitation.SponsorOfRecord),
-		OrganizationName:  strings.TrimSpace(invitation.OrganizationName),
-		Status:            invitation.Status,
-		ExpectedDID:       strings.TrimSpace(invitation.ExpectedDID),
-		Role:              strings.TrimSpace(invitation.Role),
-		SessionScopeCount: len(uniqueTrimmedStrings(invitation.SessionScopeIDs)),
-		DataClassCount:    len(uniqueTrimmedStrings(invitation.DataClasses)),
-		ComputeZoneCount:  len(uniqueTrimmedStrings(invitation.ComputeZones)),
-		Resource:          strings.TrimSpace(invitation.Resource),
-		CreatedBy:         strings.TrimSpace(invitation.CreatedBy),
-		AcceptedBy:        strings.TrimSpace(invitation.AcceptedBy),
-		RevokedBy:         strings.TrimSpace(invitation.RevokedBy),
-		Reason:            strings.TrimSpace(invitation.Reason),
-		CreatedAt:         invitation.CreatedAt.UTC(),
-		AcceptedAt:        cloneTimePtr(invitation.AcceptedAt),
-		RevokedAt:         cloneTimePtr(invitation.RevokedAt),
-		UpdatedAt:         secureCellFederationInvitationUpdatedAt(invitation),
+		CellID:                   safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
+		CellName:                 safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
+		CellStatus:               safeSecureCellStatus(run),
+		Jurisdiction:             firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
+		InvitationID:             strings.TrimSpace(invitation.ID),
+		OrganizationID:           strings.TrimSpace(invitation.OrganizationID),
+		SponsorOfRecord:          strings.TrimSpace(invitation.SponsorOfRecord),
+		OrganizationName:         strings.TrimSpace(invitation.OrganizationName),
+		Status:                   invitation.Status,
+		ExpectedDID:              strings.TrimSpace(invitation.ExpectedDID),
+		Role:                     strings.TrimSpace(invitation.Role),
+		SessionScopeCount:        len(uniqueTrimmedStrings(invitation.SessionScopeIDs)),
+		OfferedSessionScopeCount: len(uniqueTrimmedStrings(invitation.OfferedSessionScopeIDs)),
+		DataClassCount:           len(uniqueTrimmedStrings(invitation.DataClasses)),
+		OfferedDataClassCount:    len(uniqueTrimmedStrings(invitation.OfferedDataClasses)),
+		ComputeZoneCount:         len(uniqueTrimmedStrings(invitation.ComputeZones)),
+		OfferedComputeZoneCount:  len(uniqueTrimmedStrings(invitation.OfferedComputeZones)),
+		AllowedActionCount:       len(uniqueTrimmedStrings(invitation.AllowedActions)),
+		OfferedActionCount:       len(uniqueTrimmedStrings(invitation.OfferedActions)),
+		NegotiationDiffCount:     len(invitation.NegotiationDiffs),
+		Resource:                 strings.TrimSpace(invitation.Resource),
+		CreatedBy:                strings.TrimSpace(invitation.CreatedBy),
+		AcceptedBy:               strings.TrimSpace(invitation.AcceptedBy),
+		RevokedBy:                strings.TrimSpace(invitation.RevokedBy),
+		Reason:                   strings.TrimSpace(invitation.Reason),
+		CreatedAt:                invitation.CreatedAt.UTC(),
+		AcceptedAt:               cloneTimePtr(invitation.AcceptedAt),
+		RevokedAt:                cloneTimePtr(invitation.RevokedAt),
+		UpdatedAt:                secureCellFederationInvitationUpdatedAt(invitation),
 	}
 	if run.result.ControlLedger != nil {
 		summary.ControlLedgerID = strings.TrimSpace(run.result.ControlLedger.Bundle.ID)

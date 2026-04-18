@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -3101,6 +3102,237 @@ func TestService_FederatedExchangeContractsRestrictSessionScope(t *testing.T) {
 	})
 	if !errors.Is(err, ErrFederationExchangePolicyDenied) {
 		t.Fatalf("expected ErrFederationExchangePolicyDenied, got %v", err)
+	}
+}
+
+func TestService_FederationContractRenewalAndRevocationLifecycle(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Contract Renewal Cell",
+		Purpose:       "renew and revoke federated contracts with replayable diffs",
+		Resource:      "cell:federation-renewal",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	firstSessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Initial Federation Room",
+		Purpose:         "initial federated scope",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "initial room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession first failed: %v", err)
+	}
+	firstSession := firstSessionResult.Sessions[len(firstSessionResult.Sessions)-1]
+
+	secondSessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Renewed Federation Room",
+		Purpose:         "renewed federated scope",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "renewed room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession second failed: %v", err)
+	}
+	secondSession := secondSessionResult.Sessions[len(secondSessionResult.Sessions)-1]
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{firstSession.ID, secondSession.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{secureCellFederationContractActionShareOutput, secureCellFederationContractActionSessionExchange},
+		Reason:           "bilateral invite created",
+		Metadata:         map[string]string{"ticket": "SC-FED-RENEW-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID:           invitation.ID,
+		ActorDID:               participantB.AgentID(),
+		Participant:            SecureCellParticipant{Identity: participantB, Role: "bank_b_reviewer"},
+		OfferedSessionScopeIDs: []string{firstSession.ID},
+		OfferedDataClasses:     []string{"decisioning"},
+		OfferedActions:         []string{secureCellFederationContractActionShareOutput},
+		Reason:                 "counterparty narrowed invite",
+		Metadata:               map[string]string{"ticket": "SC-FED-RENEW-02"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one active contract after accept, got %+v", accepted.FederationContracts)
+	}
+	initialContract := accepted.FederationContracts[0]
+	if initialContract.Revision != 1 || len(initialContract.NegotiationDiffs) == 0 {
+		t.Fatalf("expected first revision with negotiation diffs, got %+v", initialContract)
+	}
+	if got := strings.Join(initialContract.AllowedActions, ","); got != secureCellFederationContractActionShareOutput {
+		t.Fatalf("expected narrowed allowed actions, got %q", got)
+	}
+	if len(initialContract.SessionScopeIDs) != 1 || initialContract.SessionScopeIDs[0] != firstSession.ID {
+		t.Fatalf("expected initial scope to be narrowed to first session, got %+v", initialContract.SessionScopeIDs)
+	}
+
+	if _, err := service.AddSessionMember(ctx, created.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "counterparty admitted to initial room",
+	}, firstSession.ID); err != nil {
+		t.Fatalf("AddSessionMember first failed: %v", err)
+	}
+	if _, err := service.AddSessionMember(ctx, created.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "counterparty admitted to renewed room",
+	}, secondSession.ID); err != nil {
+		t.Fatalf("AddSessionMember second failed: %v", err)
+	}
+
+	if _, err := service.ShareOutput(ctx, created.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      firstSession.ID,
+		Name:           "Initial Scoped Memo",
+		ArtifactType:   "memo",
+		Classification: "decisioning",
+		Summary:        "allowed under initial contract",
+		SharedWith:     []string{participantA.AgentID()},
+		Reason:         "share under initial contract",
+	}); err != nil {
+		t.Fatalf("ShareOutput initial failed: %v", err)
+	}
+
+	renewed, err := service.RenewFederationContract(ctx, created.CellID, initialContract.ID, SecureCellFederationContractRenewRequest{
+		ActorDID:               owner.AgentID(),
+		SessionScopeIDs:        []string{firstSession.ID, secondSession.ID},
+		DataClasses:            []string{"confidential", "decisioning"},
+		AllowedActions:         []string{secureCellFederationContractActionShareOutput, secureCellFederationContractActionSessionExchange},
+		OfferedSessionScopeIDs: []string{secondSession.ID},
+		OfferedDataClasses:     []string{"decisioning"},
+		OfferedActions:         []string{secureCellFederationContractActionSessionExchange},
+		Resource:               "secure-cell:federation-contract:renewed",
+		Reason:                 "counterparty requested renewed scope",
+		Metadata:               map[string]string{"ticket": "SC-FED-RENEW-03"},
+	})
+	if err != nil {
+		t.Fatalf("RenewFederationContract failed: %v", err)
+	}
+	if len(renewed.FederationContracts) != 2 {
+		t.Fatalf("expected historical and renewed contracts, got %+v", renewed.FederationContracts)
+	}
+	var revokedContract, activeContract *SecureCellFederationContract
+	for idx := range renewed.FederationContracts {
+		contract := &renewed.FederationContracts[idx]
+		switch contract.Status {
+		case SecureCellFederationContractStatusRevoked:
+			revokedContract = contract
+		case SecureCellFederationContractStatusActive:
+			activeContract = contract
+		}
+	}
+	if revokedContract == nil || activeContract == nil {
+		t.Fatalf("expected one revoked and one active contract after renewal, got %+v", renewed.FederationContracts)
+	}
+	if revokedContract.ID != initialContract.ID || revokedContract.ReplacedByContractID != activeContract.ID {
+		t.Fatalf("expected initial contract to be superseded, got revoked=%+v active=%+v", revokedContract, activeContract)
+	}
+	if activeContract.Revision != 2 || activeContract.SupersedesContractID != initialContract.ID {
+		t.Fatalf("expected revision 2 contract tied to initial contract, got %+v", activeContract)
+	}
+	if len(activeContract.SessionScopeIDs) != 1 || activeContract.SessionScopeIDs[0] != secondSession.ID {
+		t.Fatalf("expected renewed contract to target second session, got %+v", activeContract.SessionScopeIDs)
+	}
+	if got := strings.Join(activeContract.AllowedActions, ","); got != secureCellFederationContractActionSessionExchange {
+		t.Fatalf("expected renewed contract to narrow to session_exchange, got %q", got)
+	}
+	if len(activeContract.NegotiationDiffs) == 0 {
+		t.Fatalf("expected renewed contract to carry negotiation diffs, got %+v", activeContract)
+	}
+	if got := renewed.Transitions[len(renewed.Transitions)-1].Action; got != "secure_cell.federation_contract_renewed" {
+		t.Fatalf("expected final renewal transition, got %q", got)
+	}
+
+	if _, err := service.ShareOutput(ctx, created.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      firstSession.ID,
+		Name:           "Blocked Renewed Memo",
+		ArtifactType:   "memo",
+		Classification: "decisioning",
+		Summary:        "blocked under renewed contract",
+		SharedWith:     []string{participantA.AgentID()},
+		Reason:         "share outside renewed scope",
+	}); !errors.Is(err, ErrFederationExchangePolicyDenied) {
+		t.Fatalf("expected ErrFederationExchangePolicyDenied after renewal, got %v", err)
+	}
+
+	if _, err := service.RecordExchange(ctx, created.CellID, SecureCellSessionExchangeRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      secondSession.ID,
+		Name:           "Renewed Session Exchange",
+		ExchangeType:   "note",
+		Classification: "decisioning",
+		Summary:        "allowed under renewed contract",
+		Recipients:     []string{participantA.AgentID()},
+		Reason:         "exchange inside renewed scope",
+	}); err != nil {
+		t.Fatalf("RecordExchange renewed failed: %v", err)
+	}
+
+	revoked, err := service.RevokeFederationContract(ctx, created.CellID, activeContract.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "counterparty trust suspended",
+		Metadata: map[string]string{"ticket": "SC-FED-RENEW-04"},
+	})
+	if err != nil {
+		t.Fatalf("RevokeFederationContract failed: %v", err)
+	}
+	if got := revoked.Transitions[len(revoked.Transitions)-1].Action; got != "secure_cell.federation_contract_revoked" {
+		t.Fatalf("expected final revoke transition, got %q", got)
+	}
+	activeContracts := secureCellFederationContractsByStatus(revoked.FederationContracts, SecureCellFederationContractStatusActive)
+	if len(activeContracts) != 0 {
+		t.Fatalf("expected no active contracts after revoke, got %+v", activeContracts)
+	}
+
+	if _, err := service.RecordExchange(ctx, created.CellID, SecureCellSessionExchangeRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      secondSession.ID,
+		Name:           "Blocked Post-Revoke Exchange",
+		ExchangeType:   "note",
+		Classification: "decisioning",
+		Summary:        "blocked after contract revoke",
+		Recipients:     []string{participantA.AgentID()},
+		Reason:         "exchange after contract revoke",
+	}); !errors.Is(err, ErrFederationContractRequired) {
+		t.Fatalf("expected ErrFederationContractRequired after revoke, got %v", err)
 	}
 }
 

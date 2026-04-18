@@ -396,16 +396,25 @@ func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Requ
 			"participant_count",
 			"session_scope_ids",
 			"session_scope_count",
+			"offered_session_scope_ids",
 			"data_classes",
 			"data_class_count",
+			"offered_data_classes",
 			"compute_zones",
 			"compute_zone_count",
+			"offered_compute_zones",
 			"allowed_actions",
+			"offered_actions",
+			"negotiation_diff_count",
+			"negotiation_diffs",
 			"resource",
 			"negotiation_id",
 			"credential_id",
 			"policy_receipt_id",
 			"policy_receipt_hash",
+			"revision",
+			"supersedes_contract_id",
+			"replaced_by_contract_id",
 			"control_ledger_id",
 			"portable_package_hash",
 			"portable_package_signed",
@@ -431,16 +440,25 @@ func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Requ
 				strconv.Itoa(item.ParticipantCount),
 				strings.Join(item.SessionScopeIDs, "|"),
 				strconv.Itoa(item.SessionScopeCount),
+				strings.Join(item.OfferedSessionScopeIDs, "|"),
 				strings.Join(item.DataClasses, "|"),
 				strconv.Itoa(item.DataClassCount),
+				strings.Join(item.OfferedDataClasses, "|"),
 				strings.Join(item.ComputeZones, "|"),
 				strconv.Itoa(item.ComputeZoneCount),
+				strings.Join(item.OfferedComputeZones, "|"),
 				strings.Join(item.AllowedActions, "|"),
+				strings.Join(item.OfferedActions, "|"),
+				strconv.Itoa(item.NegotiationDiffCount),
+				secureCellFederationPolicyDiffSummaryCSV(item.NegotiationDiffs),
 				item.Resource,
 				item.NegotiationID,
 				item.CredentialID,
 				item.PolicyReceiptID,
 				item.PolicyReceiptHash,
+				strconv.Itoa(item.Revision),
+				item.SupersedesContractID,
+				item.ReplacedByContractID,
 				item.ControlLedgerID,
 				item.PortablePackageHash,
 				strconv.FormatBool(item.PortablePackageSigned),
@@ -609,8 +627,14 @@ func writeSecureCellFederationInvitationBundleExport(w http.ResponseWriter, r *h
 			"role",
 			"resource",
 			"session_scope_count",
+			"offered_session_scope_count",
 			"data_class_count",
+			"offered_data_class_count",
 			"compute_zone_count",
+			"offered_compute_zone_count",
+			"allowed_action_count",
+			"offered_action_count",
+			"negotiation_diff_count",
 			"created_by",
 			"accepted_by",
 			"revoked_by",
@@ -643,8 +667,14 @@ func writeSecureCellFederationInvitationBundleExport(w http.ResponseWriter, r *h
 			bundle.Invitation.Role,
 			bundle.Invitation.Resource,
 			strconv.Itoa(bundle.Invitation.SessionScopeCount),
+			strconv.Itoa(bundle.Invitation.OfferedSessionScopeCount),
 			strconv.Itoa(bundle.Invitation.DataClassCount),
+			strconv.Itoa(bundle.Invitation.OfferedDataClassCount),
 			strconv.Itoa(bundle.Invitation.ComputeZoneCount),
+			strconv.Itoa(bundle.Invitation.OfferedComputeZoneCount),
+			strconv.Itoa(bundle.Invitation.AllowedActionCount),
+			strconv.Itoa(bundle.Invitation.OfferedActionCount),
+			strconv.Itoa(bundle.Invitation.NegotiationDiffCount),
 			bundle.Invitation.CreatedBy,
 			bundle.Invitation.AcceptedBy,
 			bundle.Invitation.RevokedBy,
@@ -700,14 +730,23 @@ func writeSecureCellFederationContractBundleExport(w http.ResponseWriter, r *htt
 			"contract_status",
 			"participant_dids",
 			"session_scope_ids",
+			"offered_session_scope_ids",
 			"data_classes",
+			"offered_data_classes",
 			"compute_zones",
+			"offered_compute_zones",
 			"allowed_actions",
+			"offered_actions",
+			"negotiation_diff_count",
+			"negotiation_diffs",
 			"resource",
 			"negotiation_id",
 			"credential_id",
 			"policy_receipt_id",
 			"policy_receipt_hash",
+			"revision",
+			"supersedes_contract_id",
+			"replaced_by_contract_id",
 			"control_ids",
 			"operator_surface_ids",
 			"operator_surface_paths",
@@ -735,14 +774,23 @@ func writeSecureCellFederationContractBundleExport(w http.ResponseWriter, r *htt
 			string(bundle.Contract.Status),
 			strings.Join(bundle.Contract.ParticipantDIDs, "|"),
 			strings.Join(bundle.Contract.SessionScopeIDs, "|"),
+			strings.Join(bundle.Contract.OfferedSessionScopeIDs, "|"),
 			strings.Join(bundle.Contract.DataClasses, "|"),
+			strings.Join(bundle.Contract.OfferedDataClasses, "|"),
 			strings.Join(bundle.Contract.ComputeZones, "|"),
+			strings.Join(bundle.Contract.OfferedComputeZones, "|"),
 			strings.Join(bundle.Contract.AllowedActions, "|"),
+			strings.Join(bundle.Contract.OfferedActions, "|"),
+			strconv.Itoa(bundle.Contract.NegotiationDiffCount),
+			secureCellFederationPolicyDiffSummaryCSV(bundle.Contract.NegotiationDiffs),
 			bundle.Contract.Resource,
 			bundle.Contract.NegotiationID,
 			bundle.Contract.CredentialID,
 			bundle.Contract.PolicyReceiptID,
 			bundle.Contract.PolicyReceiptHash,
+			strconv.Itoa(bundle.Contract.Revision),
+			bundle.Contract.SupersedesContractID,
+			bundle.Contract.ReplacedByContractID,
 			joinSecureCellFederationControlIDs(bundle.Controls),
 			joinSecureCellFederationOperatorSurfaceIDs(bundle.OperatorSurfaces),
 			joinSecureCellFederationOperatorSurfacePaths(bundle.OperatorSurfaces),
@@ -867,6 +915,23 @@ func secureCellOptionalFederationContractID(contract *securecellsintegration.Sec
 		return ""
 	}
 	return strings.TrimSpace(contract.ContractID)
+}
+
+func secureCellFederationPolicyDiffSummaryCSV(diffs []securecellsintegration.SecureCellFederationPolicyDiff) string {
+	if len(diffs) == 0 {
+		return ""
+	}
+	items := make([]string, 0, len(diffs))
+	for _, diff := range diffs {
+		field := strings.TrimSpace(diff.Field)
+		if field == "" {
+			continue
+		}
+		effect := strings.TrimSpace(diff.Effect)
+		negotiated := strings.Join(diff.NegotiatedValues, "|")
+		items = append(items, strings.Trim(strings.Join([]string{field, effect, negotiated}, ":"), ":"))
+	}
+	return strings.Join(items, ";")
 }
 
 func secureCellOptionalFederationInvitationID(invitation *securecellsintegration.SecureCellFederationInvitationSummary) string {
