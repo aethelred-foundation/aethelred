@@ -2767,6 +2767,167 @@ func TestService_RevokeFederationInvitationMarksOrganizationRevoked(t *testing.T
 	}
 }
 
+func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+	participantC := mustSecureCellIdentity(t, "participant-c", []string{"UAE", "UK"})
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Operator Cell",
+		Purpose:       "operator federation packaging",
+		Resource:      "cell:federation-operator",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "counterparty"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	acceptedInvite, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		Reason:           "accepted counterparty join",
+		Metadata:         map[string]string{"ticket": "SC-FED-PACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation accepted path failed: %v", err)
+	}
+	acceptedInvitationID := acceptedInvite.FederationInvitations[len(acceptedInvite.FederationInvitations)-1].ID
+	if _, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: acceptedInvitationID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+			Metadata: map[string]string{"bank": "b"},
+		},
+		Reason:   "joined operator federation cell",
+		Metadata: map[string]string{"ticket": "SC-FED-PACK-02"},
+	}); err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+
+	revokedInvite, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantC),
+		OrganizationName: secureCellFederationOrganizationName(participantC),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantC.AgentID(),
+		Role:             "bank_c_reviewer",
+		Reason:           "revoked counterparty join",
+		Metadata:         map[string]string{"ticket": "SC-FED-PACK-03"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation revoked path failed: %v", err)
+	}
+	revokedInvitationID := revokedInvite.FederationInvitations[len(revokedInvite.FederationInvitations)-1].ID
+	if _, err := service.RevokeFederationInvitation(ctx, created.CellID, revokedInvitationID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "counterparty withdrawn",
+		Metadata: map[string]string{"ticket": "SC-FED-PACK-04"},
+	}); err != nil {
+		t.Fatalf("RevokeFederationInvitation failed: %v", err)
+	}
+
+	orgItems, err := service.ListFederationOrganizations(ctx, SecureCellFederationOrganizationFilter{
+		CellID: created.CellID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationOrganizations failed: %v", err)
+	}
+	if len(orgItems) != 4 {
+		t.Fatalf("expected owner + local participant + accepted org + revoked org, got %+v", orgItems)
+	}
+
+	acceptedOrgID := secureCellFederationOrganizationID(secureCellFederationSponsor(participantB))
+	acceptedFound := false
+	for _, item := range orgItems {
+		if item.OrganizationID != acceptedOrgID {
+			continue
+		}
+		acceptedFound = true
+		if item.Status != SecureCellFederationOrganizationStatusActive || item.ParticipantCount != 1 || item.AcceptedInvitationCount != 1 {
+			t.Fatalf("expected active accepted organization summary, got %+v", item)
+		}
+		if len(item.ParticipantDIDs) != 1 || item.ParticipantDIDs[0] != participantB.AgentID() {
+			t.Fatalf("expected participant DID on organization summary, got %+v", item.ParticipantDIDs)
+		}
+	}
+	if !acceptedFound {
+		t.Fatalf("expected accepted organization %q in operator list", acceptedOrgID)
+	}
+
+	filteredOrgItems, err := service.ListFederationOrganizations(ctx, SecureCellFederationOrganizationFilter{
+		CellID:         created.CellID,
+		ParticipantDID: participantB.AgentID(),
+	})
+	if err != nil {
+		t.Fatalf("ListFederationOrganizations filtered failed: %v", err)
+	}
+	if len(filteredOrgItems) != 1 || filteredOrgItems[0].OrganizationID != acceptedOrgID {
+		t.Fatalf("expected only accepted organization for participant filter, got %+v", filteredOrgItems)
+	}
+
+	invitationItems, err := service.ListFederationInvitations(ctx, SecureCellFederationInvitationFilter{
+		CellID: created.CellID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationInvitations failed: %v", err)
+	}
+	if len(invitationItems) != 2 {
+		t.Fatalf("expected two federation invitations, got %+v", invitationItems)
+	}
+
+	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, acceptedOrgID, SecureCellFederationOrganizationTrustPackOptions{
+		OperatorSurfaces: []SecureCellFederationOperatorSurface{
+			{ID: "federation-overview", Method: "GET", Path: "/api/v1/secure-cells/" + created.CellID + "/federation"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("BuildFederationOrganizationTrustPack failed: %v", err)
+	}
+	if trustPack.Organization.OrganizationID != acceptedOrgID || len(trustPack.Participants) != 1 || len(trustPack.Invitations) != 1 {
+		t.Fatalf("expected organization-specific trust pack, got %+v", trustPack)
+	}
+	if !trustPack.PortablePackageSigned || !trustPack.PortablePackageAnchored || trustPack.ControlLedgerID == "" || trustPack.ControlLedgerHash == "" {
+		t.Fatalf("expected anchored and signed trust pack evidence, got %+v", trustPack)
+	}
+	if len(trustPack.Controls) == 0 || trustPack.Controls[0].ControlID != "CELL-FED-01" {
+		t.Fatalf("expected federation control in trust pack, got %+v", trustPack.Controls)
+	}
+	if len(trustPack.OperatorSurfaces) != 1 || trustPack.OperatorSurfaces[0].ID != "federation-overview" {
+		t.Fatalf("expected custom operator surface in trust pack, got %+v", trustPack.OperatorSurfaces)
+	}
+
+	bundle, err := service.BuildFederationInvitationBundle(ctx, created.CellID, revokedInvitationID)
+	if err != nil {
+		t.Fatalf("BuildFederationInvitationBundle failed: %v", err)
+	}
+	if bundle.Invitation.InvitationID != revokedInvitationID || bundle.Invitation.Status != SecureCellFederationInvitationStatusRevoked {
+		t.Fatalf("expected revoked invitation bundle, got %+v", bundle)
+	}
+	if bundle.Organization.OrganizationID != secureCellFederationOrganizationID(secureCellFederationSponsor(participantC)) {
+		t.Fatalf("expected revoked organization in invitation bundle, got %+v", bundle.Organization)
+	}
+	if !bundle.PortablePackageSigned || !bundle.PortablePackageAnchored || bundle.ControlLedgerID == "" || bundle.ControlLedgerHash == "" {
+		t.Fatalf("expected portable evidence on invitation bundle, got %+v", bundle)
+	}
+}
+
 func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
 	return newTestSecureCellServiceWithWorkflowStoreAndPublisher(t, nil, nil)

@@ -264,6 +264,193 @@ func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
 	}
 }
 
+func TestSecureCellsHandlers_FederationOperatorViewsAndExports(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{19}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+	participantC := mustSecureCellAppIdentity(t, "reviewer-c", []string{"UAE", "UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	acceptedInviteReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations", bytes.NewReader(mustMarshalSecureCellFederationInviteRequest(t, nil, participantB, nil)))
+	acceptedInviteReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	acceptedInviteRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(acceptedInviteRec, acceptedInviteReq)
+	if acceptedInviteRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, acceptedInviteRec.Code, acceptedInviteRec.Body.String())
+	}
+
+	var acceptedInviteResp secureCellResponse
+	if err := json.Unmarshal(acceptedInviteRec.Body.Bytes(), &acceptedInviteResp); err != nil {
+		t.Fatalf("unmarshal accepted invite response: %v", err)
+	}
+	acceptedInvitationID := acceptedInviteResp.Result.FederationInvitations[0].ID
+
+	acceptReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations/"+acceptedInvitationID+"/accept", bytes.NewReader(mustMarshalSecureCellFederationAcceptRequest(t, nil, acceptedInvitationID, participantB, nil)))
+	acceptReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	acceptRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(acceptRec, acceptReq)
+	if acceptRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, acceptRec.Code, acceptRec.Body.String())
+	}
+
+	revokedInviteReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations", bytes.NewReader(mustMarshalSecureCellFederationInviteRequest(t, nil, participantC, nil)))
+	revokedInviteReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	revokedInviteRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(revokedInviteRec, revokedInviteReq)
+	if revokedInviteRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, revokedInviteRec.Code, revokedInviteRec.Body.String())
+	}
+
+	var revokedInviteResp secureCellResponse
+	if err := json.Unmarshal(revokedInviteRec.Body.Bytes(), &revokedInviteResp); err != nil {
+		t.Fatalf("unmarshal revoked invite response: %v", err)
+	}
+	if len(revokedInviteResp.Result.FederationInvitations) != 2 {
+		t.Fatalf("expected two invitations after second invite, got %+v", revokedInviteResp.Result.FederationInvitations)
+	}
+	revokedInvitationID := revokedInviteResp.Result.FederationInvitations[1].ID
+
+	revokeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations/"+revokedInvitationID+"/revoke", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, nil, "counterparty withdrawn", nil, nil)))
+	revokeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	revokeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(revokeRec, revokeReq)
+	if revokeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, revokeRec.Code, revokeRec.Body.String())
+	}
+
+	orgListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/organizations?cell_id="+url.QueryEscape(cellID), nil)
+	orgListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(orgListRec, orgListReq)
+	if orgListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, orgListRec.Code, orgListRec.Body.String())
+	}
+	var orgListResp secureCellFederationOrganizationListResponse
+	if err := json.Unmarshal(orgListRec.Body.Bytes(), &orgListResp); err != nil {
+		t.Fatalf("unmarshal federation organization list response: %v", err)
+	}
+	if len(orgListResp.Items) != 4 {
+		t.Fatalf("expected owner + local participant + accepted org + revoked org, got %+v", orgListResp.Items)
+	}
+
+	var acceptedOrgID string
+	for _, item := range orgListResp.Items {
+		if len(item.ParticipantDIDs) == 1 && item.ParticipantDIDs[0] == participantB.AgentID() {
+			acceptedOrgID = item.OrganizationID
+			break
+		}
+	}
+	if acceptedOrgID == "" {
+		t.Fatalf("expected accepted federation organization for participant %q, got %+v", participantB.AgentID(), orgListResp.Items)
+	}
+
+	orgExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/organizations/export?cell_id="+url.QueryEscape(cellID)+"&format=csv", nil)
+	orgExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(orgExportRec, orgExportReq)
+	if orgExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, orgExportRec.Code, orgExportRec.Body.String())
+	}
+	if body := orgExportRec.Body.String(); !strings.Contains(body, "organization_id") || !strings.Contains(body, acceptedOrgID) {
+		t.Fatalf("expected federation organization csv export to include accepted organization, got %s", body)
+	}
+
+	invitationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/invitations?cell_id="+url.QueryEscape(cellID), nil)
+	invitationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(invitationListRec, invitationListReq)
+	if invitationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, invitationListRec.Code, invitationListRec.Body.String())
+	}
+	var invitationListResp secureCellFederationInvitationListResponse
+	if err := json.Unmarshal(invitationListRec.Body.Bytes(), &invitationListResp); err != nil {
+		t.Fatalf("unmarshal federation invitation list response: %v", err)
+	}
+	if len(invitationListResp.Items) != 2 {
+		t.Fatalf("expected two federation invitations, got %+v", invitationListResp.Items)
+	}
+
+	invitationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/invitations/export?cell_id="+url.QueryEscape(cellID)+"&format=csv", nil)
+	invitationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(invitationExportRec, invitationExportReq)
+	if invitationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, invitationExportRec.Code, invitationExportRec.Body.String())
+	}
+	if body := invitationExportRec.Body.String(); !strings.Contains(body, "invitation_id") || !strings.Contains(body, revokedInvitationID) {
+		t.Fatalf("expected federation invitation csv export to include revoked invitation, got %s", body)
+	}
+
+	trustPackReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/organizations/"+acceptedOrgID+"/trust-pack", nil)
+	trustPackRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(trustPackRec, trustPackReq)
+	if trustPackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, trustPackRec.Code, trustPackRec.Body.String())
+	}
+	var trustPackResp secureCellFederationTrustPackResponse
+	if err := json.Unmarshal(trustPackRec.Body.Bytes(), &trustPackResp); err != nil {
+		t.Fatalf("unmarshal federation trust pack response: %v", err)
+	}
+	if trustPackResp.Result == nil || trustPackResp.Result.Organization.OrganizationID != acceptedOrgID {
+		t.Fatalf("expected accepted organization trust pack, got %+v", trustPackResp.Result)
+	}
+	if len(trustPackResp.Result.OperatorSurfaces) == 0 || trustPackResp.Result.ControlLedgerID == "" || !trustPackResp.Result.PortablePackageSigned || !trustPackResp.Result.PortablePackageAnchored {
+		t.Fatalf("expected operator surfaces and portable evidence in trust pack, got %+v", trustPackResp.Result)
+	}
+
+	trustPackExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/organizations/"+acceptedOrgID+"/trust-pack/export?format=csv", nil)
+	trustPackExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(trustPackExportRec, trustPackExportReq)
+	if trustPackExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, trustPackExportRec.Code, trustPackExportRec.Body.String())
+	}
+	if body := trustPackExportRec.Body.String(); !strings.Contains(body, "operator_surface_ids") || !strings.Contains(body, acceptedOrgID) {
+		t.Fatalf("expected trust pack csv export to include operator surfaces and organization id, got %s", body)
+	}
+
+	bundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/invitations/"+revokedInvitationID+"/bundle", nil)
+	bundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(bundleRec, bundleReq)
+	if bundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, bundleRec.Code, bundleRec.Body.String())
+	}
+	var bundleResp secureCellFederationInvitationBundleResponse
+	if err := json.Unmarshal(bundleRec.Body.Bytes(), &bundleResp); err != nil {
+		t.Fatalf("unmarshal federation invitation bundle response: %v", err)
+	}
+	if bundleResp.Result == nil || bundleResp.Result.Invitation.InvitationID != revokedInvitationID || bundleResp.Result.Invitation.Status != securecellsintegration.SecureCellFederationInvitationStatusRevoked {
+		t.Fatalf("expected revoked invitation bundle, got %+v", bundleResp.Result)
+	}
+
+	bundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/invitations/"+revokedInvitationID+"/bundle/export?format=csv", nil)
+	bundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(bundleExportRec, bundleExportReq)
+	if bundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, bundleExportRec.Code, bundleExportRec.Body.String())
+	}
+	if body := bundleExportRec.Body.String(); !strings.Contains(body, "invitation_status") || !strings.Contains(body, revokedInvitationID) {
+		t.Fatalf("expected invitation bundle csv export to include revoked invitation id, got %s", body)
+	}
+}
+
 func TestSecureCellsCreateHandler_AcceptsEnterprisePolicyReceipt(t *testing.T) {
 	policySignerKey := mustSecureCellPolicySignerKey(t)
 	policySignerDID := "did:aethelred:secure-cells-policy"
