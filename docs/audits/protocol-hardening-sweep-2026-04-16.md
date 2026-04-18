@@ -657,6 +657,20 @@ already merged.
   endpoint rejection and readiness classification of blocked verifier targets
   as unreachable without any network call succeeding.
 
+### 3zi. EZKL remote endpoint validation hardening
+
+- Tightened `x/verify/ezkl/prover.go`, where the remote EZKL prover and remote
+  verifier paths still built outbound `/prove` and `/verify` requests directly
+  from configured endpoints without first reusing the shared endpoint safety
+  guard.
+- `CallRemoteProver(...)` and `CallRemoteVerifier(...)` now validate their
+  derived remote URLs before creating the HTTP request and fail closed through
+  the prover/verifier circuit-breaker path when the configured endpoint is
+  unsafe or malformed.
+- Added focused regressions in `x/verify/ezkl/prover_remote_test.go` covering
+  blocked metadata-host rejection for both remote proving and remote
+  verification.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -854,6 +868,9 @@ already merged.
   safety rules during startup. Configured verifier targets now have to pass
   the shared endpoint validator before the node will probe them for
   reachability.
+- The EZKL remote prover/verifier path no longer bypasses that validator
+  either. Configured prover endpoints now have to pass the shared endpoint
+  safety guard before `/prove` or `/verify` requests are issued.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

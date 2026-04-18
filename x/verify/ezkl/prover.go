@@ -658,7 +658,15 @@ func (ps *ProverService) CallRemoteProver(ctx context.Context, req *ProofRequest
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", ps.config.ProverEndpoint+"/prove", bytes.NewReader(reqBody))
+	proveURL := ps.config.ProverEndpoint + "/prove"
+	if err := httputil.ValidateEndpointURL(proveURL); err != nil {
+		if ps.proverBreaker != nil {
+			ps.proverBreaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid prover endpoint: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", proveURL, bytes.NewReader(reqBody))
 	if err != nil {
 		if ps.proverBreaker != nil {
 			ps.proverBreaker.RecordFailure()
@@ -725,7 +733,15 @@ func (ps *ProverService) CallRemoteVerifier(ctx context.Context, proof []byte, p
 		return false, fmt.Errorf("failed to marshal verifier payload: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", ps.config.ProverEndpoint+"/verify", bytes.NewReader(reqBody))
+	verifyURL := ps.config.ProverEndpoint + "/verify"
+	if err := httputil.ValidateEndpointURL(verifyURL); err != nil {
+		if ps.verifierBreaker != nil {
+			ps.verifierBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("invalid verifier endpoint: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", verifyURL, bytes.NewReader(reqBody))
 	if err != nil {
 		if ps.verifierBreaker != nil {
 			ps.verifierBreaker.RecordFailure()
