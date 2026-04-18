@@ -5,8 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -3730,31 +3728,6 @@ func secureCellDecisionOutputReleaseMetadata(metadata map[string]string, related
 		out["release_comment"] = trimmed
 	}
 	return out
-}
-
-func secureCellDecisionCommentIntegrityHash(cellID, sessionID, threadID, decisionID, comment string, metadata map[string]string, actorDID string) string {
-	payload, err := json.Marshal(struct {
-		CellID     string            `json:"cell_id"`
-		SessionID  string            `json:"session_id"`
-		ThreadID   string            `json:"thread_id"`
-		DecisionID string            `json:"decision_id"`
-		Comment    string            `json:"comment"`
-		ActorDID   string            `json:"actor_did"`
-		Metadata   map[string]string `json:"metadata,omitempty"`
-	}{
-		CellID:     strings.TrimSpace(cellID),
-		SessionID:  strings.TrimSpace(sessionID),
-		ThreadID:   strings.TrimSpace(threadID),
-		DecisionID: strings.TrimSpace(decisionID),
-		Comment:    strings.TrimSpace(comment),
-		ActorDID:   strings.TrimSpace(actorDID),
-		Metadata:   cloneStringMap(metadata),
-	})
-	if err != nil {
-		payload = []byte(strings.TrimSpace(cellID) + ":" + strings.TrimSpace(sessionID) + ":" + strings.TrimSpace(threadID) + ":" + strings.TrimSpace(decisionID) + ":" + strings.TrimSpace(comment) + ":" + strings.TrimSpace(actorDID))
-	}
-	sum := sha256.Sum256(payload)
-	return hex.EncodeToString(sum[:])
 }
 
 func secureCellErrorStatus(err error, fallback int) int {

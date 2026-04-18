@@ -7,6 +7,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -821,7 +822,10 @@ func TestP256PublicKeyFromBytes(t *testing.T) {
 		t.Fatalf("key gen: %v", err)
 	}
 
-	pubBytes := elliptic.Marshal(elliptic.P256(), key.PublicKey.X, key.PublicKey.Y)
+	pubBytes, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	if err != nil {
+		t.Fatalf("marshal public key: %v", err)
+	}
 	recovered, err := P256PublicKeyFromBytes(pubBytes)
 	if err != nil {
 		t.Fatalf("P256PublicKeyFromBytes: %v", err)

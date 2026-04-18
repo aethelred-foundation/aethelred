@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -138,11 +139,11 @@ func NewVerifier(trustedKeys map[string]*ecdsa.PublicKey, opts ...VerifierOption
 	v := &Verifier{
 		trustedKeys: make(map[string]*ecdsa.PublicKey),
 		trustedPlatforms: map[string]bool{
-			"aws-nitro":  true,
-			"intel-sgx":  true,
-			"amd-sev":    true,
-			"sev-snp":    true,
-			"arm-cca":    true,
+			"aws-nitro": true,
+			"intel-sgx": true,
+			"amd-sev":   true,
+			"sev-snp":   true,
+			"arm-cca":   true,
 		},
 		trustedProofSystems: map[string]bool{
 			"ezkl":    true,
@@ -515,17 +516,16 @@ func DefaultTrustedProofSystems() []string {
 	return []string{"ezkl", "risc0", "groth16", "plonk", "halo2", "stark"}
 }
 
-// P256PublicKeyFromBytes reconstructs an ECDSA P-256 public key from its
-// uncompressed byte representation (65 bytes: 0x04 || X || Y).
+// P256PublicKeyFromBytes reconstructs an ECDSA P-256 public key from a DER
+// SubjectPublicKeyInfo encoding.
 func P256PublicKeyFromBytes(data []byte) (*ecdsa.PublicKey, error) {
-	curve := elliptic.P256()
-	x, y := elliptic.Unmarshal(curve, data)
-	if x == nil {
+	parsed, err := x509.ParsePKIXPublicKey(data)
+	if err != nil {
+		return nil, fmt.Errorf("invalid P-256 public key encoding: %w", err)
+	}
+	key, ok := parsed.(*ecdsa.PublicKey)
+	if !ok || key.Curve != elliptic.P256() {
 		return nil, fmt.Errorf("invalid P-256 public key encoding")
 	}
-	return &ecdsa.PublicKey{
-		Curve: curve,
-		X:     x,
-		Y:     y,
-	}, nil
+	return key, nil
 }

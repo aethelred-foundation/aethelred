@@ -43,53 +43,53 @@ const (
 )
 
 const (
-	secureCellTool                                  = "secure_cells"
-	secureCellCreateAction                          = "secure_cells.create"
-	secureCellActivateAction                        = "secure_cells.activate"
-	secureCellSessionStartAction                    = "secure_cells.session.start"
-	secureCellSessionThreadStartAction              = "secure_cells.session.thread.start"
-	secureCellSessionThreadMessageAction            = "secure_cells.session.thread.message"
-	secureCellSessionThreadDecisionCreateAction     = "secure_cells.session.thread.decision.create"
-	secureCellSessionThreadDecisionApproveAction    = "secure_cells.session.thread.decision.approve"
-	secureCellSessionThreadDecisionCommentAction    = "secure_cells.session.thread.decision.comment"
-	secureCellSessionThreadDecisionDelegateAction   = "secure_cells.session.thread.decision.delegate"
-	secureCellSessionThreadDecisionEscalateAction   = "secure_cells.session.thread.decision.escalate"
-	secureCellSessionThreadDecisionOutcomeAction    = "secure_cells.session.thread.decision.publish_outcome"
-	secureCellSessionThreadDecisionContainAction    = "secure_cells.session.thread.decision.contain_outputs"
-	secureCellSessionThreadDecisionQuarantineAction = "secure_cells.session.thread.decision.quarantine"
-	secureCellSessionThreadDecisionReleaseAction    = "secure_cells.session.thread.decision.release_outputs"
-	secureCellSessionThreadDecisionResumeAction     = "secure_cells.session.thread.decision.resume"
-	secureCellSessionThreadDecisionCloseAction      = "secure_cells.session.thread.decision.close"
-	secureCellSessionShareAction                    = "secure_cells.session.share"
-	secureCellSessionExchangeAction                 = "secure_cells.session.exchange"
-	secureCellSessionCloseAction                    = "secure_cells.session.close"
-	secureCellSessionPauseAction                    = "secure_cells.session.pause"
-	secureCellSessionResumeAction                   = "secure_cells.session.resume"
-	secureCellSessionQuarantineAction               = "secure_cells.session.quarantine"
-	secureCellSessionThreadCloseAction              = "secure_cells.session.thread.close"
-	secureCellSessionThreadResumeAction             = "secure_cells.session.thread.resume"
-	secureCellSessionThreadQuarantineAction         = "secure_cells.session.thread.quarantine"
-	secureCellSessionMemberAdmitAction              = "secure_cells.session.member.admit"
-	secureCellSessionMemberRemoveAction             = "secure_cells.session.member.remove"
-	secureCellMemberAdmitAction                     = "secure_cells.member.admit"
-	secureCellFederationInviteAction                = "secure_cells.federation.invite"
-	secureCellFederationAcceptAction                = "secure_cells.federation.accept"
-	secureCellFederationRevokeAction                = "secure_cells.federation.revoke"
-	secureCellFederationCounterproposeAction        = "secure_cells.federation.counterproposal.submit"
+	secureCellTool                                    = "secure_cells"
+	secureCellCreateAction                            = "secure_cells.create"
+	secureCellActivateAction                          = "secure_cells.activate"
+	secureCellSessionStartAction                      = "secure_cells.session.start"
+	secureCellSessionThreadStartAction                = "secure_cells.session.thread.start"
+	secureCellSessionThreadMessageAction              = "secure_cells.session.thread.message"
+	secureCellSessionThreadDecisionCreateAction       = "secure_cells.session.thread.decision.create"
+	secureCellSessionThreadDecisionApproveAction      = "secure_cells.session.thread.decision.approve"
+	secureCellSessionThreadDecisionCommentAction      = "secure_cells.session.thread.decision.comment"
+	secureCellSessionThreadDecisionDelegateAction     = "secure_cells.session.thread.decision.delegate"
+	secureCellSessionThreadDecisionEscalateAction     = "secure_cells.session.thread.decision.escalate"
+	secureCellSessionThreadDecisionOutcomeAction      = "secure_cells.session.thread.decision.publish_outcome"
+	secureCellSessionThreadDecisionContainAction      = "secure_cells.session.thread.decision.contain_outputs"
+	secureCellSessionThreadDecisionQuarantineAction   = "secure_cells.session.thread.decision.quarantine"
+	secureCellSessionThreadDecisionReleaseAction      = "secure_cells.session.thread.decision.release_outputs"
+	secureCellSessionThreadDecisionResumeAction       = "secure_cells.session.thread.decision.resume"
+	secureCellSessionThreadDecisionCloseAction        = "secure_cells.session.thread.decision.close"
+	secureCellSessionShareAction                      = "secure_cells.session.share"
+	secureCellSessionExchangeAction                   = "secure_cells.session.exchange"
+	secureCellSessionCloseAction                      = "secure_cells.session.close"
+	secureCellSessionPauseAction                      = "secure_cells.session.pause"
+	secureCellSessionResumeAction                     = "secure_cells.session.resume"
+	secureCellSessionQuarantineAction                 = "secure_cells.session.quarantine"
+	secureCellSessionThreadCloseAction                = "secure_cells.session.thread.close"
+	secureCellSessionThreadResumeAction               = "secure_cells.session.thread.resume"
+	secureCellSessionThreadQuarantineAction           = "secure_cells.session.thread.quarantine"
+	secureCellSessionMemberAdmitAction                = "secure_cells.session.member.admit"
+	secureCellSessionMemberRemoveAction               = "secure_cells.session.member.remove"
+	secureCellMemberAdmitAction                       = "secure_cells.member.admit"
+	secureCellFederationInviteAction                  = "secure_cells.federation.invite"
+	secureCellFederationAcceptAction                  = "secure_cells.federation.accept"
+	secureCellFederationRevokeAction                  = "secure_cells.federation.revoke"
+	secureCellFederationCounterproposeAction          = "secure_cells.federation.counterproposal.submit"
 	secureCellFederationCounterproposalEscalateAction = "secure_cells.federation.counterproposal.escalate"
-	secureCellFederationCounterproposalApproveAction = "secure_cells.federation.counterproposal.approve"
-	secureCellFederationCounterproposalRejectAction  = "secure_cells.federation.counterproposal.reject"
-	secureCellFederationContractRenewAction         = "secure_cells.federation.contract.renew"
-	secureCellFederationContractSuspendAction       = "secure_cells.federation.contract.suspend"
-	secureCellFederationContractResumeAction        = "secure_cells.federation.contract.resume"
-	secureCellFederationContractRevokeAction        = "secure_cells.federation.contract.revoke"
-	secureCellMemberReleaseAction                   = "secure_cells.member.release"
-	secureCellMemberQuarantineAction                = "secure_cells.member.quarantine"
-	secureCellMemberRevokeAction                    = "secure_cells.member.revoke"
-	secureCellQuarantineExpireAction                = "secure_cells.quarantine.expire"
-	secureCellPauseAction                           = "secure_cells.pause"
-	secureCellResumeAction                          = "secure_cells.resume"
-	secureCellTerminateAction                       = "secure_cells.terminate"
+	secureCellFederationCounterproposalApproveAction  = "secure_cells.federation.counterproposal.approve"
+	secureCellFederationCounterproposalRejectAction   = "secure_cells.federation.counterproposal.reject"
+	secureCellFederationContractRenewAction           = "secure_cells.federation.contract.renew"
+	secureCellFederationContractSuspendAction         = "secure_cells.federation.contract.suspend"
+	secureCellFederationContractResumeAction          = "secure_cells.federation.contract.resume"
+	secureCellFederationContractRevokeAction          = "secure_cells.federation.contract.revoke"
+	secureCellMemberReleaseAction                     = "secure_cells.member.release"
+	secureCellMemberQuarantineAction                  = "secure_cells.member.quarantine"
+	secureCellMemberRevokeAction                      = "secure_cells.member.revoke"
+	secureCellQuarantineExpireAction                  = "secure_cells.quarantine.expire"
+	secureCellPauseAction                             = "secure_cells.pause"
+	secureCellResumeAction                            = "secure_cells.resume"
+	secureCellTerminateAction                         = "secure_cells.terminate"
 )
 
 // SecureCellSessionStatus tracks one governed collaboration session inside a
@@ -463,36 +463,36 @@ type SecureCellRequest struct {
 
 // SecureCellResult is the portable buyer-facing outcome for a secure cell.
 type SecureCellResult struct {
-	CellID                  string                                 `json:"cell_id"`
-	Name                    string                                 `json:"name"`
-	Purpose                 string                                 `json:"purpose"`
-	Status                  SecureCellStatus                       `json:"status"`
-	PausedFromStatus        SecureCellStatus                       `json:"paused_from_status,omitempty"`
-	Policy                  SecureCellPolicy                       `json:"policy"`
-	Participants            []SecureCellParticipantState           `json:"participants,omitempty"`
-	FederationOrganizations []SecureCellFederationOrganization     `json:"federation_organizations,omitempty"`
-	FederationInvitations   []SecureCellFederationInvitation       `json:"federation_invitations,omitempty"`
-	FederationCounterproposals []SecureCellFederationCounterproposal `json:"federation_counterproposals,omitempty"`
-	FederationContracts     []SecureCellFederationContract         `json:"federation_contracts,omitempty"`
-	Sessions                []SecureCellSession                    `json:"sessions,omitempty"`
-	Threads                 []SecureCellSessionThread              `json:"threads,omitempty"`
-	Decisions               []SecureCellThreadDecision             `json:"decisions,omitempty"`
-	DecisionOutcomes        []SecureCellThreadDecisionOutcome      `json:"decision_outcomes,omitempty"`
-	SharedOutputs           []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
-	SessionExchanges        []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
-	CreationReceipt         *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
-	ActivationReceipt       *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
-	ReceiptChain            *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
-	ConfidentialExecution   *confidential.VerificationSummary      `json:"confidential_execution,omitempty"`
-	ExecutionAttestations   []evidence.Attestation                 `json:"execution_attestations,omitempty"`
-	ExecutionSeal           *evidence.Seal                         `json:"execution_seal,omitempty"`
-	ControlLedger           *evidence.ControlLedger                `json:"control_ledger,omitempty"`
-	PortablePackage         *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
-	Transitions             []SecureCellTransition                 `json:"transitions,omitempty"`
-	RejectionReason         string                                 `json:"rejection_reason,omitempty"`
-	TerminatedAt            *time.Time                             `json:"terminated_at,omitempty"`
-	CreatedAt               time.Time                              `json:"created_at"`
-	UpdatedAt               time.Time                              `json:"updated_at"`
+	CellID                     string                                 `json:"cell_id"`
+	Name                       string                                 `json:"name"`
+	Purpose                    string                                 `json:"purpose"`
+	Status                     SecureCellStatus                       `json:"status"`
+	PausedFromStatus           SecureCellStatus                       `json:"paused_from_status,omitempty"`
+	Policy                     SecureCellPolicy                       `json:"policy"`
+	Participants               []SecureCellParticipantState           `json:"participants,omitempty"`
+	FederationOrganizations    []SecureCellFederationOrganization     `json:"federation_organizations,omitempty"`
+	FederationInvitations      []SecureCellFederationInvitation       `json:"federation_invitations,omitempty"`
+	FederationCounterproposals []SecureCellFederationCounterproposal  `json:"federation_counterproposals,omitempty"`
+	FederationContracts        []SecureCellFederationContract         `json:"federation_contracts,omitempty"`
+	Sessions                   []SecureCellSession                    `json:"sessions,omitempty"`
+	Threads                    []SecureCellSessionThread              `json:"threads,omitempty"`
+	Decisions                  []SecureCellThreadDecision             `json:"decisions,omitempty"`
+	DecisionOutcomes           []SecureCellThreadDecisionOutcome      `json:"decision_outcomes,omitempty"`
+	SharedOutputs              []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
+	SessionExchanges           []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
+	CreationReceipt            *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
+	ActivationReceipt          *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
+	ReceiptChain               *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
+	ConfidentialExecution      *confidential.VerificationSummary      `json:"confidential_execution,omitempty"`
+	ExecutionAttestations      []evidence.Attestation                 `json:"execution_attestations,omitempty"`
+	ExecutionSeal              *evidence.Seal                         `json:"execution_seal,omitempty"`
+	ControlLedger              *evidence.ControlLedger                `json:"control_ledger,omitempty"`
+	PortablePackage            *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
+	Transitions                []SecureCellTransition                 `json:"transitions,omitempty"`
+	RejectionReason            string                                 `json:"rejection_reason,omitempty"`
+	TerminatedAt               *time.Time                             `json:"terminated_at,omitempty"`
+	CreatedAt                  time.Time                              `json:"created_at"`
+	UpdatedAt                  time.Time                              `json:"updated_at"`
 }
 
 // SecureCellTransition captures one evidence-bearing lifecycle mutation after
@@ -4761,28 +4761,28 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		recordID := fmt.Sprintf("%s-federation-counterproposal-%x", cellID(req), sha256.Sum256([]byte(proposal.ID)))
 		federationCounterproposalRecordIDs = append(federationCounterproposalRecordIDs, recordID)
 		data := map[string]string{
-			"federation_counterproposal_id":  proposal.ID,
-			"federation_invitation_id":       proposal.InvitationID,
-			"federation_organization_id":     proposal.OrganizationID,
-			"sponsor_of_record":              proposal.SponsorOfRecord,
-			"organization_name":              proposal.OrganizationName,
-			"jurisdiction":                   proposal.Jurisdiction,
-			"status":                         string(proposal.Status),
-			"offered_session_scope_ids":      strings.Join(proposal.OfferedSessionScopeIDs, ","),
-			"offered_data_classes":           strings.Join(proposal.OfferedDataClasses, ","),
-			"offered_compute_zones":          strings.Join(proposal.OfferedComputeZones, ","),
-			"offered_actions":                strings.Join(proposal.OfferedActions, ","),
-			"negotiated_session_scope_ids":   strings.Join(proposal.NegotiatedSessionScopeIDs, ","),
-			"negotiated_data_classes":        strings.Join(proposal.NegotiatedDataClasses, ","),
-			"negotiated_compute_zones":       strings.Join(proposal.NegotiatedComputeZones, ","),
-			"negotiated_actions":             strings.Join(proposal.NegotiatedActions, ","),
-			"negotiation_diffs":              secureCellFederationPolicyDiffsSummary(proposal.NegotiationDiffs),
-			"resource":                       proposal.Resource,
-			"submitted_by":                   proposal.SubmittedBy,
-			"approved_by":                    proposal.ApprovedBy,
-			"rejected_by":                    proposal.RejectedBy,
-			"superseded_by":                  proposal.SupersededBy,
-			"reason":                         proposal.Reason,
+			"federation_counterproposal_id": proposal.ID,
+			"federation_invitation_id":      proposal.InvitationID,
+			"federation_organization_id":    proposal.OrganizationID,
+			"sponsor_of_record":             proposal.SponsorOfRecord,
+			"organization_name":             proposal.OrganizationName,
+			"jurisdiction":                  proposal.Jurisdiction,
+			"status":                        string(proposal.Status),
+			"offered_session_scope_ids":     strings.Join(proposal.OfferedSessionScopeIDs, ","),
+			"offered_data_classes":          strings.Join(proposal.OfferedDataClasses, ","),
+			"offered_compute_zones":         strings.Join(proposal.OfferedComputeZones, ","),
+			"offered_actions":               strings.Join(proposal.OfferedActions, ","),
+			"negotiated_session_scope_ids":  strings.Join(proposal.NegotiatedSessionScopeIDs, ","),
+			"negotiated_data_classes":       strings.Join(proposal.NegotiatedDataClasses, ","),
+			"negotiated_compute_zones":      strings.Join(proposal.NegotiatedComputeZones, ","),
+			"negotiated_actions":            strings.Join(proposal.NegotiatedActions, ","),
+			"negotiation_diffs":             secureCellFederationPolicyDiffsSummary(proposal.NegotiationDiffs),
+			"resource":                      proposal.Resource,
+			"submitted_by":                  proposal.SubmittedBy,
+			"approved_by":                   proposal.ApprovedBy,
+			"rejected_by":                   proposal.RejectedBy,
+			"superseded_by":                 proposal.SupersededBy,
+			"reason":                        proposal.Reason,
 		}
 		if proposal.ApprovedAt != nil {
 			data["approved_at"] = proposal.ApprovedAt.UTC().Format(time.RFC3339Nano)
@@ -5278,8 +5278,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				RecordIDs: federationLifecycleRecordIDs,
 			},
 			Metadata: map[string]string{
-				"federation_organizations_total": fmt.Sprintf("%d", len(run.result.FederationOrganizations)),
-				"federation_invitations_total":   fmt.Sprintf("%d", len(run.result.FederationInvitations)),
+				"federation_organizations_total":    fmt.Sprintf("%d", len(run.result.FederationOrganizations)),
+				"federation_invitations_total":      fmt.Sprintf("%d", len(run.result.FederationInvitations)),
 				"federation_counterproposals_total": fmt.Sprintf("%d", len(run.result.FederationCounterproposals)),
 			},
 		}); err != nil {
@@ -7212,15 +7212,6 @@ func decisionsForThread(decisions []SecureCellThreadDecision, threadID string) [
 
 func secureCellSessionHasParticipant(session SecureCellSession, participantDID string) bool {
 	for _, did := range session.ParticipantDIDs {
-		if strings.TrimSpace(did) == strings.TrimSpace(participantDID) {
-			return true
-		}
-	}
-	return false
-}
-
-func secureCellThreadHasParticipant(thread SecureCellSessionThread, participantDID string) bool {
-	for _, did := range thread.ParticipantDIDs {
 		if strings.TrimSpace(did) == strings.TrimSpace(participantDID) {
 			return true
 		}

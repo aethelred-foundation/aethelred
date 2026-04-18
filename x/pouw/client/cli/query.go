@@ -819,7 +819,7 @@ func fetchPouwModuleStatus(ctx context.Context, client *http.Client, apiBaseURL 
 	if err != nil {
 		return nil, fmt.Errorf("query pouw module status: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -868,7 +868,7 @@ func fetchPouwTrustRegistry(ctx context.Context, client *http.Client, apiBaseURL
 	if err != nil {
 		return nil, fmt.Errorf("query pouw trust registry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1056,7 +1056,7 @@ func fetchPouwTrustRegistryHistory(ctx context.Context, client *http.Client, api
 	if err != nil {
 		return nil, fmt.Errorf("query pouw trust registry history: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1097,7 +1097,7 @@ func fetchPouwTrustComplianceExport(ctx context.Context, client *http.Client, ap
 	if err != nil {
 		return nil, fmt.Errorf("query pouw trust compliance export: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1133,7 +1133,7 @@ func fetchPouwTrustComplianceExportAnchors(ctx context.Context, client *http.Cli
 	if err != nil {
 		return nil, fmt.Errorf("query pouw trust compliance export anchors: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1174,7 +1174,7 @@ func fetchPouwControlLedgerPackageAnchors(ctx context.Context, client *http.Clie
 	if err != nil {
 		return nil, fmt.Errorf("query pouw control ledger package anchors: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1212,7 +1212,7 @@ func verifyPouwTrustCompliancePackageRemote(ctx context.Context, client *http.Cl
 	if err != nil {
 		return auditexport.PouwTrustCompliancePackageVerificationResponse{}, fmt.Errorf("verify pouw trust compliance package: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -1250,7 +1250,7 @@ func verifyPortableControlLedgerPackageRemote(ctx context.Context, client *http.
 	if err != nil {
 		return audithttp.VerifyPortableControlLedgerPackageResponse{}, fmt.Errorf("verify portable control ledger package: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -13,7 +13,6 @@ import (
 
 	"github.com/aethelred/aethelred/x/seal/types"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Config holds configuration for the SealSDK.
@@ -454,9 +453,4 @@ func sealTimestamp(seal *types.DigitalSeal) time.Time {
 		return seal.Timestamp.AsTime()
 	}
 	return time.Time{}
-}
-
-// newTimestamp creates a protobuf timestamp from the current time.
-func newTimestamp() *timestamppb.Timestamp {
-	return timestamppb.Now()
 }
