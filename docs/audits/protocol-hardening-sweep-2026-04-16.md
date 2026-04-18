@@ -787,6 +787,22 @@ already merged.
   fail-closed parser and signature paths under the `attestation-evidence`
   feature.
 
+### 3zq. Shared endpoint literal-IP fail-closed hardening
+
+- Tightened `x/verify/httputil/httputil.go`, where the shared endpoint
+  validator still relied too heavily on string prefix checks and DNS
+  resolution, which left room for literal loopback or private-address forms to
+  bypass the non-routable endpoint policy when supplied directly as endpoint
+  hosts.
+- `ValidateEndpointURL(...)` now requires a real host, preserves the
+  localhost-only HTTP dev exception for the explicit local hosts
+  (`localhost`, `127.0.0.1`, `::1`), and validates literal IP addresses
+  directly so loopback, private, link-local, unspecified, and multicast
+  addresses fail closed even when DNS is never consulted.
+- Added focused regressions in `x/verify/httputil/httputil_test.go` covering
+  explicit localhost allowances plus blocked literal IPv4/IPv6 bypass cases,
+  including non-canonical loopback and private IPv6 forms.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -1014,6 +1030,10 @@ already merged.
 - The ARM attestation wrapper no longer fabricates placeholder token state or
   report success from signature-verification methods that lack real crypto
   backends. Its parser and signature paths now fail closed explicitly.
+- The shared endpoint validator now blocks literal loopback and non-routable
+  IP forms centrally instead of relying on DNS resolution to catch those
+  inputs after the fact, which closes an SSRF-style bypass class across the
+  app, verify, and worker startup paths that reuse that helper.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
