@@ -14,6 +14,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -85,6 +86,9 @@ type NitroConfig struct {
 	// AllowSimulated enables simulated execution/attestation (dev/test only)
 	AllowSimulated bool
 
+	// APIToken authenticates remote HTTP calls to a protected TEE worker.
+	APIToken string
+
 	// SimulatedAttestationKey signs simulated attestation documents so they
 	// remain cryptographically bound in dev/test mode instead of being accepted
 	// on structure alone.
@@ -102,6 +106,7 @@ func DefaultNitroConfig() NitroConfig {
 		ExecutorEndpoint:            "",
 		AttestationVerifierEndpoint: "",
 		AllowSimulated:              false,
+		APIToken:                    strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN")),
 	}
 }
 
@@ -198,6 +203,9 @@ type EnclaveExecutionResult struct {
 
 // NewNitroEnclaveService creates a new Nitro Enclave service
 func NewNitroEnclaveService(logger log.Logger, config NitroConfig) *NitroEnclaveService {
+	if strings.TrimSpace(config.APIToken) == "" {
+		config.APIToken = strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN"))
+	}
 	return &NitroEnclaveService{
 		logger:             logger,
 		config:             config,
@@ -212,6 +220,13 @@ func NewNitroEnclaveService(logger log.Logger, config NitroConfig) *NitroEnclave
 			IdleConnTimeout:     90 * time.Second,
 		}),
 	}
+}
+
+func (nes *NitroEnclaveService) applyAuth(req *http.Request) {
+	if nes == nil || req == nil || strings.TrimSpace(nes.config.APIToken) == "" {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(nes.config.APIToken))
 }
 
 // Initialize initializes the connection to the Nitro Enclave
@@ -545,6 +560,7 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 		return nil, fmt.Errorf("failed to create executor request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	nes.applyAuth(httpReq)
 
 	resp, err := nes.remoteClient.Do(httpReq)
 	if err != nil {
@@ -610,6 +626,7 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 		return false, fmt.Errorf("failed to create verifier request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	nes.applyAuth(httpReq)
 
 	resp, err := nes.remoteClient.Do(httpReq)
 	if err != nil {

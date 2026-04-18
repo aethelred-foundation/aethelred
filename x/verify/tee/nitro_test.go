@@ -6,6 +6,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -118,5 +120,45 @@ func TestNitroServiceEncryptForEnclaveFailsClosedWithoutEnclaveKey(t *testing.T)
 	}
 	if !strings.Contains(err.Error(), "attested enclave public key") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestNitroServiceRemoteCallsUseBearerTokenWhenConfigured(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer nitro-secret" {
+			http.Error(w, "missing auth", http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/execute":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"request_id":"req-1","success":true,"output_hash":"AQ==","execution_time_ms":1}`))
+		case "/verify":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"verified":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	service := NewNitroEnclaveService(log.NewNopLogger(), NitroConfig{
+		ExecutorEndpoint:            server.URL,
+		AttestationVerifierEndpoint: server.URL,
+		APIToken:                    "nitro-secret",
+		RequestTimeout:              time.Second,
+	})
+
+	_, err := service.callRemoteExecutor(context.Background(), &EnclaveExecutionRequest{RequestID: "req-1"})
+	if err != nil {
+		t.Fatalf("expected authenticated executor call to succeed, got %v", err)
+	}
+
+	verified, err := service.callRemoteAttestationVerifier(context.Background(), &NitroAttestationDocument{})
+	if err != nil {
+		t.Fatalf("expected authenticated verifier call to succeed, got %v", err)
+	}
+	if !verified {
+		t.Fatal("expected authenticated verifier call to return verified=true")
 	}
 }

@@ -836,6 +836,21 @@ already merged.
   `services/tee-worker/nitro-sdk/src/attestation/intel_sgx.rs` covering the
   fail-closed TCB evaluation path under the `attestation-evidence` feature.
 
+### 3zt. Nitro remote client auth alignment
+
+- Tightened `x/verify/tee/nitro.go` and
+  `services/tee-worker/l1-verifier/nitro.go`, where the remaining Nitro remote
+  executor and remote attestation-verifier clients still issued unauthenticated
+  requests even after the TEE worker control plane moved to loopback-or-bearer
+  enforcement.
+- Both Nitro clients now carry an explicit `APIToken` configuration, default it
+  from `AETHELRED_TEE_API_TOKEN`, and attach that bearer token on remote
+  `/execute` and `/verify` calls when configured.
+- Added focused regressions in `x/verify/tee/nitro_test.go` and
+  `services/tee-worker/l1-verifier/nitro_test.go` proving the authenticated
+  remote executor and verifier paths succeed against a protected local test
+  server.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -1074,6 +1089,10 @@ already merged.
 - The SGX attestation path no longer emits a placeholder `UpToDate` TCB result
   when there is no TCB evaluation backend. That assessment now fails closed
   explicitly instead of overstating platform trust.
+- The remaining Nitro remote clients now participate in the same worker auth
+  contract as the app-facing remote client, which closes an integration drift
+  where the worker had been hardened but verifier-side callers had not yet
+  started presenting the configured bearer token.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
