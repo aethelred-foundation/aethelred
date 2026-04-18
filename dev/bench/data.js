@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776285905536,
+  "lastUpdate": 1776521415874,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -959,6 +959,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 5",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c45a66479cf40c5f890808aa9a4be065c6487b4",
+          "message": "protocol: harden verification and governance enforcement\n\n* fix: harden bridge and attestation safety paths\n\n* fix: bind consensus tee verification to work results\n\n* fix: fail closed for incomplete tee verifier backends\n\n* fix: harden bridge relayer authority paths\n\n* fix: harden production governance initialization\n\n* fix: harden institutional governance bootstrap\n\n* fix: make cruzible deployable on mainnet\n\n* docs: record protocol hardening evidence tranche\n\n* fix: require burn nonces in bridge events\n\n* fix: harden hybrid tee signatures\n\n* fix: fail closed on zk proof backends\n\n* fix: harden ethereum bridge metadata parsing\n\n* governance: neutralize audit and rollout naming\n\n* core: rename external embedding profiles\n\n* tee: sign simulated nitro attestations\n\n* verify: fail closed without groth16 backend\n\n* verify: authenticate simulated keeper attestations\n\n* verify: bind simulated ezkl proofs to transcripts\n\n* governance: remove keeper bootstrap ownership window\n\n* governance: require explicit non-local deployment authorities\n\n* seal: require explicit verification backends\n\n* mempool: verify hybrid signatures cryptographically\n\n* vm: fail closed on invalid proof precompile results\n\n* vm: harden tee precompile defaults\n\n* verify: bind simulated zk proofs deterministically\n\n* sovereign: enforce owner-bound authenticated encryption\n\n* validator: enforce economic slashing through staking hooks\n\n* seal: require stored approval state for revocation\n\n* app: fail closed for remote tee startup\n\n* app: harden simulated nitro client artifacts\n\n* tee: enforce nitro payload confidentiality\n\n* seal: fail closed on unverifiable attestation signatures\n\n* seal: enforce export provenance signing\n\n* app: make pqc availability checks mode-aware\n\n* seal: fail closed on unverifiable enhanced signatures\n\n* seal: verify signed export provenance on import\n\n* verify: align simulated tee platform taxonomy\n\n* app: bind vote extension ingress to consensus requests\n\n* pouw: enforce runtime governance lock policy\n\n* pouw: align governance compatibility checks\n\n* pouw: align audit compliance reporting\n\n* pouw: audit trusted measurement registry mutations\n\n* pouw: align audit and threat model posture\n\n* pouw: require quorum for trusted measurement revocation\n\n* seal: remove privileged revocation bypass\n\n* seal: tighten direct revocation entrypoints\n\n* seal: require quorum for emergency revocation\n\n* vault: enforce authority on governance-only keeper paths\n\n* vault: harden relay challenge governance\n\n* app: harden admin consensus audit endpoint\n\n* app: harden health status truthfulness\n\n* app: harden metrics endpoint boundary\n\n* app: redact public health details\n\n* app: harden proxied operational route auth\n\n* app: fail closed on invalid remote tee endpoints\n\n* verify: harden startup endpoint reachability checks\n\n* verify: harden ezkl remote endpoint validation\n\n* verify: fail closed on collateral and mirrored worker endpoints\n\n* pouw: harden drand relay boundary\n\n* executor: fail closed on unsafe backend proxy targets\n\n* attestation: fail closed on lightweight collateral backends\n\n* attestation: fail closed on Nitro and ARM parser paths\n\n* verify: harden shared endpoint literal IP validation\n\n* tee: enforce loopback-or-bearer worker API access\n\n* attestation: fail closed on SGX TCB evaluation\n\n* tee: align Nitro remote clients with worker auth\n\n* pouw: align threat model with live enforcement posture\n\n* deps: clear rustls-webpki advisories in sdk and cli\n\n* ci: restore contracts and rust gate compatibility\n\n* consensus: keep mock tee bindings in sync\n\n* contracts: raise foundry harness size ceiling\n\n* contracts: widen foundry test harness limits\n\n* contracts: split cruzible governance relay tests",
+          "timestamp": "2026-04-18T18:08:49+04:00",
+          "tree_id": "c41dc2e9d75b5104d9ecd21a60ed8a5b90725250",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/3c45a66479cf40c5f890808aa9a4be065c6487b4"
+        },
+        "date": 1776521414817,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2992,
+            "range": "± 4",
             "unit": "ns/iter"
           }
         ]
