@@ -86,6 +86,64 @@ func TestIsSimulatedTEEPlatform(t *testing.T) {
 	}
 }
 
+func TestSanitizeHealthReport(t *testing.T) {
+	report := healthReport{
+		Status:    "degraded",
+		Timestamp: "2026-04-18T12:00:00Z",
+		ChainID:   "aethelred-mainnet",
+		Height:    42,
+		Components: []componentStatus{
+			{
+				Name:    "tee_client",
+				Healthy: false,
+				Status:  "degraded",
+				Message: "TEE unhealthy; AllowSimulated=true",
+				Details: map[string]string{"platform": "aws-nitro"},
+			},
+		},
+	}
+
+	sanitized := sanitizeHealthReport(report)
+	if sanitized.ChainID != "" {
+		t.Fatalf("expected chain ID to be redacted, got %q", sanitized.ChainID)
+	}
+	if sanitized.Height != 0 {
+		t.Fatalf("expected height to be redacted, got %d", sanitized.Height)
+	}
+	if sanitized.Components[0].Message != "" {
+		t.Fatalf("expected component message to be redacted, got %q", sanitized.Components[0].Message)
+	}
+	if sanitized.Components[0].Details != nil {
+		t.Fatalf("expected component details to be redacted")
+	}
+	if sanitized.Components[0].Status != "degraded" {
+		t.Fatalf("expected component status to be preserved, got %q", sanitized.Components[0].Status)
+	}
+}
+
+func TestCanAccessHealthDetails(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected loopback caller to access health details")
+	}
+
+	t.Setenv(healthDetailsAuthTokenEnv, "health-token")
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer health-token")
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected valid bearer token to access health details")
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer wrong-token")
+	if canAccessHealthDetails(req) {
+		t.Fatalf("expected invalid bearer token to be rejected")
+	}
+}
+
 func TestSummarizeBreakers(t *testing.T) {
 	closed := circuitbreaker.Snapshot{Name: "closed", State: circuitbreaker.Closed}
 	half := circuitbreaker.Snapshot{Name: "half", State: circuitbreaker.HalfOpen}

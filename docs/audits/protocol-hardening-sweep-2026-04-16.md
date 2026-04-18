@@ -586,6 +586,18 @@ already merged.
 - Added focused regressions in `app/health_test.go` covering overall status
   precedence, simulated/degraded truthfulness, and HTTP status signaling.
 
+### 3ze. Health endpoint detail redaction hardening
+
+- Tightened `app/health.go` again so `/health/aethelred` can remain usable as a
+  public liveness surface without exposing detailed internal readiness,
+  capability, chain, and component diagnostic data to arbitrary remote callers.
+- Detailed health output is now available only to loopback callers or requests
+  authorized with `AETHELRED_HEALTH_API_TOKEN`. Untrusted remote callers still
+  receive the honest top-level and per-component status, but chain ID, height,
+  detailed component payloads, and component messages are redacted.
+- Added focused regressions in `app/health_test.go` covering redaction behavior
+  and detailed-view authorization.
+
 ### 3zd. Metrics endpoint boundary hardening
 
 - Tightened `app/metrics_exporter.go`, where the `/metrics/aethelred` route was
@@ -778,6 +790,10 @@ already merged.
   verification states as fully `healthy`. Overall health now distinguishes
   `simulated`, `degraded`, and `unhealthy` states more honestly, with `503`
   reserved for genuinely unhealthy runtime posture.
+- The health endpoint no longer doubles as a remote information-disclosure
+  surface for chain metadata, verifier readiness internals, and TEE capability
+  details. Public callers get honest health state, while detailed diagnostics
+  are now restricted to loopback or explicit token authorization.
 - The metrics endpoint no longer behaves like a casually public operational
   surface. It now enforces its own `GET`-only boundary, defaults to loopback
   access, and requires explicit bearer-token authorization for deliberate

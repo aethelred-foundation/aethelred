@@ -45,6 +45,8 @@ type breakerStatus struct {
 	TotalTrips          int64  `json:"total_trips"`
 }
 
+const healthDetailsAuthTokenEnv = "AETHELRED_HEALTH_API_TOKEN"
+
 func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -199,6 +201,10 @@ func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		Components: components,
 	}
 
+	if !canAccessHealthDetails(r) {
+		report = sanitizeHealthReport(report)
+	}
+
 	w.WriteHeader(overallHTTPStatus(report.Status))
 	_ = json.NewEncoder(w).Encode(report)
 }
@@ -237,6 +243,23 @@ func overallHTTPStatus(status string) int {
 		return http.StatusServiceUnavailable
 	}
 	return http.StatusOK
+}
+
+func canAccessHealthDetails(r *http.Request) bool {
+	return authorizeLoopbackOrBearer(r, healthDetailsAuthTokenEnv, "detailed health data requires loopback access or a valid bearer token") == nil
+}
+
+func sanitizeHealthReport(report healthReport) healthReport {
+	report.ChainID = ""
+	report.Height = 0
+	sanitized := make([]componentStatus, 0, len(report.Components))
+	for _, component := range report.Components {
+		component.Message = ""
+		component.Details = nil
+		sanitized = append(sanitized, component)
+	}
+	report.Components = sanitized
+	return report
 }
 
 func chainID(app *AethelredApp) string {
