@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,7 +57,7 @@ type RevocationConfig struct {
 func DefaultRevocationConfig() RevocationConfig {
 	return RevocationConfig{
 		MinDisputePeriod:           24 * time.Hour,
-		RequiredAuthorityThreshold: 1,
+		RequiredAuthorityThreshold: 2,
 		AllowUserRevocation:        true,
 		GracePeriodForNotification: 7 * 24 * time.Hour,
 		MaxRevocationReason:        500,
@@ -556,58 +557,56 @@ func (rm *RevocationManager) ExecuteRevocation(ctx context.Context, requestID st
 
 // RevokeSeal is a convenience method to revoke a seal directly (for authorized users)
 func (rm *RevocationManager) RevokeSeal(ctx context.Context, sealID, revoker string, reason RevocationReason, details string) (*RevocationResult, error) {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	// Get the seal
 	seal, err := rm.keeper.GetSeal(ctx, sealID)
 	if err != nil {
 		return nil, fmt.Errorf("seal not found: %w", err)
 	}
 
-	// Check authorization
 	authority, hasAuthority := rm.authorities[revoker]
-	canRevoke := false
-
-	if hasAuthority && authority.Level >= AuthorityLevelAdmin {
-		canRevoke = true
-	} else if rm.config.AllowUserRevocation && seal.RequestedBy == revoker {
-		canRevoke = true
+	if hasAuthority && authority.Active && authority.Level >= AuthorityLevelAdmin {
+		return nil, fmt.Errorf("authorities must use request-based revocation workflow")
 	}
-
-	if !canRevoke {
+	if !rm.config.AllowUserRevocation || seal.RequestedBy != revoker {
 		return nil, fmt.Errorf("not authorized to revoke this seal")
 	}
 
-	// Check if already revoked
+	return rm.executeDirectRevocation(ctx, sealID, revoker, reason)
+}
+
+func (rm *RevocationManager) executeDirectRevocation(ctx context.Context, sealID, revokedBy string, reason RevocationReason) (*RevocationResult, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	seal, err := rm.keeper.GetSeal(ctx, sealID)
+	if err != nil {
+		return nil, fmt.Errorf("seal not found: %w", err)
+	}
+
 	if seal.Status == types.SealStatusRevoked {
 		return nil, fmt.Errorf("seal is already revoked")
 	}
 
-	// Revoke the seal
 	seal.Status = types.SealStatusRevoked
 
-	// Update seal in store
 	if err := rm.keeper.SetSeal(ctx, seal); err != nil {
 		return nil, fmt.Errorf("failed to update seal: %w", err)
 	}
 
-	// Create result
 	result := &RevocationResult{
 		Success:     true,
 		SealID:      sealID,
-		RequestID:   rm.generateRequestID(&RevocationRequest{SealID: sealID, Requester: revoker}),
+		RequestID:   rm.generateRequestID(&RevocationRequest{SealID: sealID, Requester: revokedBy}),
 		Reason:      reason,
-		RevokedBy:   revoker,
+		RevokedBy:   revokedBy,
 		RevokedAt:   time.Now().UTC(),
 		BlockHeight: sdkCtx.BlockHeight(),
 	}
 
-	// Emit event
 	sdkCtx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			"seal_revoked",
 			sdk.NewAttribute("seal_id", sealID),
-			sdk.NewAttribute("revoked_by", revoker),
+			sdk.NewAttribute("revoked_by", revokedBy),
 			sdk.NewAttribute("reason", string(reason)),
 			sdk.NewAttribute("block_height", fmt.Sprintf("%d", result.BlockHeight)),
 		),
@@ -615,7 +614,7 @@ func (rm *RevocationManager) RevokeSeal(ctx context.Context, sealID, revoker str
 
 	rm.logger.Info("Seal revoked",
 		"seal_id", sealID,
-		"revoked_by", revoker,
+		"revoked_by", revokedBy,
 		"reason", reason,
 	)
 
@@ -791,9 +790,11 @@ func (rm *RevocationManager) EmergencyRevoke(ctx context.Context, sealID, revoke
 	if !hasAuthority || !authority.Active || authority.Level < AuthorityLevelEmergency {
 		return nil, fmt.Errorf("not authorized for emergency revocation")
 	}
+	if strings.TrimSpace(justification) == "" {
+		return nil, fmt.Errorf("emergency revocation justification is required")
+	}
 
-	// Perform revocation
-	result, err := rm.RevokeSeal(ctx, sealID, revoker, reason, justification)
+	result, err := rm.executeDirectRevocation(ctx, sealID, revoker, reason)
 	if err != nil {
 		return nil, err
 	}
@@ -811,9 +812,19 @@ func (rm *RevocationManager) EmergencyRevoke(ctx context.Context, sealID, revoke
 // BatchRevoke revokes multiple seals
 func (rm *RevocationManager) BatchRevoke(ctx context.Context, sealIDs []string, revoker string, reason RevocationReason, details string) ([]*RevocationResult, error) {
 	results := make([]*RevocationResult, 0, len(sealIDs))
+	authority, hasAuthority := rm.authorities[revoker]
+	useEmergencyPath := hasAuthority && authority.Active && authority.Level >= AuthorityLevelEmergency
 
 	for _, sealID := range sealIDs {
-		result, err := rm.RevokeSeal(ctx, sealID, revoker, reason, details)
+		var (
+			result *RevocationResult
+			err    error
+		)
+		if useEmergencyPath {
+			result, err = rm.executeDirectRevocation(ctx, sealID, revoker, reason)
+		} else {
+			result, err = rm.RevokeSeal(ctx, sealID, revoker, reason, details)
+		}
 		if err != nil {
 			rm.logger.Warn("Failed to revoke seal in batch",
 				"seal_id", sealID,

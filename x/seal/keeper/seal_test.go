@@ -340,14 +340,24 @@ func TestRevocationManager(t *testing.T) {
 	}
 
 	// Revoke seal
-	result, err := rm.RevokeSeal(
+	_, err := rm.RevokeSeal(
 		ctx,
 		seal.Id,
 		authority.Address,
 		keeper.RevocationReasonUserRequest,
 		"Test revocation",
 	)
+	if err == nil {
+		t.Error("Expected direct authority revocation to require the governed workflow")
+	}
 
+	result, err := rm.RevokeSeal(
+		ctx,
+		seal.Id,
+		seal.RequestedBy,
+		keeper.RevocationReasonUserRequest,
+		"Test revocation",
+	)
 	if err != nil {
 		t.Errorf("Revocation failed: %v", err)
 	}

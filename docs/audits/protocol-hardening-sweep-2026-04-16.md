@@ -487,6 +487,27 @@ already merged.
   rejection, final approval execution, and single-member committee rejection
   all behave deterministically and emit a truthful runtime audit trail.
 
+### 3x. Seal privileged revocation bypass removal
+
+- Tightened `x/seal/keeper/revocation.go`, where privileged authorities could
+  still bypass the request/dispute workflow through the direct `RevokeSeal(...)`
+  helper even after the stored revocation-state hardening landed.
+- Direct revocation is now reserved for the seal creator’s self-revocation
+  path. Admin-level authorities are forced back onto the governed
+  request/approval/execute workflow instead of revoking seals immediately by
+  convenience call.
+- Raised the default authority threshold in `DefaultRevocationConfig()` to
+  `2`, so default privileged revocation now requires independent authority
+  confirmation unless an explicit override config is chosen for a narrower
+  environment.
+- Tightened `x/seal/keeper/msg_server.go` so module authority can no longer use
+  `MsgRevokeSeal` as an immediate revoke shortcut; governance-controlled
+  revocation must now flow through the governed revocation workflow instead of
+  bypassing dispute and approval controls on the direct message path.
+- Preserved the explicit emergency lane, but now require non-empty
+  justification for `EmergencyRevoke(...)` and keep the direct forced path
+  confined to emergency authority rather than ordinary admin authority.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -638,6 +659,11 @@ already merged.
   single-member kill switch. The runtime now persists approval state, requires
   two bonded committee approvals for execution, and refuses to operate when
   the committee cannot satisfy that quorum safely.
+- Seal revocation no longer lets ordinary privileged authorities or module
+  authority bypass the governed dispute/approval path through direct helper or
+  direct message shortcuts. The default privileged threshold is now multi-party
+  and the emergency path is isolated as an explicit exception with mandatory
+  justification.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

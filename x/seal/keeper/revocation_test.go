@@ -50,7 +50,7 @@ func TestRevocationRequestAuthorization(t *testing.T) {
 	}
 }
 
-func TestRevocationAutoApproveAdmin(t *testing.T) {
+func TestRevocationRequesterAuthorityRecordsInitialApproval(t *testing.T) {
 	k := NewKeeper(nil, nil, "authority")
 	ctx := newSDKContext()
 	rm := NewRevocationManager(log.NewNopLogger(), &k, DefaultRevocationConfig())
@@ -66,8 +66,8 @@ func TestRevocationAutoApproveAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected request success, got %v", err)
 	}
-	if resp.Status != RevocationStatusApproved {
-		t.Fatalf("expected approved status")
+	if resp.Status != RevocationStatusPending {
+		t.Fatalf("expected pending status until a second authority approval is recorded")
 	}
 
 	stored, err := rm.GetRequest(resp.RequestID)
@@ -76,6 +76,9 @@ func TestRevocationAutoApproveAdmin(t *testing.T) {
 	}
 	if len(stored.Approvals) != 1 {
 		t.Fatalf("expected requester approval to be recorded")
+	}
+	if stored.ProcessedAt != nil {
+		t.Fatalf("expected request to remain unprocessed before quorum is met")
 	}
 }
 
@@ -97,6 +100,12 @@ func TestRevocationRevokeSeal(t *testing.T) {
 
 	if _, err := rm.RevokeSeal(ctx, seal.Id, "other", RevocationReasonFraud, "details"); err == nil {
 		t.Fatalf("expected unauthorized error")
+	}
+
+	admin := RevocationAuthority{Address: testAccAddress(10), Level: AuthorityLevelAdmin}
+	_ = rm.RegisterAuthority(admin)
+	if _, err := rm.RevokeSeal(ctx, seal.Id, admin.Address, RevocationReasonFraud, "details"); err == nil {
+		t.Fatalf("expected direct authority revoke to be rejected")
 	}
 
 	_, err := rm.RevokeSeal(ctx, seal.Id, seal.RequestedBy, RevocationReasonFraud, "details")
@@ -184,6 +193,10 @@ func TestRevocationEmergencyAndBatch(t *testing.T) {
 
 	auth := RevocationAuthority{Address: testAccAddress(10), Level: AuthorityLevelEmergency}
 	_ = rm.RegisterAuthority(auth)
+
+	if _, err := rm.EmergencyRevoke(ctx, seal.Id, auth.Address, RevocationReasonLegalOrder, ""); err == nil {
+		t.Fatalf("expected missing emergency justification to fail")
+	}
 
 	if _, err := rm.EmergencyRevoke(ctx, seal.Id, auth.Address, RevocationReasonLegalOrder, "justification"); err != nil {
 		t.Fatalf("expected emergency revoke success, got %v", err)
