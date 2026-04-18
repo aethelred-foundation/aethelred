@@ -128,12 +128,27 @@ func TestCanAccessHealthDetails(t *testing.T) {
 		t.Fatalf("expected loopback caller to access health details")
 	}
 
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	req.Header.Set("X-Forwarded-For", "203.0.113.10")
+	if canAccessHealthDetails(req) {
+		t.Fatalf("expected forwarded loopback request to be denied without token")
+	}
+
 	t.Setenv(healthDetailsAuthTokenEnv, "health-token")
 	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
 	req.RemoteAddr = "203.0.113.10:8443"
 	req.Header.Set("Authorization", "Bearer health-token")
 	if !canAccessHealthDetails(req) {
 		t.Fatalf("expected valid bearer token to access health details")
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	req.Header.Set("Forwarded", "for=203.0.113.10;proto=https")
+	req.Header.Set("Authorization", "Bearer health-token")
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected valid bearer token to allow forwarded loopback access")
 	}
 
 	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)

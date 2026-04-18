@@ -10,7 +10,7 @@ import (
 )
 
 func authorizeLoopbackOrBearer(r *http.Request, envVar string, errMsg string) error {
-	if isLoopbackRemoteAddr(r.RemoteAddr) {
+	if isDirectLoopbackRequest(r) {
 		return nil
 	}
 
@@ -29,6 +29,16 @@ func authorizeLoopbackOrBearer(r *http.Request, envVar string, errMsg string) er
 	}
 
 	return nil
+}
+
+func isDirectLoopbackRequest(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	if !isLoopbackRemoteAddr(r.RemoteAddr) {
+		return false
+	}
+	return !hasForwardingHeaders(r.Header)
 }
 
 type operationalRouteAuthError string
@@ -73,4 +83,16 @@ func isLoopbackRemoteAddr(remoteAddr string) bool {
 		return false
 	}
 	return addr.IsLoopback()
+}
+
+func hasForwardingHeaders(header http.Header) bool {
+	if header == nil {
+		return false
+	}
+	for _, key := range []string{"Forwarded", "X-Forwarded-For", "X-Real-IP"} {
+		if strings.TrimSpace(header.Get(key)) != "" {
+			return true
+		}
+	}
+	return false
 }

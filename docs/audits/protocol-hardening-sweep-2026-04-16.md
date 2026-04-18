@@ -613,6 +613,21 @@ already merged.
   method rejection, off-loopback rejection, bearer-token authorization, invalid
   token rejection, and nil-app error behavior.
 
+### 3zf. Forwarded operational-route boundary hardening
+
+- Tightened `app/operational_route_auth.go`, where the shared
+  loopback-or-bearer guard still trusted `RemoteAddr` alone and could
+  accidentally treat proxied operational requests as local-only traffic.
+- Direct loopback access is now allowed only when the request does not carry
+  forwarding headers such as `Forwarded`, `X-Forwarded-For`, or `X-Real-IP`.
+  Requests that arrive through a local proxy boundary must now use the same
+  explicit bearer-token path as other remote callers before they can access
+  detailed health data, metrics, or the admin consensus-audit endpoint.
+- Added focused regressions in `app/consensus_evidence_handler_test.go`,
+  `app/metrics_exporter_test.go`, and `app/health_test.go` covering forwarded
+  loopback rejection without a token and successful access only through valid
+  bearer-token authorization.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -798,6 +813,10 @@ already merged.
   surface. It now enforces its own `GET`-only boundary, defaults to loopback
   access, and requires explicit bearer-token authorization for deliberate
   remote scraping.
+- The shared operational-route guard no longer grants unauthenticated access to
+  proxied loopback traffic. Requests carrying forwarding headers must now use
+  explicit bearer-token authorization before they can reach detailed health,
+  metrics, or admin consensus-audit surfaces.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
