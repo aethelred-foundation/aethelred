@@ -215,10 +215,6 @@ func (k Keeper) verifyAttestationInternal(ctx context.Context, attestation *type
 	return verifyAuthenticatedSimulatedAttestation(attestation, config.RootCertificate)
 }
 
-func (k Keeper) verifyPlatformAttestationAdapter(attestation *types.TEEAttestation) (bool, error) {
-	return verifyPlatformQuoteBody(attestation.Platform, attestation.Quote)
-}
-
 func verifyPlatformQuoteBody(platform types.TEEPlatform, quote []byte) (bool, error) {
 	switch platform {
 	case types.TEEPlatformAWSNitro:

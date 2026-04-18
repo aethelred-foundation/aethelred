@@ -361,32 +361,6 @@ func validateVerifyingKey(vk *VerifyingKey) error {
 	return nil
 }
 
-// validatePairingStructure performs structural validation of pairing inputs
-func validatePairingStructure(input *PairingInput) bool {
-	for _, p := range input.G1Points {
-		if p.X.Sign() < 0 || p.X.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y.Sign() < 0 || p.Y.Cmp(bn254P) >= 0 {
-			return false
-		}
-	}
-	for _, p := range input.G2Points {
-		if p.X0.Sign() < 0 || p.X0.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.X1.Sign() < 0 || p.X1.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y0.Sign() < 0 || p.Y0.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y1.Sign() < 0 || p.Y1.Cmp(bn254P) >= 0 {
-			return false
-		}
-	}
-	return true
-}
 
 // =============================================================================
 // Gas Cost Estimation

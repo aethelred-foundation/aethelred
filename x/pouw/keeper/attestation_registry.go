@@ -516,14 +516,6 @@ func isRequesterMatchValidator(requester string, validator stakingtypes.Validato
 	return false
 }
 
-func (k Keeper) isSecurityCommitteeMember(ctx context.Context, requester string) bool {
-	validators, err := k.securityCommitteeMembers(ctx)
-	if err != nil {
-		return false
-	}
-	return committeeContainsRequester(requester, validators)
-}
-
 func (k Keeper) securityCommitteeMembers(ctx context.Context) ([]stakingtypes.Validator, error) {
 	if k.stakingKeeper == nil {
 		return nil, fmt.Errorf("staking keeper unavailable for security committee lookup")
