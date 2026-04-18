@@ -107,7 +107,7 @@ Current measured rollout status (from local clones, generated matrix):
 - All 9 repos now show baseline `4/4` present and `4/4` tracked locally.
 - `aethelred-core` and `aethelred-cosmos-node` baseline + authority workflows are on workflow-bearing local branches prepared earlier.
 - The other 7 repos now have dedicated baseline rollout branches prepared locally:
-  - `audit/aeth-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
+  - `audit/aethel-mr-003-auditability-baseline-20260224` in `aethelred-tee-worker`, `aethelred-contracts`, `aethelred-sdks`, `aethelred-developer-tools`, `aethelred-integrations`, `aethelred-dashboard`, `aethelred-rust-node`.
 - Advanced workflow coverage remains uneven by repo (tracked in the rollout matrix) and is now explicitly measurable.
 
 Remaining action (per repo):
