@@ -42,20 +42,21 @@ type Keeper struct {
 	auditLogger *AuditLogger
 
 	// State collections
-	Jobs                         collections.Map[string, types.ComputeJob]
-	PendingJobs                  collections.Map[string, types.ComputeJob]
-	RegisteredModels             collections.Map[string, types.RegisteredModel]
-	ValidatorStats               collections.Map[string, types.ValidatorStats]
-	ValidatorCapabilities        collections.Map[string, types.ValidatorCapability]
-	ValidatorPCR0Mappings        collections.Map[string, string]
-	RegisteredPCR0Set            collections.KeySet[string]
-	ValidatorMeasurements        collections.Map[string, string]
-	RegisteredMeasurements       collections.KeySet[string]
-	JobCount                     collections.Item[uint64]
-	CurrentEpoch                 collections.Item[uint64]
-	TotalUWU                     collections.Item[uint64]
-	Params                       collections.Item[types.Params]
-	EnterpriseAuditTrustRegistry collections.Item[string]
+	Jobs                          collections.Map[string, types.ComputeJob]
+	PendingJobs                   collections.Map[string, types.ComputeJob]
+	RegisteredModels              collections.Map[string, types.RegisteredModel]
+	ValidatorStats                collections.Map[string, types.ValidatorStats]
+	ValidatorCapabilities         collections.Map[string, types.ValidatorCapability]
+	ValidatorPCR0Mappings         collections.Map[string, string]
+	RegisteredPCR0Set             collections.KeySet[string]
+	ValidatorMeasurements         collections.Map[string, string]
+	RegisteredMeasurements        collections.KeySet[string]
+	TrustedMeasurementRevocations collections.Map[string, string]
+	JobCount                      collections.Item[uint64]
+	CurrentEpoch                  collections.Item[uint64]
+	TotalUWU                      collections.Item[uint64]
+	Params                        collections.Item[types.Params]
+	EnterpriseAuditTrustRegistry  collections.Item[string]
 }
 
 // StakingKeeper defines the expected staking keeper interface
