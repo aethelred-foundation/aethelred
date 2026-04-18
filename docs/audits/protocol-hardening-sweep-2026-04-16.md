@@ -1097,6 +1097,11 @@ already merged.
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
   simulation gating, and app-layer vote-extension signing.
+- The formal threat model and closeout surfaces no longer claim downtime
+  slashing is unimplemented. `AS-16` now reflects the live
+  `BlockMissTracker -> IntegratedEvidenceProcessor -> slashing adapter` path,
+  while the remaining open item is narrowed to operational rollout consistency
+  in `AS-17` instead of outdated “not implemented” narratives.
 - The mirrored public SDK sovereign module has not yet been brought to the same
   owner-bound encryption contract in this tranche. The worker/runtime path is
   now the hardened source of truth; the public SDK mirror should be aligned in

@@ -300,18 +300,18 @@ var AttackSurfaces = []AttackSurface{
 
 	// --- Incomplete / Open Items ---
 	{
-		ID: "AS-16", Name: "Downtime Slashing Not Implemented",
+		ID: "AS-16", Name: "Downtime Slashing Enforcement Drift",
 		Module: "pouw/evidence", Attacker: "ATK-01", Boundary: "TB-01",
-		Vector:       "Validator goes offline indefinitely, never responds to assigned jobs. ProcessEndBlockEvidence is a stub.",
+		Vector:       "Validator goes offline indefinitely, hoping missed vote extensions are not fed into the live end-block evidence and slashing path.",
 		Impact:       "medium",
-		Mitigation:   "Downtime condition defined in validator/slashing.go (1% penalty). ProcessEndBlockEvidence exists as stub - integration with missed-block tracker is TODO.",
-		Status:       "open",
-		TestCoverage: "None - requires integration with validator module missed-block tracking",
+		Mitigation:   "ConsensusHandler records validator misses into the BlockMissTracker, AethelredApp.processEndBlockEvidence prefers the IntegratedEvidenceProcessor, and the integrated slashing path applies downtime slash and jail actions through the live slashing adapter. Remaining residual risk is threshold tuning and operator response time, not missing enforcement.",
+		Status:       "mitigated",
+		TestCoverage: "TestBlockMissTrackerAndPenalties, TestSlashingModuleAdapter_SlashForDowntime, TestThreatModel_RuntimeEnforcementNarratives",
 	},
 	{
-		ID: "AS-17", Name: "Vote Extension Signing Not Implemented",
+		ID: "AS-17", Name: "Vote Extension Signing Rollout Drift",
 		Module: "app/abci", Attacker: "ATK-05", Boundary: "TB-01",
-		Vector:       "Vote extensions are not ed25519-signed, allowing network-level forgery.",
+		Vector:       "Operational or integration drift leaves some vote-extension flows unsigned or inconsistently verified across app and consensus boundaries.",
 		Impact:       "high",
 		Mitigation:   "App-layer vote-extension signing and verification are implemented in app/abci.go and app/vote_extension.go, and production mode rejects unsigned or invalid extensions. Remaining rollout work is operational consistency, not absence of the signing control itself.",
 		Status:       "partial",

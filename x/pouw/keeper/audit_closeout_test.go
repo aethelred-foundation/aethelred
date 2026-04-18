@@ -13,13 +13,13 @@ import (
 // WEEK 33-34: Retest & Audit Closeout Report Tests
 //
 // These tests verify:
-//   1. Comprehensive retest runner (5 tests)
+//   1. Comprehensive retest runner (6 tests)
 //   2. Production readiness checks (6 tests)
 //   3. Closeout report rendering (4 tests)
 //   4. Score computation (5 tests)
 //   5. Go/no-go determination (4 tests)
 //
-// Total: 24 tests
+// Total: 25 tests
 // =============================================================================
 
 // =============================================================================
@@ -62,13 +62,25 @@ func TestRunComprehensiveRetest_HasOpenItems(t *testing.T) {
 
 	report := keeper.RunComprehensiveRetest(ctx, k)
 
-	// We know there are open attack surfaces (AS-16, AS-17)
 	require.NotNil(t, report.OpenItems)
-	// Some open items expected from threat model
 	t.Logf("Open items: %d", len(report.OpenItems))
 	for _, oi := range report.OpenItems {
 		t.Logf("  [%s] %s: %s", oi.Severity, oi.ID, oi.Description)
 	}
+}
+
+func TestRunComprehensiveRetest_OpenItemsReflectCurrentThreatModel(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	report := keeper.RunComprehensiveRetest(ctx, k)
+
+	openIDs := make(map[string]bool)
+	for _, item := range report.OpenItems {
+		openIDs[item.ID] = true
+	}
+
+	require.False(t, openIDs["AS-16"], "downtime slashing should no longer be reported as an open item")
+	require.True(t, openIDs["AS-17"], "rollout consistency for vote-extension signing should remain explicitly tracked")
 }
 
 func TestRunComprehensiveRetest_HasReadinessChecks(t *testing.T) {
