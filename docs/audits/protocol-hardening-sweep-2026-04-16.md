@@ -644,6 +644,19 @@ already merged.
   endpoint rejection at construction time and fail-closed health probing for a
   blocked endpoint.
 
+### 3zh. Readiness endpoint probe validation hardening
+
+- Tightened `x/verify/readiness.go`, where the startup reachability sweep still
+  issued best-effort HTTP probes against configured verifier endpoints without
+  first passing those URLs through the shared endpoint safety guard.
+- The readiness probe now validates each derived probe URL with the same
+  shared SSRF protection used by the remote verifier and app TEE paths, so
+  blocked metadata hosts, private-address targets, and malformed endpoints are
+  treated as unreachable instead of being probed at startup.
+- Added focused regressions in `x/verify/readiness_test.go` covering blocked
+  endpoint rejection and readiness classification of blocked verifier targets
+  as unreachable without any network call succeeding.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -837,6 +850,10 @@ already merged.
   concern. Unsafe or malformed remote endpoints are now rejected during client
   construction, and the health-probe path no longer bypasses the same SSRF
   guard used by execution and capability fetches.
+- The verify-module readiness sweep no longer bypasses those same network
+  safety rules during startup. Configured verifier targets now have to pass
+  the shared endpoint validator before the node will probe them for
+  reachability.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

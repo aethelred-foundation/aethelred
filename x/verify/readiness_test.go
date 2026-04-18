@@ -272,6 +272,30 @@ func TestIsEndpointReachable_BlankEndpoint(t *testing.T) {
 	}
 }
 
+func TestIsEndpointReachable_RejectsBlockedEndpoint(t *testing.T) {
+	if isEndpointReachable("https://169.254.169.254") {
+		t.Fatalf("blocked metadata endpoint must not be probed or considered reachable")
+	}
+}
+
+func TestValidateEndpointReachability_TreatsBlockedEndpointsAsUnreachable(t *testing.T) {
+	unreachable := ValidateEndpointReachability(&OrchestratorConfig{
+		ProverConfig: &ezkl.ProverConfig{
+			AllowSimulated: false,
+			ProverEndpoint: "https://169.254.169.254",
+		},
+		NitroConfig: &tee.NitroConfig{
+			AllowSimulated:              false,
+			ExecutorEndpoint:            "https://10.0.0.2",
+			AttestationVerifierEndpoint: "https://metadata.google.internal",
+		},
+	})
+
+	if len(unreachable) != 3 {
+		t.Fatalf("expected three unreachable blocked endpoints, got %d (%v)", len(unreachable), unreachable)
+	}
+}
+
 func TestValidateOrchestratorConfig_AllBranches(t *testing.T) {
 	checks := validateOrchestratorConfig(&OrchestratorConfig{
 		ProverConfig: &ezkl.ProverConfig{
