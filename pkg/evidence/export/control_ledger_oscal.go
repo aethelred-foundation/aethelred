@@ -122,7 +122,7 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 		controlIDs = append(controlIDs, control.ControlID)
 	}
 
-	observations := make([]ControlLedgerOSCALObservation, 0, len(snap.Controls)+len(snap.Passports)+len(snap.ApproverAttestations)+len(snap.ValueSettlements)+len(snap.PolicyReceipts)+len(snap.Seals))
+	observations := make([]ControlLedgerOSCALObservation, 0, len(snap.Controls)+len(snap.Passports)+len(snap.Attestations)+len(snap.ApproverAttestations)+len(snap.ValueSettlements)+len(snap.PolicyReceipts)+len(snap.Seals))
 	for _, control := range snap.Controls {
 		observations = append(observations, ControlLedgerOSCALObservation{
 			UUID:        deterministicUUID(snap.LedgerID + ":control:" + control.ControlID),
@@ -148,6 +148,26 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 				{Name: "did", Value: passport.DID},
 				{Name: "issuer", Value: passport.Issuer},
 				{Name: "public-key-hash", Value: passport.PublicKeyHash},
+			},
+		})
+	}
+	for _, attestation := range snap.Attestations {
+		description := attestation.Type
+		if description == "" {
+			description = "tee"
+		}
+		observations = append(observations, ControlLedgerOSCALObservation{
+			UUID:        deterministicUUID(snap.LedgerID + ":attestation:" + attestation.ID),
+			Title:       "Confidential Execution Attestation",
+			Description: description,
+			Methods:     []string{"EXAMINE", "TEST"},
+			Collected:   attestation.Timestamp,
+			Props: []ControlLedgerOSCALProperty{
+				{Name: "attestation-id", Value: attestation.ID},
+				{Name: "type", Value: attestation.Type},
+				{Name: "platform", Value: attestation.Platform},
+				{Name: "enclave-id", Value: attestation.EnclaveID},
+				{Name: "measurement", Value: attestation.Measurement},
 			},
 		})
 	}
@@ -285,6 +305,7 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 					{Name: "framework", Value: snap.Framework},
 					{Name: "controls-total", Value: fmt.Sprintf("%d", snap.Summary.TotalControls)},
 					{Name: "passports-total", Value: fmt.Sprintf("%d", snap.Summary.TotalPassports)},
+					{Name: "attestations-total", Value: fmt.Sprintf("%d", snap.Summary.TotalAttestations)},
 					{Name: "approver-attestations-total", Value: fmt.Sprintf("%d", snap.Summary.TotalApproverAttestations)},
 					{Name: "value-settlements-total", Value: fmt.Sprintf("%d", snap.Summary.TotalValueSettlements)},
 					{Name: "policy-receipts-total", Value: fmt.Sprintf("%d", snap.Summary.TotalPolicyReceipts)},
@@ -311,7 +332,7 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 					Attestations: []ControlLedgerOSCALAttestation{
 						{
 							Parts: []ControlLedgerOSCALAttestationPart{
-								{Name: "summary", Prose: fmt.Sprintf("controls=%d, passports=%d, approver_attestations=%d, value_settlements=%d, receipts=%d, seals=%d, trace_links=%d, trust_compliance_packages=%d", snap.Summary.TotalControls, snap.Summary.TotalPassports, snap.Summary.TotalApproverAttestations, snap.Summary.TotalValueSettlements, snap.Summary.TotalPolicyReceipts, snap.Summary.TotalSeals, snap.Summary.TotalTraceLinks, snap.Summary.TotalTrustCompliancePackages)},
+								{Name: "summary", Prose: fmt.Sprintf("controls=%d, passports=%d, attestations=%d, approver_attestations=%d, value_settlements=%d, receipts=%d, seals=%d, trace_links=%d, trust_compliance_packages=%d", snap.Summary.TotalControls, snap.Summary.TotalPassports, snap.Summary.TotalAttestations, snap.Summary.TotalApproverAttestations, snap.Summary.TotalValueSettlements, snap.Summary.TotalPolicyReceipts, snap.Summary.TotalSeals, snap.Summary.TotalTraceLinks, snap.Summary.TotalTrustCompliancePackages)},
 								{Name: "integrity", Prose: fmt.Sprintf("chain_intact=%s", boolString(snap.Summary.ChainIntact))},
 							},
 						},
@@ -321,6 +342,16 @@ func ExportControlLedgerOSCAL(ledger any) ([]byte, error) {
 		},
 	}
 
+	for _, attestation := range snap.Attestations {
+		statement := fmt.Sprintf("%s confidential execution attested by enclave %s", firstNonEmpty(attestation.Platform, attestation.Type), attestation.EnclaveID)
+		doc.AssessmentResults.Results[0].Attestations = append(doc.AssessmentResults.Results[0].Attestations, ControlLedgerOSCALAttestation{
+			Parts: []ControlLedgerOSCALAttestationPart{
+				{Name: "attestation", Prose: attestation.ID},
+				{Name: "platform", Prose: attestation.Platform},
+				{Name: "statement", Prose: statement},
+			},
+		})
+	}
 	for _, attestation := range snap.ApproverAttestations {
 		statement := attestation.Comment
 		if statement == "" {

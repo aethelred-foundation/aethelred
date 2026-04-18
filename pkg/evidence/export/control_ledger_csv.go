@@ -35,6 +35,7 @@ func ExportControlLedgerCSV(ledger any) ([]byte, error) {
 		"evidence_count",
 		"controls_total",
 		"passports_total",
+		"attestations_total",
 		"approver_attestations_total",
 		"value_settlements_total",
 		"policy_receipts_total",
@@ -79,6 +80,7 @@ func ExportControlLedgerCSV(ledger any) ([]byte, error) {
 		"",
 		strconv.Itoa(snap.Summary.TotalControls),
 		strconv.Itoa(snap.Summary.TotalPassports),
+		strconv.Itoa(snap.Summary.TotalAttestations),
 		strconv.Itoa(snap.Summary.TotalApproverAttestations),
 		strconv.Itoa(snap.Summary.TotalValueSettlements),
 		strconv.Itoa(snap.Summary.TotalPolicyReceipts),
@@ -111,6 +113,7 @@ func ExportControlLedgerCSV(ledger any) ([]byte, error) {
 			"",
 			"",
 			strconv.Itoa(control.EvidenceCount),
+			"",
 			"",
 			"",
 			"",
@@ -152,10 +155,49 @@ func ExportControlLedgerCSV(ledger any) ([]byte, error) {
 			"",
 			"",
 			"",
+			"",
 			"enterprise agent passport",
 			passport.IssuedAt,
 			snap.CreatedAt,
 			encodeMetadata(passport.Metadata),
+			snap.ExportedAt,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, attestation := range snap.Attestations {
+		description := "confidential execution attestation"
+		if attestation.Type != "" {
+			description = attestation.Type + " attestation"
+		}
+		if err := writeRow([]string{
+			"attestation",
+			snap.LedgerID,
+			snap.Framework,
+			attestation.ID,
+			attestation.Platform,
+			attestation.Type,
+			attestation.Measurement,
+			attestation.EnclaveID,
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			description,
+			attestation.Timestamp,
+			snap.CreatedAt,
+			encodeMetadata(attestation.Metadata),
 			snap.ExportedAt,
 		}); err != nil {
 			return nil, err
@@ -180,6 +222,7 @@ func ExportControlLedgerCSV(ledger any) ([]byte, error) {
 			attestation.PolicyReceiptID,
 			attestation.SealID,
 			attestation.TraceLinkID,
+			"",
 			"",
 			"",
 			"",

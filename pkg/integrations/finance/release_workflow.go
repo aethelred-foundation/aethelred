@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aethelred/aethelred/pkg/confidential"
 	"github.com/aethelred/aethelred/pkg/evidence"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
 	"github.com/aethelred/aethelred/pkg/protocol/agent"
@@ -59,6 +60,7 @@ type TreasuryReleaseWorkflowConfig struct {
 	Sealer          TreasuryReleaseSealer
 	SettlementRail  TreasurySettlementRail
 	LedgerStore     evidence.ControlLedgerStore
+	WorkflowStore   TreasuryReleaseStore
 
 	Framework               string
 	IncludeVerificationKeys bool
@@ -68,6 +70,8 @@ type TreasuryReleaseWorkflowConfig struct {
 	PackageSigner     string
 	PackageSignerFunc TreasuryReleasePackageSigner
 	PackageAnchorer   TreasuryReleasePackageAnchorer
+	ConfidentialAttestor confidential.Attestor
+	ConfidentialPolicy   confidential.Policy
 }
 
 // TreasuryReleaseRequest captures one treasury release request to be turned
@@ -119,6 +123,8 @@ type TreasuryReleaseResult struct {
 	SettlementReceipt *policy.SignedPolicyReceipt            `json:"settlement_receipt,omitempty"`
 	ReceiptChain      *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
 	ApprovalEvidence  []TreasuryReleaseApprovalEvidence      `json:"approval_evidence,omitempty"`
+	ConfidentialExecution *confidential.VerificationSummary  `json:"confidential_execution,omitempty"`
+	ExecutionAttestations []evidence.Attestation             `json:"execution_attestations,omitempty"`
 	ExecutionSeal     *evidence.Seal                         `json:"execution_seal,omitempty"`
 	Settlement        *evidence.ValueSettlementEvidence      `json:"settlement,omitempty"`
 	ControlLedger     *evidence.ControlLedger                `json:"control_ledger,omitempty"`
@@ -175,6 +181,9 @@ func NewTreasuryReleaseWorkflow(config TreasuryReleaseWorkflowConfig) (*Treasury
 	if config.LedgerStore == nil {
 		config.LedgerStore = evidence.NewInMemoryControlLedgerStore()
 	}
+	if config.WorkflowStore == nil {
+		config.WorkflowStore = NewInMemoryTreasuryReleaseStore()
+	}
 	if strings.TrimSpace(config.Framework) == "" {
 		config.Framework = "SOX Treasury Release"
 	}
@@ -188,10 +197,16 @@ func NewTreasuryReleaseWorkflow(config TreasuryReleaseWorkflowConfig) (*Treasury
 		return nil, fmt.Errorf("finance/release_workflow: register policy set: %w", err)
 	}
 
-	return &TreasuryReleaseWorkflow{
+	workflow := &TreasuryReleaseWorkflow{
 		config: config,
 		runs:   make(map[string]*treasuryReleaseRun),
-	}, nil
+	}
+
+	if err := workflow.loadPersistedRuns(context.Background()); err != nil {
+		return nil, fmt.Errorf("finance/release_workflow: load persisted runs: %w", err)
+	}
+
+	return workflow, nil
 }
 
 // InitiateRelease starts a regulated treasury release and returns either a
@@ -241,6 +256,9 @@ func (w *TreasuryReleaseWorkflow) InitiateRelease(ctx context.Context, req Treas
 		result.RejectionReason = reason
 		result.UpdatedAt = time.Now().UTC()
 		w.setRun(run)
+		if err := w.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		_ = w.recordRejectionEvent(ctx, normalized, result, reason)
 
 		if !screening.Clear {
@@ -274,6 +292,9 @@ func (w *TreasuryReleaseWorkflow) InitiateRelease(ctx context.Context, req Treas
 	}
 
 	w.setRun(run)
+	if err := w.persistRun(ctx, run); err != nil {
+		return nil, err
+	}
 	if operation.Status == StatusApproved {
 		return w.finalizeRelease(ctx, run)
 	}
@@ -336,6 +357,9 @@ func (w *TreasuryReleaseWorkflow) ApproveReleaseWithAuthorization(ctx context.Co
 	}
 
 	run.result.Status = ReleaseStatusPendingApproval
+	if err := w.persistRun(ctx, run); err != nil {
+		return nil, err
+	}
 	return cloneTreasuryReleaseResult(run.result)
 }
 
@@ -391,6 +415,9 @@ func (w *TreasuryReleaseWorkflow) finalizeRelease(ctx context.Context, run *trea
 		run.result.RejectionReason = "execution stage denied by policy"
 		run.result.ExecuteReceipt = cloneSignedPolicyReceipt(executeReceipt)
 		run.result.UpdatedAt = time.Now().UTC()
+		if err := w.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		_ = w.recordRejectionEvent(ctx, run.request, run.result, run.result.RejectionReason)
 		cloned, cloneErr := cloneTreasuryReleaseResult(run.result)
 		if cloneErr != nil {
@@ -407,9 +434,33 @@ func (w *TreasuryReleaseWorkflow) finalizeRelease(ctx context.Context, run *trea
 		return nil, fmt.Errorf("finance/release_workflow: build policy receipt chain: %w", err)
 	}
 
-	sealResp, err := w.config.Sealer.CreateSeal(ctx, w.buildSealRequest(run.request, run.result, executeReceipt, executionReceiptChain))
+	sealReq := w.buildSealRequest(run.request, run.result, executeReceipt, executionReceiptChain)
+	confidentialReq := w.buildConfidentialExecutionRequest(run.request, run.result, executeReceipt, executionReceiptChain, sealReq)
+	if w.config.ConfidentialPolicy.Required {
+		if w.config.ConfidentialAttestor == nil {
+			return nil, fmt.Errorf("finance/release_workflow: confidential execution is required but no attestor is configured")
+		}
+		teeAttestations, err := w.config.ConfidentialAttestor.Attest(ctx, confidentialReq)
+		if err != nil {
+			return nil, fmt.Errorf("finance/release_workflow: attest confidential execution: %w", err)
+		}
+		sealReq.TEEAttestations = teeAttestations
+	}
+
+	sealResp, err := w.config.Sealer.CreateSeal(ctx, sealReq)
 	if err != nil {
 		return nil, fmt.Errorf("finance/release_workflow: create seal: %w", err)
+	}
+	if len(sealResp.Attestations) > 0 || w.config.ConfidentialPolicy.Required {
+		summary, err := confidential.VerifyAttestations(sealResp.Attestations, confidentialReq, w.config.ConfidentialPolicy)
+		if err != nil {
+			return nil, fmt.Errorf("finance/release_workflow: verify confidential execution: %w", err)
+		}
+		run.result.ConfidentialExecution = &summary
+		run.result.ExecutionAttestations = confidential.BuildEvidenceAttestations(sealResp.Attestations, confidentialReq, summary, w.config.ConfidentialPolicy.TrustedValidatorKeys)
+	} else {
+		run.result.ConfidentialExecution = nil
+		run.result.ExecutionAttestations = nil
 	}
 
 	executionSeal := w.buildExecutionSeal(run.request.Operation.ID, executeReceipt, sealResp)
@@ -423,6 +474,9 @@ func (w *TreasuryReleaseWorkflow) finalizeRelease(ctx context.Context, run *trea
 		run.result.ExecuteReceipt = cloneSignedPolicyReceipt(executeReceipt)
 		run.result.SettlementReceipt = cloneSignedPolicyReceipt(settlementReceipt)
 		run.result.UpdatedAt = time.Now().UTC()
+		if err := w.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		_ = w.recordRejectionEvent(ctx, run.request, run.result, run.result.RejectionReason)
 		cloned, cloneErr := cloneTreasuryReleaseResult(run.result)
 		if cloneErr != nil {
@@ -499,6 +553,9 @@ func (w *TreasuryReleaseWorkflow) finalizeRelease(ctx context.Context, run *trea
 	if err := w.recordCompletionEvent(ctx, run.request, run.result); err != nil {
 		return nil, err
 	}
+	if err := w.persistRun(ctx, run); err != nil {
+		return nil, err
+	}
 
 	return cloneTreasuryReleaseResult(run.result)
 }
@@ -522,6 +579,13 @@ func (w *TreasuryReleaseWorkflow) buildControlLedger(
 	ledger.WithMetadata("receipt_chain_hash", receiptChain.ChainHash)
 	ledger.WithMetadata("settlement_provider_id", settlement.Metadata["provider_id"])
 	ledger.WithMetadata("settlement_corridor_id", settlement.Metadata["corridor_id"])
+	if current.ConfidentialExecution != nil {
+		ledger.WithMetadata("confidential_execution_verified", fmt.Sprintf("%t", current.ConfidentialExecution.Verified))
+		ledger.WithMetadata("confidential_execution_present", fmt.Sprintf("%d", current.ConfidentialExecution.Present))
+		ledger.WithMetadata("confidential_execution_valid", fmt.Sprintf("%d", current.ConfidentialExecution.Valid))
+		ledger.WithMetadata("confidential_execution_binding_hash", current.ConfidentialExecution.BindingHash)
+		ledger.WithMetadata("confidential_execution_output_hash", current.ConfidentialExecution.BoundOutputHash)
+	}
 
 	passport, err := evidence.NewAgentPassportEvidence(req.Identity)
 	if err != nil {
@@ -555,6 +619,7 @@ func (w *TreasuryReleaseWorkflow) buildControlLedger(
 	approvalAttestationIDs := make([]string, 0, len(current.ApprovalEvidence))
 	approvalReceiptIDs := make([]string, 0, len(current.ApprovalEvidence))
 	approvalTraceLinkIDs := make([]string, 0, len(current.ApprovalEvidence))
+	executionAttestationIDs := make([]string, 0, len(current.ExecutionAttestations))
 	authenticatedApprovals := 0
 
 	ledger.AddRecord(evidence.Record{
@@ -647,6 +712,10 @@ func (w *TreasuryReleaseWorkflow) buildControlLedger(
 	ledger.AddPolicyReceipt(executeReceiptEvidence)
 	ledger.AddPolicyReceipt(settlementReceiptEvidence)
 	ledger.AddSeal(*executionSeal)
+	for _, attestation := range current.ExecutionAttestations {
+		ledger.AddAttestation(attestation)
+		executionAttestationIDs = append(executionAttestationIDs, attestation.ID)
+	}
 	if err := ledger.AddValueSettlement(*settlement); err != nil {
 		return nil, nil, fmt.Errorf("finance/release_workflow: add value settlement evidence: %w", err)
 	}
@@ -814,15 +883,35 @@ func (w *TreasuryReleaseWorkflow) buildControlLedger(
 		Description: "Execution is sealed, ledgered, and packaged into a portable auditor artifact.",
 		Status:      evidence.ControlSatisfied,
 		EvidenceRefs: evidence.ControlEvidenceRefs{
-			RecordIDs:    []string{screeningRecordID, sealRecordID, soxRecordID},
-			SealIDs:      []string{executionSeal.SealID},
-			TraceLinkIDs: []string{traceLink.ID},
+			RecordIDs:      []string{screeningRecordID, sealRecordID, soxRecordID},
+			AttestationIDs: executionAttestationIDs,
+			SealIDs:        []string{executionSeal.SealID},
+			TraceLinkIDs:   []string{traceLink.ID},
 		},
 		Metadata: map[string]string{
-			"framework": w.config.Framework,
+			"framework":                  w.config.Framework,
+			"confidential_execution_valid": fmt.Sprintf("%d", len(executionAttestationIDs)),
 		},
 	}); err != nil {
 		return nil, nil, err
+	}
+	if len(executionAttestationIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "TREASURY-TEE-01",
+			ControlName: "Bound Confidential Execution Attestation",
+			Description: "Treasury execution carries verifier-checked TEE attestations bound to the release workflow, stage, and output hash.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				AttestationIDs: executionAttestationIDs,
+				SealIDs:        []string{executionSeal.SealID},
+				TraceLinkIDs:   []string{traceLink.ID},
+			},
+			Metadata: map[string]string{
+				"attestation_count": fmt.Sprintf("%d", len(executionAttestationIDs)),
+			},
+		}); err != nil {
+			return nil, nil, err
+		}
 	}
 	if err := ledger.AddControl(evidence.LedgerControl{
 		ControlID:   "TREASURY-SET-01",
@@ -951,6 +1040,39 @@ func (w *TreasuryReleaseWorkflow) buildSealRequest(
 			"resource":           req.Resource,
 			"jurisdiction":       req.Jurisdiction,
 			"counterparty":       req.Operation.Counterparty,
+		},
+	}
+}
+
+func (w *TreasuryReleaseWorkflow) buildConfidentialExecutionRequest(
+	req TreasuryReleaseRequest,
+	current *TreasuryReleaseResult,
+	executeReceipt *policy.SignedPolicyReceipt,
+	receiptChain *policy.PolicyReceiptChain,
+	sealReq sdk.SealRequest,
+) confidential.AttestationRequest {
+	chainHash := ""
+	if receiptChain != nil {
+		chainHash = receiptChain.ChainHash
+	}
+	return confidential.AttestationRequest{
+		JobID:             req.Operation.ID,
+		Workflow:          "treasury_release",
+		Stage:             "execute",
+		Purpose:           "treasury_release",
+		Resource:          req.Resource,
+		Jurisdiction:      req.Jurisdiction,
+		InputHash:         append([]byte(nil), sealReq.InputHash...),
+		OutputHash:        append([]byte(nil), sealReq.OutputHash...),
+		PolicyReceiptID:   safeString(executeReceipt, func(in *policy.SignedPolicyReceipt) string { return in.ID }),
+		PolicyReceiptHash: safeString(executeReceipt, func(in *policy.SignedPolicyReceipt) string { return in.ContentHash }),
+		ReceiptChainHash:  chainHash,
+		Metadata: map[string]string{
+			"workflow":     "treasury_release",
+			"workflow_id":  req.Operation.ID,
+			"resource":     req.Resource,
+			"jurisdiction": req.Jurisdiction,
+			"counterparty": req.Operation.Counterparty,
 		},
 	}
 }
@@ -1311,6 +1433,56 @@ func (w *TreasuryReleaseWorkflow) getRun(workflowID string) (*treasuryReleaseRun
 		return nil, fmt.Errorf("%w: %s", ErrReleaseNotFound, workflowID)
 	}
 	return run, nil
+}
+
+func (w *TreasuryReleaseWorkflow) loadPersistedRuns(ctx context.Context) error {
+	if w == nil || w.config.WorkflowStore == nil {
+		return nil
+	}
+	records, err := w.config.WorkflowStore.List(ctx)
+	if err != nil {
+		return err
+	}
+	for _, record := range records {
+		run, err := w.runFromRecord(record)
+		if err != nil {
+			return err
+		}
+		w.setRun(run)
+		if run.result != nil && run.result.Operation != nil {
+			if err := w.config.Controller.RestoreOperation(run.result.Operation); err != nil {
+				return fmt.Errorf("restore operation %q: %w", run.result.Operation.ID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (w *TreasuryReleaseWorkflow) runFromRecord(record *TreasuryReleaseRecord) (*treasuryReleaseRun, error) {
+	cloned, _, err := prepareTreasuryReleaseRecordForStorage(record)
+	if err != nil {
+		return nil, err
+	}
+	return &treasuryReleaseRun{
+		request: cloned.Request,
+		result:  cloned.Result,
+	}, nil
+}
+
+func (w *TreasuryReleaseWorkflow) persistRun(ctx context.Context, run *treasuryReleaseRun) error {
+	if w == nil || w.config.WorkflowStore == nil || run == nil || run.result == nil {
+		return nil
+	}
+	record := &TreasuryReleaseRecord{
+		WorkflowID: run.result.WorkflowID,
+		Request:    run.request,
+		Result:     run.result,
+		StoredAt:   time.Now().UTC(),
+	}
+	if err := w.config.WorkflowStore.Save(ctx, record); err != nil {
+		return fmt.Errorf("finance/release_workflow: persist workflow state: %w", err)
+	}
+	return nil
 }
 
 func (w *TreasuryReleaseWorkflow) setRun(run *treasuryReleaseRun) {

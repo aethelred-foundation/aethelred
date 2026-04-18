@@ -19,6 +19,7 @@ const (
 // control ledger.
 type ControlEvidenceRefs struct {
 	RecordIDs                 []string `json:"record_ids,omitempty"`
+	AttestationIDs            []string `json:"attestation_ids,omitempty"`
 	ApproverAttestationIDs    []string `json:"approver_attestation_ids,omitempty"`
 	ValueSettlementIDs        []string `json:"value_settlement_ids,omitempty"`
 	PolicyReceiptIDs          []string `json:"policy_receipt_ids,omitempty"`
@@ -47,6 +48,7 @@ type ControlLedgerSummary struct {
 	TotalControls                int      `json:"total_controls"`
 	TotalRecords                 int      `json:"total_records"`
 	TotalPassports               int      `json:"total_passports"`
+	TotalAttestations            int      `json:"total_attestations"`
 	TotalApproverAttestations    int      `json:"total_approver_attestations"`
 	TotalValueSettlements        int      `json:"total_value_settlements"`
 	TotalPolicyReceipts          int      `json:"total_policy_receipts"`
@@ -107,6 +109,16 @@ func (cl *ControlLedger) AddAgentPassport(passport AgentPassportEvidence) {
 		return
 	}
 	cl.Bundle.AddAgentPassport(passport)
+	cl.refreshSummary()
+}
+
+// AddAttestation appends a canonical TEE or validator attestation artifact to
+// the ledger.
+func (cl *ControlLedger) AddAttestation(attestation Attestation) {
+	if cl == nil || cl.Bundle == nil {
+		return
+	}
+	cl.Bundle.AddAttestation(attestation)
 	cl.refreshSummary()
 }
 
@@ -263,6 +275,10 @@ func (cl *ControlLedger) validateControls() error {
 	for _, attestation := range cl.Bundle.ApproverAttestations {
 		approverAttestationIDs[attestation.ID] = struct{}{}
 	}
+	attestationIDs := make(map[string]struct{}, len(cl.Bundle.Attestations))
+	for _, attestation := range cl.Bundle.Attestations {
+		attestationIDs[attestation.ID] = struct{}{}
+	}
 	valueSettlementIDs := make(map[string]struct{}, len(cl.Bundle.ValueSettlements))
 	for _, settlement := range cl.Bundle.ValueSettlements {
 		valueSettlementIDs[settlement.ID] = struct{}{}
@@ -304,6 +320,11 @@ func (cl *ControlLedger) validateControls() error {
 		for _, approverAttestationID := range control.EvidenceRefs.ApproverAttestationIDs {
 			if _, ok := approverAttestationIDs[approverAttestationID]; !ok {
 				return fmt.Errorf("evidence/control_ledger: control %q references unknown approver attestation %q", control.ControlID, approverAttestationID)
+			}
+		}
+		for _, attestationID := range control.EvidenceRefs.AttestationIDs {
+			if _, ok := attestationIDs[attestationID]; !ok {
+				return fmt.Errorf("evidence/control_ledger: control %q references unknown attestation %q", control.ControlID, attestationID)
 			}
 		}
 		for _, valueSettlementID := range control.EvidenceRefs.ValueSettlementIDs {
@@ -405,6 +426,7 @@ func (cl *ControlLedger) refreshSummary() {
 		TotalControls:                len(cl.Controls),
 		TotalRecords:                 len(cl.Bundle.Records),
 		TotalPassports:               len(cl.Bundle.AgentPassports),
+		TotalAttestations:            len(cl.Bundle.Attestations),
 		TotalApproverAttestations:    len(cl.Bundle.ApproverAttestations),
 		TotalValueSettlements:        len(cl.Bundle.ValueSettlements),
 		TotalPolicyReceipts:          len(cl.Bundle.PolicyReceipts),
@@ -422,6 +444,7 @@ func (cl *ControlLedger) refreshSummary() {
 
 func (c LedgerControl) hasEvidenceRefs() bool {
 	return len(c.EvidenceRefs.RecordIDs) > 0 ||
+		len(c.EvidenceRefs.AttestationIDs) > 0 ||
 		len(c.EvidenceRefs.ApproverAttestationIDs) > 0 ||
 		len(c.EvidenceRefs.ValueSettlementIDs) > 0 ||
 		len(c.EvidenceRefs.PolicyReceiptIDs) > 0 ||
@@ -433,6 +456,7 @@ func (c LedgerControl) hasEvidenceRefs() bool {
 func cloneControlEvidenceRefs(in ControlEvidenceRefs) ControlEvidenceRefs {
 	return ControlEvidenceRefs{
 		RecordIDs:                 cloneStringSlice(in.RecordIDs),
+		AttestationIDs:            cloneStringSlice(in.AttestationIDs),
 		ApproverAttestationIDs:    cloneStringSlice(in.ApproverAttestationIDs),
 		ValueSettlementIDs:        cloneStringSlice(in.ValueSettlementIDs),
 		PolicyReceiptIDs:          cloneStringSlice(in.PolicyReceiptIDs),

@@ -532,6 +532,16 @@ func newAuditEnabledTestApp(t *testing.T, opts sims.AppOptionsMap) *AethelredApp
 	cfg.SetBech32PrefixForValidator(AccountAddressPrefix+"valoper", AccountAddressPrefix+"valoperpub")
 	cfg.SetBech32PrefixForConsensusNode(AccountAddressPrefix+"valcons", AccountAddressPrefix+"valconspub")
 
+	if _, ok := opts["aethelred.tee.mode"]; !ok {
+		opts["aethelred.tee.mode"] = "mock"
+	}
+	if _, ok := opts["aethelred.secure_cells.confidential_execution.trusted_platforms"]; !ok {
+		opts["aethelred.secure_cells.confidential_execution.trusted_platforms"] = "mock-tee"
+	}
+	if _, ok := opts["aethelred.finance.confidential_execution.trusted_platforms"]; !ok {
+		opts["aethelred.finance.confidential_execution.trusted_platforms"] = "mock-tee"
+	}
+
 	app := New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, opts)
 	if app.auditServer == nil {
 		t.Fatal("expected audit server to be initialized")

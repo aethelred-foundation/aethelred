@@ -6,20 +6,28 @@ import (
 	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/aethelred/aethelred/pkg/confidential"
 	"github.com/aethelred/aethelred/pkg/evidence"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
 	"github.com/aethelred/aethelred/pkg/protocol/agent"
 	"github.com/aethelred/aethelred/pkg/seal/sdk"
+	sealtypes "github.com/aethelred/aethelred/x/seal/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type mockSecureCellSealer struct {
 	count int
+}
+
+type mockSecureCellConfidentialAttestor struct {
+	signingKey *ecdsa.PrivateKey
 }
 
 type capturingSecureCellEvents struct {
@@ -48,8 +56,39 @@ func (m *mockSecureCellSealer) CreateSeal(_ context.Context, req sdk.SealRequest
 		Timestamp:    time.Now().UTC(),
 		BlockHeight:  int64(200 + m.count),
 		Purpose:      req.Purpose,
+		Attestations: append([]*sealtypes.TEEAttestation(nil), req.TEEAttestations...),
 		ValidatorSet: []string{"validator-a", "validator-b"},
 	}, nil
+}
+
+func (m *mockSecureCellConfidentialAttestor) Attest(_ context.Context, req confidential.AttestationRequest) ([]*sealtypes.TEEAttestation, error) {
+	measurement := sha256.Sum256(req.OutputHash)
+	attestation := &sealtypes.TEEAttestation{
+		ValidatorAddress: "did:aethelred:secure-cells-policy",
+		Platform:         "aws-nitro",
+		EnclaveId:        "secure-cells-enclave-test",
+		Measurement:      measurement[:],
+		Timestamp:        timestamppb.New(time.Now().UTC()),
+	}
+	envelope := confidential.BuildQuoteEnvelope(req, attestation, []byte("secure-cells-test-quote"), []byte("secure-cells-user-data"), []byte("secure-cells-nonce"), time.Now().UTC())
+	quote, err := confidential.EncodeQuoteEnvelope(envelope)
+	if err != nil {
+		return nil, err
+	}
+	attestation.Quote = quote
+
+	h := sha256.New()
+	h.Write([]byte(attestation.GetValidatorAddress()))
+	h.Write([]byte(attestation.GetPlatform()))
+	h.Write([]byte(attestation.GetEnclaveId()))
+	h.Write(attestation.GetMeasurement())
+	h.Write(attestation.GetQuote())
+	sig, err := ecdsa.SignASN1(rand.Reader, m.signingKey, h.Sum(nil))
+	if err != nil {
+		return nil, err
+	}
+	attestation.Signature = sig
+	return []*sealtypes.TEEAttestation{attestation}, nil
 }
 
 func TestService_CreateCellActiveHappyPath(t *testing.T) {
@@ -89,6 +128,12 @@ func TestService_CreateCellActiveHappyPath(t *testing.T) {
 	}
 	if result.ExecutionSeal == nil || result.ExecutionSeal.SealID == "" {
 		t.Fatal("expected an execution seal")
+	}
+	if result.ConfidentialExecution == nil || !result.ConfidentialExecution.Verified {
+		t.Fatalf("expected verified confidential execution summary, got %+v", result.ConfidentialExecution)
+	}
+	if len(result.ExecutionAttestations) != 1 {
+		t.Fatalf("expected 1 execution attestation, got %d", len(result.ExecutionAttestations))
 	}
 	if result.ControlLedger == nil {
 		t.Fatal("expected a control ledger")
@@ -2540,6 +2585,14 @@ func newTestSecureCellServiceWithPublisher(t *testing.T, publisher SecureCellEve
 		CredentialIssuerKey:     policySignerKey,
 		CredentialIssuer:        "did:aethelred:secure-cells-issuer",
 		Sealer:                  sealer,
+		ConfidentialAttestor:    &mockSecureCellConfidentialAttestor{signingKey: policySignerKey},
+		ConfidentialPolicy: confidential.Policy{
+			TrustedPlatforms:         []string{"aws-nitro"},
+			TrustedValidatorKeys:     map[string]*ecdsa.PublicKey{"did:aethelred:secure-cells-policy": &policySignerKey.PublicKey},
+			AllowedEnclaveIDs:        []string{"secure-cells-enclave-test"},
+			RequireQuoteBinding:      true,
+			MinimumValidAttestations: 1,
+		},
 		LedgerStore:             store,
 		PackageSigningKey:       packageSigningKey,
 		PackageSigner:           "validator:secure-cells",

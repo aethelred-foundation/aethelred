@@ -239,7 +239,7 @@ func mapTEEAttestation(result *verify.TEEVerificationResult) *TEEAttestationData
 			chain = append(chain, doc.Certificate)
 		}
 		if len(doc.CABundle) > 0 {
-			chain = append(chain, doc.CABundle...)
+			chain = append(chain, doc.CABundle)
 		}
 		data.CertificateChain = chain
 	}
@@ -329,7 +329,12 @@ func marshalNitroQuote(doc *tee.NitroAttestationDocument) []byte {
 		Digest:      doc.Digest,
 		PCRs:        pcrs,
 		Certificate: doc.Certificate,
-		CABundle:    doc.CABundle,
+		CABundle: func() [][]byte {
+			if len(doc.CABundle) == 0 {
+				return nil
+			}
+			return [][]byte{doc.CABundle}
+		}(),
 		PublicKey:   doc.PublicKey,
 		UserData:    doc.UserData,
 		Nonce:       doc.Nonce,

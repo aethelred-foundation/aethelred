@@ -25,6 +25,7 @@ type ControlLedgerExport struct {
 	Metadata                map[string]string                     `json:"metadata,omitempty"`
 	Summary                 ControlLedgerSummary                  `json:"summary"`
 	Passports               []ControlLedgerPassport               `json:"passports,omitempty"`
+	Attestations            []ControlLedgerAttestation            `json:"attestations,omitempty"`
 	ApproverAttestations    []ControlLedgerApproverAttestation    `json:"approver_attestations,omitempty"`
 	ValueSettlements        []ControlLedgerValueSettlement        `json:"value_settlements,omitempty"`
 	PolicyReceipts          []ControlLedgerPolicyReceipt          `json:"policy_receipts,omitempty"`
@@ -38,6 +39,7 @@ type ControlLedgerExport struct {
 type ControlLedgerSummary struct {
 	TotalControls                int  `json:"total_controls"`
 	TotalPassports               int  `json:"total_passports"`
+	TotalAttestations            int  `json:"total_attestations"`
 	TotalApproverAttestations    int  `json:"total_approver_attestations"`
 	TotalValueSettlements        int  `json:"total_value_settlements"`
 	TotalPolicyReceipts          int  `json:"total_policy_receipts"`
@@ -75,6 +77,17 @@ type ControlLedgerPassportSponsor struct {
 	Role              string `json:"role,omitempty"`
 	LiabilityAccepted bool   `json:"liability_accepted"`
 	SignedAt          string `json:"signed_at,omitempty"`
+}
+
+// ControlLedgerAttestation exports one canonical TEE/validator attestation.
+type ControlLedgerAttestation struct {
+	ID          string            `json:"id"`
+	Type        string            `json:"type,omitempty"`
+	Platform    string            `json:"platform,omitempty"`
+	EnclaveID   string            `json:"enclave_id,omitempty"`
+	Measurement string            `json:"measurement,omitempty"`
+	Timestamp   string            `json:"timestamp,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // ControlLedgerApproverAttestation exports one authenticated approval action.
@@ -240,6 +253,7 @@ func normalizeControlLedger(ledger any) (*controlLedgerSnapshot, error) {
 			ExportedAt:              time.Now().UTC().Format(time.RFC3339Nano),
 			Metadata:                firstStringMap(raw, "metadata", "labels", "annotations"),
 			Passports:               []ControlLedgerPassport{},
+			Attestations:            []ControlLedgerAttestation{},
 			ApproverAttestations:    []ControlLedgerApproverAttestation{},
 			ValueSettlements:        []ControlLedgerValueSettlement{},
 			PolicyReceipts:          []ControlLedgerPolicyReceipt{},
@@ -260,6 +274,7 @@ func normalizeControlLedger(ledger any) (*controlLedgerSnapshot, error) {
 	}
 
 	snap.Passports = decodeCollection[ControlLedgerPassport](firstArray(raw, "passports", "agent_passports", "identity_passports", "portfolios"))
+	snap.Attestations = decodeCollection[ControlLedgerAttestation](firstArray(raw, "attestations", "tee_attestations", "execution_attestations"))
 	snap.ApproverAttestations = decodeCollection[ControlLedgerApproverAttestation](firstArray(raw, "approver_attestations", "approval_attestations", "approvals"))
 	snap.ValueSettlements = decodeCollection[ControlLedgerValueSettlement](firstArray(raw, "value_settlements", "settlements", "payment_settlements"))
 	snap.PolicyReceipts = decodeCollection[ControlLedgerPolicyReceipt](firstArray(raw, "policy_receipts", "receipts", "policy_authorizations"))
@@ -269,6 +284,7 @@ func normalizeControlLedger(ledger any) (*controlLedgerSnapshot, error) {
 	snap.Controls = decodeCollection[ControlLedgerControl](firstArray(raw, "controls", "entries", "records", "control_entries"))
 
 	snap.Summary.TotalPassports = maxInt(snap.Summary.TotalPassports, len(snap.Passports))
+	snap.Summary.TotalAttestations = maxInt(snap.Summary.TotalAttestations, len(snap.Attestations))
 	snap.Summary.TotalApproverAttestations = maxInt(snap.Summary.TotalApproverAttestations, len(snap.ApproverAttestations))
 	snap.Summary.TotalValueSettlements = maxInt(snap.Summary.TotalValueSettlements, len(snap.ValueSettlements))
 	snap.Summary.TotalPolicyReceipts = maxInt(snap.Summary.TotalPolicyReceipts, len(snap.PolicyReceipts))
@@ -290,6 +306,7 @@ func snapshotFromTypedLedger(ledger *evidence.ControlLedger) *controlLedgerSnaps
 			ExportedAt:              time.Now().UTC().Format(time.RFC3339Nano),
 			Metadata:                cloneStringMap(ledger.Metadata),
 			Passports:               make([]ControlLedgerPassport, 0, len(ledger.Bundle.AgentPassports)),
+			Attestations:            make([]ControlLedgerAttestation, 0, len(ledger.Bundle.Attestations)),
 			ApproverAttestations:    make([]ControlLedgerApproverAttestation, 0, len(ledger.Bundle.ApproverAttestations)),
 			ValueSettlements:        make([]ControlLedgerValueSettlement, 0, len(ledger.Bundle.ValueSettlements)),
 			PolicyReceipts:          make([]ControlLedgerPolicyReceipt, 0, len(ledger.Bundle.PolicyReceipts)),
@@ -311,6 +328,7 @@ func snapshotFromTypedLedger(ledger *evidence.ControlLedger) *controlLedgerSnaps
 	snap.Summary = ControlLedgerSummary{
 		TotalControls:                ledger.Summary.TotalControls,
 		TotalPassports:               ledger.Summary.TotalPassports,
+		TotalAttestations:            ledger.Summary.TotalAttestations,
 		TotalApproverAttestations:    ledger.Summary.TotalApproverAttestations,
 		TotalValueSettlements:        ledger.Summary.TotalValueSettlements,
 		TotalPolicyReceipts:          ledger.Summary.TotalPolicyReceipts,
@@ -349,6 +367,18 @@ func snapshotFromTypedLedger(ledger *evidence.ControlLedger) *controlLedgerSnaps
 			IssuedAt:         passport.IssuedAt,
 			ExpiresAt:        passport.ExpiresAt,
 			Metadata:         cloneStringMap(passport.Metadata),
+		})
+	}
+
+	for _, attestation := range ledger.Bundle.Attestations {
+		snap.Attestations = append(snap.Attestations, ControlLedgerAttestation{
+			ID:          attestation.ID,
+			Type:        attestation.Type,
+			Platform:    attestation.Platform,
+			EnclaveID:   attestation.EnclaveID,
+			Measurement: attestation.Measurement,
+			Timestamp:   attestation.Timestamp,
+			Metadata:    cloneStringMap(attestation.Metadata),
 		})
 	}
 
@@ -496,6 +526,7 @@ func parseSummary(summary map[string]any) ControlLedgerSummary {
 	return ControlLedgerSummary{
 		TotalControls:                firstInt(summary, "total_controls", "controls_total", "controls", "control_count"),
 		TotalPassports:               firstInt(summary, "total_passports", "passports_total", "passport_count"),
+		TotalAttestations:            firstInt(summary, "total_attestations", "attestations_total", "tee_attestation_count"),
 		TotalApproverAttestations:    firstInt(summary, "total_approver_attestations", "approver_attestations_total", "approval_attestation_count"),
 		TotalValueSettlements:        firstInt(summary, "total_value_settlements", "value_settlements_total", "settlement_count"),
 		TotalPolicyReceipts:          firstInt(summary, "total_policy_receipts", "policy_receipts_total", "receipt_count"),
@@ -688,8 +719,9 @@ func encodeMetadata(m map[string]string) string {
 }
 
 func flattenEvidenceRefs(refs evidence.ControlEvidenceRefs) []string {
-	out := make([]string, 0, len(refs.RecordIDs)+len(refs.ApproverAttestationIDs)+len(refs.ValueSettlementIDs)+len(refs.PolicyReceiptIDs)+len(refs.SealIDs)+len(refs.TraceLinkIDs)+len(refs.TrustCompliancePackageIDs))
+	out := make([]string, 0, len(refs.RecordIDs)+len(refs.AttestationIDs)+len(refs.ApproverAttestationIDs)+len(refs.ValueSettlementIDs)+len(refs.PolicyReceiptIDs)+len(refs.SealIDs)+len(refs.TraceLinkIDs)+len(refs.TrustCompliancePackageIDs))
 	out = append(out, refs.RecordIDs...)
+	out = append(out, refs.AttestationIDs...)
 	out = append(out, refs.ApproverAttestationIDs...)
 	out = append(out, refs.ValueSettlementIDs...)
 	out = append(out, refs.PolicyReceiptIDs...)
