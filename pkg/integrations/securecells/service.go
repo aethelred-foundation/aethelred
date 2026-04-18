@@ -385,6 +385,8 @@ type SecureCellSessionExchange struct {
 	Summary                string                              `json:"summary,omitempty"`
 	SentBy                 string                              `json:"sent_by,omitempty"`
 	Recipients             []string                            `json:"recipients,omitempty"`
+	FederationContractIDs  []string                            `json:"federation_contract_ids,omitempty"`
+	FederationOrgIDs       []string                            `json:"federation_org_ids,omitempty"`
 	IntegrityHash          string                              `json:"integrity_hash"`
 	PolicyReceiptID        string                              `json:"policy_receipt_id,omitempty"`
 	PolicyReceiptHash      string                              `json:"policy_receipt_hash,omitempty"`
@@ -417,6 +419,8 @@ type SecureCellSharedOutput struct {
 	Summary                string                              `json:"summary,omitempty"`
 	ProducedBy             string                              `json:"produced_by,omitempty"`
 	SharedWith             []string                            `json:"shared_with,omitempty"`
+	FederationContractIDs  []string                            `json:"federation_contract_ids,omitempty"`
+	FederationOrgIDs       []string                            `json:"federation_org_ids,omitempty"`
 	IntegrityHash          string                              `json:"integrity_hash"`
 	PolicyReceiptID        string                              `json:"policy_receipt_id,omitempty"`
 	PolicyReceiptHash      string                              `json:"policy_receipt_hash,omitempty"`
@@ -460,6 +464,7 @@ type SecureCellResult struct {
 	Participants            []SecureCellParticipantState           `json:"participants,omitempty"`
 	FederationOrganizations []SecureCellFederationOrganization     `json:"federation_organizations,omitempty"`
 	FederationInvitations   []SecureCellFederationInvitation       `json:"federation_invitations,omitempty"`
+	FederationContracts     []SecureCellFederationContract         `json:"federation_contracts,omitempty"`
 	Sessions                []SecureCellSession                    `json:"sessions,omitempty"`
 	Threads                 []SecureCellSessionThread              `json:"threads,omitempty"`
 	Decisions               []SecureCellThreadDecision             `json:"decisions,omitempty"`
@@ -1367,22 +1372,28 @@ func (s *Service) ShareOutput(ctx context.Context, cellID string, share SecureCe
 	if err != nil {
 		return nil, err
 	}
+	federationAuth, err := secureCellAuthorizeFederatedExchange(run, actorDID, sharedWith, session.ID, classification, secureCellFederationContractActionShareOutput)
+	if err != nil {
+		return nil, err
+	}
 
 	outputID := secureCellSharedOutputID(run.request, *session, share.Name, actorDID, run.result.SharedOutputs)
 	output := SecureCellSharedOutput{
-		ID:                outputID,
-		SessionID:         session.ID,
-		Name:              firstNonEmpty(strings.TrimSpace(share.Name), fmt.Sprintf("%s Output %d", session.Name, len(session.SharedOutputIDs)+1)),
-		ArtifactType:      firstNonEmpty(strings.TrimSpace(share.ArtifactType), "decision_packet"),
-		Classification:    classification,
-		Resource:          firstNonEmpty(strings.TrimSpace(share.Resource), fmt.Sprintf("secure-cell:%s:session:%s:output:%s", run.result.CellID, session.ID, outputID)),
-		Summary:           strings.TrimSpace(share.Summary),
-		ProducedBy:        actorDID,
-		SharedWith:        sharedWith,
-		IntegrityHash:     secureCellResolveOutputIntegrityHash(share, outputID, session.ID, actorDID, sharedWith),
-		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
-		CreatedAt:         time.Now().UTC(),
-		Metadata:          cloneStringMap(share.Metadata),
+		ID:                    outputID,
+		SessionID:             session.ID,
+		Name:                  firstNonEmpty(strings.TrimSpace(share.Name), fmt.Sprintf("%s Output %d", session.Name, len(session.SharedOutputIDs)+1)),
+		ArtifactType:          firstNonEmpty(strings.TrimSpace(share.ArtifactType), "decision_packet"),
+		Classification:        classification,
+		Resource:              firstNonEmpty(strings.TrimSpace(share.Resource), fmt.Sprintf("secure-cell:%s:session:%s:output:%s", run.result.CellID, session.ID, outputID)),
+		Summary:               strings.TrimSpace(share.Summary),
+		ProducedBy:            actorDID,
+		SharedWith:            sharedWith,
+		FederationContractIDs: append([]string(nil), federationAuth.ContractIDs...),
+		FederationOrgIDs:      append([]string(nil), federationAuth.OrganizationIDs...),
+		IntegrityHash:         secureCellResolveOutputIntegrityHash(share, outputID, session.ID, actorDID, sharedWith),
+		ContainmentStatus:     SecureCellArtifactContainmentStatusActive,
+		CreatedAt:             time.Now().UTC(),
+		Metadata:              mergeStringMaps(share.Metadata, federationAuth.metadata()),
 	}
 	custody, err := secureCellBuildOutputCustody(output.ProducedBy, output.SharedWith)
 	if err != nil {
@@ -1397,6 +1408,8 @@ func (s *Service) ShareOutput(ctx context.Context, cellID string, share SecureCe
 		"shared_output_type":           output.ArtifactType,
 		"shared_output_classification": output.Classification,
 		"shared_with":                  strings.Join(output.SharedWith, ","),
+		"federation_contract_ids":      strings.Join(output.FederationContractIDs, ","),
+		"federation_org_ids":           strings.Join(output.FederationOrgIDs, ","),
 		"cell_status_before":           string(run.result.Status),
 		"transition_reason":            strings.TrimSpace(share.Reason),
 	}, actorDID)
@@ -1427,7 +1440,7 @@ func (s *Service) ShareOutput(ctx context.Context, cellID string, share SecureCe
 		CellStatusAfter:     run.result.Status,
 		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
 		Reason:              strings.TrimSpace(share.Reason),
-		Metadata:            cloneStringMap(share.Metadata),
+		Metadata:            mergeStringMaps(share.Metadata, federationAuth.metadata()),
 		OccurredAt:          receipt.EvaluatedAt.UTC(),
 	}
 	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
@@ -1541,22 +1554,28 @@ func (s *Service) RecordExchange(ctx context.Context, cellID string, exchange Se
 	if err != nil {
 		return nil, err
 	}
+	federationAuth, err := secureCellAuthorizeFederatedExchange(run, actorDID, recipients, session.ID, classification, secureCellFederationContractActionSessionExchange)
+	if err != nil {
+		return nil, err
+	}
 
 	exchangeID := secureCellSessionExchangeID(run.request, *session, exchange.Name, actorDID, run.result.SessionExchanges)
 	item := SecureCellSessionExchange{
-		ID:                exchangeID,
-		SessionID:         session.ID,
-		Name:              firstNonEmpty(strings.TrimSpace(exchange.Name), fmt.Sprintf("%s Exchange %d", session.Name, len(session.ExchangeIDs)+1)),
-		ExchangeType:      firstNonEmpty(strings.TrimSpace(exchange.ExchangeType), "message"),
-		Classification:    classification,
-		Resource:          firstNonEmpty(strings.TrimSpace(exchange.Resource), fmt.Sprintf("secure-cell:%s:session:%s:exchange:%s", run.result.CellID, session.ID, exchangeID)),
-		Summary:           strings.TrimSpace(exchange.Summary),
-		SentBy:            actorDID,
-		Recipients:        recipients,
-		IntegrityHash:     secureCellResolveExchangeIntegrityHash(exchange, exchangeID, session.ID, actorDID, recipients),
-		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
-		CreatedAt:         time.Now().UTC(),
-		Metadata:          cloneStringMap(exchange.Metadata),
+		ID:                    exchangeID,
+		SessionID:             session.ID,
+		Name:                  firstNonEmpty(strings.TrimSpace(exchange.Name), fmt.Sprintf("%s Exchange %d", session.Name, len(session.ExchangeIDs)+1)),
+		ExchangeType:          firstNonEmpty(strings.TrimSpace(exchange.ExchangeType), "message"),
+		Classification:        classification,
+		Resource:              firstNonEmpty(strings.TrimSpace(exchange.Resource), fmt.Sprintf("secure-cell:%s:session:%s:exchange:%s", run.result.CellID, session.ID, exchangeID)),
+		Summary:               strings.TrimSpace(exchange.Summary),
+		SentBy:                actorDID,
+		Recipients:            recipients,
+		FederationContractIDs: append([]string(nil), federationAuth.ContractIDs...),
+		FederationOrgIDs:      append([]string(nil), federationAuth.OrganizationIDs...),
+		IntegrityHash:         secureCellResolveExchangeIntegrityHash(exchange, exchangeID, session.ID, actorDID, recipients),
+		ContainmentStatus:     SecureCellArtifactContainmentStatusActive,
+		CreatedAt:             time.Now().UTC(),
+		Metadata:              mergeStringMaps(exchange.Metadata, federationAuth.metadata()),
 	}
 	custody, err := secureCellBuildOutputCustody(item.SentBy, item.Recipients)
 	if err != nil {
@@ -1571,6 +1590,8 @@ func (s *Service) RecordExchange(ctx context.Context, cellID string, exchange Se
 		"session_exchange_type":           item.ExchangeType,
 		"session_exchange_classification": item.Classification,
 		"session_exchange_recipients":     strings.Join(item.Recipients, ","),
+		"federation_contract_ids":         strings.Join(item.FederationContractIDs, ","),
+		"federation_org_ids":              strings.Join(item.FederationOrgIDs, ","),
 		"cell_status_before":              string(run.result.Status),
 		"transition_reason":               strings.TrimSpace(exchange.Reason),
 	}, actorDID)
@@ -1602,7 +1623,7 @@ func (s *Service) RecordExchange(ctx context.Context, cellID string, exchange Se
 		CellStatusAfter:     run.result.Status,
 		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
 		Reason:              strings.TrimSpace(exchange.Reason),
-		Metadata:            cloneStringMap(exchange.Metadata),
+		Metadata:            mergeStringMaps(exchange.Metadata, federationAuth.metadata()),
 		OccurredAt:          receipt.EvaluatedAt.UTC(),
 	}
 	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
@@ -1662,23 +1683,29 @@ func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message 
 	if err != nil {
 		return nil, err
 	}
+	federationAuth, err := secureCellAuthorizeFederatedExchange(run, actorDID, recipients, session.ID, classification, secureCellFederationContractActionThreadMessage)
+	if err != nil {
+		return nil, err
+	}
 
 	exchangeID := secureCellThreadMessageID(run.request, *session, *thread, message.Name, actorDID, run.result.SessionExchanges)
 	item := SecureCellSessionExchange{
-		ID:                exchangeID,
-		SessionID:         session.ID,
-		ThreadID:          thread.ID,
-		Name:              firstNonEmpty(strings.TrimSpace(message.Name), fmt.Sprintf("%s Message %d", thread.Name, len(thread.ExchangeIDs)+1)),
-		ExchangeType:      firstNonEmpty(strings.TrimSpace(message.ExchangeType), "thread_message"),
-		Classification:    classification,
-		Resource:          firstNonEmpty(strings.TrimSpace(message.Resource), fmt.Sprintf("secure-cell:%s:session:%s:thread:%s:message:%s", run.result.CellID, session.ID, thread.ID, exchangeID)),
-		Summary:           strings.TrimSpace(message.Summary),
-		SentBy:            actorDID,
-		Recipients:        recipients,
-		IntegrityHash:     secureCellResolveThreadMessageIntegrityHash(message, exchangeID, session.ID, thread.ID, actorDID, recipients),
-		ContainmentStatus: SecureCellArtifactContainmentStatusActive,
-		CreatedAt:         time.Now().UTC(),
-		Metadata:          cloneStringMap(message.Metadata),
+		ID:                    exchangeID,
+		SessionID:             session.ID,
+		ThreadID:              thread.ID,
+		Name:                  firstNonEmpty(strings.TrimSpace(message.Name), fmt.Sprintf("%s Message %d", thread.Name, len(thread.ExchangeIDs)+1)),
+		ExchangeType:          firstNonEmpty(strings.TrimSpace(message.ExchangeType), "thread_message"),
+		Classification:        classification,
+		Resource:              firstNonEmpty(strings.TrimSpace(message.Resource), fmt.Sprintf("secure-cell:%s:session:%s:thread:%s:message:%s", run.result.CellID, session.ID, thread.ID, exchangeID)),
+		Summary:               strings.TrimSpace(message.Summary),
+		SentBy:                actorDID,
+		Recipients:            recipients,
+		FederationContractIDs: append([]string(nil), federationAuth.ContractIDs...),
+		FederationOrgIDs:      append([]string(nil), federationAuth.OrganizationIDs...),
+		IntegrityHash:         secureCellResolveThreadMessageIntegrityHash(message, exchangeID, session.ID, thread.ID, actorDID, recipients),
+		ContainmentStatus:     SecureCellArtifactContainmentStatusActive,
+		CreatedAt:             time.Now().UTC(),
+		Metadata:              mergeStringMaps(message.Metadata, federationAuth.metadata()),
 	}
 	custody, err := secureCellBuildOutputCustody(item.SentBy, item.Recipients)
 	if err != nil {
@@ -1694,6 +1721,8 @@ func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message 
 		"thread_message_type":           item.ExchangeType,
 		"thread_message_classification": item.Classification,
 		"thread_message_recipients":     strings.Join(item.Recipients, ","),
+		"federation_contract_ids":       strings.Join(item.FederationContractIDs, ","),
+		"federation_org_ids":            strings.Join(item.FederationOrgIDs, ","),
 		"thread_status_before":          string(thread.Status),
 		"session_status_before":         string(session.Status),
 		"cell_status_before":            string(run.result.Status),
@@ -1732,7 +1761,7 @@ func (s *Service) PostThreadMessage(ctx context.Context, cellID string, message 
 		CellStatusAfter:     run.result.Status,
 		PolicyReceipt:       cloneSignedPolicyReceipt(receipt),
 		Reason:              strings.TrimSpace(message.Reason),
-		Metadata:            cloneStringMap(message.Metadata),
+		Metadata:            mergeStringMaps(message.Metadata, federationAuth.metadata()),
 		OccurredAt:          receipt.EvaluatedAt.UTC(),
 	}
 	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
@@ -4423,6 +4452,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("participants_revoked", fmt.Sprintf("%d", len(participantsByStatus(participants, SecureCellParticipantStatusRevoked))))
 	ledger.WithMetadata("federation_organizations_total", fmt.Sprintf("%d", len(run.result.FederationOrganizations)))
 	ledger.WithMetadata("federation_invitations_total", fmt.Sprintf("%d", len(run.result.FederationInvitations)))
+	ledger.WithMetadata("federation_contracts_total", fmt.Sprintf("%d", len(run.result.FederationContracts)))
+	ledger.WithMetadata("federation_contracts_active", fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusActive))))
+	ledger.WithMetadata("federation_contracts_revoked", fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
 	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
@@ -4476,6 +4508,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	sessionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	threadLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationContractRecordIDs := make([]string, 0, len(run.result.FederationContracts))
+	federationContractPolicyReceiptIDs := make([]string, 0, len(run.result.FederationContracts))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4645,6 +4679,51 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
 			decisionArtifactContainmentRecordIDs = append(decisionArtifactContainmentRecordIDs, recordID)
 		}
+	}
+
+	for _, contract := range run.result.FederationContracts {
+		recordID := fmt.Sprintf("%s-federation-contract-%x", cellID(req), sha256.Sum256([]byte(contract.ID)))
+		federationContractRecordIDs = append(federationContractRecordIDs, recordID)
+		data := map[string]string{
+			"federation_contract_id":     contract.ID,
+			"federation_organization_id": contract.OrganizationID,
+			"federation_invitation_id":   contract.InvitationID,
+			"sponsor_of_record":          contract.SponsorOfRecord,
+			"organization_name":          contract.OrganizationName,
+			"jurisdiction":               contract.Jurisdiction,
+			"status":                     string(contract.Status),
+			"participant_dids":           strings.Join(contract.ParticipantDIDs, ","),
+			"session_scope_ids":          strings.Join(contract.SessionScopeIDs, ","),
+			"data_classes":               strings.Join(contract.DataClasses, ","),
+			"compute_zones":              strings.Join(contract.ComputeZones, ","),
+			"allowed_actions":            strings.Join(contract.AllowedActions, ","),
+			"resource":                   contract.Resource,
+			"negotiation_id":             contract.NegotiationID,
+			"credential_id":              contract.CredentialID,
+			"policy_receipt_id":          contract.PolicyReceiptID,
+			"policy_receipt_hash":        contract.PolicyReceiptHash,
+			"created_by":                 contract.CreatedBy,
+			"activated_by":               contract.ActivatedBy,
+			"revoked_by":                 contract.RevokedBy,
+			"reason":                     contract.Reason,
+		}
+		if contract.PolicyReceiptID != "" {
+			federationContractPolicyReceiptIDs = append(federationContractPolicyReceiptIDs, contract.PolicyReceiptID)
+		}
+		if contract.ActivatedAt != nil {
+			data["activated_at"] = contract.ActivatedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if contract.RevokedAt != nil {
+			data["revoked_at"] = contract.RevokedAt.UTC().Format(time.RFC3339Nano)
+		}
+		ledger.AddRecord(evidence.Record{
+			ID:        recordID,
+			Type:      "trust",
+			Action:    "secure_cell.federation_contract_state",
+			Actor:     firstNonEmpty(contract.RevokedBy, contract.ActivatedBy, contract.CreatedBy, req.OwnerIdentity.AgentID()),
+			Timestamp: secureCellFederationContractUpdatedAt(contract).UTC().Format(time.RFC3339Nano),
+			Data:      data,
+		})
 	}
 
 	for _, session := range run.result.Sessions {
@@ -4922,6 +5001,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"integrity_hash":          output.IntegrityHash,
 			"produced_by":             output.ProducedBy,
 			"shared_with":             strings.Join(output.SharedWith, ","),
+			"federation_contract_ids": strings.Join(output.FederationContractIDs, ","),
+			"federation_org_ids":      strings.Join(output.FederationOrgIDs, ","),
 			"custody_entries_total":   fmt.Sprintf("%d", len(output.ChainOfCustody)),
 			"containment_status":      string(firstNonEmptyArtifactContainmentStatus(output.ContainmentStatus, SecureCellArtifactContainmentStatusActive)),
 			"containment_decision_id": output.ContainmentDecisionID,
@@ -4995,6 +5076,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"integrity_hash":          item.IntegrityHash,
 			"sent_by":                 item.SentBy,
 			"recipients":              strings.Join(item.Recipients, ","),
+			"federation_contract_ids": strings.Join(item.FederationContractIDs, ","),
+			"federation_org_ids":      strings.Join(item.FederationOrgIDs, ","),
 			"custody_entries_total":   fmt.Sprintf("%d", len(item.ChainOfCustody)),
 			"containment_status":      string(firstNonEmptyArtifactContainmentStatus(item.ContainmentStatus, SecureCellArtifactContainmentStatusActive)),
 			"containment_decision_id": item.ContainmentDecisionID,
@@ -5120,6 +5203,25 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Metadata: map[string]string{
 				"federation_organizations_total": fmt.Sprintf("%d", len(run.result.FederationOrganizations)),
 				"federation_invitations_total":   fmt.Sprintf("%d", len(run.result.FederationInvitations)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationContractRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-02",
+			ControlName: "Federated Exchange Contract Enforcement",
+			Description: "Accepted federation invitations mint replayable collaboration contracts that scope which sessions, data classes, and outbound exchange actions are authorized for cross-organization traffic.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs:        federationContractRecordIDs,
+				PolicyReceiptIDs: federationContractPolicyReceiptIDs,
+			},
+			Metadata: map[string]string{
+				"federation_contracts_total":   fmt.Sprintf("%d", len(run.result.FederationContracts)),
+				"federation_contracts_active":  fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusActive))),
+				"federation_contracts_revoked": fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))),
 			},
 		}); err != nil {
 			return nil, err

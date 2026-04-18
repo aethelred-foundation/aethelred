@@ -71,9 +71,21 @@ var (
 	// organization does not exist in the secure cell state.
 	ErrFederationOrganizationNotFound = errors.New("secure cell federation organization not found")
 
+	// ErrFederationContractNotFound indicates that a federation contract does
+	// not exist in the secure cell state.
+	ErrFederationContractNotFound = errors.New("secure cell federation contract not found")
+
 	// ErrFederationInvitationImmutable indicates that a federation invitation
 	// cannot be mutated from its current lifecycle posture.
 	ErrFederationInvitationImmutable = errors.New("secure cell federation invitation is immutable")
+
+	// ErrFederationContractRequired indicates that one or more cross-organization
+	// actions require an active federation contract before they can proceed.
+	ErrFederationContractRequired = errors.New("secure cell federation contract is required")
+
+	// ErrFederationExchangePolicyDenied indicates that an active federation
+	// contract exists but does not authorize the requested exchange scope.
+	ErrFederationExchangePolicyDenied = errors.New("secure cell federation exchange policy denied")
 
 	// ErrPolicyDenied indicates that the secure-cell policy engine denied the
 	// requested lifecycle transition.

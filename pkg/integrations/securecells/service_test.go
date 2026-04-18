@@ -2696,11 +2696,20 @@ func TestService_FederationInvitationAcceptsCrossOrgParticipant(t *testing.T) {
 	if accepted.FederationInvitations[0].Status != SecureCellFederationInvitationStatusAccepted {
 		t.Fatalf("expected accepted invitation, got %+v", accepted.FederationInvitations[0])
 	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one active federation contract, got %+v", accepted.FederationContracts)
+	}
+	if contract := accepted.FederationContracts[0]; contract.Status != SecureCellFederationContractStatusActive || contract.InvitationID != invitation.ID || contract.PolicyReceiptID == "" {
+		t.Fatalf("expected active evidence-bearing federation contract, got %+v", contract)
+	}
 	if got := accepted.Transitions[len(accepted.Transitions)-1].Action; got != "secure_cell.federation_joined" {
 		t.Fatalf("expected final federation join transition, got %q", got)
 	}
 	if !controlLedgerHasControl(accepted.ControlLedger, "CELL-FED-01") {
 		t.Fatalf("expected federation control after accept, got %+v", accepted.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(accepted.ControlLedger, "CELL-FED-02") {
+		t.Fatalf("expected federation contract control after accept, got %+v", accepted.ControlLedger.Controls)
 	}
 	if err := evidence.VerifyPortableControlLedgerPackage(accepted.PortablePackage); err != nil {
 		t.Fatalf("VerifyPortableControlLedgerPackage failed: %v", err)
@@ -2892,6 +2901,20 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 		t.Fatalf("expected two federation invitations, got %+v", invitationItems)
 	}
 
+	contractItems, err := service.ListFederationContracts(ctx, SecureCellFederationContractFilter{
+		CellID:         created.CellID,
+		OrganizationID: acceptedOrgID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationContracts failed: %v", err)
+	}
+	if len(contractItems) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", contractItems)
+	}
+	if contractItems[0].Status != SecureCellFederationContractStatusActive || contractItems[0].InvitationID != acceptedInvitationID {
+		t.Fatalf("expected active contract summary for accepted invitation, got %+v", contractItems[0])
+	}
+
 	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, acceptedOrgID, SecureCellFederationOrganizationTrustPackOptions{
 		OperatorSurfaces: []SecureCellFederationOperatorSurface{
 			{ID: "federation-overview", Method: "GET", Path: "/api/v1/secure-cells/" + created.CellID + "/federation"},
@@ -2903,6 +2926,9 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 	if trustPack.Organization.OrganizationID != acceptedOrgID || len(trustPack.Participants) != 1 || len(trustPack.Invitations) != 1 {
 		t.Fatalf("expected organization-specific trust pack, got %+v", trustPack)
 	}
+	if len(trustPack.Contracts) != 1 || trustPack.Contracts[0].ContractID == "" {
+		t.Fatalf("expected contract projection in trust pack, got %+v", trustPack.Contracts)
+	}
 	if !trustPack.PortablePackageSigned || !trustPack.PortablePackageAnchored || trustPack.ControlLedgerID == "" || trustPack.ControlLedgerHash == "" {
 		t.Fatalf("expected anchored and signed trust pack evidence, got %+v", trustPack)
 	}
@@ -2911,6 +2937,21 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 	}
 	if len(trustPack.OperatorSurfaces) != 1 || trustPack.OperatorSurfaces[0].ID != "federation-overview" {
 		t.Fatalf("expected custom operator surface in trust pack, got %+v", trustPack.OperatorSurfaces)
+	}
+
+	contractBundle, err := service.BuildFederationContractBundle(ctx, created.CellID, contractItems[0].ContractID, SecureCellFederationContractBundleOptions{
+		OperatorSurfaces: []SecureCellFederationOperatorSurface{
+			{ID: "federation-contract-detail", Method: "GET", Path: "/api/v1/secure-cells/" + created.CellID + "/federation/contracts/" + contractItems[0].ContractID},
+		},
+	})
+	if err != nil {
+		t.Fatalf("BuildFederationContractBundle failed: %v", err)
+	}
+	if contractBundle.Contract.ContractID != contractItems[0].ContractID || contractBundle.Invitation == nil || contractBundle.Invitation.InvitationID != acceptedInvitationID {
+		t.Fatalf("expected contract bundle tied to accepted invitation, got %+v", contractBundle)
+	}
+	if len(contractBundle.OperatorSurfaces) != 1 || contractBundle.OperatorSurfaces[0].ID != "federation-contract-detail" {
+		t.Fatalf("expected operator surfaces in contract bundle, got %+v", contractBundle.OperatorSurfaces)
 	}
 
 	bundle, err := service.BuildFederationInvitationBundle(ctx, created.CellID, revokedInvitationID)
@@ -2923,8 +2964,143 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 	if bundle.Organization.OrganizationID != secureCellFederationOrganizationID(secureCellFederationSponsor(participantC)) {
 		t.Fatalf("expected revoked organization in invitation bundle, got %+v", bundle.Organization)
 	}
+	if bundle.Contract != nil {
+		t.Fatalf("expected no active contract on revoked invitation bundle, got %+v", bundle.Contract)
+	}
 	if !bundle.PortablePackageSigned || !bundle.PortablePackageAnchored || bundle.ControlLedgerID == "" || bundle.ControlLedgerHash == "" {
 		t.Fatalf("expected portable evidence on invitation bundle, got %+v", bundle)
+	}
+}
+
+func TestService_FederatedExchangeContractsRestrictSessionScope(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federated Scope Cell",
+		Purpose:       "contract-scoped exchange enforcement",
+		Resource:      "cell:federated-scope",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	scopedSessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Scoped Session",
+		Purpose:         "allowed federated room",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "scoped room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession scoped failed: %v", err)
+	}
+	scopedSession, ok := mustSecureCellSession(t, scopedSessionResult, scopedSessionResult.Sessions[0].ID)
+	if !ok {
+		t.Fatalf("expected scoped session, got %+v", scopedSessionResult.Sessions)
+	}
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{scopedSession.ID},
+		DataClasses:      []string{"decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		Reason:           "scoped counterparty invite",
+		Metadata:         map[string]string{"ticket": "SC-FED-CONTRACT-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invited.FederationInvitations[len(invited.FederationInvitations)-1].ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "joined scoped counterparty room",
+		Metadata: map[string]string{"ticket": "SC-FED-CONTRACT-02"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one active contract after accept, got %+v", accepted.FederationContracts)
+	}
+
+	if _, err := service.AddSessionMember(ctx, created.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "counterparty admitted to scoped room",
+	}, scopedSession.ID); err != nil {
+		t.Fatalf("AddSessionMember scoped failed: %v", err)
+	}
+
+	allowedShare, err := service.ShareOutput(ctx, created.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      scopedSession.ID,
+		Name:           "Scoped Memo",
+		ArtifactType:   "memo",
+		Classification: "decisioning",
+		Summary:        "allowed counterparty share",
+		SharedWith:     []string{participantA.AgentID()},
+		Reason:         "share inside scoped contract room",
+		Metadata:       map[string]string{"ticket": "SC-FED-CONTRACT-03"},
+	})
+	if err != nil {
+		t.Fatalf("ShareOutput scoped failed: %v", err)
+	}
+	if len(allowedShare.SharedOutputs) != 1 || len(allowedShare.SharedOutputs[0].FederationContractIDs) != 1 {
+		t.Fatalf("expected shared output bound to federation contract, got %+v", allowedShare.SharedOutputs)
+	}
+
+	unscopedSessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Unscoped Session",
+		Purpose:         "room outside contract scope",
+		ParticipantDIDs: []string{participantA.AgentID(), participantB.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "unscoped room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession unscoped failed: %v", err)
+	}
+	unscopedSession, ok := mustSecureCellSession(t, unscopedSessionResult, unscopedSessionResult.Sessions[len(unscopedSessionResult.Sessions)-1].ID)
+	if !ok {
+		t.Fatalf("expected unscoped session, got %+v", unscopedSessionResult.Sessions)
+	}
+
+	_, err = service.ShareOutput(ctx, created.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      unscopedSession.ID,
+		Name:           "Blocked Memo",
+		ArtifactType:   "memo",
+		Classification: "decisioning",
+		Summary:        "blocked counterparty share",
+		SharedWith:     []string{participantA.AgentID()},
+		Reason:         "share outside scoped contract room",
+	})
+	if !errors.Is(err, ErrFederationExchangePolicyDenied) {
+		t.Fatalf("expected ErrFederationExchangePolicyDenied, got %v", err)
 	}
 }
 
