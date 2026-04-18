@@ -67,6 +67,10 @@ var (
 	// does not exist in the secure cell state.
 	ErrFederationInvitationNotFound = errors.New("secure cell federation invitation not found")
 
+	// ErrFederationOrganizationNotFound indicates that a federation
+	// organization does not exist in the secure cell state.
+	ErrFederationOrganizationNotFound = errors.New("secure cell federation organization not found")
+
 	// ErrFederationInvitationImmutable indicates that a federation invitation
 	// cannot be mutated from its current lifecycle posture.
 	ErrFederationInvitationImmutable = errors.New("secure cell federation invitation is immutable")
