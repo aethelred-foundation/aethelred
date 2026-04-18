@@ -240,7 +240,7 @@ coverage:
 | Frequency | Action | Tool |
 |-----------|--------|------|
 | Every PR | Automated vulnerability scan | `cargo audit`, `npm audit`, `govulncheck` |
-| Weekly | Dependency update review | Security and maintainers |
+| Weekly | Dependency update review | Managed dependency monitoring |
 | Monthly | Manual audit of critical deps | Security team review |
 | Quarterly | Full dependency tree audit | External security review |
 
