@@ -758,7 +758,7 @@ impl TcbEvaluator {
     /// Evaluate TCB level of a quote
     pub fn evaluate(
         &self,
-        quote: &SgxQuote,
+        _quote: &SgxQuote,
         _collateral: &IntelCollateral,
     ) -> Result<TcbEvaluationResult, AttestationError> {
         // In production, this would:
@@ -767,18 +767,9 @@ impl TcbEvaluator {
         // 3. Check for advisories
         // 4. Return the evaluation result
 
-        // For now, return a placeholder
-        Ok(TcbEvaluationResult {
-            status: TcbStatus::UpToDate,
-            tcb_level: Some(TcbLevel {
-                sgxtcbcomponents: quote.report.cpu_svn,
-                pcesvn: quote.header.pce_svn,
-                status: TcbStatus::UpToDate,
-                tcb_date: "2024-01-01T00:00:00Z".to_string(),
-                advisory_ids: Vec::new(),
-            }),
-            advisories: Vec::new(),
-        })
+        Err(AttestationError::IntelDcap(
+            "SGX TCB evaluation backend is not implemented".to_string(),
+        ))
     }
 }
 
@@ -929,6 +920,13 @@ mod tests {
     fn test_certificate_chain_verification_fails_closed_when_backend_missing() {
         let verifier = DcapVerifier::new(AttestationConfig::default());
         let result = verifier.verify_certificate_chain(&mock_quote(), &mock_collateral());
+        assert!(matches!(result, Err(AttestationError::IntelDcap(_))));
+    }
+
+    #[test]
+    fn test_tcb_evaluation_fails_closed_when_backend_missing() {
+        let evaluator = TcbEvaluator::new(AttestationConfig::default());
+        let result = evaluator.evaluate(&mock_quote(), &mock_collateral());
         assert!(matches!(result, Err(AttestationError::IntelDcap(_))));
     }
 }

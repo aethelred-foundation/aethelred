@@ -393,6 +393,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Shared endpoint literal-IP regression | `go test ./x/verify/httputil` | `x/verify/httputil/httputil_test.go` |
 | Worker API auth boundary regression | `go test ./services/tee-worker/executor` | `services/tee-worker/executor/main_test.go` |
 | Remote TEE client auth regression | `go test ./app` | `app/tee_client_test.go` |
+| SGX TCB fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence sgx` | `services/tee-worker/nitro-sdk/src/attestation/intel_sgx.rs` |
 | Seal verifier regression | `go test ./x/seal/keeper/...` | `x/seal/keeper/` |
 | Vault relay governance regression | `go test ./x/vault/keeper` | `x/vault/keeper/keeper_test.go` |
 | Sovereign access-control regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk lib_full::sovereign::` | `services/tee-worker/nitro-sdk/src/sovereign/` |

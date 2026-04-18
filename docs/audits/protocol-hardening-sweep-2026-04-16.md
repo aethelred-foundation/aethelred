@@ -823,6 +823,19 @@ already merged.
   with the configured bearer token, and token-aware remote client health
   probing.
 
+### 3zs. SGX TCB fail-closed hardening
+
+- Tightened `services/tee-worker/nitro-sdk/src/attestation/intel_sgx.rs`,
+  where the SGX TCB evaluator still returned a placeholder `UpToDate`
+  assessment even though the real TCB-info evaluation backend was not present.
+- `TcbEvaluator::evaluate(...)` now fails closed with an explicit
+  `IntelDcap("SGX TCB evaluation backend is not implemented")` error instead
+  of constructing a synthetic TCB level that could be mistaken for a real
+  platform state assessment.
+- Added a focused regression in
+  `services/tee-worker/nitro-sdk/src/attestation/intel_sgx.rs` covering the
+  fail-closed TCB evaluation path under the `attestation-evidence` feature.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -1058,6 +1071,9 @@ already merged.
   Non-loopback exposure now requires an explicit API token, the worker enforces
   loopback-or-bearer access on its HTTP routes, and the remote Go client
   participates in that contract by attaching the configured bearer token.
+- The SGX attestation path no longer emits a placeholder `UpToDate` TCB result
+  when there is no TCB evaluation backend. That assessment now fails closed
+  explicitly instead of overstating platform trust.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
