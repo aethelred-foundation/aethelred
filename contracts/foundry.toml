@@ -108,7 +108,7 @@ invariant = { runs = 100, depth = 10 }
 verbosity = 1
 # Keep the CI VM permissive enough to deploy large test harness contracts.
 # Production deployability remains enforced by the Hardhat contract size gate.
-code_size_limit = 131072
+code_size_limit = 262144
 
 # Production profile - thorough testing
 [profile.production]

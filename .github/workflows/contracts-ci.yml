@@ -72,7 +72,7 @@ jobs:
           version: stable
       - name: Run Foundry unit and integration tests
         run: >
-          FOUNDRY_PROFILE=ci forge test -vv
+          FOUNDRY_PROFILE=ci forge test -vv --code-size-limit 262144
           --no-match-path 'test/*Invariant.t.sol'
           --no-match-test '^(testFuzz_|test_Audit_|invariant_)'
 
@@ -98,8 +98,8 @@ jobs:
           version: stable
       - name: Run Foundry deep invariant and audit suites
         run: |
-          FOUNDRY_PROFILE=ci forge test -vv --match-path 'test/*Invariant.t.sol'
-          FOUNDRY_PROFILE=ci forge test -vv --match-test '^(testFuzz_|test_Audit_)'
+          FOUNDRY_PROFILE=ci forge test -vv --code-size-limit 262144 --match-path 'test/*Invariant.t.sol'
+          FOUNDRY_PROFILE=ci forge test -vv --code-size-limit 262144 --match-test '^(testFuzz_|test_Audit_)'
 
   contracts-required-gate:
     name: Contracts Required Gate
