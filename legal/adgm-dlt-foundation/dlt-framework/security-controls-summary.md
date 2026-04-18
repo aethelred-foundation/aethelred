@@ -52,7 +52,7 @@
 | Control | Implementation | Evidence |
 |---------|---------------|----------|
 | CI/CD scanning | gosec, trivy, gitleaks, slither, cargo-audit | CI pipeline — all passing |
-| Dependency scanning | Controlled dependency review + manual validation | `go.sum`, `Cargo.lock` |
+| Dependency scanning | Managed dependency monitoring + manual review | `go.sum`, `Cargo.lock` |
 | Secret detection | gitleaks in CI | CI pipeline |
 | Release provenance | Supply chain attestation | `docs/security/release-provenance.md` |
 
