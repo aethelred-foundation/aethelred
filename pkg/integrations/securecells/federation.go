@@ -65,6 +65,7 @@ type SecureCellFederationInvitation struct {
 	OfferedComputeZones    []string                             `json:"offered_compute_zones,omitempty"`
 	OfferedActions         []string                             `json:"offered_actions,omitempty"`
 	NegotiationDiffs       []SecureCellFederationPolicyDiff     `json:"negotiation_diffs,omitempty"`
+	ApprovedCounterproposalID string                            `json:"approved_counterproposal_id,omitempty"`
 	Resource               string                               `json:"resource,omitempty"`
 	CreatedBy              string                               `json:"created_by,omitempty"`
 	AcceptedBy             string                               `json:"accepted_by,omitempty"`
@@ -329,16 +330,53 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 	}
 	actorDID := firstNonEmpty(strings.TrimSpace(acceptance.ActorDID), participantDID)
 	invitationTerms := secureCellInvitationTerms(*invitation)
-	offeredTerms, err := secureCellFederationOfferedTerms(run.result.Sessions, acceptance.OfferedSessionScopeIDs, acceptance.OfferedDataClasses, acceptance.OfferedComputeZones, acceptance.OfferedActions)
-	if err != nil {
-		return nil, err
-	}
-	negotiatedTerms, diffs, err := secureCellNegotiateFederationTerms(invitationTerms, offeredTerms)
-	if err != nil {
-		return nil, err
-	}
-	if err := secureCellValidateNegotiatedFederationTerms(run.request.Policy, negotiatedTerms); err != nil {
-		return nil, err
+	var (
+		offeredTerms    secureCellFederationTerms
+		negotiatedTerms secureCellFederationTerms
+		diffs           []SecureCellFederationPolicyDiff
+	)
+	if approvedCounterproposalID := strings.TrimSpace(invitation.ApprovedCounterproposalID); approvedCounterproposalID != "" {
+		approvedProposal := secureCellFederationCounterproposalForInvitation(run.result.FederationCounterproposals, invitation.ID, SecureCellFederationCounterproposalStatusApproved)
+		if approvedProposal == nil || strings.TrimSpace(approvedProposal.ID) != approvedCounterproposalID {
+			return nil, fmt.Errorf("securecells/service: %w: approved federation counterproposal %q is unavailable", ErrFederationNegotiationConflict, approvedCounterproposalID)
+		}
+		requestedOfferedTerms, err := secureCellFederationOfferedTerms(run.result.Sessions, acceptance.OfferedSessionScopeIDs, acceptance.OfferedDataClasses, acceptance.OfferedComputeZones, acceptance.OfferedActions)
+		if err != nil {
+			return nil, err
+		}
+		if !secureCellFederationTermsEmpty(requestedOfferedTerms) && !secureCellFederationTermsEqual(requestedOfferedTerms, secureCellFederationTerms{
+			SessionScopeIDs: approvedProposal.OfferedSessionScopeIDs,
+			DataClasses:     approvedProposal.OfferedDataClasses,
+			ComputeZones:    approvedProposal.OfferedComputeZones,
+			AllowedActions:  approvedProposal.OfferedActions,
+		}) {
+			return nil, fmt.Errorf("securecells/service: %w: acceptance terms do not match approved counterproposal %q", ErrFederationNegotiationConflict, approvedCounterproposalID)
+		}
+		offeredTerms = secureCellFederationTerms{
+			SessionScopeIDs: append([]string(nil), approvedProposal.OfferedSessionScopeIDs...),
+			DataClasses:     append([]string(nil), approvedProposal.OfferedDataClasses...),
+			ComputeZones:    append([]string(nil), approvedProposal.OfferedComputeZones...),
+			AllowedActions:  append([]string(nil), approvedProposal.OfferedActions...),
+		}
+		negotiatedTerms, diffs, err = secureCellNegotiateFederationTerms(invitationTerms, offeredTerms)
+		if err != nil {
+			return nil, err
+		}
+		if err := secureCellValidateNegotiatedFederationTerms(run.request.Policy, negotiatedTerms); err != nil {
+			return nil, err
+		}
+	} else {
+		offeredTerms, err = secureCellFederationOfferedTerms(run.result.Sessions, acceptance.OfferedSessionScopeIDs, acceptance.OfferedDataClasses, acceptance.OfferedComputeZones, acceptance.OfferedActions)
+		if err != nil {
+			return nil, err
+		}
+		negotiatedTerms, diffs, err = secureCellNegotiateFederationTerms(invitationTerms, offeredTerms)
+		if err != nil {
+			return nil, err
+		}
+		if err := secureCellValidateNegotiatedFederationTerms(run.request.Policy, negotiatedTerms); err != nil {
+			return nil, err
+		}
 	}
 
 	negotiatedStates, sessionIDs, err := s.negotiateParticipants(ctx, SecureCellRequest{
@@ -411,6 +449,11 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 	run.result.FederationInvitations[inviteIdx].OfferedActions = append([]string(nil), uniqueTrimmedStrings(offeredTerms.AllowedActions)...)
 	run.result.FederationInvitations[inviteIdx].NegotiationDiffs = cloneSecureCellFederationPolicyDiffs(diffs)
 	run.result.FederationInvitations[inviteIdx].Metadata = mergeStringMaps(run.result.FederationInvitations[inviteIdx].Metadata, acceptance.Metadata)
+	if approvedCounterproposalID := strings.TrimSpace(invitation.ApprovedCounterproposalID); approvedCounterproposalID != "" {
+		run.result.FederationInvitations[inviteIdx].Metadata = mergeStringMaps(run.result.FederationInvitations[inviteIdx].Metadata, map[string]string{
+			"approved_counterproposal_id": approvedCounterproposalID,
+		})
+	}
 	contract := newActivatedFederationContract(run.request, run.result.FederationInvitations[inviteIdx], newState, negotiatedTerms, offeredTerms, diffs, run.result.FederationInvitations[inviteIdx].Resource, receipt, actorDID, strings.TrimSpace(acceptance.Reason), acceptance.Metadata, nil)
 	run.result.FederationContracts = append(run.result.FederationContracts, contract)
 	orgIdx, org := findSecureCellFederationOrganization(run.result.FederationOrganizations, invitation.OrganizationID)
@@ -459,6 +502,7 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 			"federation_contract_scopes":   strings.Join(contract.SessionScopeIDs, ","),
 			"federation_offered_actions":   strings.Join(contract.OfferedActions, ","),
 			"federation_policy_diffs":      secureCellFederationPolicyDiffsSummary(contract.NegotiationDiffs),
+			"approved_counterproposal_id":  strings.TrimSpace(invitation.ApprovedCounterproposalID),
 			"target_participant_did":       participantDID,
 			"target_role":                  newState.Role,
 		}),

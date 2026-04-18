@@ -16,8 +16,9 @@ import (
 type SecureCellFederationContractStatus string
 
 const (
-	SecureCellFederationContractStatusActive  SecureCellFederationContractStatus = "active"
-	SecureCellFederationContractStatusRevoked SecureCellFederationContractStatus = "revoked"
+	SecureCellFederationContractStatusActive    SecureCellFederationContractStatus = "active"
+	SecureCellFederationContractStatusSuspended SecureCellFederationContractStatus = "suspended"
+	SecureCellFederationContractStatusRevoked   SecureCellFederationContractStatus = "revoked"
 )
 
 const (
@@ -92,10 +93,14 @@ type SecureCellFederationContract struct {
 	ReplacedByContractID   string                             `json:"replaced_by_contract_id,omitempty"`
 	CreatedBy              string                             `json:"created_by,omitempty"`
 	ActivatedBy            string                             `json:"activated_by,omitempty"`
+	SuspendedBy            string                             `json:"suspended_by,omitempty"`
+	ResumedBy              string                             `json:"resumed_by,omitempty"`
 	RevokedBy              string                             `json:"revoked_by,omitempty"`
 	Reason                 string                             `json:"reason,omitempty"`
 	CreatedAt              time.Time                          `json:"created_at,omitempty"`
 	ActivatedAt            *time.Time                         `json:"activated_at,omitempty"`
+	SuspendedAt            *time.Time                         `json:"suspended_at,omitempty"`
+	ResumedAt              *time.Time                         `json:"resumed_at,omitempty"`
 	RevokedAt              *time.Time                         `json:"revoked_at,omitempty"`
 	UpdatedAt              time.Time                          `json:"updated_at,omitempty"`
 	Metadata               map[string]string                  `json:"metadata,omitempty"`
@@ -159,6 +164,8 @@ type SecureCellFederationContractSummary struct {
 	PortablePackageAnchored bool                               `json:"portable_package_anchored"`
 	CreatedAt               time.Time                          `json:"created_at,omitempty"`
 	ActivatedAt             *time.Time                         `json:"activated_at,omitempty"`
+	SuspendedAt             *time.Time                         `json:"suspended_at,omitempty"`
+	ResumedAt               *time.Time                         `json:"resumed_at,omitempty"`
 	RevokedAt               *time.Time                         `json:"revoked_at,omitempty"`
 	UpdatedAt               time.Time                          `json:"updated_at,omitempty"`
 }
@@ -315,7 +322,7 @@ func (s *Service) RevokeFederationContract(ctx context.Context, cellID string, c
 	if contract == nil {
 		return nil, fmt.Errorf("securecells/service: %w: %q", ErrFederationContractNotFound, contractID)
 	}
-	if contract.Status != SecureCellFederationContractStatusActive {
+	if contract.Status != SecureCellFederationContractStatusActive && contract.Status != SecureCellFederationContractStatusSuspended {
 		return nil, fmt.Errorf("securecells/service: %w: federation contract %q is %s", ErrFederationContractImmutable, contractID, contract.Status)
 	}
 
@@ -363,6 +370,151 @@ func (s *Service) RevokeFederationContract(ctx context.Context, cellID string, c
 			"federation_contract_revision": fmt.Sprintf("%d", revoked.Revision),
 			"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(revoked.AllowedActions), ","),
 			"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(revoked.SessionScopeIDs), ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// SuspendFederationContract pauses one active federation contract without
+// destroying its replayable negotiation history.
+func (s *Service) SuspendFederationContract(ctx context.Context, cellID string, contractID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+
+	contractIdx, contract := findSecureCellFederationContract(run.result.FederationContracts, contractID)
+	if contract == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrFederationContractNotFound, contractID)
+	}
+	if contract.Status != SecureCellFederationContractStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: federation contract %q is %s", ErrFederationContractImmutable, contractID, contract.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellActorAllowed(run, actorDID, true) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to suspend federation contracts", ErrPolicyDenied, actorDID)
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "suspend_federation_contract", lastReceiptHash(run.result), map[string]string{
+		"federation_contract_id":       contract.ID,
+		"federation_organization_id":   contract.OrganizationID,
+		"federation_invitation_id":     contract.InvitationID,
+		"federation_sponsor_of_record": contract.SponsorOfRecord,
+		"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(contract.AllowedActions), ","),
+		"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(contract.SessionScopeIDs), ","),
+		"cell_status_before":           string(run.result.Status),
+		"transition_reason":            strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	suspendedAt := time.Now().UTC()
+	suspended := suspendFederationContract(&run.result.FederationContracts[contractIdx], actorDID, strings.TrimSpace(lifecycle.Reason), suspendedAt, lifecycle.Metadata)
+	run.result.UpdatedAt = suspendedAt
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_contract_suspended", suspended.ID),
+		Action:           "secure_cell.federation_contract_suspended",
+		Actor:            actorDID,
+		TargetType:       "federation_contract",
+		TargetDID:        suspended.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           strings.TrimSpace(lifecycle.Reason),
+		Metadata: mergeStringMaps(lifecycle.Metadata, map[string]string{
+			"federation_contract_id":       suspended.ID,
+			"federation_organization_id":   suspended.OrganizationID,
+			"federation_invitation_id":     suspended.InvitationID,
+			"federation_sponsor_of_record": suspended.SponsorOfRecord,
+			"federation_contract_revision": fmt.Sprintf("%d", suspended.Revision),
+			"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(suspended.AllowedActions), ","),
+			"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(suspended.SessionScopeIDs), ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// ResumeFederationContract reactivates one suspended federation contract.
+func (s *Service) ResumeFederationContract(ctx context.Context, cellID string, contractID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+
+	contractIdx, contract := findSecureCellFederationContract(run.result.FederationContracts, contractID)
+	if contract == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrFederationContractNotFound, contractID)
+	}
+	if contract.Status != SecureCellFederationContractStatusSuspended {
+		return nil, fmt.Errorf("securecells/service: %w: federation contract %q is %s", ErrFederationContractImmutable, contractID, contract.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellActorAllowed(run, actorDID, true) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to resume federation contracts", ErrPolicyDenied, actorDID)
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "resume_federation_contract", lastReceiptHash(run.result), map[string]string{
+		"federation_contract_id":       contract.ID,
+		"federation_organization_id":   contract.OrganizationID,
+		"federation_invitation_id":     contract.InvitationID,
+		"federation_sponsor_of_record": contract.SponsorOfRecord,
+		"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(contract.AllowedActions), ","),
+		"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(contract.SessionScopeIDs), ","),
+		"cell_status_before":           string(run.result.Status),
+		"transition_reason":            strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	resumedAt := time.Now().UTC()
+	resumed := resumeFederationContract(&run.result.FederationContracts[contractIdx], actorDID, strings.TrimSpace(lifecycle.Reason), resumedAt, lifecycle.Metadata)
+	run.result.UpdatedAt = resumedAt
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_contract_resumed", resumed.ID),
+		Action:           "secure_cell.federation_contract_resumed",
+		Actor:            actorDID,
+		TargetType:       "federation_contract",
+		TargetDID:        resumed.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           strings.TrimSpace(lifecycle.Reason),
+		Metadata: mergeStringMaps(lifecycle.Metadata, map[string]string{
+			"federation_contract_id":       resumed.ID,
+			"federation_organization_id":   resumed.OrganizationID,
+			"federation_invitation_id":     resumed.InvitationID,
+			"federation_sponsor_of_record": resumed.SponsorOfRecord,
+			"federation_contract_revision": fmt.Sprintf("%d", resumed.Revision),
+			"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(resumed.AllowedActions), ","),
+			"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(resumed.SessionScopeIDs), ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -579,6 +731,32 @@ func revokeFederationContract(contract *SecureCellFederationContract, actorDID s
 	return *contract
 }
 
+func suspendFederationContract(contract *SecureCellFederationContract, actorDID string, reason string, suspendedAt time.Time, metadata map[string]string) SecureCellFederationContract {
+	if contract == nil {
+		return SecureCellFederationContract{}
+	}
+	contract.Status = SecureCellFederationContractStatusSuspended
+	contract.SuspendedBy = strings.TrimSpace(actorDID)
+	contract.Reason = firstNonEmpty(strings.TrimSpace(reason), contract.Reason)
+	contract.SuspendedAt = cloneTimePtr(&suspendedAt)
+	contract.UpdatedAt = suspendedAt.UTC()
+	contract.Metadata = mergeStringMaps(contract.Metadata, metadata)
+	return *contract
+}
+
+func resumeFederationContract(contract *SecureCellFederationContract, actorDID string, reason string, resumedAt time.Time, metadata map[string]string) SecureCellFederationContract {
+	if contract == nil {
+		return SecureCellFederationContract{}
+	}
+	contract.Status = SecureCellFederationContractStatusActive
+	contract.ResumedBy = strings.TrimSpace(actorDID)
+	contract.Reason = firstNonEmpty(strings.TrimSpace(reason), contract.Reason)
+	contract.ResumedAt = cloneTimePtr(&resumedAt)
+	contract.UpdatedAt = resumedAt.UTC()
+	contract.Metadata = mergeStringMaps(contract.Metadata, metadata)
+	return *contract
+}
+
 func secureCellPrimaryFederationContractParticipant(result *SecureCellResult, contract SecureCellFederationContract) (SecureCellParticipantState, error) {
 	if result == nil {
 		return SecureCellParticipantState{}, fmt.Errorf("securecells/service: secure cell result is required")
@@ -679,6 +857,20 @@ func secureCellContractTerms(contract SecureCellFederationContract) secureCellFe
 		ComputeZones:    uniqueTrimmedStrings(contract.ComputeZones),
 		AllowedActions:  uniqueTrimmedStrings(contract.AllowedActions),
 	}
+}
+
+func secureCellFederationTermsEmpty(terms secureCellFederationTerms) bool {
+	return len(uniqueTrimmedStrings(terms.SessionScopeIDs)) == 0 &&
+		len(uniqueTrimmedStrings(terms.DataClasses)) == 0 &&
+		len(uniqueTrimmedStrings(terms.ComputeZones)) == 0 &&
+		len(uniqueTrimmedStrings(terms.AllowedActions)) == 0
+}
+
+func secureCellFederationTermsEqual(left, right secureCellFederationTerms) bool {
+	return strings.Join(uniqueTrimmedStrings(left.SessionScopeIDs), ",") == strings.Join(uniqueTrimmedStrings(right.SessionScopeIDs), ",") &&
+		strings.Join(uniqueTrimmedStrings(left.DataClasses), ",") == strings.Join(uniqueTrimmedStrings(right.DataClasses), ",") &&
+		strings.Join(uniqueTrimmedStrings(left.ComputeZones), ",") == strings.Join(uniqueTrimmedStrings(right.ComputeZones), ",") &&
+		strings.Join(uniqueTrimmedStrings(left.AllowedActions), ",") == strings.Join(uniqueTrimmedStrings(right.AllowedActions), ",")
 }
 
 func secureCellFederationOfferedTerms(sessions []SecureCellSession, sessionScopeIDs, dataClasses, computeZones, allowedActions []string) (secureCellFederationTerms, error) {
@@ -890,6 +1082,10 @@ func secureCellFederationContractUpdatedAt(contract SecureCellFederationContract
 	switch {
 	case contract.RevokedAt != nil && !contract.RevokedAt.IsZero():
 		return contract.RevokedAt.UTC()
+	case contract.ResumedAt != nil && !contract.ResumedAt.IsZero():
+		return contract.ResumedAt.UTC()
+	case contract.SuspendedAt != nil && !contract.SuspendedAt.IsZero():
+		return contract.SuspendedAt.UTC()
 	case contract.ActivatedAt != nil && !contract.ActivatedAt.IsZero():
 		return contract.ActivatedAt.UTC()
 	case !contract.UpdatedAt.IsZero():
@@ -956,6 +1152,8 @@ func secureCellFederationContractSummaryFromRun(run *secureCellRun, contract Sec
 		ReplacedByContractID:   strings.TrimSpace(contract.ReplacedByContractID),
 		CreatedAt:              contract.CreatedAt.UTC(),
 		ActivatedAt:            cloneTimePtr(contract.ActivatedAt),
+		SuspendedAt:            cloneTimePtr(contract.SuspendedAt),
+		ResumedAt:              cloneTimePtr(contract.ResumedAt),
 		RevokedAt:              cloneTimePtr(contract.RevokedAt),
 		UpdatedAt:              secureCellFederationContractUpdatedAt(contract),
 	}
@@ -1110,16 +1308,22 @@ func secureCellMatchingFederationContract(run *secureCellRun, organizationID str
 		return nil, fmt.Errorf("securecells/service: %w", ErrFederationContractRequired)
 	}
 	var activeCount int
+	var suspendedCount int
 	var match *SecureCellFederationContract
 	for idx := range run.result.FederationContracts {
 		contract := &run.result.FederationContracts[idx]
 		if strings.TrimSpace(contract.OrganizationID) != strings.TrimSpace(organizationID) {
 			continue
 		}
-		if contract.Status != SecureCellFederationContractStatusActive {
+		switch contract.Status {
+		case SecureCellFederationContractStatusActive:
+			activeCount++
+		case SecureCellFederationContractStatusSuspended:
+			suspendedCount++
+			continue
+		default:
 			continue
 		}
-		activeCount++
 		if !secureCellFederationContractHasSession(*contract, sessionID) {
 			continue
 		}
@@ -1137,6 +1341,9 @@ func secureCellMatchingFederationContract(run *secureCellRun, organizationID str
 		}
 	}
 	if activeCount == 0 {
+		if suspendedCount > 0 {
+			return nil, fmt.Errorf("securecells/service: %w: federation contract for organization %q is suspended", ErrFederationContractSuspended, organizationID)
+		}
 		return nil, fmt.Errorf("securecells/service: %w: no active federation contract for organization %q", ErrFederationContractRequired, organizationID)
 	}
 	if match == nil {
@@ -1155,6 +1362,7 @@ func secureCellFederationGovernedOrganizationForParticipant(result *SecureCellRe
 	}
 	var best *SecureCellFederationContract
 	var bestActive *SecureCellFederationContract
+	var bestSuspended *SecureCellFederationContract
 	for idx := range result.FederationContracts {
 		contract := &result.FederationContracts[idx]
 		for _, candidate := range contract.ParticipantDIDs {
@@ -1167,11 +1375,17 @@ func secureCellFederationGovernedOrganizationForParticipant(result *SecureCellRe
 			if contract.Status == SecureCellFederationContractStatusActive && (bestActive == nil || secureCellFederationContractUpdatedAt(*contract).After(secureCellFederationContractUpdatedAt(*bestActive))) {
 				bestActive = contract
 			}
+			if contract.Status == SecureCellFederationContractStatusSuspended && (bestSuspended == nil || secureCellFederationContractUpdatedAt(*contract).After(secureCellFederationContractUpdatedAt(*bestSuspended))) {
+				bestSuspended = contract
+			}
 			break
 		}
 	}
 	if bestActive != nil {
 		return strings.TrimSpace(bestActive.OrganizationID), true
+	}
+	if bestSuspended != nil {
+		return strings.TrimSpace(bestSuspended.OrganizationID), true
 	}
 	if best == nil {
 		return "", false

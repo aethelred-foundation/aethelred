@@ -55,8 +55,14 @@ type SecureCellFederationOrganizationSummary struct {
 	PendingInvitationCount  int                                    `json:"pending_invitation_count"`
 	AcceptedInvitationCount int                                    `json:"accepted_invitation_count"`
 	RevokedInvitationCount  int                                    `json:"revoked_invitation_count"`
+	CounterproposalCount    int                                    `json:"counterproposal_count"`
+	PendingCounterproposalCount int                                 `json:"pending_counterproposal_count"`
+	ApprovedCounterproposalCount int                                `json:"approved_counterproposal_count"`
+	RejectedCounterproposalCount int                                `json:"rejected_counterproposal_count"`
+	SupersededCounterproposalCount int                              `json:"superseded_counterproposal_count"`
 	ContractCount           int                                    `json:"contract_count"`
 	ActiveContractCount     int                                    `json:"active_contract_count"`
+	SuspendedContractCount  int                                    `json:"suspended_contract_count"`
 	RevokedContractCount    int                                    `json:"revoked_contract_count"`
 	ControlLedgerID         string                                 `json:"control_ledger_id,omitempty"`
 	PortablePackageHash     string                                 `json:"portable_package_hash,omitempty"`
@@ -134,8 +140,14 @@ type SecureCellFederationOrganizationRuntime struct {
 	PendingInvitations      int       `json:"pending_invitations"`
 	AcceptedInvitations     int       `json:"accepted_invitations"`
 	RevokedInvitations      int       `json:"revoked_invitations"`
+	CounterproposalCount    int       `json:"counterproposal_count"`
+	PendingCounterproposals int       `json:"pending_counterproposals"`
+	ApprovedCounterproposals int      `json:"approved_counterproposals"`
+	RejectedCounterproposals int      `json:"rejected_counterproposals"`
+	SupersededCounterproposals int     `json:"superseded_counterproposals"`
 	ContractCount           int       `json:"contract_count"`
 	ActiveContracts         int       `json:"active_contracts"`
+	SuspendedContracts      int       `json:"suspended_contracts"`
 	RevokedContracts        int       `json:"revoked_contracts"`
 	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
 }
@@ -159,6 +171,7 @@ type SecureCellFederationOrganizationTrustPack struct {
 	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
 	Participants            []SecureCellParticipantState            `json:"participants,omitempty"`
 	Invitations             []SecureCellFederationInvitationSummary `json:"invitations,omitempty"`
+	Counterproposals        []SecureCellFederationCounterproposalSummary `json:"counterproposals,omitempty"`
 	Contracts               []SecureCellFederationContractSummary   `json:"contracts,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
@@ -193,6 +206,7 @@ type SecureCellFederationInvitationBundle struct {
 	Framework               string                                  `json:"framework,omitempty"`
 	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
 	Invitation              SecureCellFederationInvitationSummary   `json:"invitation"`
+	Counterproposals        []SecureCellFederationCounterproposalSummary `json:"counterproposals,omitempty"`
 	Contract                *SecureCellFederationContractSummary    `json:"contract,omitempty"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	ControlLedgerID         string                                  `json:"control_ledger_id,omitempty"`
@@ -291,6 +305,7 @@ func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID
 		return nil, err
 	}
 	invitations := secureCellFederationInvitationSummariesForOrganization(run, org.OrganizationID)
+	counterproposals := secureCellFederationCounterproposalsForOrganization(run, org.OrganizationID)
 	contracts := secureCellFederationContractsForOrganization(run, org.OrganizationID)
 	participants := secureCellFederationParticipantsForOrganization(run, *org)
 	runtime := secureCellFederationRuntimeForOrganization(run, *org)
@@ -310,6 +325,7 @@ func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID
 		Organization:     orgSummary,
 		Participants:     participants,
 		Invitations:      invitations,
+		Counterproposals: counterproposals,
 		Contracts:        contracts,
 		Runtime:          runtime,
 		Controls:         secureCellFederationControlsFromLedger(run.result.ControlLedger),
@@ -361,6 +377,7 @@ func (s *Service) BuildFederationInvitationBundle(_ context.Context, cellID stri
 		Framework:    s.config.Framework,
 		Organization: orgSummary,
 		Invitation:   invitationSummary,
+		Counterproposals: secureCellFederationCounterproposalsForInvitation(run, invitation.ID),
 		Contract:     secureCellFederationContractForInvitation(run, invitation.ID),
 		Controls:     secureCellFederationControlsFromLedger(run.result.ControlLedger),
 	}
@@ -448,6 +465,22 @@ func secureCellFederationOrganizationSummaryFromRun(run *secureCellRun, org Secu
 			summary.RevokedInvitationCount++
 		}
 	}
+	for _, proposal := range run.result.FederationCounterproposals {
+		if strings.TrimSpace(proposal.OrganizationID) != summary.OrganizationID {
+			continue
+		}
+		summary.CounterproposalCount++
+		switch proposal.Status {
+		case SecureCellFederationCounterproposalStatusPending:
+			summary.PendingCounterproposalCount++
+		case SecureCellFederationCounterproposalStatusApproved:
+			summary.ApprovedCounterproposalCount++
+		case SecureCellFederationCounterproposalStatusRejected:
+			summary.RejectedCounterproposalCount++
+		case SecureCellFederationCounterproposalStatusSuperseded:
+			summary.SupersededCounterproposalCount++
+		}
+	}
 	for _, contract := range run.result.FederationContracts {
 		if strings.TrimSpace(contract.OrganizationID) != summary.OrganizationID {
 			continue
@@ -456,6 +489,8 @@ func secureCellFederationOrganizationSummaryFromRun(run *secureCellRun, org Secu
 		switch contract.Status {
 		case SecureCellFederationContractStatusActive:
 			summary.ActiveContractCount++
+		case SecureCellFederationContractStatusSuspended:
+			summary.SuspendedContractCount++
 		case SecureCellFederationContractStatusRevoked:
 			summary.RevokedContractCount++
 		}
@@ -659,6 +694,25 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 			runtime.LastUpdatedAt = updatedAt
 		}
 	}
+	for _, proposal := range run.result.FederationCounterproposals {
+		if strings.TrimSpace(proposal.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
+			continue
+		}
+		runtime.CounterproposalCount++
+		switch proposal.Status {
+		case SecureCellFederationCounterproposalStatusPending:
+			runtime.PendingCounterproposals++
+		case SecureCellFederationCounterproposalStatusApproved:
+			runtime.ApprovedCounterproposals++
+		case SecureCellFederationCounterproposalStatusRejected:
+			runtime.RejectedCounterproposals++
+		case SecureCellFederationCounterproposalStatusSuperseded:
+			runtime.SupersededCounterproposals++
+		}
+		if updatedAt := secureCellFederationCounterproposalUpdatedAt(proposal); updatedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = updatedAt
+		}
+	}
 	for _, contract := range run.result.FederationContracts {
 		if strings.TrimSpace(contract.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
 			continue
@@ -667,6 +721,8 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 		switch contract.Status {
 		case SecureCellFederationContractStatusActive:
 			runtime.ActiveContracts++
+		case SecureCellFederationContractStatusSuspended:
+			runtime.SuspendedContracts++
 		case SecureCellFederationContractStatusRevoked:
 			runtime.RevokedContracts++
 		}
