@@ -628,6 +628,22 @@ already merged.
   loopback rejection without a token and successful access only through valid
   bearer-token authorization.
 
+### 3zg. Remote TEE endpoint validation hardening
+
+- Tightened `app/tee_client.go`, where `RemoteTEEClient` already validated the
+  configured remote endpoint for execution and capability fetches but still
+  allowed the health probe path to bypass the same SSRF guard.
+- `NewRemoteTEEClient(...)` now validates the configured remote endpoint at
+  construction time, so real remote TEE modes fail closed during startup if the
+  configured endpoint is unsafe or malformed instead of deferring that failure
+  until later runtime use.
+- `RemoteTEEClient.IsHealthy(...)` now validates the derived `/health` URL
+  before issuing the request and records the failure through the same
+  fail-closed path used by the other remote TEE operations.
+- Added focused regressions in `app/tee_client_test.go` covering invalid remote
+  endpoint rejection at construction time and fail-closed health probing for a
+  blocked endpoint.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -817,6 +833,10 @@ already merged.
   proxied loopback traffic. Requests carrying forwarding headers must now use
   explicit bearer-token authorization before they can reach detailed health,
   metrics, or admin consensus-audit surfaces.
+- The remote TEE client no longer treats endpoint safety as an execution-only
+  concern. Unsafe or malformed remote endpoints are now rejected during client
+  construction, and the health-probe path no longer bypasses the same SSRF
+  guard used by execution and capability fetches.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

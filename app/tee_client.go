@@ -153,6 +153,9 @@ func NewRemoteTEEClient(logger log.Logger, endpoint string) (*RemoteTEEClient, e
 	if endpoint == "" {
 		return nil, fmt.Errorf("remote TEE endpoint is required")
 	}
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		return nil, fmt.Errorf("invalid remote TEE endpoint: %w", err)
+	}
 	return &RemoteTEEClient{
 		logger:   logger,
 		endpoint: endpoint,
@@ -295,7 +298,16 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		return false
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "GET", c.endpoint+"/health", nil)
+	healthURL := c.endpoint + "/health"
+	if err := httputil.ValidateEndpointURL(healthURL); err != nil {
+		if c.breaker != nil {
+			c.breaker.RecordFailure()
+		}
+		c.logger.Warn("Invalid TEE health endpoint", "error", err)
+		return false
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
 	if err != nil {
 		if c.breaker != nil {
 			c.breaker.RecordFailure()

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,6 +81,31 @@ func TestBuildFullOrchestratorConfig_UsesSimulatedNitroConfig(t *testing.T) {
 	}
 	if !cfg.NitroConfig.AllowSimulated {
 		t.Fatalf("expected simulated nitro config to allow simulated mode")
+	}
+}
+
+func TestRemoteTEEClient_RejectsInvalidEndpointAtConstruction(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewRemoteTEEClient(log.NewNopLogger(), "https://169.254.169.254")
+	if err == nil {
+		t.Fatal("expected invalid remote endpoint to be rejected")
+	}
+	if !strings.Contains(err.Error(), "invalid remote TEE endpoint") {
+		t.Fatalf("expected invalid endpoint error, got %v", err)
+	}
+}
+
+func TestRemoteTEEClient_IsHealthyRejectsBlockedEndpoint(t *testing.T) {
+	t.Parallel()
+
+	client := &RemoteTEEClient{
+		logger:   log.NewNopLogger(),
+		endpoint: "https://169.254.169.254",
+	}
+
+	if client.IsHealthy(context.Background()) {
+		t.Fatal("expected blocked endpoint health probe to fail closed")
 	}
 }
 
