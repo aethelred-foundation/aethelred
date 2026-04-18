@@ -2312,11 +2312,16 @@ func (k *Keeper) RevokeRelay(ctx context.Context, caller string, platform uint8)
 	return nil
 }
 
-// ChallengeRelay issues a liveness challenge to an attestation relay. The relay
-// must respond within RelayChallengeWindowSec (1 hour) by providing a valid
-// P-256 signature over the challenge nonce using its registered signing key.
-// challengeHex is the hex-encoded 32-byte nonce for the relay to sign.
-func (k *Keeper) ChallengeRelay(ctx context.Context, platform uint8, challengeHex string) error {
+// ChallengeRelay issues a governance-controlled liveness challenge to an
+// attestation relay. The relay must respond within RelayChallengeWindowSec
+// (1 hour) by providing a valid P-256 signature over the challenge nonce using
+// its registered signing key. challengeHex is the hex-encoded 32-byte nonce
+// for the relay to sign.
+func (k *Keeper) ChallengeRelay(ctx context.Context, caller string, platform uint8, challengeHex string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2336,10 +2341,30 @@ func (k *Keeper) ChallengeRelay(ctx context.Context, platform uint8, challengeHe
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := sdkCtx.BlockTime().Unix()
 
+	if relay.ActiveChallenge != "" {
+		if relay.ChallengeDeadline >= now {
+			return fmt.Errorf("%w: platform %d already has a live challenge", types.ErrChallengeAlreadyPending, platform)
+		}
+		// Expired challenges must be cleared before a new governance challenge
+		// can become authoritative.
+		relay.ActiveChallenge = ""
+		relay.ChallengeDeadline = 0
+	}
+
 	relay.ActiveChallenge = challengeHex
 	relay.ChallengeDeadline = now + types.RelayChallengeWindowSec
 
-	return k.setAttestationRelay(ctx, platformKey, relay)
+	if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+		return err
+	}
+
+	k.appendOperatorAuditLog(ctx, types.OperatorAction{
+		Action:    "challenge_relay",
+		Target:    platformKey,
+		Timestamp: sdkCtx.BlockTime(),
+	})
+
+	return nil
 }
 
 // RespondRelayChallenge processes a relay's response to a liveness challenge.
@@ -2362,6 +2387,11 @@ func (k *Keeper) RespondRelayChallenge(ctx context.Context, platform uint8, sigR
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := sdkCtx.BlockTime().Unix()
 	if now > relay.ChallengeDeadline {
+		relay.ActiveChallenge = ""
+		relay.ChallengeDeadline = 0
+		if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+			return err
+		}
 		return types.ErrChallengeExpired
 	}
 
@@ -2402,7 +2432,17 @@ func (k *Keeper) RespondRelayChallenge(ctx context.Context, platform uint8, sigR
 	relay.ActiveChallenge = ""
 	relay.ChallengeDeadline = 0
 
-	return k.setAttestationRelay(ctx, platformKey, relay)
+	if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+		return err
+	}
+
+	k.appendOperatorAuditLog(ctx, types.OperatorAction{
+		Action:    "respond_relay_challenge",
+		Target:    platformKey,
+		Timestamp: sdkCtx.BlockTime(),
+	})
+
+	return nil
 }
 
 // IsRelayActive returns whether a platform has an active attestation relay.

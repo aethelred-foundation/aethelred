@@ -547,6 +547,21 @@ already merged.
   governance-only keeper paths reject non-authority callers before mutating any
   enclave, operator, root-key, or attestation-relay state.
 
+### 3za. Vault relay challenge governance enforcement
+
+- Tightened the attestation-relay liveness workflow in
+  `x/vault/keeper/keeper.go`, where `ChallengeRelay(...)` was documented as a
+  governance-issued control but still allowed arbitrary callers to mint or
+  replace live relay challenges.
+- `ChallengeRelay(...)` now enforces module authority directly, rejects
+  in-place overwrite of live challenges, clears expired challenge state before
+  rollover, and records both challenge issuance and successful response in the
+  operator audit log.
+- Added regressions in `x/vault/keeper/keeper_test.go` proving non-authority
+  callers cannot issue relay challenges, live challenges cannot be silently
+  replaced, expired challenge state is cleared, and governance can safely
+  re-issue a fresh challenge after expiry.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -583,6 +598,7 @@ already merged.
 - `go test ./x/validator/keeper`
 - `go test ./x/pouw/keeper`
 - `go test ./x/seal/keeper`
+- `go test ./x/vault/keeper`
 - `go test ./app -run 'Test(TeeModeRequiresHealthyVerifier|SafeInitTEEClient_.*|NewApp_NoPanic)$'`
 - `go test ./app`
 - `go test ./x/verify/tee ./services/tee-worker/l1-verifier`
@@ -710,6 +726,11 @@ already merged.
 - The vault keeper no longer leaves governance-only TEE and relay management
   methods protected only by documentation. Those state-mutating keeper entry
   points now enforce module authority directly at the boundary.
+- The vault attestation-relay liveness path no longer relies on the phrase
+  “governance-issued challenge” as a comment-level promise. Challenge issuance
+  is now authority-gated, live challenges cannot be silently overwritten,
+  expired challenge state rolls forward cleanly, and successful challenge
+  issuance / response are recorded in the runtime audit trail.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

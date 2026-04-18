@@ -48,6 +48,10 @@ var (
 	// that doesn't exist.
 	ErrNoPendingChallenge = errors.New("no pending relay liveness challenge")
 
+	// ErrChallengeAlreadyPending is returned when governance attempts to issue
+	// a new challenge while a live challenge is still outstanding.
+	ErrChallengeAlreadyPending = errors.New("relay liveness challenge already pending")
+
 	// ErrChallengeExpired is returned when the challenge response window
 	// has passed.
 	ErrChallengeExpired = errors.New("relay liveness challenge has expired")
@@ -74,13 +78,13 @@ const (
 	MinStakeUAETH          = 32_000_000 // 32 AETHEL in uaethel (6 decimals)
 	MaxStakePerTxUAETH     = 10_000_000_000_000
 	UnbondingPeriodSeconds = 14 * 24 * 60 * 60 // 14 days
-	EpochDurationSeconds   = 24 * 60 * 60       // 24 hours
+	EpochDurationSeconds   = 24 * 60 * 60      // 24 hours
 
 	// Fee parameters (basis points).
-	ProtocolFeeBPS     = 500  // 5%
-	MEVStakerShareBPS  = 9000 // 90%
-	MaxCommissionBPS   = 1000 // 10%
-	BPSDenominator     = 10000
+	ProtocolFeeBPS    = 500  // 5%
+	MEVStakerShareBPS = 9000 // 90%
+	MaxCommissionBPS  = 1000 // 10%
+	BPSDenominator    = 10000
 
 	// Validator limits.
 	MaxValidators = 200
@@ -117,14 +121,14 @@ const (
 
 // StakerRecord represents a user's staking position.
 type StakerRecord struct {
-	Address        string    `json:"address"`
-	EvmAddress     string    `json:"evm_address"`      // Canonical 20-byte EVM address (hex, no 0x prefix)
-	Shares         uint64    `json:"shares"`            // stAETHEL shares
-	StakedAmount   uint64    `json:"staked_amount"`     // Original AETHEL staked (uaethel)
-	DelegatedTo    string    `json:"delegated_to"`      // Validator address
-	StakedAt       time.Time `json:"staked_at"`
-	LastRewardAt   time.Time `json:"last_reward_at"`
-	ReferralCode   uint64    `json:"referral_code"`
+	Address      string    `json:"address"`
+	EvmAddress   string    `json:"evm_address"`   // Canonical 20-byte EVM address (hex, no 0x prefix)
+	Shares       uint64    `json:"shares"`        // stAETHEL shares
+	StakedAmount uint64    `json:"staked_amount"` // Original AETHEL staked (uaethel)
+	DelegatedTo  string    `json:"delegated_to"`  // Validator address
+	StakedAt     time.Time `json:"staked_at"`
+	LastRewardAt time.Time `json:"last_reward_at"`
+	ReferralCode uint64    `json:"referral_code"`
 }
 
 // ValidatorRecord represents a validator in the active set.
@@ -135,19 +139,19 @@ type StakerRecord struct {
 // not been populated (TelemetryUpdatedAt is zero), preventing the TEE from
 // scoring fabricated data.
 type ValidatorRecord struct {
-	Address              string    `json:"address"`
-	DelegatedStake       uint64    `json:"delegated_stake"`
-	PerformanceScore     uint32    `json:"performance_score"`      // 0-10000
-	DecentralizationScore uint32   `json:"decentralization_score"` // 0-10000
-	ReputationScore      uint32    `json:"reputation_score"`       // 0-10000
-	CompositeScore       uint32    `json:"composite_score"`
-	TEEPublicKey         []byte    `json:"tee_public_key"`
-	Commission           uint32    `json:"commission"`             // Basis points
-	ActiveSince          time.Time `json:"active_since"`
-	SlashCount           uint32    `json:"slash_count"`
-	IsActive             bool      `json:"is_active"`
-	GeographicRegion     string    `json:"geographic_region"`
-	OperatorID           string    `json:"operator_id"`
+	Address               string    `json:"address"`
+	DelegatedStake        uint64    `json:"delegated_stake"`
+	PerformanceScore      uint32    `json:"performance_score"`      // 0-10000
+	DecentralizationScore uint32    `json:"decentralization_score"` // 0-10000
+	ReputationScore       uint32    `json:"reputation_score"`       // 0-10000
+	CompositeScore        uint32    `json:"composite_score"`
+	TEEPublicKey          []byte    `json:"tee_public_key"`
+	Commission            uint32    `json:"commission"` // Basis points
+	ActiveSince           time.Time `json:"active_since"`
+	SlashCount            uint32    `json:"slash_count"`
+	IsActive              bool      `json:"is_active"`
+	GeographicRegion      string    `json:"geographic_region"`
+	OperatorID            string    `json:"operator_id"`
 
 	// ── Telemetry (oracle-supplied) ─────────────────────────────────────
 	// These fields are written by UpdateValidatorTelemetry() and read by
@@ -177,7 +181,7 @@ type WithdrawalRequest struct {
 	ID             uint64    `json:"id"`
 	Owner          string    `json:"owner"`
 	Shares         uint64    `json:"shares"`
-	AethelAmount   uint64    `json:"aethel_amount"`   // uaethel
+	AethelAmount   uint64    `json:"aethel_amount"` // uaethel
 	RequestTime    time.Time `json:"request_time"`
 	CompletionTime time.Time `json:"completion_time"`
 	Claimed        bool      `json:"claimed"`
@@ -185,17 +189,17 @@ type WithdrawalRequest struct {
 
 // EpochSnapshot stores the state at the end of each epoch.
 type EpochSnapshot struct {
-	Epoch                uint64    `json:"epoch"`
-	TotalPooledAethel    uint64    `json:"total_pooled_aethel"`
-	TotalShares          uint64    `json:"total_shares"`
-	RewardsDistributed   uint64    `json:"rewards_distributed"`
-	MEVRedistributed     uint64    `json:"mev_redistributed"`
-	ProtocolFee          uint64    `json:"protocol_fee"`
-	RewardsMerkleRoot    []byte    `json:"rewards_merkle_root"`
-	ValidatorSetHash     []byte    `json:"validator_set_hash"`
-	TEEAttestationHash   []byte    `json:"tee_attestation_hash"`
-	Timestamp            time.Time `json:"timestamp"`
-	Finalized            bool      `json:"finalized"`
+	Epoch              uint64    `json:"epoch"`
+	TotalPooledAethel  uint64    `json:"total_pooled_aethel"`
+	TotalShares        uint64    `json:"total_shares"`
+	RewardsDistributed uint64    `json:"rewards_distributed"`
+	MEVRedistributed   uint64    `json:"mev_redistributed"`
+	ProtocolFee        uint64    `json:"protocol_fee"`
+	RewardsMerkleRoot  []byte    `json:"rewards_merkle_root"`
+	ValidatorSetHash   []byte    `json:"validator_set_hash"`
+	TEEAttestationHash []byte    `json:"tee_attestation_hash"`
+	Timestamp          time.Time `json:"timestamp"`
+	Finalized          bool      `json:"finalized"`
 }
 
 // RewardAllocation is an individual staker's reward for an epoch.
@@ -209,22 +213,22 @@ type RewardAllocation struct {
 
 // VaultParams stores configurable protocol parameters.
 type VaultParams struct {
-	MinStake             uint64 `json:"min_stake"`
-	UnbondingPeriod      uint64 `json:"unbonding_period"`       // seconds
-	EpochDuration        uint64 `json:"epoch_duration"`         // seconds
-	ProtocolFeeBPS       uint32 `json:"protocol_fee_bps"`
-	MEVStakerShareBPS    uint32 `json:"mev_staker_share_bps"`
-	MaxCommission        uint32 `json:"max_commission"`
-	MaxValidators        uint32 `json:"max_validators"`
-	MinValidators        uint32 `json:"min_validators"`
-	TEEWorkerURL         string `json:"tee_worker_url"`
-	Treasury             string `json:"treasury"`
+	MinStake          uint64 `json:"min_stake"`
+	UnbondingPeriod   uint64 `json:"unbonding_period"` // seconds
+	EpochDuration     uint64 `json:"epoch_duration"`   // seconds
+	ProtocolFeeBPS    uint32 `json:"protocol_fee_bps"`
+	MEVStakerShareBPS uint32 `json:"mev_staker_share_bps"`
+	MaxCommission     uint32 `json:"max_commission"`
+	MaxValidators     uint32 `json:"max_validators"`
+	MinValidators     uint32 `json:"min_validators"`
+	TEEWorkerURL      string `json:"tee_worker_url"`
+	Treasury          string `json:"treasury"`
 	// TelemetryMaxAgeSec is the maximum age (in seconds) for validator
 	// telemetry to be considered fresh.  Validators whose
 	// TelemetryUpdatedAt is older than block_time - TelemetryMaxAgeSec
 	// are excluded from the TEE selection request.
 	// 0 means use DefaultTelemetryMaxAgeSec.
-	TelemetryMaxAgeSec   uint64 `json:"telemetry_max_age_sec"`
+	TelemetryMaxAgeSec uint64 `json:"telemetry_max_age_sec"`
 	// MinTelemetryQuorumPct is the minimum percentage (0–100) of active
 	// validators that must have fresh telemetry before a TEE selection
 	// request is built.  If fewer than this fraction have fresh telemetry
@@ -237,16 +241,16 @@ type VaultParams struct {
 // DefaultParams returns the default vault parameters.
 func DefaultParams() VaultParams {
 	return VaultParams{
-		MinStake:            MinStakeUAETH,
-		UnbondingPeriod:     UnbondingPeriodSeconds,
-		EpochDuration:       EpochDurationSeconds,
-		ProtocolFeeBPS:      ProtocolFeeBPS,
-		MEVStakerShareBPS:   MEVStakerShareBPS,
-		MaxCommission:       MaxCommissionBPS,
-		MaxValidators:       MaxValidators,
-		MinValidators:       MinValidators,
-		TEEWorkerURL:        "http://localhost:8547",
-		Treasury:            "",
+		MinStake:              MinStakeUAETH,
+		UnbondingPeriod:       UnbondingPeriodSeconds,
+		EpochDuration:         EpochDurationSeconds,
+		ProtocolFeeBPS:        ProtocolFeeBPS,
+		MEVStakerShareBPS:     MEVStakerShareBPS,
+		MaxCommission:         MaxCommissionBPS,
+		MaxValidators:         MaxValidators,
+		MinValidators:         MinValidators,
+		TEEWorkerURL:          "http://localhost:8547",
+		Treasury:              "",
 		TelemetryMaxAgeSec:    DefaultTelemetryMaxAgeSec,
 		MinTelemetryQuorumPct: DefaultMinTelemetryQuorumPct,
 	}
@@ -288,34 +292,34 @@ func (p VaultParams) Validate() error {
 // TEEAttestation represents a TEE attestation document for on-chain verification.
 // All binary fields are hex-encoded strings for deterministic JSON serialization.
 type TEEAttestation struct {
-	Platform         uint8  `json:"platform"`           // 0=SGX, 1=Nitro, 2=SEV
-	Timestamp        int64  `json:"timestamp"`          // Unix seconds
-	Nonce            string `json:"nonce"`              // hex, 32 bytes
-	EnclaveHash      string `json:"enclave_hash"`       // hex, 32 bytes (MRENCLAVE / PCR0)
-	SignerHash       string `json:"signer_hash"`        // hex, 32 bytes (MRSIGNER / PCR1)
-	PayloadHash      string `json:"payload_hash"`       // hex, SHA-256 of the attested data
-	PlatformEvidence string `json:"platform_evidence"`  // hex, ABI-encoded platform evidence
-	Signature        string `json:"signature"`          // hex, 65 bytes (R‖S‖V secp256k1)
+	Platform         uint8  `json:"platform"`          // 0=SGX, 1=Nitro, 2=SEV
+	Timestamp        int64  `json:"timestamp"`         // Unix seconds
+	Nonce            string `json:"nonce"`             // hex, 32 bytes
+	EnclaveHash      string `json:"enclave_hash"`      // hex, 32 bytes (MRENCLAVE / PCR0)
+	SignerHash       string `json:"signer_hash"`       // hex, 32 bytes (MRSIGNER / PCR1)
+	PayloadHash      string `json:"payload_hash"`      // hex, SHA-256 of the attested data
+	PlatformEvidence string `json:"platform_evidence"` // hex, ABI-encoded platform evidence
+	Signature        string `json:"signature"`         // hex, 65 bytes (R‖S‖V secp256k1)
 }
 
 // EnclaveRegistration represents a registered TEE enclave configuration.
 type EnclaveRegistration struct {
-	EnclaveHash     string `json:"enclave_hash"`      // hex, 32 bytes (MRENCLAVE / PCR0)
-	SignerHash      string `json:"signer_hash"`       // hex, 32 bytes (MRSIGNER / PCR1)
-	ApplicationHash string `json:"application_hash"`  // hex, 32 bytes (Nitro PCR2; empty for SGX/SEV)
+	EnclaveHash     string `json:"enclave_hash"`     // hex, 32 bytes (MRENCLAVE / PCR0)
+	SignerHash      string `json:"signer_hash"`      // hex, 32 bytes (MRSIGNER / PCR1)
+	ApplicationHash string `json:"application_hash"` // hex, 32 bytes (Nitro PCR2; empty for SGX/SEV)
 	Platform        uint8  `json:"platform"`
 	Active          bool   `json:"active"`
 	Description     string `json:"description"`
-	PlatformKeyX    string `json:"platform_key_x"`    // P-256 public key X coordinate (hex, 32 bytes)
-	PlatformKeyY    string `json:"platform_key_y"`    // P-256 public key Y coordinate (hex, 32 bytes)
-	VendorAttestR   string `json:"vendor_attest_r"`   // P-256 vendor root signature R (hex, 32 bytes)
-	VendorAttestS   string `json:"vendor_attest_s"`   // P-256 vendor root signature S (hex, 32 bytes)
+	PlatformKeyX    string `json:"platform_key_x"`  // P-256 public key X coordinate (hex, 32 bytes)
+	PlatformKeyY    string `json:"platform_key_y"`  // P-256 public key Y coordinate (hex, 32 bytes)
+	VendorAttestR   string `json:"vendor_attest_r"` // P-256 vendor root signature R (hex, 32 bytes)
+	VendorAttestS   string `json:"vendor_attest_s"` // P-256 vendor root signature S (hex, 32 bytes)
 }
 
 // OperatorRegistration represents a registered TEE operator bound to a specific enclave.
 type OperatorRegistration struct {
-	PubKeyHex   string `json:"pub_key_hex"`  // compressed secp256k1 public key, hex (33 bytes)
-	EnclaveID   string `json:"enclave_id"`   // hex — SHA-256(enclaveHash ‖ platform)
+	PubKeyHex   string `json:"pub_key_hex"` // compressed secp256k1 public key, hex (33 bytes)
+	EnclaveID   string `json:"enclave_id"`  // hex — SHA-256(enclaveHash ‖ platform)
 	Active      bool   `json:"active"`
 	Description string `json:"description"`
 }
@@ -336,20 +340,20 @@ type OperatorRegistration struct {
 // This struct mirrors the AttestationRelay struct in VaultTEEVerifier.sol to
 // ensure cross-network trust model consistency between the EVM and native paths.
 type AttestationRelay struct {
-	PublicKeyX        string `json:"public_key_x"`         // Current P-256 signing key X (hex, 32 bytes)
-	PublicKeyY        string `json:"public_key_y"`         // Current P-256 signing key Y (hex, 32 bytes)
-	RegisteredAt      int64  `json:"registered_at"`        // Unix timestamp of initial registration
-	LastRotatedAt     int64  `json:"last_rotated_at"`      // Unix timestamp of last key rotation
-	AttestationCount  uint64 `json:"attestation_count"`    // Enclaves certified by this relay
-	Active            bool   `json:"active"`               // Whether the relay is currently active
+	PublicKeyX       string `json:"public_key_x"`      // Current P-256 signing key X (hex, 32 bytes)
+	PublicKeyY       string `json:"public_key_y"`      // Current P-256 signing key Y (hex, 32 bytes)
+	RegisteredAt     int64  `json:"registered_at"`     // Unix timestamp of initial registration
+	LastRotatedAt    int64  `json:"last_rotated_at"`   // Unix timestamp of last key rotation
+	AttestationCount uint64 `json:"attestation_count"` // Enclaves certified by this relay
+	Active           bool   `json:"active"`            // Whether the relay is currently active
 	// Time-locked key rotation
-	PendingKeyX       string `json:"pending_key_x"`        // Pending new key X (empty if no rotation pending)
-	PendingKeyY       string `json:"pending_key_y"`        // Pending new key Y (empty if no rotation pending)
-	RotationUnlocksAt int64  `json:"rotation_unlocks_at"`  // Unix timestamp when pending rotation can finalize
+	PendingKeyX       string `json:"pending_key_x"`       // Pending new key X (empty if no rotation pending)
+	PendingKeyY       string `json:"pending_key_y"`       // Pending new key Y (empty if no rotation pending)
+	RotationUnlocksAt int64  `json:"rotation_unlocks_at"` // Unix timestamp when pending rotation can finalize
 	// Liveness challenge
-	ActiveChallenge   string `json:"active_challenge"`     // Current governance-issued challenge nonce (hex, 32 bytes)
-	ChallengeDeadline int64  `json:"challenge_deadline"`   // Unix timestamp deadline for relay response
-	Description       string `json:"description"`          // Human-readable relay identity
+	ActiveChallenge   string `json:"active_challenge"`   // Current governance-issued challenge nonce (hex, 32 bytes)
+	ChallengeDeadline int64  `json:"challenge_deadline"` // Unix timestamp deadline for relay response
+	Description       string `json:"description"`        // Human-readable relay identity
 }
 
 const (
@@ -377,16 +381,16 @@ const (
 // DelegateStake, ApplyValidatorSelection, SlashValidator) are blocked.
 // Only governance (authority) can pause/unpause.
 type PauseState struct {
-	Paused    bool      `json:"paused"`
-	Reason    string    `json:"reason"`      // Human-readable reason for the pause
-	PausedBy  string    `json:"paused_by"`   // Authority address that triggered the pause
-	PausedAt  time.Time `json:"paused_at"`   // When the pause was activated
-	EventLog  []PauseEvent `json:"event_log"` // Audit trail of pause/unpause events
+	Paused   bool         `json:"paused"`
+	Reason   string       `json:"reason"`    // Human-readable reason for the pause
+	PausedBy string       `json:"paused_by"` // Authority address that triggered the pause
+	PausedAt time.Time    `json:"paused_at"` // When the pause was activated
+	EventLog []PauseEvent `json:"event_log"` // Audit trail of pause/unpause events
 }
 
 // PauseEvent is an audit log entry for pause/unpause actions.
 type PauseEvent struct {
-	Action    string    `json:"action"`     // "pause" or "unpause"
+	Action    string    `json:"action"` // "pause" or "unpause"
 	Reason    string    `json:"reason"`
 	Actor     string    `json:"actor"`
 	Timestamp time.Time `json:"timestamp"`
@@ -421,25 +425,25 @@ func DefaultCircuitBreakerConfig() CircuitBreakerConfig {
 
 // OperatorAction represents an auditable operator action for the activity log.
 type OperatorAction struct {
-	Operator  string    `json:"operator"`   // Operator pubkey hex
-	Action    string    `json:"action"`     // e.g. "register_enclave", "register_operator", etc.
-	Target    string    `json:"target"`     // EnclaveID or operator key affected
+	Operator  string    `json:"operator"` // Operator pubkey hex
+	Action    string    `json:"action"`   // e.g. "register_enclave", "register_operator", etc.
+	Target    string    `json:"target"`   // EnclaveID or operator key affected
 	Timestamp time.Time `json:"timestamp"`
-	TxHash    string    `json:"tx_hash"`    // Transaction hash for traceability
+	TxHash    string    `json:"tx_hash"` // Transaction hash for traceability
 }
 
 // VaultStatus represents the overall vault state for API responses.
 type VaultStatus struct {
-	TotalPooledAethel    uint64            `json:"total_pooled_aethel"`
-	TotalShares          uint64            `json:"total_shares"`
-	ExchangeRate         float64           `json:"exchange_rate"`
-	CurrentEpoch         uint64            `json:"current_epoch"`
-	ActiveValidators     uint32            `json:"active_validators"`
-	TotalStakers         uint64            `json:"total_stakers"`
-	PendingWithdrawals   uint64            `json:"pending_withdrawals"`
-	TotalMEVRevenue      uint64            `json:"total_mev_revenue"`
-	EffectiveAPY         float64           `json:"effective_apy"`
-	Params               VaultParams       `json:"params"`
-	Paused               bool              `json:"paused"`
-	PauseReason          string            `json:"pause_reason,omitempty"`
+	TotalPooledAethel  uint64      `json:"total_pooled_aethel"`
+	TotalShares        uint64      `json:"total_shares"`
+	ExchangeRate       float64     `json:"exchange_rate"`
+	CurrentEpoch       uint64      `json:"current_epoch"`
+	ActiveValidators   uint32      `json:"active_validators"`
+	TotalStakers       uint64      `json:"total_stakers"`
+	PendingWithdrawals uint64      `json:"pending_withdrawals"`
+	TotalMEVRevenue    uint64      `json:"total_mev_revenue"`
+	EffectiveAPY       float64     `json:"effective_apy"`
+	Params             VaultParams `json:"params"`
+	Paused             bool        `json:"paused"`
+	PauseReason        string      `json:"pause_reason,omitempty"`
 }

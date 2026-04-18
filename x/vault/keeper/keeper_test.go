@@ -2930,7 +2930,7 @@ func TestRelayChallenge_SuccessfulResponse(t *testing.T) {
 	// Issue a challenge
 	challengeBytes := sha256.Sum256([]byte("governance-challenge-nonce-1"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Verify challenge is pending
 	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2968,7 +2968,7 @@ func TestRelayChallenge_InvalidSignature(t *testing.T) {
 
 	challengeBytes := sha256.Sum256([]byte("challenge-nonce-2"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Respond with a signature from a DIFFERENT key (vendorRoot, not relay)
 	wrongPriv := vendorRootTestPrivateKey()
@@ -2997,7 +2997,7 @@ func TestRelayChallenge_Expired(t *testing.T) {
 
 	challengeBytes := sha256.Sum256([]byte("challenge-nonce-3"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Advance time past the 1-hour challenge window
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Hour))
@@ -3015,6 +3015,16 @@ func TestRelayChallenge_Expired(t *testing.T) {
 	err = k.RespondRelayChallenge(ctx, types.PlatformSGX,
 		hex.EncodeToString(rBytes), hex.EncodeToString(sBytes))
 	require.ErrorIs(t, err, types.ErrChallengeExpired)
+
+	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
+	require.NoError(t, err)
+	require.Empty(t, relay.ActiveChallenge)
+	require.Zero(t, relay.ChallengeDeadline)
+
+	// A fresh governance-issued challenge should be issuable after the stale
+	// challenge state is cleared.
+	nextChallenge := sha256.Sum256([]byte("challenge-nonce-3b"))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, hex.EncodeToString(nextChallenge[:])))
 }
 
 func TestRelayChallenge_NoPending(t *testing.T) {
@@ -3030,6 +3040,32 @@ func TestRelayChallenge_NoPending(t *testing.T) {
 		"0000000000000000000000000000000000000000000000000000000000000001",
 		"0000000000000000000000000000000000000000000000000000000000000001")
 	require.ErrorIs(t, err, types.ErrNoPendingChallenge)
+}
+
+func TestRelayChallenge_RequiresAuthorityAndRejectsOverwrite(t *testing.T) {
+	k, ctx := setupKeeper(t)
+
+	relayX, relayY := relayTestPublicKey()
+	xHex := hex.EncodeToString(relayX.Bytes())
+	yHex := hex.EncodeToString(relayY.Bytes())
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
+
+	firstChallenge := sha256.Sum256([]byte("challenge-overwrite-1"))
+	secondChallenge := sha256.Sum256([]byte("challenge-overwrite-2"))
+	firstHex := hex.EncodeToString(firstChallenge[:])
+	secondHex := hex.EncodeToString(secondChallenge[:])
+
+	err := k.ChallengeRelay(ctx, "not-authority", types.PlatformSGX, firstHex)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, firstHex))
+
+	err = k.ChallengeRelay(ctx, "authority", types.PlatformSGX, secondHex)
+	require.ErrorIs(t, err, types.ErrChallengeAlreadyPending)
+
+	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
+	require.NoError(t, err)
+	require.Equal(t, firstHex, relay.ActiveChallenge)
 }
 
 func TestRelayAttestationCountTracking(t *testing.T) {
