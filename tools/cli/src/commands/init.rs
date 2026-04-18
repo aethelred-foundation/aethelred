@@ -93,6 +93,12 @@ impl IndustryTemplate {
 // ============================================================================
 
 pub async fn run(args: InitArgs, config: &Config) -> anyhow::Result<()> {
+    if let Some(home) = &args.home {
+        initialize_cli_home(home, config)?;
+        println!("{} Initialized CLI home at {}", "✓".green(), home.display());
+        return Ok(());
+    }
+
     println!();
     println!(
         "{}",
@@ -194,6 +200,13 @@ pub async fn run(args: InitArgs, config: &Config) -> anyhow::Result<()> {
     // Display success message and next steps
     display_success(&project_config);
 
+    Ok(())
+}
+
+fn initialize_cli_home(home: &PathBuf, config: &Config) -> anyhow::Result<()> {
+    fs::create_dir_all(home)?;
+    let config_path = home.join("config.toml");
+    config.save(Some(&config_path))?;
     Ok(())
 }
 

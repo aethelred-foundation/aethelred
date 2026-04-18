@@ -48,8 +48,8 @@
 //! ```rust,no_run
 //! use aethelred_sdk::{
 //!     AethelredClient, Network, Runtime, Device, Tensor,
-//!     nn::{Module, Linear, Sequential},
-//!     optim::Adam,
+//!     nn::{Linear, Module, ReLU, Sequential},
+//!     seals::CreateSealRequest,
 //! };
 //!
 //! #[tokio::main]
@@ -66,7 +66,7 @@
 //!     // Build model
 //!     let model = Sequential::new(vec![
 //!         Box::new(Linear::new(784, 256)),
-//!         Box::new(nn::ReLU),
+//!         Box::new(ReLU),
 //!         Box::new(Linear::new(256, 10)),
 //!     ]);
 //!
@@ -75,8 +75,15 @@
 //!
 //!     // Submit to blockchain
 //!     let client = AethelredClient::new(Network::Testnet).await?;
-//!     let seal = client.seals().create(&output).await?;
-//!     println!("Seal ID: {}", seal.id);
+//!     let seal = client
+//!         .seals()
+//!         .create(CreateSealRequest {
+//!             job_id: "job-demo".to_string(),
+//!             regulatory_info: None,
+//!             expires_in_blocks: Some(100),
+//!         })
+//!         .await?;
+//!     println!("Seal ID: {}", seal.seal_id);
 //!
 //!     Ok(())
 //! }

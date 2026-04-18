@@ -56,7 +56,7 @@ sha2 = "0.10"
 home = "=0.5.11"
 
 # HTTP client
-reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12.24", features = ["json", "rustls-tls"], default-features = false }
 
 # Crypto
 rand = "0.9.3"

@@ -126,8 +126,12 @@ enum Commands {
 
 #[derive(Args)]
 struct InitArgs {
+    /// CLI home directory to initialize with a default config
+    #[arg(long)]
+    home: Option<PathBuf>,
+
     /// Project name
-    #[arg(short, long)]
+    #[arg(short = 'p', long)]
     name: Option<String>,
 
     /// Project template (minimal, standard, advanced)
@@ -943,7 +947,7 @@ enum ConfigCommands {
 #[derive(Args)]
 struct NodeArgs {
     /// Node type (full, validator, light)
-    #[arg(short, long, default_value = "full")]
+    #[arg(short = 't', long, default_value = "full")]
     node_type: String,
 
     /// Data directory
@@ -979,11 +983,11 @@ struct DeployArgs {
     artifact: PathBuf,
 
     /// Deployment name
-    #[arg(short, long)]
+    #[arg(short = 'm', long)]
     name: Option<String>,
 
     /// Target network
-    #[arg(short, long)]
+    #[arg(short = 't', long = "target-network")]
     network: Option<String>,
 
     /// Gas limit
