@@ -95,6 +95,13 @@ type SecureCellFederationInvitationSummary struct {
 	AllowedActionCount       int                                  `json:"allowed_action_count"`
 	OfferedActionCount       int                                  `json:"offered_action_count"`
 	NegotiationDiffCount     int                                  `json:"negotiation_diff_count"`
+	ApprovedCounterproposalID string                              `json:"approved_counterproposal_id,omitempty"`
+	CounterproposalGovernanceTemplate string                      `json:"counterproposal_governance_template,omitempty"`
+	CounterproposalApprovalThreshold int                          `json:"counterproposal_approval_threshold,omitempty"`
+	CounterproposalEligibleApproverCount int                      `json:"counterproposal_eligible_approver_count"`
+	CounterproposalEscalationTierCount int                        `json:"counterproposal_escalation_tier_count"`
+	CounterproposalResolutionDueAt *time.Time                     `json:"counterproposal_resolution_due_at,omitempty"`
+	CounterproposalAutoSuspendOnOverdue bool                      `json:"counterproposal_auto_suspend_on_overdue"`
 	Resource                 string                               `json:"resource,omitempty"`
 	CreatedBy                string                               `json:"created_by,omitempty"`
 	AcceptedBy               string                               `json:"accepted_by,omitempty"`
@@ -528,6 +535,13 @@ func secureCellFederationInvitationSummaryFromRun(run *secureCellRun, invitation
 		AllowedActionCount:       len(uniqueTrimmedStrings(invitation.AllowedActions)),
 		OfferedActionCount:       len(uniqueTrimmedStrings(invitation.OfferedActions)),
 		NegotiationDiffCount:     len(invitation.NegotiationDiffs),
+		ApprovedCounterproposalID: strings.TrimSpace(invitation.ApprovedCounterproposalID),
+		CounterproposalGovernanceTemplate: strings.TrimSpace(invitation.CounterproposalGovernanceTemplate),
+		CounterproposalApprovalThreshold: secureCellMaxInt(1, invitation.CounterproposalApprovalThreshold),
+		CounterproposalEligibleApproverCount: len(uniqueTrimmedStrings(invitation.CounterproposalEligibleApproverDIDs)),
+		CounterproposalEscalationTierCount: len(invitation.CounterproposalEscalationLadder),
+		CounterproposalResolutionDueAt: cloneTimePtr(invitation.CounterproposalResolutionDueAt),
+		CounterproposalAutoSuspendOnOverdue: invitation.CounterproposalAutoSuspendOnOverdue,
 		Resource:                 strings.TrimSpace(invitation.Resource),
 		CreatedBy:                strings.TrimSpace(invitation.CreatedBy),
 		AcceptedBy:               strings.TrimSpace(invitation.AcceptedBy),

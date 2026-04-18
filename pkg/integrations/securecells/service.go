@@ -76,6 +76,7 @@ const (
 	secureCellFederationAcceptAction                = "secure_cells.federation.accept"
 	secureCellFederationRevokeAction                = "secure_cells.federation.revoke"
 	secureCellFederationCounterproposeAction        = "secure_cells.federation.counterproposal.submit"
+	secureCellFederationCounterproposalEscalateAction = "secure_cells.federation.counterproposal.escalate"
 	secureCellFederationCounterproposalApproveAction = "secure_cells.federation.counterproposal.approve"
 	secureCellFederationCounterproposalRejectAction  = "secure_cells.federation.counterproposal.reject"
 	secureCellFederationContractRenewAction         = "secure_cells.federation.contract.renew"
@@ -4660,7 +4661,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" {
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.member_quarantined" || transition.Action == "secure_cell.member_revoked" || transition.Action == "secure_cell.member_released" || transition.Action == "secure_cell.quarantine_expired" {
@@ -6239,7 +6240,7 @@ func transitionRecordType(action string) string {
 	switch action {
 	case "secure_cell.activated", "secure_cell.created", "secure_cell.paused", "secure_cell.resumed", "secure_cell.terminated":
 		return "governance"
-	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed":
+	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_vote_recorded", "secure_cell.federation_counterproposal_escalated", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed":
 		return "trust"
 	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
@@ -6266,6 +6267,10 @@ func transitionStageForAction(action string) string {
 		return "revoke_federation_invitation"
 	case "secure_cell.federation_counterproposed":
 		return "counterpropose_federation_invitation"
+	case "secure_cell.federation_counterproposal_vote_recorded":
+		return "approve_federation_counterproposal"
+	case "secure_cell.federation_counterproposal_escalated":
+		return "escalate_federation_counterproposal"
 	case "secure_cell.federation_counterproposal_approved":
 		return "approve_federation_counterproposal"
 	case "secure_cell.federation_counterproposal_rejected":
@@ -7942,6 +7947,7 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationAcceptAction,
 				secureCellFederationRevokeAction,
 				secureCellFederationCounterproposeAction,
+				secureCellFederationCounterproposalEscalateAction,
 				secureCellFederationCounterproposalApproveAction,
 				secureCellFederationCounterproposalRejectAction,
 				secureCellFederationContractRenewAction,
@@ -8064,6 +8070,15 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_counterpropose_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "counterpropose_federation_invitation"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_counterproposal_escalate_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "escalate_federation_counterproposal"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -8413,6 +8428,8 @@ func actionForStage(stage string) string {
 		return secureCellFederationRevokeAction
 	case "counterpropose_federation_invitation":
 		return secureCellFederationCounterproposeAction
+	case "escalate_federation_counterproposal":
+		return secureCellFederationCounterproposalEscalateAction
 	case "approve_federation_counterproposal":
 		return secureCellFederationCounterproposalApproveAction
 	case "reject_federation_counterproposal":
