@@ -39,14 +39,50 @@ func TestBoolStatus(t *testing.T) {
 }
 
 func TestOverallStatus(t *testing.T) {
-	status := overallStatus([]componentStatus{{Healthy: true}, {Healthy: true}})
+	status := overallStatus([]componentStatus{{Status: "healthy"}, {Status: "healthy"}})
 	if status != "healthy" {
 		t.Fatalf("expected healthy, got %s", status)
 	}
 
-	status = overallStatus([]componentStatus{{Healthy: true}, {Healthy: false}})
+	status = overallStatus([]componentStatus{{Status: "healthy"}, {Status: "simulated"}})
+	if status != "simulated" {
+		t.Fatalf("expected simulated, got %s", status)
+	}
+
+	status = overallStatus([]componentStatus{{Status: "healthy"}, {Status: "degraded"}})
+	if status != "degraded" {
+		t.Fatalf("expected degraded, got %s", status)
+	}
+
+	status = overallStatus([]componentStatus{{Status: "simulated"}, {Status: "unhealthy"}})
 	if status != "unhealthy" {
 		t.Fatalf("expected unhealthy, got %s", status)
+	}
+}
+
+func TestOverallHTTPStatus(t *testing.T) {
+	if got := overallHTTPStatus("healthy"); got != http.StatusOK {
+		t.Fatalf("expected 200 for healthy, got %d", got)
+	}
+	if got := overallHTTPStatus("simulated"); got != http.StatusOK {
+		t.Fatalf("expected 200 for simulated, got %d", got)
+	}
+	if got := overallHTTPStatus("degraded"); got != http.StatusOK {
+		t.Fatalf("expected 200 for degraded, got %d", got)
+	}
+	if got := overallHTTPStatus("unhealthy"); got != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503 for unhealthy, got %d", got)
+	}
+}
+
+func TestIsSimulatedTEEPlatform(t *testing.T) {
+	for _, platform := range []string{"simulated", "nitro-simulated", "mock-tee"} {
+		if !isSimulatedTEEPlatform(platform) {
+			t.Fatalf("expected platform %q to be treated as simulated", platform)
+		}
+	}
+	if isSimulatedTEEPlatform("aws-nitro") {
+		t.Fatalf("real platform must not be treated as simulated")
 	}
 }
 

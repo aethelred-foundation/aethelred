@@ -574,6 +574,18 @@ already merged.
   covering off-loopback rejection, bearer-token authorization, invalid token
   rejection, and fast-fail oversized request handling.
 
+### 3zc. Health endpoint truthfulness hardening
+
+- Tightened `app/health.go`, where simulated or fallback-permitted verification
+  paths could still collapse into an overall `healthy` report because the
+  handler treated allowed simulation as component health.
+- The health surface now reports `simulated` or `degraded` explicitly when the
+  node is running in simulated mode or tolerating a degraded verification path,
+  and it returns `503` only for genuinely unhealthy overall states instead of
+  flattening all non-fatal fallback modes into `healthy`.
+- Added focused regressions in `app/health_test.go` covering overall status
+  precedence, simulated/degraded truthfulness, and HTTP status signaling.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -747,6 +759,10 @@ already merged.
   unauthenticated remote admin surface. It is now loopback-only by default,
   supports explicit bearer-token authorization for deliberate remote exposure,
   and rejects oversized request bodies before they reach the JSON decoder.
+- The health endpoint no longer reports simulated or fallback-tolerated
+  verification states as fully `healthy`. Overall health now distinguishes
+  `simulated`, `degraded`, and `unhealthy` states more honestly, with `503`
+  reserved for genuinely unhealthy runtime posture.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
