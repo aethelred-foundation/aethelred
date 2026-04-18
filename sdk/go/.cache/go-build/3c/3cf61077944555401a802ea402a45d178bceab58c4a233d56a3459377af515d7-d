@@ -1,5 +1,0 @@
-./attention.go
-./containers.go
-./layers.go
-./loss.go
-./module.go
