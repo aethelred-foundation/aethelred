@@ -738,6 +738,22 @@ already merged.
 - Added focused regressions in `services/tee-worker/executor/main_test.go`
   covering blocked backend endpoints for both `/execute` and `/verify`.
 
+### 3zn. Lightweight attestation collateral fail-closed hardening
+
+- Tightened `services/tee-worker/nitro-sdk/src/attestation/engine.rs`, where
+  the lightweight attestation engine still fabricated empty Intel PCCS and AMD
+  KDS collateral objects even though those collateral-fetch backends were not
+  actually implemented in that engine path.
+- `fetch_intel_collateral(...)` now fails closed with an explicit backend
+  unavailability error that includes the extracted FMSPC context, instead of
+  returning an empty-looking Intel collateral bundle.
+- `fetch_amd_collateral(...)` now fails closed with an explicit AMD KDS backend
+  unavailability error instead of returning an empty collateral structure.
+- Added focused regressions in
+  `services/tee-worker/nitro-sdk/src/attestation/engine.rs` covering both
+  Intel and AMD lightweight-engine collateral paths under the
+  `attestation-evidence` feature.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -954,6 +970,10 @@ already merged.
   safe. Both startup and request-time proxying now fail closed on unsafe
   backend targets instead of forwarding execution and attestation verification
   traffic by convention.
+- The lightweight worker attestation engine no longer fabricates empty Intel or
+  AMD collateral bundles that could be mistaken for partial verification state.
+  Those collateral paths now fail closed until a real fetch backend is wired
+  into that engine surface.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
