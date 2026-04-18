@@ -4645,7 +4645,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" {
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.member_quarantined" || transition.Action == "secure_cell.member_revoked" || transition.Action == "secure_cell.member_released" || transition.Action == "secure_cell.quarantine_expired" {
@@ -4697,11 +4697,19 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			"data_classes":               strings.Join(contract.DataClasses, ","),
 			"compute_zones":              strings.Join(contract.ComputeZones, ","),
 			"allowed_actions":            strings.Join(contract.AllowedActions, ","),
+			"offered_session_scope_ids":  strings.Join(contract.OfferedSessionScopeIDs, ","),
+			"offered_data_classes":       strings.Join(contract.OfferedDataClasses, ","),
+			"offered_compute_zones":      strings.Join(contract.OfferedComputeZones, ","),
+			"offered_actions":            strings.Join(contract.OfferedActions, ","),
+			"negotiation_diffs":          secureCellFederationPolicyDiffsSummary(contract.NegotiationDiffs),
 			"resource":                   contract.Resource,
 			"negotiation_id":             contract.NegotiationID,
 			"credential_id":              contract.CredentialID,
 			"policy_receipt_id":          contract.PolicyReceiptID,
 			"policy_receipt_hash":        contract.PolicyReceiptHash,
+			"revision":                   fmt.Sprintf("%d", contract.Revision),
+			"supersedes_contract_id":     contract.SupersedesContractID,
+			"replaced_by_contract_id":    contract.ReplacedByContractID,
 			"created_by":                 contract.CreatedBy,
 			"activated_by":               contract.ActivatedBy,
 			"revoked_by":                 contract.RevokedBy,
@@ -5219,9 +5227,10 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				PolicyReceiptIDs: federationContractPolicyReceiptIDs,
 			},
 			Metadata: map[string]string{
-				"federation_contracts_total":   fmt.Sprintf("%d", len(run.result.FederationContracts)),
-				"federation_contracts_active":  fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusActive))),
-				"federation_contracts_revoked": fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))),
+				"federation_contracts_total":          fmt.Sprintf("%d", len(run.result.FederationContracts)),
+				"federation_contracts_active":         fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusActive))),
+				"federation_contracts_revoked":        fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))),
+				"federation_contract_revisions_total": fmt.Sprintf("%d", len(run.result.FederationContracts)),
 			},
 		}); err != nil {
 			return nil, err
@@ -6140,7 +6149,7 @@ func transitionRecordType(action string) string {
 	switch action {
 	case "secure_cell.activated", "secure_cell.created", "secure_cell.paused", "secure_cell.resumed", "secure_cell.terminated":
 		return "governance"
-	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked":
+	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed":
 		return "trust"
 	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
@@ -6165,6 +6174,10 @@ func transitionStageForAction(action string) string {
 		return "accept_federation_invitation"
 	case "secure_cell.federation_invitation_revoked":
 		return "revoke_federation_invitation"
+	case "secure_cell.federation_contract_revoked":
+		return "revoke_federation_contract"
+	case "secure_cell.federation_contract_renewed":
+		return "renew_federation_contract"
 	case "secure_cell.session_started":
 		return "start_session"
 	case "secure_cell.session_thread_started":

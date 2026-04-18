@@ -79,6 +79,10 @@ var (
 	// cannot be mutated from its current lifecycle posture.
 	ErrFederationInvitationImmutable = errors.New("secure cell federation invitation is immutable")
 
+	// ErrFederationContractImmutable indicates that a federation contract
+	// cannot be mutated from its current lifecycle posture.
+	ErrFederationContractImmutable = errors.New("secure cell federation contract is immutable")
+
 	// ErrFederationContractRequired indicates that one or more cross-organization
 	// actions require an active federation contract before they can proceed.
 	ErrFederationContractRequired = errors.New("secure cell federation contract is required")
@@ -86,6 +90,11 @@ var (
 	// ErrFederationExchangePolicyDenied indicates that an active federation
 	// contract exists but does not authorize the requested exchange scope.
 	ErrFederationExchangePolicyDenied = errors.New("secure cell federation exchange policy denied")
+
+	// ErrFederationNegotiationConflict indicates that the owner-authored
+	// invitation/renewal terms and the counterparty-offered terms do not yield a
+	// mutually valid federation contract.
+	ErrFederationNegotiationConflict = errors.New("secure cell federation negotiation conflict")
 
 	// ErrPolicyDenied indicates that the secure-cell policy engine denied the
 	// requested lifecycle transition.

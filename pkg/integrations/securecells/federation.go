@@ -48,26 +48,32 @@ type SecureCellFederationOrganization struct {
 
 // SecureCellFederationInvitation captures one cross-organization invitation.
 type SecureCellFederationInvitation struct {
-	ID               string                               `json:"id"`
-	OrganizationID   string                               `json:"organization_id"`
-	SponsorOfRecord  string                               `json:"sponsor_of_record,omitempty"`
-	OrganizationName string                               `json:"organization_name,omitempty"`
-	Jurisdiction     string                               `json:"jurisdiction,omitempty"`
-	ExpectedDID      string                               `json:"expected_did,omitempty"`
-	Role             string                               `json:"role,omitempty"`
-	Status           SecureCellFederationInvitationStatus `json:"status"`
-	SessionScopeIDs  []string                             `json:"session_scope_ids,omitempty"`
-	DataClasses      []string                             `json:"data_classes,omitempty"`
-	ComputeZones     []string                             `json:"compute_zones,omitempty"`
-	Resource         string                               `json:"resource,omitempty"`
-	CreatedBy        string                               `json:"created_by,omitempty"`
-	AcceptedBy       string                               `json:"accepted_by,omitempty"`
-	RevokedBy        string                               `json:"revoked_by,omitempty"`
-	Reason           string                               `json:"reason,omitempty"`
-	CreatedAt        time.Time                            `json:"created_at,omitempty"`
-	AcceptedAt       *time.Time                           `json:"accepted_at,omitempty"`
-	RevokedAt        *time.Time                           `json:"revoked_at,omitempty"`
-	Metadata         map[string]string                    `json:"metadata,omitempty"`
+	ID                     string                               `json:"id"`
+	OrganizationID         string                               `json:"organization_id"`
+	SponsorOfRecord        string                               `json:"sponsor_of_record,omitempty"`
+	OrganizationName       string                               `json:"organization_name,omitempty"`
+	Jurisdiction           string                               `json:"jurisdiction,omitempty"`
+	ExpectedDID            string                               `json:"expected_did,omitempty"`
+	Role                   string                               `json:"role,omitempty"`
+	Status                 SecureCellFederationInvitationStatus `json:"status"`
+	SessionScopeIDs        []string                             `json:"session_scope_ids,omitempty"`
+	DataClasses            []string                             `json:"data_classes,omitempty"`
+	ComputeZones           []string                             `json:"compute_zones,omitempty"`
+	AllowedActions         []string                             `json:"allowed_actions,omitempty"`
+	OfferedSessionScopeIDs []string                             `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string                             `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string                             `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string                             `json:"offered_actions,omitempty"`
+	NegotiationDiffs       []SecureCellFederationPolicyDiff     `json:"negotiation_diffs,omitempty"`
+	Resource               string                               `json:"resource,omitempty"`
+	CreatedBy              string                               `json:"created_by,omitempty"`
+	AcceptedBy             string                               `json:"accepted_by,omitempty"`
+	RevokedBy              string                               `json:"revoked_by,omitempty"`
+	Reason                 string                               `json:"reason,omitempty"`
+	CreatedAt              time.Time                            `json:"created_at,omitempty"`
+	AcceptedAt             *time.Time                           `json:"accepted_at,omitempty"`
+	RevokedAt              *time.Time                           `json:"revoked_at,omitempty"`
+	Metadata               map[string]string                    `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationInviteRequest creates one cross-organization invitation.
@@ -81,6 +87,7 @@ type SecureCellFederationInviteRequest struct {
 	SessionScopeIDs  []string          `json:"session_scope_ids,omitempty"`
 	DataClasses      []string          `json:"data_classes,omitempty"`
 	ComputeZones     []string          `json:"compute_zones,omitempty"`
+	AllowedActions   []string          `json:"allowed_actions,omitempty"`
 	Resource         string            `json:"resource,omitempty"`
 	Reason           string            `json:"reason,omitempty"`
 	Metadata         map[string]string `json:"metadata,omitempty"`
@@ -89,11 +96,15 @@ type SecureCellFederationInviteRequest struct {
 // SecureCellFederationAcceptRequest accepts one pending cross-organization
 // invitation and joins the participant into the cell.
 type SecureCellFederationAcceptRequest struct {
-	InvitationID string                `json:"invitation_id"`
-	ActorDID     string                `json:"actor_did,omitempty"`
-	Participant  SecureCellParticipant `json:"participant"`
-	Reason       string                `json:"reason,omitempty"`
-	Metadata     map[string]string     `json:"metadata,omitempty"`
+	InvitationID           string                `json:"invitation_id"`
+	ActorDID               string                `json:"actor_did,omitempty"`
+	Participant            SecureCellParticipant `json:"participant"`
+	OfferedSessionScopeIDs []string              `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string              `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string              `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string              `json:"offered_actions,omitempty"`
+	Reason                 string                `json:"reason,omitempty"`
+	Metadata               map[string]string     `json:"metadata,omitempty"`
 }
 
 func deriveSecureCellFederationOrganizations(req SecureCellRequest, participants []SecureCellParticipantState) []SecureCellFederationOrganization {
@@ -178,6 +189,13 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 	}
 	dataClasses := uniqueTrimmedStrings(firstNonEmptySlice(invite.DataClasses, run.request.Policy.DataClasses))
 	computeZones := uniqueTrimmedStrings(firstNonEmptySlice(invite.ComputeZones, run.request.Policy.ComputeZones))
+	allowedActions, err := secureCellNormalizeFederationActions(invite.AllowedActions)
+	if err != nil {
+		return nil, err
+	}
+	if len(allowedActions) == 0 {
+		allowedActions = secureCellDefaultFederationContractActions()
+	}
 	orgID := secureCellFederationOrganizationID(sponsorOfRecord)
 	resource := firstNonEmpty(strings.TrimSpace(invite.Resource), fmt.Sprintf("secure-cell:%s:federation:%s", run.result.CellID, orgID))
 
@@ -209,6 +227,7 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 		SessionScopeIDs:  sessionScopeIDs,
 		DataClasses:      dataClasses,
 		ComputeZones:     computeZones,
+		AllowedActions:   allowedActions,
 		Resource:         resource,
 		CreatedBy:        actorDID,
 		Reason:           strings.TrimSpace(invite.Reason),
@@ -223,6 +242,7 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 		"federation_expected_did":      invitation.ExpectedDID,
 		"federation_role":              invitation.Role,
 		"federation_session_scopes":    strings.Join(invitation.SessionScopeIDs, ","),
+		"federation_allowed_actions":   strings.Join(invitation.AllowedActions, ","),
 		"cell_status_before":           string(run.result.Status),
 		"transition_reason":            invitation.Reason,
 	}, actorDID)
@@ -255,6 +275,7 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 			"federation_expected_did":      invitation.ExpectedDID,
 			"federation_role":              invitation.Role,
 			"federation_session_scopes":    strings.Join(invitation.SessionScopeIDs, ","),
+			"federation_allowed_actions":   strings.Join(invitation.AllowedActions, ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -307,6 +328,18 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 		return nil, fmt.Errorf("securecells/service: participant count would exceed max participants %d", run.request.Policy.MaxParticipants)
 	}
 	actorDID := firstNonEmpty(strings.TrimSpace(acceptance.ActorDID), participantDID)
+	invitationTerms := secureCellInvitationTerms(*invitation)
+	offeredTerms, err := secureCellFederationOfferedTerms(run.result.Sessions, acceptance.OfferedSessionScopeIDs, acceptance.OfferedDataClasses, acceptance.OfferedComputeZones, acceptance.OfferedActions)
+	if err != nil {
+		return nil, err
+	}
+	negotiatedTerms, diffs, err := secureCellNegotiateFederationTerms(invitationTerms, offeredTerms)
+	if err != nil {
+		return nil, err
+	}
+	if err := secureCellValidateNegotiatedFederationTerms(run.request.Policy, negotiatedTerms); err != nil {
+		return nil, err
+	}
 
 	negotiatedStates, sessionIDs, err := s.negotiateParticipants(ctx, SecureCellRequest{
 		OwnerIdentity: run.request.OwnerIdentity,
@@ -333,14 +366,23 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 	newState.Metadata = mergeStringMaps(newState.Metadata, acceptance.Metadata)
 
 	receipt, err := s.evaluateStage(ctx, run.request, "accept_federation_invitation", lastReceiptHash(run.result), map[string]string{
-		"federation_invitation_id":     invitation.ID,
-		"federation_organization_id":   invitation.OrganizationID,
-		"federation_sponsor_of_record": invitation.SponsorOfRecord,
-		"target_participant_did":       participantDID,
-		"target_role":                  newState.Role,
-		"cell_status_before":           string(run.result.Status),
-		"participant_status_after":     string(newState.Status),
-		"transition_reason":            strings.TrimSpace(acceptance.Reason),
+		"federation_invitation_id":          invitation.ID,
+		"federation_organization_id":        invitation.OrganizationID,
+		"federation_sponsor_of_record":      invitation.SponsorOfRecord,
+		"federation_session_scopes":         strings.Join(uniqueTrimmedStrings(negotiatedTerms.SessionScopeIDs), ","),
+		"federation_data_classes":           strings.Join(uniqueTrimmedStrings(negotiatedTerms.DataClasses), ","),
+		"federation_compute_zones":          strings.Join(uniqueTrimmedStrings(negotiatedTerms.ComputeZones), ","),
+		"federation_allowed_actions":        strings.Join(uniqueTrimmedStrings(negotiatedTerms.AllowedActions), ","),
+		"federation_offered_session_scopes": strings.Join(uniqueTrimmedStrings(offeredTerms.SessionScopeIDs), ","),
+		"federation_offered_data_classes":   strings.Join(uniqueTrimmedStrings(offeredTerms.DataClasses), ","),
+		"federation_offered_compute_zones":  strings.Join(uniqueTrimmedStrings(offeredTerms.ComputeZones), ","),
+		"federation_offered_actions":        strings.Join(uniqueTrimmedStrings(offeredTerms.AllowedActions), ","),
+		"federation_policy_diffs":           secureCellFederationPolicyDiffsSummary(diffs),
+		"target_participant_did":            participantDID,
+		"target_role":                       newState.Role,
+		"cell_status_before":                string(run.result.Status),
+		"participant_status_after":          string(newState.Status),
+		"transition_reason":                 strings.TrimSpace(acceptance.Reason),
 	}, actorDID)
 	if err != nil {
 		s.markNegotiationsFailed(ctx, sessionIDs, err.Error())
@@ -363,8 +405,13 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 	run.result.FederationInvitations[inviteIdx].AcceptedBy = actorDID
 	run.result.FederationInvitations[inviteIdx].AcceptedAt = &acceptedAt
 	run.result.FederationInvitations[inviteIdx].ExpectedDID = participantDID
+	run.result.FederationInvitations[inviteIdx].OfferedSessionScopeIDs = append([]string(nil), uniqueTrimmedStrings(offeredTerms.SessionScopeIDs)...)
+	run.result.FederationInvitations[inviteIdx].OfferedDataClasses = append([]string(nil), uniqueTrimmedStrings(offeredTerms.DataClasses)...)
+	run.result.FederationInvitations[inviteIdx].OfferedComputeZones = append([]string(nil), uniqueTrimmedStrings(offeredTerms.ComputeZones)...)
+	run.result.FederationInvitations[inviteIdx].OfferedActions = append([]string(nil), uniqueTrimmedStrings(offeredTerms.AllowedActions)...)
+	run.result.FederationInvitations[inviteIdx].NegotiationDiffs = cloneSecureCellFederationPolicyDiffs(diffs)
 	run.result.FederationInvitations[inviteIdx].Metadata = mergeStringMaps(run.result.FederationInvitations[inviteIdx].Metadata, acceptance.Metadata)
-	contract := newActivatedFederationContract(run.request, run.result.FederationInvitations[inviteIdx], newState, receipt, actorDID, strings.TrimSpace(acceptance.Reason), acceptance.Metadata)
+	contract := newActivatedFederationContract(run.request, run.result.FederationInvitations[inviteIdx], newState, negotiatedTerms, offeredTerms, diffs, run.result.FederationInvitations[inviteIdx].Resource, receipt, actorDID, strings.TrimSpace(acceptance.Reason), acceptance.Metadata, nil)
 	run.result.FederationContracts = append(run.result.FederationContracts, contract)
 	orgIdx, org := findSecureCellFederationOrganization(run.result.FederationOrganizations, invitation.OrganizationID)
 	if org == nil {
@@ -407,8 +454,11 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 			"federation_organization_id":   invitation.OrganizationID,
 			"federation_sponsor_of_record": invitation.SponsorOfRecord,
 			"federation_contract_id":       contract.ID,
+			"federation_contract_revision": fmt.Sprintf("%d", contract.Revision),
 			"federation_contract_actions":  strings.Join(contract.AllowedActions, ","),
 			"federation_contract_scopes":   strings.Join(contract.SessionScopeIDs, ","),
+			"federation_offered_actions":   strings.Join(contract.OfferedActions, ","),
+			"federation_policy_diffs":      secureCellFederationPolicyDiffsSummary(contract.NegotiationDiffs),
 			"target_participant_did":       participantDID,
 			"target_role":                  newState.Role,
 		}),

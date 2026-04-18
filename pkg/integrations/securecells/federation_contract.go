@@ -26,35 +26,79 @@ const (
 	secureCellFederationContractActionThreadMessage   = "thread_message"
 )
 
+// SecureCellFederationPolicyDiff captures how the owner-authored federation
+// terms and counterparty-offered terms resolved into one replayable contract.
+type SecureCellFederationPolicyDiff struct {
+	Field            string   `json:"field"`
+	InvitationValues []string `json:"invitation_values,omitempty"`
+	OfferedValues    []string `json:"offered_values,omitempty"`
+	NegotiatedValues []string `json:"negotiated_values,omitempty"`
+	Effect           string   `json:"effect,omitempty"`
+	Summary          string   `json:"summary,omitempty"`
+}
+
+type secureCellFederationTerms struct {
+	SessionScopeIDs []string
+	DataClasses     []string
+	ComputeZones    []string
+	AllowedActions  []string
+}
+
+// SecureCellFederationContractRenewRequest renews an active federation
+// contract with owner-authored policy terms and optional counterparty-offered
+// narrowing terms.
+type SecureCellFederationContractRenewRequest struct {
+	ActorDID               string            `json:"actor_did,omitempty"`
+	SessionScopeIDs        []string          `json:"session_scope_ids,omitempty"`
+	DataClasses            []string          `json:"data_classes,omitempty"`
+	ComputeZones           []string          `json:"compute_zones,omitempty"`
+	AllowedActions         []string          `json:"allowed_actions,omitempty"`
+	OfferedSessionScopeIDs []string          `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string          `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string          `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string          `json:"offered_actions,omitempty"`
+	Resource               string            `json:"resource,omitempty"`
+	Reason                 string            `json:"reason,omitempty"`
+	Metadata               map[string]string `json:"metadata,omitempty"`
+}
+
 // SecureCellFederationContract captures the negotiated, replayable contract
 // binding one accepted federation invitation to the live collaboration state.
 type SecureCellFederationContract struct {
-	ID                string                             `json:"id"`
-	OrganizationID    string                             `json:"organization_id"`
-	InvitationID      string                             `json:"invitation_id"`
-	SponsorOfRecord   string                             `json:"sponsor_of_record,omitempty"`
-	OrganizationName  string                             `json:"organization_name,omitempty"`
-	Jurisdiction      string                             `json:"jurisdiction,omitempty"`
-	Status            SecureCellFederationContractStatus `json:"status"`
-	ParticipantDIDs   []string                           `json:"participant_dids,omitempty"`
-	SessionScopeIDs   []string                           `json:"session_scope_ids,omitempty"`
-	DataClasses       []string                           `json:"data_classes,omitempty"`
-	ComputeZones      []string                           `json:"compute_zones,omitempty"`
-	AllowedActions    []string                           `json:"allowed_actions,omitempty"`
-	Resource          string                             `json:"resource,omitempty"`
-	NegotiationID     string                             `json:"negotiation_id,omitempty"`
-	CredentialID      string                             `json:"credential_id,omitempty"`
-	PolicyReceiptID   string                             `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash string                             `json:"policy_receipt_hash,omitempty"`
-	CreatedBy         string                             `json:"created_by,omitempty"`
-	ActivatedBy       string                             `json:"activated_by,omitempty"`
-	RevokedBy         string                             `json:"revoked_by,omitempty"`
-	Reason            string                             `json:"reason,omitempty"`
-	CreatedAt         time.Time                          `json:"created_at,omitempty"`
-	ActivatedAt       *time.Time                         `json:"activated_at,omitempty"`
-	RevokedAt         *time.Time                         `json:"revoked_at,omitempty"`
-	UpdatedAt         time.Time                          `json:"updated_at,omitempty"`
-	Metadata          map[string]string                  `json:"metadata,omitempty"`
+	ID                     string                             `json:"id"`
+	OrganizationID         string                             `json:"organization_id"`
+	InvitationID           string                             `json:"invitation_id"`
+	SponsorOfRecord        string                             `json:"sponsor_of_record,omitempty"`
+	OrganizationName       string                             `json:"organization_name,omitempty"`
+	Jurisdiction           string                             `json:"jurisdiction,omitempty"`
+	Status                 SecureCellFederationContractStatus `json:"status"`
+	ParticipantDIDs        []string                           `json:"participant_dids,omitempty"`
+	SessionScopeIDs        []string                           `json:"session_scope_ids,omitempty"`
+	DataClasses            []string                           `json:"data_classes,omitempty"`
+	ComputeZones           []string                           `json:"compute_zones,omitempty"`
+	AllowedActions         []string                           `json:"allowed_actions,omitempty"`
+	OfferedSessionScopeIDs []string                           `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string                           `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string                           `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string                           `json:"offered_actions,omitempty"`
+	NegotiationDiffs       []SecureCellFederationPolicyDiff   `json:"negotiation_diffs,omitempty"`
+	Resource               string                             `json:"resource,omitempty"`
+	NegotiationID          string                             `json:"negotiation_id,omitempty"`
+	CredentialID           string                             `json:"credential_id,omitempty"`
+	PolicyReceiptID        string                             `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                             `json:"policy_receipt_hash,omitempty"`
+	Revision               int                                `json:"revision,omitempty"`
+	SupersedesContractID   string                             `json:"supersedes_contract_id,omitempty"`
+	ReplacedByContractID   string                             `json:"replaced_by_contract_id,omitempty"`
+	CreatedBy              string                             `json:"created_by,omitempty"`
+	ActivatedBy            string                             `json:"activated_by,omitempty"`
+	RevokedBy              string                             `json:"revoked_by,omitempty"`
+	Reason                 string                             `json:"reason,omitempty"`
+	CreatedAt              time.Time                          `json:"created_at,omitempty"`
+	ActivatedAt            *time.Time                         `json:"activated_at,omitempty"`
+	RevokedAt              *time.Time                         `json:"revoked_at,omitempty"`
+	UpdatedAt              time.Time                          `json:"updated_at,omitempty"`
+	Metadata               map[string]string                  `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationContractFilter narrows operator queries across live
@@ -95,11 +139,20 @@ type SecureCellFederationContractSummary struct {
 	ComputeZones            []string                           `json:"compute_zones,omitempty"`
 	ComputeZoneCount        int                                `json:"compute_zone_count"`
 	AllowedActions          []string                           `json:"allowed_actions,omitempty"`
+	OfferedSessionScopeIDs  []string                           `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses      []string                           `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones     []string                           `json:"offered_compute_zones,omitempty"`
+	OfferedActions          []string                           `json:"offered_actions,omitempty"`
+	NegotiationDiffs        []SecureCellFederationPolicyDiff   `json:"negotiation_diffs,omitempty"`
+	NegotiationDiffCount    int                                `json:"negotiation_diff_count"`
 	Resource                string                             `json:"resource,omitempty"`
 	NegotiationID           string                             `json:"negotiation_id,omitempty"`
 	CredentialID            string                             `json:"credential_id,omitempty"`
 	PolicyReceiptID         string                             `json:"policy_receipt_id,omitempty"`
 	PolicyReceiptHash       string                             `json:"policy_receipt_hash,omitempty"`
+	Revision                int                                `json:"revision,omitempty"`
+	SupersedesContractID    string                             `json:"supersedes_contract_id,omitempty"`
+	ReplacedByContractID    string                             `json:"replaced_by_contract_id,omitempty"`
 	ControlLedgerID         string                             `json:"control_ledger_id,omitempty"`
 	PortablePackageHash     string                             `json:"portable_package_hash,omitempty"`
 	PortablePackageSigned   bool                               `json:"portable_package_signed"`
@@ -247,33 +300,236 @@ func (s *Service) BuildFederationContractBundle(_ context.Context, cellID string
 	return bundle, nil
 }
 
-func newActivatedFederationContract(req SecureCellRequest, invitation SecureCellFederationInvitation, participant SecureCellParticipantState, receipt *policy.SignedPolicyReceipt, actorDID string, reason string, metadata map[string]string) SecureCellFederationContract {
+// RevokeFederationContract revokes one active federation contract while
+// leaving the collaborating participant enrolled in the cell.
+func (s *Service) RevokeFederationContract(ctx context.Context, cellID string, contractID string, lifecycle SecureCellLifecycleRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+
+	contractIdx, contract := findSecureCellFederationContract(run.result.FederationContracts, contractID)
+	if contract == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrFederationContractNotFound, contractID)
+	}
+	if contract.Status != SecureCellFederationContractStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: federation contract %q is %s", ErrFederationContractImmutable, contractID, contract.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(lifecycle.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellActorAllowed(run, actorDID, true) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to revoke federation contracts", ErrPolicyDenied, actorDID)
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "revoke_federation_contract", lastReceiptHash(run.result), map[string]string{
+		"federation_contract_id":       contract.ID,
+		"federation_organization_id":   contract.OrganizationID,
+		"federation_invitation_id":     contract.InvitationID,
+		"federation_sponsor_of_record": contract.SponsorOfRecord,
+		"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(contract.AllowedActions), ","),
+		"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(contract.SessionScopeIDs), ","),
+		"cell_status_before":           string(run.result.Status),
+		"transition_reason":            strings.TrimSpace(lifecycle.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	revokedAt := time.Now().UTC()
+	revoked := revokeFederationContract(&run.result.FederationContracts[contractIdx], actorDID, strings.TrimSpace(lifecycle.Reason), revokedAt, lifecycle.Metadata, "")
+	run.result.UpdatedAt = revokedAt
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_contract_revoked", revoked.ID),
+		Action:           "secure_cell.federation_contract_revoked",
+		Actor:            actorDID,
+		TargetType:       "federation_contract",
+		TargetDID:        revoked.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           strings.TrimSpace(lifecycle.Reason),
+		Metadata: mergeStringMaps(lifecycle.Metadata, map[string]string{
+			"federation_contract_id":       revoked.ID,
+			"federation_organization_id":   revoked.OrganizationID,
+			"federation_invitation_id":     revoked.InvitationID,
+			"federation_sponsor_of_record": revoked.SponsorOfRecord,
+			"federation_contract_revision": fmt.Sprintf("%d", revoked.Revision),
+			"federation_allowed_actions":   strings.Join(uniqueTrimmedStrings(revoked.AllowedActions), ","),
+			"federation_session_scopes":    strings.Join(uniqueTrimmedStrings(revoked.SessionScopeIDs), ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// RenewFederationContract supersedes one active federation contract with a new
+// negotiated revision.
+func (s *Service) RenewFederationContract(ctx context.Context, cellID string, contractID string, renewal SecureCellFederationContractRenewRequest) (*SecureCellResult, error) {
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+
+	contractIdx, contract := findSecureCellFederationContract(run.result.FederationContracts, contractID)
+	if contract == nil {
+		return nil, fmt.Errorf("securecells/service: %w: %q", ErrFederationContractNotFound, contractID)
+	}
+	if contract.Status != SecureCellFederationContractStatusActive {
+		return nil, fmt.Errorf("securecells/service: %w: federation contract %q is %s", ErrFederationContractImmutable, contractID, contract.Status)
+	}
+
+	actorDID := firstNonEmpty(strings.TrimSpace(renewal.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellActorAllowed(run, actorDID, true) {
+		return nil, fmt.Errorf("securecells/service: %w: actor %q is not permitted to renew federation contracts", ErrPolicyDenied, actorDID)
+	}
+
+	participantState, err := secureCellPrimaryFederationContractParticipant(run.result, *contract)
+	if err != nil {
+		return nil, err
+	}
+	invitation := secureCellFederationInvitationForContract(run.result.FederationInvitations, *contract)
+	ownerTerms, offeredTerms, resource, err := secureCellRenewalTerms(run, *contract, renewal)
+	if err != nil {
+		return nil, err
+	}
+	negotiatedTerms, diffs, err := secureCellNegotiateFederationTerms(ownerTerms, offeredTerms)
+	if err != nil {
+		return nil, err
+	}
+	if err := secureCellValidateNegotiatedFederationTerms(run.request.Policy, negotiatedTerms); err != nil {
+		return nil, err
+	}
+
+	receipt, err := s.evaluateStage(ctx, run.request, "renew_federation_contract", lastReceiptHash(run.result), map[string]string{
+		"federation_contract_id":            contract.ID,
+		"federation_contract_revision":      fmt.Sprintf("%d", contract.Revision),
+		"federation_organization_id":        contract.OrganizationID,
+		"federation_invitation_id":          contract.InvitationID,
+		"federation_sponsor_of_record":      contract.SponsorOfRecord,
+		"federation_contract_supersedes":    contract.ID,
+		"federation_session_scopes":         strings.Join(uniqueTrimmedStrings(negotiatedTerms.SessionScopeIDs), ","),
+		"federation_data_classes":           strings.Join(uniqueTrimmedStrings(negotiatedTerms.DataClasses), ","),
+		"federation_compute_zones":          strings.Join(uniqueTrimmedStrings(negotiatedTerms.ComputeZones), ","),
+		"federation_allowed_actions":        strings.Join(uniqueTrimmedStrings(negotiatedTerms.AllowedActions), ","),
+		"federation_offered_session_scopes": strings.Join(uniqueTrimmedStrings(offeredTerms.SessionScopeIDs), ","),
+		"federation_offered_data_classes":   strings.Join(uniqueTrimmedStrings(offeredTerms.DataClasses), ","),
+		"federation_offered_compute_zones":  strings.Join(uniqueTrimmedStrings(offeredTerms.ComputeZones), ","),
+		"federation_offered_actions":        strings.Join(uniqueTrimmedStrings(offeredTerms.AllowedActions), ","),
+		"federation_policy_diffs":           secureCellFederationPolicyDiffsSummary(diffs),
+		"target_participant_did":            participantState.ParticipantDID,
+		"cell_status_before":                string(run.result.Status),
+		"transition_reason":                 strings.TrimSpace(renewal.Reason),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/service: %w", ErrPolicyDenied)
+	}
+
+	revokedAt := time.Now().UTC()
+	revoked := revokeFederationContract(&run.result.FederationContracts[contractIdx], actorDID, firstNonEmpty(strings.TrimSpace(renewal.Reason), contract.Reason), revokedAt, renewal.Metadata, "")
+	newContract := newActivatedFederationContract(run.request, invitation, participantState, negotiatedTerms, offeredTerms, diffs, resource, receipt, actorDID, strings.TrimSpace(renewal.Reason), renewal.Metadata, &revoked)
+	run.result.FederationContracts[contractIdx].ReplacedByContractID = newContract.ID
+	run.result.FederationContracts = append(run.result.FederationContracts, newContract)
+	run.result.UpdatedAt = revokedAt
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_contract_renewed", newContract.ID),
+		Action:           "secure_cell.federation_contract_renewed",
+		Actor:            actorDID,
+		TargetType:       "federation_contract",
+		TargetDID:        newContract.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           strings.TrimSpace(renewal.Reason),
+		Metadata: mergeStringMaps(renewal.Metadata, map[string]string{
+			"federation_contract_id":            newContract.ID,
+			"federation_contract_previous_id":   revoked.ID,
+			"federation_contract_revision":      fmt.Sprintf("%d", newContract.Revision),
+			"federation_contract_supersedes":    revoked.ID,
+			"federation_organization_id":        newContract.OrganizationID,
+			"federation_invitation_id":          newContract.InvitationID,
+			"federation_sponsor_of_record":      newContract.SponsorOfRecord,
+			"federation_session_scopes":         strings.Join(uniqueTrimmedStrings(newContract.SessionScopeIDs), ","),
+			"federation_data_classes":           strings.Join(uniqueTrimmedStrings(newContract.DataClasses), ","),
+			"federation_compute_zones":          strings.Join(uniqueTrimmedStrings(newContract.ComputeZones), ","),
+			"federation_allowed_actions":        strings.Join(uniqueTrimmedStrings(newContract.AllowedActions), ","),
+			"federation_offered_session_scopes": strings.Join(uniqueTrimmedStrings(newContract.OfferedSessionScopeIDs), ","),
+			"federation_offered_data_classes":   strings.Join(uniqueTrimmedStrings(newContract.OfferedDataClasses), ","),
+			"federation_offered_compute_zones":  strings.Join(uniqueTrimmedStrings(newContract.OfferedComputeZones), ","),
+			"federation_offered_actions":        strings.Join(uniqueTrimmedStrings(newContract.OfferedActions), ","),
+			"federation_policy_diffs":           secureCellFederationPolicyDiffsSummary(newContract.NegotiationDiffs),
+			"target_participant_did":            participantState.ParticipantDID,
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+func newActivatedFederationContract(req SecureCellRequest, invitation SecureCellFederationInvitation, participant SecureCellParticipantState, negotiatedTerms secureCellFederationTerms, offeredTerms secureCellFederationTerms, diffs []SecureCellFederationPolicyDiff, resource string, receipt *policy.SignedPolicyReceipt, actorDID string, reason string, metadata map[string]string, prior *SecureCellFederationContract) SecureCellFederationContract {
 	activatedAt := time.Now().UTC()
+	revision := 1
+	supersedesContractID := ""
+	createdBy := strings.TrimSpace(invitation.CreatedBy)
+	createdAt := invitation.CreatedAt.UTC()
+	if prior != nil {
+		revision = secureCellMaxInt(1, prior.Revision) + 1
+		supersedesContractID = strings.TrimSpace(prior.ID)
+		createdBy = strings.TrimSpace(actorDID)
+		createdAt = activatedAt
+	}
 	contract := SecureCellFederationContract{
-		ID:                secureCellFederationContractID(req, invitation, participant.ParticipantDID),
-		OrganizationID:    strings.TrimSpace(invitation.OrganizationID),
-		InvitationID:      strings.TrimSpace(invitation.ID),
-		SponsorOfRecord:   strings.TrimSpace(invitation.SponsorOfRecord),
-		OrganizationName:  strings.TrimSpace(invitation.OrganizationName),
-		Jurisdiction:      firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), req.Jurisdiction),
-		Status:            SecureCellFederationContractStatusActive,
-		ParticipantDIDs:   uniqueTrimmedStrings([]string{participant.ParticipantDID}),
-		SessionScopeIDs:   uniqueTrimmedStrings(invitation.SessionScopeIDs),
-		DataClasses:       uniqueTrimmedStrings(invitation.DataClasses),
-		ComputeZones:      uniqueTrimmedStrings(invitation.ComputeZones),
-		AllowedActions:    secureCellDefaultFederationContractActions(),
-		Resource:          strings.TrimSpace(invitation.Resource),
-		NegotiationID:     strings.TrimSpace(participant.NegotiationID),
-		CredentialID:      strings.TrimSpace(participant.CredentialID),
-		PolicyReceiptID:   safeString(receipt, func(in *policy.SignedPolicyReceipt) string { return strings.TrimSpace(in.ID) }),
-		PolicyReceiptHash: safeString(receipt, func(in *policy.SignedPolicyReceipt) string { return strings.TrimSpace(in.ContentHash) }),
-		CreatedBy:         strings.TrimSpace(invitation.CreatedBy),
-		ActivatedBy:       strings.TrimSpace(actorDID),
-		Reason:            strings.TrimSpace(reason),
-		CreatedAt:         invitation.CreatedAt.UTC(),
-		ActivatedAt:       &activatedAt,
-		UpdatedAt:         activatedAt,
-		Metadata:          mergeStringMaps(invitation.Metadata, metadata),
+		ID:                     secureCellFederationContractID(req, invitation, participant.ParticipantDID, revision, resource, negotiatedTerms),
+		OrganizationID:         strings.TrimSpace(invitation.OrganizationID),
+		InvitationID:           strings.TrimSpace(invitation.ID),
+		SponsorOfRecord:        strings.TrimSpace(invitation.SponsorOfRecord),
+		OrganizationName:       strings.TrimSpace(invitation.OrganizationName),
+		Jurisdiction:           firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), req.Jurisdiction),
+		Status:                 SecureCellFederationContractStatusActive,
+		ParticipantDIDs:        uniqueTrimmedStrings([]string{participant.ParticipantDID}),
+		SessionScopeIDs:        uniqueTrimmedStrings(negotiatedTerms.SessionScopeIDs),
+		DataClasses:            uniqueTrimmedStrings(negotiatedTerms.DataClasses),
+		ComputeZones:           uniqueTrimmedStrings(negotiatedTerms.ComputeZones),
+		AllowedActions:         uniqueTrimmedStrings(negotiatedTerms.AllowedActions),
+		OfferedSessionScopeIDs: uniqueTrimmedStrings(offeredTerms.SessionScopeIDs),
+		OfferedDataClasses:     uniqueTrimmedStrings(offeredTerms.DataClasses),
+		OfferedComputeZones:    uniqueTrimmedStrings(offeredTerms.ComputeZones),
+		OfferedActions:         uniqueTrimmedStrings(offeredTerms.AllowedActions),
+		NegotiationDiffs:       cloneSecureCellFederationPolicyDiffs(diffs),
+		Resource:               strings.TrimSpace(resource),
+		NegotiationID:          strings.TrimSpace(participant.NegotiationID),
+		CredentialID:           strings.TrimSpace(participant.CredentialID),
+		PolicyReceiptID:        safeString(receipt, func(in *policy.SignedPolicyReceipt) string { return strings.TrimSpace(in.ID) }),
+		PolicyReceiptHash:      safeString(receipt, func(in *policy.SignedPolicyReceipt) string { return strings.TrimSpace(in.ContentHash) }),
+		Revision:               revision,
+		SupersedesContractID:   supersedesContractID,
+		CreatedBy:              createdBy,
+		ActivatedBy:            strings.TrimSpace(actorDID),
+		Reason:                 strings.TrimSpace(reason),
+		CreatedAt:              createdAt,
+		ActivatedAt:            &activatedAt,
+		UpdatedAt:              activatedAt,
+		Metadata:               mergeStringMaps(invitation.Metadata, metadata),
 	}
 	if contract.Resource == "" {
 		contract.Resource = fmt.Sprintf("secure-cell:%s:federation-contract:%s", cellID(req), contract.ID)
@@ -284,8 +540,20 @@ func newActivatedFederationContract(req SecureCellRequest, invitation SecureCell
 	return contract
 }
 
-func secureCellFederationContractID(req SecureCellRequest, invitation SecureCellFederationInvitation, participantDID string) string {
-	seed := fmt.Sprintf("%s|%s|%s|%s|%s", cellID(req), invitation.ID, invitation.OrganizationID, strings.TrimSpace(participantDID), strings.Join(uniqueTrimmedStrings(invitation.SessionScopeIDs), ","))
+func secureCellFederationContractID(req SecureCellRequest, invitation SecureCellFederationInvitation, participantDID string, revision int, resource string, terms secureCellFederationTerms) string {
+	seed := fmt.Sprintf(
+		"%s|%s|%s|%s|%d|%s|%s|%s|%s|%s",
+		cellID(req),
+		invitation.ID,
+		invitation.OrganizationID,
+		strings.TrimSpace(participantDID),
+		secureCellMaxInt(1, revision),
+		strings.TrimSpace(resource),
+		strings.Join(uniqueTrimmedStrings(terms.SessionScopeIDs), ","),
+		strings.Join(uniqueTrimmedStrings(terms.DataClasses), ","),
+		strings.Join(uniqueTrimmedStrings(terms.ComputeZones), ","),
+		strings.Join(uniqueTrimmedStrings(terms.AllowedActions), ","),
+	)
 	return fmt.Sprintf("%s-federation-contract-%x", cellID(req), sha256.Sum256([]byte(seed)))
 }
 
@@ -295,6 +563,327 @@ func secureCellDefaultFederationContractActions() []string {
 		secureCellFederationContractActionSessionExchange,
 		secureCellFederationContractActionThreadMessage,
 	}
+}
+
+func revokeFederationContract(contract *SecureCellFederationContract, actorDID string, reason string, revokedAt time.Time, metadata map[string]string, replacedByContractID string) SecureCellFederationContract {
+	if contract == nil {
+		return SecureCellFederationContract{}
+	}
+	contract.Status = SecureCellFederationContractStatusRevoked
+	contract.RevokedBy = strings.TrimSpace(actorDID)
+	contract.Reason = firstNonEmpty(strings.TrimSpace(reason), contract.Reason)
+	contract.RevokedAt = cloneTimePtr(&revokedAt)
+	contract.UpdatedAt = revokedAt.UTC()
+	contract.ReplacedByContractID = firstNonEmpty(strings.TrimSpace(replacedByContractID), strings.TrimSpace(contract.ReplacedByContractID))
+	contract.Metadata = mergeStringMaps(contract.Metadata, metadata)
+	return *contract
+}
+
+func secureCellPrimaryFederationContractParticipant(result *SecureCellResult, contract SecureCellFederationContract) (SecureCellParticipantState, error) {
+	if result == nil {
+		return SecureCellParticipantState{}, fmt.Errorf("securecells/service: secure cell result is required")
+	}
+	for _, participantDID := range uniqueTrimmedStrings(contract.ParticipantDIDs) {
+		state, ok := participantStateForResult(result, participantDID)
+		if !ok {
+			continue
+		}
+		if state.Status == SecureCellParticipantStatusActive {
+			return state, nil
+		}
+	}
+	return SecureCellParticipantState{}, fmt.Errorf("securecells/service: %w: federation contract %q has no active participant", ErrFederationContractImmutable, strings.TrimSpace(contract.ID))
+}
+
+func secureCellFederationInvitationForContract(invitations []SecureCellFederationInvitation, contract SecureCellFederationContract) SecureCellFederationInvitation {
+	if _, invitation := findSecureCellFederationInvitation(invitations, contract.InvitationID); invitation != nil {
+		return *invitation
+	}
+	return SecureCellFederationInvitation{
+		ID:               strings.TrimSpace(contract.InvitationID),
+		OrganizationID:   strings.TrimSpace(contract.OrganizationID),
+		SponsorOfRecord:  strings.TrimSpace(contract.SponsorOfRecord),
+		OrganizationName: strings.TrimSpace(contract.OrganizationName),
+		Jurisdiction:     strings.TrimSpace(contract.Jurisdiction),
+		SessionScopeIDs:  uniqueTrimmedStrings(contract.SessionScopeIDs),
+		DataClasses:      uniqueTrimmedStrings(contract.DataClasses),
+		ComputeZones:     uniqueTrimmedStrings(contract.ComputeZones),
+		AllowedActions:   uniqueTrimmedStrings(contract.AllowedActions),
+		Resource:         strings.TrimSpace(contract.Resource),
+		CreatedBy:        strings.TrimSpace(contract.CreatedBy),
+		CreatedAt:        contract.CreatedAt.UTC(),
+		Metadata:         cloneStringMap(contract.Metadata),
+	}
+}
+
+func secureCellRenewalTerms(run *secureCellRun, contract SecureCellFederationContract, renewal SecureCellFederationContractRenewRequest) (secureCellFederationTerms, secureCellFederationTerms, string, error) {
+	if run == nil || run.result == nil {
+		return secureCellFederationTerms{}, secureCellFederationTerms{}, "", fmt.Errorf("securecells/service: secure cell result is required")
+	}
+
+	sessionScopes := uniqueTrimmedStrings(contract.SessionScopeIDs)
+	if renewal.SessionScopeIDs != nil {
+		resolved, err := secureCellResolveFederationSessionScopes(run.result.Sessions, renewal.SessionScopeIDs)
+		if err != nil {
+			return secureCellFederationTerms{}, secureCellFederationTerms{}, "", err
+		}
+		sessionScopes = resolved
+	}
+	dataClasses := uniqueTrimmedStrings(contract.DataClasses)
+	if renewal.DataClasses != nil {
+		dataClasses = uniqueTrimmedStrings(renewal.DataClasses)
+	}
+	computeZones := uniqueTrimmedStrings(contract.ComputeZones)
+	if renewal.ComputeZones != nil {
+		computeZones = uniqueTrimmedStrings(renewal.ComputeZones)
+	}
+	allowedActions := uniqueTrimmedStrings(contract.AllowedActions)
+	if renewal.AllowedActions != nil {
+		var err error
+		allowedActions, err = secureCellNormalizeFederationActions(renewal.AllowedActions)
+		if err != nil {
+			return secureCellFederationTerms{}, secureCellFederationTerms{}, "", err
+		}
+	}
+
+	ownerTerms := secureCellFederationTerms{
+		SessionScopeIDs: sessionScopes,
+		DataClasses:     dataClasses,
+		ComputeZones:    computeZones,
+		AllowedActions:  allowedActions,
+	}
+	offeredTerms, err := secureCellFederationOfferedTerms(run.result.Sessions, renewal.OfferedSessionScopeIDs, renewal.OfferedDataClasses, renewal.OfferedComputeZones, renewal.OfferedActions)
+	if err != nil {
+		return secureCellFederationTerms{}, secureCellFederationTerms{}, "", err
+	}
+	return ownerTerms, offeredTerms, firstNonEmpty(strings.TrimSpace(renewal.Resource), strings.TrimSpace(contract.Resource)), nil
+}
+
+func secureCellInvitationTerms(invitation SecureCellFederationInvitation) secureCellFederationTerms {
+	allowedActions := uniqueTrimmedStrings(invitation.AllowedActions)
+	if len(allowedActions) == 0 {
+		allowedActions = secureCellDefaultFederationContractActions()
+	}
+	return secureCellFederationTerms{
+		SessionScopeIDs: uniqueTrimmedStrings(invitation.SessionScopeIDs),
+		DataClasses:     uniqueTrimmedStrings(invitation.DataClasses),
+		ComputeZones:    uniqueTrimmedStrings(invitation.ComputeZones),
+		AllowedActions:  allowedActions,
+	}
+}
+
+func secureCellContractTerms(contract SecureCellFederationContract) secureCellFederationTerms {
+	return secureCellFederationTerms{
+		SessionScopeIDs: uniqueTrimmedStrings(contract.SessionScopeIDs),
+		DataClasses:     uniqueTrimmedStrings(contract.DataClasses),
+		ComputeZones:    uniqueTrimmedStrings(contract.ComputeZones),
+		AllowedActions:  uniqueTrimmedStrings(contract.AllowedActions),
+	}
+}
+
+func secureCellFederationOfferedTerms(sessions []SecureCellSession, sessionScopeIDs, dataClasses, computeZones, allowedActions []string) (secureCellFederationTerms, error) {
+	resolvedSessionScopes := uniqueTrimmedStrings(sessionScopeIDs)
+	if len(resolvedSessionScopes) > 0 {
+		var err error
+		resolvedSessionScopes, err = secureCellResolveFederationSessionScopes(sessions, sessionScopeIDs)
+		if err != nil {
+			return secureCellFederationTerms{}, err
+		}
+	}
+	normalizedActions, err := secureCellNormalizeFederationActions(allowedActions)
+	if err != nil {
+		return secureCellFederationTerms{}, err
+	}
+	return secureCellFederationTerms{
+		SessionScopeIDs: resolvedSessionScopes,
+		DataClasses:     uniqueTrimmedStrings(dataClasses),
+		ComputeZones:    uniqueTrimmedStrings(computeZones),
+		AllowedActions:  normalizedActions,
+	}, nil
+}
+
+func secureCellNegotiateFederationTerms(invitationTerms secureCellFederationTerms, offeredTerms secureCellFederationTerms) (secureCellFederationTerms, []SecureCellFederationPolicyDiff, error) {
+	negotiatedSessionScopes, sessionDiff, err := secureCellNegotiateFederationField("session_scope_ids", invitationTerms.SessionScopeIDs, offeredTerms.SessionScopeIDs)
+	if err != nil {
+		return secureCellFederationTerms{}, nil, err
+	}
+	negotiatedDataClasses, dataClassDiff, err := secureCellNegotiateFederationField("data_classes", invitationTerms.DataClasses, offeredTerms.DataClasses)
+	if err != nil {
+		return secureCellFederationTerms{}, nil, err
+	}
+	negotiatedComputeZones, computeZoneDiff, err := secureCellNegotiateFederationField("compute_zones", invitationTerms.ComputeZones, offeredTerms.ComputeZones)
+	if err != nil {
+		return secureCellFederationTerms{}, nil, err
+	}
+	negotiatedActions, actionDiff, err := secureCellNegotiateFederationField("allowed_actions", invitationTerms.AllowedActions, offeredTerms.AllowedActions)
+	if err != nil {
+		return secureCellFederationTerms{}, nil, err
+	}
+	return secureCellFederationTerms{
+			SessionScopeIDs: negotiatedSessionScopes,
+			DataClasses:     negotiatedDataClasses,
+			ComputeZones:    negotiatedComputeZones,
+			AllowedActions:  negotiatedActions,
+		},
+		compactSecureCellFederationPolicyDiffs(sessionDiff, dataClassDiff, computeZoneDiff, actionDiff),
+		nil
+}
+
+func secureCellValidateNegotiatedFederationTerms(policy SecureCellPolicy, terms secureCellFederationTerms) error {
+	if len(uniqueTrimmedStrings(terms.AllowedActions)) == 0 {
+		return fmt.Errorf("securecells/service: %w: negotiated federation actions are required", ErrFederationNegotiationConflict)
+	}
+	if len(policy.DataClasses) > 0 && len(terms.DataClasses) > 0 && len(intersectSecureCellFederationValues(policy.DataClasses, terms.DataClasses)) == 0 {
+		return fmt.Errorf("securecells/service: %w: negotiated federation data classes do not align with the secure cell policy", ErrFederationNegotiationConflict)
+	}
+	if len(policy.ComputeZones) > 0 && len(terms.ComputeZones) > 0 && len(intersectSecureCellFederationValues(policy.ComputeZones, terms.ComputeZones)) == 0 {
+		return fmt.Errorf("securecells/service: %w: negotiated federation compute zones do not align with the secure cell policy", ErrFederationNegotiationConflict)
+	}
+	return nil
+}
+
+func secureCellNegotiateFederationField(field string, invitationValues []string, offeredValues []string) ([]string, SecureCellFederationPolicyDiff, error) {
+	invitationValues = uniqueTrimmedStrings(invitationValues)
+	offeredValues = uniqueTrimmedStrings(offeredValues)
+	diff := SecureCellFederationPolicyDiff{
+		Field:            strings.TrimSpace(field),
+		InvitationValues: append([]string(nil), invitationValues...),
+		OfferedValues:    append([]string(nil), offeredValues...),
+	}
+
+	switch {
+	case len(invitationValues) == 0 && len(offeredValues) == 0:
+		return nil, diff, nil
+	case len(offeredValues) == 0:
+		diff.Effect = "owner_terms_applied"
+		diff.NegotiatedValues = append([]string(nil), invitationValues...)
+		diff.Summary = "counterparty accepted owner terms"
+		return invitationValues, diff, nil
+	case len(invitationValues) == 0:
+		diff.Effect = "counterparty_narrowed_open_scope"
+		diff.NegotiatedValues = append([]string(nil), offeredValues...)
+		diff.Summary = "counterparty narrowed an otherwise open federation scope"
+		return offeredValues, diff, nil
+	default:
+		negotiated := intersectSecureCellFederationValues(invitationValues, offeredValues)
+		if len(negotiated) == 0 {
+			return nil, SecureCellFederationPolicyDiff{}, fmt.Errorf("securecells/service: %w: no mutually permitted %s values", ErrFederationNegotiationConflict, strings.TrimSpace(field))
+		}
+		diff.NegotiatedValues = append([]string(nil), negotiated...)
+		if equalFoldStringSlices(invitationValues, negotiated) && equalFoldStringSlices(offeredValues, negotiated) {
+			diff.Effect = "unchanged"
+			diff.Summary = "counterparty accepted the owner-authored federation terms"
+		} else {
+			diff.Effect = "narrowed"
+			diff.Summary = "negotiated federation scope narrowed relative to one or both proposed term sets"
+		}
+		return negotiated, diff, nil
+	}
+}
+
+func intersectSecureCellFederationValues(left []string, right []string) []string {
+	if len(left) == 0 || len(right) == 0 {
+		return nil
+	}
+	rightIndex := make(map[string]string, len(right))
+	for _, value := range uniqueTrimmedStrings(right) {
+		rightIndex[strings.ToLower(strings.TrimSpace(value))] = strings.TrimSpace(value)
+	}
+	out := make([]string, 0, len(left))
+	for _, candidate := range uniqueTrimmedStrings(left) {
+		if matched, ok := rightIndex[strings.ToLower(strings.TrimSpace(candidate))]; ok {
+			out = append(out, firstNonEmpty(strings.TrimSpace(candidate), matched))
+		}
+	}
+	return uniqueTrimmedStrings(out)
+}
+
+func equalFoldStringSlices(left []string, right []string) bool {
+	left = uniqueTrimmedStrings(left)
+	right = uniqueTrimmedStrings(right)
+	if len(left) != len(right) {
+		return false
+	}
+	for idx := range left {
+		if !strings.EqualFold(strings.TrimSpace(left[idx]), strings.TrimSpace(right[idx])) {
+			return false
+		}
+	}
+	return true
+}
+
+func compactSecureCellFederationPolicyDiffs(diffs ...SecureCellFederationPolicyDiff) []SecureCellFederationPolicyDiff {
+	out := make([]SecureCellFederationPolicyDiff, 0, len(diffs))
+	for _, diff := range diffs {
+		if strings.TrimSpace(diff.Field) == "" {
+			continue
+		}
+		if len(diff.InvitationValues) == 0 && len(diff.OfferedValues) == 0 && len(diff.NegotiatedValues) == 0 {
+			continue
+		}
+		out = append(out, diff)
+	}
+	return out
+}
+
+func cloneSecureCellFederationPolicyDiffs(in []SecureCellFederationPolicyDiff) []SecureCellFederationPolicyDiff {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]SecureCellFederationPolicyDiff, 0, len(in))
+	for _, diff := range in {
+		out = append(out, SecureCellFederationPolicyDiff{
+			Field:            strings.TrimSpace(diff.Field),
+			InvitationValues: append([]string(nil), uniqueTrimmedStrings(diff.InvitationValues)...),
+			OfferedValues:    append([]string(nil), uniqueTrimmedStrings(diff.OfferedValues)...),
+			NegotiatedValues: append([]string(nil), uniqueTrimmedStrings(diff.NegotiatedValues)...),
+			Effect:           strings.TrimSpace(diff.Effect),
+			Summary:          strings.TrimSpace(diff.Summary),
+		})
+	}
+	return out
+}
+
+func secureCellFederationPolicyDiffsSummary(diffs []SecureCellFederationPolicyDiff) string {
+	items := make([]string, 0, len(diffs))
+	for _, diff := range diffs {
+		field := strings.TrimSpace(diff.Field)
+		if field == "" {
+			continue
+		}
+		negotiated := strings.Join(uniqueTrimmedStrings(diff.NegotiatedValues), "|")
+		if negotiated == "" {
+			negotiated = "open"
+		}
+		effect := firstNonEmpty(strings.TrimSpace(diff.Effect), "resolved")
+		items = append(items, fmt.Sprintf("%s:%s:%s", field, effect, negotiated))
+	}
+	sort.Strings(items)
+	return strings.Join(items, ",")
+}
+
+func secureCellNormalizeFederationActions(values []string) ([]string, error) {
+	normalized := uniqueTrimmedStrings(values)
+	if len(normalized) == 0 {
+		return nil, nil
+	}
+	allowed := make(map[string]struct{}, len(secureCellDefaultFederationContractActions()))
+	for _, action := range secureCellDefaultFederationContractActions() {
+		allowed[strings.ToLower(strings.TrimSpace(action))] = struct{}{}
+	}
+	for _, value := range normalized {
+		if _, ok := allowed[strings.ToLower(strings.TrimSpace(value))]; !ok {
+			return nil, fmt.Errorf("securecells/service: %w: unsupported federation action %q", ErrFederationNegotiationConflict, strings.TrimSpace(value))
+		}
+	}
+	return normalized, nil
+}
+
+func secureCellMaxInt(left, right int) int {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func secureCellFederationContractUpdatedAt(contract SecureCellFederationContract) time.Time {
@@ -333,33 +922,42 @@ func secureCellFederationContractSummaryAndRef(run *secureCellRun, contractID st
 
 func secureCellFederationContractSummaryFromRun(run *secureCellRun, contract SecureCellFederationContract) SecureCellFederationContractSummary {
 	summary := SecureCellFederationContractSummary{
-		CellID:            safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
-		CellName:          safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
-		CellStatus:        safeSecureCellStatus(run),
-		Jurisdiction:      firstNonEmpty(strings.TrimSpace(contract.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
-		ContractID:        strings.TrimSpace(contract.ID),
-		OrganizationID:    strings.TrimSpace(contract.OrganizationID),
-		InvitationID:      strings.TrimSpace(contract.InvitationID),
-		SponsorOfRecord:   strings.TrimSpace(contract.SponsorOfRecord),
-		OrganizationName:  strings.TrimSpace(contract.OrganizationName),
-		Status:            contract.Status,
-		ParticipantDIDs:   uniqueTrimmedStrings(contract.ParticipantDIDs),
-		SessionScopeIDs:   uniqueTrimmedStrings(contract.SessionScopeIDs),
-		SessionScopeCount: len(uniqueTrimmedStrings(contract.SessionScopeIDs)),
-		DataClasses:       uniqueTrimmedStrings(contract.DataClasses),
-		DataClassCount:    len(uniqueTrimmedStrings(contract.DataClasses)),
-		ComputeZones:      uniqueTrimmedStrings(contract.ComputeZones),
-		ComputeZoneCount:  len(uniqueTrimmedStrings(contract.ComputeZones)),
-		AllowedActions:    append([]string(nil), uniqueTrimmedStrings(contract.AllowedActions)...),
-		Resource:          strings.TrimSpace(contract.Resource),
-		NegotiationID:     strings.TrimSpace(contract.NegotiationID),
-		CredentialID:      strings.TrimSpace(contract.CredentialID),
-		PolicyReceiptID:   strings.TrimSpace(contract.PolicyReceiptID),
-		PolicyReceiptHash: strings.TrimSpace(contract.PolicyReceiptHash),
-		CreatedAt:         contract.CreatedAt.UTC(),
-		ActivatedAt:       cloneTimePtr(contract.ActivatedAt),
-		RevokedAt:         cloneTimePtr(contract.RevokedAt),
-		UpdatedAt:         secureCellFederationContractUpdatedAt(contract),
+		CellID:                 safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
+		CellName:               safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
+		CellStatus:             safeSecureCellStatus(run),
+		Jurisdiction:           firstNonEmpty(strings.TrimSpace(contract.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
+		ContractID:             strings.TrimSpace(contract.ID),
+		OrganizationID:         strings.TrimSpace(contract.OrganizationID),
+		InvitationID:           strings.TrimSpace(contract.InvitationID),
+		SponsorOfRecord:        strings.TrimSpace(contract.SponsorOfRecord),
+		OrganizationName:       strings.TrimSpace(contract.OrganizationName),
+		Status:                 contract.Status,
+		ParticipantDIDs:        uniqueTrimmedStrings(contract.ParticipantDIDs),
+		SessionScopeIDs:        uniqueTrimmedStrings(contract.SessionScopeIDs),
+		SessionScopeCount:      len(uniqueTrimmedStrings(contract.SessionScopeIDs)),
+		DataClasses:            uniqueTrimmedStrings(contract.DataClasses),
+		DataClassCount:         len(uniqueTrimmedStrings(contract.DataClasses)),
+		ComputeZones:           uniqueTrimmedStrings(contract.ComputeZones),
+		ComputeZoneCount:       len(uniqueTrimmedStrings(contract.ComputeZones)),
+		AllowedActions:         append([]string(nil), uniqueTrimmedStrings(contract.AllowedActions)...),
+		OfferedSessionScopeIDs: append([]string(nil), uniqueTrimmedStrings(contract.OfferedSessionScopeIDs)...),
+		OfferedDataClasses:     append([]string(nil), uniqueTrimmedStrings(contract.OfferedDataClasses)...),
+		OfferedComputeZones:    append([]string(nil), uniqueTrimmedStrings(contract.OfferedComputeZones)...),
+		OfferedActions:         append([]string(nil), uniqueTrimmedStrings(contract.OfferedActions)...),
+		NegotiationDiffs:       cloneSecureCellFederationPolicyDiffs(contract.NegotiationDiffs),
+		NegotiationDiffCount:   len(contract.NegotiationDiffs),
+		Resource:               strings.TrimSpace(contract.Resource),
+		NegotiationID:          strings.TrimSpace(contract.NegotiationID),
+		CredentialID:           strings.TrimSpace(contract.CredentialID),
+		PolicyReceiptID:        strings.TrimSpace(contract.PolicyReceiptID),
+		PolicyReceiptHash:      strings.TrimSpace(contract.PolicyReceiptHash),
+		Revision:               secureCellMaxInt(1, contract.Revision),
+		SupersedesContractID:   strings.TrimSpace(contract.SupersedesContractID),
+		ReplacedByContractID:   strings.TrimSpace(contract.ReplacedByContractID),
+		CreatedAt:              contract.CreatedAt.UTC(),
+		ActivatedAt:            cloneTimePtr(contract.ActivatedAt),
+		RevokedAt:              cloneTimePtr(contract.RevokedAt),
+		UpdatedAt:              secureCellFederationContractUpdatedAt(contract),
 	}
 	for _, participantDID := range summary.ParticipantDIDs {
 		if _, ok := participantStateForResult(run.result, participantDID); ok {
@@ -556,6 +1154,7 @@ func secureCellFederationGovernedOrganizationForParticipant(result *SecureCellRe
 		return "", false
 	}
 	var best *SecureCellFederationContract
+	var bestActive *SecureCellFederationContract
 	for idx := range result.FederationContracts {
 		contract := &result.FederationContracts[idx]
 		for _, candidate := range contract.ParticipantDIDs {
@@ -565,8 +1164,14 @@ func secureCellFederationGovernedOrganizationForParticipant(result *SecureCellRe
 			if best == nil || secureCellFederationContractUpdatedAt(*contract).After(secureCellFederationContractUpdatedAt(*best)) {
 				best = contract
 			}
+			if contract.Status == SecureCellFederationContractStatusActive && (bestActive == nil || secureCellFederationContractUpdatedAt(*contract).After(secureCellFederationContractUpdatedAt(*bestActive))) {
+				bestActive = contract
+			}
 			break
 		}
+	}
+	if bestActive != nil {
+		return strings.TrimSpace(bestActive.OrganizationID), true
 	}
 	if best == nil {
 		return "", false

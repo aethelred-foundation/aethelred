@@ -53,6 +53,8 @@ const (
 	secureCellsAuthFederationInviteAction                         = "secure_cells.federation.invite"
 	secureCellsAuthFederationAcceptAction                         = "secure_cells.federation.accept"
 	secureCellsAuthFederationRevokeAction                         = "secure_cells.federation.revoke"
+	secureCellsAuthFederationContractRenewAction                  = "secure_cells.federation.contract.renew"
+	secureCellsAuthFederationContractRevokeAction                 = "secure_cells.federation.contract.revoke"
 	secureCellsAuthReleaseAction                                  = "secure_cells.member.release"
 	secureCellsAuthQuarantineAction                               = "secure_cells.member.quarantine"
 	secureCellsAuthRevokeAction                                   = "secure_cells.member.revoke"
@@ -115,6 +117,8 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationInvite(r *http.Request, cellID string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationAccept(r *http.Request, cellID string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationContractRenew(r *http.Request, cellID string, contractID string, req *secureCellFederationContractRenewRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationContractRevoke(r *http.Request, cellID string, contractID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeQuarantine(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeRevoke(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
@@ -181,6 +185,17 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationAccept(r *http.R
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationRevoke(r *http.Request, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationContractRenew(r *http.Request, _ string, _ string, req *secureCellFederationContractRenewRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationContractRevoke(r *http.Request, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.AuthorizeClose(r, "", "", req)
 }
 
@@ -391,6 +406,18 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationAccept(r *http.Req
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeFederationRevoke(r, cellID, invitationID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationContractRenew(r *http.Request, cellID string, contractID string, req *secureCellFederationContractRenewRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationContractRenew(r, cellID, contractID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationContractRevoke(r *http.Request, cellID string, contractID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationContractRevoke(r, cellID, contractID, req)
 	})
 }
 
@@ -771,6 +798,60 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationRevoke(r *htt
 		req.PolicyReceipt,
 		secureCellsAuthFederationRevokeAction,
 		resourceCandidatesForSecureCellFederationInvitationAction(cellID, invitationID, "revoke", ""),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationContractRenew(r *http.Request, cellID string, contractID string, req *secureCellFederationContractRenewRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(contractID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and contract ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation contract renew request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationContractRenewAction,
+		resourceCandidatesForSecureCellFederationContractAction(cellID, contractID, "renew"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationContractRevoke(r *http.Request, cellID string, contractID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(contractID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and contract ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation contract revoke request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationContractRevokeAction,
+		resourceCandidatesForSecureCellFederationContractAction(cellID, contractID, "revoke"),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
@@ -1920,6 +2001,20 @@ func (app *AethelredApp) authorizeSecureCellFederationRevoke(r *http.Request, ce
 	return app.secureCellAuth.AuthorizeFederationRevoke(r, cellID, invitationID, req)
 }
 
+func (app *AethelredApp) authorizeSecureCellFederationContractRenew(r *http.Request, cellID string, contractID string, req *secureCellFederationContractRenewRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationContractRenew(r, cellID, contractID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationContractRevoke(r *http.Request, cellID string, contractID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationContractRevoke(r, cellID, contractID, req)
+}
+
 func (app *AethelredApp) authorizeSecureCellExpire(r *http.Request, cellID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, nil
@@ -2066,6 +2161,25 @@ func resourceCandidatesForSecureCellFederationInvitationAction(cellID, invitatio
 	}
 	if participantDID != "" {
 		candidates = append(candidates, "participant:"+participantDID)
+	}
+	return candidates
+}
+
+func resourceCandidatesForSecureCellFederationContractAction(cellID, contractID, action string) []string {
+	cellID = strings.TrimSpace(cellID)
+	contractID = strings.TrimSpace(contractID)
+	action = strings.TrimSpace(action)
+	candidates := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		"federation-contract:" + contractID,
+		contractID,
+	}
+	if contractID != "" && action != "" {
+		candidates = append(candidates,
+			secureCellsItemPrefix+cellID+"/federation/contracts/"+contractID+"/"+action,
+			"secure-cell:"+cellID+":federation:contract:"+contractID+":"+action,
+		)
 	}
 	return candidates
 }

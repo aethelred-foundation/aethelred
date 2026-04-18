@@ -72,18 +72,39 @@ type secureCellFederationInviteRequest struct {
 	SessionScopeIDs  []string                    `json:"session_scope_ids,omitempty"`
 	DataClasses      []string                    `json:"data_classes,omitempty"`
 	ComputeZones     []string                    `json:"compute_zones,omitempty"`
+	AllowedActions   []string                    `json:"allowed_actions,omitempty"`
 	Resource         string                      `json:"resource,omitempty"`
 	Reason           string                      `json:"reason,omitempty"`
 	Metadata         map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellFederationAcceptRequest struct {
-	ActorIdentity json.RawMessage                              `json:"actor_identity,omitempty"`
-	PolicyReceipt *policy.SignedPolicyReceipt                  `json:"policy_receipt,omitempty"`
-	InvitationID  string                                       `json:"invitation_id,omitempty"`
-	Participant   securecellsintegration.SecureCellParticipant `json:"participant"`
-	Reason        string                                       `json:"reason,omitempty"`
-	Metadata      map[string]string                            `json:"metadata,omitempty"`
+	ActorIdentity          json.RawMessage                              `json:"actor_identity,omitempty"`
+	PolicyReceipt          *policy.SignedPolicyReceipt                  `json:"policy_receipt,omitempty"`
+	InvitationID           string                                       `json:"invitation_id,omitempty"`
+	Participant            securecellsintegration.SecureCellParticipant `json:"participant"`
+	OfferedSessionScopeIDs []string                                     `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string                                     `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string                                     `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string                                     `json:"offered_actions,omitempty"`
+	Reason                 string                                       `json:"reason,omitempty"`
+	Metadata               map[string]string                            `json:"metadata,omitempty"`
+}
+
+type secureCellFederationContractRenewRequest struct {
+	ActorIdentity          json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt          *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	SessionScopeIDs        []string                    `json:"session_scope_ids,omitempty"`
+	DataClasses            []string                    `json:"data_classes,omitempty"`
+	ComputeZones           []string                    `json:"compute_zones,omitempty"`
+	AllowedActions         []string                    `json:"allowed_actions,omitempty"`
+	OfferedSessionScopeIDs []string                    `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string                    `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string                    `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string                    `json:"offered_actions,omitempty"`
+	Resource               string                      `json:"resource,omitempty"`
+	Reason                 string                      `json:"reason,omitempty"`
+	Metadata               map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellMemberMutationRequest struct {
@@ -1081,6 +1102,7 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				SessionScopeIDs:  append([]string(nil), req.SessionScopeIDs...),
 				DataClasses:      append([]string(nil), req.DataClasses...),
 				ComputeZones:     append([]string(nil), req.ComputeZones...),
+				AllowedActions:   append([]string(nil), req.AllowedActions...),
 				Resource:         req.Resource,
 				Reason:           req.Reason,
 				Metadata:         req.Metadata,
@@ -1110,11 +1132,15 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.AcceptFederationInvitation(r.Context(), cellID, securecellsintegration.SecureCellFederationAcceptRequest{
-				InvitationID: req.InvitationID,
-				ActorDID:     safeSecureCellActorDID(authCtx),
-				Participant:  req.Participant,
-				Reason:       req.Reason,
-				Metadata:     req.Metadata,
+				InvitationID:           req.InvitationID,
+				ActorDID:               safeSecureCellActorDID(authCtx),
+				Participant:            req.Participant,
+				OfferedSessionScopeIDs: append([]string(nil), req.OfferedSessionScopeIDs...),
+				OfferedDataClasses:     append([]string(nil), req.OfferedDataClasses...),
+				OfferedComputeZones:    append([]string(nil), req.OfferedComputeZones...),
+				OfferedActions:         append([]string(nil), req.OfferedActions...),
+				Reason:                 req.Reason,
+				Metadata:               req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -1140,6 +1166,71 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.RevokeFederationInvitation(r.Context(), cellID, invitationID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/renew") && strings.Contains(r.URL.Path, "/federation/contracts/"):
+			cellID, contractID, err := parseSecureCellFederationContractActionPath(r.URL.Path, "/renew")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationContractRenewRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation contract renew request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationContractRenew(r, cellID, contractID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.RenewFederationContract(r.Context(), cellID, contractID, securecellsintegration.SecureCellFederationContractRenewRequest{
+				ActorDID:               safeSecureCellActorDID(authCtx),
+				SessionScopeIDs:        append([]string(nil), req.SessionScopeIDs...),
+				DataClasses:            append([]string(nil), req.DataClasses...),
+				ComputeZones:           append([]string(nil), req.ComputeZones...),
+				AllowedActions:         append([]string(nil), req.AllowedActions...),
+				OfferedSessionScopeIDs: append([]string(nil), req.OfferedSessionScopeIDs...),
+				OfferedDataClasses:     append([]string(nil), req.OfferedDataClasses...),
+				OfferedComputeZones:    append([]string(nil), req.OfferedComputeZones...),
+				OfferedActions:         append([]string(nil), req.OfferedActions...),
+				Resource:               req.Resource,
+				Reason:                 req.Reason,
+				Metadata:               req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/revoke") && strings.Contains(r.URL.Path, "/federation/contracts/"):
+			cellID, contractID, err := parseSecureCellFederationContractActionPath(r.URL.Path, "/revoke")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation contract revoke request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationContractRevoke(r, cellID, contractID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.RevokeFederationContract(r.Context(), cellID, contractID, securecellsintegration.SecureCellLifecycleRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
@@ -2122,6 +2213,20 @@ func secureCellFederationContractBundleOptions(cellID string, contractID string)
 				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/export?format=csv",
 				Description: "Export the portable contract bundle for this federated collaboration contract.",
 				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "contract-renew",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/renew",
+				Description: "Renew this federation contract with new negotiated terms and replayable policy diffs.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "contract-revoke",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/revoke",
+				Description: "Revoke this federation contract while preserving the historical collaboration trace.",
+				Formats:     []string{"json"},
 			},
 		},
 	}
@@ -3202,6 +3307,10 @@ func secureCellErrorStatus(err error, fallback int) int {
 	case errors.Is(err, securecellsintegration.ErrFederationInvitationNotFound):
 		return http.StatusNotFound
 	case errors.Is(err, securecellsintegration.ErrFederationInvitationImmutable):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrFederationContractImmutable):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrFederationNegotiationConflict):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrFederationContractRequired):
 		return http.StatusConflict
