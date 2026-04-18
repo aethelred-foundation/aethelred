@@ -137,18 +137,19 @@ coverage*.html
 # ── Rust Workspace Lock (lives in crates/) ───────────────────────────
 /Cargo.lock
 
-# ── AI & Dev Tooling (local only) ────────────────────────────────────
+# ── Local Tooling (local only) ───────────────────────────────────────
 .ai-tools/
-.claude/
 .cursor/
-.codex/
 .serena/
 .aider*
-CLAUDE.md
+.local-workspace/
+LOCAL_TOOLING.md
 
 # ── Local Test Outputs ───────────────────────────────────────────────
 loadtest-results/
 test-results/
+.cache/
+sdk/go/.cache/
 
 # ── Separate Repositories ────────────────────────────────────────────
 dApps/terraqura/
