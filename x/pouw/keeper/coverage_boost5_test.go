@@ -76,7 +76,7 @@ func TestCB5_AppendTrustedMeasurement_InvalidHex(t *testing.T) {
 }
 
 func TestCB5_RevokeTrustedMeasurement_NotCommitteeMember(t *testing.T) {
-	k, ctx := newTestKeeper(t)
+	k, ctx := newCommitteeTestKeeper(t, defaultCommitteeValidators())
 	validHex := "abababababababababababababababababababababababababababababababab"
 	err := k.RevokeTrustedMeasurementBySecurityCommittee(ctx, "random-requester", "aws-nitro", validHex)
 	require.Error(t, err)

@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
 import "../contracts/AethelredToken.sol";
 
 /**
@@ -54,10 +55,7 @@ contract AethelredTokenTest is Test {
     event TokensBurnedByBridge(address indexed bridge, address indexed from, uint256 amount);
     event TokensMintedByBridge(address indexed bridge, address indexed to, uint256 amount);
     event ComplianceSlash(
-        address indexed account,
-        uint256 amount,
-        bytes32 indexed reason,
-        address indexed authority
+        address indexed account, uint256 amount, bytes32 indexed reason, address indexed authority
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -68,10 +66,8 @@ contract AethelredTokenTest is Test {
     function setUp() public {
         implementation = new AethelredToken();
 
-        bytes memory initData = abi.encodeCall(
-            AethelredToken.initialize,
-            (admin, minter, alice, INITIAL_AMOUNT)
-        );
+        bytes memory initData =
+            abi.encodeCall(AethelredToken.initialize, (admin, minter, alice, INITIAL_AMOUNT));
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
         token = AethelredToken(address(proxy));
 
@@ -125,6 +121,41 @@ contract AethelredTokenTest is Test {
     function test_Revert_Init_ImplementationCannotBeInitialized() public {
         vm.expectRevert();
         implementation.initialize(admin, minter, alice, INITIAL_AMOUNT);
+    }
+
+    function test_Revert_Init_RequiresTimelockOnNonLocalChain() public {
+        vm.chainId(1);
+
+        AethelredToken impl = new AethelredToken();
+        bytes memory initData =
+            abi.encodeCall(AethelredToken.initialize, (admin, minter, alice, INITIAL_AMOUNT));
+
+        vm.expectRevert(AethelredToken.ProductionInitializationRequiresTimelock.selector);
+        new ERC1967Proxy(address(impl), initData);
+    }
+
+    function test_Init_WithTimelock_IsolatesUpgraderRole() public {
+        address[] memory proposers = new address[](1);
+        proposers[0] = admin;
+        address[] memory executors = new address[](1);
+        executors[0] = admin;
+
+        TimelockController timelock = new TimelockController(27 days, proposers, executors, admin);
+
+        AethelredToken impl = new AethelredToken();
+        bytes memory initData = abi.encodeCall(
+            AethelredToken.initializeWithTimelock,
+            (admin, address(timelock), minter, alice, INITIAL_AMOUNT)
+        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+        AethelredToken timelockedToken = AethelredToken(address(proxy));
+
+        assertTrue(timelockedToken.hasRole(timelockedToken.UPGRADER_ROLE(), address(timelock)));
+        assertFalse(timelockedToken.hasRole(timelockedToken.UPGRADER_ROLE(), admin));
+        assertEq(
+            timelockedToken.getRoleAdmin(timelockedToken.UPGRADER_ROLE()),
+            timelockedToken.UPGRADER_ROLE()
+        );
     }
 
     // =========================================================================
@@ -188,7 +219,9 @@ contract AethelredTokenTest is Test {
         token.setBlacklisted(alice, true);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice)
+        );
         token.transfer(bob, 1 ether);
     }
 
@@ -200,7 +233,9 @@ contract AethelredTokenTest is Test {
         token.setBlacklisted(bob, true);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob)
+        );
         token.transfer(bob, 1 ether);
     }
 
@@ -355,7 +390,9 @@ contract AethelredTokenTest is Test {
         token.setBlacklisted(bob, true);
 
         vm.prank(minter);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob)
+        );
         token.mint(bob, 100 ether);
     }
 
@@ -418,12 +455,7 @@ contract AethelredTokenTest is Test {
         token.approve(burner, 500 ether);
 
         vm.expectEmit(true, true, true, true);
-        emit ComplianceSlash(
-            alice,
-            500 ether,
-            keccak256("LEGACY_ADMIN_BURN"),
-            burner
-        );
+        emit ComplianceSlash(alice, 500 ether, keccak256("LEGACY_ADMIN_BURN"), burner);
         vm.prank(burner);
         token.adminBurn(alice, 500 ether);
     }
@@ -562,7 +594,9 @@ contract AethelredTokenTest is Test {
         token.setBlacklisted(bob, true);
 
         vm.prank(bridge1);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, bob)
+        );
         token.bridgeMint(bob, 10 ether);
     }
 
@@ -662,7 +696,11 @@ contract AethelredTokenTest is Test {
         bytes32 adminRole = token.DEFAULT_ADMIN_ROLE();
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, adminRole));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, alice, adminRole
+            )
+        );
         token.grantRole(minterRole, bob);
     }
 
@@ -771,10 +809,7 @@ contract AethelredTokenTest is Test {
         // totalSupply() already excludes burned tokens (ERC20 standard).
         // circulatingSupply() == totalSupply(). The invariant is:
         // totalSupply + totalBurned == total ever minted (INITIAL_AMOUNT here)
-        assertEq(
-            token.circulatingSupply() + token.totalBurned(),
-            INITIAL_AMOUNT
-        );
+        assertEq(token.circulatingSupply() + token.totalBurned(), INITIAL_AMOUNT);
     }
 
     // =========================================================================
@@ -965,7 +1000,9 @@ contract AethelredTokenTest is Test {
 
         // Blacklist takes precedence over whitelist for transfers
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice)
+        );
         token.transfer(bob, 1 ether);
     }
 
@@ -1182,8 +1219,7 @@ contract AethelredTokenTest is Test {
     function test_Revert_Upgrade_NonUpgraderCannotAuthorize() public {
         AethelredToken newImpl = new AethelredToken();
 
-        // admin has DEFAULT_ADMIN_ROLE but not UPGRADER_ROLE (unless granted)
-        // Let's use bob who has no role
+        // Use principals that definitely do not hold UPGRADER_ROLE.
         vm.prank(bob);
         vm.expectRevert();
         token.upgradeToAndCall(address(newImpl), "");
@@ -1286,7 +1322,8 @@ contract AethelredTokenTest is Test {
         assertEq(token.balanceOf(carol), 100 ether);
 
         // 4. Verify total balances add up to totalSupply
-        uint256 totalBalances = token.balanceOf(alice) + token.balanceOf(bob) + token.balanceOf(carol);
+        uint256 totalBalances =
+            token.balanceOf(alice) + token.balanceOf(bob) + token.balanceOf(carol);
         assertEq(totalBalances, token.totalSupply());
     }
 
@@ -1305,7 +1342,9 @@ contract AethelredTokenTest is Test {
 
         // Transfer should fail because blacklist takes priority
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice));
+        vm.expectRevert(
+            abi.encodeWithSelector(AethelredToken.AddressBlacklistedError.selector, alice)
+        );
         token.transfer(bob, 10 ether);
 
         // Remove blacklist, transfer should work again

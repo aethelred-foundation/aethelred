@@ -70,13 +70,17 @@ func (k msgServer) RevokeSeal(goCtx context.Context, msg *types.MsgRevokeSeal) (
 		return nil, fmt.Errorf("seal not found: %s", msg.SealId)
 	}
 
-	// Check if the authority is the seal creator or module authority
-	if msg.Authority != seal.RequestedBy && msg.Authority != k.GetAuthority() {
-		return nil, fmt.Errorf("unauthorized: only seal creator or module authority can revoke")
+	// Seal creators may self-revoke immediately. Module authority must use the
+	// governed revocation workflow instead of bypassing dispute/approval controls.
+	if msg.Authority == k.GetAuthority() {
+		return nil, fmt.Errorf("module authority must use governed revocation workflow")
+	}
+	if msg.Authority != seal.RequestedBy {
+		return nil, fmt.Errorf("unauthorized: only seal creator can revoke directly")
 	}
 
 	// Revoke the seal
-	if err := k.Keeper.RevokeSeal(ctx, msg.SealId, msg.Reason); err != nil {
+	if err := k.Keeper.revokeSealDirect(ctx, msg.SealId, msg.Reason); err != nil {
 		return nil, err
 	}
 

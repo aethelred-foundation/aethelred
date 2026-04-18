@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -70,6 +71,40 @@ func TestHTTPDrandPulseProvider_RejectsInconsistentPayload(t *testing.T) {
 	provider := NewHTTPDrandPulseProvider(server.URL, time.Second)
 	if _, err := provider.LatestPulse(context.Background()); err == nil {
 		t.Fatal("expected consistency-check error")
+	}
+}
+
+func TestHTTPDrandPulseProvider_RejectsBlockedEndpoint(t *testing.T) {
+	provider := NewHTTPDrandPulseProvider("https://169.254.169.254", time.Second)
+
+	_, err := provider.LatestPulse(context.Background())
+	if err == nil {
+		t.Fatal("expected blocked drand endpoint to be rejected")
+	}
+	if got := err.Error(); got == "" || !strings.Contains(got, "invalid drand endpoint") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestHTTPDrandPulseProvider_LocalFallbackRejectsOversizedPayload(t *testing.T) {
+	signature := bytesFromString("drand-signature-v1-with-production-like-length-abcdefghijklmnopqrstuvwxyz")
+	randomness := sha256.Sum256(signature)
+	oversizedPadding := strings.Repeat("a", 20*1024)
+
+	server := newIPv4TestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(
+			w,
+			`{"round":12345,"randomness":"%s","signature":"%s","padding":"%s"}`,
+			hex.EncodeToString(randomness[:]),
+			hex.EncodeToString(signature),
+			oversizedPadding,
+		)
+	}))
+	t.Cleanup(server.Close)
+
+	provider := NewHTTPDrandPulseProvider(server.URL, time.Second)
+	if _, err := provider.LatestPulse(context.Background()); err == nil {
+		t.Fatal("expected oversized drand payload to be rejected")
 	}
 }
 

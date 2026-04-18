@@ -65,6 +65,7 @@ func newTestApp(t *testing.T) *AethelredApp {
 
 	app := &AethelredApp{
 		BaseApp:            bapp,
+		keys:               map[string]*storetypes.KVStoreKey{pouwtypes.StoreKey: storeKey},
 		voteExtensionCache: NewVoteExtensionCache(4, "aethelred-test-1"),
 	}
 

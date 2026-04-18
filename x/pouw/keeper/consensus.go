@@ -115,6 +115,25 @@ func (ch *ConsensusHandler) productionVerificationMode(ctx sdk.Context) bool {
 	return !ch.simulatedVerificationEnabled(ctx)
 }
 
+func isSupportedTEEPlatform(platform string) bool {
+	switch platform {
+	case "aws-nitro", "intel-sgx", "intel-tdx", "amd-sev", "arm-trustzone",
+		"simulated", "nitro-simulated", "mock-tee":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSimulatedTEEPlatform(platform string) bool {
+	switch platform {
+	case "simulated", "nitro-simulated", "mock-tee":
+		return true
+	default:
+		return false
+	}
+}
+
 // requiredThresholdCount computes ceil(total * threshold / 100) using integer
 // math only and caps the requirement at total when threshold <= 100.
 func requiredThresholdCount[T ~int | ~int64](total T, threshold int) T {
@@ -579,16 +598,12 @@ func (ch *ConsensusHandler) validateTEEAttestationWireWithCtx(ctxPtr *sdk.Contex
 	}
 
 	// Validate platform
-	validPlatforms := map[string]bool{
-		"aws-nitro": true, "intel-sgx": true, "intel-tdx": true,
-		"amd-sev": true, "arm-trustzone": true, "simulated": true,
-	}
-	if !validPlatforms[attestation.Platform] {
+	if !isSupportedTEEPlatform(attestation.Platform) {
 		return fmt.Errorf("unknown TEE platform: %s", attestation.Platform)
 	}
 
 	// ── Production guard: reject simulated TEE platform ──
-	if ctxPtr != nil && attestation.Platform == "simulated" {
+	if ctxPtr != nil && isSimulatedTEEPlatform(attestation.Platform) {
 		// Default: reject (fail-closed)
 		allowSimulated := ch.simulatedVerificationEnabled(*ctxPtr)
 		if !allowSimulated {

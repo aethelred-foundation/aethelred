@@ -3,6 +3,9 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -13,6 +16,15 @@ import (
 )
 
 const maxTEEAttestationFutureSkew = 2 * time.Minute
+
+var simulatedTEEQuoteMagic = []byte("AETSIMQ1")
+
+const (
+	simulatedTEEQuoteVersion   = byte(1)
+	simulatedTEEQuoteMACSize   = sha256.Size
+	simulatedTEEQuoteHeaderLen = 8 + 1 + 4 + simulatedTEEQuoteMACSize
+	simulatedTEEKeyMinLen      = 32
+)
 
 // VerifyTEEAttestation verifies a TEE attestation.
 func (k Keeper) VerifyTEEAttestation(ctx context.Context, attestation *types.TEEAttestation) (*types.VerificationResult, error) {
@@ -200,31 +212,46 @@ func (k Keeper) verifyAttestationInternal(ctx context.Context, attestation *type
 		return false, fmt.Errorf("attestation measurement cannot be empty")
 	}
 
-	// Adapter dispatch for hardware-specific attestation formats.
-	return k.verifyPlatformAttestationAdapter(attestation)
+	return verifyAuthenticatedSimulatedAttestation(attestation, config.RootCertificate)
 }
 
-func (k Keeper) verifyPlatformAttestationAdapter(attestation *types.TEEAttestation) (bool, error) {
-	switch attestation.Platform {
+func verifyPlatformQuoteBody(platform types.TEEPlatform, quote []byte) (bool, error) {
+	switch platform {
 	case types.TEEPlatformAWSNitro:
-		return verifyAWSNitroAttestation(attestation)
+		return verifyAWSNitroQuoteBody(quote)
 	case types.TEEPlatformIntelSGX:
-		return verifyIntelSGXAttestation(attestation)
+		return verifyIntelSGXQuoteBody(quote)
 	case types.TEEPlatformIntelTDX:
-		return verifyIntelTDXAttestation(attestation)
+		return verifyIntelTDXQuoteBody(quote)
 	case types.TEEPlatformAMDSEV:
-		return verifyAMDSEVAttestation(attestation)
+		return verifyAMDSEVQuoteBody(quote)
 	default:
-		return false, fmt.Errorf("unsupported TEE platform: %s", attestation.Platform.String())
+		return false, fmt.Errorf("unsupported TEE platform: %s", platform.String())
 	}
 }
 
 func verifyAWSNitroAttestation(attestation *types.TEEAttestation) (bool, error) {
-	if len(attestation.Quote) < 1000 {
-		return false, fmt.Errorf("AWS Nitro attestation document too small: %d bytes", len(attestation.Quote))
+	return verifyAWSNitroQuoteBody(attestation.Quote)
+}
+
+func verifyIntelSGXAttestation(attestation *types.TEEAttestation) (bool, error) {
+	return verifyIntelSGXQuoteBody(attestation.Quote)
+}
+
+func verifyIntelTDXAttestation(attestation *types.TEEAttestation) (bool, error) {
+	return verifyIntelTDXQuoteBody(attestation.Quote)
+}
+
+func verifyAMDSEVAttestation(attestation *types.TEEAttestation) (bool, error) {
+	return verifyAMDSEVQuoteBody(attestation.Quote)
+}
+
+func verifyAWSNitroQuoteBody(quote []byte) (bool, error) {
+	if len(quote) < 1000 {
+		return false, fmt.Errorf("AWS Nitro attestation document too small: %d bytes", len(quote))
 	}
 	allZero := true
-	for _, b := range attestation.Quote {
+	for _, b := range quote {
 		if b != 0 {
 			allZero = false
 			break
@@ -236,24 +263,129 @@ func verifyAWSNitroAttestation(attestation *types.TEEAttestation) (bool, error) 
 	return true, nil
 }
 
-func verifyIntelSGXAttestation(attestation *types.TEEAttestation) (bool, error) {
-	if len(attestation.Quote) < 432 {
-		return false, fmt.Errorf("Intel SGX quote too small: %d bytes (minimum 432)", len(attestation.Quote))
+func verifyIntelSGXQuoteBody(quote []byte) (bool, error) {
+	if len(quote) < 432 {
+		return false, fmt.Errorf("Intel SGX quote too small: %d bytes (minimum 432)", len(quote))
 	}
 	return true, nil
 }
 
-func verifyIntelTDXAttestation(attestation *types.TEEAttestation) (bool, error) {
-	if len(attestation.Quote) < 584 {
-		return false, fmt.Errorf("Intel TDX quote too small: %d bytes (minimum 584)", len(attestation.Quote))
+func verifyIntelTDXQuoteBody(quote []byte) (bool, error) {
+	if len(quote) < 584 {
+		return false, fmt.Errorf("Intel TDX quote too small: %d bytes (minimum 584)", len(quote))
 	}
 	return true, nil
 }
 
-func verifyAMDSEVAttestation(attestation *types.TEEAttestation) (bool, error) {
+func verifyAMDSEVQuoteBody(quote []byte) (bool, error) {
 	// SEV-SNP report blobs are expected to be >= 672 bytes in our adapter.
-	if len(attestation.Quote) < 672 {
-		return false, fmt.Errorf("AMD SEV attestation report too small: %d bytes (minimum 672)", len(attestation.Quote))
+	if len(quote) < 672 {
+		return false, fmt.Errorf("AMD SEV attestation report too small: %d bytes (minimum 672)", len(quote))
 	}
 	return true, nil
+}
+
+func verifyAuthenticatedSimulatedAttestation(attestation *types.TEEAttestation, simulationVerifierKey []byte) (bool, error) {
+	rawQuoteBody, err := parseAndVerifySimulatedAttestationQuote(attestation, simulationVerifierKey)
+	if err != nil {
+		return false, err
+	}
+	return verifyPlatformQuoteBody(attestation.Platform, rawQuoteBody)
+}
+
+func parseAndVerifySimulatedAttestationQuote(attestation *types.TEEAttestation, simulationVerifierKey []byte) ([]byte, error) {
+	if len(simulationVerifierKey) < simulatedTEEKeyMinLen {
+		return nil, fmt.Errorf("simulation attestation verifier key must be at least %d bytes", simulatedTEEKeyMinLen)
+	}
+	if len(attestation.Quote) < simulatedTEEQuoteHeaderLen {
+		return nil, fmt.Errorf("simulated attestation quote too small: %d bytes", len(attestation.Quote))
+	}
+	if !bytes.Equal(attestation.Quote[:len(simulatedTEEQuoteMagic)], simulatedTEEQuoteMagic) {
+		return nil, fmt.Errorf("simulated attestation quote missing authenticated envelope")
+	}
+	if attestation.Quote[len(simulatedTEEQuoteMagic)] != simulatedTEEQuoteVersion {
+		return nil, fmt.Errorf("unsupported simulated attestation quote version: %d", attestation.Quote[len(simulatedTEEQuoteMagic)])
+	}
+
+	offset := len(simulatedTEEQuoteMagic) + 1
+	rawQuoteLen := binary.BigEndian.Uint32(attestation.Quote[offset : offset+4])
+	offset += 4
+
+	expectedLen := offset + simulatedTEEQuoteMACSize + int(rawQuoteLen)
+	if len(attestation.Quote) != expectedLen {
+		return nil, fmt.Errorf("simulated attestation quote length mismatch: got %d want %d", len(attestation.Quote), expectedLen)
+	}
+
+	macBytes := attestation.Quote[offset : offset+simulatedTEEQuoteMACSize]
+	offset += simulatedTEEQuoteMACSize
+	rawQuoteBody := attestation.Quote[offset:]
+
+	expectedMAC := computeSimulatedAttestationMAC(attestation, rawQuoteBody, simulationVerifierKey)
+	if !hmac.Equal(macBytes, expectedMAC) {
+		return nil, fmt.Errorf("simulated attestation authentication failed")
+	}
+
+	return rawQuoteBody, nil
+}
+
+func buildSimulatedAttestationQuote(attestation *types.TEEAttestation, simulationVerifierKey, rawQuoteBody []byte) ([]byte, error) {
+	if len(simulationVerifierKey) < simulatedTEEKeyMinLen {
+		return nil, fmt.Errorf("simulation attestation verifier key must be at least %d bytes", simulatedTEEKeyMinLen)
+	}
+	if len(rawQuoteBody) == 0 {
+		return nil, fmt.Errorf("simulated attestation quote body cannot be empty")
+	}
+
+	macBytes := computeSimulatedAttestationMAC(attestation, rawQuoteBody, simulationVerifierKey)
+	quote := make([]byte, 0, simulatedTEEQuoteHeaderLen+len(rawQuoteBody))
+	quote = append(quote, simulatedTEEQuoteMagic...)
+	quote = append(quote, simulatedTEEQuoteVersion)
+
+	var lenBuf [4]byte
+	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(rawQuoteBody)))
+	quote = append(quote, lenBuf[:]...)
+	quote = append(quote, macBytes...)
+	quote = append(quote, rawQuoteBody...)
+
+	return quote, nil
+}
+
+func computeSimulatedAttestationMAC(attestation *types.TEEAttestation, rawQuoteBody, simulationVerifierKey []byte) []byte {
+	mac := hmac.New(sha256.New, simulationVerifierKey)
+	mac.Write(canonicalSimulatedAttestationInput(attestation, rawQuoteBody))
+	return mac.Sum(nil)
+}
+
+func canonicalSimulatedAttestationInput(attestation *types.TEEAttestation, rawQuoteBody []byte) []byte {
+	var out []byte
+	out = appendUvarintField(out, uint64(attestation.Platform))
+	out = appendLengthPrefixedField(out, []byte(attestation.EnclaveId))
+	out = appendLengthPrefixedField(out, attestation.Measurement)
+	out = appendLengthPrefixedField(out, attestation.UserData)
+	if attestation.Timestamp != nil {
+		out = appendUvarintField(out, uint64(attestation.Timestamp.AsTime().UTC().UnixNano()))
+	} else {
+		out = appendUvarintField(out, 0)
+	}
+	out = appendUvarintField(out, uint64(len(attestation.CertificateChain)))
+	for _, cert := range attestation.CertificateChain {
+		out = appendLengthPrefixedField(out, cert)
+	}
+	out = appendLengthPrefixedField(out, attestation.Nonce)
+	out = appendLengthPrefixedField(out, rawQuoteBody)
+	return out
+}
+
+func appendLengthPrefixedField(dst, field []byte) []byte {
+	var lenBuf [4]byte
+	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(field)))
+	dst = append(dst, lenBuf[:]...)
+	dst = append(dst, field...)
+	return dst
+}
+
+func appendUvarintField(dst []byte, value uint64) []byte {
+	var buf [binary.MaxVarintLen64]byte
+	n := binary.PutUvarint(buf[:], value)
+	return append(dst, buf[:n]...)
 }

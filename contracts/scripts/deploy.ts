@@ -11,7 +11,7 @@
  *
  * Environment Variables Required:
  *   - DEPLOYER_PRIVATE_KEY: Private key of deployer account
- *   - ADMIN_ADDRESS: Address to receive admin role (defaults to deployer)
+ *   - ADMIN_ADDRESS: Address to receive admin role (required for non-local networks)
  *   - RELAYER_ADDRESSES: Comma-separated list of relayer addresses
  *   - CONSENSUS_THRESHOLD_BPS: Consensus threshold in basis points (default: 6700)
  *
@@ -23,6 +23,11 @@ import { ethers, upgrades, network } from "hardhat";
 import { AethelredBridge } from "../typechain-types";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  isLocalDeploymentNetwork,
+  resolveDeploymentAddress,
+  resolveTimelockParticipants,
+} from "./lib/deployment-governance";
 
 // ============================================================================
 // Configuration Types
@@ -107,22 +112,34 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   const networkName = network.name;
   const chainId = network.config.chainId ?? 31337;
   const [deployer] = await ethers.getSigners();
+  const isLocal = isLocalDeploymentNetwork({ networkName, chainId });
 
-  console.log(`\n📋 Preparing deployment configuration for network: ${networkName} (chainId: ${chainId})`);
+  console.log(
+    `\n📋 Preparing deployment configuration for network: ${networkName} (chainId: ${chainId})`,
+  );
 
   // Get network-specific defaults
   const networkConfig = NETWORK_CONFIGS[networkName] ?? {};
 
-  // Admin address (defaults to deployer)
-  const adminAddress = process.env.ADMIN_ADDRESS ?? deployer.address;
+  const adminAddress = resolveDeploymentAddress({
+    envName: "ADMIN_ADDRESS",
+    envValue: process.env.ADMIN_ADDRESS,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
   console.log(`   Admin: ${adminAddress}`);
 
   // Relayer addresses
   let relayerAddresses: string[];
 
   if (process.env.RELAYER_ADDRESSES) {
-    relayerAddresses = process.env.RELAYER_ADDRESSES.split(",").map((addr) => addr.trim());
-  } else if (networkConfig.relayerAddresses && networkConfig.relayerAddresses.length > 0) {
+    relayerAddresses = process.env.RELAYER_ADDRESSES.split(",").map((addr) =>
+      addr.trim(),
+    );
+  } else if (
+    networkConfig.relayerAddresses &&
+    networkConfig.relayerAddresses.length > 0
+  ) {
     relayerAddresses = networkConfig.relayerAddresses;
   } else if (networkName === "hardhat" || networkName === "devnet") {
     // Use first few hardhat accounts as relayers for testing
@@ -131,7 +148,7 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   } else {
     throw new Error(
       `No relayer addresses configured for network ${networkName}. ` +
-      `Set RELAYER_ADDRESSES environment variable.`
+        `Set RELAYER_ADDRESSES environment variable.`,
     );
   }
 
@@ -141,50 +158,65 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   // Consensus threshold
   const consensusThresholdBps = process.env.CONSENSUS_THRESHOLD_BPS
     ? parseInt(process.env.CONSENSUS_THRESHOLD_BPS, 10)
-    : networkConfig.consensusThresholdBps ?? 6700;
+    : (networkConfig.consensusThresholdBps ?? 6700);
 
   console.log(`   Consensus Threshold: ${consensusThresholdBps / 100}%`);
 
   // Calculate minimum votes required
-  const minVotes = Math.max(1, Math.floor((relayerAddresses.length * consensusThresholdBps) / 10000));
-  console.log(`   Minimum Votes Required: ${minVotes}/${relayerAddresses.length}`);
+  const minVotes =
+    relayerAddresses.length === 0
+      ? 0
+      : Math.min(
+          relayerAddresses.length,
+          Math.max(
+            1,
+            Math.ceil(
+              (relayerAddresses.length * consensusThresholdBps) / 10000,
+            ),
+          ),
+        );
+  console.log(
+    `   Minimum Votes Required: ${minVotes}/${relayerAddresses.length}`,
+  );
 
-  const timelockAdminAddress = process.env.TIMELOCK_ADMIN_ADDRESS ?? adminAddress;
+  const timelockAdminAddress =
+    process.env.TIMELOCK_ADMIN_ADDRESS ?? adminAddress;
   const timelockProposers = parseAddressList(process.env.TIMELOCK_PROPOSERS);
   const timelockExecutors = parseAddressList(process.env.TIMELOCK_EXECUTORS);
-  const upgraderTimelockAddress = process.env.UPGRADER_TIMELOCK_ADDRESS?.trim();
-  const upgraderTimelockMinDelaySeconds = process.env.UPGRADER_TIMELOCK_MIN_DELAY_SECONDS
+  const resolvedTimelock = resolveTimelockParticipants({
+    explicitTimelockAddress: process.env.UPGRADER_TIMELOCK_ADDRESS,
+    proposers: timelockProposers,
+    executors: timelockExecutors,
+    fallbackAddress: adminAddress,
+    isLocal,
+  });
+  const upgraderTimelockAddress = resolvedTimelock.timelockAddress;
+  const upgraderTimelockMinDelaySeconds = process.env
+    .UPGRADER_TIMELOCK_MIN_DELAY_SECONDS
     ? parseInt(process.env.UPGRADER_TIMELOCK_MIN_DELAY_SECONDS, 10)
     : UPGRADER_TIMELOCK_MIN_DELAY_SECONDS;
 
   if (upgraderTimelockMinDelaySeconds < UPGRADER_TIMELOCK_MIN_DELAY_SECONDS) {
     throw new Error(
-      `UPGRADER_TIMELOCK_MIN_DELAY_SECONDS must be >= ${UPGRADER_TIMELOCK_MIN_DELAY_SECONDS} (27 days)`
+      `UPGRADER_TIMELOCK_MIN_DELAY_SECONDS must be >= ${UPGRADER_TIMELOCK_MIN_DELAY_SECONDS} (27 days)`,
     );
   }
 
-  if (!upgraderTimelockAddress) {
-    if (timelockProposers.length === 0) {
-      timelockProposers.push(adminAddress);
-    }
-    if (timelockExecutors.length === 0) {
-      timelockExecutors.push(adminAddress);
-    }
-  }
-
-  console.log(`   Upgrader Timelock: ${upgraderTimelockAddress ?? "(deploy new)"}`);
+  console.log(
+    `   Upgrader Timelock: ${upgraderTimelockAddress ?? "(deploy new)"}`,
+  );
   console.log(`   Timelock Delay: ${upgraderTimelockMinDelaySeconds}s`);
   console.log(`   Timelock Admin: ${timelockAdminAddress}`);
-  console.log(`   Timelock Proposers (${timelockProposers.length})`);
-  console.log(`   Timelock Executors (${timelockExecutors.length})`);
+  console.log(`   Timelock Proposers (${resolvedTimelock.proposers.length})`);
+  console.log(`   Timelock Executors (${resolvedTimelock.executors.length})`);
 
   return {
     adminAddress,
     relayerAddresses,
     consensusThresholdBps,
     upgraderTimelockAddress,
-    timelockProposers,
-    timelockExecutors,
+    timelockProposers: resolvedTimelock.proposers,
+    timelockExecutors: resolvedTimelock.executors,
     timelockAdminAddress,
     upgraderTimelockMinDelaySeconds,
     networkName,
@@ -192,7 +224,9 @@ async function getDeploymentConfig(): Promise<DeploymentConfig> {
   };
 }
 
-async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult> {
+async function deployBridge(
+  config: DeploymentConfig,
+): Promise<DeploymentResult> {
   const [deployer] = await ethers.getSigners();
 
   console.log(`\n🚀 Deploying AethelredBridge...`);
@@ -209,12 +243,13 @@ async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult>
   let upgraderTimelockAddress = config.upgraderTimelockAddress;
   if (!upgraderTimelockAddress) {
     console.log(`\n⏱️  Deploying upgrade timelock (27-day min delay)...`);
-    const TimelockFactory = await ethers.getContractFactory("TimelockController");
+    const TimelockFactory =
+      await ethers.getContractFactory("TimelockController");
     const timelock = await TimelockFactory.deploy(
       config.upgraderTimelockMinDelaySeconds,
       config.timelockProposers,
       config.timelockExecutors,
-      config.timelockAdminAddress
+      config.timelockAdminAddress,
     );
     await timelock.waitForDeployment();
     upgraderTimelockAddress = await timelock.getAddress();
@@ -222,15 +257,20 @@ async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult>
   } else {
     const code = await ethers.provider.getCode(upgraderTimelockAddress);
     if (code === "0x") {
-      throw new Error(`UPGRADER_TIMELOCK_ADDRESS ${upgraderTimelockAddress} is not a deployed contract`);
+      throw new Error(
+        `UPGRADER_TIMELOCK_ADDRESS ${upgraderTimelockAddress} is not a deployed contract`,
+      );
     }
   }
 
-  const timelock = await ethers.getContractAt("TimelockController", upgraderTimelockAddress);
+  const timelock = await ethers.getContractAt(
+    "TimelockController",
+    upgraderTimelockAddress,
+  );
   const timelockDelay = Number(await timelock.getMinDelay());
   if (timelockDelay < UPGRADER_TIMELOCK_MIN_DELAY_SECONDS) {
     throw new Error(
-      `Timelock min delay ${timelockDelay}s is below required ${UPGRADER_TIMELOCK_MIN_DELAY_SECONDS}s (27 days)`
+      `Timelock min delay ${timelockDelay}s is below required ${UPGRADER_TIMELOCK_MIN_DELAY_SECONDS}s (27 days)`,
     );
   }
   console.log(`   Timelock Verified Delay: ${timelockDelay}s`);
@@ -241,7 +281,7 @@ async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult>
   console.log(`\n📦 Deploying UUPS proxy...`);
 
   // Deploy with UUPS proxy
-  const bridge = await upgrades.deployProxy(
+  const bridge = (await upgrades.deployProxy(
     BridgeFactory,
     [
       config.adminAddress,
@@ -254,14 +294,15 @@ async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult>
       initializer: "initializeWithTimelock",
       timeout: 120000,
       pollingInterval: 5000,
-    }
-  ) as unknown as AethelredBridge;
+    },
+  )) as unknown as AethelredBridge;
 
   // Wait for deployment
   await bridge.waitForDeployment();
 
   const proxyAddress = await bridge.getAddress();
-  const implementationAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+  const implementationAddress =
+    await upgrades.erc1967.getImplementationAddress(proxyAddress);
 
   // Get deployment transaction
   const deploymentTx = bridge.deploymentTransaction();
@@ -301,21 +342,27 @@ async function deployBridge(config: DeploymentConfig): Promise<DeploymentResult>
 async function verifyDeployment(
   bridge: AethelredBridge,
   config: DeploymentConfig,
-  result: DeploymentResult
+  result: DeploymentResult,
 ): Promise<void> {
   console.log(`\n🔍 Verifying deployment...`);
 
   // Verify relayer configuration
   const relayerConfig = await bridge.relayerConfig();
   console.log(`   Relayer Count: ${relayerConfig.relayerCount}`);
-  console.log(`   Consensus Threshold: ${relayerConfig.consensusThresholdBps} bps`);
+  console.log(
+    `   Consensus Threshold: ${relayerConfig.consensusThresholdBps} bps`,
+  );
   console.log(`   Min Votes Required: ${relayerConfig.minVotesRequired}`);
 
   // Verify rate limit configuration
   const rateLimitConfig = await bridge.rateLimitConfig();
   console.log(`   Rate Limit Enabled: ${rateLimitConfig.enabled}`);
-  console.log(`   Max Deposit/Period: ${ethers.formatEther(rateLimitConfig.maxDepositPerPeriod)} ETH`);
-  console.log(`   Max Withdrawal/Period: ${ethers.formatEther(rateLimitConfig.maxWithdrawalPerPeriod)} ETH`);
+  console.log(
+    `   Max Deposit/Period: ${ethers.formatEther(rateLimitConfig.maxDepositPerPeriod)} ETH`,
+  );
+  console.log(
+    `   Max Withdrawal/Period: ${ethers.formatEther(rateLimitConfig.maxWithdrawalPerPeriod)} ETH`,
+  );
 
   // Verify roles
   const RELAYER_ROLE = await bridge.RELAYER_ROLE();
@@ -325,14 +372,25 @@ async function verifyDeployment(
   const hasAdminRole = await bridge.hasRole(ADMIN_ROLE, config.adminAddress);
   console.log(`   Admin Role Granted: ${hasAdminRole}`);
 
-  const hasGuardianRole = await bridge.hasRole(GUARDIAN_ROLE, config.adminAddress);
+  const hasGuardianRole = await bridge.hasRole(
+    GUARDIAN_ROLE,
+    config.adminAddress,
+  );
   console.log(`   Guardian Role Granted: ${hasGuardianRole}`);
 
   const UPGRADER_ROLE = await bridge.UPGRADER_ROLE();
-  const timelockHasUpgradeRole = await bridge.hasRole(UPGRADER_ROLE, result.upgraderTimelockAddress);
+  const timelockHasUpgradeRole = await bridge.hasRole(
+    UPGRADER_ROLE,
+    result.upgraderTimelockAddress,
+  );
   console.log(`   Timelock UPGRADER_ROLE Granted: ${timelockHasUpgradeRole}`);
-  const adminHasUpgradeRole = await bridge.hasRole(UPGRADER_ROLE, config.adminAddress);
-  console.log(`   Admin UPGRADER_ROLE Granted: ${adminHasUpgradeRole} (expected false)`);
+  const adminHasUpgradeRole = await bridge.hasRole(
+    UPGRADER_ROLE,
+    config.adminAddress,
+  );
+  console.log(
+    `   Admin UPGRADER_ROLE Granted: ${adminHasUpgradeRole} (expected false)`,
+  );
 
   // Verify all relayers have role
   for (const relayer of config.relayerAddresses) {
@@ -431,7 +489,6 @@ async function main(): Promise<void> {
 ║  Network:                ${result.networkName.padEnd(46)}║
 ╚═══════════════════════════════════════════════════════════════════════════╝
     `);
-
   } catch (error) {
     console.error("\n❌ Deployment failed:", error);
     process.exit(1);

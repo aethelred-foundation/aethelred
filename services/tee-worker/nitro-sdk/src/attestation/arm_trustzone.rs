@@ -316,30 +316,9 @@ impl ArmVerifier {
             ));
         }
 
-        // In production, use CBOR parser
-        // For now, return placeholder
-        Ok(CcaPlatformToken {
-            platform: CcaPlatformClaims {
-                challenge: [0u8; 64],
-                implementation_id: [0u8; 32],
-                instance_id: [0u8; 33],
-                config: [0u8; 32],
-                lifecycle: CcaLifecycleState::Secured,
-                hash_algo_id: "sha-384".to_string(),
-                boot_seed: [0u8; 32],
-                security_state: CcaSecurityState::Secure,
-            },
-            realm: CcaRealmToken {
-                challenge: [0u8; 64],
-                personalization_value: [0u8; 64],
-                initial_measurements: [[0u8; 64]; 4],
-                extensible_measurements: [[0u8; 64]; 4],
-                hash_algo_id: "sha-384".to_string(),
-                public_key_hash: [0u8; 64],
-                signature: Vec::new(),
-            },
-            signature: Vec::new(),
-        })
+        Err(AttestationError::ArmTrustZone(
+            "CCA token parsing backend is not implemented".to_string(),
+        ))
     }
 
     /// Parse PSA attestation token
@@ -350,23 +329,9 @@ impl ArmVerifier {
             ));
         }
 
-        // PSA tokens are CBOR-encoded
-        // In production, use proper CBOR parsing
-
-        Ok(TrustZoneToken {
-            token_type: TrustZoneTokenType::Psa,
-            claims: TrustZoneClaims {
-                instance_id: Vec::new(),
-                implementation_id: [0u8; 32],
-                boot_seed: [0u8; 32],
-                hw_version: String::new(),
-                sw_components: Vec::new(),
-                lifecycle: CcaLifecycleState::Secured,
-                client_id: 0,
-                profile_id: "http://arm.com/psa/2.0.0".to_string(),
-            },
-            signature: Vec::new(),
-        })
+        Err(AttestationError::ArmTrustZone(
+            "PSA token parsing backend is not implemented".to_string(),
+        ))
     }
 
     // ========================================================================
@@ -382,8 +347,9 @@ impl ArmVerifier {
             return Err(AttestationError::InvalidSignature);
         }
 
-        // TODO: Implement actual signature verification
-        Ok(())
+        Err(AttestationError::ArmTrustZone(
+            "CCA platform signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify realm signature
@@ -394,8 +360,9 @@ impl ArmVerifier {
             return Err(AttestationError::InvalidSignature);
         }
 
-        // TODO: Implement actual signature verification
-        Ok(())
+        Err(AttestationError::ArmTrustZone(
+            "CCA realm signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify TrustZone signature
@@ -404,8 +371,9 @@ impl ArmVerifier {
             return Err(AttestationError::InvalidSignature);
         }
 
-        // TODO: Implement actual signature verification
-        Ok(())
+        Err(AttestationError::ArmTrustZone(
+            "PSA/TrustZone signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify challenge
@@ -599,6 +567,20 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_cca_token_fails_closed_when_backend_missing() {
+        let verifier = ArmVerifier::new(AttestationConfig::default());
+        let result = verifier.parse_cca_token(b"CCA\x00placeholder-token");
+        assert!(matches!(result, Err(AttestationError::ArmTrustZone(_))));
+    }
+
+    #[test]
+    fn test_parse_psa_token_fails_closed_when_backend_missing() {
+        let verifier = ArmVerifier::new(AttestationConfig::default());
+        let result = verifier.parse_psa_token(b"psa-placeholder-token");
+        assert!(matches!(result, Err(AttestationError::ArmTrustZone(_))));
+    }
+
+    #[test]
     fn test_challenge_verification() {
         let verifier = ArmVerifier::new(AttestationConfig::default());
 
@@ -611,5 +593,87 @@ mod tests {
         let mut challenge2 = [0u8; 64];
         challenge2[32..].copy_from_slice(&nonce);
         assert!(verifier.verify_challenge(&challenge2, &nonce));
+    }
+
+    #[test]
+    fn test_platform_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = ArmVerifier::new(AttestationConfig::default());
+        let token = CcaPlatformToken {
+            platform: CcaPlatformClaims {
+                challenge: [0u8; 64],
+                implementation_id: [0u8; 32],
+                instance_id: [0u8; 33],
+                config: [0u8; 32],
+                lifecycle: CcaLifecycleState::Secured,
+                hash_algo_id: "sha-384".to_string(),
+                boot_seed: [0u8; 32],
+                security_state: CcaSecurityState::Secure,
+            },
+            realm: CcaRealmToken {
+                challenge: [0u8; 64],
+                personalization_value: [0u8; 64],
+                initial_measurements: [[0u8; 64]; 4],
+                extensible_measurements: [[0u8; 64]; 4],
+                hash_algo_id: "sha-384".to_string(),
+                public_key_hash: [0u8; 64],
+                signature: vec![1; 96],
+            },
+            signature: vec![2; 96],
+        };
+
+        let result = verifier.verify_platform_signature(&token);
+        assert!(matches!(result, Err(AttestationError::ArmTrustZone(_))));
+    }
+
+    #[test]
+    fn test_realm_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = ArmVerifier::new(AttestationConfig::default());
+        let token = CcaPlatformToken {
+            platform: CcaPlatformClaims {
+                challenge: [0u8; 64],
+                implementation_id: [0u8; 32],
+                instance_id: [0u8; 33],
+                config: [0u8; 32],
+                lifecycle: CcaLifecycleState::Secured,
+                hash_algo_id: "sha-384".to_string(),
+                boot_seed: [0u8; 32],
+                security_state: CcaSecurityState::Secure,
+            },
+            realm: CcaRealmToken {
+                challenge: [0u8; 64],
+                personalization_value: [0u8; 64],
+                initial_measurements: [[0u8; 64]; 4],
+                extensible_measurements: [[0u8; 64]; 4],
+                hash_algo_id: "sha-384".to_string(),
+                public_key_hash: [0u8; 64],
+                signature: vec![1; 96],
+            },
+            signature: vec![2; 96],
+        };
+
+        let result = verifier.verify_realm_signature(&token);
+        assert!(matches!(result, Err(AttestationError::ArmTrustZone(_))));
+    }
+
+    #[test]
+    fn test_tz_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = ArmVerifier::new(AttestationConfig::default());
+        let token = TrustZoneToken {
+            token_type: TrustZoneTokenType::Psa,
+            claims: TrustZoneClaims {
+                instance_id: vec![],
+                implementation_id: [0u8; 32],
+                boot_seed: [0u8; 32],
+                hw_version: String::new(),
+                sw_components: Vec::new(),
+                lifecycle: CcaLifecycleState::Secured,
+                client_id: 0,
+                profile_id: "http://arm.com/psa/2.0.0".to_string(),
+            },
+            signature: vec![3; 96],
+        };
+
+        let result = verifier.verify_tz_signature(&token);
+        assert!(matches!(result, Err(AttestationError::ArmTrustZone(_))));
     }
 }

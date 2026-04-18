@@ -14,6 +14,9 @@ import (
 )
 
 func newVerifierForTest(k *Keeper, cfg VerifierConfig) *SealVerifier {
+	if cfg.TEEAttestationVerifier == nil && cfg.ZKMLProofVerifier == nil {
+		cfg.AllowInsecureFallbackVerification = true
+	}
 	return NewSealVerifier(log.NewNopLogger(), k, cfg)
 }
 
@@ -189,6 +192,25 @@ func TestSealVerifierTeeAttestationFailures(t *testing.T) {
 	}
 }
 
+func TestSealVerifierFailsClosedWithoutTeeBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, DefaultVerifierConfig())
+
+	seal := makeValidSealForVerifier(5)
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "tee_attestations") {
+		t.Fatalf("expected tee_attestations check to fail without a verifier backend")
+	}
+	if check, ok := findCheck(result, "tee_attestations"); !ok || check.Message != "No TEE attestation verifier backend configured" {
+		t.Fatalf("expected explicit backend-missing tee failure, got %+v (present=%v)", check, ok)
+	}
+}
+
 func TestSealVerifierZKMLProofInvalid(t *testing.T) {
 	k := NewKeeper(nil, nil, "authority")
 	verifier := newVerifierForTest(&k, DefaultVerifierConfig())
@@ -207,6 +229,76 @@ func TestSealVerifierZKMLProofInvalid(t *testing.T) {
 	}
 	if !containsFailedCheck(result, "zkml_proof") {
 		t.Fatalf("expected zkml_proof check to fail")
+	}
+}
+
+func TestSealVerifierFailsClosedWithoutZkBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, DefaultVerifierConfig())
+
+	seal := makeValidSealForVerifier(6)
+	seal.ZkProof = &types.ZKMLProof{
+		ProofSystem:      "ezkl",
+		ProofBytes:       []byte{0x01},
+		VerifyingKeyHash: bytes.Repeat([]byte{0x02}, 32),
+	}
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "zkml_proof") {
+		t.Fatalf("expected zkml_proof check to fail without a verifier backend")
+	}
+	if check, ok := findCheck(result, "zkml_proof"); !ok || check.Message != "No zkML verifier backend configured" {
+		t.Fatalf("expected explicit backend-missing zkml failure, got %+v (present=%v)", check, ok)
+	}
+}
+
+func TestSealVerifierFailsClosedWithoutSignatureBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := makeValidSealForVerifier(16)
+	seal.TeeAttestations[0].Signature = []byte{0xAA}
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "signatures") {
+		t.Fatalf("expected signatures check to fail without a verifier backend")
+	}
+	if check, ok := findCheck(result, "signatures"); !ok || check.Message != "No signature verifier backend configured" {
+		t.Fatalf("expected explicit backend-missing signature failure, got %+v (present=%v)", check, ok)
+	}
+}
+
+func TestSealVerifierRejectsInvalidAttestationSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	cfg.SignatureVerifier = func(att *types.TEEAttestation) bool {
+		return bytes.Equal(att.Signature, []byte("good"))
+	}
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := makeValidSealForVerifier(17)
+	seal.TeeAttestations[0].Signature = []byte("bad")
+	storeSealForTest(t, &k, seal)
+
+	result, err := verifier.VerifySeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected verify seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "signatures") {
+		t.Fatalf("expected signatures check to fail on invalid signature")
 	}
 }
 
@@ -341,5 +433,56 @@ func TestSealVerifierEnhancedSealHashMismatch(t *testing.T) {
 	}
 	if !containsFailedCheck(result, "seal_hash") {
 		t.Fatalf("expected seal_hash check to fail")
+	}
+}
+
+func TestSealVerifierEnhancedFailsClosedWithoutSignatureBackend(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.VerifyTEEAttestations = false
+	cfg.VerifyZKMLProofs = false
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := newEnhancedSealForVerifier(13)
+	seal.Signatures = append(seal.Signatures, types.SealSignature{
+		SignerAddress: testAccAddress(30),
+		Algorithm:     "ed25519",
+		Signature:     []byte("sig"),
+		Timestamp:     time.Now().UTC(),
+	})
+	seal.SealHash = seal.ComputeSealHash()
+
+	result, err := verifier.VerifyEnhancedSeal(context.Background(), seal)
+	if err != nil {
+		t.Fatalf("expected verify enhanced seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "enhanced_signatures") {
+		t.Fatalf("expected enhanced_signatures check to fail without backend")
+	}
+}
+
+func TestSealVerifierEnhancedRejectsInvalidSignature(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	cfg := DefaultVerifierConfig()
+	cfg.EnhancedSignatureVerifier = func(sig types.SealSignature, seal *types.EnhancedDigitalSeal) bool {
+		return bytes.Equal(sig.Signature, []byte("good"))
+	}
+	verifier := NewSealVerifier(log.NewNopLogger(), &k, cfg)
+
+	seal := newEnhancedSealForVerifier(14)
+	seal.Signatures = append(seal.Signatures, types.SealSignature{
+		SignerAddress: testAccAddress(31),
+		Algorithm:     "ed25519",
+		Signature:     []byte("bad"),
+		Timestamp:     time.Now().UTC(),
+	})
+	seal.SealHash = seal.ComputeSealHash()
+
+	result, err := verifier.VerifyEnhancedSeal(context.Background(), seal)
+	if err != nil {
+		t.Fatalf("expected verify enhanced seal success, got %v", err)
+	}
+	if !containsFailedCheck(result, "enhanced_signatures") {
+		t.Fatalf("expected enhanced_signatures check to fail on invalid signature")
 	}
 }

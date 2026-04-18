@@ -366,3 +366,35 @@ func TestVoteExtensionSigner_NoKeyConfigured(t *testing.T) {
 		t.Error("Expected HasSigningKey to return false")
 	}
 }
+
+func TestVoteExtensionVerifierRejectsUnknownTEEPlatform(t *testing.T) {
+	verifier := NewVoteExtensionVerifier(log.NewNopLogger(), "test-chain-1", nil)
+
+	err := verifier.verifyTEEAttestation(&TEEAttestationData{
+		Platform:    "google-enclave",
+		Measurement: bytes.Repeat([]byte{0x01}, 48),
+		Quote:       bytes.Repeat([]byte{0x02}, 128),
+		UserData:    bytes.Repeat([]byte{0x03}, 32),
+		Timestamp:   time.Now().UTC(),
+		Nonce:       bytes.Repeat([]byte{0x04}, 32),
+	})
+	if err == nil {
+		t.Fatal("expected unknown TEE platform to be rejected")
+	}
+}
+
+func TestVoteExtensionVerifierAcceptsNitroSimulatedTEEPlatform(t *testing.T) {
+	verifier := NewVoteExtensionVerifier(log.NewNopLogger(), "test-chain-1", nil)
+
+	err := verifier.verifyTEEAttestation(&TEEAttestationData{
+		Platform:    "nitro-simulated",
+		Measurement: bytes.Repeat([]byte{0x01}, 48),
+		Quote:       bytes.Repeat([]byte{0x02}, 128),
+		UserData:    bytes.Repeat([]byte{0x03}, 32),
+		Timestamp:   time.Now().UTC(),
+		Nonce:       bytes.Repeat([]byte{0x04}, 32),
+	})
+	if err != nil {
+		t.Fatalf("expected nitro-simulated TEE platform to be accepted, got %v", err)
+	}
+}

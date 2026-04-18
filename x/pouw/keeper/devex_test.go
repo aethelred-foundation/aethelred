@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -22,10 +23,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/aethelred/aethelred/x/pouw/keeper"
 	"github.com/aethelred/aethelred/x/pouw/types"
+	sealkeeper "github.com/aethelred/aethelred/x/seal/keeper"
+	verifykeeper "github.com/aethelred/aethelred/x/verify/keeper"
 )
 
 // =============================================================================
@@ -62,6 +66,91 @@ func newTestKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
 	k := newTestKeeperFromStore(cdc, storeService)
 
 	// Initialize default params.
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.JobCount.Set(ctx, 0))
+
+	return k, ctx
+}
+
+type committeeTestBankKeeper struct{}
+
+func (committeeTestBankKeeper) SendCoinsFromModuleToAccount(context.Context, string, sdk.AccAddress, sdk.Coins) error {
+	return nil
+}
+
+func (committeeTestBankKeeper) SendCoinsFromAccountToModule(context.Context, sdk.AccAddress, string, sdk.Coins) error {
+	return nil
+}
+
+func (committeeTestBankKeeper) SendCoinsFromModuleToModule(context.Context, string, string, sdk.Coins) error {
+	return nil
+}
+
+func (committeeTestBankKeeper) BurnCoins(context.Context, string, sdk.Coins) error { return nil }
+
+func (committeeTestBankKeeper) SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins {
+	return sdk.NewCoins()
+}
+
+type committeeTestStakingKeeper struct {
+	validators []stakingtypes.Validator
+}
+
+func (m committeeTestStakingKeeper) GetAllValidators(context.Context) ([]stakingtypes.Validator, error) {
+	return m.validators, nil
+}
+
+func (committeeTestStakingKeeper) GetValidator(context.Context, sdk.ValAddress) (stakingtypes.Validator, error) {
+	return stakingtypes.Validator{}, nil
+}
+
+func makeCommitteeTestValidator(seed string, tokens int64) stakingtypes.Validator {
+	raw := make([]byte, 20)
+	copy(raw, []byte(seed))
+	return stakingtypes.Validator{
+		OperatorAddress: sdk.ValAddress(raw).String(),
+		Status:          stakingtypes.Bonded,
+		Tokens:          sdkmath.NewInt(tokens),
+	}
+}
+
+func defaultCommitteeValidators() []stakingtypes.Validator {
+	return []stakingtypes.Validator{
+		makeCommitteeTestValidator("committee-a", 2_000_000),
+		makeCommitteeTestValidator("committee-b", 1_000_000),
+	}
+}
+
+func newCommitteeTestKeeper(t *testing.T, validators []stakingtypes.Validator) (keeper.Keeper, sdk.Context) {
+	t.Helper()
+
+	storeKey := storetypes.NewKVStoreKey(types.ModuleName)
+	db := dbm.NewMemDB()
+	cms := rootmulti.NewStore(db, log.NewNopLogger(), storemetrics.NoOpMetrics{})
+	cms.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, nil)
+	require.NoError(t, cms.LoadLatestVersion())
+
+	header := tmproto.Header{
+		ChainID: "aethelred-test-1",
+		Height:  100,
+		Time:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	ctx := sdk.NewContext(cms, header, false, log.NewNopLogger())
+
+	reg := codectypes.NewInterfaceRegistry()
+	std.RegisterInterfaces(reg)
+	cdc := codec.NewProtoCodec(reg)
+
+	k := keeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKey),
+		committeeTestStakingKeeper{validators: validators},
+		committeeTestBankKeeper{},
+		sealkeeper.Keeper{},
+		verifykeeper.Keeper{},
+		"",
+	)
+
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 	require.NoError(t, k.JobCount.Set(ctx, 0))
 
@@ -133,6 +222,13 @@ func newTestKeeperFromStore(cdc codec.Codec, storeService store.KVStoreService) 
 			collections.NewPrefix(types.RegisteredMeasurementKeyPrefix),
 			"registered_measurements_set",
 			collections.StringKey,
+		),
+		TrustedMeasurementRevocations: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.TrustedMeasurementRevocationKeyPrefix),
+			"trusted_measurement_revocations",
+			collections.StringKey,
+			collections.StringValue,
 		),
 		JobCount: collections.NewItem(
 			sb,

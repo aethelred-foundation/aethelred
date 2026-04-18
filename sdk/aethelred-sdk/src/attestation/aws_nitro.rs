@@ -182,7 +182,10 @@ impl NitroVerifier {
     // ========================================================================
 
     /// Parse CBOR/COSE attestation document
-    fn parse_document(&self, document: &[u8]) -> Result<NitroAttestationDocument, AttestationError> {
+    fn parse_document(
+        &self,
+        document: &[u8],
+    ) -> Result<NitroAttestationDocument, AttestationError> {
         // The document is COSE_Sign1 encoded in CBOR
         // Structure: [protected, unprotected, payload, signature]
 
@@ -222,7 +225,7 @@ impl NitroVerifier {
     /// Verify COSE ES384 signature
     fn verify_cose_signature(
         &self,
-        document: &[u8],
+        _document: &[u8],
         attestation: &NitroAttestationDocument,
     ) -> Result<(), AttestationError> {
         // COSE_Sign1 signature verification:
@@ -236,12 +239,9 @@ impl NitroVerifier {
             ));
         }
 
-        // TODO: Implement actual COSE verification
-        // let public_key = extract_public_key(&attestation.certificate)?;
-        // let sig_structure = create_sig_structure(protected, payload)?;
-        // verify_ecdsa_p384(&public_key, &sig_structure, &attestation.signature)?;
-
-        Ok(())
+        Err(AttestationError::AwsNitro(
+            "Cryptographic COSE signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify certificate chain
@@ -257,21 +257,13 @@ impl NitroVerifier {
             ));
         }
 
-        // In production:
-        // 1. Verify enclave cert is signed by first CA in bundle
-        // 2. Verify each CA is signed by the next
-        // 3. Verify last CA is signed by AWS Nitro root
-        // 4. Check certificate validity periods
-        // 5. Check for revocations (CRL/OCSP)
-
-        Ok(())
+        Err(AttestationError::AwsNitro(
+            "Nitro certificate chain verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify PCR values
-    fn verify_pcrs(
-        &self,
-        attestation: &NitroAttestationDocument,
-    ) -> Result<(), AttestationError> {
+    fn verify_pcrs(&self, attestation: &NitroAttestationDocument) -> Result<(), AttestationError> {
         // Check if expected PCR values are configured
         if self.config.expected_measurements.is_empty() {
             return Ok(()); // No PCR verification required
@@ -283,7 +275,12 @@ impl NitroVerifier {
                 let mut pcr0_32 = [0u8; 32];
                 pcr0_32.copy_from_slice(&pcr0[..32]);
 
-                if !self.config.expected_measurements.iter().any(|m| m == &pcr0_32) {
+                if !self
+                    .config
+                    .expected_measurements
+                    .iter()
+                    .any(|m| m == &pcr0_32)
+                {
                     return Err(AttestationError::MeasurementMismatch {
                         expected: hex::encode(&self.config.expected_measurements[0]),
                         actual: hex::encode(&pcr0_32),
@@ -358,7 +355,10 @@ impl NitroVerifier {
     }
 
     /// Generate warnings
-    fn generate_warnings(&self, attestation: &NitroAttestationDocument) -> Vec<VerificationWarning> {
+    fn generate_warnings(
+        &self,
+        attestation: &NitroAttestationDocument,
+    ) -> Vec<VerificationWarning> {
         let mut warnings = Vec::new();
 
         // Check timestamp freshness
@@ -463,5 +463,45 @@ mod tests {
         assert_eq!(NitroPcr::LinuxKernel as u8, 1);
         assert_eq!(NitroPcr::Application as u8, 2);
         assert_eq!(NitroPcr::SigningCert as u8, 8);
+    }
+
+    #[test]
+    fn test_cose_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = NitroVerifier::new(AttestationConfig::default());
+        let attestation = NitroAttestationDocument {
+            module_id: "test".to_string(),
+            digest: "SHA384".to_string(),
+            timestamp: 0,
+            pcrs: HashMap::new(),
+            certificate: vec![1],
+            cabundle: vec![vec![2]],
+            public_key: None,
+            user_data: None,
+            nonce: None,
+            signature: vec![3; 96],
+        };
+
+        let result = verifier.verify_cose_signature(&[0x84], &attestation);
+        assert!(matches!(result, Err(AttestationError::AwsNitro(_))));
+    }
+
+    #[test]
+    fn test_cert_chain_verification_fails_closed_when_backend_missing() {
+        let verifier = NitroVerifier::new(AttestationConfig::default());
+        let attestation = NitroAttestationDocument {
+            module_id: "test".to_string(),
+            digest: "SHA384".to_string(),
+            timestamp: 0,
+            pcrs: HashMap::new(),
+            certificate: vec![1],
+            cabundle: vec![vec![2]],
+            public_key: None,
+            user_data: None,
+            nonce: None,
+            signature: vec![3; 96],
+        };
+
+        let result = verifier.verify_cert_chain(&attestation);
+        assert!(matches!(result, Err(AttestationError::AwsNitro(_))));
     }
 }

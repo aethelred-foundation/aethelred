@@ -28,16 +28,20 @@
 //! ```
 //!
 //! ### 2. zkTensors
-//! Tensors that automatically generate ZK proofs of computation.
+//! Tensors that track proof-ready computation graphs.
+//! Proof generation and verification fail closed until a proving backend is configured.
 //!
 //! ```rust,ignore
-//! use aethelred_sdk::zktensor::ZkTensor;
+//! use aethelred_sdk::zktensor::{ZkTensor, ZkTensorError};
 //!
-//! let a = ZkTensor::from_vec(vec![1.0, 2.0, 3.0]);
-//! let b = ZkTensor::from_vec(vec![4.0, 5.0, 6.0]);
-//! let c = a.matmul(&b); // Proof generated automatically!
+//! let a = ZkTensor::from_vec(vec![1.0, 2.0, 3.0], &[3]);
+//! let b = ZkTensor::from_vec(vec![4.0, 5.0, 6.0], &[3]);
+//! let mut c = a.add(&b);
 //!
-//! assert!(c.verify_proof().is_ok());
+//! assert!(matches!(
+//!     c.generate_proof(),
+//!     Err(ZkTensorError::ProofBackendUnavailable(_))
+//! ));
 //! ```
 //!
 //! ### 3. The @sovereign Decorator (Python)
@@ -96,7 +100,7 @@ pub mod compliance;
 /// Hybrid post-quantum cryptography (ECDSA + Dilithium3)
 pub mod crypto;
 
-/// Zero-knowledge tensor operations with automatic proof generation
+/// Zero-knowledge tensor operations with fail-closed proof backend hooks
 pub mod zktensor;
 
 /// The Helix DSL - Rust-based language for verifiable AI
@@ -125,24 +129,24 @@ pub mod seal;
 // Re-exports for convenience
 // ============================================================================
 
-pub use sovereign::{Sovereign, SovereignBuilder, SovereignError};
 pub use attestation::{
-    AttestationEngine, EnclaveReport, HardwareType, AttestationError,
-    AttestationConfig, TcbStatus, VerificationResult,
+    AttestationConfig, AttestationEngine, AttestationError, EnclaveReport, HardwareType, TcbStatus,
+    VerificationResult,
 };
+pub use client::{AethelredClient, ClientConfig};
 pub use compliance::{
-    ComplianceEngine, Jurisdiction, Regulation, ComplianceViolation,
-    ComplianceResult, DataOperation, DataClassification,
+    ComplianceEngine, ComplianceResult, ComplianceViolation, DataClassification, DataOperation,
+    Jurisdiction, Regulation,
 };
 pub use crypto::{
-    HybridKeypair, HybridSignature, HybridPublicKey,
-    CryptoError, EncryptionAlgorithm, HashAlgorithm,
+    CryptoError, EncryptionAlgorithm, HashAlgorithm, HybridKeypair, HybridPublicKey,
+    HybridSignature,
 };
-pub use zktensor::{ZkTensor, ZkProof, TensorOp, ProofVerifier};
-pub use helix::{HelixCompiler, HelixProgram, HelixError};
-pub use registry::{ModelRegistry, ModelLicense, ModelVersion};
-pub use client::{AethelredClient, ClientConfig};
+pub use helix::{HelixCompiler, HelixError, HelixProgram};
+pub use registry::{ModelLicense, ModelRegistry, ModelVersion};
 pub use seal::{DigitalSeal, SealBuilder, SealId};
+pub use sovereign::{Sovereign, SovereignBuilder, SovereignError};
+pub use zktensor::{ProofVerifier, TensorOp, ZkProof, ZkTensor};
 
 // ============================================================================
 // Version & Build Info
@@ -204,10 +208,10 @@ pub struct Features {
 
 /// Commonly used types and traits
 pub mod prelude {
-    pub use crate::sovereign::{Sovereign, SovereignBuilder};
     pub use crate::attestation::{AttestationEngine, HardwareType};
-    pub use crate::compliance::{Jurisdiction, CompliancePolicy};
-    pub use crate::crypto::{HybridKeypair, HybridSignature};
-    pub use crate::zktensor::ZkTensor;
     pub use crate::client::AethelredClient;
+    pub use crate::compliance::{CompliancePolicy, Jurisdiction};
+    pub use crate::crypto::{HybridKeypair, HybridSignature};
+    pub use crate::sovereign::{Sovereign, SovereignBuilder};
+    pub use crate::zktensor::ZkTensor;
 }

@@ -171,6 +171,26 @@ func TestTEEQuoteSchemaValidationCoverage(t *testing.T) {
 	nitro.Quote = []byte("{invalid-json")
 	require.ErrorContains(t, validateTEEQuoteSchema(nitro), "invalid nitro quote json")
 
+	simulatedPayload := quotePayload
+	simulatedPayload.SimulationSignature = []byte("sim-sig")
+	simulatedBytes, err := json.Marshal(simulatedPayload)
+	require.NoError(t, err)
+	require.NoError(t, validateTEEQuoteSchema(&TEEAttestationData{
+		Platform: "nitro-simulated",
+		Quote:    simulatedBytes,
+		UserData: []byte("user"),
+		Nonce:    []byte("nonce"),
+	}))
+	simulatedPayload.SimulationSignature = nil
+	simulatedBytes, err = json.Marshal(simulatedPayload)
+	require.NoError(t, err)
+	require.ErrorContains(t, validateTEEQuoteSchema(&TEEAttestationData{
+		Platform: "nitro-simulated",
+		Quote:    simulatedBytes,
+		UserData: []byte("user"),
+		Nonce:    []byte("nonce"),
+	}), "simulation_signature")
+
 	sgxQuote := make([]byte, sgxQuoteHeaderLen)
 	binary.LittleEndian.PutUint16(sgxQuote[0:2], 3)
 	require.NoError(t, validateTEEQuoteSchema(&TEEAttestationData{

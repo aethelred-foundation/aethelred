@@ -38,6 +38,7 @@ import (
 
 	"github.com/aethelred/aethelred/internal/circuitbreaker"
 	"github.com/aethelred/aethelred/internal/httpclient"
+	"github.com/aethelred/aethelred/x/verify/httputil"
 )
 
 // QuoteVersion represents the SGX quote version
@@ -862,6 +863,13 @@ func (v *DCAPVerifier) httpGet(ctx context.Context, url string) ([]byte, error) 
 		return nil, fmt.Errorf("dcap collateral circuit open")
 	}
 
+	if err := httputil.ValidateEndpointURL(url); err != nil {
+		if v.breaker != nil {
+			v.breaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid collateral endpoint: %w", err)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		if v.breaker != nil {
@@ -993,6 +1001,13 @@ func (v *DCAPVerifier) checkRevocation(collateral *Collateral) error {
 func (v *DCAPVerifier) fetchCRLFromIntel(url string) (*x509.RevocationList, error) {
 	if v.breaker != nil && !v.breaker.Allow() {
 		return nil, fmt.Errorf("dcap collateral circuit open")
+	}
+
+	if err := httputil.ValidateEndpointURL(url); err != nil {
+		if v.breaker != nil {
+			v.breaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid CRL endpoint: %w", err)
 	}
 
 	// Check cache first

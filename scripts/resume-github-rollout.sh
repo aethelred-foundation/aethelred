@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST_FILE="${MANIFEST_FILE:-$ROOT_DIR/docs/governance/github-repo-standards.json}"
 GITHUB_ORG="${GITHUB_ORG:-$(jq -r '.org' "$MANIFEST_FILE")}"
-BRANCH_NAME="${BRANCH_NAME:-codex/github-standards-20260313}"
+BRANCH_NAME="${BRANCH_NAME:-governance/github-standards-20260313}"
 ROLLOUT_MODE="${ROLLOUT_MODE:-branch}"
 OPEN_PRS="${OPEN_PRS:-1}"
 APPLY_LABELS="${APPLY_LABELS:-0}"
@@ -17,7 +17,7 @@ Usage:
 
 Environment:
   GITHUB_ORG                Override org from manifest
-  BRANCH_NAME               Rollout branch to update (default: codex/github-standards-20260313)
+  BRANCH_NAME               Rollout branch to update (default: governance/github-standards-20260313)
   ROLLOUT_MODE              branch|direct (default: branch)
   OPEN_PRS                  1 to open PRs when missing (default: 1)
   APPLY_LABELS              1 to sync labels, 0 to skip (default: 0)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aethelred/aethelred/x/verify/ezkl"
+	"github.com/aethelred/aethelred/x/verify/httputil"
 	"github.com/aethelred/aethelred/x/verify/tee"
 	"github.com/aethelred/aethelred/x/verify/types"
 )
@@ -290,6 +291,9 @@ func isEndpointReachable(endpoint string) bool {
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	for _, probe := range probes {
+		if err := httputil.ValidateEndpointURL(probe); err != nil {
+			continue
+		}
 		req, err := http.NewRequest(http.MethodGet, probe, nil)
 		if err != nil {
 			continue

@@ -45,6 +45,8 @@ type breakerStatus struct {
 	TotalTrips          int64  `json:"total_trips"`
 }
 
+const healthDetailsAuthTokenEnv = "AETHELRED_HEALTH_API_TOKEN"
+
 func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -119,7 +121,7 @@ func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		if params.AllowSimulated {
 			components = append(components, componentStatus{
 				Name:    "tee_client",
-				Healthy: true,
+				Healthy: false,
 				Status:  "simulated",
 				Message: "TEE client not configured; AllowSimulated=true",
 			})
@@ -133,32 +135,43 @@ func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		}
 	} else {
 		healthy := h.app.teeClient.IsHealthy(r.Context())
+		caps := h.app.teeClient.GetCapabilities()
+		simulatedTEE := caps != nil && isSimulatedTEEPlatform(caps.Platform)
 		msg := "healthy"
 		status := boolStatus(healthy)
-		if !healthy && params.AllowSimulated {
+		componentHealthy := healthy
+		if simulatedTEE {
+			status = "simulated"
+			msg = "simulated TEE client active"
+			componentHealthy = false
+		} else if !healthy && params.AllowSimulated {
 			status = "degraded"
 			msg = "TEE unhealthy; AllowSimulated=true"
+			componentHealthy = false
 		} else if !healthy {
 			msg = "TEE health check failed"
+			componentHealthy = false
 		}
 		components = append(components, componentStatus{
 			Name:    "tee_client",
-			Healthy: healthy || params.AllowSimulated,
+			Healthy: componentHealthy,
 			Status:  status,
 			Message: msg,
-			Details: h.app.teeClient.GetCapabilities(),
+			Details: caps,
 		})
 	}
 
 	// Readiness (config correctness) for verify module
 	readiness := verify.ValidateProductionReadiness(params, collectTEEConfigs(h.app, ctx), ptrOrchestratorConfig(h.app))
 	readinessStatus := boolStatus(readiness.Ready)
+	readinessHealthy := readiness.Ready
 	if params.AllowSimulated {
 		readinessStatus = "simulated"
+		readinessHealthy = false
 	}
 	components = append(components, componentStatus{
 		Name:    "verify_readiness",
-		Healthy: readiness.Ready || params.AllowSimulated,
+		Healthy: readinessHealthy,
 		Status:  readinessStatus,
 		Details: readiness,
 	})
@@ -188,7 +201,11 @@ func (h *AethelredHealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		Components: components,
 	}
 
-	w.WriteHeader(http.StatusOK)
+	if !canAccessHealthDetails(r) {
+		report = sanitizeHealthReport(report)
+	}
+
+	w.WriteHeader(overallHTTPStatus(report.Status))
 	_ = json.NewEncoder(w).Encode(report)
 }
 
@@ -200,12 +217,49 @@ func boolStatus(healthy bool) string {
 }
 
 func overallStatus(components []componentStatus) string {
+	hasSimulated := false
+	hasDegraded := false
 	for _, c := range components {
-		if !c.Healthy {
+		switch c.Status {
+		case "unhealthy":
 			return "unhealthy"
+		case "degraded":
+			hasDegraded = true
+		case "simulated":
+			hasSimulated = true
 		}
 	}
+	if hasDegraded {
+		return "degraded"
+	}
+	if hasSimulated {
+		return "simulated"
+	}
 	return "healthy"
+}
+
+func overallHTTPStatus(status string) int {
+	if status == "unhealthy" {
+		return http.StatusServiceUnavailable
+	}
+	return http.StatusOK
+}
+
+func canAccessHealthDetails(r *http.Request) bool {
+	return authorizeLoopbackOrBearer(r, healthDetailsAuthTokenEnv, "detailed health data requires loopback access or a valid bearer token") == nil
+}
+
+func sanitizeHealthReport(report healthReport) healthReport {
+	report.ChainID = ""
+	report.Height = 0
+	sanitized := make([]componentStatus, 0, len(report.Components))
+	for _, component := range report.Components {
+		component.Message = ""
+		component.Details = nil
+		sanitized = append(sanitized, component)
+	}
+	report.Components = sanitized
+	return report
 }
 
 func chainID(app *AethelredApp) string {

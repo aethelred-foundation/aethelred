@@ -7,6 +7,10 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./IPlatformVerifier.sol";
 import "./P256Verifier.sol";
 
+interface IVaultTEEVerifierUpgraderTimelockDelaySource {
+    function getMinDelay() external view returns (uint256);
+}
+
 /**
  * @title VaultTEEVerifier
  * @author Aethelred Team
@@ -56,17 +60,14 @@ import "./P256Verifier.sol";
  *
  * @custom:security-contact security@aethelred.io
  */
-contract VaultTEEVerifier is
-    Initializable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
-{
+contract VaultTEEVerifier is Initializable, AccessControlUpgradeable, UUPSUpgradeable {
     // =========================================================================
     // CONSTANTS & ROLES
     // =========================================================================
 
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    uint256 public constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
 
     /// @notice Maximum attestation age (5 minutes).
     uint256 public constant MAX_ATTESTATION_AGE = 5 minutes;
@@ -89,20 +90,20 @@ contract VaultTEEVerifier is
 
     /// @notice Registered enclave configuration.
     struct EnclaveConfig {
-        bytes32 enclaveHash;      // MRENCLAVE / PCR0
-        bytes32 signerHash;       // MRSIGNER / PCR1
-        bytes32 applicationHash;  // Nitro PCR2 (zero for SGX/SEV)
-        uint8 platform;           // TEE platform
+        bytes32 enclaveHash; // MRENCLAVE / PCR0
+        bytes32 signerHash; // MRSIGNER / PCR1
+        bytes32 applicationHash; // Nitro PCR2 (zero for SGX/SEV)
+        uint8 platform; // TEE platform
         bool active;
         uint256 registeredAt;
         string description;
-        uint256 platformKeyX;     // Enclave-specific P-256 platform key X
-        uint256 platformKeyY;     // Enclave-specific P-256 platform key Y
+        uint256 platformKeyX; // Enclave-specific P-256 platform key X
+        uint256 platformKeyY; // Enclave-specific P-256 platform key Y
     }
 
     /// @notice Registered TEE operator (signer).
     struct TEEOperator {
-        address signer;           // ECDSA address of the TEE operator
+        address signer; // ECDSA address of the TEE operator
         bool active;
         uint256 registeredAt;
         uint256 attestationCount;
@@ -114,20 +115,20 @@ contract VaultTEEVerifier is
     ///      platform key bindings. The relay's P-256 key is also stored in
     ///      vendorRootKeyX/Y for backward compatibility with registerEnclave().
     struct AttestationRelay {
-        uint256 publicKeyX;           // Current P-256 signing key X
-        uint256 publicKeyY;           // Current P-256 signing key Y
-        uint256 registeredAt;         // Block timestamp of initial registration
-        uint256 lastRotatedAt;        // Block timestamp of last key rotation
-        uint256 attestationCount;     // Enclaves certified by this relay
-        bool active;                  // Whether the relay is currently active
+        uint256 publicKeyX; // Current P-256 signing key X
+        uint256 publicKeyY; // Current P-256 signing key Y
+        uint256 registeredAt; // Block timestamp of initial registration
+        uint256 lastRotatedAt; // Block timestamp of last key rotation
+        uint256 attestationCount; // Enclaves certified by this relay
+        bool active; // Whether the relay is currently active
         // Time-locked key rotation
-        uint256 pendingKeyX;          // Pending new key X (zero if no rotation pending)
-        uint256 pendingKeyY;          // Pending new key Y
-        uint256 rotationUnlocksAt;    // Timestamp when pending rotation can finalize
+        uint256 pendingKeyX; // Pending new key X (zero if no rotation pending)
+        uint256 pendingKeyY; // Pending new key Y
+        uint256 rotationUnlocksAt; // Timestamp when pending rotation can finalize
         // Liveness challenge
-        bytes32 activeChallenge;      // Current governance-issued challenge nonce
-        uint256 challengeDeadline;    // Deadline for the relay to respond
-        string description;           // Human-readable relay identity
+        bytes32 activeChallenge; // Current governance-issued challenge nonce
+        uint256 challengeDeadline; // Deadline for the relay to respond
+        string description; // Human-readable relay identity
     }
 
     /// @notice Decoded attestation.
@@ -193,8 +194,12 @@ contract VaultTEEVerifier is
     event AttestationVerified(bytes32 indexed nonce, uint8 platform, address indexed signer);
     event PlatformVerifierSet(uint8 indexed platform, address verifier);
     event VendorRootKeySet(uint8 indexed platform, uint256 x, uint256 y);
-    event AttestationRelayRegistered(uint8 indexed platform, uint256 x, uint256 y, string description);
-    event RelayRotationInitiated(uint8 indexed platform, uint256 newX, uint256 newY, uint256 unlocksAt);
+    event AttestationRelayRegistered(
+        uint8 indexed platform, uint256 x, uint256 y, string description
+    );
+    event RelayRotationInitiated(
+        uint8 indexed platform, uint256 newX, uint256 newY, uint256 unlocksAt
+    );
     event RelayRotationFinalized(uint8 indexed platform, uint256 newX, uint256 newY);
     event RelayRotationCancelled(uint8 indexed platform);
     event RelayRevoked(uint8 indexed platform);
@@ -236,6 +241,9 @@ contract VaultTEEVerifier is
     error ChallengeExpired(uint8 platform);
     error ChallengeResponseInvalid(uint8 platform);
     error DirectOverrideWhileRelayActive(uint8 platform);
+    error AdminMustBeContract();
+    error UpgraderTimelockDelayTooShort();
+    error ProductionInitializationRequiresTimelock();
 
     // =========================================================================
     // INITIALIZATION
@@ -247,14 +255,28 @@ contract VaultTEEVerifier is
     }
 
     function initialize(address admin) external initializer {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
+        _initializeVerifier(admin, admin);
+    }
+
+    function initializeWithTimelock(address admin, address upgraderTimelock) external initializer {
+        _requireContractAdmin(admin);
+        _requireContractAdmin(upgraderTimelock);
+        _requireUpgraderTimelockDelay(upgraderTimelock);
+        _initializeVerifier(admin, upgraderTimelock);
+    }
+
+    function _initializeVerifier(address admin, address upgraderAuthority) internal {
         if (admin == address(0)) revert ZeroAddress();
+        if (upgraderAuthority == address(0)) revert ZeroAddress();
 
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(REGISTRAR_ROLE, admin);
-        _grantRole(UPGRADER_ROLE, admin);
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
+        _grantRole(UPGRADER_ROLE, upgraderAuthority);
     }
 
     // =========================================================================
@@ -310,15 +332,17 @@ contract VaultTEEVerifier is
         //    SHA-256("CruzibleTEEAttestation" ‖ platform ‖ timestamp_u64 ‖
         //            nonce ‖ enclaveHash ‖ signerHash ‖ sha256(payload))
         bytes32 payloadHash = sha256(decoded.payload);
-        bytes32 digest = sha256(abi.encodePacked(
-            "CruzibleTEEAttestation",
-            decoded.platform,
-            uint64(decoded.timestamp),
-            decoded.nonce,
-            decoded.enclaveHash,
-            decoded.signerHash,
-            payloadHash
-        ));
+        bytes32 digest = sha256(
+            abi.encodePacked(
+                "CruzibleTEEAttestation",
+                decoded.platform,
+                uint64(decoded.timestamp),
+                decoded.nonce,
+                decoded.enclaveHash,
+                decoded.signerHash,
+                payloadHash
+            )
+        );
 
         address signer = _recoverSigner(digest, decoded.signature);
         if (signer == address(0)) revert InvalidSignature();
@@ -371,7 +395,9 @@ contract VaultTEEVerifier is
         if (decoded.timestamp > block.timestamp) return (false, payload, platform);
 
         // Check freshness
-        if (block.timestamp > decoded.timestamp + MAX_ATTESTATION_AGE) return (false, payload, platform);
+        if (block.timestamp > decoded.timestamp + MAX_ATTESTATION_AGE) {
+            return (false, payload, platform);
+        }
 
         // Check nonce
         if (usedNonces[decoded.nonce]) return (false, payload, platform);
@@ -379,31 +405,43 @@ contract VaultTEEVerifier is
         // Check enclave
         bytes32 enclaveId = keccak256(abi.encodePacked(decoded.enclaveHash, decoded.platform));
         EnclaveConfig storage enclave = enclaves[enclaveId];
-        if (enclave.enclaveHash == bytes32(0) || !enclave.active) return (false, payload, platform);
+        if (enclave.enclaveHash == bytes32(0) || !enclave.active) {
+            return (false, payload, platform);
+        }
 
         // Check signerHash matches registered enclave identity
         if (decoded.signerHash != enclave.signerHash) return (false, payload, platform);
 
         // Verify signature — tagged SHA-256 digest (matches Go & Rust verifiers)
         bytes32 payloadHash = sha256(decoded.payload);
-        bytes32 digest = sha256(abi.encodePacked(
-            "CruzibleTEEAttestation",
-            decoded.platform,
-            uint64(decoded.timestamp),
-            decoded.nonce,
-            decoded.enclaveHash,
-            decoded.signerHash,
-            payloadHash
-        ));
+        bytes32 digest = sha256(
+            abi.encodePacked(
+                "CruzibleTEEAttestation",
+                decoded.platform,
+                uint64(decoded.timestamp),
+                decoded.nonce,
+                decoded.enclaveHash,
+                decoded.signerHash,
+                payloadHash
+            )
+        );
         address signer = _recoverSigner(digest, decoded.signature);
 
         if (signer == address(0)) return (false, payload, platform);
 
         // Check platform evidence using enclave-specific platform key
-        if (!_checkPlatformEvidence(decoded.platform, decoded.platformEvidence,
-                                     decoded.enclaveHash, decoded.signerHash, enclave.applicationHash, digest,
-                                     enclave.platformKeyX, enclave.platformKeyY))
+        if (!_checkPlatformEvidence(
+                decoded.platform,
+                decoded.platformEvidence,
+                decoded.enclaveHash,
+                decoded.signerHash,
+                enclave.applicationHash,
+                digest,
+                enclave.platformKeyX,
+                enclave.platformKeyY
+            )) {
             return (false, payload, platform);
+        }
 
         TEEOperator storage operator = operators[signer];
         if (operator.signer == address(0) || !operator.active) return (false, payload, platform);
@@ -442,7 +480,10 @@ contract VaultTEEVerifier is
         uint256 platformKeyY,
         uint256 vendorAttestR,
         uint256 vendorAttestS
-    ) external onlyRole(REGISTRAR_ROLE) {
+    )
+        external
+        onlyRole(REGISTRAR_ROLE)
+    {
         bytes32 enclaveId = keccak256(abi.encodePacked(enclaveHash, platformId));
         if (enclaves[enclaveId].enclaveHash != bytes32(0)) {
             revert EnclaveAlreadyRegistered(enclaveId);
@@ -499,7 +540,11 @@ contract VaultTEEVerifier is
      *                  Must be a registered enclave (keccak256(enclaveHash, platform)).
      * @param description Human-readable description.
      */
-    function registerOperator(address signer, bytes32 enclaveId, string calldata description)
+    function registerOperator(
+        address signer,
+        bytes32 enclaveId,
+        string calldata description
+    )
         external
         onlyRole(REGISTRAR_ROLE)
     {
@@ -551,7 +596,11 @@ contract VaultTEEVerifier is
     ///      To switch from relay back to direct vendor keys, first call revokeRelay().
     ///
     ///      Reverts with DirectOverrideWhileRelayActive if a relay is active.
-    function setVendorRootKey(uint8 platformId, uint256 x, uint256 y)
+    function setVendorRootKey(
+        uint8 platformId,
+        uint256 x,
+        uint256 y
+    )
         external
         onlyRole(REGISTRAR_ROLE)
     {
@@ -593,7 +642,10 @@ contract VaultTEEVerifier is
         uint256 x,
         uint256 y,
         string calldata description
-    ) external onlyRole(REGISTRAR_ROLE) {
+    )
+        external
+        onlyRole(REGISTRAR_ROLE)
+    {
         AttestationRelay storage relay = attestationRelays[platformId];
         if (relay.registeredAt != 0 && relay.active) revert RelayAlreadyRegistered(platformId);
 
@@ -630,7 +682,10 @@ contract VaultTEEVerifier is
         uint8 platformId,
         uint256 newX,
         uint256 newY
-    ) external onlyRole(REGISTRAR_ROLE) {
+    )
+        external
+        onlyRole(REGISTRAR_ROLE)
+    {
         AttestationRelay storage relay = attestationRelays[platformId];
         if (relay.registeredAt == 0) revert RelayNotRegistered(platformId);
         if (!relay.active) revert RelayNotActive(platformId);
@@ -713,10 +768,7 @@ contract VaultTEEVerifier is
     ///      offline or its key compromised.
     /// @param platformId TEE platform whose relay to challenge.
     /// @param challenge Random nonce for the relay to sign (governance picks this).
-    function challengeRelay(uint8 platformId, bytes32 challenge)
-        external
-        onlyRole(REGISTRAR_ROLE)
-    {
+    function challengeRelay(uint8 platformId, bytes32 challenge) external onlyRole(REGISTRAR_ROLE) {
         AttestationRelay storage relay = attestationRelays[platformId];
         if (relay.registeredAt == 0) revert RelayNotRegistered(platformId);
         if (!relay.active) revert RelayNotActive(platformId);
@@ -734,11 +786,7 @@ contract VaultTEEVerifier is
     /// @param platformId TEE platform whose challenge to respond to.
     /// @param sigR P-256 signature R component over the challenge nonce.
     /// @param sigS P-256 signature S component over the challenge nonce.
-    function respondRelayChallenge(
-        uint8 platformId,
-        uint256 sigR,
-        uint256 sigS
-    ) external {
+    function respondRelayChallenge(uint8 platformId, uint256 sigR, uint256 sigS) external {
         AttestationRelay storage relay = attestationRelays[platformId];
         if (relay.activeChallenge == bytes32(0)) revert NoPendingChallenge(platformId);
         if (block.timestamp > relay.challengeDeadline) revert ChallengeExpired(platformId);
@@ -828,7 +876,10 @@ contract VaultTEEVerifier is
         bytes32 attestationDigest,
         uint256 pkX,
         uint256 pkY
-    ) internal view {
+    )
+        internal
+        view
+    {
         if (evidence.length == 0) revert MissingPlatformEvidence();
 
         address verifierAddr = platformVerifiers[platformId];
@@ -845,7 +896,10 @@ contract VaultTEEVerifier is
             revert EvidenceMeasurementMismatch(result.signerHash, expectedSignerHash);
         }
         // Nitro PCR2 (application hash) — only enforced when the registered value is non-zero
-        if (expectedApplicationHash != bytes32(0) && result.applicationHash != expectedApplicationHash) {
+        if (
+            expectedApplicationHash != bytes32(0)
+                && result.applicationHash != expectedApplicationHash
+        ) {
             revert EvidenceMeasurementMismatch(result.applicationHash, expectedApplicationHash);
         }
         if (result.dataBinding != attestationDigest) {
@@ -866,7 +920,11 @@ contract VaultTEEVerifier is
         bytes32 attestationDigest,
         uint256 pkX,
         uint256 pkY
-    ) internal view returns (bool) {
+    )
+        internal
+        view
+        returns (bool)
+    {
         if (evidence.length == 0) return false;
         address verifierAddr = platformVerifiers[platformId];
         if (verifierAddr == address(0)) return false;
@@ -878,7 +936,10 @@ contract VaultTEEVerifier is
         if (result.enclaveHash != expectedEnclaveHash) return false;
         if (result.signerHash != expectedSignerHash) return false;
         // Nitro PCR2 (application hash) — only enforced when registered value is non-zero
-        if (expectedApplicationHash != bytes32(0) && result.applicationHash != expectedApplicationHash) return false;
+        if (
+            expectedApplicationHash != bytes32(0)
+                && result.applicationHash != expectedApplicationHash
+        ) return false;
         if (result.dataBinding != attestationDigest) return false;
         return true;
     }
@@ -897,7 +958,10 @@ contract VaultTEEVerifier is
             decoded.payload,
             decoded.platformEvidence,
             decoded.signature
-        ) = abi.decode(attestation, (uint8, uint256, bytes32, bytes32, bytes32, bytes, bytes, bytes));
+        ) =
+            abi.decode(
+                attestation, (uint8, uint256, bytes32, bytes32, bytes32, bytes, bytes, bytes)
+            );
     }
 
     function _recoverSigner(bytes32 digest, bytes memory signature)
@@ -932,7 +996,33 @@ contract VaultTEEVerifier is
         internal
         override
         onlyRole(UPGRADER_ROLE)
-    {}
+    { }
+
+    function _requireContractAdmin(address admin) internal view {
+        if (admin == address(0)) revert ZeroAddress();
+        if (admin.code.length > 0) {
+            return;
+        }
+        if (block.chainid == 31_337 || block.chainid == 1337) {
+            return;
+        }
+        revert AdminMustBeContract();
+    }
+
+    function _requireUpgraderTimelockDelay(address upgraderTimelock) internal view {
+        if (
+            IVaultTEEVerifierUpgraderTimelockDelaySource(upgraderTimelock).getMinDelay()
+                < MIN_UPGRADER_TIMELOCK_DELAY
+        ) {
+            revert UpgraderTimelockDelayTooShort();
+        }
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
+    }
 
     function version() external pure returns (string memory) {
         return "1.1.0";

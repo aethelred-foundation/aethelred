@@ -100,8 +100,6 @@ impl EthereumListener {
 
     /// Connect to Ethereum provider
     async fn connect(&self) -> Result<EthProvider> {
-        // In production, this would use ethers-rs to connect
-        // For now, return a placeholder
         info!("Connecting to Ethereum at {}", self.config.rpc_url);
         Ok(EthProvider::new(&self.config.rpc_url))
     }
@@ -297,10 +295,14 @@ impl EthProvider {
             crate::error::BridgeError::Ethereum(format!("Invalid block hash hex: {}", e))
         })?;
 
-        let mut hash = [0u8; 32];
-        if hash_bytes.len() == 32 {
-            hash.copy_from_slice(&hash_bytes);
+        if hash_bytes.len() != 32 {
+            return Err(crate::error::BridgeError::Ethereum(
+                "Block hash must be exactly 32 bytes".into(),
+            ));
         }
+
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(&hash_bytes);
         Ok(hash)
     }
 
@@ -360,10 +362,11 @@ impl EthProvider {
 
         // Parse depositor as EthAddress (last 20 bytes of 32-byte topic)
         let depositor_bytes = hex::decode(topics[2].as_str()?.trim_start_matches("0x")).ok()?;
-        let mut depositor = [0u8; 20];
-        if depositor_bytes.len() >= 20 {
-            depositor.copy_from_slice(&depositor_bytes[depositor_bytes.len() - 20..]);
+        if depositor_bytes.len() != 32 {
+            return None;
         }
+        let mut depositor = [0u8; 20];
+        depositor.copy_from_slice(&depositor_bytes[12..32]);
 
         // Non-indexed params from data: token, amount, nonce, timestamp
         let data = log.get("data")?.as_str()?;
@@ -392,25 +395,16 @@ impl EthProvider {
         let block_number = u64::from_str_radix(block_hex.trim_start_matches("0x"), 16).ok()?;
 
         // Parse block hash
-        let block_hash = log
-            .get("blockHash")
-            .and_then(|h| h.as_str())
-            .and_then(|h| self.parse_hash(h))
-            .unwrap_or([0u8; 32]);
+        let block_hash = self.parse_hash(log.get("blockHash")?.as_str()?)?;
 
         // Parse transaction hash
-        let tx_hash = log
-            .get("transactionHash")
-            .and_then(|h| h.as_str())
-            .and_then(|h| self.parse_hash(h))
-            .unwrap_or([0u8; 32]);
+        let tx_hash = self.parse_hash(log.get("transactionHash")?.as_str()?)?;
 
         // Parse log index
         let log_index = log
             .get("logIndex")
             .and_then(|l| l.as_str())
-            .and_then(|l| u32::from_str_radix(l.trim_start_matches("0x"), 16).ok())
-            .unwrap_or(0);
+            .and_then(|l| u32::from_str_radix(l.trim_start_matches("0x"), 16).ok())?;
 
         Some(EthereumDeposit {
             deposit_id,
@@ -430,11 +424,11 @@ impl EthProvider {
     /// Parse a 0x-prefixed hex string into a 32-byte hash
     fn parse_hash(&self, hex_str: &str) -> Option<Hash> {
         let bytes = hex::decode(hex_str.trim_start_matches("0x")).ok()?;
-        if bytes.len() < 32 {
+        if bytes.len() != 32 {
             return None;
         }
         let mut hash = [0u8; 32];
-        hash.copy_from_slice(&bytes[bytes.len() - 32..]);
+        hash.copy_from_slice(&bytes);
         Some(hash)
     }
 }
@@ -446,6 +440,33 @@ impl EthProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+
+    fn provider() -> EthProvider {
+        EthProvider::new("http://localhost:8545")
+    }
+
+    fn sample_deposit_log() -> serde_json::Value {
+        json!({
+            "topics": [
+                "0x5e3c1311ea442664e90b8c12c1b7a8fa8a3477f7e4a3f5a0b7b1e25e6c3e7b3a",
+                "0x1111111111111111111111111111111111111111111111111111111111111111",
+                "0x0000000000000000000000002222222222222222222222222222222222222222",
+                "0x3333333333333333333333333333333333333333333333333333333333333333"
+            ],
+            "data": concat!(
+                "0x",
+                "0000000000000000000000004444444444444444444444444444444444444444",
+                "000000000000000000000000000000000000000000000000000000000000002a",
+                "0000000000000000000000000000000000000000000000000000000000000007",
+                "00000000000000000000000000000000000000000000000000000000661f6f80"
+            ),
+            "blockNumber": "0x64",
+            "blockHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+            "transactionHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+            "logIndex": "0x2"
+        })
+    }
 
     #[tokio::test]
     async fn test_listener_creation() {
@@ -458,5 +479,32 @@ mod tests {
             .unwrap();
 
         assert_eq!(listener.last_processed_block().await, 0);
+    }
+
+    #[test]
+    fn test_parse_deposit_log_requires_full_metadata() {
+        let provider = provider();
+        let mut log = sample_deposit_log();
+        log.as_object_mut().unwrap().remove("transactionHash");
+
+        assert!(provider.parse_deposit_log(&log).is_none());
+    }
+
+    #[test]
+    fn test_parse_deposit_log_parses_strict_metadata() {
+        let provider = provider();
+        let deposit = provider.parse_deposit_log(&sample_deposit_log()).unwrap();
+
+        assert_eq!(deposit.deposit_id, [0x11; 32]);
+        assert_eq!(deposit.depositor, [0x22; 20]);
+        assert_eq!(deposit.aethelred_recipient, [0x33; 32]);
+        assert_eq!(deposit.token, [0x44; 20]);
+        assert_eq!(deposit.amount, 42);
+        assert_eq!(deposit.nonce, 7);
+        assert_eq!(deposit.block_number, 100);
+        assert_eq!(deposit.block_hash, [0x55; 32]);
+        assert_eq!(deposit.tx_hash, [0x66; 32]);
+        assert_eq!(deposit.log_index, 2);
+        assert_eq!(deposit.timestamp, 1_713_336_192);
     }
 }

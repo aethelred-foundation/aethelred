@@ -34,7 +34,7 @@ fn make_useful_work_result(
     method: VerificationMethod,
     uwu: u64,
 ) -> UsefulWorkResult {
-    UsefulWorkResult {
+    let mut result = UsefulWorkResult {
         job_id: [1u8; 32],
         model_hash: [2u8; 32],
         input_hash: [3u8; 32],
@@ -43,11 +43,7 @@ fn make_useful_work_result(
         work_difficulty: 100,
         category: UtilityCategory::General,
         verification_method: method,
-        tee_attestation: {
-            let mut att = vec![0x02, 0x00]; // SGX header
-            att.extend(vec![0xAA; 200]);
-            att
-        },
+        tee_attestation: Vec::new(),
         zkml_proof: Some(vec![0xBB; 300]),
         ai_proof: Some(AiProof {
             verifier_model_hash: [5u8; 32],
@@ -61,7 +57,19 @@ fn make_useful_work_result(
         confirmations: 3,
         completed_at: 100,
         sla_deadline: 200,
-    }
+    };
+
+    bind_mock_sgx_quote(&mut result);
+    result
+}
+
+fn bind_mock_sgx_quote(result: &mut UsefulWorkResult) {
+    let mut quote = vec![0u8; 436];
+    quote[0..2].copy_from_slice(&3u16.to_le_bytes());
+    quote[4..8].copy_from_slice(&0u32.to_le_bytes());
+    quote[112..144].copy_from_slice(&[9u8; 32]);
+    quote[368..400].copy_from_slice(&result.hash());
+    result.tee_attestation = quote;
 }
 
 fn make_block_header(proposer: [u8; 32], slot: u64) -> PoUWBlockHeader {
@@ -458,6 +466,7 @@ fn test_consensus_timing() {
 fn test_verification_engine_tee_attestation() {
     let engine = VerificationEngine::new(devnet_config());
     let mut result = make_useful_work_result([1u8; 32], VerificationMethod::TeeAttestation, 100);
+    engine.register_measurement([9u8; 32], "coverage-sgx".to_string());
     assert!(engine.verify_tee_attestation(&result).unwrap());
 
     result.tee_attestation = Vec::new();
@@ -471,6 +480,7 @@ fn test_verification_engine_tee_attestation() {
 
     let mut nitro = vec![0x84];
     nitro.extend(vec![0xAA; 200]);
+    nitro[40..72].fill(9);
     result.tee_attestation = nitro;
     assert!(engine.verify_tee_attestation(&result).unwrap());
 }
@@ -523,6 +533,26 @@ fn test_verification_engine_ai_proof() {
 fn test_verification_engine_register_measurement() {
     let engine = VerificationEngine::new(devnet_config());
     engine.register_measurement([1u8; 32], "SGX measurement v1".to_string());
+}
+
+#[test]
+fn test_verification_engine_rejects_sgx_measurement_not_in_allowlist() {
+    let engine = VerificationEngine::new(devnet_config());
+    engine.register_measurement([7u8; 32], "different-sgx".to_string());
+    let result = make_useful_work_result([1u8; 32], VerificationMethod::TeeAttestation, 100);
+
+    assert!(!engine.verify_tee_attestation(&result).unwrap());
+}
+
+#[test]
+fn test_verification_engine_rejects_tampered_sgx_binding() {
+    let engine = VerificationEngine::new(devnet_config());
+    engine.register_measurement([9u8; 32], "SGX measurement v1".to_string());
+
+    let mut result = make_useful_work_result([1u8; 32], VerificationMethod::TeeAttestation, 100);
+    result.tee_attestation[368] ^= 0xFF;
+
+    assert!(!engine.verify_tee_attestation(&result).unwrap());
 }
 
 // =============================================================================
@@ -1642,6 +1672,7 @@ fn test_score_contribution_medical_category_higher() {
         .unwrap();
     let mut result_med = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     result_med.category = crate::pouw::config::UtilityCategory::Medical;
+    bind_mock_sgx_quote(&mut result_med);
     let proc_med = consensus_med
         .process_useful_work_results(&header, &[result_med])
         .unwrap();

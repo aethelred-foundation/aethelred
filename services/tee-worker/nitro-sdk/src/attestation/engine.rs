@@ -436,19 +436,10 @@ impl AttestationEngine {
         // Extract FMSPC from quote
         let fmspc = Self::extract_fmspc(quote)?;
 
-        // In production, this would make HTTP requests to PCCS
-        // For now, return a placeholder
-        Ok(AttestationCollateral::Intel(IntelCollateral {
-            pck_certificate: Vec::new(),
-            pck_cert_chain: Vec::new(),
-            tcb_info: Vec::new(),
-            tcb_info_signature: Vec::new(),
-            qe_identity: Vec::new(),
-            qe_identity_signature: Vec::new(),
-            root_ca_crl: Vec::new(),
-            pck_crl: Vec::new(),
-            fmspc: fmspc.to_vec(),
-        }))
+        Err(AttestationError::NetworkError(format!(
+            "Intel PCCS collateral fetch backend is not implemented in the lightweight attestation engine (fmspc={})",
+            hex::encode(fmspc)
+        )))
     }
 
     /// Fetch AMD KDS collateral
@@ -460,12 +451,10 @@ impl AttestationEngine {
             AttestationError::NetworkError("AMD KDS URL not configured".to_string())
         })?;
 
-        // In production, this would fetch from AMD KDS
-        Ok(AttestationCollateral::Amd(AmdCollateral {
-            vcek_certificate: Vec::new(),
-            vcek_cert_chain: Vec::new(),
-            crl: Vec::new(),
-        }))
+        Err(AttestationError::NetworkError(
+            "AMD KDS collateral fetch backend is not implemented in the lightweight attestation engine"
+                .to_string(),
+        ))
     }
 
     /// Fetch ARM CCA collateral
@@ -1037,6 +1026,37 @@ mod tests {
 
         assert!(options.expected_measurements.is_some());
         assert!(options.require_production);
+    }
+
+    #[test]
+    fn test_fetch_intel_collateral_fails_closed_without_backend() {
+        let engine = AttestationEngine::default();
+        let mut quote = vec![0u8; 432];
+        quote[426..432].copy_from_slice(&[1, 2, 3, 4, 5, 6]);
+
+        let err = engine.fetch_intel_collateral(&quote).unwrap_err();
+        let rendered = err.to_string();
+
+        assert!(
+            rendered.contains("not implemented"),
+            "unexpected error message: {rendered}"
+        );
+        assert!(
+            rendered.contains("010203040506"),
+            "expected fmspc context in error message: {rendered}"
+        );
+    }
+
+    #[test]
+    fn test_fetch_amd_collateral_fails_closed_without_backend() {
+        let engine = AttestationEngine::default();
+        let err = engine.fetch_amd_collateral(&[0u8; 0x2A0]).unwrap_err();
+        let rendered = err.to_string();
+
+        assert!(
+            rendered.contains("AMD KDS collateral fetch backend is not implemented"),
+            "unexpected error message: {rendered}"
+        );
     }
 
     #[test]

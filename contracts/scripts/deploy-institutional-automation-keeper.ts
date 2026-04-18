@@ -1,4 +1,8 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import {
+  isLocalDeploymentNetwork,
+  resolveDeploymentAddress,
+} from "./lib/deployment-governance";
 
 const DEFAULT_MAX_ASSETS_PER_RUN = 16n;
 
@@ -8,7 +12,9 @@ function parseAssetIds(raw: string | undefined): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((id) => (id.startsWith("0x") && id.length === 66 ? id : ethers.id(id)));
+    .map((id) =>
+      id.startsWith("0x") && id.length === 66 ? id : ethers.id(id),
+    );
 }
 
 async function main() {
@@ -25,12 +31,26 @@ async function main() {
   const grantPauserRole = process.env.GRANT_PAUSER_ROLE_TO_KEEPER !== "false";
 
   const [deployer] = await ethers.getSigners();
+  const chainId = Number((await ethers.provider.getNetwork()).chainId);
+  const isLocal = isLocalDeploymentNetwork({
+    networkName: network.name,
+    chainId,
+  });
+  const initialOwner = resolveDeploymentAddress({
+    envName: "KEEPER_OWNER_ADDRESS",
+    envValue: ownerAddress,
+    deployerAddress: deployer.address,
+    isLocal,
+  });
   console.log("Deployer:", deployer.address);
   console.log("Institutional bridge:", bridgeAddress);
   console.log("Tracked assets:", assetIds.length);
+  console.log("Keeper owner:", initialOwner);
 
-  const Factory = await ethers.getContractFactory("InstitutionalReserveAutomationKeeper");
-  const keeper = await Factory.deploy(bridgeAddress, assetIds);
+  const Factory = await ethers.getContractFactory(
+    "InstitutionalReserveAutomationKeeper",
+  );
+  const keeper = await Factory.deploy(bridgeAddress, assetIds, initialOwner);
   await keeper.waitForDeployment();
 
   const keeperAddress = await keeper.getAddress();
@@ -40,18 +60,30 @@ async function main() {
     await (await keeper.setMaxAssetsPerRun(maxAssetsPerRun)).wait();
   }
 
-  if (ownerAddress && ownerAddress.toLowerCase() !== deployer.address.toLowerCase()) {
-    console.log("Transferring keeper ownership to:", ownerAddress);
-    await (await keeper.transferOwnership(ownerAddress)).wait();
-  }
-
-  const bridge = await ethers.getContractAt("InstitutionalStablecoinBridge", bridgeAddress);
+  const bridge = await ethers.getContractAt(
+    "InstitutionalStablecoinBridge",
+    bridgeAddress,
+  );
   if (grantPauserRole) {
     const pauserRole = await bridge.PAUSER_ROLE();
     const hasRole = await bridge.hasRole(pauserRole, keeperAddress);
     if (!hasRole) {
-      console.log("Granting PAUSER_ROLE to automation keeper...");
-      await (await bridge.grantRole(pauserRole, keeperAddress)).wait();
+      const governanceTimelock = await bridge.governanceTimelock();
+      if (governanceTimelock !== ethers.ZeroAddress) {
+        const grantRoleCalldata = bridge.interface.encodeFunctionData(
+          "grantRole",
+          [pauserRole, keeperAddress],
+        );
+        console.log(
+          "Governance timelock is active; queue this role grant through governance before enabling automation:",
+        );
+        console.log(`  Timelock: ${governanceTimelock}`);
+        console.log(`  Target:   ${bridgeAddress}`);
+        console.log(`  Calldata: ${grantRoleCalldata}`);
+      } else {
+        console.log("Granting PAUSER_ROLE to automation keeper...");
+        await (await bridge.grantRole(pauserRole, keeperAddress)).wait();
+      }
     }
   }
 
@@ -62,12 +94,12 @@ async function main() {
         keeperAddress,
         bridgeAddress,
         trackedAssets: assetIds,
-        owner: ownerAddress ?? deployer.address,
+        owner: initialOwner,
         maxAssetsPerRun: maxAssetsPerRun.toString(),
       },
       null,
-      2
-    )
+      2,
+    ),
   );
 }
 

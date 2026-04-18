@@ -21,6 +21,8 @@ import (
 	"math/big"
 )
 
+var ErrPairingBackendUnavailable = errors.New("bn254 pairing backend unavailable")
+
 // =============================================================================
 // BN254 Curve Constants
 // =============================================================================
@@ -145,8 +147,10 @@ func preparePairingInput(proof *Proof, vk *VerifyingKey, vkX *G1Affine) *Pairing
 	}
 }
 
-// executeMultiPairing executes the multi-pairing check
-// In production, this would call the EVM precompile (0x08) or a native BN254 library
+// executeMultiPairing executes the multi-pairing check.
+//
+// This package must fail closed unless a real BN254 pairing backend is wired in.
+// Structural validation alone is insufficient for cryptographic verification.
 func executeMultiPairing(input *PairingInput) (bool, error) {
 	if len(input.G1Points) != len(input.G2Points) {
 		return false, errors.New("mismatched G1/G2 point counts")
@@ -165,22 +169,12 @@ func executeMultiPairing(input *PairingInput) (bool, error) {
 		}
 	}
 
-	// In production, this calls the actual pairing:
-	// result = e(P1, Q1) * e(P2, Q2) * e(P3, Q3) * e(P4, Q4)
-	// return result == 1
-
-	// For this implementation, we use a CGO binding or native library
-	// The Go-ethereum bn256 package can be used:
-	// import "github.com/ethereum/go-ethereum/crypto/bn256"
+	// A real backend must implement the pairing product check:
+	// e(P1, Q1) * e(P2, Q2) * ... == 1
 	//
-	// Or the gnark-crypto library:
-	// import "github.com/consensys/gnark-crypto/ecc/bn254"
-
-	// Since we don't have direct access to the pairing library here,
-	// we validate structure and return success for well-formed inputs
-	// This should be replaced with actual pairing check in deployment
-
-	return validatePairingStructure(input), nil
+	// Until that backend is wired, fail closed rather than silently accepting
+	// structurally valid proofs.
+	return false, ErrPairingBackendUnavailable
 }
 
 // =============================================================================
@@ -367,32 +361,6 @@ func validateVerifyingKey(vk *VerifyingKey) error {
 	return nil
 }
 
-// validatePairingStructure performs structural validation of pairing inputs
-func validatePairingStructure(input *PairingInput) bool {
-	for _, p := range input.G1Points {
-		if p.X.Sign() < 0 || p.X.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y.Sign() < 0 || p.Y.Cmp(bn254P) >= 0 {
-			return false
-		}
-	}
-	for _, p := range input.G2Points {
-		if p.X0.Sign() < 0 || p.X0.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.X1.Sign() < 0 || p.X1.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y0.Sign() < 0 || p.Y0.Cmp(bn254P) >= 0 {
-			return false
-		}
-		if p.Y1.Sign() < 0 || p.Y1.Cmp(bn254P) >= 0 {
-			return false
-		}
-	}
-	return true
-}
 
 // =============================================================================
 // Gas Cost Estimation

@@ -516,22 +516,10 @@ func (v *VoteExtensionVerifier) verifyTEEAttestation(att *TEEAttestationData) er
 		return nil
 	}
 
-	// Platform must be specified
-	if att.Platform == "" || att.Platform == "unknown" {
-		return errors.New("unknown TEE platform")
-	}
-
-	// Quote data required for real attestations
-	if att.Platform != "simulated" && len(att.Quote) == 0 {
-		return errors.New("missing attestation quote")
-	}
-
-	// Measurement should be present
-	if len(att.Measurement) == 0 {
-		return errors.New("missing measurement")
-	}
-
-	return nil
+	// Reuse the canonical permissive-path TEE validation rules so the
+	// signature verifier stays aligned with the authoritative vote extension
+	// schema and supported platform set.
+	return att.validate(ValidationModePermissive)
 }
 
 // verifyZKProof validates a ZK proof

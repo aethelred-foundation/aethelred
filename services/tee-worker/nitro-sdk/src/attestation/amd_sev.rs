@@ -454,12 +454,9 @@ impl SnpVerifier {
             ));
         }
 
-        // TODO: Implement actual ECDSA P-384 verification
-        // let public_key = extract_vcek_pubkey(&collateral.vcek_certificate)?;
-        // let signature = p384::ecdsa::Signature::from_components(&report.signature.r, &report.signature.s)?;
-        // public_key.verify(&report_body_hash, &signature)?;
-
-        Ok(())
+        Err(AttestationError::AmdSev(
+            "Cryptographic SEV-SNP report signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify certificate chain
@@ -476,9 +473,9 @@ impl SnpVerifier {
             ));
         }
 
-        // TODO: Implement full chain verification
-
-        Ok(())
+        Err(AttestationError::AmdSev(
+            "SEV-SNP certificate chain verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify nonce in report data
@@ -667,5 +664,70 @@ mod tests {
 
         assert!(verifier.verify_nonce(&report_data, &nonce));
         assert!(!verifier.verify_nonce(&report_data, &[0u8; 32]));
+    }
+
+    fn mock_report() -> SnpReport {
+        SnpReport {
+            version: 2,
+            guest_svn: 1,
+            policy: SnpPolicy { raw: 0 },
+            family_id: [0; 16],
+            image_id: [0; 16],
+            vmpl: 0,
+            signature_algo: 1,
+            platform_version: SevPlatformVersion {
+                boot_loader: 0,
+                tee: 0,
+                snp: 0,
+                microcode: 0,
+            },
+            platform_info: 0,
+            author_key_en: 0,
+            report_data: [0; 64],
+            measurement: [0; 48],
+            host_data: [0; 32],
+            id_key_digest: [0; 48],
+            author_key_digest: [0; 48],
+            report_id: [0; 32],
+            report_id_ma: [0; 32],
+            reported_tcb: SnpTcb { raw: 0 },
+            chip_id: [0; 64],
+            committed_svn: 0,
+            committed_tcb: SnpTcb { raw: 0 },
+            current_build: 0,
+            current_minor: 0,
+            current_major: 0,
+            committed_build: 0,
+            committed_minor: 0,
+            committed_major: 0,
+            launch_tcb: SnpTcb { raw: 0 },
+            signature: SnpSignature {
+                r: [0; 72],
+                s: [0; 72],
+                reserved: [0; 368],
+            },
+        }
+    }
+
+    fn mock_collateral() -> AmdCollateral {
+        AmdCollateral {
+            vcek_certificate: vec![1],
+            vcek_cert_chain: vec![2],
+            crl: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn test_report_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = SnpVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_signature(&mock_report(), &mock_collateral());
+        assert!(matches!(result, Err(AttestationError::AmdSev(_))));
+    }
+
+    #[test]
+    fn test_cert_chain_verification_fails_closed_when_backend_missing() {
+        let verifier = SnpVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_cert_chain(&mock_collateral());
+        assert!(matches!(result, Err(AttestationError::AmdSev(_))));
     }
 }

@@ -41,32 +41,32 @@ import (
 
 // Store key prefixes for collections.
 var (
-	ParamsKey            = collections.NewPrefix(0)
-	StakersKey           = collections.NewPrefix(1)
-	ValidatorsKey        = collections.NewPrefix(2)
-	WithdrawalsKey       = collections.NewPrefix(3)
-	EpochSnapshotsKey    = collections.NewPrefix(4)
-	StakePerEpochKey     = collections.NewPrefix(5)
-	RewardsClaimedKey    = collections.NewPrefix(6)
-	TotalPooledAethelKey = collections.NewPrefix(7)
-	TotalSharesKey       = collections.NewPrefix(8)
-	CurrentEpochKey      = collections.NewPrefix(9)
-	NextWithdrawalIDKey  = collections.NewPrefix(10)
-	TotalPendingKey      = collections.NewPrefix(11)
-	TotalMEVKey          = collections.NewPrefix(12)
-	ActiveValidatorsKey    = collections.NewPrefix(13)
-	UserWithdrawalsKey     = collections.NewPrefix(14)
-	RegisteredEnclavesKey  = collections.NewPrefix(15)
-	RegisteredOperatorsKey = collections.NewPrefix(16)
-	UsedNoncesKey          = collections.NewPrefix(17)
-	VendorRootKeysKey      = collections.NewPrefix(18)
-	DelegationSnapshotsKey     = collections.NewPrefix(19)
-	PauseStateKey              = collections.NewPrefix(20)
-	CircuitBreakerConfigKey    = collections.NewPrefix(21)
-	EpochUnstakeAccumKey       = collections.NewPrefix(22) // epoch → cumulative unstaked amount
-	EpochSlashCountKey         = collections.NewPrefix(23) // epoch → number of slashes
-	OperatorAuditLogKey        = collections.NewPrefix(24) // index → JSON OperatorAction
-	AttestationRelaysKey       = collections.NewPrefix(25) // platformId (string) → JSON AttestationRelay
+	ParamsKey               = collections.NewPrefix(0)
+	StakersKey              = collections.NewPrefix(1)
+	ValidatorsKey           = collections.NewPrefix(2)
+	WithdrawalsKey          = collections.NewPrefix(3)
+	EpochSnapshotsKey       = collections.NewPrefix(4)
+	StakePerEpochKey        = collections.NewPrefix(5)
+	RewardsClaimedKey       = collections.NewPrefix(6)
+	TotalPooledAethelKey    = collections.NewPrefix(7)
+	TotalSharesKey          = collections.NewPrefix(8)
+	CurrentEpochKey         = collections.NewPrefix(9)
+	NextWithdrawalIDKey     = collections.NewPrefix(10)
+	TotalPendingKey         = collections.NewPrefix(11)
+	TotalMEVKey             = collections.NewPrefix(12)
+	ActiveValidatorsKey     = collections.NewPrefix(13)
+	UserWithdrawalsKey      = collections.NewPrefix(14)
+	RegisteredEnclavesKey   = collections.NewPrefix(15)
+	RegisteredOperatorsKey  = collections.NewPrefix(16)
+	UsedNoncesKey           = collections.NewPrefix(17)
+	VendorRootKeysKey       = collections.NewPrefix(18)
+	DelegationSnapshotsKey  = collections.NewPrefix(19)
+	PauseStateKey           = collections.NewPrefix(20)
+	CircuitBreakerConfigKey = collections.NewPrefix(21)
+	EpochUnstakeAccumKey    = collections.NewPrefix(22) // epoch → cumulative unstaked amount
+	EpochSlashCountKey      = collections.NewPrefix(23) // epoch → number of slashes
+	OperatorAuditLogKey     = collections.NewPrefix(24) // index → JSON OperatorAction
+	AttestationRelaysKey    = collections.NewPrefix(25) // platformId (string) → JSON AttestationRelay
 )
 
 // Keeper manages the Cruzible module state.
@@ -119,11 +119,11 @@ type Keeper struct {
 	DelegationSnapshots collections.Map[string, string] // epoch (string) → JSON []stakerStakeEntry
 
 	// Emergency pause and circuit breaker state.
-	PauseState          collections.Item[string]         // JSON PauseState
-	CircuitBreakerCfg   collections.Item[string]         // JSON CircuitBreakerConfig
-	EpochUnstakeAccum   collections.Map[string, uint64]  // epoch (string) → cumulative unstaked uaethel
-	EpochSlashCount     collections.Map[string, uint64]  // epoch (string) → number of slashes
-	OperatorAuditLog    collections.Map[string, string]  // auto-increment index → JSON OperatorAction
+	PauseState        collections.Item[string]        // JSON PauseState
+	CircuitBreakerCfg collections.Item[string]        // JSON CircuitBreakerConfig
+	EpochUnstakeAccum collections.Map[string, uint64] // epoch (string) → cumulative unstaked uaethel
+	EpochSlashCount   collections.Map[string, uint64] // epoch (string) → number of slashes
+	OperatorAuditLog  collections.Map[string, string] // auto-increment index → JSON OperatorAction
 }
 
 // NewKeeper creates a new Cruzible keeper with store-backed collections.
@@ -230,6 +230,13 @@ func (k *Keeper) InitializeDefaults(ctx context.Context) error {
 // GetAuthority returns the module authority address.
 func (k *Keeper) GetAuthority() string {
 	return k.authority
+}
+
+func (k *Keeper) requireAuthority(caller string) error {
+	if caller != k.authority {
+		return fmt.Errorf("%w: %s is not authority %s", types.ErrUnauthorized, caller, k.authority)
+	}
+	return nil
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1760,7 +1767,11 @@ func bytesEqual(a, b []byte) bool {
 // direct vendor keys, first call RevokeRelay().
 //
 // Returns ErrDirectOverrideWhileRelayActive if a relay is active.
-func (k *Keeper) RegisterVendorRootKey(ctx context.Context, platform uint8, xHex, yHex string) error {
+func (k *Keeper) RegisterVendorRootKey(ctx context.Context, caller string, platform uint8, xHex, yHex string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	// Prevent bypassing relay governance controls via direct override
 	platformKey := strconv.Itoa(int(platform))
 	if relayData, err := k.AttestationRelays.Get(ctx, platformKey); err == nil {
@@ -1836,7 +1847,11 @@ func (k *Keeper) getVendorRootKey(ctx context.Context, platform uint8) (*ecdsa.P
 
 // RegisterEnclave registers a new TEE enclave configuration.
 // Only callable by the module authority (governance).
-func (k *Keeper) RegisterEnclave(ctx context.Context, reg types.EnclaveRegistration) (enclaveID string, err error) {
+func (k *Keeper) RegisterEnclave(ctx context.Context, caller string, reg types.EnclaveRegistration) (enclaveID string, err error) {
+	if err := k.requireAuthority(caller); err != nil {
+		return "", err
+	}
+
 	enclaveHashBytes, err := hex.DecodeString(reg.EnclaveHash)
 	if err != nil || len(enclaveHashBytes) != 32 {
 		return "", fmt.Errorf("invalid enclave_hash: must be 64 hex chars (32 bytes)")
@@ -1928,7 +1943,11 @@ func (k *Keeper) RegisterEnclave(ctx context.Context, reg types.EnclaveRegistrat
 
 // RegisterOperator registers a new TEE operator bound to a specific enclave.
 // Only callable by the module authority (governance).
-func (k *Keeper) RegisterOperator(ctx context.Context, reg types.OperatorRegistration) error {
+func (k *Keeper) RegisterOperator(ctx context.Context, caller string, reg types.OperatorRegistration) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	// Validate the enclave exists
 	if _, err := k.RegisteredEnclaves.Get(ctx, reg.EnclaveID); err != nil {
 		return fmt.Errorf("enclave not registered: %s", reg.EnclaveID)
@@ -1970,7 +1989,11 @@ func (k *Keeper) RegisterOperator(ctx context.Context, reg types.OperatorRegistr
 }
 
 // RevokeEnclave deactivates a registered enclave.
-func (k *Keeper) RevokeEnclave(ctx context.Context, enclaveID string) error {
+func (k *Keeper) RevokeEnclave(ctx context.Context, caller string, enclaveID string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	raw, err := k.RegisteredEnclaves.Get(ctx, enclaveID)
 	if err != nil {
 		return fmt.Errorf("enclave not found: %s", enclaveID)
@@ -1997,7 +2020,11 @@ func (k *Keeper) RevokeEnclave(ctx context.Context, enclaveID string) error {
 }
 
 // RevokeOperator deactivates a registered operator.
-func (k *Keeper) RevokeOperator(ctx context.Context, pubKeyHex string) error {
+func (k *Keeper) RevokeOperator(ctx context.Context, caller string, pubKeyHex string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	raw, err := k.RegisteredOperators.Get(ctx, pubKeyHex)
 	if err != nil {
 		return fmt.Errorf("operator not found: %s", pubKeyHex)
@@ -2045,7 +2072,11 @@ func (k *Keeper) RevokeOperator(ctx context.Context, pubKeyHex string) error {
 // overwritten. The previous relay's attestation count is not carried forward.
 //
 // Only callable by governance (module authority).
-func (k *Keeper) RegisterAttestationRelay(ctx context.Context, platform uint8, xHex, yHex, description string) error {
+func (k *Keeper) RegisterAttestationRelay(ctx context.Context, caller string, platform uint8, xHex, yHex, description string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	// Check if an active relay is already registered for this platform.
@@ -2112,7 +2143,11 @@ func (k *Keeper) RegisterAttestationRelay(ctx context.Context, platform uint8, x
 // InitiateRelayRotation starts a time-locked key rotation for a platform's
 // attestation relay. The new key becomes effective after RelayRotationDelaySec
 // (48 hours). During the delay, governance can cancel via CancelRelayRotation().
-func (k *Keeper) InitiateRelayRotation(ctx context.Context, platform uint8, newXHex, newYHex string) error {
+func (k *Keeper) InitiateRelayRotation(ctx context.Context, caller string, platform uint8, newXHex, newYHex string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2151,7 +2186,11 @@ func (k *Keeper) InitiateRelayRotation(ctx context.Context, platform uint8, newX
 // FinalizeRelayRotation completes a pending relay key rotation after the
 // timelock has expired. Updates both the relay's active key and the vendor
 // root key for RegisterEnclave() compatibility.
-func (k *Keeper) FinalizeRelayRotation(ctx context.Context, platform uint8) error {
+func (k *Keeper) FinalizeRelayRotation(ctx context.Context, caller string, platform uint8) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2199,7 +2238,11 @@ func (k *Keeper) FinalizeRelayRotation(ctx context.Context, platform uint8) erro
 }
 
 // CancelRelayRotation cancels a pending relay key rotation.
-func (k *Keeper) CancelRelayRotation(ctx context.Context, platform uint8) error {
+func (k *Keeper) CancelRelayRotation(ctx context.Context, caller string, platform uint8) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2220,7 +2263,11 @@ func (k *Keeper) CancelRelayRotation(ctx context.Context, platform uint8) error 
 // RevokeRelay immediately deactivates an attestation relay AND clears the
 // vendor root key, preventing any further enclave registrations for this
 // platform. Existing enclaves already registered remain valid.
-func (k *Keeper) RevokeRelay(ctx context.Context, platform uint8) error {
+func (k *Keeper) RevokeRelay(ctx context.Context, caller string, platform uint8) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2265,11 +2312,16 @@ func (k *Keeper) RevokeRelay(ctx context.Context, platform uint8) error {
 	return nil
 }
 
-// ChallengeRelay issues a liveness challenge to an attestation relay. The relay
-// must respond within RelayChallengeWindowSec (1 hour) by providing a valid
-// P-256 signature over the challenge nonce using its registered signing key.
-// challengeHex is the hex-encoded 32-byte nonce for the relay to sign.
-func (k *Keeper) ChallengeRelay(ctx context.Context, platform uint8, challengeHex string) error {
+// ChallengeRelay issues a governance-controlled liveness challenge to an
+// attestation relay. The relay must respond within RelayChallengeWindowSec
+// (1 hour) by providing a valid P-256 signature over the challenge nonce using
+// its registered signing key. challengeHex is the hex-encoded 32-byte nonce
+// for the relay to sign.
+func (k *Keeper) ChallengeRelay(ctx context.Context, caller string, platform uint8, challengeHex string) error {
+	if err := k.requireAuthority(caller); err != nil {
+		return err
+	}
+
 	platformKey := strconv.Itoa(int(platform))
 
 	relay, err := k.getAttestationRelay(ctx, platformKey)
@@ -2289,10 +2341,30 @@ func (k *Keeper) ChallengeRelay(ctx context.Context, platform uint8, challengeHe
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := sdkCtx.BlockTime().Unix()
 
+	if relay.ActiveChallenge != "" {
+		if relay.ChallengeDeadline >= now {
+			return fmt.Errorf("%w: platform %d already has a live challenge", types.ErrChallengeAlreadyPending, platform)
+		}
+		// Expired challenges must be cleared before a new governance challenge
+		// can become authoritative.
+		relay.ActiveChallenge = ""
+		relay.ChallengeDeadline = 0
+	}
+
 	relay.ActiveChallenge = challengeHex
 	relay.ChallengeDeadline = now + types.RelayChallengeWindowSec
 
-	return k.setAttestationRelay(ctx, platformKey, relay)
+	if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+		return err
+	}
+
+	k.appendOperatorAuditLog(ctx, types.OperatorAction{
+		Action:    "challenge_relay",
+		Target:    platformKey,
+		Timestamp: sdkCtx.BlockTime(),
+	})
+
+	return nil
 }
 
 // RespondRelayChallenge processes a relay's response to a liveness challenge.
@@ -2315,6 +2387,11 @@ func (k *Keeper) RespondRelayChallenge(ctx context.Context, platform uint8, sigR
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := sdkCtx.BlockTime().Unix()
 	if now > relay.ChallengeDeadline {
+		relay.ActiveChallenge = ""
+		relay.ChallengeDeadline = 0
+		if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+			return err
+		}
 		return types.ErrChallengeExpired
 	}
 
@@ -2355,7 +2432,17 @@ func (k *Keeper) RespondRelayChallenge(ctx context.Context, platform uint8, sigR
 	relay.ActiveChallenge = ""
 	relay.ChallengeDeadline = 0
 
-	return k.setAttestationRelay(ctx, platformKey, relay)
+	if err := k.setAttestationRelay(ctx, platformKey, relay); err != nil {
+		return err
+	}
+
+	k.appendOperatorAuditLog(ctx, types.OperatorAction{
+		Action:    "respond_relay_challenge",
+		Target:    platformKey,
+		Timestamp: sdkCtx.BlockTime(),
+	})
+
+	return nil
 }
 
 // IsRelayActive returns whether a platform has an active attestation relay.
@@ -2987,7 +3074,7 @@ func (k *Keeper) BuildDelegationAttestationRequest(ctx context.Context) ([]byte,
 	registryRoot := computeStakerRegistryRoot(entries)
 
 	reqBody := map[string]interface{}{
-		"epoch":                 currentEpoch,
+		"epoch":                currentEpoch,
 		"staker_stakes":        entries,
 		"staker_registry_root": hex.EncodeToString(registryRoot[:]),
 	}

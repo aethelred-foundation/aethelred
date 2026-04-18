@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../contracts/AethelredVesting.sol";
+import "../contracts/mocks/MockTimelockController.sol";
 
 /**
  * @title MockToken
@@ -43,7 +44,7 @@ contract AethelredVestingTest is Test {
     address public carol = address(0x3);
 
     uint256 public constant TOTAL_SUPPLY = 10_000_000_000 * 1e18;
-    uint256 public constant BPS_BASE = 10000;
+    uint256 public constant BPS_BASE = 10_000;
 
     // =========================================================================
     // EVENTS (re-declared for vm.expectEmit)
@@ -72,9 +73,7 @@ contract AethelredVestingTest is Test {
         uint256 revokedAt
     );
     event BeneficiaryTransferred(
-        bytes32 indexed scheduleId,
-        address indexed oldBeneficiary,
-        address indexed newBeneficiary
+        bytes32 indexed scheduleId, address indexed oldBeneficiary, address indexed newBeneficiary
     );
     event TGEExecuted(uint256 timestamp);
 
@@ -89,10 +88,7 @@ contract AethelredVestingTest is Test {
 
         // Deploy vesting via proxy
         AethelredVesting impl = new AethelredVesting();
-        bytes memory initData = abi.encodeCall(
-            AethelredVesting.initialize,
-            (address(token), admin)
-        );
+        bytes memory initData = abi.encodeCall(AethelredVesting.initialize, (address(token), admin));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         vesting = AethelredVesting(address(proxy));
 
@@ -124,6 +120,40 @@ contract AethelredVestingTest is Test {
 
     function test_Init_Version() public view {
         assertEq(keccak256(bytes(vesting.version())), keccak256(bytes("1.0.0")));
+    }
+
+    function test_Revert_Init_RequiresTimelockOnNonLocalChain() public {
+        vm.chainId(1);
+
+        AethelredVesting impl = new AethelredVesting();
+        bytes memory initData = abi.encodeCall(AethelredVesting.initialize, (address(token), admin));
+
+        vm.expectRevert(AethelredVesting.ProductionInitializationRequiresTimelock.selector);
+        new ERC1967Proxy(address(impl), initData);
+    }
+
+    function test_Init_WithTimelock_IsolatesUpgraderRole() public {
+        MockTimelockController adminController = new MockTimelockController(1 days, address(this));
+        MockTimelockController upgraderTimelock = new MockTimelockController(27 days, address(this));
+
+        AethelredVesting impl = new AethelredVesting();
+        bytes memory initData = abi.encodeCall(
+            AethelredVesting.initializeWithTimelock,
+            (address(token), address(adminController), address(upgraderTimelock))
+        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+        AethelredVesting governedVesting = AethelredVesting(address(proxy));
+
+        assertTrue(
+            governedVesting.hasRole(governedVesting.UPGRADER_ROLE(), address(upgraderTimelock))
+        );
+        assertFalse(
+            governedVesting.hasRole(governedVesting.UPGRADER_ROLE(), address(adminController))
+        );
+        assertEq(
+            governedVesting.getRoleAdmin(governedVesting.UPGRADER_ROLE()),
+            governedVesting.UPGRADER_ROLE()
+        );
     }
 
     // =========================================================================
@@ -164,9 +194,9 @@ contract AethelredVestingTest is Test {
             1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days,  // 6 month cliff
-            5 * 365 days,  // 5 year vesting
-            500,  // 5% TGE
+            180 days, // 6 month cliff
+            5 * 365 days, // 5 year vesting
+            500, // 5% TGE
             1000, // 10% cliff
             true, // revocable
             false // not transferable
@@ -217,10 +247,16 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.InvalidAmount.selector);
         vesting.createCustomSchedule(
-            alice, 0,
+            alice,
+            0,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
     }
 
@@ -228,10 +264,16 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.InvalidBeneficiary.selector);
         vesting.createCustomSchedule(
-            address(0), 1000 ether,
+            address(0),
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
     }
 
@@ -240,10 +282,16 @@ contract AethelredVestingTest is Test {
         for (uint256 i = 0; i < vesting.MAX_SCHEDULES_PER_BENEFICIARY(); i++) {
             vm.prank(vestingAdmin);
             vesting.createCustomSchedule(
-                alice, 100 ether,
+                alice,
+                100 ether,
                 AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
                 AethelredVesting.VestingType.LINEAR,
-                0, 365 days, 0, 0, true, false
+                0,
+                365 days,
+                0,
+                0,
+                true,
+                false
             );
         }
 
@@ -251,26 +299,44 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.MaxSchedulesExceeded.selector);
         vesting.createCustomSchedule(
-            alice, 100 ether,
+            alice,
+            100 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
     }
 
     function test_BeneficiarySchedules() public {
         vm.startPrank(vestingAdmin);
         bytes32 id1 = vesting.createCustomSchedule(
-            alice, 100 ether,
+            alice,
+            100 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 id2 = vesting.createCustomSchedule(
-            alice, 200 ether,
+            alice,
+            200 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vm.stopPrank();
 
@@ -287,10 +353,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_LinearBeforeStart() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -303,10 +375,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_LinearHalfway() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -322,10 +400,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_LinearFullyVested() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -340,10 +424,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_LinearPastDuration() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -363,14 +453,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_TGEUnlock() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.PUBLIC_SALES,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days,  // 6 month cliff
-            548 days,  // 18 month total
-            2000,      // 20% TGE
-            0,         // no cliff unlock
-            true, false
+            180 days, // 6 month cliff
+            548 days, // 18 month total
+            2000, // 20% TGE
+            0, // no cliff unlock
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -384,14 +476,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_CliffUnlock() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.CORE_CONTRIBUTORS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days,   // 6 month cliff
+            180 days, // 6 month cliff
             4 * 365 days, // 4 year total
-            0,           // no TGE unlock
-            0,           // 0% cliff unlock
-            true, false
+            0, // no TGE unlock
+            0, // 0% cliff unlock
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -410,14 +504,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_TGEPlusCliff() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 10000 ether,
+            alice,
+            10_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days,     // 6 month cliff
+            180 days, // 6 month cliff
             5 * 365 days, // 5 year total
-            500,          // 5% TGE
-            1000,         // 10% cliff
-            true, false
+            500, // 5% TGE
+            1000, // 10% cliff
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -425,12 +521,12 @@ contract AethelredVestingTest is Test {
 
         // At TGE: 5% = 500 AETHEL
         uint256 tgeVested = vesting.getVested(id);
-        assertEq(tgeVested, 10000 ether * 500 / BPS_BASE);
+        assertEq(tgeVested, 10_000 ether * 500 / BPS_BASE);
 
         // Just after cliff: 5% + 10% + some linear = >= 15%
         vm.warp(block.timestamp + 180 days + 1);
         uint256 cliffVested = vesting.getVested(id);
-        assertGe(cliffVested, 10000 ether * 1500 / BPS_BASE);
+        assertGe(cliffVested, 10_000 ether * 1500 / BPS_BASE);
     }
 
     // =========================================================================
@@ -440,10 +536,16 @@ contract AethelredVestingTest is Test {
     function test_Release_Success() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -463,10 +565,16 @@ contract AethelredVestingTest is Test {
     function test_Release_PartialThenFull() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -490,10 +598,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_Release_BeforeTGE() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(alice);
@@ -504,10 +618,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_Release_NothingToRelease() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -522,16 +642,28 @@ contract AethelredVestingTest is Test {
     function test_ReleaseAll_MultipleSchedules() public {
         vm.startPrank(vestingAdmin);
         vesting.createCustomSchedule(
-            alice, 500 ether,
+            alice,
+            500 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.createCustomSchedule(
-            alice, 300 ether,
+            alice,
+            300 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.executeTGE();
         vm.stopPrank();
@@ -551,10 +683,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_BeforeAnyVesting() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(revoker);
@@ -567,10 +705,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_AfterPartialVesting() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -593,10 +737,14 @@ contract AethelredVestingTest is Test {
     function test_Revert_Revoke_NotRevocable() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0,
+            0,
+            365 days,
+            0,
+            0,
             false, // NOT revocable
             false
         );
@@ -609,10 +757,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_Revoke_AlreadyRevoked() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(revoker);
@@ -626,10 +780,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_Revoke_OnlyRevokerRole() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(alice);
@@ -667,10 +827,15 @@ contract AethelredVestingTest is Test {
     function test_TransferBeneficiary() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true,
+            0,
+            365 days,
+            0,
+            0,
+            true,
             true // transferable
         );
 
@@ -684,10 +849,15 @@ contract AethelredVestingTest is Test {
     function test_Revert_TransferBeneficiary_NotTransferable() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true,
+            0,
+            365 days,
+            0,
+            0,
+            true,
             false // NOT transferable
         );
 
@@ -699,10 +869,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_TransferBeneficiary_NotBeneficiary() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, true
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            true
         );
 
         vm.prank(bob); // not alice
@@ -717,10 +893,16 @@ contract AethelredVestingTest is Test {
     function test_Pause_BlocksRelease() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -743,10 +925,16 @@ contract AethelredVestingTest is Test {
     function testFuzz_Vested_Monotonic(uint256 t1, uint256 t2) public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1_000_000 ether,
+            alice,
+            1_000_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 5 * 365 days, 0, 0, true, false
+            0,
+            5 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -772,10 +960,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 4 * 365 days, 500, 1000, true, false
+            180 days,
+            4 * 365 days,
+            500,
+            1000,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -793,10 +987,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 4 * 365 days, 0, 0, true, false
+            0,
+            4 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -819,10 +1019,16 @@ contract AethelredVestingTest is Test {
         vm.startPrank(vestingAdmin);
         for (uint8 i = 0; i < count; i++) {
             vesting.createCustomSchedule(
-                alice, amount,
+                alice,
+                amount,
                 AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
                 AethelredVesting.VestingType.LINEAR,
-                0, 365 days, 0, 0, true, false
+                0,
+                365 days,
+                0,
+                0,
+                true,
+                false
             );
         }
         vesting.executeTGE();
@@ -845,11 +1051,16 @@ contract AethelredVestingTest is Test {
         // when vestingDuration == 0 (fully vested immediately after TGE)
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 0, // zero duration
-            0, 0, true, false
+            0,
+            0, // zero duration
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -862,12 +1073,16 @@ contract AethelredVestingTest is Test {
     function test_Boundary_ImmediateVesting() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.IMMEDIATE,
-            0, 1, // minimal duration
+            0,
+            1, // minimal duration
             0, // TGE bps not needed for IMMEDIATE type (contract returns totalAmount)
-            0, true, false
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -880,12 +1095,16 @@ contract AethelredVestingTest is Test {
     function test_Boundary_MaxTGEBps() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days,
+            0,
+            365 days,
             8000, // 80% TGE unlock (max allowed by contract)
-            0, true, false
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -899,11 +1118,16 @@ contract AethelredVestingTest is Test {
         // 50 year vesting schedule
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1_000_000 ether,
+            alice,
+            1_000_000 ether,
             AethelredVesting.AllocationCategory.COMPUTE_POUW_REWARDS,
             AethelredVesting.VestingType.LINEAR,
-            0, 50 * 365 days,
-            0, 0, true, false
+            0,
+            50 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -917,10 +1141,16 @@ contract AethelredVestingTest is Test {
     function test_Boundary_SmallAmount() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1, // 1 wei
+            alice,
+            1, // 1 wei
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -941,10 +1171,16 @@ contract AethelredVestingTest is Test {
         // Milestone schedules can be created; vesting is unlock-based via achieveMilestone
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.MILESTONE,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
         assertEq(uint8(s.vestingType), uint8(AethelredVesting.VestingType.MILESTONE));
@@ -953,10 +1189,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_ImmediateFullUnlock_ReleaseAll() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 5000 ether,
+            alice,
+            5000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.IMMEDIATE,
-            0, 1, 0, 0, true, false // tgeUnlockBps=0; IMMEDIATE type returns totalAmount regardless
+            0,
+            1,
+            0,
+            0,
+            true,
+            false // tgeUnlockBps=0; IMMEDIATE type returns totalAmount regardless
         );
 
         vm.prank(vestingAdmin);
@@ -975,10 +1217,16 @@ contract AethelredVestingTest is Test {
         // No TGE, no cliff unlock, pure linear after cliff
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.CORE_CONTRIBUTORS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            365 days, 4 * 365 days, 0, 0, true, false
+            365 days,
+            4 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1000,13 +1248,16 @@ contract AethelredVestingTest is Test {
         // 80% upfront (max allowed by tge+cliff), 20% linear
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 10000 ether,
+            alice,
+            10_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            30 days, 365 days,
+            30 days,
+            365 days,
             5000, // 50% TGE
             3000, // 30% cliff (total upfront = 80%, the max)
-            true, false
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1022,19 +1273,22 @@ contract AethelredVestingTest is Test {
 
         // Fully vested at end
         vm.warp(block.timestamp + 336 days);
-        assertEq(vesting.getVested(id), 10000 ether);
+        assertEq(vesting.getVested(id), 10_000 ether);
     }
 
     function test_Vested_CliffLinear_JustBeforeCliff() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 2000 ether,
+            alice,
+            2000 ether,
             AethelredVesting.AllocationCategory.CORE_CONTRIBUTORS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 4 * 365 days,
+            180 days,
+            4 * 365 days,
             0, // 0% TGE
             0, // 0% cliff
-            true, false
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1049,13 +1303,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_CliffLinear_ExactlyAtCliff() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 2000 ether,
+            alice,
+            2000 ether,
             AethelredVesting.AllocationCategory.CORE_CONTRIBUTORS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 4 * 365 days,
+            180 days,
+            4 * 365 days,
             0, // 0% TGE
             0, // 0% cliff
-            true, false
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1070,10 +1327,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_Linear_QuarterWay() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 4000 ether,
+            alice,
+            4000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, true, false
+            0,
+            400 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1087,10 +1350,16 @@ contract AethelredVestingTest is Test {
     function test_Vested_Linear_ThreeQuarterWay() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 4000 ether,
+            alice,
+            4000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, true, false
+            0,
+            400 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1109,10 +1378,16 @@ contract AethelredVestingTest is Test {
         // Compute/PoUW Rewards: 10yr linear, no cliff
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1_000_000 ether,
+            alice,
+            1_000_000 ether,
             AethelredVesting.AllocationCategory.COMPUTE_POUW_REWARDS,
             AethelredVesting.VestingType.LINEAR,
-            0, 10 * 365 days, 0, 0, false, false
+            0,
+            10 * 365 days,
+            0,
+            0,
+            false,
+            false
         );
 
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
@@ -1125,10 +1400,16 @@ contract AethelredVestingTest is Test {
         // Contingency Reserve: 12mo cliff, 5yr total
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 100_000 ether,
+            alice,
+            100_000 ether,
             AethelredVesting.AllocationCategory.CONTINGENCY_RESERVE,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            365 days, 5 * 365 days, 0, 0, true, false
+            365 days,
+            5 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
@@ -1140,11 +1421,16 @@ contract AethelredVestingTest is Test {
         // Insurance Fund: 10% TGE, 30mo vest
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 200_000 ether,
+            alice,
+            200_000 ether,
             AethelredVesting.AllocationCategory.INSURANCE_FUND,
             AethelredVesting.VestingType.LINEAR,
-            0, 30 * 30 days, // ~30 months
-            1000, 0, false, false
+            0,
+            30 * 30 days, // ~30 months
+            1000,
+            0,
+            false,
+            false
         );
 
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
@@ -1156,10 +1442,16 @@ contract AethelredVestingTest is Test {
         // Treasury MM: TGE 25%, no cliff, 36mo vest
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 50_000 ether,
+            alice,
+            50_000 ether,
             AethelredVesting.AllocationCategory.TREASURY_MM,
             AethelredVesting.VestingType.LINEAR,
-            0, 3 * 365 days, 2500, 0, true, false
+            0,
+            3 * 365 days,
+            2500,
+            0,
+            true,
+            false
         );
 
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
@@ -1172,32 +1464,49 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.CategoryCapExceeded.selector);
         vesting.createCustomSchedule(
-            alice, cap + 1,
+            alice,
+            cap + 1,
             AethelredVesting.AllocationCategory.STRATEGIC_SEED,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, false, false
+            0,
+            365 days,
+            0,
+            0,
+            false,
+            false
         );
     }
 
     function test_CategoryAllocation_MultipleSchedulesSameCategory() public {
         vm.startPrank(vestingAdmin);
         vesting.createCustomSchedule(
-            alice, 100_000 ether,
+            alice,
+            100_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.createCustomSchedule(
-            bob, 200_000 ether,
+            bob,
+            200_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vm.stopPrank();
 
-        (uint256 cap, uint256 allocated, ) = vesting.getCategoryStats(
-            AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS
-        );
+        (uint256 cap, uint256 allocated,) =
+            vesting.getCategoryStats(AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS);
         assertEq(allocated, 300_000 ether);
         assertGt(cap, allocated);
     }
@@ -1210,12 +1519,16 @@ contract AethelredVestingTest is Test {
         // 80% TGE unlock (max allowed), linear schedule for remaining 20%
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 500 ether,
+            alice,
+            500 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days,
+            0,
+            365 days,
             8000, // 80% TGE (max allowed by contract)
-            0, true, false
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1232,10 +1545,16 @@ contract AethelredVestingTest is Test {
     function test_Release_RevokedSchedule_CannotRelease() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1255,10 +1574,16 @@ contract AethelredVestingTest is Test {
     function test_Release_AfterRevoke_VestedFrozen() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1283,10 +1608,16 @@ contract AethelredVestingTest is Test {
     function test_Release_MultipleTimestamps_Incremental() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1200 ether,
+            alice,
+            1200 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 360 days, 0, 0, true, false
+            0,
+            360 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1328,10 +1659,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_Release_NotBeneficiary() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1347,11 +1684,16 @@ contract AethelredVestingTest is Test {
     function test_Release_CliffLinear_StepByStep() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 10000 ether,
+            alice,
+            10_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 5 * 365 days,
-            500, 1000, true, false
+            180 days,
+            5 * 365 days,
+            500,
+            1000,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1361,7 +1703,7 @@ contract AethelredVestingTest is Test {
         // Step 1: At TGE, 5% available
         vm.prank(alice);
         uint256 r1 = vesting.release(id);
-        assertEq(r1, 10000 ether * 500 / BPS_BASE); // 500 AETHEL
+        assertEq(r1, 10_000 ether * 500 / BPS_BASE); // 500 AETHEL
 
         // Step 2: Before cliff, nothing more
         vm.warp(tgeTs + 90 days);
@@ -1374,14 +1716,14 @@ contract AethelredVestingTest is Test {
         vm.prank(alice);
         uint256 r3 = vesting.release(id);
         // At cliff boundary: linearElapsed = 0, so only cliff unlock
-        assertEq(r3, 10000 ether * 1000 / BPS_BASE); // cliff: 10% = 1000
+        assertEq(r3, 10_000 ether * 1000 / BPS_BASE); // cliff: 10% = 1000
 
         // Step 4: At end, everything released
         vm.warp(tgeTs + 5 * 365 days + 1);
         vm.prank(alice);
         uint256 r4 = vesting.release(id);
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
-        assertEq(s.releasedAmount, 10000 ether);
+        assertEq(s.releasedAmount, 10_000 ether);
     }
 
     // =========================================================================
@@ -1391,10 +1733,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_MidVesting_VestedAmountFreeze() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 2000 ether,
+            alice,
+            2000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, true, false
+            0,
+            400 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1416,10 +1764,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_ReturnedToContract() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 2000 ether,
+            alice,
+            2000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, true, false
+            0,
+            400 days,
+            0,
+            0,
+            true,
+            false
         );
 
         uint256 allocBefore = vesting.totalAllocated();
@@ -1439,10 +1793,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_ThenRelease_OnlyVestedPortion() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, true, false
+            0,
+            400 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1468,12 +1828,16 @@ contract AethelredVestingTest is Test {
     function test_Revoke_WithTGE_BeneficiaryKeepsTGE() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.PUBLIC_SALES,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            0, 548 days,
-            2000, 0, // 20% TGE
-            true, false
+            0,
+            548 days,
+            2000,
+            0, // 20% TGE
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1495,16 +1859,28 @@ contract AethelredVestingTest is Test {
     function test_Revoke_MultipleTimes_DifferentSchedules() public {
         vm.startPrank(vestingAdmin);
         bytes32 id1 = vesting.createCustomSchedule(
-            alice, 500 ether,
+            alice,
+            500 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 id2 = vesting.createCustomSchedule(
-            alice, 700 ether,
+            alice,
+            700 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.executeTGE();
         vm.stopPrank();
@@ -1534,10 +1910,16 @@ contract AethelredVestingTest is Test {
     function test_TransferBeneficiary_NewBeneficiaryCanRelease() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, false, true
+            0,
+            365 days,
+            0,
+            0,
+            false,
+            true
         );
 
         vm.prank(vestingAdmin);
@@ -1558,10 +1940,16 @@ contract AethelredVestingTest is Test {
     function test_TransferBeneficiary_OldBeneficiaryCannotRelease() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, false, true
+            0,
+            365 days,
+            0,
+            0,
+            false,
+            true
         );
 
         vm.prank(vestingAdmin);
@@ -1581,10 +1969,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_TransferBeneficiary_ToZeroAddress() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, false, true
+            0,
+            365 days,
+            0,
+            0,
+            false,
+            true
         );
 
         vm.prank(alice);
@@ -1595,10 +1989,16 @@ contract AethelredVestingTest is Test {
     function test_TransferBeneficiary_ThenRevoke() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, true
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            true
         );
 
         // Transfer to bob
@@ -1632,10 +2032,16 @@ contract AethelredVestingTest is Test {
             365 days
         );
         vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
     }
 
@@ -1649,10 +2055,16 @@ contract AethelredVestingTest is Test {
     function test_Event_TokensReleased() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1668,10 +2080,16 @@ contract AethelredVestingTest is Test {
     function test_Event_ScheduleRevoked() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(revoker);
@@ -1683,10 +2101,16 @@ contract AethelredVestingTest is Test {
     function test_Event_BeneficiaryTransferred() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, false, true
+            0,
+            365 days,
+            0,
+            0,
+            false,
+            true
         );
 
         vm.prank(alice);
@@ -1710,10 +2134,16 @@ contract AethelredVestingTest is Test {
         // Create still works (no whenNotPaused modifier on create)
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         assertNotEq(id, bytes32(0));
     }
@@ -1721,10 +2151,16 @@ contract AethelredVestingTest is Test {
     function test_Pause_ThenUnpause_ReleaseWorks() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1753,10 +2189,16 @@ contract AethelredVestingTest is Test {
     function test_Revert_ReleaseAll_WhenPaused() public {
         vm.startPrank(vestingAdmin);
         vesting.createCustomSchedule(
-            alice, 500 ether,
+            alice,
+            500 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.executeTGE();
         vm.stopPrank();
@@ -1779,7 +2221,9 @@ contract AethelredVestingTest is Test {
         uint256 tgeBps,
         uint256 cliffBps,
         uint256 elapsed
-    ) public {
+    )
+        public
+    {
         tgeBps = bound(tgeBps, 0, 4000);
         cliffBps = bound(cliffBps, 0, 4000);
         // Ensure tge + cliff <= 8000 (max 80%)
@@ -1792,11 +2236,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 4 * 365 days,
-            tgeBps, cliffBps, true, false
+            180 days,
+            4 * 365 days,
+            tgeBps,
+            cliffBps,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1810,7 +2259,9 @@ contract AethelredVestingTest is Test {
     function testFuzz_Release_CumulativeEqualsFinalVested(
         uint256 elapsed1,
         uint256 elapsed2
-    ) public {
+    )
+        public
+    {
         elapsed1 = bound(elapsed1, 1 days, 2 * 365 days);
         elapsed2 = bound(elapsed2, elapsed1 + 1 days, 4 * 365 days + 1);
 
@@ -1818,10 +2269,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 4 * 365 days, 0, 0, true, false
+            0,
+            4 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1842,20 +2299,22 @@ contract AethelredVestingTest is Test {
         assertEq(s.releasedAmount, r1 + r2, "Cumulative released mismatch");
     }
 
-    function testFuzz_Vested_TGE_AlwaysAvailableImmediately(
-        uint256 tgeBps,
-        uint256 amount
-    ) public {
+    function testFuzz_Vested_TGE_AlwaysAvailableImmediately(uint256 tgeBps, uint256 amount) public {
         tgeBps = bound(tgeBps, 1, 8000);
         amount = bound(amount, 1 ether, 1_000_000 ether);
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, amount,
+            alice,
+            amount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            365 days, 4 * 365 days,
-            tgeBps, 0, true, false
+            365 days,
+            4 * 365 days,
+            tgeBps,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1869,7 +2328,9 @@ contract AethelredVestingTest is Test {
     function testFuzz_Vested_CliffBehavior_BeforeAndAfter(
         uint256 cliffDuration,
         uint256 elapsed
-    ) public {
+    )
+        public
+    {
         cliffDuration = bound(cliffDuration, 1 days, 2 * 365 days);
         elapsed = bound(elapsed, 0, 5 * 365 days);
 
@@ -1881,11 +2342,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            cliffDuration, vestingDuration,
-            0, 0, true, false
+            cliffDuration,
+            vestingDuration,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1909,16 +2375,28 @@ contract AethelredVestingTest is Test {
 
         vm.startPrank(vestingAdmin);
         bytes32 id1 = vesting.createCustomSchedule(
-            alice, salt1,
+            alice,
+            salt1,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 id2 = vesting.createCustomSchedule(
-            alice, salt2,
+            alice,
+            salt2,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vm.stopPrank();
 
@@ -1932,10 +2410,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 4 * 365 days, 0, 0, true, false
+            0,
+            4 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -1956,22 +2440,36 @@ contract AethelredVestingTest is Test {
     function testFuzz_MultipleSchedules_IndependentVesting(
         uint256 amount1,
         uint256 amount2
-    ) public {
+    )
+        public
+    {
         amount1 = bound(amount1, 100 ether, 100_000 ether);
         amount2 = bound(amount2, 100 ether, 100_000 ether);
 
         vm.startPrank(vestingAdmin);
         bytes32 id1 = vesting.createCustomSchedule(
-            alice, amount1,
+            alice,
+            amount1,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 id2 = vesting.createCustomSchedule(
-            bob, amount2,
+            bob,
+            amount2,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 2 * 365 days, 0, 0, true, false
+            0,
+            2 * 365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.executeTGE();
         vm.stopPrank();
@@ -1994,10 +2492,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, totalAmount,
+            alice,
+            totalAmount,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2028,12 +2532,16 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.InvalidAmount.selector);
         vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days,
+            0,
+            365 days,
             BPS_BASE + 1, // 10001 > 10000
-            0, true, false
+            0,
+            true,
+            false
         );
     }
 
@@ -2043,11 +2551,16 @@ contract AethelredVestingTest is Test {
 
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, largeAmount,
+            alice,
+            largeAmount,
             AethelredVesting.AllocationCategory.COMPUTE_POUW_REWARDS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            365 days, 10 * 365 days,
-            500, 1000, true, false
+            365 days,
+            10 * 365 days,
+            500,
+            1000,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2065,12 +2578,16 @@ contract AethelredVestingTest is Test {
     function test_Boundary_MinimalCliff_1Second() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
             1, // 1 second cliff
             365 days,
-            0, 0, true, false
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2090,12 +2607,16 @@ contract AethelredVestingTest is Test {
         vm.prank(vestingAdmin);
         vm.expectRevert(AethelredVesting.InvalidAmount.selector);
         vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 365 days,
-            0, 8001, // exceeds 8000 max upfront
-            true, false
+            180 days,
+            365 days,
+            0,
+            8001, // exceeds 8000 max upfront
+            true,
+            false
         );
     }
 
@@ -2106,10 +2627,16 @@ contract AethelredVestingTest is Test {
         bytes32[] memory ids = new bytes32[](maxSchedules);
         for (uint256 i = 0; i < maxSchedules; i++) {
             ids[i] = vesting.createCustomSchedule(
-                alice, 100 ether,
+                alice,
+                100 ether,
                 AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
                 AethelredVesting.VestingType.LINEAR,
-                0, 365 days, 0, 0, true, false
+                0,
+                365 days,
+                0,
+                0,
+                true,
+                false
             );
         }
         vm.stopPrank();
@@ -2128,10 +2655,16 @@ contract AethelredVestingTest is Test {
     function test_Boundary_ReleaseAtExactVestingEnd() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2154,22 +2687,40 @@ contract AethelredVestingTest is Test {
     function test_Integration_CreateRelease_MultipleBeneficiaries() public {
         vm.startPrank(vestingAdmin);
         bytes32 idAlice = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 idBob = vesting.createCustomSchedule(
-            bob, 2000 ether,
+            bob,
+            2000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         bytes32 idCarol = vesting.createCustomSchedule(
-            carol, 3000 ether,
+            carol,
+            3000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
         vesting.executeTGE();
         vm.stopPrank();
@@ -2195,12 +2746,16 @@ contract AethelredVestingTest is Test {
         // Ecosystem Grants: 5% TGE, 6mo cliff, 10% cliff unlock, 5yr total
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 10000 ether,
+            alice,
+            10_000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.CLIFF_LINEAR,
-            180 days, 5 * 365 days,
-            500, 1000, // 5% TGE, 10% cliff
-            true, false
+            180 days,
+            5 * 365 days,
+            500,
+            1000, // 5% TGE, 10% cliff
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2236,16 +2791,22 @@ contract AethelredVestingTest is Test {
         uint256 finalRelease = vesting.release(id);
 
         AethelredVesting.VestingSchedule memory s = vesting.getSchedule(id);
-        assertEq(s.releasedAmount, 10000 ether);
+        assertEq(s.releasedAmount, 10_000 ether);
     }
 
     function test_Integration_RevokeAndCreateNew_SameBeneficiary() public {
         vm.prank(vestingAdmin);
         bytes32 id1 = vesting.createCustomSchedule(
-            alice, 1000 ether,
+            alice,
+            1000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         vm.prank(vestingAdmin);
@@ -2264,10 +2825,16 @@ contract AethelredVestingTest is Test {
         // Create new schedule for alice
         vm.prank(vestingAdmin);
         bytes32 id2 = vesting.createCustomSchedule(
-            alice, 500 ether,
+            alice,
+            500 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 365 days, 0, 0, true, false
+            0,
+            365 days,
+            0,
+            0,
+            true,
+            false
         );
 
         // Warp and release new schedule
@@ -2283,10 +2850,16 @@ contract AethelredVestingTest is Test {
     function test_Integration_TransferBeneficiary_ContinueVesting() public {
         vm.prank(vestingAdmin);
         bytes32 id = vesting.createCustomSchedule(
-            alice, 2000 ether,
+            alice,
+            2000 ether,
             AethelredVesting.AllocationCategory.ECOSYSTEM_GRANTS,
             AethelredVesting.VestingType.LINEAR,
-            0, 400 days, 0, 0, false, true
+            0,
+            400 days,
+            0,
+            0,
+            false,
+            true
         );
 
         vm.prank(vestingAdmin);

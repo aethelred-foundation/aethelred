@@ -106,6 +106,9 @@ polygon = { key = "${POLYGONSCAN_API_KEY}" }
 fuzz = { runs = 100 }
 invariant = { runs = 100, depth = 10 }
 verbosity = 1
+# Keep the CI VM permissive enough to deploy large test harness contracts.
+# Production deployability remains enforced by the Hardhat contract size gate.
+code_size_limit = 1048576
 
 # Production profile - thorough testing
 [profile.production]

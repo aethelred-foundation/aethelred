@@ -75,15 +75,16 @@ func makeValidTEEAttestationWithUserData(userData []byte) *app.TEEAttestationDat
 }
 
 type nitroQuoteTest struct {
-	ModuleID    string          `json:"module_id"`
-	Timestamp   int64           `json:"timestamp_unix"`
-	Digest      string          `json:"digest"`
-	PCRs        []nitroQuotePCR `json:"pcrs"`
-	Certificate []byte          `json:"certificate,omitempty"`
-	CABundle    []byte          `json:"cabundle,omitempty"`
-	PublicKey   []byte          `json:"public_key,omitempty"`
-	UserData    []byte          `json:"user_data,omitempty"`
-	Nonce       []byte          `json:"nonce,omitempty"`
+	ModuleID            string          `json:"module_id"`
+	Timestamp           int64           `json:"timestamp_unix"`
+	Digest              string          `json:"digest"`
+	PCRs                []nitroQuotePCR `json:"pcrs"`
+	Certificate         []byte          `json:"certificate,omitempty"`
+	CABundle            []byte          `json:"cabundle,omitempty"`
+	PublicKey           []byte          `json:"public_key,omitempty"`
+	UserData            []byte          `json:"user_data,omitempty"`
+	Nonce               []byte          `json:"nonce,omitempty"`
+	SimulationSignature []byte          `json:"simulation_signature,omitempty"`
 }
 
 type nitroQuotePCR struct {
@@ -313,23 +314,25 @@ func TestVoteExtension_ValidateStrict_AcceptsSignedExtension(t *testing.T) {
 }
 
 func TestVoteExtension_ValidateStrict_RejectsSimulatedTEE(t *testing.T) {
-	ve := makeValidVoteExtension(t)
-	// Set TEE attestation to simulated
-	ve.Verifications[0].TEEAttestation.Platform = "simulated"
-	// Sign properly
-	_, privKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := app.SignVoteExtension(ve, privKey); err != nil {
-		t.Fatal(err)
-	}
-	err = ve.ValidateStrict()
-	if err == nil {
-		t.Fatal("strict mode must reject simulated TEE platform")
-	}
-	if !strings.Contains(err.Error(), "simulated TEE platform is rejected") {
-		t.Fatalf("unexpected error: %v", err)
+	for _, platform := range []string{"simulated", "nitro-simulated", "mock-tee"} {
+		t.Run(platform, func(t *testing.T) {
+			ve := makeValidVoteExtension(t)
+			ve.Verifications[0].TEEAttestation.Platform = platform
+			_, privKey, err := ed25519.GenerateKey(rand.Reader)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := app.SignVoteExtension(ve, privKey); err != nil {
+				t.Fatal(err)
+			}
+			err = ve.ValidateStrict()
+			if err == nil {
+				t.Fatal("strict mode must reject simulated TEE platform")
+			}
+			if !strings.Contains(err.Error(), "simulated TEE platform is rejected") {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
 	}
 }
 
@@ -563,10 +566,28 @@ func TestTEEAttestation_Validate_UnknownPlatform(t *testing.T) {
 
 func TestTEEAttestation_Validate_SimulatedPermissive(t *testing.T) {
 	ta := makeValidTEEAttestation()
-	ta.Platform = "simulated"
-	// Permissive mode should accept simulated
-	if err := ta.Validate(); err != nil {
-		t.Fatalf("permissive mode should accept simulated, got: %v", err)
+	for _, platform := range []string{"simulated", "nitro-simulated", "mock-tee"} {
+		ta.Platform = platform
+		if platform == "nitro-simulated" {
+			quotePayload := nitroQuoteTest{
+				ModuleID:            "enclave-123",
+				Timestamp:           time.Now().Unix(),
+				Digest:              "SHA384",
+				PCRs:                []nitroQuotePCR{{Index: 0, Value: make32Bytes()}},
+				UserData:            ta.UserData,
+				Nonce:               ta.Nonce,
+				SimulationSignature: make32Bytes(),
+			}
+			quoteBytes, err := json.Marshal(quotePayload)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ta.Quote = quoteBytes
+		}
+		// Permissive mode should accept simulated/dev platforms
+		if err := ta.Validate(); err != nil {
+			t.Fatalf("permissive mode should accept %s, got: %v", platform, err)
+		}
 	}
 }
 
@@ -628,11 +649,27 @@ func TestTEEAttestation_Validate_ZeroTimestamp(t *testing.T) {
 }
 
 func TestTEEAttestation_AllPlatforms(t *testing.T) {
-	platforms := []string{"aws-nitro", "intel-sgx", "intel-tdx", "amd-sev", "arm-trustzone", "simulated"}
+	platforms := []string{"aws-nitro", "intel-sgx", "intel-tdx", "amd-sev", "arm-trustzone", "simulated", "nitro-simulated", "mock-tee"}
 	for _, p := range platforms {
 		t.Run(p, func(t *testing.T) {
 			ta := makeValidTEEAttestation()
 			ta.Platform = p
+			if p == "nitro-simulated" {
+				quotePayload := nitroQuoteTest{
+					ModuleID:            "enclave-123",
+					Timestamp:           time.Now().Unix(),
+					Digest:              "SHA384",
+					PCRs:                []nitroQuotePCR{{Index: 0, Value: make32Bytes()}},
+					UserData:            ta.UserData,
+					Nonce:               ta.Nonce,
+					SimulationSignature: make32Bytes(),
+				}
+				quoteBytes, err := json.Marshal(quotePayload)
+				if err != nil {
+					t.Fatal(err)
+				}
+				ta.Quote = quoteBytes
+			}
 			if err := ta.Validate(); err != nil {
 				t.Fatalf("platform %s should be valid in permissive mode: %v", p, err)
 			}

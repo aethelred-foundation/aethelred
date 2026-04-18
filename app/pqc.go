@@ -13,7 +13,7 @@ import (
 	"github.com/aethelred/aethelred/crypto/pqc"
 )
 
-func initPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
+func resolvePQCMode(appOpts servertypes.AppOptions) string {
 	mode := strings.ToLower(firstNonEmpty(
 		cast.ToString(appOpts.Get("aethelred.pqc.mode")),
 		cast.ToString(appOpts.Get("pqc.mode")),
@@ -27,6 +27,11 @@ func initPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
 	if mode == "" {
 		mode = "simulated"
 	}
+	return mode
+}
+
+func initPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
+	mode := resolvePQCMode(appOpts)
 
 	switch mode {
 	case "enabled", "production", "prod", "true", "1":

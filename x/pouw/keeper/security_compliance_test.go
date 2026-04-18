@@ -9,6 +9,28 @@ import (
 	"github.com/aethelred/aethelred/x/pouw/keeper"
 )
 
+func policyCriterionByID(t *testing.T, criteria []keeper.PolicyCriterion, id string) keeper.PolicyCriterion {
+	t.Helper()
+	for _, criterion := range criteria {
+		if criterion.ID == id {
+			return criterion
+		}
+	}
+	t.Fatalf("policy criterion %s not found", id)
+	return keeper.PolicyCriterion{}
+}
+
+func checklistItemByID(t *testing.T, items []keeper.AuditChecklistItem, id string) keeper.AuditChecklistItem {
+	t.Helper()
+	for _, item := range items {
+		if item.ID == id {
+			return item
+		}
+	}
+	t.Fatalf("checklist item %s not found", id)
+	return keeper.AuditChecklistItem{}
+}
+
 // =============================================================================
 // SECURITY & COMPLIANCE FRAMEWORK TESTS
 //
@@ -81,6 +103,16 @@ func TestEvaluateVerificationPolicy_CriticalFailures(t *testing.T) {
 		"clean state should have no critical failures")
 }
 
+func TestEvaluateVerificationPolicy_RuntimeGovernanceLocksEnforced(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	assessment := keeper.EvaluateVerificationPolicy(ctx, k)
+	criterion := policyCriterionByID(t, assessment.Criteria, "VP-09")
+	require.True(t, criterion.Passed)
+	require.Contains(t, criterion.Description, "runtime")
+	require.Contains(t, criterion.Details, "locked parameter")
+}
+
 // =============================================================================
 // Section 2: Audit Checklist
 // =============================================================================
@@ -151,6 +183,19 @@ func TestAuditChecklist_AllItemsHaveFields(t *testing.T) {
 		require.NotEmpty(t, item.Category, "item %s must have category", item.ID)
 		require.NotEmpty(t, item.Owner, "item %s must have owner", item.ID)
 	}
+}
+
+func TestAuditChecklist_GovernanceItemsReflectRuntimePolicy(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	checklist := keeper.BuildAuditChecklist(ctx, k)
+
+	ac08 := checklistItemByID(t, checklist.Items, "AC-08")
+	require.True(t, ac08.Verified)
+	require.Contains(t, ac08.Evidence, "locked parameter")
+
+	ac14 := checklistItemByID(t, checklist.Items, "AC-14")
+	require.Contains(t, ac14.Description, "[67,100]")
 }
 
 // =============================================================================

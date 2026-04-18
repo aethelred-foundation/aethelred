@@ -6,6 +6,8 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/aethelred/aethelred/x/pouw/types"
 )
 
 // ---------------------------------------------------------------------------
@@ -87,7 +89,7 @@ func DefaultVerificationPolicy() VerificationPolicy {
 		AllowZKMLFallback:             false,
 		FailClosed:                    true,
 		MaxAttestationAgeBlocks:       BlocksPerDay, // 24h max attestation age
-		MinProofConfidenceBps:         9500,          // 95% minimum confidence
+		MinProofConfidenceBps:         9500,         // 95% minimum confidence
 		RequireMultiPartyVerification: true,
 		MinVerifiers:                  3,
 	}
@@ -122,6 +124,30 @@ func ValidateVerificationPolicy(policy VerificationPolicy) error {
 			policy.MinVerifiers)
 	}
 	return nil
+}
+
+func runtimeGovernanceLockPolicyEvidence(params *types.Params) (bool, string) {
+	if params == nil {
+		return false, "module params unavailable"
+	}
+
+	probe := *params
+	switch {
+	case probe.ConsensusThreshold < 100:
+		probe.ConsensusThreshold++
+	default:
+		probe.ConsensusThreshold--
+	}
+
+	if probe.ConsensusThreshold == params.ConsensusThreshold {
+		return false, "unable to construct locked-parameter runtime probe"
+	}
+
+	if err := enforceRuntimeParamLockPolicy(params, &probe); err != nil {
+		return true, err.Error()
+	}
+
+	return false, "locked consensus_threshold probe was not rejected by runtime governance policy"
 }
 
 // EvaluateVerificationPolicy checks the on-chain state against the policy.
@@ -266,15 +292,18 @@ func EvaluateVerificationPolicy(ctx sdk.Context, k Keeper) *VerificationPolicyAs
 		assessment.Passed = false
 	}
 
-	// VP-09: Locked parameters are properly locked
-	locked := GetLockedParams()
+	// VP-09: Locked governance parameters are enforced at runtime
+	locksEnforced, lockEvidence := runtimeGovernanceLockPolicyEvidence(params)
 	assessment.Criteria = append(assessment.Criteria, PolicyCriterion{
 		ID:          "VP-09",
-		Description: "Parameter lock registry has locked parameters",
-		Passed:      len(locked) > 0,
-		Details:     fmt.Sprintf("%d locked parameters", len(locked)),
-		Severity:    "warning",
+		Description: "Locked governance parameters are enforced by the runtime update path",
+		Passed:      locksEnforced,
+		Details:     lockEvidence,
+		Severity:    "critical",
 	})
+	if !locksEnforced {
+		assessment.Passed = false
+	}
 
 	// VP-10: Allowed proof types include TEE
 	hasTEE := false
@@ -461,15 +490,15 @@ func BuildAuditChecklist(ctx sdk.Context, k Keeper) *AuditChecklist {
 	// Phase 2 Requirements
 	// ============================================================
 
-	// AC-08: Governance parameters are bounded and change-controlled
-	locked := GetLockedParams()
+	// AC-08: Governance parameters are bounded and runtime-enforced
+	locksEnforced, lockEvidence := runtimeGovernanceLockPolicyEvidence(params)
 	checklist.Items = append(checklist.Items, AuditChecklistItem{
 		ID:          "AC-08",
 		Phase:       ChecklistPhase2,
 		Category:    "governance",
 		Description: "Governance parameters are bounded and change-controlled",
-		Verified:    len(locked) > 0,
-		Evidence:    fmt.Sprintf("%d locked, %d mutable params", len(locked), len(GetMutableParams())),
+		Verified:    locksEnforced,
+		Evidence:    lockEvidence,
 		Owner:       "GL",
 		Blocking:    true,
 	})
@@ -542,7 +571,7 @@ func BuildAuditChecklist(ctx sdk.Context, k Keeper) *AuditChecklist {
 		ID:          "AC-14",
 		Phase:       ChecklistPhase2,
 		Category:    "governance",
-		Description: "Parameter validation bounds enforced (ConsensusThreshold [51,100])",
+		Description: "Parameter validation bounds enforced (ConsensusThreshold [67,100])",
 		Verified:    paramValid,
 		Evidence:    fmt.Sprintf("ValidateParams pass=%v", paramValid),
 		Owner:       "GL",
@@ -905,13 +934,13 @@ func RequiredAuditArtifacts() []AuditArtifact {
 
 // ComplianceSummary aggregates all security and compliance assessments.
 type ComplianceSummary struct {
-	PolicyAssessment    *VerificationPolicyAssessment
-	AuditChecklist      *AuditChecklist
-	Jurisdictions       []Jurisdiction
-	InvariantResults    []SecurityInvariantResult
-	AuditArtifacts      []AuditArtifact
-	OverallCompliant    bool
-	ReadyForAudit       bool
+	PolicyAssessment *VerificationPolicyAssessment
+	AuditChecklist   *AuditChecklist
+	Jurisdictions    []Jurisdiction
+	InvariantResults []SecurityInvariantResult
+	AuditArtifacts   []AuditArtifact
+	OverallCompliant bool
+	ReadyForAudit    bool
 }
 
 // RunComplianceSummary generates the complete compliance assessment.

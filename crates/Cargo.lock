@@ -45,6 +45,7 @@ dependencies = [
 name = "aethelred-bridge"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "chrono",
  "clap",
  "hex",
@@ -167,6 +168,7 @@ dependencies = [
 name = "aethelred-mempool"
 version = "0.1.0"
 dependencies = [
+ "aethelred-core",
  "criterion",
  "hex",
  "proptest",

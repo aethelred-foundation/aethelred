@@ -20,6 +20,14 @@ type SealVerifier struct {
 	config VerifierConfig
 }
 
+type TEEAttestationVerifier func(attestation *types.TEEAttestation, expectedOutput []byte) bool
+
+type ZKMLProofVerifier func(proof *types.ZKMLProof) bool
+
+type AttestationSignatureVerifier func(attestation *types.TEEAttestation) bool
+
+type EnhancedSealSignatureVerifier func(signature types.SealSignature, seal *types.EnhancedDigitalSeal) bool
+
 // VerifierConfig contains configuration for seal verification
 type VerifierConfig struct {
 	// VerifyTEEAttestations enables TEE attestation verification
@@ -42,18 +50,50 @@ type VerifierConfig struct {
 
 	// RequireCompliance requires compliance checks
 	RequireCompliance bool
+
+	// TEEAttestationVerifier performs platform-specific attestation verification.
+	// When unset, verification must fail closed unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	TEEAttestationVerifier TEEAttestationVerifier
+
+	// ZKMLProofVerifier performs proof-system-specific zkML verification.
+	// When unset, verification must fail closed unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	ZKMLProofVerifier ZKMLProofVerifier
+
+	// SignatureVerifier performs cryptographic verification of attestation
+	// signatures. When unset, signature verification must fail closed unless
+	// insecure fallback checks are explicitly enabled for tests or local
+	// development.
+	SignatureVerifier AttestationSignatureVerifier
+
+	// EnhancedSignatureVerifier performs cryptographic verification of
+	// EnhancedDigitalSeal envelope signatures. When unset, verification must fail
+	// closed if enhanced signatures are present unless insecure fallback checks
+	// are explicitly enabled for tests or local development.
+	EnhancedSignatureVerifier EnhancedSealSignatureVerifier
+
+	// AllowInsecureFallbackVerification enables legacy structural-only checks for
+	// TEE attestations and zk proofs. This is intended for tests and local
+	// development only and must remain disabled in production-facing configs.
+	AllowInsecureFallbackVerification bool
 }
 
 // DefaultVerifierConfig returns default configuration
 func DefaultVerifierConfig() VerifierConfig {
 	return VerifierConfig{
-		VerifyTEEAttestations: true,
-		VerifyZKMLProofs:      true,
-		VerifyConsensus:       true,
-		VerifySignatures:      true,
-		AllowExpiredSeals:     false,
-		MaxAuditTrailSize:     1000,
-		RequireCompliance:     true,
+		VerifyTEEAttestations:             true,
+		VerifyZKMLProofs:                  true,
+		VerifyConsensus:                   true,
+		VerifySignatures:                  true,
+		AllowExpiredSeals:                 false,
+		MaxAuditTrailSize:                 1000,
+		RequireCompliance:                 true,
+		TEEAttestationVerifier:            nil,
+		ZKMLProofVerifier:                 nil,
+		SignatureVerifier:                 nil,
+		EnhancedSignatureVerifier:         nil,
+		AllowInsecureFallbackVerification: false,
 	}
 }
 
@@ -348,6 +388,15 @@ func (sv *SealVerifier) checkTEEAttestations(ctx context.Context, seal *types.Di
 		return
 	}
 
+	if sv.config.TEEAttestationVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No TEE attestation verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
 	// Verify each attestation
 	validCount := 0
 	for i, attestation := range seal.TeeAttestations {
@@ -381,8 +430,16 @@ func (sv *SealVerifier) checkTEEAttestations(ctx context.Context, seal *types.Di
 
 // verifyTEEAttestation verifies a single TEE attestation
 func (sv *SealVerifier) verifyTEEAttestation(attestation *types.TEEAttestation, expectedOutput []byte) bool {
+	if sv.config.TEEAttestationVerifier != nil {
+		return sv.config.TEEAttestationVerifier(attestation, expectedOutput)
+	}
+	if !sv.config.AllowInsecureFallbackVerification {
+		return false
+	}
+
 	// In production: verify attestation signature, certificate chain, PCRs
-	// For MVP: basic validation
+	// Legacy fallback: basic structural validation only. This path is disabled
+	// by default and must only be enabled explicitly for tests/dev.
 	if len(attestation.Quote) == 0 {
 		return false
 	}
@@ -413,6 +470,15 @@ func (sv *SealVerifier) checkZKMLProof(ctx context.Context, seal *types.DigitalS
 		return
 	}
 
+	if sv.config.ZKMLProofVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No zkML verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
 	// Verify the proof
 	if sv.verifyZKMLProof(seal.ZkProof) {
 		check.Passed = true
@@ -429,8 +495,16 @@ func (sv *SealVerifier) checkZKMLProof(ctx context.Context, seal *types.DigitalS
 
 // verifyZKMLProof verifies a zkML proof
 func (sv *SealVerifier) verifyZKMLProof(proof *types.ZKMLProof) bool {
+	if sv.config.ZKMLProofVerifier != nil {
+		return sv.config.ZKMLProofVerifier(proof)
+	}
+	if !sv.config.AllowInsecureFallbackVerification {
+		return false
+	}
+
 	// In production: call EZKL/RISC0 verifier
-	// For MVP: basic validation
+	// Legacy fallback: basic structural validation only. This path is disabled
+	// by default and must only be enabled explicitly for tests/dev.
 	if len(proof.ProofBytes) == 0 {
 		return false
 	}
@@ -453,20 +527,60 @@ func (sv *SealVerifier) checkSignatures(seal *types.DigitalSeal, result *SealVer
 		Required: false,
 	}
 
-	// Verify attestation signatures
-	signedCount := 0
+	hasSignedAttestation := false
 	for _, attestation := range seal.TeeAttestations {
 		if attestation != nil && len(attestation.Signature) > 0 {
-			signedCount++
+			hasSignedAttestation = true
+			break
 		}
 	}
 
-	if signedCount > 0 {
-		check.Passed = true
-		check.Message = fmt.Sprintf("%d signatures present", signedCount)
-	} else {
+	if !hasSignedAttestation {
 		check.Passed = true
 		check.Message = "No signatures to verify"
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	if sv.config.SignatureVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No signature verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		check.TimeMs = time.Since(startTime).Milliseconds()
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	validCount := 0
+	invalidCount := 0
+	for _, attestation := range seal.TeeAttestations {
+		if attestation == nil || len(attestation.Signature) == 0 {
+			invalidCount++
+			continue
+		}
+		if sv.config.SignatureVerifier != nil {
+			if sv.config.SignatureVerifier(attestation) {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			continue
+		}
+		validCount++
+	}
+
+	if invalidCount == 0 && validCount > 0 {
+		check.Passed = true
+		if sv.config.SignatureVerifier != nil {
+			check.Message = fmt.Sprintf("%d/%d signatures verified", validCount, len(seal.TeeAttestations))
+		} else {
+			check.Message = fmt.Sprintf("%d/%d signatures passed insecure fallback checks", validCount, len(seal.TeeAttestations))
+		}
+	} else {
+		check.Passed = false
+		check.Message = fmt.Sprintf("%d/%d signatures verified", validCount, len(seal.TeeAttestations))
+		result.FailedChecks = append(result.FailedChecks, check.Name)
 	}
 
 	check.TimeMs = time.Since(startTime).Milliseconds()
@@ -565,6 +679,9 @@ func (sv *SealVerifier) VerifyEnhancedSeal(ctx context.Context, seal *types.Enha
 
 	// Verify verification bundle
 	sv.checkVerificationBundle(seal, result)
+
+	// Verify enhanced signatures when present
+	sv.checkEnhancedSignatures(seal, result)
 
 	// Verify audit trail chain
 	sv.checkEnhancedAuditTrail(seal, result)
@@ -702,6 +819,57 @@ func (sv *SealVerifier) checkEnhancedAuditTrail(seal *types.EnhancedDigitalSeal,
 	} else {
 		check.Passed = false
 		check.Message = "Audit trail integrity compromised"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+	}
+
+	result.Checks = append(result.Checks, check)
+}
+
+func (sv *SealVerifier) checkEnhancedSignatures(seal *types.EnhancedDigitalSeal, result *SealVerificationResult) {
+	check := VerificationCheck{
+		Name:     "enhanced_signatures",
+		Required: false,
+	}
+
+	if len(seal.Signatures) == 0 {
+		check.Passed = true
+		check.Message = "No enhanced signatures to verify"
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	if sv.config.EnhancedSignatureVerifier == nil && !sv.config.AllowInsecureFallbackVerification {
+		check.Passed = false
+		check.Message = "No enhanced signature verifier backend configured"
+		result.FailedChecks = append(result.FailedChecks, check.Name)
+		result.Checks = append(result.Checks, check)
+		return
+	}
+
+	validCount := 0
+	for _, sig := range seal.Signatures {
+		if len(sig.Signature) == 0 {
+			continue
+		}
+		if sv.config.EnhancedSignatureVerifier != nil {
+			if sv.config.EnhancedSignatureVerifier(sig, seal) {
+				validCount++
+			}
+			continue
+		}
+		validCount++
+	}
+
+	if validCount == len(seal.Signatures) {
+		check.Passed = true
+		if sv.config.EnhancedSignatureVerifier != nil {
+			check.Message = fmt.Sprintf("%d/%d enhanced signatures verified", validCount, len(seal.Signatures))
+		} else {
+			check.Message = fmt.Sprintf("%d/%d enhanced signatures passed insecure fallback checks", validCount, len(seal.Signatures))
+		}
+	} else {
+		check.Passed = false
+		check.Message = fmt.Sprintf("%d/%d enhanced signatures verified", validCount, len(seal.Signatures))
 		result.FailedChecks = append(result.FailedChecks, check.Name)
 	}
 

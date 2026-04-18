@@ -232,7 +232,7 @@ impl RegistryBuilder {
 
     /// Add TEE precompiles
     pub fn with_tee(self) -> Self {
-        let config = super::tee::TeeVerifierConfig::default();
+        let config = super::tee::TeeVerifierConfig::enterprise();
         let registry = Arc::new(super::tee::MeasurementRegistry::new());
 
         self.add(super::tee::NitroVerifyPrecompile::new(

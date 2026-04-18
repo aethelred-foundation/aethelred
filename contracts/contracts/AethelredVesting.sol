@@ -9,6 +9,10 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+interface IVestingUpgraderTimelockDelaySource {
+    function getMinDelay() external view returns (uint256);
+}
+
 /**
  * @title AethelredVesting
  * @author Aethelred Team
@@ -71,9 +75,10 @@ contract AethelredVesting is
     bytes32 public constant REVOKER_ROLE = keccak256("REVOKER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant MILESTONE_ATTESTOR_ROLE = keccak256("MILESTONE_ATTESTOR_ROLE");
+    uint256 public constant MIN_UPGRADER_TIMELOCK_DELAY = 27 days;
 
     /// @notice Precision for percentage calculations (basis points)
-    uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 public constant BPS_DENOMINATOR = 10_000;
 
     /// @notice Maximum schedules per beneficiary
     uint256 public constant MAX_SCHEDULES_PER_BENEFICIARY = 10;
@@ -84,24 +89,24 @@ contract AethelredVesting is
 
     /// @notice Types of vesting schedules
     enum VestingType {
-        LINEAR,           // Linear unlock over duration
-        CLIFF_LINEAR,     // Cliff period then linear
-        IMMEDIATE,        // 100% at TGE
-        DAO_CONTROLLED,   // Released via DAO proposals
-        MILESTONE         // Released at specific milestones
+        LINEAR, // Linear unlock over duration
+        CLIFF_LINEAR, // Cliff period then linear
+        IMMEDIATE, // 100% at TGE
+        DAO_CONTROLLED, // Released via DAO proposals
+        MILESTONE // Released at specific milestones
     }
 
     /// @notice Allocation categories matching tokenomics (10B total supply, 9 categories)
     enum AllocationCategory {
-        COMPUTE_POUW_REWARDS,   // 30%  (3B)   - 10yr linear, no cliff
-        CORE_CONTRIBUTORS,      // 20%  (2B)   - 6mo cliff, 42mo linear, no TGE
-        ECOSYSTEM_GRANTS,       // 15%  (1.5B) - 2% TGE, 6mo cliff, 48mo linear
-        STRATEGIC_SEED,         // 5.5% (550M) - 12mo cliff, 24mo linear, no TGE
-        PUBLIC_SALES,           // 7.5% (750M) - 20% TGE, no cliff, 18mo linear
-        AIRDROP_SEALS,          // 7%   (700M) - 25% TGE, no cliff, 12mo linear
-        TREASURY_MM,            // 6%   (600M) - 25% TGE, no cliff, 36mo linear
-        INSURANCE_FUND,         // 5%   (500M) - 10% TGE, no cliff, 30mo linear
-        CONTINGENCY_RESERVE     // 4%   (400M) - 12mo cliff, vesting TBD
+        COMPUTE_POUW_REWARDS, // 30%  (3B)   - 10yr linear, no cliff
+        CORE_CONTRIBUTORS, // 20%  (2B)   - 6mo cliff, 42mo linear, no TGE
+        ECOSYSTEM_GRANTS, // 15%  (1.5B) - 2% TGE, 6mo cliff, 48mo linear
+        STRATEGIC_SEED, // 5.5% (550M) - 12mo cliff, 24mo linear, no TGE
+        PUBLIC_SALES, // 7.5% (750M) - 20% TGE, no cliff, 18mo linear
+        AIRDROP_SEALS, // 7%   (700M) - 25% TGE, no cliff, 12mo linear
+        TREASURY_MM, // 6%   (600M) - 25% TGE, no cliff, 36mo linear
+        INSURANCE_FUND, // 5%   (500M) - 10% TGE, no cliff, 30mo linear
+        CONTINGENCY_RESERVE // 4%   (400M) - 12mo cliff, vesting TBD
     }
 
     // =========================================================================
@@ -226,16 +231,11 @@ contract AethelredVesting is
     );
 
     event BeneficiaryTransferred(
-        bytes32 indexed scheduleId,
-        address indexed oldBeneficiary,
-        address indexed newBeneficiary
+        bytes32 indexed scheduleId, address indexed oldBeneficiary, address indexed newBeneficiary
     );
 
     event MilestoneAchieved(
-        bytes32 indexed scheduleId,
-        string milestoneName,
-        uint256 unlockBps,
-        uint256 achievedAt
+        bytes32 indexed scheduleId, string milestoneName, uint256 unlockBps, uint256 achievedAt
     );
 
     /**
@@ -278,6 +278,8 @@ contract AethelredVesting is
     error CategoryCapBelowAllocated();
     error ScheduleAlreadyActive();
     error MilestoneIndexOutOfBounds();
+    error UpgraderTimelockDelayTooShort();
+    error ProductionInitializationRequiresTimelock();
 
     // =========================================================================
     // MODIFIERS
@@ -317,10 +319,38 @@ contract AethelredVesting is
      * @param _token The AETHEL token address
      * @param _admin Admin address
      */
-    function initialize(
+    function initialize(address _token, address _admin) external initializer {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
+        _initializeVesting(_token, _admin, _admin);
+    }
+
+    /**
+     * @notice Initialize the vesting contract with a dedicated upgrader timelock.
+     * @param _token The AETHEL token address
+     * @param _admin Governance/admin executor contract
+     * @param upgraderTimelock Timelock contract holding UPGRADER_ROLE
+     */
+    function initializeWithTimelock(
         address _token,
-        address _admin
-    ) external initializer {
+        address _admin,
+        address upgraderTimelock
+    )
+        external
+        initializer
+    {
+        _requireContractAdmin(_admin);
+        _requireContractAdmin(upgraderTimelock);
+        _requireUpgraderTimelockDelay(upgraderTimelock);
+        _initializeVesting(_token, _admin, upgraderTimelock);
+    }
+
+    function _initializeVesting(
+        address _token,
+        address _admin,
+        address upgraderAuthority
+    )
+        internal
+    {
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __Pausable_init();
@@ -328,26 +358,27 @@ contract AethelredVesting is
 
         if (_token == address(0)) revert InvalidBeneficiary();
         if (_admin == address(0)) revert InvalidBeneficiary();
-        _requireContractAdmin(_admin);
+        if (upgraderAuthority == address(0)) revert InvalidBeneficiary();
 
         token = IERC20(_token);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(VESTING_ADMIN_ROLE, _admin);
         _grantRole(REVOKER_ROLE, _admin);
-        _grantRole(UPGRADER_ROLE, _admin);
+        _setRoleAdmin(UPGRADER_ROLE, UPGRADER_ROLE);
+        _grantRole(UPGRADER_ROLE, upgraderAuthority);
 
         // Set category caps from tokenomics (10B total supply, 9 categories)
         // Using 18 decimals: amount * 10^18
-        categoryCaps[AllocationCategory.COMPUTE_POUW_REWARDS] = 3_000_000_000 * 1e18;  // 30%
-        categoryCaps[AllocationCategory.CORE_CONTRIBUTORS] = 2_000_000_000 * 1e18;     // 20%
-        categoryCaps[AllocationCategory.ECOSYSTEM_GRANTS] = 1_500_000_000 * 1e18;      // 15%
-        categoryCaps[AllocationCategory.STRATEGIC_SEED] = 550_000_000 * 1e18;           // 5.5%
-        categoryCaps[AllocationCategory.PUBLIC_SALES] = 750_000_000 * 1e18;             // 7.5%
-        categoryCaps[AllocationCategory.AIRDROP_SEALS] = 700_000_000 * 1e18;            // 7%
-        categoryCaps[AllocationCategory.TREASURY_MM] = 600_000_000 * 1e18;              // 6%
-        categoryCaps[AllocationCategory.INSURANCE_FUND] = 500_000_000 * 1e18;           // 5%
-        categoryCaps[AllocationCategory.CONTINGENCY_RESERVE] = 400_000_000 * 1e18;      // 4%
+        categoryCaps[AllocationCategory.COMPUTE_POUW_REWARDS] = 3_000_000_000 * 1e18; // 30%
+        categoryCaps[AllocationCategory.CORE_CONTRIBUTORS] = 2_000_000_000 * 1e18; // 20%
+        categoryCaps[AllocationCategory.ECOSYSTEM_GRANTS] = 1_500_000_000 * 1e18; // 15%
+        categoryCaps[AllocationCategory.STRATEGIC_SEED] = 550_000_000 * 1e18; // 5.5%
+        categoryCaps[AllocationCategory.PUBLIC_SALES] = 750_000_000 * 1e18; // 7.5%
+        categoryCaps[AllocationCategory.AIRDROP_SEALS] = 700_000_000 * 1e18; // 7%
+        categoryCaps[AllocationCategory.TREASURY_MM] = 600_000_000 * 1e18; // 6%
+        categoryCaps[AllocationCategory.INSURANCE_FUND] = 500_000_000 * 1e18; // 5%
+        categoryCaps[AllocationCategory.CONTINGENCY_RESERVE] = 400_000_000 * 1e18; // 4%
     }
 
     // =========================================================================
@@ -395,18 +426,22 @@ contract AethelredVesting is
     function createStrategicSeedSchedule(
         address beneficiary,
         uint256 amount
-    ) external onlyRole(VESTING_ADMIN_ROLE) returns (bytes32) {
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        returns (bytes32)
+    {
         return _createSchedule(
             beneficiary,
             amount,
             AllocationCategory.STRATEGIC_SEED,
             VestingType.CLIFF_LINEAR,
-            365 days,         // 12-month cliff
-            3 * 365 days,     // 3 years total (12mo cliff + 24mo linear)
-            0,                // No TGE unlock
-            0,                // No cliff unlock
-            false,            // Not revocable
-            true              // Transferable
+            365 days, // 12-month cliff
+            3 * 365 days, // 3 years total (12mo cliff + 24mo linear)
+            0, // No TGE unlock
+            0, // No cliff unlock
+            false, // Not revocable
+            true // Transferable
         );
     }
 
@@ -419,18 +454,22 @@ contract AethelredVesting is
     function createCoreContributorSchedule(
         address beneficiary,
         uint256 amount
-    ) external onlyRole(VESTING_ADMIN_ROLE) returns (bytes32) {
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        returns (bytes32)
+    {
         return _createSchedule(
             beneficiary,
             amount,
             AllocationCategory.CORE_CONTRIBUTORS,
             VestingType.CLIFF_LINEAR,
-            182 days,         // 6-month cliff
-            4 * 365 days,     // 4 years total (6mo cliff + 42mo linear)
-            0,                // No TGE unlock
-            0,                // No cliff unlock
-            true,             // Revocable (for departures)
-            false             // Not transferable
+            182 days, // 6-month cliff
+            4 * 365 days, // 4 years total (6mo cliff + 42mo linear)
+            0, // No TGE unlock
+            0, // No cliff unlock
+            true, // Revocable (for departures)
+            false // Not transferable
         );
     }
 
@@ -443,16 +482,20 @@ contract AethelredVesting is
     function createPublicSalesSchedule(
         address beneficiary,
         uint256 amount
-    ) external onlyRole(VESTING_ADMIN_ROLE) returns (bytes32) {
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        returns (bytes32)
+    {
         return _createSchedule(
             beneficiary,
             amount,
             AllocationCategory.PUBLIC_SALES,
             VestingType.CLIFF_LINEAR,
-            0,                    // No cliff
-            547 days,             // 18-month total vest
-            2000,                 // 20% at TGE
-            0,                    // No cliff unlock
+            0, // No cliff
+            547 days, // 18-month total vest
+            2000, // 20% at TGE
+            0, // No cliff unlock
             false,
             true
         );
@@ -473,7 +516,11 @@ contract AethelredVesting is
         uint256 cliffUnlockBps,
         bool revocable,
         bool transferable
-    ) external onlyRole(VESTING_ADMIN_ROLE) returns (bytes32) {
+    )
+        external
+        onlyRole(VESTING_ADMIN_ROLE)
+        returns (bytes32)
+    {
         return _createSchedule(
             beneficiary,
             amount,
@@ -505,7 +552,10 @@ contract AethelredVesting is
         uint256 cliffUnlockBps,
         bool revocable,
         bool transferable
-    ) internal returns (bytes32) {
+    )
+        internal
+        returns (bytes32)
+    {
         if (beneficiary == address(0)) revert InvalidBeneficiary();
         if (amount == 0) revert InvalidAmount();
         if (tgeUnlockBps > BPS_DENOMINATOR) revert InvalidAmount();
@@ -522,13 +572,7 @@ contract AethelredVesting is
 
         // Audit fix [M-04]: Removed block.timestamp from hash - scheduleCount
         // provides uniqueness and block.timestamp is miner-controllable.
-        bytes32 scheduleId = keccak256(
-            abi.encode(
-                beneficiary,
-                amount,
-                scheduleCount
-            )
-        );
+        bytes32 scheduleId = keccak256(abi.encode(beneficiary, amount, scheduleCount));
 
         schedules[scheduleId] = VestingSchedule({
             scheduleId: scheduleId,
@@ -598,12 +642,7 @@ contract AethelredVesting is
 
         token.safeTransfer(schedule.beneficiary, releasable);
 
-        emit TokensReleased(
-            scheduleId,
-            schedule.beneficiary,
-            releasable,
-            schedule.releasedAmount
-        );
+        emit TokensReleased(scheduleId, schedule.beneficiary, releasable, schedule.releasedAmount);
 
         return releasable;
     }
@@ -641,12 +680,7 @@ contract AethelredVesting is
                 categoryReleased[schedule.category] += releasable;
                 totalReleasedAmount += releasable;
 
-                emit TokensReleased(
-                    scheduleIds[i],
-                    msg.sender,
-                    releasable,
-                    schedule.releasedAmount
-                );
+                emit TokensReleased(scheduleIds[i], msg.sender, releasable, schedule.releasedAmount);
             }
         }
 
@@ -715,10 +749,7 @@ contract AethelredVesting is
         uint256 linearDuration = schedule.vestingDuration - schedule.cliffDuration;
         uint256 linearElapsed = elapsed - schedule.cliffDuration;
         uint256 vestedAmount =
-            tgeAmount +
-            cliffAmount +
-            (vestingAmount * linearElapsed) /
-            linearDuration;
+            tgeAmount + cliffAmount + (vestingAmount * linearElapsed) / linearDuration;
 
         return vestedAmount > schedule.totalAmount ? schedule.totalAmount : vestedAmount;
     }
@@ -768,11 +799,7 @@ contract AethelredVesting is
         view
         returns (uint256 cap, uint256 allocated, uint256 released)
     {
-        return (
-            categoryCaps[category],
-            categoryAllocated[category],
-            categoryReleased[category]
-        );
+        return (categoryCaps[category], categoryAllocated[category], categoryReleased[category]);
     }
 
     // =========================================================================
@@ -803,18 +830,16 @@ contract AethelredVesting is
         totalAllocated -= unvested;
         categoryAllocated[schedule.category] -= unvested;
 
-        emit ScheduleRevoked(
-            scheduleId,
-            schedule.beneficiary,
-            unvested,
-            block.timestamp
-        );
+        emit ScheduleRevoked(scheduleId, schedule.beneficiary, unvested, block.timestamp);
     }
 
     /**
      * @notice Transfer beneficiary (for investors)
      */
-    function transferBeneficiary(bytes32 scheduleId, address newBeneficiary)
+    function transferBeneficiary(
+        bytes32 scheduleId,
+        address newBeneficiary
+    )
         external
         scheduleExists(scheduleId)
         notRevoked(scheduleId)
@@ -851,7 +876,10 @@ contract AethelredVesting is
     /**
      * @notice Update category cap
      */
-    function setCategoryCap(AllocationCategory category, uint256 cap)
+    function setCategoryCap(
+        AllocationCategory category,
+        uint256 cap
+    )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
@@ -882,7 +910,11 @@ contract AethelredVesting is
      * @param amount Amount to recover
      * @param recipient Address to send recovered tokens to
      */
-    function recoverTokens(address tokenAddress, uint256 amount, address recipient)
+    function recoverTokens(
+        address tokenAddress,
+        uint256 amount,
+        address recipient
+    )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
@@ -890,13 +922,11 @@ contract AethelredVesting is
 
         // Cannot recover vesting token beyond what's unvested
         if (tokenAddress == address(token)) {
-            uint256 vestingBalance = totalAllocated > totalReleased
-                ? totalAllocated - totalReleased
-                : 0;
+            uint256 vestingBalance =
+                totalAllocated > totalReleased ? totalAllocated - totalReleased : 0;
             uint256 currentBalance = token.balanceOf(address(this));
-            uint256 recoverable = currentBalance > vestingBalance
-                ? currentBalance - vestingBalance
-                : 0;
+            uint256 recoverable =
+                currentBalance > vestingBalance ? currentBalance - vestingBalance : 0;
             require(amount <= recoverable, "Cannot recover vesting tokens");
         }
 
@@ -911,16 +941,32 @@ contract AethelredVesting is
         internal
         override
         onlyRole(UPGRADER_ROLE)
-    {}
+    { }
 
     function _requireContractAdmin(address admin) internal view {
+        if (admin == address(0)) revert InvalidBeneficiary();
         if (admin.code.length > 0) {
             return;
         }
-        if (block.chainid == 31337 || block.chainid == 1337) {
+        if (block.chainid == 31_337 || block.chainid == 1337) {
             return;
         }
         revert AdminMustBeContract();
+    }
+
+    function _requireUpgraderTimelockDelay(address upgraderTimelock) internal view {
+        if (
+            IVestingUpgraderTimelockDelaySource(upgraderTimelock).getMinDelay()
+                < MIN_UPGRADER_TIMELOCK_DELAY
+        ) {
+            revert UpgraderTimelockDelayTooShort();
+        }
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
     }
 
     // =========================================================================
@@ -956,19 +1002,9 @@ contract AethelredVesting is
         milestone.achieved = true;
         milestone.achievedAt = block.timestamp;
 
-        emit MilestoneAttested(
-            scheduleId,
-            milestoneIndex,
-            msg.sender,
-            milestone.name
-        );
+        emit MilestoneAttested(scheduleId, milestoneIndex, msg.sender, milestone.name);
 
-        emit MilestoneAchieved(
-            scheduleId,
-            milestone.name,
-            milestone.unlockBps,
-            block.timestamp
-        );
+        emit MilestoneAchieved(scheduleId, milestone.name, milestone.unlockBps, block.timestamp);
     }
 
     // =========================================================================

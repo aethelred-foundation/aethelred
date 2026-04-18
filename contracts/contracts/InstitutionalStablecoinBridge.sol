@@ -17,14 +17,18 @@ interface ITokenMessengerV2 {
         uint32 destinationDomain,
         bytes32 mintRecipient,
         address burnToken
-    ) external returns (uint64 nonce);
+    )
+        external
+        returns (uint64 nonce);
 }
 
 interface IMessageTransmitterV2 {
     function receiveMessage(
         bytes calldata message,
         bytes calldata attestation
-    ) external returns (bool success);
+    )
+        external
+        returns (bool success);
 }
 
 interface IMintBurnERC20 is IERC20 {
@@ -91,23 +95,19 @@ contract InstitutionalStablecoinBridge is
     uint256 internal constant RELAYER_OFFBOARD_COOLDOWN = 7 days;
     uint256 internal constant SECP256K1N_HALF =
         0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
-    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-        );
-    bytes32 internal constant EIP712_NAME_HASH =
-        keccak256("InstitutionalStablecoinBridge");
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH = keccak256(
+        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+    );
+    bytes32 internal constant EIP712_NAME_HASH = keccak256("InstitutionalStablecoinBridge");
     bytes32 internal constant EIP712_VERSION_HASH = keccak256("2");
-    bytes32 internal constant TEE_MINT_TYPEHASH =
-        keccak256(
-            "TeeMint(bytes32 assetId,address recipient,uint256 amount,bytes32 mintOperationId,bytes32 enclaveMeasurement,uint256 deadline)"
-        );
+    bytes32 internal constant TEE_MINT_TYPEHASH = keccak256(
+        "TeeMint(bytes32 assetId,address recipient,uint256 amount,bytes32 mintOperationId,bytes32 enclaveMeasurement,uint256 deadline)"
+    );
     bytes32 internal constant JOINT_UNPAUSE_TYPEHASH =
         keccak256("JointUnpause(bytes32 actionId,uint256 deadline)");
-    bytes32 internal constant CCTP_FAST_TYPEHASH =
-        keccak256(
-            "CCTPFast(bytes32 assetId,bytes32 messageHash,bytes32 attestationHash,uint256 deadline)"
-        );
+    bytes32 internal constant CCTP_FAST_TYPEHASH = keccak256(
+        "CCTPFast(bytes32 assetId,bytes32 messageHash,bytes32 attestationHash,uint256 deadline)"
+    );
 
     enum RoutingType {
         Unsupported,
@@ -201,16 +201,9 @@ contract InstitutionalStablecoinBridge is
     uint256 public lastAutomatedCheckTimestamp;
 
     event StablecoinConfigured(
-        bytes32 indexed assetId,
-        address indexed token,
-        RoutingType routingType,
-        bool enabled
+        bytes32 indexed assetId, address indexed token, RoutingType routingType, bool enabled
     );
-    event IssuerSignerSet(
-        bytes32 indexed assetId,
-        address[] signers,
-        uint8 threshold
-    );
+    event IssuerSignerSet(bytes32 indexed assetId, address[] signers, uint8 threshold);
     event EnclaveMeasurementUpdated(bytes32 indexed measurement, bool allowed);
     event MintExecuted(
         bytes32 indexed assetId,
@@ -225,21 +218,10 @@ contract InstitutionalStablecoinBridge is
         uint256 amount,
         uint64 cctpNonce
     );
-    event CCTPMessageRelayed(
-        bytes32 indexed assetId,
-        address indexed relayer,
-        bool success
-    );
-    event CCTPFastMessageRelayed(
-        bytes32 indexed assetId,
-        address indexed relayer,
-        bool success
-    );
+    event CCTPMessageRelayed(bytes32 indexed assetId, address indexed relayer, bool success);
+    event CCTPFastMessageRelayed(bytes32 indexed assetId, address indexed relayer, bool success);
     event TeeRedemptionRequested(
-        bytes32 indexed assetId,
-        address indexed account,
-        uint256 amount,
-        bytes32 issuerReference
+        bytes32 indexed assetId, address indexed account, uint256 amount, bytes32 issuerReference
     );
     event ReserveCheckPerformed(
         bytes32 indexed assetId,
@@ -249,10 +231,7 @@ contract InstitutionalStablecoinBridge is
         bool heartbeatStale
     );
     event CircuitBreakerTriggered(
-        bytes32 indexed assetId,
-        bytes32 indexed reasonCode,
-        uint256 observed,
-        uint256 threshold
+        bytes32 indexed assetId, bytes32 indexed reasonCode, uint256 observed, uint256 threshold
     );
     event MerkleAuditRootRecorded(
         bytes32 indexed assetId,
@@ -260,53 +239,25 @@ contract InstitutionalStablecoinBridge is
         bytes32 indexed reportHash,
         uint64 reportTimestamp
     );
-    event GovernanceKeysUpdated(
-        address issuerKey,
-        address foundationKey,
-        address auditorKey
-    );
+    event GovernanceKeysUpdated(address issuerKey, address foundationKey, address auditorKey);
     event IrisAttesterUpdated(address indexed irisAttester);
     event JointUnpauseExecuted(bytes32 indexed actionId, address indexed executor);
-    event GovernanceTimelockConfigured(
-        address indexed timelock,
-        uint48 delaySeconds
-    );
-    event RelayerBondConfigured(
-        address indexed bondToken,
-        uint256 requiredBond
-    );
-    event RelayerBondPosted(
-        address indexed relayer,
-        uint256 amount,
-        uint256 totalBonded
-    );
+    event GovernanceTimelockConfigured(address indexed timelock, uint48 delaySeconds);
+    event RelayerBondConfigured(address indexed bondToken, uint256 requiredBond);
+    event RelayerBondPosted(address indexed relayer, uint256 amount, uint256 totalBonded);
     event RelayerBondWithdrawn(
-        address indexed relayer,
-        address indexed recipient,
-        uint256 amount,
-        uint256 remainingBond
+        address indexed relayer, address indexed recipient, uint256 amount, uint256 remainingBond
     );
     event RelayerBondSlashed(
-        address indexed relayer,
-        address indexed recipient,
-        uint256 amount,
-        bytes32 reasonCode
+        address indexed relayer, address indexed recipient, uint256 amount, bytes32 reasonCode
     );
     event RelayerOffboardInitiated(
-        address indexed relayer,
-        uint256 initiatedAt,
-        uint256 completableAt
+        address indexed relayer, uint256 initiatedAt, uint256 completableAt
     );
     event RelayerOffboardCompleted(
-        address indexed relayer,
-        address indexed recipient,
-        uint256 amount
+        address indexed relayer, address indexed recipient, uint256 amount
     );
-    event AutomatedReserveCheckPerformed(
-        bytes32 indexed assetId,
-        uint256 timestamp,
-        bool breached
-    );
+    event AutomatedReserveCheckPerformed(bytes32 indexed assetId, uint256 timestamp, bool breached);
 
     error InvalidAddress();
     error InvalidRecipient();
@@ -335,6 +286,7 @@ contract InstitutionalStablecoinBridge is
     error OffboardCooldownNotElapsed();
     error OffboardAlreadyInitiated();
     error OffboardNotRelayer();
+    error ProductionInitializationRequiresTimelock();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -387,11 +339,7 @@ contract InstitutionalStablecoinBridge is
      *      This prevents the deploy-time DEFAULT_ADMIN_ROLE holder from
      *      granting CONFIG_ROLE or UPGRADER_ROLE to bypass governance.
      */
-    function grantRole(bytes32 role, address account)
-        public
-        override
-        onlyTimelockForRoleAdmin
-    {
+    function grantRole(bytes32 role, address account) public override onlyTimelockForRoleAdmin {
         super.grantRole(role, account);
     }
 
@@ -399,11 +347,7 @@ contract InstitutionalStablecoinBridge is
      * @notice Override revokeRole to route through the governance timelock.
      * @dev Once a timelock is configured, only the timelock can revoke roles.
      */
-    function revokeRole(bytes32 role, address account)
-        public
-        override
-        onlyTimelockForRoleAdmin
-    {
+    function revokeRole(bytes32 role, address account) public override onlyTimelockForRoleAdmin {
         super.revokeRole(role, account);
     }
 
@@ -414,18 +358,68 @@ contract InstitutionalStablecoinBridge is
         address issuerKey,
         address foundationKey,
         address auditorKey
-    ) external initializer {
+    )
+        external
+        initializer
+    {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
+        _initializeBridge(
+            admin,
+            admin,
+            false,
+            uint48(MIN_GOVERNANCE_ACTION_DELAY),
+            issuerKey,
+            foundationKey,
+            auditorKey
+        );
+    }
+
+    /**
+     * @notice Initialize the bridge with governance timelock active from deployment.
+     * @param admin Governance/admin executor contract.
+     * @param timelock Timelock contract for governed config and upgrades.
+     * @param issuerKey Issuer governance key.
+     * @param foundationKey Foundation governance key.
+     * @param auditorKey Auditor governance key.
+     */
+    function initializeWithTimelock(
+        address admin,
+        address timelock,
+        address issuerKey,
+        address foundationKey,
+        address auditorKey
+    )
+        external
+        initializer
+    {
+        _requireContractAdmin(admin);
+        _requireContractAdmin(timelock);
+
+        uint256 liveDelay = ITimelockControllerMinDelay(timelock).getMinDelay();
+        if (liveDelay < MIN_GOVERNANCE_ACTION_DELAY) {
+            revert TimelockDelayTooShort();
+        }
+
+        _initializeBridge(
+            admin, timelock, true, uint48(liveDelay), issuerKey, foundationKey, auditorKey
+        );
+    }
+
+    function _initializeBridge(
+        address admin,
+        address upgraderAuthority,
+        bool activateGovernanceTimelock,
+        uint48 timelockDelaySeconds,
+        address issuerKey,
+        address foundationKey,
+        address auditorKey
+    )
+        internal
+    {
         if (
-            admin == address(0) ||
-            issuerKey == address(0) ||
-            foundationKey == address(0) ||
-            auditorKey == address(0)
+            admin == address(0) || upgraderAuthority == address(0) || issuerKey == address(0)
+                || foundationKey == address(0) || auditorKey == address(0)
         ) revert InvalidAddress();
-        if (
-            admin.code.length == 0 &&
-            block.chainid != 31337 &&
-            block.chainid != 1337
-        ) revert InvalidConfig();
 
         __UUPSUpgradeable_init();
         __AccessControl_init();
@@ -438,12 +432,20 @@ contract InstitutionalStablecoinBridge is
         _grantRole(MINTER_ROLE, admin);
         _grantRole(RELAYER_ROLE, admin);
         _grantRole(UNPAUSER_ROLE, admin);
-        _grantRole(UPGRADER_ROLE, admin);
+        _grantRole(UPGRADER_ROLE, upgraderAuthority);
+
+        if (activateGovernanceTimelock) {
+            governanceTimelock = upgraderAuthority;
+            governanceActionDelaySeconds = timelockDelaySeconds;
+            _grantRole(DEFAULT_ADMIN_ROLE, upgraderAuthority);
+            _grantRole(CONFIG_ROLE, upgraderAuthority);
+        } else {
+            governanceActionDelaySeconds = uint48(MIN_GOVERNANCE_ACTION_DELAY);
+        }
 
         issuerGovernanceKey = issuerKey;
         foundationGovernanceKey = foundationKey;
         auditorGovernanceKey = auditorKey;
-        governanceActionDelaySeconds = uint48(MIN_GOVERNANCE_ACTION_DELAY);
         relayerBondRequirement = DEFAULT_RELAYER_BOND_REQUIREMENT;
     }
 
@@ -451,24 +453,22 @@ contract InstitutionalStablecoinBridge is
         address issuerKey,
         address foundationKey,
         address auditorKey
-    ) external onlyGovernedConfigRole {
-        if (
-            issuerKey == address(0) ||
-            foundationKey == address(0) ||
-            auditorKey == address(0)
-        ) revert InvalidAddress();
+    )
+        external
+        onlyGovernedConfigRole
+    {
+        if (issuerKey == address(0) || foundationKey == address(0) || auditorKey == address(0)) {
+            revert InvalidAddress();
+        }
 
+        if (issuerRecoveryGovernanceKey != address(0) && issuerKey == issuerRecoveryGovernanceKey) {
+            revert InvalidConfig();
+        }
         if (
-            issuerRecoveryGovernanceKey != address(0) &&
-            issuerKey == issuerRecoveryGovernanceKey
-        ) revert InvalidConfig();
-        if (
-            guardianGovernanceKey != address(0) &&
-            (
-                guardianGovernanceKey == issuerKey ||
-                guardianGovernanceKey == foundationKey ||
-                guardianGovernanceKey == auditorKey
-            )
+            guardianGovernanceKey != address(0)
+                && (guardianGovernanceKey == issuerKey
+                    || guardianGovernanceKey == foundationKey
+                    || guardianGovernanceKey == auditorKey)
         ) revert InvalidConfig();
 
         issuerGovernanceKey = issuerKey;
@@ -480,18 +480,18 @@ contract InstitutionalStablecoinBridge is
     function setSovereignUnpauseKeys(
         address issuerRecoveryKey,
         address guardianKey
-    ) external onlyGovernedConfigRole {
+    )
+        external
+        onlyGovernedConfigRole
+    {
         if (issuerRecoveryKey == address(0) || guardianKey == address(0)) {
             revert InvalidAddress();
         }
         if (
-            issuerRecoveryKey == issuerGovernanceKey ||
-            issuerRecoveryKey == foundationGovernanceKey ||
-            issuerRecoveryKey == auditorGovernanceKey ||
-            guardianKey == issuerGovernanceKey ||
-            guardianKey == foundationGovernanceKey ||
-            guardianKey == auditorGovernanceKey ||
-            issuerRecoveryKey == guardianKey
+            issuerRecoveryKey == issuerGovernanceKey || issuerRecoveryKey == foundationGovernanceKey
+                || issuerRecoveryKey == auditorGovernanceKey || guardianKey == issuerGovernanceKey
+                || guardianKey == foundationGovernanceKey || guardianKey == auditorGovernanceKey
+                || issuerRecoveryKey == guardianKey
         ) revert InvalidConfig();
 
         issuerRecoveryGovernanceKey = issuerRecoveryKey;
@@ -514,7 +514,10 @@ contract InstitutionalStablecoinBridge is
      * @param timelock The address of the TimelockController contract.
      * @param delaySeconds The minimum governance action delay to record.
      */
-    function configureGovernanceTimelock(address timelock, uint48 delaySeconds)
+    function configureGovernanceTimelock(
+        address timelock,
+        uint48 delaySeconds
+    )
         external
         onlyGovernedConfigRole
     {
@@ -544,7 +547,10 @@ contract InstitutionalStablecoinBridge is
         emit GovernanceTimelockConfigured(timelock, delaySeconds);
     }
 
-    function configureRelayerBonding(address bondToken, uint256 requiredBond)
+    function configureRelayerBonding(
+        address bondToken,
+        uint256 requiredBond
+    )
         external
         onlyGovernedConfigRole
     {
@@ -555,11 +561,7 @@ contract InstitutionalStablecoinBridge is
         emit RelayerBondConfigured(bondToken, requiredBond);
     }
 
-    function postRelayerBond(uint256 amount)
-        external
-        onlyRole(RELAYER_ROLE)
-        nonReentrant
-    {
+    function postRelayerBond(uint256 amount) external onlyRole(RELAYER_ROLE) nonReentrant {
         if (relayerBondToken == address(0)) revert RelayerBondTokenNotConfigured();
         if (amount == 0) revert InvalidAmount();
 
@@ -571,7 +573,10 @@ contract InstitutionalStablecoinBridge is
         emit RelayerBondPosted(msg.sender, actualReceived, relayerBonds[msg.sender]);
     }
 
-    function withdrawRelayerBond(uint256 amount, address recipient)
+    function withdrawRelayerBond(
+        uint256 amount,
+        address recipient
+    )
         external
         onlyRole(RELAYER_ROLE)
         nonReentrant
@@ -597,7 +602,11 @@ contract InstitutionalStablecoinBridge is
         address relayer,
         bytes32 reasonCode,
         address recipient
-    ) external onlyRole(PAUSER_ROLE) nonReentrant {
+    )
+        external
+        onlyRole(PAUSER_ROLE)
+        nonReentrant
+    {
         if (relayer == address(0)) revert InvalidAddress();
         if (recipient == address(0)) revert InvalidRecipient();
         if (relayerBondToken == address(0)) revert RelayerBondTokenNotConfigured();
@@ -618,19 +627,14 @@ contract InstitutionalStablecoinBridge is
      *      offboarding on behalf of a relayer (e.g., admin-initiated retirement).
      * @param relayer The address of the relayer to offboard.
      */
-    function initiateRelayerOffboard(address relayer)
-        external
-        onlyRole(PAUSER_ROLE)
-    {
+    function initiateRelayerOffboard(address relayer) external onlyRole(PAUSER_ROLE) {
         if (relayer == address(0)) revert InvalidAddress();
         if (relayerBonds[relayer] == 0) revert RelayerBondNotFound();
         if (relayerOffboardInitiated[relayer] != 0) revert OffboardAlreadyInitiated();
 
         relayerOffboardInitiated[relayer] = block.timestamp;
         emit RelayerOffboardInitiated(
-            relayer,
-            block.timestamp,
-            block.timestamp + RELAYER_OFFBOARD_COOLDOWN
+            relayer, block.timestamp, block.timestamp + RELAYER_OFFBOARD_COOLDOWN
         );
     }
 
@@ -641,10 +645,7 @@ contract InstitutionalStablecoinBridge is
      *      front-running bond theft by arbitrary callers.
      * @param recipient The address to receive the bonded tokens.
      */
-    function completeRelayerOffboard(address recipient)
-        external
-        nonReentrant
-    {
+    function completeRelayerOffboard(address recipient) external nonReentrant {
         if (recipient == address(0)) revert InvalidRecipient();
         if (relayerBondToken == address(0)) revert RelayerBondTokenNotConfigured();
 
@@ -664,7 +665,10 @@ contract InstitutionalStablecoinBridge is
         emit RelayerOffboardCompleted(relayer, recipient, bonded);
     }
 
-    function setCircuitBreakerModule(bytes32 assetId, address module)
+    function setCircuitBreakerModule(
+        bytes32 assetId,
+        address module
+    )
         external
         onlyGovernedConfigRole
     {
@@ -675,20 +679,21 @@ contract InstitutionalStablecoinBridge is
     function configureStablecoin(
         ConfigureStablecoinCore calldata core,
         ConfigureStablecoinLimits calldata limits
-    ) external onlyGovernedConfigRole {
+    )
+        external
+        onlyGovernedConfigRole
+    {
         if (core.assetId == bytes32(0) || core.token == address(0)) revert InvalidConfig();
         if (core.routingType == RoutingType.Unsupported) revert InvalidRoutingType();
         if (
-            limits.hourlyOutflowBps > BPS_DENOMINATOR ||
-            limits.dailyOutflowBps > BPS_DENOMINATOR ||
-            limits.porDeviationBps > BPS_DENOMINATOR
+            limits.hourlyOutflowBps > BPS_DENOMINATOR || limits.dailyOutflowBps > BPS_DENOMINATOR
+                || limits.porDeviationBps > BPS_DENOMINATOR
         ) revert InvalidConfig();
 
         if (core.routingType == RoutingType.CCTP_V2) {
-            if (
-                core.tokenMessengerV2 == address(0) ||
-                core.messageTransmitterV2 == address(0)
-            ) revert InvalidConfig();
+            if (core.tokenMessengerV2 == address(0) || core.messageTransmitterV2 == address(0)) {
+                revert InvalidConfig();
+            }
         }
 
         StablecoinConfig storage cfg = stablecoins[core.assetId];
@@ -720,7 +725,9 @@ contract InstitutionalStablecoinBridge is
         bytes32 assetId,
         address[] calldata signers,
         uint8 threshold
-    ) external {
+    )
+        external
+    {
         if (assetId == bytes32(0) || signers.length == 0) revert InvalidConfig();
         // Issuer-exclusive: always require issuerGovernanceKey, regardless of
         // whether a governance timelock is active. This is intentionally NOT
@@ -738,9 +745,8 @@ contract InstitutionalStablecoinBridge is
             address signer = signers[i];
             if (signer == address(0)) revert InvalidAddress();
             if (
-                signer == foundationGovernanceKey ||
-                signer == auditorGovernanceKey ||
-                signer == guardianGovernanceKey
+                signer == foundationGovernanceKey || signer == auditorGovernanceKey
+                    || signer == guardianGovernanceKey
             ) revert InvalidConfig();
             if (isIssuerSigner[assetId][signer]) revert InvalidConfig();
             isIssuerSigner[assetId][signer] = true;
@@ -751,7 +757,10 @@ contract InstitutionalStablecoinBridge is
         emit IssuerSignerSet(assetId, signers, threshold);
     }
 
-    function setEnclaveMeasurement(bytes32 measurement, bool allowed)
+    function setEnclaveMeasurement(
+        bytes32 measurement,
+        bool allowed
+    )
         external
         onlyGovernedConfigRole
     {
@@ -767,7 +776,13 @@ contract InstitutionalStablecoinBridge is
         bytes32 enclaveMeasurement,
         uint256 deadline,
         bytes[] calldata issuerSignatures
-    ) external onlyRole(RELAYER_ROLE) onlyBondedRelayer whenNotPaused nonReentrant {
+    )
+        external
+        onlyRole(RELAYER_ROLE)
+        onlyBondedRelayer
+        whenNotPaused
+        nonReentrant
+    {
         StablecoinConfig storage cfg = _requireEnabledTeeMintAsset(assetId);
         if (cfg.mintPaused) revert MintPausedForAsset();
         if (recipient == address(0)) revert InvalidRecipient();
@@ -786,12 +801,7 @@ contract InstitutionalStablecoinBridge is
         _checkExternalCircuitBreaker(assetId, amount);
 
         bytes32 digest = _buildMintDigest(
-            assetId,
-            recipient,
-            amount,
-            mintOperationId,
-            enclaveMeasurement,
-            deadline
+            assetId, recipient, amount, mintOperationId, enclaveMeasurement, deadline
         );
         _requireIssuerQuorum(assetId, digest, issuerSignatures);
 
@@ -805,7 +815,12 @@ contract InstitutionalStablecoinBridge is
         uint256 amount,
         uint32 destinationDomain,
         bytes32 mintRecipient
-    ) external whenNotPaused nonReentrant returns (uint64 cctpNonce) {
+    )
+        external
+        whenNotPaused
+        nonReentrant
+        returns (uint64 cctpNonce)
+    {
         StablecoinConfig storage cfg = _requireEnabledCCTPAsset(assetId);
         if (amount == 0) revert InvalidAmount();
 
@@ -816,29 +831,25 @@ contract InstitutionalStablecoinBridge is
 
         token.forceApprove(cfg.tokenMessengerV2, actualReceived);
 
-        cctpNonce = ITokenMessengerV2(cfg.tokenMessengerV2).depositForBurn(
-            actualReceived,
-            destinationDomain,
-            mintRecipient,
-            cfg.token
-        );
+        cctpNonce = ITokenMessengerV2(cfg.tokenMessengerV2)
+            .depositForBurn(actualReceived, destinationDomain, mintRecipient, cfg.token);
 
         _recordOutflowAndCircuitCheck(assetId, actualReceived);
 
-        emit CCTPBurnInitiated(
-            assetId,
-            msg.sender,
-            destinationDomain,
-            actualReceived,
-            cctpNonce
-        );
+        emit CCTPBurnInitiated(assetId, msg.sender, destinationDomain, actualReceived, cctpNonce);
     }
 
     function relayCCTPMessage(
         bytes32 assetId,
         bytes calldata message,
         bytes calldata attestation
-    ) external onlyRole(RELAYER_ROLE) onlyBondedRelayer whenNotPaused returns (bool success) {
+    )
+        external
+        onlyRole(RELAYER_ROLE)
+        onlyBondedRelayer
+        whenNotPaused
+        returns (bool success)
+    {
         StablecoinConfig storage cfg = _requireEnabledCCTPAsset(assetId);
         success = _receiveCCTPMessage(cfg, message, attestation);
         emit CCTPMessageRelayed(assetId, msg.sender, success);
@@ -850,17 +861,19 @@ contract InstitutionalStablecoinBridge is
         bytes calldata attestation,
         uint256 deadline,
         bytes calldata irisSignature
-    ) external onlyRole(RELAYER_ROLE) onlyBondedRelayer whenNotPaused returns (bool success) {
+    )
+        external
+        onlyRole(RELAYER_ROLE)
+        onlyBondedRelayer
+        whenNotPaused
+        returns (bool success)
+    {
         StablecoinConfig storage cfg = _requireEnabledCCTPAsset(assetId);
         if (irisAttester == address(0)) revert InvalidConfig();
         if (deadline < block.timestamp) revert ExpiredOperation();
 
-        bytes32 digest = _buildCCTPFastDigest(
-            assetId,
-            keccak256(message),
-            keccak256(attestation),
-            deadline
-        );
+        bytes32 digest =
+            _buildCCTPFastDigest(assetId, keccak256(message), keccak256(attestation), deadline);
         bytes32 signed = _toTypedDataHash(digest);
         address recovered = _recoverSigner(signed, irisSignature);
         if (recovered != irisAttester) revert InvalidSignature();
@@ -873,7 +886,11 @@ contract InstitutionalStablecoinBridge is
         bytes32 assetId,
         uint256 amount,
         bytes32 issuerReference
-    ) external whenNotPaused nonReentrant {
+    )
+        external
+        whenNotPaused
+        nonReentrant
+    {
         StablecoinConfig storage cfg = _requireEnabledTeeMintAsset(assetId);
         if (amount == 0) revert InvalidAmount();
 
@@ -900,7 +917,10 @@ contract InstitutionalStablecoinBridge is
         bytes32 merkleRoot,
         bytes32 reportHash,
         uint64 reportTimestamp
-    ) external onlyRole(PAUSER_ROLE) {
+    )
+        external
+        onlyRole(PAUSER_ROLE)
+    {
         if (stablecoins[assetId].token == address(0)) revert AssetNotSupported();
         if (merkleRoot == bytes32(0) || reportHash == bytes32(0)) revert InvalidConfig();
 
@@ -918,7 +938,11 @@ contract InstitutionalStablecoinBridge is
         bytes32 assetId,
         bytes32 leaf,
         bytes32[] calldata proof
-    ) external view returns (bool) {
+    )
+        external
+        view
+        returns (bool)
+    {
         bytes32 root = latestMerkleAudit[assetId].merkleRoot;
         if (root == bytes32(0)) return false;
         return _verifyMerkleProof(leaf, proof, root);
@@ -928,11 +952,7 @@ contract InstitutionalStablecoinBridge is
     function getRelayerBondStatus(address relayer)
         external
         view
-        returns (
-            uint256 bondedAmount,
-            uint256 requiredBond,
-            address bondToken
-        )
+        returns (uint256 bondedAmount, uint256 requiredBond, address bondToken)
     {
         bondedAmount = relayerBonds[relayer];
         requiredBond = relayerBondRequirement;
@@ -940,11 +960,7 @@ contract InstitutionalStablecoinBridge is
     }
 
     /// @notice Returns whether a TEE enclave measurement is currently approved.
-    function isEnclaveMeasurementApproved(bytes32 measurement)
-        external
-        view
-        returns (bool)
-    {
+    function isEnclaveMeasurementApproved(bytes32 measurement) external view returns (bool) {
         return approvedEnclaveMeasurements[measurement];
     }
 
@@ -957,7 +973,10 @@ contract InstitutionalStablecoinBridge is
      *         multisig (unpauseWithJointSignatures), so a rogue pauser can
      *         halt but cannot unilaterally resume.
      */
-    function pauseFromCircuitBreaker(bytes32 assetId, bytes32 reasonCode)
+    function pauseFromCircuitBreaker(
+        bytes32 assetId,
+        bytes32 reasonCode
+    )
         external
         onlyRole(PAUSER_ROLE)
     {
@@ -968,14 +987,16 @@ contract InstitutionalStablecoinBridge is
         bytes32 actionId,
         uint256 deadline,
         bytes[] calldata signatures
-    ) external onlyRole(UNPAUSER_ROLE) {
+    )
+        external
+        onlyRole(UNPAUSER_ROLE)
+    {
         if (!paused()) revert InvalidConfig();
         if (deadline < block.timestamp) revert ExpiredOperation();
         if (usedUnpauseActions[actionId]) revert DuplicateOperation();
-        if (
-            issuerRecoveryGovernanceKey == address(0) ||
-            guardianGovernanceKey == address(0)
-        ) revert InvalidConfig();
+        if (issuerRecoveryGovernanceKey == address(0) || guardianGovernanceKey == address(0)) {
+            revert InvalidConfig();
+        }
         if (signatures.length < 3 || signatures.length > 5) revert InvalidSignature();
 
         bytes32 digest = _buildUnpauseDigest(actionId, deadline);
@@ -987,11 +1008,7 @@ contract InstitutionalStablecoinBridge is
         allowedSigners[3] = auditorGovernanceKey;
         allowedSigners[4] = guardianGovernanceKey;
         (uint256 validSignerCount, bool hasIssuerAnchor) = _countUniqueAllowedSigners(
-            signed,
-            signatures,
-            allowedSigners,
-            issuerGovernanceKey,
-            issuerRecoveryGovernanceKey
+            signed, signatures, allowedSigners, issuerGovernanceKey, issuerRecoveryGovernanceKey
         );
 
         if (validSignerCount < 3 || !hasIssuerAnchor) revert InvalidSignature();
@@ -1015,34 +1032,33 @@ contract InstitutionalStablecoinBridge is
         bytes32 mintOperationId,
         bytes32 enclaveMeasurement,
         uint256 deadline
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    TEE_MINT_TYPEHASH,
-                    assetId,
-                    recipient,
-                    amount,
-                    mintOperationId,
-                    enclaveMeasurement,
-                    deadline
-                )
-            );
-    }
-
-    function _buildUnpauseDigest(bytes32 actionId, uint256 deadline)
+    )
         internal
         pure
         returns (bytes32)
     {
-        return
-            keccak256(
-                abi.encode(
-                    JOINT_UNPAUSE_TYPEHASH,
-                    actionId,
-                    deadline
-                )
-            );
+        return keccak256(
+            abi.encode(
+                TEE_MINT_TYPEHASH,
+                assetId,
+                recipient,
+                amount,
+                mintOperationId,
+                enclaveMeasurement,
+                deadline
+            )
+        );
+    }
+
+    function _buildUnpauseDigest(
+        bytes32 actionId,
+        uint256 deadline
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(JOINT_UNPAUSE_TYPEHASH, actionId, deadline));
     }
 
     function _buildCCTPFastDigest(
@@ -1050,24 +1066,24 @@ contract InstitutionalStablecoinBridge is
         bytes32 messageHash,
         bytes32 attestationHash,
         uint256 deadline
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    CCTP_FAST_TYPEHASH,
-                    assetId,
-                    messageHash,
-                    attestationHash,
-                    deadline
-                )
-            );
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encode(CCTP_FAST_TYPEHASH, assetId, messageHash, attestationHash, deadline)
+        );
     }
 
     function _requireIssuerQuorum(
         bytes32 assetId,
         bytes32 digest,
         bytes[] calldata signatures
-    ) internal view {
+    )
+        internal
+        view
+    {
         uint8 threshold = issuerThreshold[assetId];
         if (threshold == 0) revert InvalidConfig();
 
@@ -1077,13 +1093,8 @@ contract InstitutionalStablecoinBridge is
         for (uint256 i = 0; i < signerStorage.length; i++) {
             allowedSigners[i] = signerStorage[i];
         }
-        (uint256 validCount, ) = _countUniqueAllowedSigners(
-            signed,
-            signatures,
-            allowedSigners,
-            address(0),
-            address(0)
-        );
+        (uint256 validCount,) =
+            _countUniqueAllowedSigners(signed, signatures, allowedSigners, address(0), address(0));
 
         if (validCount < threshold) revert InsufficientIssuerSignatures();
     }
@@ -1094,7 +1105,11 @@ contract InstitutionalStablecoinBridge is
         address[] memory allowedSigners,
         address anchor1,
         address anchor2
-    ) internal pure returns (uint256 validCount, bool hasAnchor) {
+    )
+        internal
+        pure
+        returns (uint256 validCount, bool hasAnchor)
+    {
         address[] memory seen = new address[](signatures.length);
         for (uint256 i = 0; i < signatures.length; i++) {
             address signer = _recoverSigner(signedDigest, signatures[i]);
@@ -1117,7 +1132,11 @@ contract InstitutionalStablecoinBridge is
         address account,
         address[] memory list,
         uint256 length
-    ) internal pure returns (bool) {
+    )
+        internal
+        pure
+        returns (bool)
+    {
         for (uint256 i = 0; i < length; i++) {
             if (list[i] == account) return true;
         }
@@ -1138,10 +1157,7 @@ contract InstitutionalStablecoinBridge is
         uint256 projectedMinted = usage.mintedAmount + amount;
         uint256 projectedVolume = usage.txVolume + amount;
 
-        if (
-            cfg.mintCeilingPerEpoch > 0 &&
-            projectedMinted > cfg.mintCeilingPerEpoch
-        ) {
+        if (cfg.mintCeilingPerEpoch > 0 && projectedMinted > cfg.mintCeilingPerEpoch) {
             revert MintCeilingExceeded();
         }
 
@@ -1153,9 +1169,7 @@ contract InstitutionalStablecoinBridge is
         usage.txVolume = projectedVolume;
     }
 
-    function _checkExternalCircuitBreaker(bytes32 assetId, uint256 pendingMintAmount)
-        internal
-    {
+    function _checkExternalCircuitBreaker(bytes32 assetId, uint256 pendingMintAmount) internal {
         address module = circuitBreakerModule[assetId];
         if (module == address(0)) {
             return;
@@ -1171,17 +1185,15 @@ contract InstitutionalStablecoinBridge is
         bytes32 assetId,
         StablecoinConfig storage cfg,
         uint256 pendingMintAmount
-    ) internal {
+    )
+        internal
+    {
         if (cfg.proofOfReserveFeed == address(0)) {
             return;
         }
 
-        (
-            ,
-            int256 reserveAnswer,
-            ,
-            uint256 updatedAt,
-        ) = IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
+        (, int256 reserveAnswer,, uint256 updatedAt,) =
+            IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
         if (reserveAnswer <= 0) {
             _triggerCircuitBreaker(assetId, keccak256("POR_NON_POSITIVE"), 0, 1);
             emit ReserveCheckPerformed(assetId, 0, 0, BPS_DENOMINATOR, true);
@@ -1191,21 +1203,16 @@ contract InstitutionalStablecoinBridge is
         uint8 feedDecimals = IAggregatorV3(cfg.proofOfReserveFeed).decimals();
         uint8 tokenDecimals = IERC20Metadata(cfg.token).decimals();
 
-        uint256 reserveAmount18 = _normalizeTo18(
-            uint256(reserveAnswer),
-            feedDecimals
-        );
+        uint256 reserveAmount18 = _normalizeTo18(uint256(reserveAnswer), feedDecimals);
         uint256 liabilitiesRaw = IERC20Metadata(cfg.token).totalSupply() + pendingMintAmount;
         uint256 liabilities18 = _normalizeTo18(liabilitiesRaw, tokenDecimals);
 
-        bool stale = cfg.porHeartbeatSeconds > 0 &&
-            block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
+        bool stale =
+            cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
 
         uint256 deviationBps = 0;
         if (liabilities18 > reserveAmount18 && liabilities18 > 0) {
-            deviationBps =
-                ((liabilities18 - reserveAmount18) * BPS_DENOMINATOR) /
-                liabilities18;
+            deviationBps = ((liabilities18 - reserveAmount18) * BPS_DENOMINATOR) / liabilities18;
         }
 
         if (stale || deviationBps > cfg.porDeviationBps) {
@@ -1217,13 +1224,7 @@ contract InstitutionalStablecoinBridge is
             );
         }
 
-        emit ReserveCheckPerformed(
-            assetId,
-            reserveAmount18,
-            liabilities18,
-            deviationBps,
-            stale
-        );
+        emit ReserveCheckPerformed(assetId, reserveAmount18, liabilities18, deviationBps, stale);
     }
 
     function _requireEnabledAsset(bytes32 assetId)
@@ -1257,11 +1258,12 @@ contract InstitutionalStablecoinBridge is
         StablecoinConfig storage cfg,
         bytes calldata message,
         bytes calldata attestation
-    ) internal returns (bool success) {
-        success = IMessageTransmitterV2(cfg.messageTransmitterV2).receiveMessage(
-            message,
-            attestation
-        );
+    )
+        internal
+        returns (bool success)
+    {
+        success =
+            IMessageTransmitterV2(cfg.messageTransmitterV2).receiveMessage(message, attestation);
     }
 
     function _recordOutflowAndCircuitCheck(bytes32 assetId, uint256 amount) internal {
@@ -1279,10 +1281,7 @@ contract InstitutionalStablecoinBridge is
             usage.txVolume += amount;
             if (cfg.dailyTxLimit > 0 && usage.txVolume > cfg.dailyTxLimit) {
                 _triggerCircuitBreaker(
-                    assetId,
-                    keccak256("DAILY_TX_LIMIT_BREACH"),
-                    usage.txVolume,
-                    cfg.dailyTxLimit
+                    assetId, keccak256("DAILY_TX_LIMIT_BREACH"), usage.txVolume, cfg.dailyTxLimit
                 );
                 return;
             }
@@ -1321,15 +1320,17 @@ contract InstitutionalStablecoinBridge is
         StablecoinConfig storage cfg,
         uint256 hourFlow,
         uint256 dayFlow
-    ) private {
+    )
+        private
+    {
         uint8 tokenDecimals = IERC20Metadata(cfg.token).decimals();
         uint256 supply18 = _normalizeTo18(IERC20Metadata(cfg.token).totalSupply(), tokenDecimals);
         if (supply18 == 0) return;
 
         uint256 hourFlow18 = _normalizeTo18(hourFlow, tokenDecimals);
         if (
-            cfg.hourlyOutflowBps > 0 &&
-            hourFlow18 * BPS_DENOMINATOR > supply18 * cfg.hourlyOutflowBps
+            cfg.hourlyOutflowBps > 0
+                && hourFlow18 * BPS_DENOMINATOR > supply18 * cfg.hourlyOutflowBps
         ) {
             _triggerCircuitBreaker(
                 assetId,
@@ -1341,10 +1342,8 @@ contract InstitutionalStablecoinBridge is
         }
 
         uint256 dayFlow18 = _normalizeTo18(dayFlow, tokenDecimals);
-        if (
-            cfg.dailyOutflowBps > 0 &&
-            dayFlow18 * BPS_DENOMINATOR > supply18 * cfg.dailyOutflowBps
-        ) {
+        if (cfg.dailyOutflowBps > 0 && dayFlow18 * BPS_DENOMINATOR > supply18 * cfg.dailyOutflowBps)
+        {
             _triggerCircuitBreaker(
                 assetId,
                 keccak256("DAILY_VELOCITY_BREACH"),
@@ -1359,7 +1358,9 @@ contract InstitutionalStablecoinBridge is
         bytes32 reasonCode,
         uint256 observed,
         uint256 threshold
-    ) internal {
+    )
+        internal
+    {
         stablecoins[assetId].mintPaused = true;
         if (!paused()) {
             _pause();
@@ -1367,37 +1368,32 @@ contract InstitutionalStablecoinBridge is
         emit CircuitBreakerTriggered(assetId, reasonCode, observed, threshold);
     }
 
-    function _normalizeTo18(uint256 amount, uint8 decimals)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _normalizeTo18(uint256 amount, uint8 decimals) internal pure returns (uint256) {
         if (decimals == 18) return amount;
         if (decimals < 18) return amount * (10 ** (18 - decimals));
         return amount / (10 ** (decimals - 18));
     }
 
     function _domainSeparatorV4() internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    EIP712_DOMAIN_TYPEHASH,
-                    EIP712_NAME_HASH,
-                    EIP712_VERSION_HASH,
-                    block.chainid,
-                    address(this)
-                )
-            );
+        return keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH,
+                EIP712_NAME_HASH,
+                EIP712_VERSION_HASH,
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function _toTypedDataHash(bytes32 structHash) internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked("\x19\x01", _domainSeparatorV4(), structHash)
-            );
+        return keccak256(abi.encodePacked("\x19\x01", _domainSeparatorV4(), structHash));
     }
 
-    function _recoverSigner(bytes32 signedDigest, bytes calldata signature)
+    function _recoverSigner(
+        bytes32 signedDigest,
+        bytes calldata signature
+    )
         internal
         pure
         returns (address)
@@ -1425,7 +1421,11 @@ contract InstitutionalStablecoinBridge is
         bytes32 leaf,
         bytes32[] calldata proof,
         bytes32 root
-    ) internal pure returns (bool) {
+    )
+        internal
+        pure
+        returns (bool)
+    {
         bytes32 computed = leaf;
         for (uint256 i = 0; i < proof.length; i++) {
             bytes32 sibling = proof[i];
@@ -1443,15 +1443,28 @@ contract InstitutionalStablecoinBridge is
      *      Prevents the deploy-time UPGRADER_ROLE holder from upgrading
      *      the implementation to bypass governance controls.
      */
-    function _authorizeUpgrade(address)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {
+    function _authorizeUpgrade(address) internal view override onlyRole(UPGRADER_ROLE) {
         if (governanceTimelock != address(0) && msg.sender != governanceTimelock) {
             revert TimelockRequired();
         }
         _enforceTimelockDelayFloor();
+    }
+
+    function _requireContractAdmin(address admin) internal view {
+        if (admin == address(0)) revert InvalidAddress();
+        if (admin.code.length > 0) {
+            return;
+        }
+        if (block.chainid == 31_337 || block.chainid == 1337) {
+            return;
+        }
+        revert InvalidConfig();
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
     }
 
     // =========================================================================
@@ -1479,20 +1492,16 @@ contract InstitutionalStablecoinBridge is
             StablecoinConfig storage cfg = stablecoins[assetIds[i]];
             if (!cfg.enabled || cfg.proofOfReserveFeed == address(0)) continue;
 
-            (
-                ,
-                int256 reserveAnswer,
-                ,
-                uint256 updatedAt,
-            ) = IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
+            (, int256 reserveAnswer,, uint256 updatedAt,) =
+                IAggregatorV3(cfg.proofOfReserveFeed).latestRoundData();
 
             if (reserveAnswer <= 0) {
                 breached[count++] = assetIds[i];
                 continue;
             }
 
-            bool stale = cfg.porHeartbeatSeconds > 0 &&
-                block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
+            bool stale =
+                cfg.porHeartbeatSeconds > 0 && block.timestamp > updatedAt + cfg.porHeartbeatSeconds;
 
             if (stale) {
                 breached[count++] = assetIds[i];
@@ -1502,9 +1511,8 @@ contract InstitutionalStablecoinBridge is
             uint8 feedDecimals = IAggregatorV3(cfg.proofOfReserveFeed).decimals();
             uint8 tokenDecimals = IERC20Metadata(cfg.token).decimals();
             uint256 reserve18 = _normalizeTo18(uint256(reserveAnswer), feedDecimals);
-            uint256 liabilities18 = _normalizeTo18(
-                IERC20Metadata(cfg.token).totalSupply(), tokenDecimals
-            );
+            uint256 liabilities18 =
+                _normalizeTo18(IERC20Metadata(cfg.token).totalSupply(), tokenDecimals);
 
             if (liabilities18 > reserve18 && liabilities18 > 0) {
                 uint256 devBps = ((liabilities18 - reserve18) * BPS_DENOMINATOR) / liabilities18;
@@ -1541,11 +1549,7 @@ contract InstitutionalStablecoinBridge is
             // Re-verify on-chain (defense against stale performData)
             _monitorReserve(breachedIds[i], cfg, 0);
 
-            emit AutomatedReserveCheckPerformed(
-                breachedIds[i],
-                block.timestamp,
-                cfg.mintPaused
-            );
+            emit AutomatedReserveCheckPerformed(breachedIds[i], block.timestamp, cfg.mintPaused);
         }
 
         lastAutomatedCheckTimestamp = block.timestamp;

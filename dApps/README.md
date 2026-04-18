@@ -10,4 +10,4 @@ Canonical repositories:
 - `terraqura`: <https://github.com/aethelred-foundation/terraqura>
 - `shiora`: <https://github.com/aethelred-foundation/shiora>
 
-The Aethelred monorepo retains only shared protocol fixtures and pointer metadata needed for release coordination. Dependabot and CI ownership for each application should be handled in the application's canonical repository.
+The Aethelred monorepo retains only shared protocol fixtures and pointer metadata needed for release coordination. Dependency monitoring and CI ownership for each application should be handled in the application's canonical repository.

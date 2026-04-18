@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 
 describe("InstitutionalReserveAutomationKeeper", function () {
   it("performUpkeep calls monitorReserve on the configured bridge for enabled assets", async function () {
+    const [owner] = await ethers.getSigners();
     const MockBridgeFactory = await ethers.getContractFactory("MockInstitutionalBridgeMonitor");
     const mockBridge = await MockBridgeFactory.deploy();
     await mockBridge.waitForDeployment();
@@ -11,7 +12,7 @@ describe("InstitutionalReserveAutomationKeeper", function () {
     const assetB = ethers.id("USDT");
 
     const KeeperFactory = await ethers.getContractFactory("InstitutionalReserveAutomationKeeper");
-    const keeper = await KeeperFactory.deploy(await mockBridge.getAddress(), [assetA, assetB]);
+    const keeper = await KeeperFactory.deploy(await mockBridge.getAddress(), [assetA, assetB], owner.address);
     await keeper.waitForDeployment();
 
     // Disable one asset to ensure keeper only invokes monitorReserve for enabled assets.
@@ -31,6 +32,7 @@ describe("InstitutionalReserveAutomationKeeper", function () {
   });
 
   it("emits ReserveMonitorFailed and continues processing when one asset monitor reverts", async function () {
+    const [owner] = await ethers.getSigners();
     const MockBridgeFactory = await ethers.getContractFactory("MockInstitutionalBridgeMonitor");
     const mockBridge = await MockBridgeFactory.deploy();
     await mockBridge.waitForDeployment();
@@ -39,7 +41,7 @@ describe("InstitutionalReserveAutomationKeeper", function () {
     const assetB = ethers.id("DDSC");
 
     const KeeperFactory = await ethers.getContractFactory("InstitutionalReserveAutomationKeeper");
-    const keeper = await KeeperFactory.deploy(await mockBridge.getAddress(), [assetA, assetB]);
+    const keeper = await KeeperFactory.deploy(await mockBridge.getAddress(), [assetA, assetB], owner.address);
     await keeper.waitForDeployment();
 
     await (await mockBridge.setShouldRevert(assetA, true)).wait();
@@ -56,5 +58,26 @@ describe("InstitutionalReserveAutomationKeeper", function () {
     expect(await mockBridge.monitorCallsByAsset(assetB)).to.equal(1n);
     expect(await mockBridge.monitorCallCount()).to.equal(1n);
     expect(await mockBridge.lastMonitoredAssetId()).to.equal(assetB);
+  });
+
+  it("assigns the configured owner at deployment and blocks deployer bootstrap control", async function () {
+    const [deployer, governance] = await ethers.getSigners();
+    const MockBridgeFactory = await ethers.getContractFactory("MockInstitutionalBridgeMonitor");
+    const mockBridge = await MockBridgeFactory.deploy();
+    await mockBridge.waitForDeployment();
+
+    const assetA = ethers.id("USDX");
+    const KeeperFactory = await ethers.getContractFactory("InstitutionalReserveAutomationKeeper");
+    const keeper = await KeeperFactory.deploy(await mockBridge.getAddress(), [assetA], governance.address);
+    await keeper.waitForDeployment();
+
+    expect(await keeper.owner()).to.equal(governance.address);
+    await expect(keeper.connect(deployer).setMaxAssetsPerRun(8)).to.be.revertedWithCustomError(
+      keeper,
+      "Unauthorized",
+    );
+    await expect(keeper.connect(governance).setMaxAssetsPerRun(8))
+      .to.emit(keeper, "MaxAssetsPerRunUpdated")
+      .withArgs(16n, 8n);
   });
 });

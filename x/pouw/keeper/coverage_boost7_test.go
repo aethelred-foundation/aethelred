@@ -669,7 +669,7 @@ func TestCB7_IsRegisteredMeasurement_NotRegistered(t *testing.T) {
 // =============================================================================
 
 func TestCB7_RevokeTrustedMeasurement_NotCommittee(t *testing.T) {
-	k, ctx := newTestKeeper(t)
+	k, ctx := newCommitteeTestKeeper(t, defaultCommitteeValidators())
 	err := k.RevokeTrustedMeasurementBySecurityCommittee(ctx, cb7Bech32("nobody"), "aws-nitro", cb7ValidHex64())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not in security committee")
@@ -1008,7 +1008,7 @@ func TestCB7_UpdateParams_Unauthorized(t *testing.T) {
 func TestCB7_UpdateParams_Success(t *testing.T) {
 	k, ctx := newTestKeeper(t)
 	params := types.DefaultParams()
-	params.ConsensusThreshold = 80
+	params.VerificationReward = "200uaethel"
 	msg := &keeper.MsgUpdateParams{Authority: k.GetAuthority(), Params: *params}
 	_, err := keeper.UpdateParamsForTest(k, ctx, msg)
 	require.NoError(t, err)

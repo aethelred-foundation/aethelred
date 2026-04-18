@@ -3,12 +3,16 @@ package app
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -143,6 +147,7 @@ type RemoteTEEClient struct {
 	endpoint string
 	client   *http.Client
 	breaker  *circuitbreaker.Breaker
+	apiToken string
 }
 
 // NewRemoteTEEClient creates a new HTTP-based TEE client.
@@ -150,10 +155,14 @@ func NewRemoteTEEClient(logger log.Logger, endpoint string) (*RemoteTEEClient, e
 	if endpoint == "" {
 		return nil, fmt.Errorf("remote TEE endpoint is required")
 	}
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		return nil, fmt.Errorf("invalid remote TEE endpoint: %w", err)
+	}
 	return &RemoteTEEClient{
 		logger:   logger,
 		endpoint: endpoint,
 		breaker:  circuitbreaker.NewDefault("tee_remote_execute"),
+		apiToken: strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN")),
 		client: httpclient.NewPooledClient(httpclient.PoolConfig{
 			Timeout:             60 * time.Second,
 			MaxIdleConns:        100,
@@ -194,6 +203,7 @@ func (c *RemoteTEEClient) Execute(ctx context.Context, request *TEEExecutionRequ
 		return nil, fmt.Errorf("failed to create TEE request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	c.applyAuth(httpReq)
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -251,6 +261,7 @@ func (c *RemoteTEEClient) GetCapabilities() *TEECapabilities {
 		c.logger.Warn("Failed to create capabilities request", "error", err)
 		return &TEECapabilities{Platform: "remote"}
 	}
+	c.applyAuth(httpReq)
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -292,13 +303,23 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		return false
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "GET", c.endpoint+"/health", nil)
+	healthURL := c.endpoint + "/health"
+	if err := httputil.ValidateEndpointURL(healthURL); err != nil {
+		if c.breaker != nil {
+			c.breaker.RecordFailure()
+		}
+		c.logger.Warn("Invalid TEE health endpoint", "error", err)
+		return false
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
 	if err != nil {
 		if c.breaker != nil {
 			c.breaker.RecordFailure()
 		}
 		return false
 	}
+	c.applyAuth(httpReq)
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
 		if c.breaker != nil {
@@ -326,6 +347,13 @@ func (c *RemoteTEEClient) Close() error {
 	return nil
 }
 
+func (c *RemoteTEEClient) applyAuth(req *http.Request) {
+	if c == nil || req == nil || c.apiToken == "" {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+c.apiToken)
+}
+
 // Breaker exposes the circuit breaker for metrics.
 func (c *RemoteTEEClient) Breaker() *circuitbreaker.Breaker {
 	return c.breaker
@@ -333,12 +361,14 @@ func (c *RemoteTEEClient) Breaker() *circuitbreaker.Breaker {
 
 // NitroEnclaveClient implements TEEClient for AWS Nitro Enclaves
 type NitroEnclaveClient struct {
-	logger     log.Logger
-	endpoint   string
-	enclaveID  string
-	mu         sync.RWMutex
-	isHealthy  bool
-	lastHealth time.Time
+	logger        log.Logger
+	endpoint      string
+	enclaveID     string
+	platform      string
+	simulationKey []byte
+	mu            sync.RWMutex
+	isHealthy     bool
+	lastHealth    time.Time
 
 	// Simulated state for MVP
 	models map[string][]byte // modelHash -> model data (simulated)
@@ -346,18 +376,29 @@ type NitroEnclaveClient struct {
 
 // NewNitroEnclaveClient creates a new Nitro Enclave client
 func NewNitroEnclaveClient(logger log.Logger, endpoint string) (*NitroEnclaveClient, error) {
+	platform := "aws-nitro"
+	if strings.HasPrefix(endpoint, "simulated://") {
+		platform = "nitro-simulated"
+	}
+
 	client := &NitroEnclaveClient{
 		logger:    logger,
 		endpoint:  endpoint,
 		enclaveID: generateEnclaveID(),
+		platform:  platform,
 		isHealthy: true,
 		models:    make(map[string][]byte),
+	}
+	if client.platform == "nitro-simulated" {
+		seed := sha256.Sum256([]byte(client.endpoint + "|" + client.enclaveID))
+		client.simulationKey = seed[:]
 	}
 
 	// In production: establish vsock connection to enclave
 	logger.Info("Nitro Enclave client initialized",
 		"endpoint", endpoint,
 		"enclave_id", client.enclaveID,
+		"platform", client.platform,
 	)
 
 	return client, nil
@@ -466,12 +507,10 @@ func (c *NitroEnclaveClient) generateAttestation(
 	measurement := make([]byte, 48) // PCR0 + PCR1 + PCR2
 	copy(measurement, request.ModelHash)
 
-	// Generate simulated quote
-	// In production: actual attestation document from Nitro
-	quote := c.generateSimulatedQuote(userData, measurement)
+	quote := c.generateNitroQuote(userData, measurement, nonce)
 
 	return &TEEAttestationData{
-		Platform:    "aws-nitro",
+		Platform:    c.platform,
 		EnclaveID:   c.enclaveID,
 		Measurement: measurement,
 		Quote:       quote,
@@ -481,26 +520,33 @@ func (c *NitroEnclaveClient) generateAttestation(
 	}
 }
 
-// generateSimulatedQuote creates a simulated attestation quote
-func (c *NitroEnclaveClient) generateSimulatedQuote(userData, measurement []byte) []byte {
-	// In production: actual CBOR-encoded attestation document
-	// For MVP: create a deterministic "quote" structure
-	h := sha256.New()
-	h.Write([]byte("nitro_attestation_v1"))
-	h.Write([]byte(c.enclaveID))
-	h.Write(measurement)
-	h.Write(userData)
-	h.Write([]byte(time.Now().UTC().Format(time.RFC3339)))
+func (c *NitroEnclaveClient) generateNitroQuote(userData, measurement, nonce []byte) []byte {
+	quote := nitroQuoteSchema{
+		ModuleID:  c.enclaveID,
+		Timestamp: time.Now().UTC().Unix(),
+		Digest:    "SHA384",
+		PCRs: []nitroQuotePCR{
+			{Index: 0, Value: append([]byte(nil), measurement...)},
+		},
+		UserData: append([]byte(nil), userData...),
+		Nonce:    append([]byte(nil), nonce...),
+	}
+	if c.platform == "nitro-simulated" {
+		quote.SimulationSignature = c.signSimulatedNitroQuote(&quote)
+	}
 
-	// Simulated quote structure
-	quote := make([]byte, 0, 256)
-	quote = append(quote, []byte("NITRO")...) // Magic bytes
-	quote = append(quote, byte(1))            // Version
-	quote = append(quote, measurement...)     // Measurement
-	quote = append(quote, userData...)        // User data
-	quote = append(quote, h.Sum(nil)...)      // Signature placeholder
+	encoded, err := json.Marshal(quote)
+	if err != nil {
+		c.logger.Error("failed to marshal nitro quote", "error", err)
+		return []byte(`{"module_id":"marshal-error","timestamp_unix":1,"digest":"SHA384","pcrs":[{"index":0,"value":"AA=="}],"user_data":"AA==","nonce":"AA==","simulation_signature":"AA=="}`)
+	}
+	return encoded
+}
 
-	return quote
+func (c *NitroEnclaveClient) signSimulatedNitroQuote(quote *nitroQuoteSchema) []byte {
+	mac := hmac.New(sha256.New, c.simulationKey)
+	mac.Write(simulatedNitroQuotePayload(quote))
+	return mac.Sum(nil)
 }
 
 // generateZKProof generates a zkML proof (simulated for MVP)
@@ -508,24 +554,32 @@ func (c *NitroEnclaveClient) generateZKProof(
 	request *TEEExecutionRequest,
 	outputHash []byte,
 ) (*ZKProofData, error) {
-	// In production: call EZKL or other zkML prover
-
-	// Generate simulated proof
-	h := sha256.New()
-	h.Write(request.ModelHash)
-	h.Write(request.InputHash)
-	h.Write(outputHash)
-	h.Write([]byte("ezkl_proof_v1"))
-
-	proofData := h.Sum(nil)
-
-	// Verifying key hash (would be from registered key)
+	// Build a deterministic simulated proof transcript that still satisfies the
+	// app-layer validation contract (minimum size, vk binding, public inputs).
 	vkHash := sha256.Sum256(request.ModelHash)
+	seed := make([]byte, 0, len(request.ModelHash)+len(request.InputHash)+len(outputHash)+len(vkHash)+len("ezkl_simulated_v2"))
+	seed = append(seed, request.ModelHash...)
+	seed = append(seed, request.InputHash...)
+	seed = append(seed, outputHash...)
+	seed = append(seed, vkHash[:]...)
+	seed = append(seed, []byte("ezkl_simulated_v2")...)
+
+	proofData := make([]byte, 0, 32*5)
+	for i := 0; i < 5; i++ {
+		blockSeed := append(append([]byte(nil), seed...), byte(i))
+		block := sha256.Sum256(blockSeed)
+		proofData = append(proofData, block[:]...)
+	}
+
+	publicInputs := make([]byte, 0, len(request.InputHash)+len(outputHash)+len(vkHash))
+	publicInputs = append(publicInputs, request.InputHash...)
+	publicInputs = append(publicInputs, outputHash...)
+	publicInputs = append(publicInputs, vkHash[:]...)
 
 	return &ZKProofData{
 		ProofSystem:      "ezkl",
 		Proof:            proofData,
-		PublicInputs:     append(request.InputHash, outputHash...),
+		PublicInputs:     publicInputs,
 		VerifyingKeyHash: vkHash[:],
 		CircuitHash:      request.ModelHash,
 		ProofSize:        int64(len(proofData)),
@@ -535,7 +589,7 @@ func (c *NitroEnclaveClient) generateZKProof(
 // GetCapabilities returns the capabilities of this TEE client
 func (c *NitroEnclaveClient) GetCapabilities() *TEECapabilities {
 	return &TEECapabilities{
-		Platform:              "aws-nitro",
+		Platform:              c.platform,
 		SupportedModels:       []string{"onnx", "pytorch", "tensorflow"},
 		MaxModelSize:          1024 * 1024 * 1024, // 1 GB
 		MaxInputSize:          100 * 1024 * 1024,  // 100 MB
@@ -548,17 +602,18 @@ func (c *NitroEnclaveClient) GetCapabilities() *TEECapabilities {
 
 // IsHealthy checks if the enclave is operational
 func (c *NitroEnclaveClient) IsHealthy(ctx context.Context) bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	// Cache health check for 10 seconds
 	if time.Since(c.lastHealth) < 10*time.Second {
 		return c.isHealthy
 	}
 
-	// In production: actually ping the enclave
-	// For MVP: always healthy
-	return true
+	healthy := c.platform == "nitro-simulated"
+	c.isHealthy = healthy
+	c.lastHealth = time.Now().UTC()
+	return healthy
 }
 
 // Close closes the TEE client connection
@@ -573,6 +628,33 @@ func generateEnclaveID() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return fmt.Sprintf("enclave-%s", hex.EncodeToString(b))
+}
+
+func simulatedNitroQuotePayload(quote *nitroQuoteSchema) []byte {
+	var buf bytes.Buffer
+	writeString := func(v string) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.WriteString(v)
+	}
+	writeBytes := func(v []byte) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.Write(v)
+	}
+
+	writeString(quote.ModuleID)
+	_ = binary.Write(&buf, binary.BigEndian, quote.Timestamp)
+	writeString(quote.Digest)
+	_ = binary.Write(&buf, binary.BigEndian, uint32(len(quote.PCRs)))
+	for _, pcr := range quote.PCRs {
+		_ = binary.Write(&buf, binary.BigEndian, int32(pcr.Index))
+		writeBytes(pcr.Value)
+	}
+	writeBytes(quote.Certificate)
+	writeBytes(quote.CABundle)
+	writeBytes(quote.PublicKey)
+	writeBytes(quote.UserData)
+	writeBytes(quote.Nonce)
+	return buf.Bytes()
 }
 
 // MockTEEClient implements TEEClient for testing

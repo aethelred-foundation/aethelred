@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	cryptoRand "crypto/rand"
 	"fmt"
 	"time"
@@ -263,6 +264,22 @@ func (app *AethelredApp) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHan
 			return reject(), nil
 		}
 
+		if voteExt.Height != req.Height {
+			app.Logger().Error("Vote extension height mismatch",
+				"request_height", req.Height,
+				"extension_height", voteExt.Height,
+			)
+			return reject(), nil
+		}
+
+		if !bytes.Equal(voteExt.ValidatorAddress, req.ValidatorAddress) {
+			app.Logger().Error("Vote extension validator identity mismatch",
+				"request_validator_address", fmt.Sprintf("%X", req.ValidatorAddress),
+				"extension_validator_address", fmt.Sprintf("%X", voteExt.ValidatorAddress),
+			)
+			return reject(), nil
+		}
+
 		// Validate the vote extension using mode-appropriate validation.
 		// Strict mode rejects unsigned extensions, simulated TEE, missing hashes.
 		now, ok := app.lastBlockTime(ctx)
@@ -491,7 +508,7 @@ func (app *AethelredApp) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// to prevent a malicious proposer from flooding ProcessProposal with
 		// expensive-to-verify payloads.
 		const (
-			maxInjectedTxsPerBlock = 50  // PR-17: bound O(n) verification work
+			maxInjectedTxsPerBlock = 50              // PR-17: bound O(n) verification work
 			maxTotalProofBytes     = 5 * 1024 * 1024 // H-4: 5MB total proof budget per block
 		)
 		injectedCount := 0

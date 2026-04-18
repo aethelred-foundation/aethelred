@@ -138,6 +138,14 @@ func TestMsgAndQueryServers(t *testing.T) {
 	})
 	require.ErrorContains(t, err, "unauthorized")
 
+	// Module authority must use the governed revocation workflow.
+	_, err = msgServer.RevokeSeal(wrappedCtx, &types.MsgRevokeSeal{
+		Authority: k.GetAuthority(),
+		SealId:    createResp.SealId,
+		Reason:    "policy",
+	})
+	require.ErrorContains(t, err, "governed revocation workflow")
+
 	// Creator can revoke.
 	_, err = msgServer.RevokeSeal(wrappedCtx, &types.MsgRevokeSeal{
 		Authority: msg.Creator,

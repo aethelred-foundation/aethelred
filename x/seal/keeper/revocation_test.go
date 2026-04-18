@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"cosmossdk.io/log"
 
@@ -49,7 +50,7 @@ func TestRevocationRequestAuthorization(t *testing.T) {
 	}
 }
 
-func TestRevocationAutoApproveAdmin(t *testing.T) {
+func TestRevocationRequesterAuthorityRecordsInitialApproval(t *testing.T) {
 	k := NewKeeper(nil, nil, "authority")
 	ctx := newSDKContext()
 	rm := NewRevocationManager(log.NewNopLogger(), &k, DefaultRevocationConfig())
@@ -65,8 +66,19 @@ func TestRevocationAutoApproveAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected request success, got %v", err)
 	}
-	if resp.Status != RevocationStatusApproved {
-		t.Fatalf("expected approved status")
+	if resp.Status != RevocationStatusPending {
+		t.Fatalf("expected pending status until a second authority approval is recorded")
+	}
+
+	stored, err := rm.GetRequest(resp.RequestID)
+	if err != nil {
+		t.Fatalf("expected stored request, got %v", err)
+	}
+	if len(stored.Approvals) != 1 {
+		t.Fatalf("expected requester approval to be recorded")
+	}
+	if stored.ProcessedAt != nil {
+		t.Fatalf("expected request to remain unprocessed before quorum is met")
 	}
 }
 
@@ -75,6 +87,14 @@ func TestRevocationValidateRequest(t *testing.T) {
 	longReason := strings.Repeat("x", rm.config.MaxRevocationReason+1)
 	if err := rm.validateRevocationRequest(context.Background(), &RevocationRequest{ReasonDetails: longReason}); err == nil {
 		t.Fatalf("expected error for long reason")
+	}
+	if err := rm.validateRevocationRequest(context.Background(), &RevocationRequest{
+		SealID:    "seal",
+		Requester: "requester",
+		Reason:    RevocationReasonLegalOrder,
+		Emergency: true,
+	}); err == nil {
+		t.Fatalf("expected emergency request creation through the normal path to fail")
 	}
 }
 
@@ -90,6 +110,12 @@ func TestRevocationRevokeSeal(t *testing.T) {
 		t.Fatalf("expected unauthorized error")
 	}
 
+	admin := RevocationAuthority{Address: testAccAddress(10), Level: AuthorityLevelAdmin}
+	_ = rm.RegisterAuthority(admin)
+	if _, err := rm.RevokeSeal(ctx, seal.Id, admin.Address, RevocationReasonFraud, "details"); err == nil {
+		t.Fatalf("expected direct authority revoke to be rejected")
+	}
+
 	_, err := rm.RevokeSeal(ctx, seal.Id, seal.RequestedBy, RevocationReasonFraud, "details")
 	if err != nil {
 		t.Fatalf("expected revocation success, got %v", err)
@@ -100,7 +126,68 @@ func TestRevocationRevokeSeal(t *testing.T) {
 	}
 }
 
-func TestRevocationEmergencyAndBatch(t *testing.T) {
+func TestRevocationApproveAndExecuteStoredRequest(t *testing.T) {
+	k := NewKeeper(nil, nil, "authority")
+	ctx := newSDKContext()
+	cfg := DefaultRevocationConfig()
+	cfg.MinDisputePeriod = 0
+	cfg.RequiredAuthorityThreshold = 2
+	rm := NewRevocationManager(log.NewNopLogger(), &k, cfg)
+
+	adminA := RevocationAuthority{Address: testAccAddress(11), Level: AuthorityLevelAdmin}
+	adminB := RevocationAuthority{Address: testAccAddress(12), Level: AuthorityLevelAdmin}
+	_ = rm.RegisterAuthority(adminA)
+	_ = rm.RegisterAuthority(adminB)
+
+	seal := newSealForTest(30)
+	_ = k.SetSeal(context.Background(), seal)
+
+	req, err := rm.RequestRevocation(ctx, &RevocationRequest{
+		SealID:    seal.Id,
+		Requester: adminA.Address,
+		Reason:    RevocationReasonLegalOrder,
+	})
+	if err != nil {
+		t.Fatalf("expected request success, got %v", err)
+	}
+	if req.Status != RevocationStatusPending {
+		t.Fatalf("expected pending status before threshold is met")
+	}
+
+	if _, err := rm.ExecuteRevocation(ctx, req.RequestID); err == nil {
+		t.Fatalf("expected execute to fail before approval threshold is met")
+	}
+
+	if err := rm.ApproveRevocation(ctx, req.RequestID, adminB.Address, "co-signed"); err != nil {
+		t.Fatalf("expected approval success, got %v", err)
+	}
+
+	stored, err := rm.GetRequest(req.RequestID)
+	if err != nil {
+		t.Fatalf("expected stored request, got %v", err)
+	}
+	if stored.Status != RevocationStatusApproved {
+		t.Fatalf("expected approved status after threshold is met")
+	}
+
+	result, err := rm.ExecuteRevocation(ctx, req.RequestID)
+	if err != nil {
+		t.Fatalf("expected execute success, got %v", err)
+	}
+	if !result.Success {
+		t.Fatalf("expected successful revocation result")
+	}
+
+	updatedSeal, err := k.GetSeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected updated seal, got %v", err)
+	}
+	if updatedSeal.Status != types.SealStatusRevoked {
+		t.Fatalf("expected seal to be revoked")
+	}
+}
+
+func TestRevocationEmergencyQuorumAndBatch(t *testing.T) {
 	k := NewKeeper(nil, nil, "authority")
 	ctx := newSDKContext()
 	rm := NewRevocationManager(log.NewNopLogger(), &k, DefaultRevocationConfig())
@@ -112,50 +199,164 @@ func TestRevocationEmergencyAndBatch(t *testing.T) {
 		t.Fatalf("expected unauthorized emergency revoke")
 	}
 
-	auth := RevocationAuthority{Address: testAccAddress(10), Level: AuthorityLevelEmergency}
-	_ = rm.RegisterAuthority(auth)
+	emergencyA := RevocationAuthority{Address: testAccAddress(10), Level: AuthorityLevelEmergency}
+	emergencyB := RevocationAuthority{Address: testAccAddress(11), Level: AuthorityLevelEmergency}
+	admin := RevocationAuthority{Address: testAccAddress(12), Level: AuthorityLevelAdmin}
+	_ = rm.RegisterAuthority(emergencyA)
+	_ = rm.RegisterAuthority(emergencyB)
+	_ = rm.RegisterAuthority(admin)
 
-	if _, err := rm.EmergencyRevoke(ctx, seal.Id, auth.Address, RevocationReasonLegalOrder, "justification"); err != nil {
-		t.Fatalf("expected emergency revoke success, got %v", err)
+	if _, err := rm.EmergencyRevoke(ctx, seal.Id, emergencyA.Address, RevocationReasonLegalOrder, ""); err == nil {
+		t.Fatalf("expected missing emergency justification to fail")
+	}
+
+	if _, err := rm.EmergencyRevoke(ctx, seal.Id, emergencyA.Address, RevocationReasonOther, "justification"); err == nil {
+		t.Fatalf("expected non-emergency reason to fail")
+	}
+
+	firstResult, err := rm.EmergencyRevoke(ctx, seal.Id, emergencyA.Address, RevocationReasonLegalOrder, "justification")
+	if err != nil {
+		t.Fatalf("expected first emergency approval to be recorded, got %v", err)
+	}
+	if firstResult.Success {
+		t.Fatalf("expected first emergency approval to remain pending until quorum is met")
+	}
+	if !strings.Contains(firstResult.Error, "awaiting") {
+		t.Fatalf("expected pending emergency result to report quorum wait, got %q", firstResult.Error)
+	}
+
+	req, err := rm.GetRequest(firstResult.RequestID)
+	if err != nil {
+		t.Fatalf("expected emergency request to be stored, got %v", err)
+	}
+	if !req.Emergency {
+		t.Fatalf("expected stored request to be marked emergency")
+	}
+	if len(req.Approvals) != 1 {
+		t.Fatalf("expected exactly one emergency approval after first signer")
+	}
+
+	if err := rm.ApproveRevocation(ctx, req.RequestID, admin.Address, "not enough"); err == nil {
+		t.Fatalf("expected non-emergency authority to be rejected for emergency approvals")
+	}
+
+	if _, err := rm.FileDispute(ctx, req.RequestID, "user", "block it"); err == nil {
+		t.Fatalf("expected emergency requests to reject dispute workflow")
+	}
+
+	if _, err := rm.EmergencyRevoke(ctx, seal.Id, emergencyA.Address, RevocationReasonLegalOrder, "justification"); err == nil {
+		t.Fatalf("expected duplicate emergency approval to fail")
+	}
+
+	secondResult, err := rm.EmergencyRevoke(ctx, seal.Id, emergencyB.Address, RevocationReasonLegalOrder, "justification")
+	if err != nil {
+		t.Fatalf("expected emergency quorum execution, got %v", err)
+	}
+	if !secondResult.Success {
+		t.Fatalf("expected second emergency approval to execute revocation, got %+v", secondResult)
+	}
+
+	updatedSeal, err := k.GetSeal(context.Background(), seal.Id)
+	if err != nil {
+		t.Fatalf("expected revoked seal lookup, got %v", err)
+	}
+	if updatedSeal.Status != types.SealStatusRevoked {
+		t.Fatalf("expected seal to be revoked after emergency quorum execution")
 	}
 
 	seal2 := newSealForTest(5)
 	_ = k.SetSeal(context.Background(), seal2)
 
-	results, err := rm.BatchRevoke(ctx, []string{seal2.Id, "missing"}, auth.Address, RevocationReasonOther, "details")
+	if _, err := rm.BatchRevoke(ctx, []string{seal2.Id}, emergencyA.Address, RevocationReasonLegalOrder, ""); err == nil {
+		t.Fatalf("expected emergency batch revoke without justification to fail")
+	}
+
+	results, err := rm.BatchRevoke(ctx, []string{seal2.Id, "missing"}, emergencyA.Address, RevocationReasonLegalOrder, "details")
 	if err != nil {
 		t.Fatalf("unexpected batch revoke error: %v", err)
 	}
 	if len(results) != 2 {
 		t.Fatalf("expected 2 results")
 	}
+	if results[0].Success {
+		t.Fatalf("expected first batch emergency approval to remain pending")
+	}
 	if results[1].Success {
 		t.Fatalf("expected failure for missing seal")
+	}
+
+	secondBatchResults, err := rm.BatchRevoke(ctx, []string{seal2.Id}, emergencyB.Address, RevocationReasonLegalOrder, "details")
+	if err != nil {
+		t.Fatalf("unexpected second batch emergency approval error: %v", err)
+	}
+	if len(secondBatchResults) != 1 || !secondBatchResults[0].Success {
+		t.Fatalf("expected second batch approval to execute revocation, got %+v", secondBatchResults)
 	}
 }
 
 func TestRevocationDisputeFlow(t *testing.T) {
-	rm := NewRevocationManager(log.NewNopLogger(), nil, DefaultRevocationConfig())
+	k := NewKeeper(nil, nil, "authority")
 	ctx := newSDKContext()
+	cfg := DefaultRevocationConfig()
+	cfg.MinDisputePeriod = time.Hour
+	rm := NewRevocationManager(log.NewNopLogger(), &k, cfg)
 
-	dispute, err := rm.FileDispute(ctx, "req-1", "user", "reason")
+	auth := RevocationAuthority{Address: "resolver", Level: AuthorityLevelAdmin}
+	_ = rm.RegisterAuthority(auth)
+
+	seal := newSealForTest(40)
+	_ = k.SetSeal(context.Background(), seal)
+
+	req, err := rm.RequestRevocation(ctx, &RevocationRequest{
+		SealID:    seal.Id,
+		Requester: auth.Address,
+		Reason:    RevocationReasonLegalOrder,
+	})
+	if err != nil {
+		t.Fatalf("expected request success, got %v", err)
+	}
+
+	dispute, err := rm.FileDispute(ctx, req.RequestID, "user", "reason")
 	if err != nil {
 		t.Fatalf("expected dispute created, got %v", err)
+	}
+
+	stored, err := rm.GetRequest(req.RequestID)
+	if err != nil {
+		t.Fatalf("expected stored request")
+	}
+	if stored.Status != RevocationStatusDisputed {
+		t.Fatalf("expected disputed request status")
 	}
 
 	if _, err := rm.GetDispute(dispute.DisputeID); err != nil {
 		t.Fatalf("expected dispute lookup")
 	}
 
-	if err := rm.ResolveDispute(ctx, dispute.DisputeID, "resolver", true, "ok"); err == nil {
-		t.Fatalf("expected unauthorized resolution")
+	if _, err := rm.ExecuteRevocation(ctx, req.RequestID); err == nil {
+		t.Fatalf("expected execution to fail while dispute is unresolved")
 	}
 
-	auth := RevocationAuthority{Address: "resolver", Level: AuthorityLevelAdmin}
-	_ = rm.RegisterAuthority(auth)
-
-	if err := rm.ResolveDispute(ctx, dispute.DisputeID, "resolver", true, "ok"); err != nil {
+	if err := rm.ResolveDispute(ctx, dispute.DisputeID, "resolver", true, "cancel"); err != nil {
 		t.Fatalf("expected resolve success, got %v", err)
+	}
+
+	stored, err = rm.GetRequest(req.RequestID)
+	if err != nil {
+		t.Fatalf("expected stored request")
+	}
+	if stored.Status != RevocationStatusCancelled {
+		t.Fatalf("expected cancelled request after upheld dispute")
+	}
+}
+
+func TestRevocationDisputeResolutionRequiresAuthority(t *testing.T) {
+	rm := NewRevocationManager(log.NewNopLogger(), nil, DefaultRevocationConfig())
+	ctx := newSDKContext()
+	rm.disputes["disp-1"] = &RevocationDispute{DisputeID: "disp-1", RequestID: "req-1", Status: DisputeStatusOpen}
+
+	if err := rm.ResolveDispute(ctx, "disp-1", "resolver", true, "ok"); err == nil {
+		t.Fatalf("expected unauthorized resolution")
 	}
 }
 

@@ -365,40 +365,6 @@ func (ps *ProverService) generateProofInternal(ctx context.Context, req *ProofRe
 
 // simulateProofGeneration creates a simulated but valid-looking proof
 func (ps *ProverService) simulateProofGeneration(req *ProofRequest) ([]byte, *PublicInputs, error) {
-	// Create deterministic "proof" based on inputs
-	// This ensures all validators generate the same proof for the same input
-	proofInput := bytes.NewBuffer(nil)
-	proofInput.Write(req.ModelHash)
-	proofInput.Write(req.InputHash)
-	proofInput.Write(req.OutputHash)
-	proofInput.Write(req.CircuitHash)
-	proofInput.Write([]byte("EZKL_PROOF_V1"))
-
-	// Generate proof bytes
-	proofHash := sha256.Sum256(proofInput.Bytes())
-
-	// Create a proof structure that mimics EZKL output
-	simulatedProof := &SimulatedEZKLProof{
-		Protocol: "halo2",
-		Curve:    "bn254",
-		ProofCommitments: [][]byte{
-			proofHash[:16],
-			proofHash[16:],
-		},
-		Evaluations: [][]byte{
-			sha256Hash(append(proofHash[:], []byte("eval1")...)),
-			sha256Hash(append(proofHash[:], []byte("eval2")...)),
-		},
-		Challenges: [][]byte{
-			sha256Hash(append(proofHash[:], []byte("challenge")...)),
-		},
-	}
-
-	proof, err := json.Marshal(simulatedProof)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal proof: %w", err)
-	}
-
 	// Create public inputs
 	publicInputs := &PublicInputs{
 		ModelCommitment:  sha256Hash(req.ModelHash),
@@ -408,6 +374,16 @@ func (ps *ProverService) simulateProofGeneration(req *ProofRequest) ([]byte, *Pu
 			req.InputHash,
 			req.OutputHash,
 		},
+	}
+
+	simulatedProof, err := buildSimulatedEZKLProof(publicInputs, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	proof, err := json.Marshal(simulatedProof)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal proof: %w", err)
 	}
 
 	return proof, publicInputs, nil
@@ -452,8 +428,110 @@ func (ps *ProverService) VerifyProof(ctx context.Context, proof []byte, publicIn
 		return false, fmt.Errorf("missing proof commitments")
 	}
 
-	// In production: call halo2 verifier
+	expectedProof, err := buildSimulatedEZKLProof(publicInputs, verifyingKey)
+	if err != nil {
+		return false, err
+	}
+	if !simulatedEZKLProofEqual(&simProof, expectedProof) {
+		return false, fmt.Errorf("simulated proof binding mismatch")
+	}
+
 	return true, nil
+}
+
+func buildSimulatedEZKLProof(publicInputs *PublicInputs, verifyingKey []byte) (*SimulatedEZKLProof, error) {
+	transcript, err := canonicalSimulatedProofTranscript(publicInputs, verifyingKey)
+	if err != nil {
+		return nil, err
+	}
+	proofHash := sha256.Sum256(append(transcript, []byte("EZKL_PROOF_V2")...))
+
+	return &SimulatedEZKLProof{
+		Protocol: "halo2",
+		Curve:    "bn254",
+		ProofCommitments: [][]byte{
+			proofHash[:16],
+			proofHash[16:],
+		},
+		Evaluations: [][]byte{
+			sha256Hash(append(proofHash[:], []byte("eval1")...)),
+			sha256Hash(append(proofHash[:], []byte("eval2")...)),
+		},
+		Challenges: [][]byte{
+			sha256Hash(append(proofHash[:], []byte("challenge")...)),
+		},
+	}, nil
+}
+
+func canonicalSimulatedProofTranscript(publicInputs *PublicInputs, verifyingKey []byte) ([]byte, error) {
+	if publicInputs == nil {
+		return nil, fmt.Errorf("public inputs cannot be nil")
+	}
+	if len(publicInputs.ModelCommitment) == 0 {
+		return nil, fmt.Errorf("model commitment cannot be empty")
+	}
+	if len(publicInputs.InputCommitment) == 0 {
+		return nil, fmt.Errorf("input commitment cannot be empty")
+	}
+	if len(publicInputs.OutputCommitment) == 0 {
+		return nil, fmt.Errorf("output commitment cannot be empty")
+	}
+	if len(publicInputs.Instances) == 0 {
+		return nil, fmt.Errorf("instances cannot be empty")
+	}
+
+	transcript := struct {
+		ModelCommitment  []byte    `json:"model_commitment"`
+		InputCommitment  []byte    `json:"input_commitment"`
+		OutputCommitment []byte    `json:"output_commitment"`
+		ScaleFactors     []float64 `json:"scale_factors,omitempty"`
+		Instances        [][]byte  `json:"instances"`
+		VerifyingKeyHash []byte    `json:"verifying_key_hash,omitempty"`
+	}{
+		ModelCommitment:  publicInputs.ModelCommitment,
+		InputCommitment:  publicInputs.InputCommitment,
+		OutputCommitment: publicInputs.OutputCommitment,
+		ScaleFactors:     publicInputs.ScaleFactors,
+		Instances:        publicInputs.Instances,
+	}
+	if len(verifyingKey) > 0 {
+		vkHash := sha256.Sum256(verifyingKey)
+		transcript.VerifyingKeyHash = vkHash[:]
+	}
+
+	encoded, err := json.Marshal(transcript)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode simulated proof transcript: %w", err)
+	}
+	return encoded, nil
+}
+
+func simulatedEZKLProofEqual(a, b *SimulatedEZKLProof) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	if a.Protocol != b.Protocol || a.Curve != b.Curve {
+		return false
+	}
+	if !equalByteSlices2D(a.ProofCommitments, b.ProofCommitments) {
+		return false
+	}
+	if !equalByteSlices2D(a.Evaluations, b.Evaluations) {
+		return false
+	}
+	return equalByteSlices2D(a.Challenges, b.Challenges)
+}
+
+func equalByteSlices2D(a, b [][]byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !bytes.Equal(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 // CacheCircuit adds a circuit to the cache
@@ -580,7 +658,15 @@ func (ps *ProverService) CallRemoteProver(ctx context.Context, req *ProofRequest
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", ps.config.ProverEndpoint+"/prove", bytes.NewReader(reqBody))
+	proveURL := ps.config.ProverEndpoint + "/prove"
+	if err := httputil.ValidateEndpointURL(proveURL); err != nil {
+		if ps.proverBreaker != nil {
+			ps.proverBreaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid prover endpoint: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", proveURL, bytes.NewReader(reqBody))
 	if err != nil {
 		if ps.proverBreaker != nil {
 			ps.proverBreaker.RecordFailure()
@@ -647,7 +733,15 @@ func (ps *ProverService) CallRemoteVerifier(ctx context.Context, proof []byte, p
 		return false, fmt.Errorf("failed to marshal verifier payload: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", ps.config.ProverEndpoint+"/verify", bytes.NewReader(reqBody))
+	verifyURL := ps.config.ProverEndpoint + "/verify"
+	if err := httputil.ValidateEndpointURL(verifyURL); err != nil {
+		if ps.verifierBreaker != nil {
+			ps.verifierBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("invalid verifier endpoint: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", verifyURL, bytes.NewReader(reqBody))
 	if err != nil {
 		if ps.verifierBreaker != nil {
 			ps.verifierBreaker.RecordFailure()

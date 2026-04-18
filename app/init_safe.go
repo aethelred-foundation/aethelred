@@ -15,6 +15,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/spf13/cast"
 
+	"github.com/aethelred/aethelred/crypto/pqc"
 	pouwkeeper "github.com/aethelred/aethelred/x/pouw/keeper"
 )
 
@@ -116,11 +117,12 @@ func SafeInitPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
 	}
 
 	// Check if PQC libraries are available
-	pqcAvailable := checkPQCAvailability()
+	pqcAvailable := checkPQCAvailability(appOpts)
 	if !pqcAvailable {
-		logger.Warn("PQC libraries not available, falling back to classical cryptography",
+		logger.Warn("Requested PQC backend not available, falling back to classical cryptography",
 			"component", "pqc",
 			"fallback", "classical_crypto",
+			"requested_mode", resolvePQCMode(appOpts),
 		)
 		return nil // Graceful degradation - don't fail
 	}
@@ -139,15 +141,20 @@ func SafeInitPQCMode(logger log.Logger, appOpts servertypes.AppOptions) error {
 	return nil
 }
 
-// checkPQCAvailability checks if PQC libraries are available
-func checkPQCAvailability() bool {
-	// In a real implementation, this would check for the presence
-	// of required PQC libraries (e.g., liboqs bindings)
-	return true // Placeholder
+// checkPQCAvailability checks whether the requested PQC mode has the required
+// runtime/backend support in the current build.
+func checkPQCAvailability(appOpts servertypes.AppOptions) bool {
+	switch resolvePQCMode(appOpts) {
+	case "enabled", "production", "prod", "true", "1", "hybrid":
+		return pqc.IsCirclAvailable()
+	default:
+		return true
+	}
 }
 
-// SafeInitTEEClient initializes the TEE client with graceful fallback.
-// If TEE initialization fails, verification falls back to simulation mode.
+// SafeInitTEEClient initializes the TEE client with controlled fallback.
+// Only explicit dev/test TEE modes may degrade; production-facing TEE modes
+// fail closed if initialization cannot complete.
 func SafeInitTEEClient(
 	app *AethelredApp,
 	logger log.Logger,
@@ -168,8 +175,7 @@ func SafeInitTEEClient(
 	})
 
 	if err != nil {
-		// Determine if this is a critical error
-		isCritical := mode == "production" || mode == "mainnet"
+		isCritical := teeModeRequiresHealthyVerifier(mode)
 
 		initErr := &InitializationError{
 			Component:   "tee_client",
@@ -201,6 +207,15 @@ func SafeInitTEEClient(
 		"endpoint", endpoint,
 	)
 	return nil, nil
+}
+
+func teeModeRequiresHealthyVerifier(mode string) bool {
+	switch mode {
+	case "", "disabled", "mock", "simulated", "nitro-simulated":
+		return false
+	default:
+		return true
+	}
 }
 
 // getTEEMode extracts TEE mode from app options
@@ -512,7 +527,7 @@ func AssertProductionInvariants(app *AethelredApp, logger log.Logger) error {
 
 	// EV-07: Verify validator signing key is configured.
 	if app.validatorPrivKey == nil {
-		logger.Warn("SECURITY WARNING: validator private key not configured in production build; "+
+		logger.Warn("SECURITY WARNING: validator private key not configured in production build; " +
 			"this node will not be able to sign vote extensions",
 		)
 		// Not a fatal error - non-validator nodes don't need a signing key.

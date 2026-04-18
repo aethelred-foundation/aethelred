@@ -113,6 +113,13 @@ func setupBenchKeeper(b *testing.B) (keeper.Keeper, sdk.Context) {
 			"registered_measurements_set",
 			collections.StringKey,
 		),
+		TrustedMeasurementRevocations: collections.NewMap(
+			sb,
+			collections.NewPrefix(types.TrustedMeasurementRevocationKeyPrefix),
+			"trusted_measurement_revocations",
+			collections.StringKey,
+			collections.StringValue,
+		),
 		JobCount: collections.NewItem(
 			sb,
 			collections.NewPrefix(types.JobCountKey),

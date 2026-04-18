@@ -18,7 +18,6 @@ import (
 	"time"
 
 	storetypes "cosmossdk.io/store/types"
-	"golang.org/x/crypto/sha3"
 	"github.com/btcsuite/btcd/btcec/v2"
 	btcecdsa "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -27,6 +26,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/aethelred/aethelred/x/vault/types"
 )
@@ -136,7 +136,7 @@ func registerTestEnclaveAndOperator(
 
 	// Register vendor root key for SGX platform
 	vrX, vrY := vendorRootTestPublicKey()
-	err := k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	err := k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes()))
 	// Ignore "already registered" since multiple tests may call this
@@ -151,7 +151,7 @@ func registerTestEnclaveAndOperator(
 	// Generate vendor key attestation
 	vendorR, vendorS := generateVendorKeyAttestation(t, p256X, p256Y, types.PlatformSGX)
 
-	enclaveID, err := k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	enclaveID, err := k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,
@@ -164,7 +164,7 @@ func registerTestEnclaveAndOperator(
 	require.NoError(t, err)
 
 	pubKeyHex := hex.EncodeToString(pubKey.SerializeCompressed())
-	err = k.RegisterOperator(ctx, types.OperatorRegistration{
+	err = k.RegisterOperator(ctx, "authority", types.OperatorRegistration{
 		PubKeyHex:   pubKeyHex,
 		EnclaveID:   enclaveID,
 		Description: "Test TEE Operator",
@@ -308,12 +308,14 @@ func signAttestationWithUniverse(
 
 	// Generate SGX platform evidence: 8 x 32 = 256 bytes (with rawReportHash)
 	evidence := make([]byte, 8*32)
-	copy(evidence[0:32], enclaveHash[:])       // mrenclave (from hardware report)
-	copy(evidence[32:64], signerHash[:])       // mrsigner (from hardware report)
-	copy(evidence[64:96], digest[:])           // reportData = attestation digest
-	evidence[126] = 0; evidence[127] = 1       // isvProdId = 1 (uint16 right-aligned at [96:128])
-	evidence[158] = 0; evidence[159] = 1       // isvSvn = 1 (uint16 right-aligned at [128:160])
-	copy(evidence[160:192], rawReportHash[:])  // rawReportHash (verifier computes bindingHash)
+	copy(evidence[0:32], enclaveHash[:]) // mrenclave (from hardware report)
+	copy(evidence[32:64], signerHash[:]) // mrsigner (from hardware report)
+	copy(evidence[64:96], digest[:])     // reportData = attestation digest
+	evidence[126] = 0
+	evidence[127] = 1 // isvProdId = 1 (uint16 right-aligned at [96:128])
+	evidence[158] = 0
+	evidence[159] = 1                         // isvSvn = 1 (uint16 right-aligned at [128:160])
+	copy(evidence[160:192], rawReportHash[:]) // rawReportHash (verifier computes bindingHash)
 
 	// r and s as 32-byte big-endian, left-padded
 	rBytes := sigR.Bytes()
@@ -327,7 +329,7 @@ func signAttestationWithUniverse(
 
 	// Convert btcec compact (V[1]‖R[32]‖S[32]) → Ethereum-style (R[32]‖S[32]‖V[1])
 	ethSig := make([]byte, 65)
-	copy(ethSig[0:32], compactSig[1:33])  // R
+	copy(ethSig[0:32], compactSig[1:33])   // R
 	copy(ethSig[32:64], compactSig[33:65]) // S
 	ethSig[64] = compactSig[0]             // V (27 or 28)
 
@@ -773,7 +775,7 @@ func TestApplyValidatorSelection_WrongEnclaveBinding(t *testing.T) {
 	// Generate vendor key attestation for enclave v2
 	vendorR2, vendorS2 := generateVendorKeyAttestation(t, p256X, p256Y, types.PlatformSGX)
 
-	_, err = k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err = k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclave2Hash[:]),
 		SignerHash:    hex.EncodeToString(signer2Hash[:]),
 		Platform:      types.PlatformSGX,
@@ -825,8 +827,10 @@ func TestApplyValidatorSelection_WrongEnclaveBinding(t *testing.T) {
 	copy(evidence[0:32], enclave2Hash[:])
 	copy(evidence[32:64], signer2Hash[:])
 	copy(evidence[64:96], digest[:])
-	evidence[126] = 0; evidence[127] = 1
-	evidence[158] = 0; evidence[159] = 1
+	evidence[126] = 0
+	evidence[127] = 1
+	evidence[158] = 0
+	evidence[159] = 1
 	rBytes := sigR.Bytes()
 	sBytes := sigS.Bytes()
 	copy(evidence[192-len(rBytes):192], rBytes)
@@ -920,7 +924,7 @@ func TestApplyValidatorSelection_RevokedOperator(t *testing.T) {
 
 	// Revoke the operator
 	pubKeyHex := hex.EncodeToString(privKey.PubKey().SerializeCompressed())
-	require.NoError(t, k.RevokeOperator(ctx, pubKeyHex))
+	require.NoError(t, k.RevokeOperator(ctx, "authority", pubKeyHex))
 
 	validators := testValidators()
 	blockTime := time.Now()
@@ -941,7 +945,7 @@ func TestApplyValidatorSelection_RevokedEnclave(t *testing.T) {
 	enclaveID := registerTestEnclaveAndOperator(t, k, ctx, privKey.PubKey())
 
 	// Revoke the enclave
-	require.NoError(t, k.RevokeEnclave(ctx, enclaveID))
+	require.NoError(t, k.RevokeEnclave(ctx, "authority", enclaveID))
 
 	validators := testValidators()
 	blockTime := time.Now()
@@ -1069,7 +1073,7 @@ func TestRegisterEnclave_DuplicateRejected(t *testing.T) {
 
 	// Register vendor root key
 	vrX, vrY := vendorRootTestPublicKey()
-	require.NoError(t, k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	require.NoError(t, k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes())))
 
@@ -1085,10 +1089,10 @@ func TestRegisterEnclave_DuplicateRejected(t *testing.T) {
 		VendorAttestR: vendorR,
 		VendorAttestS: vendorS,
 	}
-	_, err := k.RegisterEnclave(ctx, reg)
+	_, err := k.RegisterEnclave(ctx, "authority", reg)
 	require.NoError(t, err)
 
-	_, err = k.RegisterEnclave(ctx, reg)
+	_, err = k.RegisterEnclave(ctx, "authority", reg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "already registered")
 }
@@ -1099,7 +1103,7 @@ func TestRegisterOperator_UnregisteredEnclaveRejected(t *testing.T) {
 	privKey, err := btcec.NewPrivateKey()
 	require.NoError(t, err)
 
-	err = k.RegisterOperator(ctx, types.OperatorRegistration{
+	err = k.RegisterOperator(ctx, "authority", types.OperatorRegistration{
 		PubKeyHex:   hex.EncodeToString(privKey.PubKey().SerializeCompressed()),
 		EnclaveID:   "0000000000000000000000000000000000000000000000000000000000000000",
 		Description: "Ghost enclave",
@@ -1114,7 +1118,7 @@ func TestRegisterEnclave_MissingVendorRootKey(t *testing.T) {
 	p256X, p256Y := p256TestPublicKey()
 
 	// Don't register vendor root key — should fail
-	_, err := k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err := k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,
@@ -1135,12 +1139,12 @@ func TestRegisterEnclave_InvalidVendorAttestation(t *testing.T) {
 
 	// Register vendor root key
 	vrX, vrY := vendorRootTestPublicKey()
-	require.NoError(t, k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	require.NoError(t, k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes())))
 
 	// Try with invalid vendor attestation (wrong signature)
-	_, err := k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err := k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,
@@ -1162,7 +1166,7 @@ func TestRegisterEnclave_SelfIssuedKeyRejected(t *testing.T) {
 
 	// Register vendor root key (D=2)
 	vrX, vrY := vendorRootTestPublicKey()
-	require.NoError(t, k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	require.NoError(t, k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes())))
 
@@ -1191,7 +1195,7 @@ func TestRegisterEnclave_SelfIssuedKeyRejected(t *testing.T) {
 	r.FillBytes(rBytes)
 	s.FillBytes(sBytes)
 
-	_, err = k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err = k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,
@@ -2250,7 +2254,7 @@ func TestCircuitBreaker_unstakeThreshold(t *testing.T) {
 
 	// Unstake another 6% — should succeed but the circuit breaker should trip (>10%).
 	_, _, err = k.Unstake(ctx, testAddrAlice, 60_000_000)
-	require.NoError(t, err) // The unstake itself succeeds
+	require.NoError(t, err)          // The unstake itself succeeds
 	require.True(t, k.IsPaused(ctx)) // But the vault is now paused
 
 	ps := k.GetPauseState(ctx)
@@ -2342,7 +2346,7 @@ func TestOperatorAuditLog_recordsOnRegisterEnclave(t *testing.T) {
 	pkX, pkY := p256TestPublicKey()
 	xHex := fmt.Sprintf("%064x", pkX)
 	yHex := fmt.Sprintf("%064x", pkY)
-	require.NoError(t, k.RegisterVendorRootKey(ctx, types.PlatformSGX, xHex, yHex))
+	require.NoError(t, k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX, xHex, yHex))
 
 	// Create an enclave registration with valid vendor attestation.
 	enclaveHash, signerHash := testEnclaveHashes()
@@ -2375,7 +2379,7 @@ func TestOperatorAuditLog_recordsOnRegisterEnclave(t *testing.T) {
 		VendorAttestS:   fmt.Sprintf("%064x", attestS),
 	}
 
-	enclaveID, err := k.RegisterEnclave(ctx, reg)
+	enclaveID, err := k.RegisterEnclave(ctx, "authority", reg)
 	require.NoError(t, err)
 	require.NotEmpty(t, enclaveID)
 
@@ -2401,7 +2405,7 @@ func TestOperatorAuditLog_recordsOnRevokeEnclave(t *testing.T) {
 	data, _ := json.Marshal(reg)
 	require.NoError(t, k.RegisteredEnclaves.Set(ctx, "test-enclave-id", string(data)))
 
-	require.NoError(t, k.RevokeEnclave(ctx, "test-enclave-id"))
+	require.NoError(t, k.RevokeEnclave(ctx, "authority", "test-enclave-id"))
 
 	var foundAudit bool
 	_ = k.OperatorAuditLog.Walk(ctx, nil, func(_ string, val string) (bool, error) {
@@ -2485,15 +2489,15 @@ type conformanceValidatorVector struct {
 	Input struct {
 		Epoch      uint64 `json:"epoch"`
 		Validators []struct {
-			Address              string `json:"address"`
-			Stake                string `json:"stake"`
-			PerformanceScore     uint32 `json:"performance_score"`
+			Address               string `json:"address"`
+			Stake                 string `json:"stake"`
+			PerformanceScore      uint32 `json:"performance_score"`
 			DecentralizationScore uint32 `json:"decentralization_score"`
-			ReputationScore      uint32 `json:"reputation_score"`
-			CompositeScore       uint32 `json:"composite_score"`
-			TEEPublicKey         string `json:"tee_public_key"`
-			CommissionBps        uint32 `json:"commission_bps"`
-			Rank                 int    `json:"rank"`
+			ReputationScore       uint32 `json:"reputation_score"`
+			CompositeScore        uint32 `json:"composite_score"`
+			TEEPublicKey          string `json:"tee_public_key"`
+			CommissionBps         uint32 `json:"commission_bps"`
+			Rank                  int    `json:"rank"`
 		} `json:"validators"`
 	} `json:"input"`
 	Expected struct {
@@ -2505,10 +2509,10 @@ type conformanceValidatorVector struct {
 type conformanceRewardVector struct {
 	Name  string `json:"name"`
 	Input struct {
-		Epoch                 uint64 `json:"epoch"`
-		StakerRegistryRoot    string `json:"staker_registry_root"`
+		Epoch                  uint64 `json:"epoch"`
+		StakerRegistryRoot     string `json:"staker_registry_root"`
 		DelegationRegistryRoot string `json:"delegation_registry_root"`
-		StakerStakes          []struct {
+		StakerStakes           []struct {
 			Address     string `json:"address"`
 			Shares      string `json:"shares"`
 			DelegatedTo string `json:"delegated_to"`
@@ -2665,7 +2669,7 @@ func TestRegisterAttestationRelay(t *testing.T) {
 	yHex := hex.EncodeToString(relayY.Bytes())
 
 	// Register relay for SGX
-	err := k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test SGX Relay v1")
+	err := k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test SGX Relay v1")
 	require.NoError(t, err)
 
 	// Verify relay is active
@@ -2689,18 +2693,87 @@ func TestRegisterAttestationRelay(t *testing.T) {
 	require.Equal(t, relayY, vendorKey.Y)
 
 	// Duplicate registration must fail
-	err = k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Duplicate")
+	err = k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Duplicate")
 	require.ErrorIs(t, err, types.ErrRelayAlreadyRegistered)
 
 	// Unregistered platform returns false
 	require.False(t, k.IsRelayActive(ctx, types.PlatformNitro))
 }
 
+func TestGovernanceOnlyKeeperMethodsRequireAuthority(t *testing.T) {
+	k, ctx := setupKeeper(t)
+
+	vendorX, vendorY := vendorRootTestPublicKey()
+	vendorXHex := hex.EncodeToString(vendorX.Bytes())
+	vendorYHex := hex.EncodeToString(vendorY.Bytes())
+
+	err := k.RegisterVendorRootKey(ctx, "not-authority", types.PlatformSGX, vendorXHex, vendorYHex)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+	require.NoError(t, k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX, vendorXHex, vendorYHex))
+
+	platformKeyX, platformKeyY := p256TestPublicKey()
+	platformKeyXHex := hex.EncodeToString(platformKeyX.FillBytes(make([]byte, 32)))
+	platformKeyYHex := hex.EncodeToString(platformKeyY.FillBytes(make([]byte, 32)))
+	attestRHex, attestSHex := generateVendorKeyAttestation(t, platformKeyX, platformKeyY, types.PlatformSGX)
+	enclaveHash := sha256.Sum256([]byte("governance-enclave"))
+	signerHash := sha256.Sum256([]byte("governance-signer"))
+
+	reg := types.EnclaveRegistration{
+		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
+		SignerHash:    hex.EncodeToString(signerHash[:]),
+		Platform:      types.PlatformSGX,
+		PlatformKeyX:  platformKeyXHex,
+		PlatformKeyY:  platformKeyYHex,
+		VendorAttestR: attestRHex,
+		VendorAttestS: attestSHex,
+	}
+
+	_, err = k.RegisterEnclave(ctx, "not-authority", reg)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+	enclaveID, err := k.RegisterEnclave(ctx, "authority", reg)
+	require.NoError(t, err)
+
+	operatorPriv, _ := btcec.PrivKeyFromBytes([]byte{
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	})
+	operatorReg := types.OperatorRegistration{
+		PubKeyHex: hex.EncodeToString(operatorPriv.PubKey().SerializeCompressed()),
+		EnclaveID: enclaveID,
+	}
+	err = k.RegisterOperator(ctx, "not-authority", operatorReg)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+	require.NoError(t, k.RegisterOperator(ctx, "authority", operatorReg))
+	require.ErrorIs(t, k.RevokeOperator(ctx, "not-authority", operatorReg.PubKeyHex), types.ErrUnauthorized)
+	require.ErrorIs(t, k.RevokeEnclave(ctx, "not-authority", enclaveID), types.ErrUnauthorized)
+
+	relayX, relayY := relayTestPublicKey()
+	relayXHex := hex.EncodeToString(relayX.Bytes())
+	relayYHex := hex.EncodeToString(relayY.Bytes())
+
+	err = k.RegisterAttestationRelay(ctx, "not-authority", types.PlatformNitro, relayXHex, relayYHex, "unauthorized")
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformNitro, relayXHex, relayYHex, "authorized"))
+
+	rotX, rotY := rotatedRelayTestPublicKey()
+	rotXHex := hex.EncodeToString(rotX.Bytes())
+	rotYHex := hex.EncodeToString(rotY.Bytes())
+
+	err = k.InitiateRelayRotation(ctx, "not-authority", types.PlatformNitro, rotXHex, rotYHex)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+	require.NoError(t, k.InitiateRelayRotation(ctx, "authority", types.PlatformNitro, rotXHex, rotYHex))
+	require.ErrorIs(t, k.CancelRelayRotation(ctx, "not-authority", types.PlatformNitro), types.ErrUnauthorized)
+
+	rotCtx := ctx.WithBlockTime(ctx.BlockTime().Add(49 * time.Hour))
+	require.ErrorIs(t, k.FinalizeRelayRotation(rotCtx, "not-authority", types.PlatformNitro), types.ErrUnauthorized)
+	require.ErrorIs(t, k.RevokeRelay(ctx, "not-authority", types.PlatformNitro), types.ErrUnauthorized)
+}
+
 func TestRegisterAttestationRelay_InvalidKey(t *testing.T) {
 	k, ctx := setupKeeper(t)
 
 	// Not on curve (arbitrary bytes that are not a valid P-256 point)
-	err := k.RegisterAttestationRelay(ctx, types.PlatformSGX,
+	err := k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX,
 		"0000000000000000000000000000000000000000000000000000000000000001",
 		"0000000000000000000000000000000000000000000000000000000000000001",
 		"Bad key")
@@ -2708,7 +2781,7 @@ func TestRegisterAttestationRelay_InvalidKey(t *testing.T) {
 	require.Contains(t, err.Error(), "not on the P-256 curve")
 
 	// Wrong length
-	err = k.RegisterAttestationRelay(ctx, types.PlatformSGX, "abcd", "efgh", "Short key")
+	err = k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, "abcd", "efgh", "Short key")
 	require.Error(t, err)
 }
 
@@ -2719,13 +2792,13 @@ func TestRelayRotation_FullLifecycle(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Initiate rotation with new key
 	newX, newY := rotatedRelayTestPublicKey()
 	newXHex := hex.EncodeToString(newX.Bytes())
 	newYHex := hex.EncodeToString(newY.Bytes())
-	require.NoError(t, k.InitiateRelayRotation(ctx, types.PlatformSGX, newXHex, newYHex))
+	require.NoError(t, k.InitiateRelayRotation(ctx, "authority", types.PlatformSGX, newXHex, newYHex))
 
 	// Verify pending rotation state
 	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2735,14 +2808,14 @@ func TestRelayRotation_FullLifecycle(t *testing.T) {
 	require.NotZero(t, relay.RotationUnlocksAt)
 
 	// Finalize before timelock must fail
-	err = k.FinalizeRelayRotation(ctx, types.PlatformSGX)
+	err = k.FinalizeRelayRotation(ctx, "authority", types.PlatformSGX)
 	require.ErrorIs(t, err, types.ErrRotationTimelockActive)
 
 	// Advance time past the 48-hour timelock
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(49 * time.Hour))
 
 	// Now finalization should succeed
-	require.NoError(t, k.FinalizeRelayRotation(ctx, types.PlatformSGX))
+	require.NoError(t, k.FinalizeRelayRotation(ctx, "authority", types.PlatformSGX))
 
 	// Verify key was updated
 	relay, err = k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2766,15 +2839,15 @@ func TestRelayRotation_Cancel(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	newX, newY := rotatedRelayTestPublicKey()
 	newXHex := hex.EncodeToString(newX.Bytes())
 	newYHex := hex.EncodeToString(newY.Bytes())
-	require.NoError(t, k.InitiateRelayRotation(ctx, types.PlatformSGX, newXHex, newYHex))
+	require.NoError(t, k.InitiateRelayRotation(ctx, "authority", types.PlatformSGX, newXHex, newYHex))
 
 	// Cancel the rotation
-	require.NoError(t, k.CancelRelayRotation(ctx, types.PlatformSGX))
+	require.NoError(t, k.CancelRelayRotation(ctx, "authority", types.PlatformSGX))
 
 	// Verify pending state was cleared
 	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2788,7 +2861,7 @@ func TestRelayRotation_Cancel(t *testing.T) {
 	require.Equal(t, yHex, relay.PublicKeyY)
 
 	// Cancelling when nothing is pending must fail
-	err = k.CancelRelayRotation(ctx, types.PlatformSGX)
+	err = k.CancelRelayRotation(ctx, "authority", types.PlatformSGX)
 	require.ErrorIs(t, err, types.ErrNoRotationPending)
 }
 
@@ -2800,11 +2873,11 @@ func TestRelayRotation_UnregisteredRelay(t *testing.T) {
 	newYHex := hex.EncodeToString(newY.Bytes())
 
 	// Initiating rotation on unregistered platform must fail
-	err := k.InitiateRelayRotation(ctx, types.PlatformSGX, newXHex, newYHex)
+	err := k.InitiateRelayRotation(ctx, "authority", types.PlatformSGX, newXHex, newYHex)
 	require.ErrorIs(t, err, types.ErrRelayNotRegistered)
 
 	// Finalizing on unregistered platform must fail
-	err = k.FinalizeRelayRotation(ctx, types.PlatformSGX)
+	err = k.FinalizeRelayRotation(ctx, "authority", types.PlatformSGX)
 	require.ErrorIs(t, err, types.ErrRelayNotRegistered)
 }
 
@@ -2814,10 +2887,10 @@ func TestRevokeRelay(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Revoke
-	require.NoError(t, k.RevokeRelay(ctx, types.PlatformSGX))
+	require.NoError(t, k.RevokeRelay(ctx, "authority", types.PlatformSGX))
 
 	// Verify relay is inactive
 	require.False(t, k.IsRelayActive(ctx, types.PlatformSGX))
@@ -2835,11 +2908,11 @@ func TestRevokeRelay(t *testing.T) {
 	// so vendor key attestation will fail during RegisterEnclave.
 
 	// Revoking unregistered relay must fail
-	err = k.RevokeRelay(ctx, types.PlatformNitro)
+	err = k.RevokeRelay(ctx, "authority", types.PlatformNitro)
 	require.ErrorIs(t, err, types.ErrRelayNotRegistered)
 
 	// Operations on revoked relay should fail
-	err = k.InitiateRelayRotation(ctx, types.PlatformSGX,
+	err = k.InitiateRelayRotation(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(relayX.Bytes()),
 		hex.EncodeToString(relayY.Bytes()))
 	require.ErrorIs(t, err, types.ErrRelayNotActive)
@@ -2852,12 +2925,12 @@ func TestRelayChallenge_SuccessfulResponse(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Issue a challenge
 	challengeBytes := sha256.Sum256([]byte("governance-challenge-nonce-1"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Verify challenge is pending
 	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2891,11 +2964,11 @@ func TestRelayChallenge_InvalidSignature(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	challengeBytes := sha256.Sum256([]byte("challenge-nonce-2"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Respond with a signature from a DIFFERENT key (vendorRoot, not relay)
 	wrongPriv := vendorRootTestPrivateKey()
@@ -2920,11 +2993,11 @@ func TestRelayChallenge_Expired(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	challengeBytes := sha256.Sum256([]byte("challenge-nonce-3"))
 	challengeHex := hex.EncodeToString(challengeBytes[:])
-	require.NoError(t, k.ChallengeRelay(ctx, types.PlatformSGX, challengeHex))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, challengeHex))
 
 	// Advance time past the 1-hour challenge window
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Hour))
@@ -2942,6 +3015,16 @@ func TestRelayChallenge_Expired(t *testing.T) {
 	err = k.RespondRelayChallenge(ctx, types.PlatformSGX,
 		hex.EncodeToString(rBytes), hex.EncodeToString(sBytes))
 	require.ErrorIs(t, err, types.ErrChallengeExpired)
+
+	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
+	require.NoError(t, err)
+	require.Empty(t, relay.ActiveChallenge)
+	require.Zero(t, relay.ChallengeDeadline)
+
+	// A fresh governance-issued challenge should be issuable after the stale
+	// challenge state is cleared.
+	nextChallenge := sha256.Sum256([]byte("challenge-nonce-3b"))
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, hex.EncodeToString(nextChallenge[:])))
 }
 
 func TestRelayChallenge_NoPending(t *testing.T) {
@@ -2950,13 +3033,39 @@ func TestRelayChallenge_NoPending(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Responding without a challenge must fail
 	err := k.RespondRelayChallenge(ctx, types.PlatformSGX,
 		"0000000000000000000000000000000000000000000000000000000000000001",
 		"0000000000000000000000000000000000000000000000000000000000000001")
 	require.ErrorIs(t, err, types.ErrNoPendingChallenge)
+}
+
+func TestRelayChallenge_RequiresAuthorityAndRejectsOverwrite(t *testing.T) {
+	k, ctx := setupKeeper(t)
+
+	relayX, relayY := relayTestPublicKey()
+	xHex := hex.EncodeToString(relayX.Bytes())
+	yHex := hex.EncodeToString(relayY.Bytes())
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
+
+	firstChallenge := sha256.Sum256([]byte("challenge-overwrite-1"))
+	secondChallenge := sha256.Sum256([]byte("challenge-overwrite-2"))
+	firstHex := hex.EncodeToString(firstChallenge[:])
+	secondHex := hex.EncodeToString(secondChallenge[:])
+
+	err := k.ChallengeRelay(ctx, "not-authority", types.PlatformSGX, firstHex)
+	require.ErrorIs(t, err, types.ErrUnauthorized)
+
+	require.NoError(t, k.ChallengeRelay(ctx, "authority", types.PlatformSGX, firstHex))
+
+	err = k.ChallengeRelay(ctx, "authority", types.PlatformSGX, secondHex)
+	require.ErrorIs(t, err, types.ErrChallengeAlreadyPending)
+
+	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
+	require.NoError(t, err)
+	require.Equal(t, firstHex, relay.ActiveChallenge)
 }
 
 func TestRelayAttestationCountTracking(t *testing.T) {
@@ -2967,7 +3076,7 @@ func TestRelayAttestationCountTracking(t *testing.T) {
 	relayX, relayY := relayTestPublicKey()
 	xHex := hex.EncodeToString(relayX.Bytes())
 	yHex := hex.EncodeToString(relayY.Bytes())
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Initial attestation count should be zero
 	relay, err := k.GetAttestationRelay(ctx, types.PlatformSGX)
@@ -2998,7 +3107,7 @@ func TestRelayAttestationCountTracking(t *testing.T) {
 	r.FillBytes(rBytes)
 	s.FillBytes(sBytes)
 
-	_, err = k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err = k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,
@@ -3024,11 +3133,11 @@ func TestDirectVendorRootKeyOverrideBlockedWhileRelayActive(t *testing.T) {
 	yHex := hex.EncodeToString(relayY.Bytes())
 
 	// Register a relay for SGX
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Test Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Test Relay"))
 
 	// Direct override while relay is active must be rejected
 	vrX, vrY := vendorRootTestPublicKey()
-	err := k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	err := k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes()))
 	require.ErrorIs(t, err, types.ErrDirectOverrideWhileRelayActive)
@@ -3040,9 +3149,9 @@ func TestDirectVendorRootKeyOverrideBlockedWhileRelayActive(t *testing.T) {
 	require.Equal(t, relayY, vendorKey.Y, "vendor root key should not have been overridden")
 
 	// After revoking the relay, direct override should work
-	require.NoError(t, k.RevokeRelay(ctx, types.PlatformSGX))
+	require.NoError(t, k.RevokeRelay(ctx, "authority", types.PlatformSGX))
 
-	err = k.RegisterVendorRootKey(ctx, types.PlatformSGX,
+	err = k.RegisterVendorRootKey(ctx, "authority", types.PlatformSGX,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes()))
 	require.NoError(t, err, "direct vendor root key should be settable after relay revocation")
@@ -3058,7 +3167,7 @@ func TestDirectVendorRootKeyAllowedWithoutRelay(t *testing.T) {
 
 	// Without any relay registered, direct set should work fine
 	vrX, vrY := vendorRootTestPublicKey()
-	err := k.RegisterVendorRootKey(ctx, types.PlatformNitro,
+	err := k.RegisterVendorRootKey(ctx, "authority", types.PlatformNitro,
 		hex.EncodeToString(vrX.Bytes()),
 		hex.EncodeToString(vrY.Bytes()))
 	require.NoError(t, err)
@@ -3093,8 +3202,8 @@ func TestRelayReregistrationAfterRevocation(t *testing.T) {
 	yHex := bigIntHex32(relayY)
 
 	// Register → revoke
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "First Relay"))
-	require.NoError(t, k.RevokeRelay(ctx, types.PlatformSGX))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "First Relay"))
+	require.NoError(t, k.RevokeRelay(ctx, "authority", types.PlatformSGX))
 	require.False(t, k.IsRelayActive(ctx, types.PlatformSGX))
 
 	// Re-register with a different key (the rotated key) on the same platform
@@ -3102,7 +3211,7 @@ func TestRelayReregistrationAfterRevocation(t *testing.T) {
 	rotXHex := bigIntHex32(rotX)
 	rotYHex := bigIntHex32(rotY)
 
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, rotXHex, rotYHex, "Replacement Relay"),
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, rotXHex, rotYHex, "Replacement Relay"),
 		"re-registration after revocation must succeed")
 
 	// Verify the new relay is active with fresh state
@@ -3136,8 +3245,8 @@ func TestReplacementRelayRegistersEnclaves(t *testing.T) {
 	yHex := bigIntHex32(relayY)
 
 	// Register → revoke first relay
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, xHex, yHex, "Old Relay"))
-	require.NoError(t, k.RevokeRelay(ctx, types.PlatformSGX))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, xHex, yHex, "Old Relay"))
+	require.NoError(t, k.RevokeRelay(ctx, "authority", types.PlatformSGX))
 
 	// Register replacement relay with D=4 key
 	rotPriv := rotatedRelayTestPrivateKey()
@@ -3145,7 +3254,7 @@ func TestReplacementRelayRegistersEnclaves(t *testing.T) {
 	rotXHex := bigIntHex32(rotX)
 	rotYHex := bigIntHex32(rotY)
 
-	require.NoError(t, k.RegisterAttestationRelay(ctx, types.PlatformSGX, rotXHex, rotYHex, "New Relay"))
+	require.NoError(t, k.RegisterAttestationRelay(ctx, "authority", types.PlatformSGX, rotXHex, rotYHex, "New Relay"))
 
 	// Use the replacement relay to attest an enclave
 	enclaveHash := sha256.Sum256([]byte("replacement-enclave-code"))
@@ -3177,7 +3286,7 @@ func TestReplacementRelayRegistersEnclaves(t *testing.T) {
 	r.FillBytes(rBytes)
 	s.FillBytes(sBytes)
 
-	_, err = k.RegisterEnclave(ctx, types.EnclaveRegistration{
+	_, err = k.RegisterEnclave(ctx, "authority", types.EnclaveRegistration{
 		EnclaveHash:   hex.EncodeToString(enclaveHash[:]),
 		SignerHash:    hex.EncodeToString(signerHash[:]),
 		Platform:      types.PlatformSGX,

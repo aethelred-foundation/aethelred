@@ -246,7 +246,12 @@ impl SnpVerifier {
         // 7. Check expected measurements
         if !self.config.expected_measurements.is_empty() {
             let measurement_32: [u8; 32] = report.measurement[..32].try_into().unwrap();
-            if !self.config.expected_measurements.iter().any(|m| m == &measurement_32) {
+            if !self
+                .config
+                .expected_measurements
+                .iter()
+                .any(|m| m == &measurement_32)
+            {
                 return Err(AttestationError::MeasurementMismatch {
                     expected: hex::encode(&self.config.expected_measurements[0]),
                     actual: hex::encode(&measurement_32),
@@ -283,9 +288,10 @@ impl SnpVerifier {
     /// Parse raw report bytes
     fn parse_report(&self, bytes: &[u8]) -> Result<SnpReport, AttestationError> {
         if bytes.len() < 0x2A0 {
-            return Err(AttestationError::InvalidFormat(
-                format!("SNP report too short: {} bytes", bytes.len()),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "SNP report too short: {} bytes",
+                bytes.len()
+            )));
         }
 
         // Parse version and guest SVN
@@ -414,16 +420,18 @@ impl SnpVerifier {
     fn verify_structure(&self, report: &SnpReport) -> Result<(), AttestationError> {
         // Check version
         if report.version < 1 || report.version > 2 {
-            return Err(AttestationError::InvalidFormat(
-                format!("Unsupported SNP report version: {}", report.version),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "Unsupported SNP report version: {}",
+                report.version
+            )));
         }
 
         // Check signature algorithm
         if report.signature_algo != 1 {
-            return Err(AttestationError::InvalidFormat(
-                format!("Unsupported signature algorithm: {}", report.signature_algo),
-            ));
+            return Err(AttestationError::InvalidFormat(format!(
+                "Unsupported signature algorithm: {}",
+                report.signature_algo
+            )));
         }
 
         Ok(())
@@ -446,12 +454,9 @@ impl SnpVerifier {
             ));
         }
 
-        // TODO: Implement actual ECDSA P-384 verification
-        // let public_key = extract_vcek_pubkey(&collateral.vcek_certificate)?;
-        // let signature = p384::ecdsa::Signature::from_components(&report.signature.r, &report.signature.s)?;
-        // public_key.verify(&report_body_hash, &signature)?;
-
-        Ok(())
+        Err(AttestationError::AmdSev(
+            "Cryptographic SEV-SNP report signature verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify certificate chain
@@ -468,9 +473,9 @@ impl SnpVerifier {
             ));
         }
 
-        // TODO: Implement full chain verification
-
-        Ok(())
+        Err(AttestationError::AmdSev(
+            "SEV-SNP certificate chain verification is not implemented".to_string(),
+        ))
     }
 
     /// Verify nonce in report data
@@ -637,7 +642,9 @@ mod tests {
 
     #[test]
     fn test_tcb_parsing() {
-        let tcb = SnpTcb { raw: 0x0102_0000_0000_0304 };
+        let tcb = SnpTcb {
+            raw: 0x0102_0000_0000_0304,
+        };
         assert_eq!(tcb.boot_loader(), 0x04);
         assert_eq!(tcb.tee(), 0x03);
     }
@@ -659,5 +666,70 @@ mod tests {
 
         assert!(verifier.verify_nonce(&report_data, &nonce));
         assert!(!verifier.verify_nonce(&report_data, &[0u8; 32]));
+    }
+
+    fn mock_report() -> SnpReport {
+        SnpReport {
+            version: 2,
+            guest_svn: 1,
+            policy: SnpPolicy { raw: 0 },
+            family_id: [0; 16],
+            image_id: [0; 16],
+            vmpl: 0,
+            signature_algo: 1,
+            platform_version: SevPlatformVersion {
+                boot_loader: 0,
+                tee: 0,
+                snp: 0,
+                microcode: 0,
+            },
+            platform_info: 0,
+            author_key_en: 0,
+            report_data: [0; 64],
+            measurement: [0; 48],
+            host_data: [0; 32],
+            id_key_digest: [0; 48],
+            author_key_digest: [0; 48],
+            report_id: [0; 32],
+            report_id_ma: [0; 32],
+            reported_tcb: SnpTcb { raw: 0 },
+            chip_id: [0; 64],
+            committed_svn: 0,
+            committed_tcb: SnpTcb { raw: 0 },
+            current_build: 0,
+            current_minor: 0,
+            current_major: 0,
+            committed_build: 0,
+            committed_minor: 0,
+            committed_major: 0,
+            launch_tcb: SnpTcb { raw: 0 },
+            signature: SnpSignature {
+                r: [0; 72],
+                s: [0; 72],
+                reserved: [0; 368],
+            },
+        }
+    }
+
+    fn mock_collateral() -> AmdCollateral {
+        AmdCollateral {
+            vcek_certificate: vec![1],
+            vcek_cert_chain: vec![2],
+            crl: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn test_report_signature_verification_fails_closed_when_backend_missing() {
+        let verifier = SnpVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_signature(&mock_report(), &mock_collateral());
+        assert!(matches!(result, Err(AttestationError::AmdSev(_))));
+    }
+
+    #[test]
+    fn test_cert_chain_verification_fails_closed_when_backend_missing() {
+        let verifier = SnpVerifier::new(AttestationConfig::default());
+        let result = verifier.verify_cert_chain(&mock_collateral());
+        assert!(matches!(result, Err(AttestationError::AmdSev(_))));
     }
 }

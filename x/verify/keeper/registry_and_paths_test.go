@@ -62,6 +62,13 @@ func mustSetVerifyParams(t *testing.T, k Keeper, ctx sdk.Context, allowSim bool,
 	return params
 }
 
+func mustBuildSimulatedTEEQuote(t *testing.T, attestation *vtypes.TEEAttestation, simulationVerifierKey, rawQuoteBody []byte) []byte {
+	t.Helper()
+	quote, err := buildSimulatedAttestationQuote(attestation, simulationVerifierKey, rawQuoteBody)
+	require.NoError(t, err)
+	return quote
+}
+
 func TestRegistryKeyCircuitLifecycle(t *testing.T) {
 	k, ctx := createVerifyKeeper(t)
 	params := vtypes.DefaultParams()
@@ -198,10 +205,12 @@ func TestVerifyTEEAttestationPath(t *testing.T) {
 	k, ctx := createVerifyKeeper(t)
 	mustSetVerifyParams(t, k, ctx, true, nil)
 
+	simulationVerifierKey := bytes.Repeat([]byte{0x51}, simulatedTEEKeyMinLen)
 	trustedMeasurement := []byte("trusted-measurement")
 	require.NoError(t, k.SetTEEConfig(ctx, &vtypes.TEEConfig{
 		Platform:            vtypes.TEEPlatformAWSNitro,
 		TrustedMeasurements: [][]byte{trustedMeasurement},
+		RootCertificate:     simulationVerifierKey,
 		MaxQuoteAge:         durationpb.New(2 * time.Hour),
 		IsActive:            true,
 	}))
@@ -209,10 +218,10 @@ func TestVerifyTEEAttestationPath(t *testing.T) {
 	successAttestation := &vtypes.TEEAttestation{
 		Platform:    vtypes.TEEPlatformAWSNitro,
 		Measurement: trustedMeasurement,
-		Quote:       bytes.Repeat([]byte{0xAA}, 1200),
 		Timestamp:   timestamppb.New(ctx.BlockTime()),
 		Nonce:       []byte("nonce"),
 	}
+	successAttestation.Quote = mustBuildSimulatedTEEQuote(t, successAttestation, simulationVerifierKey, bytes.Repeat([]byte{0xAA}, 1200))
 	result, err := k.VerifyTEEAttestation(ctx, successAttestation)
 	require.NoError(t, err)
 	require.True(t, result.Success)
@@ -327,24 +336,26 @@ func TestVerifyTEEAttestation_ReplayRegistryRejectsDuplicatesAndExpires(t *testi
 	// mode so the test exercises replay persistence without requiring an external verifier.
 	mustSetVerifyParams(t, k, ctx, true, nil)
 
+	simulationVerifierKey := bytes.Repeat([]byte{0x62}, simulatedTEEKeyMinLen)
 	trustedMeasurement := []byte("trusted-measurement")
 	require.NoError(t, k.SetTEEConfig(ctx, &vtypes.TEEConfig{
 		Platform:            vtypes.TEEPlatformAWSNitro,
 		TrustedMeasurements: [][]byte{trustedMeasurement},
+		RootCertificate:     simulationVerifierKey,
 		MaxQuoteAge:         durationpb.New(2 * time.Hour),
 		RequireFreshNonce:   true,
 		IsActive:            true,
 	}))
 
-	baseQuote := bytes.Repeat([]byte{0xA1}, 1200)
+	baseQuoteBody := bytes.Repeat([]byte{0xA1}, 1200)
 	baseNonce := []byte("nonce-replay-test")
 	base := &vtypes.TEEAttestation{
 		Platform:    vtypes.TEEPlatformAWSNitro,
 		Measurement: trustedMeasurement,
-		Quote:       baseQuote,
 		Timestamp:   timestamppb.New(ctx.BlockTime()),
 		Nonce:       baseNonce,
 	}
+	base.Quote = mustBuildSimulatedTEEQuote(t, base, simulationVerifierKey, baseQuoteBody)
 
 	result, err := k.VerifyTEEAttestation(ctx, base)
 	require.NoError(t, err)
@@ -358,10 +369,10 @@ func TestVerifyTEEAttestation_ReplayRegistryRejectsDuplicatesAndExpires(t *testi
 	diffQuoteSameNonce := &vtypes.TEEAttestation{
 		Platform:    vtypes.TEEPlatformAWSNitro,
 		Measurement: trustedMeasurement,
-		Quote:       bytes.Repeat([]byte{0xA2}, 1200),
 		Timestamp:   timestamppb.New(ctx.BlockTime()),
 		Nonce:       baseNonce,
 	}
+	diffQuoteSameNonce.Quote = mustBuildSimulatedTEEQuote(t, diffQuoteSameNonce, simulationVerifierKey, bytes.Repeat([]byte{0xA2}, 1200))
 	result, err = k.VerifyTEEAttestation(ctx, diffQuoteSameNonce)
 	require.NoError(t, err)
 	require.False(t, result.Success)
@@ -371,10 +382,10 @@ func TestVerifyTEEAttestation_ReplayRegistryRejectsDuplicatesAndExpires(t *testi
 	reusedAfterExpiry := &vtypes.TEEAttestation{
 		Platform:    vtypes.TEEPlatformAWSNitro,
 		Measurement: trustedMeasurement,
-		Quote:       baseQuote,
 		Timestamp:   timestamppb.New(ctxAfterExpiry.BlockTime()),
 		Nonce:       baseNonce,
 	}
+	reusedAfterExpiry.Quote = mustBuildSimulatedTEEQuote(t, reusedAfterExpiry, simulationVerifierKey, baseQuoteBody)
 	result, err = k.VerifyTEEAttestation(ctxAfterExpiry, reusedAfterExpiry)
 	require.NoError(t, err)
 	require.True(t, result.Success, "expired replay entries should not permanently poison quote/nonce")
@@ -395,12 +406,12 @@ func TestVerifyZKMLProofPath(t *testing.T) {
 
 	proof := &vtypes.ZKMLProof{
 		ProofSystem:      "ezkl",
-		ProofBytes:       append([]byte("EZKL"), bytes.Repeat([]byte{0x11}, 252)...),
 		PublicInputs:     bytes.Repeat([]byte{0x22}, 96),
 		VerifyingKeyHash: vkHash[:],
 		CircuitHash:      bytes.Repeat([]byte{0x33}, 32),
 		Timestamp:        timestamppb.New(ctx.BlockTime()),
 	}
+	proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
 	result, err := k.VerifyZKMLProof(ctx, proof)
 	require.NoError(t, err)
 	require.True(t, result.Success)
@@ -509,7 +520,8 @@ func TestZKVerifierPrecompileAndSystemVerifier(t *testing.T) {
 
 func TestVerifyAttestationInternalBranches(t *testing.T) {
 	k, ctx := createVerifyKeeper(t)
-	config := &vtypes.TEEConfig{}
+	simulationVerifierKey := bytes.Repeat([]byte{0x73}, simulatedTEEKeyMinLen)
+	config := &vtypes.TEEConfig{RootCertificate: simulationVerifierKey}
 
 	tests := []struct {
 		name      string
@@ -527,11 +539,12 @@ func TestVerifyAttestationInternalBranches(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := k.verifyAttestationInternal(ctx, &vtypes.TEEAttestation{
+			attestation := &vtypes.TEEAttestation{
 				Platform:    tc.platform,
 				Measurement: []byte("m"),
-				Quote:       bytes.Repeat([]byte{0xAB}, tc.quoteSize),
-			}, config, true)
+			}
+			attestation.Quote = mustBuildSimulatedTEEQuote(t, attestation, simulationVerifierKey, bytes.Repeat([]byte{0xAB}, tc.quoteSize))
+			ok, err := k.verifyAttestationInternal(ctx, attestation, config, true)
 			if tc.wantOK {
 				require.NoError(t, err)
 				require.True(t, ok)
@@ -542,18 +555,49 @@ func TestVerifyAttestationInternalBranches(t *testing.T) {
 		})
 	}
 
-	ok, err := k.verifyAttestationInternal(ctx, &vtypes.TEEAttestation{
+	prodAttestation := &vtypes.TEEAttestation{
 		Platform:    vtypes.TEEPlatformAWSNitro,
 		Measurement: []byte("m"),
-		Quote:       bytes.Repeat([]byte{0xAB}, 1000),
-	}, config, false)
+	}
+	prodAttestation.Quote = mustBuildSimulatedTEEQuote(t, prodAttestation, simulationVerifierKey, bytes.Repeat([]byte{0xAB}, 1000))
+	ok, err := k.verifyAttestationInternal(ctx, prodAttestation, config, false)
 	require.ErrorContains(t, err, "SECURITY")
+	require.False(t, ok)
+}
+
+func TestVerifyAttestationInternalRejectsUnauthenticatedSimulationQuotes(t *testing.T) {
+	k, ctx := createVerifyKeeper(t)
+	simulationVerifierKey := bytes.Repeat([]byte{0x84}, simulatedTEEKeyMinLen)
+	config := &vtypes.TEEConfig{RootCertificate: simulationVerifierKey}
+
+	attestation := &vtypes.TEEAttestation{
+		Platform:    vtypes.TEEPlatformIntelSGX,
+		Measurement: []byte("m"),
+		Timestamp:   timestamppb.New(ctx.BlockTime()),
+		Nonce:       []byte("nonce"),
+	}
+	attestation.Quote = mustBuildSimulatedTEEQuote(t, attestation, simulationVerifierKey, bytes.Repeat([]byte{0xAB}, 432))
+
+	ok, err := k.verifyAttestationInternal(ctx, attestation, config, true)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	tampered := *attestation
+	tampered.Quote = append([]byte{}, attestation.Quote...)
+	tampered.Quote[len(tampered.Quote)-1] ^= 0x01
+
+	ok, err = k.verifyAttestationInternal(ctx, &tampered, config, true)
+	require.ErrorContains(t, err, "authentication failed")
+	require.False(t, ok)
+
+	ok, err = k.verifyAttestationInternal(ctx, attestation, &vtypes.TEEConfig{}, true)
+	require.ErrorContains(t, err, "verifier key")
 	require.False(t, ok)
 }
 
 func TestVerifyProofInternalBranches(t *testing.T) {
 	k, ctx := createVerifyKeeper(t)
-	vk := &vtypes.VerifyingKey{IsActive: true}
+	vk := &vtypes.VerifyingKey{IsActive: true, KeyBytes: []byte("simulated-vk")}
 	params := vtypes.DefaultParams()
 	params.AllowSimulated = true
 
@@ -574,11 +618,18 @@ func TestVerifyProofInternalBranches(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			ok, err := k.verifyProofInternal(ctx, &vtypes.ZKMLProof{
+			proof := &vtypes.ZKMLProof{
 				ProofSystem:  tc.system,
-				ProofBytes:   bytes.Repeat([]byte{0xCD}, tc.proofSize),
 				PublicInputs: bytes.Repeat([]byte{0xEF}, 96),
-			}, vk, params)
+				CircuitHash:  bytes.Repeat([]byte{0xAC}, 32),
+			}
+			if tc.wantOK {
+				proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, tc.proofSize)
+			} else {
+				proof.ProofBytes = bytes.Repeat([]byte{0xCD}, tc.proofSize)
+			}
+
+			ok, err := k.verifyProofInternal(ctx, proof, vk, params)
 			if tc.wantOK {
 				require.NoError(t, err)
 				require.True(t, ok)
@@ -589,10 +640,38 @@ func TestVerifyProofInternalBranches(t *testing.T) {
 		})
 	}
 
+	t.Run("tampered public inputs", func(t *testing.T) {
+		proof := &vtypes.ZKMLProof{
+			ProofSystem:  "ezkl",
+			PublicInputs: bytes.Repeat([]byte{0xEE}, 96),
+			CircuitHash:  bytes.Repeat([]byte{0xBC}, 32),
+		}
+		proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
+		proof.PublicInputs[0] ^= 0x01
+
+		ok, err := k.verifyProofInternal(ctx, proof, vk, params)
+		require.ErrorContains(t, err, "binding mismatch")
+		require.False(t, ok)
+	})
+
+	t.Run("tampered proof bytes", func(t *testing.T) {
+		proof := &vtypes.ZKMLProof{
+			ProofSystem:  "ezkl",
+			PublicInputs: bytes.Repeat([]byte{0xEF}, 96),
+			CircuitHash:  bytes.Repeat([]byte{0xBD}, 32),
+		}
+		proof.ProofBytes = buildSimulatedZKProofBytes(proof, vk, 256)
+		proof.ProofBytes[len(proof.ProofBytes)-1] ^= 0x01
+
+		ok, err := k.verifyProofInternal(ctx, proof, vk, params)
+		require.ErrorContains(t, err, "binding mismatch")
+		require.False(t, ok)
+	})
+
 	params.AllowSimulated = false
 	ok, err := k.verifyProofInternal(ctx, &vtypes.ZKMLProof{
 		ProofSystem:  "ezkl",
-		ProofBytes:   bytes.Repeat([]byte{0xCC}, 256),
+		ProofBytes:   buildSimulatedZKProofBytes(&vtypes.ZKMLProof{ProofSystem: "ezkl", PublicInputs: bytes.Repeat([]byte{0xEE}, 96)}, vk, 256),
 		PublicInputs: bytes.Repeat([]byte{0xEE}, 96),
 	}, vk, params)
 	require.ErrorContains(t, err, "SECURITY")

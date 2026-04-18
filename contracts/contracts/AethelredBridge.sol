@@ -130,12 +130,14 @@ contract AethelredBridge is
     // EIP-712 TYPED DATA (M-01 hardening)
     // =========================================================================
 
-    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH = keccak256(
+        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+    );
     bytes32 internal constant EIP712_NAME_HASH = keccak256("AethelredBridge");
     bytes32 internal constant EIP712_VERSION_HASH = keccak256("1");
-    bytes32 internal constant WITHDRAWAL_TYPEHASH =
-        keccak256("WithdrawalProposal(bytes32 proposalId,address recipient,address token,uint256 amount,bytes32 burnTxHash,uint256 aethelredBlockHeight)");
+    bytes32 internal constant WITHDRAWAL_TYPEHASH = keccak256(
+        "WithdrawalProposal(bytes32 proposalId,address recipient,address token,uint256 amount,bytes32 burnTxHash,uint256 aethelredBlockHeight)"
+    );
 
     // =========================================================================
     // STATE VARIABLES
@@ -324,18 +326,10 @@ contract AethelredBridge is
     );
 
     /// @notice Emitted when a deposit is finalized (after confirmations)
-    event DepositFinalized(
-        bytes32 indexed depositId,
-        address indexed depositor,
-        uint256 amount
-    );
+    event DepositFinalized(bytes32 indexed depositId, address indexed depositor, uint256 amount);
 
     /// @notice Emitted when a deposit is cancelled
-    event DepositCancelled(
-        bytes32 indexed depositId,
-        address indexed depositor,
-        uint256 amount
-    );
+    event DepositCancelled(bytes32 indexed depositId, address indexed depositor, uint256 amount);
 
     /// @notice Emitted when a withdrawal proposal is created
     event WithdrawalProposed(
@@ -367,9 +361,7 @@ contract AethelredBridge is
 
     /// @notice Emitted when a withdrawal is challenged
     event WithdrawalChallenged(
-        bytes32 indexed proposalId,
-        address indexed challenger,
-        string reason
+        bytes32 indexed proposalId, address indexed challenger, string reason
     );
 
     /// @notice Emitted when a token is added/removed from supported list
@@ -377,16 +369,12 @@ contract AethelredBridge is
 
     /// @notice Emitted when relayer config is updated
     event RelayerConfigUpdated(
-        uint256 relayerCount,
-        uint256 consensusThresholdBps,
-        uint256 minVotesRequired
+        uint256 relayerCount, uint256 consensusThresholdBps, uint256 minVotesRequired
     );
 
     /// @notice Emitted when rate limit config is updated
     event RateLimitConfigUpdated(
-        uint256 maxDepositPerPeriod,
-        uint256 maxWithdrawalPerPeriod,
-        bool enabled
+        uint256 maxDepositPerPeriod, uint256 maxWithdrawalPerPeriod, bool enabled
     );
 
     /// @notice Emitted when an address is blocked/unblocked
@@ -410,10 +398,7 @@ contract AethelredBridge is
     );
 
     /// @notice Emitted when an emergency withdrawal is cancelled
-    event EmergencyWithdrawalCancelled(
-        bytes32 indexed operationId,
-        address indexed cancelledBy
-    );
+    event EmergencyWithdrawalCancelled(bytes32 indexed operationId, address indexed cancelledBy);
 
     /// @notice Emitted when emergency withdrawal delay is updated
     event EmergencyWithdrawalDelayUpdated(uint256 oldDelay, uint256 newDelay);
@@ -459,6 +444,7 @@ contract AethelredBridge is
     error AdminMustBeContract();
     error RelayerCountMismatch();
     error UpgraderTimelockDelayTooShort();
+    error ProductionInitializationRequiresTimelock();
     error MintCeilingExceeded();
     error InsufficientGuardianApprovals();
     error GuardianAlreadyApproved();
@@ -506,7 +492,7 @@ contract AethelredBridge is
     }
 
     /**
-     * @notice Initialize the bridge contract
+     * @notice Initialize the bridge contract for local development only.
      * @param admin Address of the admin
      * @param initialRelayers Array of initial relayer addresses
      * @param consensusThresholdBps Consensus threshold in basis points (e.g., 6700 = 67%)
@@ -515,7 +501,11 @@ contract AethelredBridge is
         address admin,
         address[] calldata initialRelayers,
         uint256 consensusThresholdBps
-    ) external initializer {
+    )
+        external
+        initializer
+    {
+        _requireLegacyInitializerOnlyOnLocalDevChain();
         _initializeBridge(admin, admin, initialRelayers, consensusThresholdBps);
     }
 
@@ -531,14 +521,12 @@ contract AethelredBridge is
         address upgraderTimelock,
         address[] calldata initialRelayers,
         uint256 consensusThresholdBps
-    ) external initializer {
+    )
+        external
+        initializer
+    {
         _requireUpgraderTimelockDelay(upgraderTimelock);
-        _initializeBridge(
-            admin,
-            upgraderTimelock,
-            initialRelayers,
-            consensusThresholdBps
-        );
+        _initializeBridge(admin, upgraderTimelock, initialRelayers, consensusThresholdBps);
     }
 
     function _initializeBridge(
@@ -546,7 +534,9 @@ contract AethelredBridge is
         address upgraderTimelock,
         address[] calldata initialRelayers,
         uint256 consensusThresholdBps
-    ) internal {
+    )
+        internal
+    {
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __Pausable_init();
@@ -569,8 +559,7 @@ contract AethelredBridge is
         }
 
         // Configure relayer set
-        uint256 minVotes = (initialRelayers.length * consensusThresholdBps) / 10000;
-        if (minVotes == 0) minVotes = 1;
+        uint256 minVotes = _calculateMinVotesRequired(initialRelayers.length, consensusThresholdBps);
 
         relayerConfig = RelayerConfig({
             relayerCount: initialRelayers.length,
@@ -580,9 +569,7 @@ contract AethelredBridge is
 
         // Configure rate limits (default: 1000 ETH per period)
         rateLimitConfig = RateLimitConfig({
-            maxDepositPerPeriod: 1000 ether,
-            maxWithdrawalPerPeriod: 1000 ether,
-            enabled: true
+            maxDepositPerPeriod: 1000 ether, maxWithdrawalPerPeriod: 1000 ether, enabled: true
         });
 
         // Emergency withdrawal timelock defaults to 48h for production safety.
@@ -615,11 +602,7 @@ contract AethelredBridge is
         _validateDeposit(aethelredRecipient, msg.value);
 
         bytes32 depositId = _generateDepositId(
-            msg.sender,
-            aethelredRecipient,
-            address(0),
-            msg.value,
-            depositNonce
+            msg.sender, aethelredRecipient, address(0), msg.value, depositNonce
         );
 
         deposits[depositId] = Deposit({
@@ -673,11 +656,7 @@ contract AethelredBridge is
         uint256 actualReceived = IERC20(token).balanceOf(address(this)) - balanceBefore;
 
         bytes32 depositId = _generateDepositId(
-            msg.sender,
-            aethelredRecipient,
-            token,
-            actualReceived,
-            depositNonce
+            msg.sender, aethelredRecipient, token, actualReceived, depositNonce
         );
 
         deposits[depositId] = Deposit({
@@ -728,7 +707,7 @@ contract AethelredBridge is
         // Refund
         if (deposit.token == address(0)) {
             totalLockedETH -= deposit.amount;
-            (bool success, ) = msg.sender.call{value: deposit.amount}("");
+            (bool success,) = msg.sender.call{ value: deposit.amount }("");
             if (!success) revert TransferFailed();
         } else {
             totalLockedERC20[deposit.token] -= deposit.amount;
@@ -743,11 +722,7 @@ contract AethelredBridge is
      * @dev Relayers should call this before minting on Aethelred to close the
      *      Ethereum-side cancellation path.
      */
-    function finalizeDeposit(bytes32 depositId)
-        external
-        onlyRole(RELAYER_ROLE)
-        whenNotPaused
-    {
+    function finalizeDeposit(bytes32 depositId) external onlyRole(RELAYER_ROLE) whenNotPaused {
         Deposit storage deposit = deposits[depositId];
         if (deposit.depositor == address(0)) revert DepositNotFound();
         if (deposit.cancelled) revert DepositAlreadyCancelled();
@@ -812,32 +787,16 @@ contract AethelredBridge is
 
         withdrawalVotes[proposalId][msg.sender] = true;
 
-        emit WithdrawalProposed(
-            proposalId,
-            recipient,
-            token,
-            amount,
-            burnTxHash,
-            msg.sender
-        );
+        emit WithdrawalProposed(proposalId, recipient, token, amount, burnTxHash, msg.sender);
 
-        emit WithdrawalVoted(
-            proposalId,
-            msg.sender,
-            1,
-            relayerConfig.minVotesRequired
-        );
+        emit WithdrawalVoted(proposalId, msg.sender, 1, relayerConfig.minVotesRequired);
     }
 
     /**
      * @notice Vote on a withdrawal proposal
      * @param proposalId The proposal to vote on
      */
-    function voteWithdrawal(bytes32 proposalId)
-        external
-        onlyRole(RELAYER_ROLE)
-        whenNotPaused
-    {
+    function voteWithdrawal(bytes32 proposalId) external onlyRole(RELAYER_ROLE) whenNotPaused {
         WithdrawalProposal storage proposal = withdrawalProposals[proposalId];
 
         if (proposal.createdAt == 0) revert WithdrawalNotFound();
@@ -849,10 +808,7 @@ contract AethelredBridge is
         proposal.voteCount++;
 
         emit WithdrawalVoted(
-            proposalId,
-            msg.sender,
-            proposal.voteCount,
-            proposal.requiredVotesSnapshot
+            proposalId, msg.sender, proposal.voteCount, proposal.requiredVotesSnapshot
         );
     }
 
@@ -893,7 +849,7 @@ contract AethelredBridge is
         // Transfer funds
         if (proposal.token == address(0)) {
             totalLockedETH -= proposal.amount;
-            (bool success, ) = proposal.recipient.call{value: proposal.amount}("");
+            (bool success,) = proposal.recipient.call{ value: proposal.amount }("");
             if (!success) revert TransferFailed();
         } else {
             totalLockedERC20[proposal.token] -= proposal.amount;
@@ -901,11 +857,7 @@ contract AethelredBridge is
         }
 
         emit WithdrawalProcessed(
-            proposalId,
-            proposal.recipient,
-            proposal.token,
-            proposal.amount,
-            proposal.burnTxHash
+            proposalId, proposal.recipient, proposal.token, proposal.amount, proposal.burnTxHash
         );
     }
 
@@ -914,7 +866,10 @@ contract AethelredBridge is
      * @param proposalId The proposal to challenge
      * @param reason Reason for the challenge
      */
-    function challengeWithdrawal(bytes32 proposalId, string calldata reason)
+    function challengeWithdrawal(
+        bytes32 proposalId,
+        string calldata reason
+    )
         external
         onlyRole(GUARDIAN_ROLE)
     {
@@ -955,13 +910,15 @@ contract AethelredBridge is
      * @param relayerCount New relayer count
      * @param consensusThresholdBps New consensus threshold in basis points
      */
-    function updateRelayerConfig(uint256 relayerCount, uint256 consensusThresholdBps)
+    function updateRelayerConfig(
+        uint256 relayerCount,
+        uint256 consensusThresholdBps
+    )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         if (relayerCount != relayerConfig.relayerCount) revert RelayerCountMismatch();
-        uint256 minVotes = (relayerCount * consensusThresholdBps) / 10000;
-        if (minVotes == 0) minVotes = 1;
+        uint256 minVotes = _calculateMinVotesRequired(relayerCount, consensusThresholdBps);
 
         relayerConfig = RelayerConfig({
             relayerCount: relayerCount,
@@ -982,11 +939,12 @@ contract AethelredBridge is
         uint256 maxDeposit,
         uint256 maxWithdrawal,
         bool enabled
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    )
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         rateLimitConfig = RateLimitConfig({
-            maxDepositPerPeriod: maxDeposit,
-            maxWithdrawalPerPeriod: maxWithdrawal,
-            enabled: enabled
+            maxDepositPerPeriod: maxDeposit, maxWithdrawalPerPeriod: maxWithdrawal, enabled: enabled
         });
 
         emit RateLimitConfigUpdated(maxDeposit, maxWithdrawal, enabled);
@@ -1016,10 +974,7 @@ contract AethelredBridge is
      * @param addr Address to block/unblock
      * @param blocked Whether to block the address
      */
-    function setAddressBlocked(address addr, bool blocked)
-        external
-        onlyRole(GUARDIAN_ROLE)
-    {
+    function setAddressBlocked(address addr, bool blocked) external onlyRole(GUARDIAN_ROLE) {
         blockedAddresses[addr] = blocked;
         emit AddressBlockStatusChanged(addr, blocked);
     }
@@ -1031,10 +986,7 @@ contract AethelredBridge is
      *      and indefinite fund locking.
      * @param newDelay New delay in seconds (must be within min/max bounds)
      */
-    function setEmergencyWithdrawalDelay(uint256 newDelay)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setEmergencyWithdrawalDelay(uint256 newDelay) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newDelay < MIN_EMERGENCY_TIMELOCK || newDelay > MAX_EMERGENCY_TIMELOCK) {
             revert InvalidEmergencyDelay();
         }
@@ -1064,7 +1016,11 @@ contract AethelredBridge is
      * @param amount Amount to withdraw
      * @param recipient Recipient address
      */
-    function queueEmergencyWithdrawal(address token, uint256 amount, address recipient)
+    function queueEmergencyWithdrawal(
+        address token,
+        uint256 amount,
+        address recipient
+    )
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
         whenNotPaused
@@ -1081,12 +1037,7 @@ contract AethelredBridge is
 
         operationId = keccak256(
             abi.encode(
-                token,
-                amount,
-                recipient,
-                emergencyWithdrawalNonce,
-                block.chainid,
-                address(this)
+                token, amount, recipient, emergencyWithdrawalNonce, block.chainid, address(this)
             )
         );
 
@@ -1103,11 +1054,7 @@ contract AethelredBridge is
         emergencyWithdrawalNonce++;
 
         emit EmergencyWithdrawalQueued(
-            operationId,
-            token,
-            recipient,
-            amount,
-            block.timestamp + emergencyWithdrawalDelay
+            operationId, token, recipient, amount, block.timestamp + emergencyWithdrawalDelay
         );
     }
 
@@ -1117,10 +1064,7 @@ contract AethelredBridge is
      *      are reached, the admin can call executeEmergencyWithdrawal.
      * @param operationId The queued emergency withdrawal operation ID
      */
-    function approveEmergencyWithdrawal(bytes32 operationId)
-        external
-        onlyRole(GUARDIAN_ROLE)
-    {
+    function approveEmergencyWithdrawal(bytes32 operationId) external onlyRole(GUARDIAN_ROLE) {
         EmergencyWithdrawalRequest storage req = emergencyWithdrawalRequests[operationId];
         if (req.queuedAt == 0) revert EmergencyWithdrawalNotFound();
         if (req.executed || req.cancelled) revert EmergencyWithdrawalAlreadyHandled();
@@ -1130,10 +1074,7 @@ contract AethelredBridge is
         guardianApprovalCount[operationId] += 1;
 
         emit GuardianApprovalSubmitted(
-            operationId,
-            msg.sender,
-            guardianApprovalCount[operationId],
-            REQUIRED_GUARDIAN_APPROVALS
+            operationId, msg.sender, guardianApprovalCount[operationId], REQUIRED_GUARDIAN_APPROVALS
         );
     }
 
@@ -1166,7 +1107,7 @@ contract AethelredBridge is
         // totalLockedETH/ERC20 == actual locked balance available for normal withdrawals.
         if (req.token == address(0)) {
             totalLockedETH -= req.amount;
-            (bool success, ) = req.recipient.call{value: req.amount}("");
+            (bool success,) = req.recipient.call{ value: req.amount }("");
             if (!success) revert TransferFailed();
         } else {
             totalLockedERC20[req.token] -= req.amount;
@@ -1180,10 +1121,7 @@ contract AethelredBridge is
      * @notice Cancel a queued emergency withdrawal
      * @param operationId Queued emergency withdrawal operation ID
      */
-    function cancelEmergencyWithdrawal(bytes32 operationId)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function cancelEmergencyWithdrawal(bytes32 operationId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         EmergencyWithdrawalRequest storage req = emergencyWithdrawalRequests[operationId];
         if (req.queuedAt == 0) revert EmergencyWithdrawalNotFound();
         if (req.executed || req.cancelled) revert EmergencyWithdrawalAlreadyHandled();
@@ -1196,10 +1134,7 @@ contract AethelredBridge is
      * @notice Update the per-block mint/withdrawal ceiling.
      * @param newCeiling New ceiling in wei (must be > 0)
      */
-    function setMintCeilingPerBlock(uint256 newCeiling)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setMintCeilingPerBlock(uint256 newCeiling) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newCeiling == 0) revert InvalidAmount();
         uint256 oldCeiling = mintCeilingPerBlock;
         mintCeilingPerBlock = newCeiling;
@@ -1210,7 +1145,11 @@ contract AethelredBridge is
      * @notice Backward-compatible alias that now enforces timelocked flow.
      * @dev This no longer transfers immediately; it only queues the request.
      */
-    function emergencyWithdraw(address token, uint256 amount, address recipient)
+    function emergencyWithdraw(
+        address token,
+        uint256 amount,
+        address recipient
+    )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
@@ -1249,11 +1188,7 @@ contract AethelredBridge is
      * @param relayer The relayer address
      * @return hasVoted Whether the relayer has voted
      */
-    function hasRelayerVoted(bytes32 proposalId, address relayer)
-        external
-        view
-        returns (bool)
-    {
+    function hasRelayerVoted(bytes32 proposalId, address relayer) external view returns (bool) {
         return withdrawalVotes[proposalId][relayer];
     }
 
@@ -1267,7 +1202,8 @@ contract AethelredBridge is
         view
         returns (uint256 deposited, uint256 withdrawn)
     {
-        uint256 currentPeriod = block.timestamp / RATE_LIMIT_PERIOD;
+        uint256 currentPeriod =
+            block.timestamp / RATE_LIMIT_PERIOD;
         RateLimitState storage state = rateLimitState[currentPeriod];
         return (state.totalDeposited, state.totalWithdrawn);
     }
@@ -1293,12 +1229,15 @@ contract AethelredBridge is
         if (relayerConfig.minVotesRequired > effectiveThreshold) {
             effectiveThreshold = relayerConfig.minVotesRequired;
         }
-        if (proposal.voteCount < effectiveThreshold)
+        if (proposal.voteCount < effectiveThreshold) {
             return (false, "Insufficient votes");
-        if (block.timestamp < proposal.challengeEndTime)
+        }
+        if (block.timestamp < proposal.challengeEndTime) {
             return (false, "Challenge period not ended");
-        if (blockedAddresses[proposal.recipient])
+        }
+        if (blockedAddresses[proposal.recipient]) {
             return (false, "Recipient blocked");
+        }
 
         return (true, "");
     }
@@ -1319,24 +1258,17 @@ contract AethelredBridge is
         address token,
         uint256 amount,
         uint256 nonce
-    ) internal view returns (bytes32) {
+    )
+        internal
+        view
+        returns (bytes32)
+    {
         return keccak256(
-            abi.encode(
-                depositor,
-                aethelredRecipient,
-                token,
-                amount,
-                nonce,
-                block.chainid
-            )
+            abi.encode(depositor, aethelredRecipient, token, amount, nonce, block.chainid)
         );
     }
 
-    function grantRole(bytes32 role, address account)
-        public
-        override
-        onlyRole(getRoleAdmin(role))
-    {
+    function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
         bool alreadyHad = hasRole(role, account);
         super.grantRole(role, account);
         if (role == RELAYER_ROLE && !alreadyHad) {
@@ -1344,7 +1276,10 @@ contract AethelredBridge is
         }
     }
 
-    function revokeRole(bytes32 role, address account)
+    function revokeRole(
+        bytes32 role,
+        address account
+    )
         public
         override
         onlyRole(getRoleAdmin(role))
@@ -1386,13 +1321,7 @@ contract AethelredBridge is
         relayerConfig.relayerCount = count;
 
         uint256 thresholdBps = relayerConfig.consensusThresholdBps;
-        uint256 minVotes = (count * thresholdBps) / 10000;
-        if (count > 0 && minVotes == 0) {
-            minVotes = 1;
-        }
-        if (minVotes > count) {
-            minVotes = count;
-        }
+        uint256 minVotes = _calculateMinVotesRequired(count, thresholdBps);
         relayerConfig.minVotesRequired = minVotes;
 
         emit RelayerConfigUpdated(count, thresholdBps, minVotes);
@@ -1401,19 +1330,44 @@ contract AethelredBridge is
     function _requireContractAdmin(address admin) internal view {
         if (admin == address(0)) revert InvalidRecipient();
         // Allow local-dev EOAs on common local chains to keep tests/development usable.
-        if (block.chainid == 31337 || block.chainid == 1337) {
+        if (block.chainid == 31_337 || block.chainid == 1337) {
             return;
         }
         if (admin.code.length == 0) revert AdminMustBeContract();
     }
 
     function _requireUpgraderTimelockDelay(address upgraderTimelock) internal view {
-        if (
-            ITimelockDelaySource(upgraderTimelock).getMinDelay() <
-            MIN_UPGRADER_TIMELOCK_DELAY
-        ) {
+        if (ITimelockDelaySource(upgraderTimelock).getMinDelay() < MIN_UPGRADER_TIMELOCK_DELAY) {
             revert UpgraderTimelockDelayTooShort();
         }
+    }
+
+    function _requireLegacyInitializerOnlyOnLocalDevChain() internal view {
+        if (block.chainid != 31_337 && block.chainid != 1337) {
+            revert ProductionInitializationRequiresTimelock();
+        }
+    }
+
+    function _calculateMinVotesRequired(
+        uint256 relayerCount,
+        uint256 consensusThresholdBps
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (relayerCount == 0) {
+            return 0;
+        }
+
+        uint256 minVotes = (relayerCount * consensusThresholdBps + 9999) / 10_000;
+        if (minVotes == 0) {
+            minVotes = 1;
+        }
+        if (minVotes > relayerCount) {
+            minVotes = relayerCount;
+        }
+        return minVotes;
     }
 
     /**
@@ -1495,7 +1449,11 @@ contract AethelredBridge is
         uint256 amount,
         bytes32 burnTxHash,
         uint256 aethelredBlockHeight
-    ) public view returns (bytes32) {
+    )
+        public
+        view
+        returns (bytes32)
+    {
         bytes32 structHash = keccak256(
             abi.encode(
                 WITHDRAWAL_TYPEHASH,
@@ -1507,9 +1465,7 @@ contract AethelredBridge is
                 aethelredBlockHeight
             )
         );
-        return keccak256(
-            abi.encodePacked("\x19\x01", domainSeparatorV4(), structHash)
-        );
+        return keccak256(abi.encodePacked("\x19\x01", domainSeparatorV4(), structHash));
     }
 
     // =========================================================================

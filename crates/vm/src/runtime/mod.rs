@@ -470,14 +470,9 @@ fn host_call_precompile(
     let data = env.data();
     let _ = data.gas_meter.consume_host_call(HostCall::PrecompileCall);
 
-    // In production, this would:
-    // 1. Read input from WASM memory
-    // 2. Call precompile
-    // 3. Write output to WASM memory
-    // 4. Return success/failure
-
-    // For now, return 0 (success placeholder)
-    0
+    // Until the precompile bridge is fully wired into WASM memory, fail closed
+    // instead of reporting a successful verification path to the guest module.
+    1
 }
 
 #[cfg(feature = "wasmer-runtime")]
@@ -521,7 +516,7 @@ fn host_verify_signature(
 
     // Signature verification via precompile
     // sig_type: 0 = ECDSA, 1 = Dilithium, 2 = Hybrid
-    0 // Placeholder
+    1
 }
 
 #[cfg(feature = "wasmer-runtime")]
@@ -539,7 +534,7 @@ fn host_verify_tee(
 
     // TEE attestation verification
     // platform: 0 = Nitro, 1 = SGX, 2 = SEV
-    0 // Placeholder
+    1
 }
 
 #[cfg(feature = "wasmer-runtime")]
@@ -560,7 +555,7 @@ fn host_verify_zkp(
 
     // ZK proof verification
     // proof_type: 0 = Groth16, 1 = PLONK, 2 = EZKL
-    0 // Placeholder
+    1
 }
 
 #[cfg(feature = "wasmer-runtime")]

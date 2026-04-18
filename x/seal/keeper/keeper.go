@@ -265,8 +265,8 @@ func (k Keeper) UpdateSeal(ctx context.Context, seal *types.DigitalSeal) error {
 	return nil
 }
 
-// RevokeSeal revokes a seal by ID
-func (k Keeper) RevokeSeal(ctx context.Context, id string, reason string) error {
+// revokeSealDirect revokes a seal by ID on the narrow direct self-revocation path.
+func (k Keeper) revokeSealDirect(ctx context.Context, id string, reason string) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	seal, err := k.GetSeal(ctx, id)

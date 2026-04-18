@@ -1,8 +1,14 @@
 //! # Hybrid Signature Scheme
 //!
-//! Combines ECDSA P-256 with Dilithium3 for post-quantum security.
+//! Combines ECDSA secp256k1 with Dilithium for post-quantum security.
 
 use super::*;
+use k256::ecdsa::{
+    signature::{Signer, Verifier},
+    Signature as EcdsaSignature, SigningKey, VerifyingKey,
+};
+use pqcrypto_dilithium::{dilithium2, dilithium3, dilithium5};
+use pqcrypto_traits::sign::{DetachedSignature as _, PublicKey as _, SecretKey as _};
 use serde::{Deserialize, Serialize};
 
 /// Dilithium security levels supported by hybrid signatures.
@@ -17,43 +23,41 @@ pub enum DilithiumSecurityLevel {
 impl DilithiumSecurityLevel {
     fn public_key_size(self) -> usize {
         match self {
-            DilithiumSecurityLevel::Level2 => 1312,
-            DilithiumSecurityLevel::Level3 => 1952,
-            DilithiumSecurityLevel::Level5 => 2592,
-        }
-    }
-
-    fn secret_key_size(self) -> usize {
-        match self {
-            DilithiumSecurityLevel::Level2 => 2528,
-            DilithiumSecurityLevel::Level3 => 4032,
-            DilithiumSecurityLevel::Level5 => 4896,
+            DilithiumSecurityLevel::Level2 => dilithium2::public_key_bytes(),
+            DilithiumSecurityLevel::Level3 => dilithium3::public_key_bytes(),
+            DilithiumSecurityLevel::Level5 => dilithium5::public_key_bytes(),
         }
     }
 
     fn signature_size(self) -> usize {
         match self {
-            DilithiumSecurityLevel::Level2 => 2420,
-            DilithiumSecurityLevel::Level3 => 3293,
-            DilithiumSecurityLevel::Level5 => 4595,
+            DilithiumSecurityLevel::Level2 => dilithium2::signature_bytes(),
+            DilithiumSecurityLevel::Level3 => dilithium3::signature_bytes(),
+            DilithiumSecurityLevel::Level5 => dilithium5::signature_bytes(),
         }
     }
 
     fn from_public_key_size(size: usize) -> Option<Self> {
-        match size {
-            1312 => Some(DilithiumSecurityLevel::Level2),
-            1952 => Some(DilithiumSecurityLevel::Level3),
-            2592 => Some(DilithiumSecurityLevel::Level5),
-            _ => None,
+        if size == dilithium2::public_key_bytes() {
+            Some(DilithiumSecurityLevel::Level2)
+        } else if size == dilithium3::public_key_bytes() {
+            Some(DilithiumSecurityLevel::Level3)
+        } else if size == dilithium5::public_key_bytes() {
+            Some(DilithiumSecurityLevel::Level5)
+        } else {
+            None
         }
     }
 
     fn from_signature_size(size: usize) -> Option<Self> {
-        match size {
-            2420 => Some(DilithiumSecurityLevel::Level2),
-            3293 => Some(DilithiumSecurityLevel::Level3),
-            4595 => Some(DilithiumSecurityLevel::Level5),
-            _ => None,
+        if size == dilithium2::signature_bytes() {
+            Some(DilithiumSecurityLevel::Level2)
+        } else if size == dilithium3::signature_bytes() {
+            Some(DilithiumSecurityLevel::Level3)
+        } else if size == dilithium5::signature_bytes() {
+            Some(DilithiumSecurityLevel::Level5)
+        } else {
+            None
         }
     }
 }
@@ -62,14 +66,14 @@ impl DilithiumSecurityLevel {
 // Hybrid Keypair
 // ============================================================================
 
-/// Hybrid keypair combining ECDSA and Dilithium3
+/// Hybrid keypair combining ECDSA secp256k1 and Dilithium
 #[derive(Clone)]
 pub struct HybridKeypair {
     /// ECDSA keypair
     ecdsa_secret: [u8; 32],
     ecdsa_public: [u8; 64],
 
-    /// Dilithium3 keypair
+    /// Dilithium keypair
     dilithium_secret: Vec<u8>,
     dilithium_public: Vec<u8>,
     level: DilithiumSecurityLevel,
@@ -83,16 +87,7 @@ impl HybridKeypair {
 
     /// Generate a new hybrid keypair for a specific Dilithium level.
     pub fn generate_with_level(level: DilithiumSecurityLevel) -> Self {
-        // Generate ECDSA keypair
-        let mut ecdsa_secret = [0u8; 32];
-        SecureRandom::fill_bytes(&mut ecdsa_secret).unwrap();
-
-        // In production, derive public key using P-256 curve operations
-        let mut ecdsa_public = [0u8; 64];
-        Self::derive_ecdsa_public(&ecdsa_secret, &mut ecdsa_public);
-
-        // Generate Dilithium3 keypair
-        // In production, use pqcrypto-dilithium
+        let (ecdsa_secret, ecdsa_public) = Self::generate_ecdsa_keypair();
         let (dilithium_secret, dilithium_public) = Self::generate_dilithium(level);
 
         HybridKeypair {
@@ -104,12 +99,14 @@ impl HybridKeypair {
         }
     }
 
-    /// Generate from seed (deterministic)
+    /// Generate from seed (deterministic test helper)
+    #[cfg(test)]
     pub fn from_seed(seed: &[u8; 32]) -> Self {
         Self::from_seed_with_level(seed, DilithiumSecurityLevel::Level3)
     }
 
     /// Generate from seed for a specific Dilithium level.
+    #[cfg(test)]
     pub fn from_seed_with_level(seed: &[u8; 32], level: DilithiumSecurityLevel) -> Self {
         use sha2::{Digest, Sha256};
 
@@ -173,36 +170,53 @@ impl HybridKeypair {
     // Internal Implementation
     // ========================================================================
 
+    fn generate_ecdsa_keypair() -> ([u8; 32], [u8; 64]) {
+        loop {
+            let mut secret = [0u8; 32];
+            SecureRandom::fill_bytes(&mut secret).unwrap();
+
+            if let Ok(signing_key) = SigningKey::from_slice(&secret) {
+                return (
+                    secret,
+                    Self::encode_ecdsa_public(signing_key.verifying_key()),
+                );
+            }
+        }
+    }
+
+    #[cfg(test)]
     fn derive_ecdsa_public(secret: &[u8; 32], public: &mut [u8; 64]) {
-        // In production, use p256 crate for proper curve operations
-        // For now, placeholder derivation
-        use sha2::{Digest, Sha256};
-        let mut hasher = Sha256::new();
-        hasher.update(secret);
-        hasher.update(b"public_x");
-        let x: [u8; 32] = hasher.finalize().into();
+        let signing_key =
+            SigningKey::from_slice(secret).expect("deterministic test seed must be valid");
+        *public = Self::encode_ecdsa_public(signing_key.verifying_key());
+    }
 
-        let mut hasher = Sha256::new();
-        hasher.update(secret);
-        hasher.update(b"public_y");
-        let y: [u8; 32] = hasher.finalize().into();
-
-        public[..32].copy_from_slice(&x);
-        public[32..].copy_from_slice(&y);
+    fn encode_ecdsa_public(verifying_key: &VerifyingKey) -> [u8; 64] {
+        let encoded = verifying_key.to_encoded_point(false);
+        let bytes = encoded.as_bytes();
+        let mut public = [0u8; 64];
+        public.copy_from_slice(&bytes[1..65]);
+        public
     }
 
     fn generate_dilithium(level: DilithiumSecurityLevel) -> (Vec<u8>, Vec<u8>) {
-        // In production, use pqcrypto_dilithium::dilithium3
-        // For now, placeholder
-        let mut secret = vec![0u8; level.secret_key_size()];
-        let mut public = vec![0u8; level.public_key_size()];
-
-        SecureRandom::fill_bytes(&mut secret).unwrap();
-        SecureRandom::fill_bytes(&mut public).unwrap();
-
-        (secret, public)
+        match level {
+            DilithiumSecurityLevel::Level2 => {
+                let (public, secret) = dilithium2::keypair();
+                (secret.as_bytes().to_vec(), public.as_bytes().to_vec())
+            }
+            DilithiumSecurityLevel::Level3 => {
+                let (public, secret) = dilithium3::keypair();
+                (secret.as_bytes().to_vec(), public.as_bytes().to_vec())
+            }
+            DilithiumSecurityLevel::Level5 => {
+                let (public, secret) = dilithium5::keypair();
+                (secret.as_bytes().to_vec(), public.as_bytes().to_vec())
+            }
+        }
     }
 
+    #[cfg(test)]
     fn generate_dilithium_from_seed(
         seed: &[u8; 32],
         level: DilithiumSecurityLevel,
@@ -229,40 +243,38 @@ impl HybridKeypair {
     }
 
     fn sign_ecdsa(&self, message: &[u8]) -> [u8; 64] {
-        // In production, use p256::ecdsa::SigningKey
-        use sha2::{Digest, Sha256};
-
-        let mut hasher = Sha256::new();
-        hasher.update(&self.ecdsa_secret);
-        hasher.update(message);
-        let hash = hasher.finalize();
-
+        let signing_key =
+            SigningKey::from_slice(&self.ecdsa_secret).expect("hybrid keypair stores valid ECDSA");
+        let signature: EcdsaSignature = signing_key.sign(message);
         let mut sig = [0u8; 64];
-        sig[..32].copy_from_slice(&hash);
-
-        let mut hasher = Sha256::new();
-        hasher.update(&hash);
-        hasher.update(&self.ecdsa_secret);
-        let hash2 = hasher.finalize();
-        sig[32..].copy_from_slice(&hash2);
-
+        sig.copy_from_slice(&signature.to_bytes());
         sig
     }
 
     fn sign_dilithium(&self, message: &[u8]) -> Vec<u8> {
-        // In production, use pqcrypto_dilithium::dilithium3::sign
-        use sha2::{Digest, Sha512};
-
-        let mut hasher = Sha512::new();
-        hasher.update(&self.dilithium_secret[..64]);
-        hasher.update(message);
-        let hash = hasher.finalize();
-
-        // Placeholder signature
-        let mut sig = vec![0u8; self.level.signature_size()];
-        sig[..64].copy_from_slice(&hash);
-
-        sig
+        match self.level {
+            DilithiumSecurityLevel::Level2 => {
+                let secret = dilithium2::SecretKey::from_bytes(&self.dilithium_secret)
+                    .expect("hybrid keypair stores valid Dilithium2 secret key");
+                dilithium2::detached_sign(message, &secret)
+                    .as_bytes()
+                    .to_vec()
+            }
+            DilithiumSecurityLevel::Level3 => {
+                let secret = dilithium3::SecretKey::from_bytes(&self.dilithium_secret)
+                    .expect("hybrid keypair stores valid Dilithium3 secret key");
+                dilithium3::detached_sign(message, &secret)
+                    .as_bytes()
+                    .to_vec()
+            }
+            DilithiumSecurityLevel::Level5 => {
+                let secret = dilithium5::SecretKey::from_bytes(&self.dilithium_secret)
+                    .expect("hybrid keypair stores valid Dilithium5 secret key");
+                dilithium5::detached_sign(message, &secret)
+                    .as_bytes()
+                    .to_vec()
+            }
+        }
     }
 }
 
@@ -282,10 +294,10 @@ impl std::fmt::Debug for HybridKeypair {
 /// Hybrid public key
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HybridPublicKey {
-    /// ECDSA P-256 public key (uncompressed, 64 bytes)
+    /// ECDSA secp256k1 public key (uncompressed x || y, 64 bytes)
     pub ecdsa: [u8; 64],
 
-    /// Dilithium3 public key (1952 bytes)
+    /// Dilithium public key
     pub dilithium: Vec<u8>,
     #[serde(default)]
     pub level: DilithiumSecurityLevel,
@@ -294,6 +306,10 @@ pub struct HybridPublicKey {
 impl HybridPublicKey {
     /// Verify a hybrid signature
     pub fn verify(&self, message: &[u8], signature: &HybridSignature) -> bool {
+        if self.level != signature.level {
+            return false;
+        }
+
         // Verify ECDSA
         if !self.verify_ecdsa(message, &signature.ecdsa) {
             return false;
@@ -390,35 +406,66 @@ impl HybridPublicKey {
     // ========================================================================
 
     fn verify_ecdsa(&self, message: &[u8], signature: &[u8; 64]) -> bool {
-        // In production, use p256::ecdsa::VerifyingKey
-        use sha2::{Digest, Sha256};
+        let mut encoded = [0u8; 65];
+        encoded[0] = 0x04;
+        encoded[1..].copy_from_slice(&self.ecdsa);
 
-        // Placeholder verification
-        let mut hasher = Sha256::new();
-        hasher.update(message);
-        hasher.update(&self.ecdsa);
-        let _hash = hasher.finalize();
+        let verifying_key = match VerifyingKey::from_sec1_bytes(&encoded) {
+            Ok(key) => key,
+            Err(_) => return false,
+        };
 
-        // For now, accept all (placeholder)
-        signature.len() == 64
+        let signature = match EcdsaSignature::try_from(signature.as_slice()) {
+            Ok(signature) => signature,
+            Err(_) => return false,
+        };
+
+        verifying_key.verify(message, &signature).is_ok()
     }
 
     fn verify_dilithium(&self, message: &[u8], signature: &[u8]) -> bool {
-        // In production, use pqcrypto_dilithium::dilithium3::verify
-        use sha2::{Digest, Sha256};
-
         if signature.len() != self.level.signature_size() {
             return false;
         }
+        if self.dilithium.len() != self.level.public_key_size() {
+            return false;
+        }
 
-        // Placeholder verification
-        let mut hasher = Sha256::new();
-        hasher.update(message);
-        hasher.update(&self.dilithium);
-        let _hash = hasher.finalize();
-
-        // For now, accept all (placeholder)
-        true
+        match self.level {
+            DilithiumSecurityLevel::Level2 => {
+                let public = match dilithium2::PublicKey::from_bytes(&self.dilithium) {
+                    Ok(public) => public,
+                    Err(_) => return false,
+                };
+                let signature = match dilithium2::DetachedSignature::from_bytes(signature) {
+                    Ok(signature) => signature,
+                    Err(_) => return false,
+                };
+                dilithium2::verify_detached_signature(&signature, message, &public).is_ok()
+            }
+            DilithiumSecurityLevel::Level3 => {
+                let public = match dilithium3::PublicKey::from_bytes(&self.dilithium) {
+                    Ok(public) => public,
+                    Err(_) => return false,
+                };
+                let signature = match dilithium3::DetachedSignature::from_bytes(signature) {
+                    Ok(signature) => signature,
+                    Err(_) => return false,
+                };
+                dilithium3::verify_detached_signature(&signature, message, &public).is_ok()
+            }
+            DilithiumSecurityLevel::Level5 => {
+                let public = match dilithium5::PublicKey::from_bytes(&self.dilithium) {
+                    Ok(public) => public,
+                    Err(_) => return false,
+                };
+                let signature = match dilithium5::DetachedSignature::from_bytes(signature) {
+                    Ok(signature) => signature,
+                    Err(_) => return false,
+                };
+                dilithium5::verify_detached_signature(&signature, message, &public).is_ok()
+            }
+        }
     }
 }
 
@@ -566,6 +613,43 @@ mod tests {
 
         assert!(signature.is_valid_format());
         assert!(public.verify(message, &signature));
+    }
+
+    #[test]
+    fn test_sign_verify_supported_levels() {
+        for level in [
+            DilithiumSecurityLevel::Level2,
+            DilithiumSecurityLevel::Level3,
+            DilithiumSecurityLevel::Level5,
+        ] {
+            let keypair = HybridKeypair::generate_with_level(level);
+            let public = keypair.public_key();
+            let signature = keypair.sign(b"multi-level verification");
+
+            assert_eq!(public.level, level);
+            assert_eq!(public.dilithium.len(), level.public_key_size());
+            assert_eq!(signature.dilithium.len(), level.signature_size());
+            assert!(public.verify(b"multi-level verification", &signature));
+        }
+    }
+
+    #[test]
+    fn test_verify_rejects_tampered_message() {
+        let keypair = HybridKeypair::generate();
+        let public = keypair.public_key();
+        let signature = keypair.sign(b"message one");
+
+        assert!(!public.verify(b"message two", &signature));
+    }
+
+    #[test]
+    fn test_verify_rejects_tampered_dilithium_signature() {
+        let keypair = HybridKeypair::generate();
+        let public = keypair.public_key();
+        let mut signature = keypair.sign(b"tamper check");
+        signature.dilithium[0] ^= 0x01;
+
+        assert!(!public.verify(b"tamper check", &signature));
     }
 
     #[test]

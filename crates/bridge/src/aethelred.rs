@@ -360,6 +360,7 @@ impl AethelredClient {
                     let mut burner = [0u8; 32];
                     let mut eth_recipient = [0u8; 20];
                     let mut amount: u128 = 0;
+                    let mut nonce: Option<u64> = None;
 
                     for attr in attrs {
                         let key = attr.get("key")?.as_str()?;
@@ -391,9 +392,12 @@ impl AethelredClient {
                                 }
                             }
                             "amount" => amount = value.parse().unwrap_or(0),
+                            "nonce" | "burn_nonce" => nonce = value.parse().ok(),
                             _ => {}
                         }
                     }
+
+                    let nonce = nonce?;
 
                     return Some(AethelredBurn {
                         burn_id,
@@ -401,7 +405,7 @@ impl AethelredClient {
                         eth_recipient,
                         token_type: TokenType::NativeAETHEL,
                         amount,
-                        nonce: 0, // Placeholder: actual nonce fetched from on-chain state
+                        nonce,
                         block_height: height,
                         block_hash: [0u8; 32], // Block hash fetched separately
                         tx_hash,
@@ -589,6 +593,7 @@ pub struct MintEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[tokio::test]
     async fn test_listener_creation() {
@@ -601,5 +606,67 @@ mod tests {
             .unwrap();
 
         assert_eq!(listener.last_processed_block().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_parse_burn_tx_extracts_nonce() {
+        let config = AethelredConfig::testnet();
+        let storage = Arc::new(BridgeStorage::open_temp().unwrap());
+        let metrics = Arc::new(BridgeMetrics::new());
+        let listener = AethelredListener::new(&config, storage, metrics)
+            .await
+            .unwrap();
+
+        let tx = json!({
+            "txhash": hex::encode([0x11u8; 32]),
+            "height": "42",
+            "timestamp": "2026-04-16T12:00:00Z",
+            "logs": [{
+                "events": [{
+                    "type": "bridge_burn",
+                    "attributes": [
+                        {"key": "burn_id", "value": hex::encode([0x22u8; 32])},
+                        {"key": "burner", "value": format!("0x{}", hex::encode([0x33u8; 32]))},
+                        {"key": "eth_recipient", "value": format!("0x{}", hex::encode([0x44u8; 20]))},
+                        {"key": "amount", "value": "123456789"},
+                        {"key": "nonce", "value": "7"}
+                    ]
+                }]
+            }]
+        });
+
+        let burn = listener
+            .connect()
+            .await
+            .unwrap()
+            .parse_burn_tx(&tx, &config.bridge_module_address)
+            .expect("burn parsed");
+
+        assert_eq!(burn.nonce, 7);
+        assert_eq!(burn.amount, 123456789);
+        assert_eq!(burn.block_height, 42);
+    }
+
+    #[tokio::test]
+    async fn test_parse_burn_tx_requires_nonce() {
+        let client = AethelredClient::new("http://localhost:1317");
+        let tx = json!({
+            "txhash": hex::encode([0x55u8; 32]),
+            "height": "9",
+            "timestamp": "2026-04-16T12:00:00Z",
+            "logs": [{
+                "events": [{
+                    "type": "burn",
+                    "attributes": [
+                        {"key": "burn_id", "value": hex::encode([0x66u8; 32])},
+                        {"key": "burner", "value": format!("0x{}", hex::encode([0x77u8; 32]))},
+                        {"key": "eth_recipient", "value": format!("0x{}", hex::encode([0x88u8; 20]))},
+                        {"key": "amount", "value": "5000"}
+                    ]
+                }]
+            }]
+        });
+
+        assert!(client.parse_burn_tx(&tx, "bridge").is_none());
     }
 }

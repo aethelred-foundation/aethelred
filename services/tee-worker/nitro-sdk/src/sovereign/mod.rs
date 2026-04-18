@@ -68,9 +68,9 @@ pub use encryption::*;
 #[allow(unused_imports)]
 pub use types::*;
 
-use crate::attestation::{AttestationError, EnclaveReport, HardwareType};
+use crate::attestation::{AttestationError, EnclaveReport, HardwareType, TcbStatus};
 use crate::compliance::{Jurisdiction, Regulation};
-use crate::crypto::{HybridPublicKey, HybridSignature};
+use crate::crypto::{EncryptedData, HybridKeypair, HybridPublicKey, HybridSignature};
 
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -137,6 +137,10 @@ pub enum SovereignError {
     /// Decryption failed
     #[error("Decryption failed: {0}")]
     DecryptionFailed(String),
+
+    /// Encryption failed
+    #[error("Encryption failed: {0}")]
+    EncryptionFailed(String),
 
     /// Audit log required
     #[error("Audit log required for this access")]
@@ -342,6 +346,18 @@ pub enum EncryptionAlgorithm {
     ChaCha20Poly1305,
     /// AES-256-GCM-SIV (Misuse resistant)
     Aes256GcmSiv,
+}
+
+impl EncryptionAlgorithm {
+    fn as_crypto_algorithm(self) -> crate::crypto::EncryptionAlgorithm {
+        match self {
+            EncryptionAlgorithm::Aes256Gcm => crate::crypto::EncryptionAlgorithm::Aes256Gcm,
+            EncryptionAlgorithm::ChaCha20Poly1305 => {
+                crate::crypto::EncryptionAlgorithm::ChaCha20Poly1305
+            }
+            EncryptionAlgorithm::Aes256GcmSiv => crate::crypto::EncryptionAlgorithm::Aes256GcmSiv,
+        }
+    }
 }
 
 /// Key derivation information
@@ -614,6 +630,27 @@ where
             });
         }
 
+        if self.privacy_level.requires_tee() {
+            if !report.hardware_type.is_production_ready() {
+                return Err(SovereignError::InsecureHardware {
+                    required: self.required_hardware,
+                    actual: report.hardware_type,
+                });
+            }
+
+            if report.flags.debug_mode {
+                return Err(SovereignError::InvalidAttestation(
+                    AttestationError::DebugMode,
+                ));
+            }
+
+            if !report.is_tcb_acceptable() {
+                return Err(SovereignError::InvalidAttestation(
+                    self.tcb_attestation_error(report),
+                ));
+            }
+        }
+
         // 4. Check retention
         if self.is_expired() {
             return Err(SovereignError::DataExpired {
@@ -637,21 +674,41 @@ where
     ) -> Result<T, SovereignError> {
         // Validate access
         self.check_access(report)?;
+        self.enforce_purpose(purpose)?;
 
-        // Check purpose if required
-        if let Some(purpose) = purpose {
-            if !self.allowed_purposes.is_empty()
-                && !self.allowed_purposes.iter().any(|p| p == purpose)
-            {
-                return Err(SovereignError::PurposeMismatch {
-                    requested: purpose.to_string(),
-                    allowed: self.allowed_purposes.clone(),
-                });
-            }
+        if self.privacy_level.requires_encryption() {
+            return Err(SovereignError::AccessDenied {
+                reason: "Encrypted sovereign payload requires owner-backed access path".to_string(),
+            });
         }
 
-        // Decrypt the data
-        self.decrypt(report)
+        self.decrypt_public()
+    }
+
+    /// Access encrypted sovereign data with the owner's private key.
+    pub fn access_with_owner_key(
+        &self,
+        report: &EnclaveReport,
+        owner_key: &HybridKeypair,
+    ) -> Result<T, SovereignError> {
+        self.access_with_owner_key_and_purpose(report, owner_key, None)
+    }
+
+    /// Access encrypted sovereign data with the owner's private key and purpose.
+    pub fn access_with_owner_key_and_purpose(
+        &self,
+        report: &EnclaveReport,
+        owner_key: &HybridKeypair,
+        purpose: Option<&str>,
+    ) -> Result<T, SovereignError> {
+        self.check_access(report)?;
+        self.enforce_purpose(purpose)?;
+
+        if self.privacy_level.requires_encryption() {
+            return self.decrypt_with_owner_key(owner_key);
+        }
+
+        self.decrypt_public()
     }
 
     /// Check if jurisdiction is allowed
@@ -696,19 +753,148 @@ where
         self.created_at + self.retention.period
     }
 
-    /// Decrypt the payload
-    fn decrypt(&self, _report: &EnclaveReport) -> Result<T, SovereignError> {
-        // In production, this would:
-        // 1. Derive key from TEE sealing key + report data
-        // 2. Decrypt using the specified algorithm
-        // 3. Verify integrity
-        // 4. Log access
+    fn enforce_purpose(&self, purpose: Option<&str>) -> Result<(), SovereignError> {
+        if self.audit_config.require_reason && purpose.is_none() {
+            return Err(SovereignError::AuditRequired);
+        }
 
-        // For now, simulate decryption
+        if let Some(purpose) = purpose {
+            if !self.allowed_purposes.is_empty()
+                && !self
+                    .allowed_purposes
+                    .iter()
+                    .any(|allowed| allowed == purpose)
+            {
+                return Err(SovereignError::PurposeMismatch {
+                    requested: purpose.to_string(),
+                    allowed: self.allowed_purposes.clone(),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    fn decrypt_public(&self) -> Result<T, SovereignError> {
         let decrypted = bincode::deserialize(&self.encrypted_payload)
             .map_err(|e| SovereignError::DecryptionFailed(e.to_string()))?;
-
         Ok(decrypted)
+    }
+
+    fn decrypt_with_owner_key(&self, owner_key: &HybridKeypair) -> Result<T, SovereignError> {
+        if owner_key.public_key() != self.access_control.owner {
+            return Err(SovereignError::AccessDenied {
+                reason: "Encrypted sovereign payload requires the owner key".to_string(),
+            });
+        }
+
+        if self.encryption_meta.nonce.is_empty() {
+            return Err(SovereignError::DecryptionFailed(
+                "Encrypted sovereign payload is missing nonce metadata".to_string(),
+            ));
+        }
+
+        let aad = self.encryption_aad();
+        let payload_key = self.derive_owner_payload_key(owner_key, &aad)?;
+        let encrypted = EncryptedData {
+            ciphertext: self.encrypted_payload.clone(),
+            nonce: self.encryption_meta.nonce.clone(),
+            algorithm: self.encryption_meta.algorithm.as_crypto_algorithm(),
+            aad_hash: Some(self.encryption_meta.aad_hash),
+        };
+
+        let decrypted = crate::crypto::decrypt(&payload_key, &encrypted, &aad)
+            .map_err(|e| SovereignError::DecryptionFailed(e.to_string()))?;
+        bincode::deserialize(&decrypted)
+            .map_err(|e| SovereignError::DecryptionFailed(e.to_string()))
+    }
+
+    fn derive_owner_payload_key(
+        &self,
+        owner_key: &HybridKeypair,
+        aad: &[u8],
+    ) -> Result<[u8; 32], SovereignError> {
+        let master_secret = owner_key.key_derivation_secret();
+        let mut info = self.encryption_meta.key_derivation.info.as_bytes().to_vec();
+        info.extend_from_slice(aad);
+
+        let derived = match self.encryption_meta.key_derivation.algorithm {
+            KdfAlgorithm::HkdfSha256 => crate::crypto::hkdf_sha256(
+                &master_secret,
+                &self.encryption_meta.key_derivation.salt,
+                &info,
+                32,
+            ),
+            KdfAlgorithm::HkdfSha384 => crate::crypto::hkdf_sha384(
+                &master_secret,
+                &self.encryption_meta.key_derivation.salt,
+                &info,
+                32,
+            ),
+            KdfAlgorithm::Pbkdf2Sha256 => crate::crypto::pbkdf2_sha256(
+                &master_secret,
+                &self.encryption_meta.key_derivation.salt,
+                self.encryption_meta
+                    .key_derivation
+                    .iterations
+                    .unwrap_or(100_000),
+                32,
+            ),
+        }
+        .map_err(|e| SovereignError::DecryptionFailed(e.to_string()))?;
+
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&derived);
+        Ok(key)
+    }
+
+    fn metadata_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.id.0);
+        bytes.extend_from_slice(self.required_jurisdiction.code().as_bytes());
+        bytes.push(self.required_hardware as u8);
+        let ts = self
+            .created_at
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        bytes.extend_from_slice(&ts.to_le_bytes());
+        bytes
+    }
+
+    fn encryption_aad(&self) -> Vec<u8> {
+        let mut bytes = self.metadata_bytes();
+        bytes.push(self.privacy_level_tag());
+
+        let creator_bytes = self.creator.to_bytes();
+        bytes.extend_from_slice(&(creator_bytes.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(&creator_bytes);
+        bytes
+    }
+
+    fn privacy_level_tag(&self) -> u8 {
+        match self.privacy_level {
+            PrivacyLevel::Public => 0,
+            PrivacyLevel::Protected => 1,
+            PrivacyLevel::Private => 2,
+            PrivacyLevel::Secret => 3,
+        }
+    }
+
+    fn tcb_attestation_error(&self, report: &EnclaveReport) -> AttestationError {
+        match report.tcb_status {
+            TcbStatus::Revoked => AttestationError::RevokedTcb {
+                reason: "Sovereign access requires a non-revoked TCB".to_string(),
+            },
+            _ => AttestationError::OutOfDateTcb {
+                description: format!(
+                    "Sovereign access requires acceptable TCB status, got {:?}",
+                    report.tcb_status
+                ),
+                required_svn: self.min_security_version,
+                actual_svn: report.security_version,
+            },
+        }
     }
 
     /// Get metadata for audit/display (no sensitive data)
@@ -774,6 +960,18 @@ impl<T> Drop for Sovereign<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::attestation::{EnclaveFlags, EnclaveReportBuilder, TcbStatus};
+
+    fn production_report(hardware: HardwareType) -> EnclaveReport {
+        EnclaveReportBuilder::new(hardware)
+            .security_version(10)
+            .tcb_status(TcbStatus::UpToDate)
+            .flags(EnclaveFlags {
+                debug_mode: false,
+                ..Default::default()
+            })
+            .build()
+    }
 
     #[test]
     fn test_sovereign_id() {
@@ -827,5 +1025,140 @@ mod tests {
         assert_eq!(decoded.jurisdiction, Jurisdiction::UAE);
         assert_eq!(decoded.hardware, HardwareType::AwsNitro);
         assert_eq!(decoded.compliance, vec![Regulation::UAEDataProtection]);
+    }
+
+    #[test]
+    fn test_encrypted_payload_requires_owner_access_path() {
+        let owner = HybridKeypair::generate();
+        let sovereign = Sovereign::new("sensitive".to_string())
+            .privacy(PrivacyLevel::Protected)
+            .owner(owner.clone())
+            .build()
+            .expect("protected sovereign should build");
+
+        let report = production_report(HardwareType::Mock);
+        let err = sovereign
+            .access(&report)
+            .expect_err("protected payload should reject ownerless access");
+
+        assert!(matches!(
+            err,
+            SovereignError::AccessDenied { reason }
+            if reason.contains("owner-backed access path")
+        ));
+
+        let recovered = sovereign
+            .access_with_owner_key(&report, &owner)
+            .expect("owner access should decrypt protected payload");
+        assert_eq!(recovered, "sensitive".to_string());
+    }
+
+    #[test]
+    fn test_wrong_owner_key_is_rejected() {
+        let owner = HybridKeypair::generate();
+        let wrong_owner = HybridKeypair::generate();
+        let sovereign = Sovereign::new("sensitive".to_string())
+            .privacy(PrivacyLevel::Protected)
+            .owner(owner)
+            .build()
+            .expect("protected sovereign should build");
+
+        let report = production_report(HardwareType::Mock);
+        let err = sovereign
+            .access_with_owner_key(&report, &wrong_owner)
+            .expect_err("wrong owner should be rejected");
+
+        assert!(matches!(
+            err,
+            SovereignError::AccessDenied { reason }
+            if reason.contains("owner key")
+        ));
+    }
+
+    #[test]
+    fn test_public_payload_allows_ownerless_access() {
+        let sovereign = Sovereign::new("public".to_string())
+            .privacy(PrivacyLevel::Public)
+            .build()
+            .expect("public sovereign should build");
+
+        let report = production_report(HardwareType::Mock);
+        let recovered = sovereign
+            .access(&report)
+            .expect("public payload should remain accessible");
+        assert_eq!(recovered, "public".to_string());
+    }
+
+    #[test]
+    fn test_private_payload_rejects_debug_mode() {
+        let owner = HybridKeypair::generate();
+        let sovereign = Sovereign::new("private".to_string())
+            .privacy(PrivacyLevel::Private)
+            .hardware(HardwareType::AwsNitro)
+            .owner(owner)
+            .build()
+            .expect("private sovereign should build");
+
+        let report = EnclaveReportBuilder::new(HardwareType::AwsNitro)
+            .security_version(10)
+            .tcb_status(TcbStatus::UpToDate)
+            .flags(EnclaveFlags {
+                debug_mode: true,
+                ..Default::default()
+            })
+            .build();
+
+        let err = sovereign
+            .check_access(&report)
+            .expect_err("debug-mode reports must fail");
+        assert!(matches!(
+            err,
+            SovereignError::InvalidAttestation(AttestationError::DebugMode)
+        ));
+    }
+
+    #[test]
+    fn test_private_payload_rejects_unacceptable_tcb() {
+        let owner = HybridKeypair::generate();
+        let sovereign = Sovereign::new("private".to_string())
+            .privacy(PrivacyLevel::Private)
+            .hardware(HardwareType::AwsNitro)
+            .owner(owner)
+            .build()
+            .expect("private sovereign should build");
+
+        let report = EnclaveReportBuilder::new(HardwareType::AwsNitro)
+            .security_version(10)
+            .tcb_status(TcbStatus::OutOfDate)
+            .flags(EnclaveFlags {
+                debug_mode: false,
+                ..Default::default()
+            })
+            .build();
+
+        let err = sovereign
+            .check_access(&report)
+            .expect_err("out-of-date TCB must fail");
+        assert!(matches!(
+            err,
+            SovereignError::InvalidAttestation(AttestationError::OutOfDateTcb { .. })
+        ));
+    }
+
+    #[test]
+    fn test_required_reason_is_enforced() {
+        let owner = HybridKeypair::generate();
+        let sovereign = Sovereign::new("sensitive".to_string())
+            .privacy(PrivacyLevel::Protected)
+            .owner(owner.clone())
+            .require_access_reason()
+            .build()
+            .expect("protected sovereign should build");
+
+        let report = production_report(HardwareType::Mock);
+        let err = sovereign
+            .access_with_owner_key(&report, &owner)
+            .expect_err("missing reason should be rejected");
+        assert!(matches!(err, SovereignError::AuditRequired));
     }
 }

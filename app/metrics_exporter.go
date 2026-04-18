@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -15,12 +16,26 @@ type AethelredMetricsExporter struct {
 	app *AethelredApp
 }
 
+const metricsAuthTokenEnv = "AETHELRED_METRICS_API_TOKEN"
+
+var errMetricsUnauthorized = errors.New("metrics endpoint requires loopback access or a valid bearer token")
+
 // MetricsHandler returns an HTTP handler for Aethelred-specific metrics.
 func (app *AethelredApp) MetricsHandler() http.Handler {
 	return &AethelredMetricsExporter{app: app}
 }
 
 func (e *AethelredMetricsExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := authorizeLoopbackOrBearer(r, metricsAuthTokenEnv, errMetricsUnauthorized.Error()); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 
 	if e.app == nil {

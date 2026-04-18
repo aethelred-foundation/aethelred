@@ -16,8 +16,8 @@ func validateTEEQuoteSchema(att *TEEAttestationData) error {
 		return fmt.Errorf("attestation is nil")
 	}
 	switch att.Platform {
-	case "aws-nitro":
-		return validateNitroQuoteSchema(att.Quote, att.UserData, att.Nonce)
+	case "aws-nitro", "nitro-simulated":
+		return validateNitroQuoteSchema(att.Platform, att.Quote, att.UserData, att.Nonce)
 	case "intel-sgx", "intel-tdx":
 		return validateDCAPQuoteHeader(att.Quote)
 	default:
@@ -26,18 +26,19 @@ func validateTEEQuoteSchema(att *TEEAttestationData) error {
 }
 
 type nitroQuoteSchema struct {
-	ModuleID    string          `json:"module_id"`
-	Timestamp   int64           `json:"timestamp_unix"`
-	Digest      string          `json:"digest"`
-	PCRs        []nitroQuotePCR `json:"pcrs"`
-	Certificate []byte          `json:"certificate,omitempty"`
-	CABundle    []byte          `json:"cabundle,omitempty"`
-	PublicKey   []byte          `json:"public_key,omitempty"`
-	UserData    []byte          `json:"user_data,omitempty"`
-	Nonce       []byte          `json:"nonce,omitempty"`
+	ModuleID            string          `json:"module_id"`
+	Timestamp           int64           `json:"timestamp_unix"`
+	Digest              string          `json:"digest"`
+	PCRs                []nitroQuotePCR `json:"pcrs"`
+	Certificate         []byte          `json:"certificate,omitempty"`
+	CABundle            []byte          `json:"cabundle,omitempty"`
+	PublicKey           []byte          `json:"public_key,omitempty"`
+	UserData            []byte          `json:"user_data,omitempty"`
+	Nonce               []byte          `json:"nonce,omitempty"`
+	SimulationSignature []byte          `json:"simulation_signature,omitempty"`
 }
 
-func validateNitroQuoteSchema(quote []byte, userData []byte, nonce []byte) error {
+func validateNitroQuoteSchema(platform string, quote []byte, userData []byte, nonce []byte) error {
 	if len(quote) == 0 {
 		return fmt.Errorf("empty nitro quote")
 	}
@@ -67,6 +68,9 @@ func validateNitroQuoteSchema(quote []byte, userData []byte, nonce []byte) error
 	}
 	if len(parsed.Nonce) == 0 {
 		return fmt.Errorf("nitro quote missing nonce")
+	}
+	if platform == "nitro-simulated" && len(parsed.SimulationSignature) == 0 {
+		return fmt.Errorf("nitro quote missing simulation_signature")
 	}
 	if len(userData) > 0 && subtle.ConstantTimeCompare(parsed.UserData, userData) != 1 {
 		return fmt.Errorf("nitro quote user_data mismatch")

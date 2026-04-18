@@ -39,14 +39,123 @@ func TestBoolStatus(t *testing.T) {
 }
 
 func TestOverallStatus(t *testing.T) {
-	status := overallStatus([]componentStatus{{Healthy: true}, {Healthy: true}})
+	status := overallStatus([]componentStatus{{Status: "healthy"}, {Status: "healthy"}})
 	if status != "healthy" {
 		t.Fatalf("expected healthy, got %s", status)
 	}
 
-	status = overallStatus([]componentStatus{{Healthy: true}, {Healthy: false}})
+	status = overallStatus([]componentStatus{{Status: "healthy"}, {Status: "simulated"}})
+	if status != "simulated" {
+		t.Fatalf("expected simulated, got %s", status)
+	}
+
+	status = overallStatus([]componentStatus{{Status: "healthy"}, {Status: "degraded"}})
+	if status != "degraded" {
+		t.Fatalf("expected degraded, got %s", status)
+	}
+
+	status = overallStatus([]componentStatus{{Status: "simulated"}, {Status: "unhealthy"}})
 	if status != "unhealthy" {
 		t.Fatalf("expected unhealthy, got %s", status)
+	}
+}
+
+func TestOverallHTTPStatus(t *testing.T) {
+	if got := overallHTTPStatus("healthy"); got != http.StatusOK {
+		t.Fatalf("expected 200 for healthy, got %d", got)
+	}
+	if got := overallHTTPStatus("simulated"); got != http.StatusOK {
+		t.Fatalf("expected 200 for simulated, got %d", got)
+	}
+	if got := overallHTTPStatus("degraded"); got != http.StatusOK {
+		t.Fatalf("expected 200 for degraded, got %d", got)
+	}
+	if got := overallHTTPStatus("unhealthy"); got != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503 for unhealthy, got %d", got)
+	}
+}
+
+func TestIsSimulatedTEEPlatform(t *testing.T) {
+	for _, platform := range []string{"simulated", "nitro-simulated", "mock-tee"} {
+		if !isSimulatedTEEPlatform(platform) {
+			t.Fatalf("expected platform %q to be treated as simulated", platform)
+		}
+	}
+	if isSimulatedTEEPlatform("aws-nitro") {
+		t.Fatalf("real platform must not be treated as simulated")
+	}
+}
+
+func TestSanitizeHealthReport(t *testing.T) {
+	report := healthReport{
+		Status:    "degraded",
+		Timestamp: "2026-04-18T12:00:00Z",
+		ChainID:   "aethelred-mainnet",
+		Height:    42,
+		Components: []componentStatus{
+			{
+				Name:    "tee_client",
+				Healthy: false,
+				Status:  "degraded",
+				Message: "TEE unhealthy; AllowSimulated=true",
+				Details: map[string]string{"platform": "aws-nitro"},
+			},
+		},
+	}
+
+	sanitized := sanitizeHealthReport(report)
+	if sanitized.ChainID != "" {
+		t.Fatalf("expected chain ID to be redacted, got %q", sanitized.ChainID)
+	}
+	if sanitized.Height != 0 {
+		t.Fatalf("expected height to be redacted, got %d", sanitized.Height)
+	}
+	if sanitized.Components[0].Message != "" {
+		t.Fatalf("expected component message to be redacted, got %q", sanitized.Components[0].Message)
+	}
+	if sanitized.Components[0].Details != nil {
+		t.Fatalf("expected component details to be redacted")
+	}
+	if sanitized.Components[0].Status != "degraded" {
+		t.Fatalf("expected component status to be preserved, got %q", sanitized.Components[0].Status)
+	}
+}
+
+func TestCanAccessHealthDetails(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected loopback caller to access health details")
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	req.Header.Set("X-Forwarded-For", "203.0.113.10")
+	if canAccessHealthDetails(req) {
+		t.Fatalf("expected forwarded loopback request to be denied without token")
+	}
+
+	t.Setenv(healthDetailsAuthTokenEnv, "health-token")
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer health-token")
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected valid bearer token to access health details")
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "127.0.0.1:26657"
+	req.Header.Set("Forwarded", "for=203.0.113.10;proto=https")
+	req.Header.Set("Authorization", "Bearer health-token")
+	if !canAccessHealthDetails(req) {
+		t.Fatalf("expected valid bearer token to allow forwarded loopback access")
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/health/aethelred", nil)
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer wrong-token")
+	if canAccessHealthDetails(req) {
+		t.Fatalf("expected invalid bearer token to be rejected")
 	}
 }
 

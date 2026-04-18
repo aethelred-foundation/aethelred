@@ -2,12 +2,21 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 )
 
 type consensusEvidenceAuditErrorResponse struct {
 	Error string `json:"error"`
 }
+
+const (
+	adminAuditAuthTokenEnv = "AETHELRED_ADMIN_API_TOKEN"
+	adminAuditMaxBodyBytes = 4 << 20
+)
+
+var errConsensusAuditUnauthorized = errors.New("admin consensus audit endpoint requires loopback access or a valid bearer token")
 
 // ConsensusEvidenceAuditHandler exposes deterministic consensus evidence
 // auditing for proposal preflight checks.
@@ -18,10 +27,26 @@ func (app *AethelredApp) ConsensusEvidenceAuditHandler() http.Handler {
 			return
 		}
 
+		if err := authorizeLoopbackOrBearer(r, adminAuditAuthTokenEnv, errConsensusAuditUnauthorized.Error()); err != nil {
+			writeConsensusAuditError(w, http.StatusForbidden, err.Error())
+			return
+		}
+
+		if r.ContentLength > adminAuditMaxBodyBytes {
+			writeConsensusAuditError(w, http.StatusRequestEntityTooLarge, "request body exceeds admin audit size limit")
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, adminAuditMaxBodyBytes)
+
 		var req ConsensusEvidenceAuditRequest
 		dec := json.NewDecoder(r.Body)
 		dec.DisallowUnknownFields()
 		if err := dec.Decode(&req); err != nil {
+			if strings.Contains(err.Error(), "http: request body too large") {
+				writeConsensusAuditError(w, http.StatusRequestEntityTooLarge, "request body exceeds admin audit size limit")
+				return
+			}
 			writeConsensusAuditError(w, http.StatusBadRequest, "invalid request body: "+err.Error())
 			return
 		}

@@ -20,13 +20,13 @@ import (
 // These tests exercise every entry in the threat model and verify the audit
 // runner produces correct findings for both clean and compromised states.
 //
-//   1.  Threat model completeness (6 tests)
+//   1.  Threat model completeness (7 tests)
 //   2.  Audit runner - clean state (5 tests)
 //   3.  Audit runner - compromised state (8 tests)
 //   4.  Security property verification (12 tests)
 //   5.  Attack surface coverage (6 tests)
 //
-// Total: 37 tests
+// Total: 38 tests
 // =============================================================================
 
 // =============================================================================
@@ -100,6 +100,30 @@ func TestThreatModel_Summary(t *testing.T) {
 	require.Contains(t, summary, "Attacker classes:")
 	require.Contains(t, summary, "Attack surfaces:")
 	require.Contains(t, summary, "Security properties:")
+}
+
+func TestThreatModel_RuntimeEnforcementNarratives(t *testing.T) {
+	var as16, as17 *keeper.AttackSurface
+	for i := range keeper.AttackSurfaces {
+		switch keeper.AttackSurfaces[i].ID {
+		case "AS-16":
+			as16 = &keeper.AttackSurfaces[i]
+		case "AS-17":
+			as17 = &keeper.AttackSurfaces[i]
+		}
+	}
+
+	require.NotNil(t, as16)
+	require.Equal(t, "mitigated", as16.Status)
+	require.NotContains(t, as16.Name, "Not Implemented")
+	require.Contains(t, as16.Mitigation, "BlockMissTracker")
+	require.Contains(t, as16.Mitigation, "IntegratedEvidenceProcessor")
+
+	require.NotNil(t, as17)
+	require.Equal(t, "partial", as17.Status)
+	require.NotContains(t, as17.Name, "Not Implemented")
+	require.Contains(t, as17.Mitigation, "implemented")
+	require.Contains(t, as17.Mitigation, "operational consistency")
 }
 
 // =============================================================================
@@ -202,6 +226,26 @@ func TestAuditRunner_BadParams_LowConsensusThreshold(t *testing.T) {
 		}
 	}
 	require.True(t, foundCritical, "must detect low consensus threshold as critical")
+}
+
+func TestAuditRunner_BadParams_BelowProductionConsensusFloor(t *testing.T) {
+	k, ctx := newTestKeeper(t)
+
+	params := types.DefaultParams()
+	params.ConsensusThreshold = 60
+	require.NoError(t, k.SetParams(ctx, params))
+
+	report := keeper.RunSecurityAudit(ctx, k)
+
+	found := false
+	for _, f := range report.Findings {
+		if f.ID == "PARAM-03" && !f.Passed {
+			found = true
+			require.Equal(t, keeper.FindingCritical, f.Severity)
+			require.Contains(t, f.Remediation, "[67, 100]")
+		}
+	}
+	require.True(t, found, "must detect threshold below the hardened production floor")
 }
 
 func TestAuditRunner_BadParams_AllowSimulatedTrue(t *testing.T) {
@@ -329,7 +373,7 @@ func TestAuditRunner_MultipleFindings(t *testing.T) {
 	params := types.DefaultParams()
 	params.ConsensusThreshold = 30 // BFT unsafe
 	params.AllowSimulated = true   // Production unsafe
-	params.SlashingPenalty = ""     // No deterrence
+	params.SlashingPenalty = ""    // No deterrence
 	params.MinValidators = 0       // No redundancy
 	require.NoError(t, k.SetParams(ctx, params))
 

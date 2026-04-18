@@ -290,30 +290,11 @@ interface ICruzible {
     ) external;
 
     // =========================================================================
-    // TEE ATTESTATION VERIFICATION
-    // =========================================================================
-
-    /**
-     * @notice Verify a TEE attestation on-chain.
-     * @param attestation The raw attestation document.
-     * @return valid Whether the attestation is valid.
-     * @return payload The attested payload (decoded).
-     * @return platform The TEE platform that produced the attestation.
-     */
-    function verifyAttestation(bytes calldata attestation)
-        external
-        view
-        returns (bool valid, bytes memory payload, uint8 platform);
-
-    // =========================================================================
     // VIEW FUNCTIONS
     // =========================================================================
 
     /// @notice Get the current AETHEL-to-stAETHEL exchange rate (scaled by 1e18).
     function getExchangeRate() external view returns (uint256);
-
-    /// @notice Get total AETHEL pooled in the vault.
-    function getTotalPooledAethel() external view returns (uint256);
 
     /// @notice Get total stAETHEL shares outstanding.
     function getTotalShares() external view returns (uint256);
@@ -323,9 +304,6 @@ interface ICruzible {
 
     /// @notice Convert stAETHEL shares to AETHEL amount.
     function getAethelForShares(uint256 shares) external view returns (uint256);
-
-    /// @notice Get the current epoch number.
-    function getCurrentEpoch() external view returns (uint256);
 
     /// @notice Get the number of active validators.
     function getActiveValidatorCount() external view returns (uint256);

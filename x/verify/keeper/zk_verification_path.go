@@ -1,7 +1,10 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -132,31 +135,62 @@ func (k Keeper) verifyProofInternal(ctx context.Context, proof *types.ZKMLProof,
 	// Validate proof system is known.
 	switch proof.ProofSystem {
 	case "groth16":
-		if len(proof.ProofBytes) < 192 {
-			return false, fmt.Errorf("groth16 proof too small: %d bytes (minimum 192)", len(proof.ProofBytes))
-		}
-		return true, nil
+		return verifySimulatedProofBinding(proof, vk, 192)
 	case "ezkl":
-		if len(proof.ProofBytes) < 256 {
-			return false, fmt.Errorf("ezkl proof too small: %d bytes (minimum 256)", len(proof.ProofBytes))
-		}
-		return true, nil
+		return verifySimulatedProofBinding(proof, vk, 256)
 	case "halo2":
-		if len(proof.ProofBytes) < 384 {
-			return false, fmt.Errorf("halo2 proof too small: %d bytes (minimum 384)", len(proof.ProofBytes))
-		}
-		return true, nil
+		return verifySimulatedProofBinding(proof, vk, 384)
 	case "plonky2":
-		if len(proof.ProofBytes) < 256 {
-			return false, fmt.Errorf("plonky2 proof too small: %d bytes (minimum 256)", len(proof.ProofBytes))
-		}
-		return true, nil
+		return verifySimulatedProofBinding(proof, vk, 256)
 	case "risc0":
-		if len(proof.ProofBytes) < 512 {
-			return false, fmt.Errorf("risc0 proof too small: %d bytes (minimum 512)", len(proof.ProofBytes))
-		}
-		return true, nil
+		return verifySimulatedProofBinding(proof, vk, 512)
 	default:
 		return false, fmt.Errorf("unknown proof system: %s", proof.ProofSystem)
 	}
+}
+
+var simulatedZKProofMagic = []byte("AETSIMZK1")
+
+func verifySimulatedProofBinding(proof *types.ZKMLProof, vk *types.VerifyingKey, minSize int) (bool, error) {
+	if len(proof.ProofBytes) != minSize {
+		return false, fmt.Errorf(
+			"%s simulated proof length mismatch: got %d bytes (expected %d)",
+			proof.ProofSystem,
+			len(proof.ProofBytes),
+			minSize,
+		)
+	}
+
+	expected := buildSimulatedZKProofBytes(proof, vk, minSize)
+	if len(expected) != len(proof.ProofBytes) {
+		return false, fmt.Errorf("%s simulated proof binding size mismatch", proof.ProofSystem)
+	}
+	if !bytes.Equal(expected, proof.ProofBytes) {
+		return false, fmt.Errorf("%s simulated proof binding mismatch", proof.ProofSystem)
+	}
+	return true, nil
+}
+
+func buildSimulatedZKProofBytes(proof *types.ZKMLProof, vk *types.VerifyingKey, size int) []byte {
+	actualVKHash := sha256.Sum256(vk.KeyBytes)
+
+	seedMaterial := make([]byte, 0, len(simulatedZKProofMagic)+len(proof.ProofSystem)+len(proof.PublicInputs)+len(actualVKHash)+len(proof.CircuitHash)+4)
+	seedMaterial = append(seedMaterial, simulatedZKProofMagic...)
+	seedMaterial = append(seedMaterial, []byte(proof.ProofSystem)...)
+	seedMaterial = append(seedMaterial, proof.PublicInputs...)
+	seedMaterial = append(seedMaterial, actualVKHash[:]...)
+	seedMaterial = append(seedMaterial, proof.CircuitHash...)
+
+	sizeBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(sizeBytes, uint32(size))
+	seedMaterial = append(seedMaterial, sizeBytes...)
+
+	block := sha256.Sum256(seedMaterial)
+	out := make([]byte, 0, size)
+	out = append(out, simulatedZKProofMagic...)
+	for len(out) < size {
+		out = append(out, block[:]...)
+		block = sha256.Sum256(block[:])
+	}
+	return out[:size]
 }

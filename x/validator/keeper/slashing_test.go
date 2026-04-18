@@ -1,10 +1,12 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -24,9 +26,60 @@ import (
 // Test helpers
 // ---------------------------------------------------------------------------
 
+type mockConsensusValidator struct {
+	consAddr []byte
+	err      error
+}
+
+func (m mockConsensusValidator) GetConsAddr() ([]byte, error) {
+	return m.consAddr, m.err
+}
+
+type mockStakingKeeper struct {
+	validator  interface{}
+	getErr     error
+	slashCalls []mockSlashCall
+	jailCalls  []string
+	slashErr   error
+	jailErr    error
+}
+
+type mockSlashCall struct {
+	consAddr string
+	fraction string
+}
+
+func (m *mockStakingKeeper) GetAllValidators(ctx context.Context) ([]interface{}, error) {
+	return nil, nil
+}
+
+func (m *mockStakingKeeper) GetValidator(ctx context.Context, addr sdk.ValAddress) (interface{}, error) {
+	if m.getErr != nil {
+		return nil, m.getErr
+	}
+	return m.validator, nil
+}
+
+func (m *mockStakingKeeper) Slash(ctx context.Context, consAddr sdk.ConsAddress, fraction sdkmath.LegacyDec) error {
+	m.slashCalls = append(m.slashCalls, mockSlashCall{
+		consAddr: consAddr.String(),
+		fraction: fraction.String(),
+	})
+	return m.slashErr
+}
+
+func (m *mockStakingKeeper) Jail(ctx context.Context, consAddr sdk.ConsAddress) error {
+	m.jailCalls = append(m.jailCalls, consAddr.String())
+	return m.jailErr
+}
+
 // createTestKeeper builds a Keeper backed by an in-memory IAVL store so that
 // collections (HardwareCapabilities, SlashingRecords, Params) work correctly.
 func createTestKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
+	return createTestKeeperWithKeepers(t, nil, nil)
+}
+
+func createTestKeeperWithKeepers(t *testing.T, staking keeper.StakingKeeper, slashing keeper.SlashingKeeper) (keeper.Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
@@ -50,7 +103,7 @@ func createTestKeeper(t *testing.T) (keeper.Keeper, sdk.Context) {
 		Time:    time.Now().UTC(),
 	}, false, log.NewNopLogger())
 
-	k := keeper.NewKeeper(cdc, storeService, log.NewNopLogger(), nil, nil, "authority")
+	k := keeper.NewKeeper(cdc, storeService, log.NewNopLogger(), staking, slashing, "authority")
 
 	return k, ctx
 }
@@ -607,4 +660,49 @@ func TestSlashValidator_DowntimeJailExpiresAfterOneHour(t *testing.T) {
 	// Advance more than 1 hour to clear the temporary jail.
 	ctx = ctx.WithBlockTime(ctx.BlockTime().Add(2 * time.Hour))
 	require.NoError(t, k.RegisterHardwareCapability(ctx, cap))
+}
+
+func TestSlashValidator_CallsConfiguredStakingKeeper(t *testing.T) {
+	operatorAddr := sdk.ValAddress([]byte("validator-operator-0001")).String()
+	consAddr := sdk.ConsAddress([]byte("validator-consensus-0001"))
+	staking := &mockStakingKeeper{
+		validator: mockConsensusValidator{consAddr: []byte(consAddr)},
+	}
+
+	k, ctx := createTestKeeperWithKeepers(t, staking, nil)
+	setupValidatorWithReputation(t, k, ctx, operatorAddr, 100)
+
+	err := k.SlashValidator(ctx, operatorAddr, keeper.SlashingConditionDoubleSign, keeper.SlashingEvidence{}, "job-real-slash")
+	require.NoError(t, err)
+
+	require.Len(t, staking.slashCalls, 1)
+	require.Equal(t, consAddr.String(), staking.slashCalls[0].consAddr)
+	require.Equal(t, sdkmath.LegacyMustNewDecFromStr("0.50").String(), staking.slashCalls[0].fraction)
+
+	require.Len(t, staking.jailCalls, 1)
+	require.Equal(t, consAddr.String(), staking.jailCalls[0])
+
+	records := k.GetSlashingRecords(ctx, operatorAddr)
+	require.Len(t, records, 1)
+}
+
+func TestSlashValidator_FailsClosedWhenEconomicPenaltyCannotResolveValidator(t *testing.T) {
+	staking := &mockStakingKeeper{}
+	k, ctx := createTestKeeperWithKeepers(t, staking, nil)
+	addr := "not-a-validator-address"
+	setupValidatorWithReputation(t, k, ctx, addr, 100)
+
+	err := k.SlashValidator(ctx, addr, keeper.SlashingConditionInvalidOutput, keeper.SlashingEvidence{}, "job-fail-closed")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "cannot apply staking penalty")
+
+	records := k.GetSlashingRecords(ctx, addr)
+	require.Empty(t, records)
+	require.Empty(t, staking.slashCalls)
+	require.Empty(t, staking.jailCalls)
+
+	cap, capErr := k.GetHardwareCapability(ctx, addr)
+	require.NoError(t, capErr)
+	require.Equal(t, int64(100), cap.Status.ReputationScore)
+	require.True(t, cap.Status.Online)
 }

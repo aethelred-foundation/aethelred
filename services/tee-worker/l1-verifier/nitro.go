@@ -3,13 +3,19 @@ package tee
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +24,7 @@ import (
 
 	"github.com/aethelred/aethelred/internal/circuitbreaker"
 	"github.com/aethelred/aethelred/internal/httpclient"
+	"github.com/aethelred/aethelred/x/verify/httputil"
 )
 
 // NitroEnclaveService provides AWS Nitro Enclave attestation and execution
@@ -78,6 +85,14 @@ type NitroConfig struct {
 
 	// AllowSimulated enables simulated execution/attestation (dev/test only)
 	AllowSimulated bool
+
+	// APIToken authenticates remote HTTP calls to a protected TEE worker.
+	APIToken string
+
+	// SimulatedAttestationKey signs simulated attestation documents so they
+	// remain cryptographically bound in dev/test mode instead of being accepted
+	// on structure alone.
+	SimulatedAttestationKey []byte
 }
 
 // DefaultNitroConfig returns default Nitro configuration
@@ -91,6 +106,7 @@ func DefaultNitroConfig() NitroConfig {
 		ExecutorEndpoint:            "",
 		AttestationVerifierEndpoint: "",
 		AllowSimulated:              false,
+		APIToken:                    strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN")),
 	}
 }
 
@@ -132,6 +148,9 @@ type NitroAttestationDocument struct {
 
 	// Nonce to prevent replay attacks
 	Nonce []byte `json:"nonce,omitempty"`
+
+	// Signature authenticates simulated attestation documents in dev/test mode.
+	Signature []byte `json:"signature,omitempty"`
 }
 
 // EnclaveExecutionRequest represents a request to execute in the enclave
@@ -184,6 +203,9 @@ type EnclaveExecutionResult struct {
 
 // NewNitroEnclaveService creates a new Nitro Enclave service
 func NewNitroEnclaveService(logger log.Logger, config NitroConfig) *NitroEnclaveService {
+	if strings.TrimSpace(config.APIToken) == "" {
+		config.APIToken = strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN"))
+	}
 	return &NitroEnclaveService{
 		logger:             logger,
 		config:             config,
@@ -200,6 +222,13 @@ func NewNitroEnclaveService(logger log.Logger, config NitroConfig) *NitroEnclave
 	}
 }
 
+func (nes *NitroEnclaveService) applyAuth(req *http.Request) {
+	if nes == nil || req == nil || strings.TrimSpace(nes.config.APIToken) == "" {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(nes.config.APIToken))
+}
+
 // Initialize initializes the connection to the Nitro Enclave
 func (nes *NitroEnclaveService) Initialize(ctx context.Context) error {
 	nes.enclaveMutex.Lock()
@@ -213,6 +242,9 @@ func (nes *NitroEnclaveService) Initialize(ctx context.Context) error {
 	if nes.config.ExecutorEndpoint != "" {
 		nes.enclaveID = "nitro-remote"
 	} else {
+		if err := nes.ensureSimulatedAttestationKey(); err != nil {
+			return err
+		}
 		nes.enclaveID = "nitro-simulated"
 	}
 	nes.enclaveReady = true
@@ -350,6 +382,11 @@ func (nes *NitroEnclaveService) generateAttestation(outputHash, nonce []byte) (*
 		doc.PCRs[2] = sha256Hash([]byte("aethelred_pcr2"))
 	}
 
+	if err := nes.ensureSimulatedAttestationKey(); err != nil {
+		return nil, err
+	}
+	doc.Signature = SignSimulatedNitroAttestation(doc, nes.config.SimulatedAttestationKey)
+
 	nes.metrics.mutex.Lock()
 	nes.metrics.TotalAttestations++
 	nes.metrics.mutex.Unlock()
@@ -401,8 +438,16 @@ func (nes *NitroEnclaveService) VerifyAttestation(ctx context.Context, doc *Nitr
 		if !nes.config.AllowSimulated {
 			return nil, fmt.Errorf("attestation verifier endpoint not configured and simulation disabled")
 		}
-		// Simulated verification (dev/test only)
-		result.CertificateChainValid = true
+		if err := nes.ensureSimulatedAttestationKey(); err != nil {
+			return nil, err
+		}
+		if err := VerifySimulatedNitroAttestation(doc, nes.config.SimulatedAttestationKey); err != nil {
+			result.Valid = false
+			result.Errors = append(result.Errors, err.Error())
+			result.CertificateChainValid = false
+		} else {
+			result.CertificateChainValid = true
+		}
 	}
 
 	result.PCRsVerified = true
@@ -416,6 +461,74 @@ func (nes *NitroEnclaveService) VerifyAttestation(ctx context.Context, doc *Nitr
 	return result, nil
 }
 
+func (nes *NitroEnclaveService) ensureSimulatedAttestationKey() error {
+	if !nes.config.AllowSimulated || len(nes.config.SimulatedAttestationKey) > 0 {
+		return nil
+	}
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return fmt.Errorf("failed to initialize simulated attestation key: %w", err)
+	}
+	nes.config.SimulatedAttestationKey = key
+	return nil
+}
+
+// SignSimulatedNitroAttestation computes a simulation-only MAC for a Nitro
+// attestation document so local verification remains cryptographically bound.
+func SignSimulatedNitroAttestation(doc *NitroAttestationDocument, key []byte) []byte {
+	mac := hmac.New(sha256.New, key)
+	mac.Write(simulatedNitroAttestationPayload(doc))
+	return mac.Sum(nil)
+}
+
+// VerifySimulatedNitroAttestation rejects unsigned or tampered simulated Nitro
+// attestation documents.
+func VerifySimulatedNitroAttestation(doc *NitroAttestationDocument, key []byte) error {
+	if len(doc.Signature) == 0 {
+		return fmt.Errorf("simulated attestation signature is required")
+	}
+	expected := SignSimulatedNitroAttestation(doc, key)
+	if !hmac.Equal(doc.Signature, expected) {
+		return fmt.Errorf("simulated attestation signature mismatch")
+	}
+	return nil
+}
+
+func simulatedNitroAttestationPayload(doc *NitroAttestationDocument) []byte {
+	var buf bytes.Buffer
+	writeString := func(v string) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.WriteString(v)
+	}
+	writeBytes := func(v []byte) {
+		_ = binary.Write(&buf, binary.BigEndian, uint32(len(v)))
+		buf.Write(v)
+	}
+
+	writeString(doc.ModuleID)
+	_ = binary.Write(&buf, binary.BigEndian, doc.Timestamp.UTC().UnixNano())
+	writeString(doc.Digest)
+
+	pcrIndexes := make([]int, 0, len(doc.PCRs))
+	for idx := range doc.PCRs {
+		pcrIndexes = append(pcrIndexes, idx)
+	}
+	sort.Ints(pcrIndexes)
+	_ = binary.Write(&buf, binary.BigEndian, uint32(len(pcrIndexes)))
+	for _, idx := range pcrIndexes {
+		_ = binary.Write(&buf, binary.BigEndian, int32(idx))
+		writeBytes(doc.PCRs[idx])
+	}
+
+	writeBytes(doc.Certificate)
+	writeBytes(doc.CABundle)
+	writeBytes(doc.PublicKey)
+	writeBytes(doc.UserData)
+	writeBytes(doc.Nonce)
+
+	return buf.Bytes()
+}
+
 // callRemoteExecutor invokes a remote enclave worker for execution.
 func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *EnclaveExecutionRequest) (*EnclaveExecutionResult, error) {
 	if nes.executorBreaker != nil && !nes.executorBreaker.Allow() {
@@ -423,6 +536,14 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 	}
 
 	endpoint := strings.TrimRight(nes.config.ExecutorEndpoint, "/") + "/execute"
+
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		if nes.executorBreaker != nil {
+			nes.executorBreaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid executor endpoint: %w", err)
+	}
+
 	body, err := json.Marshal(req)
 	if err != nil {
 		if nes.executorBreaker != nil {
@@ -439,6 +560,7 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 		return nil, fmt.Errorf("failed to create executor request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	nes.applyAuth(httpReq)
 
 	resp, err := nes.remoteClient.Do(httpReq)
 	if err != nil {
@@ -452,7 +574,7 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(resp.Body)
+		payload, _ := io.ReadAll(httputil.LimitedReader(resp.Body, httputil.MaxErrorBodySize))
 		if nes.executorBreaker != nil {
 			nes.executorBreaker.RecordFailure()
 		}
@@ -480,6 +602,14 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 	}
 
 	endpoint := strings.TrimRight(nes.config.AttestationVerifierEndpoint, "/") + "/verify"
+
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		if nes.attestationBreaker != nil {
+			nes.attestationBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("invalid attestation verifier endpoint: %w", err)
+	}
+
 	body, err := json.Marshal(doc)
 	if err != nil {
 		if nes.attestationBreaker != nil {
@@ -496,6 +626,7 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 		return false, fmt.Errorf("failed to create verifier request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	nes.applyAuth(httpReq)
 
 	resp, err := nes.remoteClient.Do(httpReq)
 	if err != nil {
@@ -509,7 +640,7 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(resp.Body)
+		payload, _ := io.ReadAll(httputil.LimitedReader(resp.Body, httputil.MaxErrorBodySize))
 		if nes.attestationBreaker != nil {
 			nes.attestationBreaker.RecordFailure()
 		}
@@ -611,13 +742,51 @@ func (nes *NitroEnclaveService) AttestationBreaker() *circuitbreaker.Breaker {
 
 // EncryptForEnclave encrypts data for the enclave's public key
 func (nes *NitroEnclaveService) EncryptForEnclave(plaintext []byte) ([]byte, error) {
-	// In production: use enclave's public key from attestation
-	// For MVP: simulate encryption with base64 encoding
-	return []byte(base64.StdEncoding.EncodeToString(plaintext)), nil
+	if len(plaintext) == 0 {
+		return nil, fmt.Errorf("plaintext cannot be empty")
+	}
+
+	if nes.enclaveID == "nitro-simulated" || (nes.config.AllowSimulated && nes.config.ExecutorEndpoint == "") {
+		key, err := nes.simulatedNitroEncryptionKey()
+		if err != nil {
+			return nil, err
+		}
+		return encryptSimulatedNitroPayload(key, plaintext)
+	}
+
+	return nil, fmt.Errorf("remote nitro encryption requires an attested enclave public key")
 }
 
 // sha256Hash computes SHA-256 hash
 func sha256Hash(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+func (nes *NitroEnclaveService) simulatedNitroEncryptionKey() ([]byte, error) {
+	if err := nes.ensureSimulatedAttestationKey(); err != nil {
+		return nil, err
+	}
+	seed := append([]byte("aethelred_nitro_encrypt_v1:"), nes.config.SimulatedAttestationKey...)
+	key := sha256.Sum256(seed)
+	return key[:], nil
+}
+
+func encryptSimulatedNitroPayload(key []byte, plaintext []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize simulated nitro cipher: %w", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize simulated nitro AEAD: %w", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return nil, fmt.Errorf("failed to generate simulated nitro nonce: %w", err)
+	}
+
+	return gcm.Seal(nonce, nonce, plaintext, []byte("aethelred:nitro:simulated:v1")), nil
 }
