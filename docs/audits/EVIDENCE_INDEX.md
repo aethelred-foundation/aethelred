@@ -383,6 +383,8 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Health truthfulness regression | `go test ./app` | `app/health_test.go` |
 | Metrics endpoint boundary regression | `go test ./app` | `app/metrics_exporter_test.go` |
 | Health detail redaction regression | `go test ./app` | `app/health_test.go` |
+| DCAP collateral endpoint validation regression | `go test ./x/verify/tee/...` | `x/verify/tee/dcap/verifier_security_test.go` |
+| Worker Nitro endpoint validation regression | `go test ./services/tee-worker/l1-verifier/...` | `services/tee-worker/l1-verifier/nitro_test.go` |
 | Seal verifier regression | `go test ./x/seal/keeper/...` | `x/seal/keeper/` |
 | Vault relay governance regression | `go test ./x/vault/keeper` | `x/vault/keeper/keeper_test.go` |
 | Sovereign access-control regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk lib_full::sovereign::` | `services/tee-worker/nitro-sdk/src/sovereign/` |

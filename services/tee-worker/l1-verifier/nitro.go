@@ -23,6 +23,7 @@ import (
 
 	"github.com/aethelred/aethelred/internal/circuitbreaker"
 	"github.com/aethelred/aethelred/internal/httpclient"
+	"github.com/aethelred/aethelred/x/verify/httputil"
 )
 
 // NitroEnclaveService provides AWS Nitro Enclave attestation and execution
@@ -520,6 +521,14 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 	}
 
 	endpoint := strings.TrimRight(nes.config.ExecutorEndpoint, "/") + "/execute"
+
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		if nes.executorBreaker != nil {
+			nes.executorBreaker.RecordFailure()
+		}
+		return nil, fmt.Errorf("invalid executor endpoint: %w", err)
+	}
+
 	body, err := json.Marshal(req)
 	if err != nil {
 		if nes.executorBreaker != nil {
@@ -549,7 +558,7 @@ func (nes *NitroEnclaveService) callRemoteExecutor(ctx context.Context, req *Enc
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(resp.Body)
+		payload, _ := io.ReadAll(httputil.LimitedReader(resp.Body, httputil.MaxErrorBodySize))
 		if nes.executorBreaker != nil {
 			nes.executorBreaker.RecordFailure()
 		}
@@ -577,6 +586,14 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 	}
 
 	endpoint := strings.TrimRight(nes.config.AttestationVerifierEndpoint, "/") + "/verify"
+
+	if err := httputil.ValidateEndpointURL(endpoint); err != nil {
+		if nes.attestationBreaker != nil {
+			nes.attestationBreaker.RecordFailure()
+		}
+		return false, fmt.Errorf("invalid attestation verifier endpoint: %w", err)
+	}
+
 	body, err := json.Marshal(doc)
 	if err != nil {
 		if nes.attestationBreaker != nil {
@@ -606,7 +623,7 @@ func (nes *NitroEnclaveService) callRemoteAttestationVerifier(ctx context.Contex
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		payload, _ := io.ReadAll(resp.Body)
+		payload, _ := io.ReadAll(httputil.LimitedReader(resp.Body, httputil.MaxErrorBodySize))
 		if nes.attestationBreaker != nil {
 			nes.attestationBreaker.RecordFailure()
 		}

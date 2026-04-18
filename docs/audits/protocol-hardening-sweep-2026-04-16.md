@@ -671,6 +671,41 @@ already merged.
   blocked metadata-host rejection for both remote proving and remote
   verification.
 
+### 3zj. DCAP collateral endpoint validation hardening
+
+- Tightened `x/verify/tee/dcap/verifier.go` and the mirrored
+  `services/tee-worker/l1-verifier/dcap/verifier.go`, where the DCAP
+  collateral fetch paths still created raw outbound requests for PCCS, TCB,
+  QE identity, and CRL collateral without first reusing the shared endpoint
+  safety guard.
+- `DCAPVerifier.httpGet(...)` now validates collateral URLs before any outbound
+  request is created, so malformed, metadata, and private-address targets fail
+  closed through the existing circuit-breaker path instead of being probed
+  directly during quote-collateral retrieval.
+- `DCAPVerifier.fetchCRLFromIntel(...)` now applies the same validator to PCCS
+  CRL fetches and CRL distribution-point fallbacks, so revocation collateral
+  no longer bypasses the module's outbound endpoint safety contract.
+- Added focused regressions in `x/verify/tee/dcap/verifier_security_test.go`
+  covering blocked collateral endpoints and blocked CRL distribution-point
+  URLs.
+
+### 3zk. Worker Nitro endpoint validation hardening
+
+- Tightened `services/tee-worker/l1-verifier/nitro.go`, where the mirrored
+  worker-side Nitro remote executor and remote attestation verifier still
+  constructed outbound requests directly from configured endpoints instead of
+  enforcing the same endpoint safety contract already present in the
+  chain-side Nitro path.
+- `callRemoteExecutor(...)` and `callRemoteAttestationVerifier(...)` now
+  validate their derived remote URLs before creating the HTTP request, so
+  malformed, metadata, and private-address targets fail closed through the
+  worker service's circuit-breaker path instead of being contacted directly.
+- Those worker-side remote error paths now also bound HTTP error-body reads via
+  the shared `httputil` limit, keeping the mirrored Nitro runtime aligned with
+  the chain-side memory-pressure defense.
+- Added focused regressions in `services/tee-worker/l1-verifier/nitro_test.go`
+  covering blocked remote executor and attestation-verifier endpoints.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -871,6 +906,14 @@ already merged.
 - The EZKL remote prover/verifier path no longer bypasses that validator
   either. Configured prover endpoints now have to pass the shared endpoint
   safety guard before `/prove` or `/verify` requests are issued.
+- The DCAP verifier no longer treats PCCS and CRL collateral fetches as trusted
+  by URL construction alone. Collateral and revocation endpoints now have to
+  pass the same shared endpoint safety validator before any outbound request is
+  issued from either the chain-side verifier or the mirrored worker copy.
+- The mirrored worker Nitro service no longer lags behind the chain-side Nitro
+  verifier on remote endpoint safety. Its remote executor and attestation
+  verifier paths now fail closed on unsafe endpoints and bound remote error
+  bodies with the same shared HTTP safety utilities.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

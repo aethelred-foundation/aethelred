@@ -120,3 +120,33 @@ func TestNitroServiceEncryptForEnclaveFailsClosedWithoutEnclaveKey(t *testing.T)
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestNitroServiceCallRemoteExecutorRejectsInvalidEndpoint(t *testing.T) {
+	service := NewNitroEnclaveService(log.NewNopLogger(), NitroConfig{
+		ExecutorEndpoint: "https://169.254.169.254",
+	})
+
+	_, err := service.callRemoteExecutor(context.Background(), &EnclaveExecutionRequest{
+		RequestID: "req-1",
+	})
+	if err == nil {
+		t.Fatal("expected invalid executor endpoint to be rejected")
+	}
+	if !strings.Contains(err.Error(), "invalid executor endpoint") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestNitroServiceCallRemoteAttestationVerifierRejectsInvalidEndpoint(t *testing.T) {
+	service := NewNitroEnclaveService(log.NewNopLogger(), NitroConfig{
+		AttestationVerifierEndpoint: "https://169.254.169.254",
+	})
+
+	_, err := service.callRemoteAttestationVerifier(context.Background(), &NitroAttestationDocument{})
+	if err == nil {
+		t.Fatal("expected invalid attestation verifier endpoint to be rejected")
+	}
+	if !strings.Contains(err.Error(), "invalid attestation verifier endpoint") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
