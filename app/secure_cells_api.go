@@ -91,6 +91,18 @@ type secureCellFederationAcceptRequest struct {
 	Metadata               map[string]string                            `json:"metadata,omitempty"`
 }
 
+type secureCellFederationCounterproposalRequest struct {
+	ActorIdentity          json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt          *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	OfferedSessionScopeIDs []string                    `json:"offered_session_scope_ids,omitempty"`
+	OfferedDataClasses     []string                    `json:"offered_data_classes,omitempty"`
+	OfferedComputeZones    []string                    `json:"offered_compute_zones,omitempty"`
+	OfferedActions         []string                    `json:"offered_actions,omitempty"`
+	Resource               string                      `json:"resource,omitempty"`
+	Reason                 string                      `json:"reason,omitempty"`
+	Metadata               map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellFederationContractRenewRequest struct {
 	ActorIdentity          json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt          *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -259,6 +271,7 @@ type secureCellArtifactsResponse struct {
 	Participants             []securecellsintegration.SecureCellParticipantState       `json:"participants,omitempty"`
 	FederationOrganizations  []securecellsintegration.SecureCellFederationOrganization `json:"federation_organizations,omitempty"`
 	FederationInvitations    []securecellsintegration.SecureCellFederationInvitation   `json:"federation_invitations,omitempty"`
+	FederationCounterproposals []securecellsintegration.SecureCellFederationCounterproposal `json:"federation_counterproposals,omitempty"`
 	FederationContracts      []securecellsintegration.SecureCellFederationContract     `json:"federation_contracts,omitempty"`
 	Sessions                 []securecellsintegration.SecureCellSession                `json:"sessions,omitempty"`
 	Threads                  []securecellsintegration.SecureCellSessionThread          `json:"threads,omitempty"`
@@ -296,6 +309,7 @@ type secureCellFederationResponse struct {
 	CellID                  string                                                    `json:"cell_id"`
 	Organizations           []securecellsintegration.SecureCellFederationOrganization `json:"organizations,omitempty"`
 	Invitations             []securecellsintegration.SecureCellFederationInvitation   `json:"invitations,omitempty"`
+	Counterproposals        []securecellsintegration.SecureCellFederationCounterproposal `json:"counterproposals,omitempty"`
 	Contracts               []securecellsintegration.SecureCellFederationContract     `json:"contracts,omitempty"`
 	PortablePackageHash     string                                                    `json:"portable_package_hash,omitempty"`
 	PortablePackageSigned   bool                                                      `json:"portable_package_signed"`
@@ -308,6 +322,10 @@ type secureCellFederationOrganizationListResponse struct {
 
 type secureCellFederationInvitationListResponse struct {
 	Items []securecellsintegration.SecureCellFederationInvitationSummary `json:"items"`
+}
+
+type secureCellFederationCounterproposalListResponse struct {
+	Items []securecellsintegration.SecureCellFederationCounterproposalSummary `json:"items"`
 }
 
 type secureCellFederationContractListResponse struct {
@@ -784,6 +802,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterproposals" {
+			filter, err := parseSecureCellFederationCounterproposalFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterproposals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterproposalListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterproposals/export" {
+			filter, err := parseSecureCellFederationCounterproposalFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterproposals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationCounterproposalExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/contracts" {
 			filter, err := parseSecureCellFederationContractFilter(r)
 			if err != nil {
@@ -1148,6 +1198,39 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/counterproposals") && strings.Contains(r.URL.Path, "/federation/invitations/"):
+			cellID, invitationID, err := parseSecureCellFederationInvitationActionPath(r.URL.Path, "/counterproposals")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationCounterproposalRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation counterproposal request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationCounterproposalSubmit(r, cellID, invitationID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.SubmitFederationCounterproposal(r.Context(), cellID, invitationID, securecellsintegration.SecureCellFederationCounterproposalRequest{
+				ActorDID:               safeSecureCellActorDID(authCtx),
+				OfferedSessionScopeIDs: append([]string(nil), req.OfferedSessionScopeIDs...),
+				OfferedDataClasses:     append([]string(nil), req.OfferedDataClasses...),
+				OfferedComputeZones:    append([]string(nil), req.OfferedComputeZones...),
+				OfferedActions:         append([]string(nil), req.OfferedActions...),
+				Resource:               req.Resource,
+				Reason:                 req.Reason,
+				Metadata:               req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/revoke") && strings.Contains(r.URL.Path, "/federation/invitations/"):
 			cellID, invitationID, err := parseSecureCellFederationInvitationActionPath(r.URL.Path, "/revoke")
 			if err != nil {
@@ -1166,6 +1249,62 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.RevokeFederationInvitation(r.Context(), cellID, invitationID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/approve") && strings.Contains(r.URL.Path, "/federation/counterproposals/"):
+			cellID, counterproposalID, err := parseSecureCellFederationCounterproposalActionPath(r.URL.Path, "/approve")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation counterproposal approve request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationCounterproposalApprove(r, cellID, counterproposalID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.ApproveFederationCounterproposal(r.Context(), cellID, counterproposalID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/reject") && strings.Contains(r.URL.Path, "/federation/counterproposals/"):
+			cellID, counterproposalID, err := parseSecureCellFederationCounterproposalActionPath(r.URL.Path, "/reject")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation counterproposal reject request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationCounterproposalReject(r, cellID, counterproposalID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.RejectFederationCounterproposal(r.Context(), cellID, counterproposalID, securecellsintegration.SecureCellLifecycleRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
@@ -1206,6 +1345,62 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				Resource:               req.Resource,
 				Reason:                 req.Reason,
 				Metadata:               req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/suspend") && strings.Contains(r.URL.Path, "/federation/contracts/"):
+			cellID, contractID, err := parseSecureCellFederationContractActionPath(r.URL.Path, "/suspend")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation contract suspend request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationContractSuspend(r, cellID, contractID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.SuspendFederationContract(r.Context(), cellID, contractID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/resume") && strings.Contains(r.URL.Path, "/federation/contracts/"):
+			cellID, contractID, err := parseSecureCellFederationContractActionPath(r.URL.Path, "/resume")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation contract resume request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationContractResume(r, cellID, contractID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.ResumeFederationContract(r.Context(), cellID, contractID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -2052,6 +2247,7 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.Participants = append([]securecellsintegration.SecureCellParticipantState(nil), result.Participants...)
 	projection.FederationOrganizations = append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...)
 	projection.FederationInvitations = append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...)
+	projection.FederationCounterproposals = append([]securecellsintegration.SecureCellFederationCounterproposal(nil), result.FederationCounterproposals...)
 	projection.FederationContracts = append([]securecellsintegration.SecureCellFederationContract(nil), result.FederationContracts...)
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
 	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
@@ -2095,6 +2291,7 @@ func secureCellFederationProjection(result *securecellsintegration.SecureCellRes
 		CellID:                  result.CellID,
 		Organizations:           append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...),
 		Invitations:             append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...),
+		Counterproposals:        append([]securecellsintegration.SecureCellFederationCounterproposal(nil), result.FederationCounterproposals...),
 		Contracts:               append([]securecellsintegration.SecureCellFederationContract(nil), result.FederationContracts...),
 		PortablePackageHash:     packageHash,
 		PortablePackageSigned:   packageSigned,
@@ -2140,6 +2337,20 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/invitations/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
 				Description: "Export federation invitations for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-counterproposals",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List replayable federation counterproposals for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-counterproposals-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export federation counterproposal history for this organization.",
 				Formats:     []string{"json", "csv"},
 			},
 			{
@@ -2201,6 +2412,20 @@ func secureCellFederationContractBundleOptions(cellID string, contractID string)
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "federation-counterproposals",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals?cell_id=" + cellID,
+				Description: "List replayable federation counterproposals across this secure cell.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-counterproposals-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/export?cell_id=" + cellID + "&format=csv",
+				Description: "Export federation counterproposal history across this secure cell.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "contract-detail",
 				Method:      http.MethodGet,
 				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID,
@@ -2219,6 +2444,20 @@ func secureCellFederationContractBundleOptions(cellID string, contractID string)
 				Method:      http.MethodPost,
 				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/renew",
 				Description: "Renew this federation contract with new negotiated terms and replayable policy diffs.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "contract-suspend",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/suspend",
+				Description: "Suspend this federation contract without destroying the negotiated collaboration trace.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "contract-resume",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/contracts/" + contractID + "/resume",
+				Description: "Resume this suspended federation contract back to active exchange posture.",
 				Formats:     []string{"json"},
 			},
 			{
@@ -2469,6 +2708,36 @@ func parseSecureCellFederationContractFilter(r *http.Request) (securecellsintegr
 	}, nil
 }
 
+func parseSecureCellFederationCounterproposalFilter(r *http.Request) (securecellsintegration.SecureCellFederationCounterproposalFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellFederationCounterproposalFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	status, err := parseSecureCellFederationCounterproposalStatus(query.Get("status"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationCounterproposalFilter{}, err
+	}
+	updatedAfter, err := parseSecureCellOptionalTime(query.Get("updated_after"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationCounterproposalFilter{}, err
+	}
+	updatedBefore, err := parseSecureCellOptionalTime(query.Get("updated_before"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationCounterproposalFilter{}, err
+	}
+	return securecellsintegration.SecureCellFederationCounterproposalFilter{
+		CellID:          strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID:  strings.TrimSpace(query.Get("organization_id")),
+		InvitationID:    strings.TrimSpace(query.Get("invitation_id")),
+		Status:          status,
+		SponsorOfRecord: strings.TrimSpace(query.Get("sponsor_of_record")),
+		SubmittedBy:     strings.TrimSpace(query.Get("submitted_by")),
+		UpdatedAfter:    updatedAfter,
+		UpdatedBefore:   updatedBefore,
+		Limit:           cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
 func parseSecureCellOverdueDecisionFilter(r *http.Request) (securecellsintegration.SecureCellOverdueDecisionFilter, error) {
 	if r == nil {
 		return securecellsintegration.SecureCellOverdueDecisionFilter{}, fmt.Errorf("request is required")
@@ -2565,10 +2834,25 @@ func parseSecureCellFederationContractStatus(raw string) (securecellsintegration
 	case "":
 		return "", nil
 	case securecellsintegration.SecureCellFederationContractStatusActive,
+		securecellsintegration.SecureCellFederationContractStatusSuspended,
 		securecellsintegration.SecureCellFederationContractStatusRevoked:
 		return status, nil
 	default:
 		return "", fmt.Errorf("unsupported federation contract status %q", raw)
+	}
+}
+
+func parseSecureCellFederationCounterproposalStatus(raw string) (securecellsintegration.SecureCellFederationCounterproposalStatus, error) {
+	switch status := securecellsintegration.SecureCellFederationCounterproposalStatus(strings.ToLower(strings.TrimSpace(raw))); status {
+	case "":
+		return "", nil
+	case securecellsintegration.SecureCellFederationCounterproposalStatusPending,
+		securecellsintegration.SecureCellFederationCounterproposalStatusApproved,
+		securecellsintegration.SecureCellFederationCounterproposalStatusRejected,
+		securecellsintegration.SecureCellFederationCounterproposalStatusSuperseded:
+		return status, nil
+	default:
+		return "", fmt.Errorf("unsupported federation counterproposal status %q", raw)
 	}
 }
 
@@ -2855,6 +3139,29 @@ func parseSecureCellFederationContractActionPath(path string, suffix string) (ce
 		return "", "", fmt.Errorf("invalid secure cell federation contract action path")
 	}
 	return cellID, contractID, nil
+}
+
+func parseSecureCellFederationCounterproposalActionPath(path string, suffix string) (cellID string, counterproposalID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", fmt.Errorf("invalid secure cell federation counterproposal path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", fmt.Errorf("invalid secure cell federation counterproposal action path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 4 || parts[1] != "federation" || parts[2] != "counterproposals" {
+		return "", "", fmt.Errorf("invalid secure cell federation counterproposal action path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	counterproposalID = strings.TrimSpace(parts[3])
+	if cellID == "" || counterproposalID == "" {
+		return "", "", fmt.Errorf("invalid secure cell federation counterproposal action path")
+	}
+	return cellID, counterproposalID, nil
 }
 
 func parseSecureCellSessionActionPath(path string, suffix string) (cellID string, sessionID string, err error) {
@@ -3306,9 +3613,15 @@ func secureCellErrorStatus(err error, fallback int) int {
 		return http.StatusNotFound
 	case errors.Is(err, securecellsintegration.ErrFederationInvitationNotFound):
 		return http.StatusNotFound
+	case errors.Is(err, securecellsintegration.ErrFederationCounterproposalNotFound):
+		return http.StatusNotFound
 	case errors.Is(err, securecellsintegration.ErrFederationInvitationImmutable):
 		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrFederationCounterproposalImmutable):
+		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrFederationContractImmutable):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrFederationContractSuspended):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrFederationNegotiationConflict):
 		return http.StatusConflict

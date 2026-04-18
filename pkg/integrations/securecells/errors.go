@@ -79,6 +79,14 @@ var (
 	// cannot be mutated from its current lifecycle posture.
 	ErrFederationInvitationImmutable = errors.New("secure cell federation invitation is immutable")
 
+	// ErrFederationCounterproposalNotFound indicates that a federation
+	// counterproposal does not exist in the secure cell state.
+	ErrFederationCounterproposalNotFound = errors.New("secure cell federation counterproposal not found")
+
+	// ErrFederationCounterproposalImmutable indicates that a federation
+	// counterproposal cannot be mutated from its current lifecycle posture.
+	ErrFederationCounterproposalImmutable = errors.New("secure cell federation counterproposal is immutable")
+
 	// ErrFederationContractImmutable indicates that a federation contract
 	// cannot be mutated from its current lifecycle posture.
 	ErrFederationContractImmutable = errors.New("secure cell federation contract is immutable")
@@ -90,6 +98,10 @@ var (
 	// ErrFederationExchangePolicyDenied indicates that an active federation
 	// contract exists but does not authorize the requested exchange scope.
 	ErrFederationExchangePolicyDenied = errors.New("secure cell federation exchange policy denied")
+
+	// ErrFederationContractSuspended indicates that a federation contract exists
+	// for the requested organization, but it is currently suspended.
+	ErrFederationContractSuspended = errors.New("secure cell federation contract is suspended")
 
 	// ErrFederationNegotiationConflict indicates that the owner-authored
 	// invitation/renewal terms and the counterparty-offered terms do not yield a

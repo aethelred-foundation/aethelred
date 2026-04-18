@@ -239,8 +239,14 @@ func writeSecureCellFederationOrganizationExport(w http.ResponseWriter, r *http.
 			"pending_invitation_count",
 			"accepted_invitation_count",
 			"revoked_invitation_count",
+			"counterproposal_count",
+			"pending_counterproposal_count",
+			"approved_counterproposal_count",
+			"rejected_counterproposal_count",
+			"superseded_counterproposal_count",
 			"contract_count",
 			"active_contract_count",
+			"suspended_contract_count",
 			"revoked_contract_count",
 			"control_ledger_id",
 			"portable_package_hash",
@@ -266,8 +272,14 @@ func writeSecureCellFederationOrganizationExport(w http.ResponseWriter, r *http.
 				strconv.Itoa(item.PendingInvitationCount),
 				strconv.Itoa(item.AcceptedInvitationCount),
 				strconv.Itoa(item.RevokedInvitationCount),
+				strconv.Itoa(item.CounterproposalCount),
+				strconv.Itoa(item.PendingCounterproposalCount),
+				strconv.Itoa(item.ApprovedCounterproposalCount),
+				strconv.Itoa(item.RejectedCounterproposalCount),
+				strconv.Itoa(item.SupersededCounterproposalCount),
 				strconv.Itoa(item.ContractCount),
 				strconv.Itoa(item.ActiveContractCount),
+				strconv.Itoa(item.SuspendedContractCount),
 				strconv.Itoa(item.RevokedContractCount),
 				item.ControlLedgerID,
 				item.PortablePackageHash,
@@ -371,6 +383,104 @@ func writeSecureCellFederationInvitationExport(w http.ResponseWriter, r *http.Re
 	}
 }
 
+func writeSecureCellFederationCounterproposalExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationCounterproposalSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterproposalListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-counterproposals.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"cell_status",
+			"jurisdiction",
+			"counterproposal_id",
+			"invitation_id",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"status",
+			"offered_session_scope_ids",
+			"offered_data_classes",
+			"offered_compute_zones",
+			"offered_actions",
+			"negotiated_session_scope_ids",
+			"negotiated_data_classes",
+			"negotiated_compute_zones",
+			"negotiated_actions",
+			"negotiation_diff_count",
+			"negotiation_diffs",
+			"resource",
+			"submitted_by",
+			"approved_by",
+			"rejected_by",
+			"superseded_by",
+			"reason",
+			"control_ledger_id",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+			"created_at",
+			"approved_at",
+			"rejected_at",
+			"superseded_at",
+			"updated_at",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				string(item.CellStatus),
+				item.Jurisdiction,
+				item.CounterproposalID,
+				item.InvitationID,
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				string(item.Status),
+				strings.Join(item.OfferedSessionScopeIDs, "|"),
+				strings.Join(item.OfferedDataClasses, "|"),
+				strings.Join(item.OfferedComputeZones, "|"),
+				strings.Join(item.OfferedActions, "|"),
+				strings.Join(item.NegotiatedSessionScopeIDs, "|"),
+				strings.Join(item.NegotiatedDataClasses, "|"),
+				strings.Join(item.NegotiatedComputeZones, "|"),
+				strings.Join(item.NegotiatedActions, "|"),
+				strconv.Itoa(item.NegotiationDiffCount),
+				secureCellFederationPolicyDiffSummaryCSV(item.NegotiationDiffs),
+				item.Resource,
+				item.SubmittedBy,
+				item.ApprovedBy,
+				item.RejectedBy,
+				item.SupersededBy,
+				item.Reason,
+				item.ControlLedgerID,
+				item.PortablePackageHash,
+				strconv.FormatBool(item.PortablePackageSigned),
+				strconv.FormatBool(item.PortablePackageAnchored),
+				item.CreatedAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellOptionalTime(item.ApprovedAt),
+				formatSecureCellOptionalTime(item.RejectedAt),
+				formatSecureCellOptionalTime(item.SupersededAt),
+				item.UpdatedAt.UTC().Format(time.RFC3339Nano),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-counterproposal csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationContractSummary) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -421,6 +531,8 @@ func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Requ
 			"portable_package_anchored",
 			"created_at",
 			"activated_at",
+			"suspended_at",
+			"resumed_at",
 			"revoked_at",
 			"updated_at",
 		}}
@@ -465,6 +577,8 @@ func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Requ
 				strconv.FormatBool(item.PortablePackageAnchored),
 				item.CreatedAt.UTC().Format(time.RFC3339Nano),
 				formatSecureCellOptionalTime(item.ActivatedAt),
+				formatSecureCellOptionalTime(item.SuspendedAt),
+				formatSecureCellOptionalTime(item.ResumedAt),
 				formatSecureCellOptionalTime(item.RevokedAt),
 				item.UpdatedAt.UTC().Format(time.RFC3339Nano),
 			})
@@ -523,11 +637,18 @@ func writeSecureCellFederationTrustPackExport(w http.ResponseWriter, r *http.Req
 			"runtime_pending_invitations",
 			"runtime_accepted_invitations",
 			"runtime_revoked_invitations",
+			"runtime_counterproposal_count",
+			"runtime_pending_counterproposals",
+			"runtime_approved_counterproposals",
+			"runtime_rejected_counterproposals",
+			"runtime_superseded_counterproposals",
 			"runtime_contract_count",
 			"runtime_active_contracts",
+			"runtime_suspended_contracts",
 			"runtime_revoked_contracts",
 			"runtime_last_updated_at",
 			"invitation_ids",
+			"counterproposal_ids",
 			"contract_ids",
 			"control_ids",
 			"operator_surface_ids",
@@ -567,11 +688,18 @@ func writeSecureCellFederationTrustPackExport(w http.ResponseWriter, r *http.Req
 			strconv.Itoa(pack.Runtime.PendingInvitations),
 			strconv.Itoa(pack.Runtime.AcceptedInvitations),
 			strconv.Itoa(pack.Runtime.RevokedInvitations),
+			strconv.Itoa(pack.Runtime.CounterproposalCount),
+			strconv.Itoa(pack.Runtime.PendingCounterproposals),
+			strconv.Itoa(pack.Runtime.ApprovedCounterproposals),
+			strconv.Itoa(pack.Runtime.RejectedCounterproposals),
+			strconv.Itoa(pack.Runtime.SupersededCounterproposals),
 			strconv.Itoa(pack.Runtime.ContractCount),
 			strconv.Itoa(pack.Runtime.ActiveContracts),
+			strconv.Itoa(pack.Runtime.SuspendedContracts),
 			strconv.Itoa(pack.Runtime.RevokedContracts),
 			pack.Runtime.LastUpdatedAt.UTC().Format(time.RFC3339Nano),
 			joinSecureCellFederationInvitationIDs(pack.Invitations),
+			joinSecureCellFederationCounterproposalIDs(pack.Counterproposals),
 			joinSecureCellFederationContractIDs(pack.Contracts),
 			joinSecureCellFederationControlIDs(pack.Controls),
 			joinSecureCellFederationOperatorSurfaceIDs(pack.OperatorSurfaces),
@@ -640,6 +768,7 @@ func writeSecureCellFederationInvitationBundleExport(w http.ResponseWriter, r *h
 			"revoked_by",
 			"reason",
 			"contract_id",
+			"counterproposal_ids",
 			"control_ids",
 			"control_ledger_id",
 			"control_ledger_hash",
@@ -680,6 +809,7 @@ func writeSecureCellFederationInvitationBundleExport(w http.ResponseWriter, r *h
 			bundle.Invitation.RevokedBy,
 			bundle.Invitation.Reason,
 			secureCellOptionalFederationContractID(bundle.Contract),
+			joinSecureCellFederationCounterproposalIDs(bundle.Counterproposals),
 			joinSecureCellFederationControlIDs(bundle.Controls),
 			bundle.ControlLedgerID,
 			bundle.ControlLedgerHash,
@@ -874,6 +1004,16 @@ func joinSecureCellFederationInvitationIDs(items []securecellsintegration.Secure
 	out := make([]string, 0, len(items))
 	for _, item := range items {
 		if trimmed := strings.TrimSpace(item.InvitationID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationCounterproposalIDs(items []securecellsintegration.SecureCellFederationCounterproposalSummary) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item.CounterproposalID); trimmed != "" {
 			out = append(out, trimmed)
 		}
 	}
