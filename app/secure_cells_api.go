@@ -62,20 +62,26 @@ type secureCellAdmitMemberRequest struct {
 }
 
 type secureCellFederationInviteRequest struct {
-	ActorIdentity    json.RawMessage             `json:"actor_identity,omitempty"`
-	PolicyReceipt    *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
-	SponsorOfRecord  string                      `json:"sponsor_of_record,omitempty"`
-	OrganizationName string                      `json:"organization_name,omitempty"`
-	Jurisdiction     string                      `json:"jurisdiction,omitempty"`
-	ExpectedDID      string                      `json:"expected_did,omitempty"`
-	Role             string                      `json:"role,omitempty"`
-	SessionScopeIDs  []string                    `json:"session_scope_ids,omitempty"`
-	DataClasses      []string                    `json:"data_classes,omitempty"`
-	ComputeZones     []string                    `json:"compute_zones,omitempty"`
-	AllowedActions   []string                    `json:"allowed_actions,omitempty"`
-	Resource         string                      `json:"resource,omitempty"`
-	Reason           string                      `json:"reason,omitempty"`
-	Metadata         map[string]string           `json:"metadata,omitempty"`
+	ActorIdentity                       json.RawMessage                                             `json:"actor_identity,omitempty"`
+	PolicyReceipt                       *policy.SignedPolicyReceipt                                 `json:"policy_receipt,omitempty"`
+	SponsorOfRecord                     string                                                      `json:"sponsor_of_record,omitempty"`
+	OrganizationName                    string                                                      `json:"organization_name,omitempty"`
+	Jurisdiction                        string                                                      `json:"jurisdiction,omitempty"`
+	ExpectedDID                         string                                                      `json:"expected_did,omitempty"`
+	Role                                string                                                      `json:"role,omitempty"`
+	SessionScopeIDs                     []string                                                    `json:"session_scope_ids,omitempty"`
+	DataClasses                         []string                                                    `json:"data_classes,omitempty"`
+	ComputeZones                        []string                                                    `json:"compute_zones,omitempty"`
+	AllowedActions                      []string                                                    `json:"allowed_actions,omitempty"`
+	CounterproposalGovernanceTemplate   string                                                      `json:"counterproposal_governance_template,omitempty"`
+	CounterproposalApprovalThreshold    *int                                                        `json:"counterproposal_approval_threshold,omitempty"`
+	CounterproposalEligibleApproverDIDs []string                                                    `json:"counterproposal_eligible_approver_dids,omitempty"`
+	CounterproposalEscalationLadder     []securecellsintegration.SecureCellFederationEscalationTier `json:"counterproposal_escalation_ladder,omitempty"`
+	CounterproposalResolutionDueAt      *time.Time                                                  `json:"counterproposal_resolution_due_at,omitempty"`
+	CounterproposalAutoSuspendOnOverdue *bool                                                       `json:"counterproposal_auto_suspend_on_overdue,omitempty"`
+	Resource                            string                                                      `json:"resource,omitempty"`
+	Reason                              string                                                      `json:"reason,omitempty"`
+	Metadata                            map[string]string                                           `json:"metadata,omitempty"`
 }
 
 type secureCellFederationAcceptRequest struct {
@@ -266,31 +272,31 @@ type secureCellResponse struct {
 }
 
 type secureCellArtifactsResponse struct {
-	CellID                   string                                                    `json:"cell_id"`
-	Status                   securecellsintegration.SecureCellStatus                   `json:"status"`
-	Participants             []securecellsintegration.SecureCellParticipantState       `json:"participants,omitempty"`
-	FederationOrganizations  []securecellsintegration.SecureCellFederationOrganization `json:"federation_organizations,omitempty"`
-	FederationInvitations    []securecellsintegration.SecureCellFederationInvitation   `json:"federation_invitations,omitempty"`
+	CellID                     string                                                       `json:"cell_id"`
+	Status                     securecellsintegration.SecureCellStatus                      `json:"status"`
+	Participants               []securecellsintegration.SecureCellParticipantState          `json:"participants,omitempty"`
+	FederationOrganizations    []securecellsintegration.SecureCellFederationOrganization    `json:"federation_organizations,omitempty"`
+	FederationInvitations      []securecellsintegration.SecureCellFederationInvitation      `json:"federation_invitations,omitempty"`
 	FederationCounterproposals []securecellsintegration.SecureCellFederationCounterproposal `json:"federation_counterproposals,omitempty"`
-	FederationContracts      []securecellsintegration.SecureCellFederationContract     `json:"federation_contracts,omitempty"`
-	Sessions                 []securecellsintegration.SecureCellSession                `json:"sessions,omitempty"`
-	Threads                  []securecellsintegration.SecureCellSessionThread          `json:"threads,omitempty"`
-	Decisions                []securecellsintegration.SecureCellThreadDecision         `json:"decisions,omitempty"`
-	DecisionOutcomes         []securecellsintegration.SecureCellThreadDecisionOutcome  `json:"decision_outcomes,omitempty"`
-	SharedOutputs            []securecellsintegration.SecureCellSharedOutput           `json:"shared_outputs,omitempty"`
-	SessionExchanges         []securecellsintegration.SecureCellSessionExchange        `json:"session_exchanges,omitempty"`
-	Transitions              []securecellsintegration.SecureCellTransition             `json:"transitions,omitempty"`
-	CreationReceipt          *policy.SignedPolicyReceipt                               `json:"creation_receipt,omitempty"`
-	ActivationReceipt        *policy.SignedPolicyReceipt                               `json:"activation_receipt,omitempty"`
-	ConfidentialExecution    *confidential.VerificationSummary                         `json:"confidential_execution,omitempty"`
-	ExecutionAttestations    []evidence.Attestation                                    `json:"execution_attestations,omitempty"`
-	ExecutionSeal            *evidence.Seal                                            `json:"execution_seal,omitempty"`
-	ControlLedgerID          string                                                    `json:"control_ledger_id,omitempty"`
-	ControlLedgerContentHash string                                                    `json:"control_ledger_content_hash,omitempty"`
-	ControlSummary           *evidence.ControlLedgerSummary                            `json:"control_summary,omitempty"`
-	PortablePackageHash      string                                                    `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned    bool                                                      `json:"portable_package_signed"`
-	PortablePackageAnchored  bool                                                      `json:"portable_package_anchored"`
+	FederationContracts        []securecellsintegration.SecureCellFederationContract        `json:"federation_contracts,omitempty"`
+	Sessions                   []securecellsintegration.SecureCellSession                   `json:"sessions,omitempty"`
+	Threads                    []securecellsintegration.SecureCellSessionThread             `json:"threads,omitempty"`
+	Decisions                  []securecellsintegration.SecureCellThreadDecision            `json:"decisions,omitempty"`
+	DecisionOutcomes           []securecellsintegration.SecureCellThreadDecisionOutcome     `json:"decision_outcomes,omitempty"`
+	SharedOutputs              []securecellsintegration.SecureCellSharedOutput              `json:"shared_outputs,omitempty"`
+	SessionExchanges           []securecellsintegration.SecureCellSessionExchange           `json:"session_exchanges,omitempty"`
+	Transitions                []securecellsintegration.SecureCellTransition                `json:"transitions,omitempty"`
+	CreationReceipt            *policy.SignedPolicyReceipt                                  `json:"creation_receipt,omitempty"`
+	ActivationReceipt          *policy.SignedPolicyReceipt                                  `json:"activation_receipt,omitempty"`
+	ConfidentialExecution      *confidential.VerificationSummary                            `json:"confidential_execution,omitempty"`
+	ExecutionAttestations      []evidence.Attestation                                       `json:"execution_attestations,omitempty"`
+	ExecutionSeal              *evidence.Seal                                               `json:"execution_seal,omitempty"`
+	ControlLedgerID            string                                                       `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash   string                                                       `json:"control_ledger_content_hash,omitempty"`
+	ControlSummary             *evidence.ControlLedgerSummary                               `json:"control_summary,omitempty"`
+	PortablePackageHash        string                                                       `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned      bool                                                         `json:"portable_package_signed"`
+	PortablePackageAnchored    bool                                                         `json:"portable_package_anchored"`
 }
 
 type secureCellListResponse struct {
@@ -306,14 +312,14 @@ type secureCellBulkMutationResponse struct {
 }
 
 type secureCellFederationResponse struct {
-	CellID                  string                                                    `json:"cell_id"`
-	Organizations           []securecellsintegration.SecureCellFederationOrganization `json:"organizations,omitempty"`
-	Invitations             []securecellsintegration.SecureCellFederationInvitation   `json:"invitations,omitempty"`
+	CellID                  string                                                       `json:"cell_id"`
+	Organizations           []securecellsintegration.SecureCellFederationOrganization    `json:"organizations,omitempty"`
+	Invitations             []securecellsintegration.SecureCellFederationInvitation      `json:"invitations,omitempty"`
 	Counterproposals        []securecellsintegration.SecureCellFederationCounterproposal `json:"counterproposals,omitempty"`
-	Contracts               []securecellsintegration.SecureCellFederationContract     `json:"contracts,omitempty"`
-	PortablePackageHash     string                                                    `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                      `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                      `json:"portable_package_anchored"`
+	Contracts               []securecellsintegration.SecureCellFederationContract        `json:"contracts,omitempty"`
+	PortablePackageHash     string                                                       `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                                         `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                                         `json:"portable_package_anchored"`
 }
 
 type secureCellFederationOrganizationListResponse struct {
@@ -377,6 +383,14 @@ type secureCellOverdueDecisionListResponse struct {
 
 type secureCellDecisionAutomationActionListResponse struct {
 	Items []securecellsintegration.SecureCellDecisionAutomationActionRecord `json:"items"`
+}
+
+type secureCellOverdueFederationCounterproposalListResponse struct {
+	Items []securecellsintegration.SecureCellOverdueFederationCounterproposal `json:"items"`
+}
+
+type secureCellFederationAutomationActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationAutomationActionRecord `json:"items"`
 }
 
 type secureCellDecisionSLATemplateListResponse struct {
@@ -834,6 +848,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterproposals/overdue" {
+			filter, err := parseSecureCellOverdueFederationCounterproposalFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationCounterproposals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellOverdueFederationCounterproposalListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterproposals/overdue/export" {
+			filter, err := parseSecureCellOverdueFederationCounterproposalFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationCounterproposals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellOverdueFederationCounterproposalExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/automation-actions" {
+			filter, err := parseSecureCellFederationAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationAutomationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/automation-actions/export" {
+			filter, err := parseSecureCellFederationAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/contracts" {
 			filter, err := parseSecureCellFederationContractFilter(r)
 			if err != nil {
@@ -1143,19 +1221,25 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.CreateFederationInvitation(r.Context(), cellID, securecellsintegration.SecureCellFederationInviteRequest{
-				ActorDID:         safeSecureCellActorDID(authCtx),
-				SponsorOfRecord:  req.SponsorOfRecord,
-				OrganizationName: req.OrganizationName,
-				Jurisdiction:     req.Jurisdiction,
-				ExpectedDID:      req.ExpectedDID,
-				Role:             req.Role,
-				SessionScopeIDs:  append([]string(nil), req.SessionScopeIDs...),
-				DataClasses:      append([]string(nil), req.DataClasses...),
-				ComputeZones:     append([]string(nil), req.ComputeZones...),
-				AllowedActions:   append([]string(nil), req.AllowedActions...),
-				Resource:         req.Resource,
-				Reason:           req.Reason,
-				Metadata:         req.Metadata,
+				ActorDID:                            safeSecureCellActorDID(authCtx),
+				SponsorOfRecord:                     req.SponsorOfRecord,
+				OrganizationName:                    req.OrganizationName,
+				Jurisdiction:                        req.Jurisdiction,
+				ExpectedDID:                         req.ExpectedDID,
+				Role:                                req.Role,
+				SessionScopeIDs:                     append([]string(nil), req.SessionScopeIDs...),
+				DataClasses:                         append([]string(nil), req.DataClasses...),
+				ComputeZones:                        append([]string(nil), req.ComputeZones...),
+				AllowedActions:                      append([]string(nil), req.AllowedActions...),
+				CounterproposalGovernanceTemplate:   req.CounterproposalGovernanceTemplate,
+				CounterproposalApprovalThreshold:    cast.ToInt(req.CounterproposalApprovalThreshold),
+				CounterproposalEligibleApproverDIDs: append([]string(nil), req.CounterproposalEligibleApproverDIDs...),
+				CounterproposalEscalationLadder:     append([]securecellsintegration.SecureCellFederationEscalationTier(nil), req.CounterproposalEscalationLadder...),
+				CounterproposalResolutionDueAt:      safeSecureCellOptionalTime(req.CounterproposalResolutionDueAt),
+				CounterproposalAutoSuspendOnOverdue: req.CounterproposalAutoSuspendOnOverdue != nil && *req.CounterproposalAutoSuspendOnOverdue,
+				Resource:                            req.Resource,
+				Reason:                              req.Reason,
+				Metadata:                            req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -2354,6 +2438,20 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "federation-counterproposals-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/overdue?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List overdue federation counterproposal milestones for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-counterproposals-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/overdue/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export overdue federation counterproposal milestones for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "organization-trust-pack",
 				Method:      http.MethodGet,
 				Path:        secureCellsItemPrefix + cellID + "/federation/organizations/" + organizationID + "/trust-pack",
@@ -2379,6 +2477,20 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/contracts/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
 				Description: "Export federation contracts for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/automation-actions?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List automated federation governance actions for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/automation-actions/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export automated federation governance actions for this organization.",
 				Formats:     []string{"json", "csv"},
 			},
 		},
@@ -2423,6 +2535,34 @@ func secureCellFederationContractBundleOptions(cellID string, contractID string)
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/counterproposals/export?cell_id=" + cellID + "&format=csv",
 				Description: "Export federation counterproposal history across this secure cell.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-counterproposals-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/overdue?cell_id=" + cellID,
+				Description: "List overdue federation counterproposal milestones across this secure cell.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-counterproposals-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterproposals/overdue/export?cell_id=" + cellID + "&format=csv",
+				Description: "Export overdue federation counterproposal milestones across this secure cell.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/automation-actions?cell_id=" + cellID + "&contract_id=" + contractID,
+				Description: "List automated federation governance actions that touched this contract or its negotiation lineage.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/automation-actions/export?cell_id=" + cellID + "&contract_id=" + contractID + "&format=csv",
+				Description: "Export automated federation governance actions that touched this contract or its negotiation lineage.",
 				Formats:     []string{"json", "csv"},
 			},
 			{
@@ -2735,6 +2875,52 @@ func parseSecureCellFederationCounterproposalFilter(r *http.Request) (securecell
 		UpdatedAfter:    updatedAfter,
 		UpdatedBefore:   updatedBefore,
 		Limit:           cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellOverdueFederationCounterproposalFilter(r *http.Request) (securecellsintegration.SecureCellOverdueFederationCounterproposalFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellOverdueFederationCounterproposalFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	before, err := parseSecureCellOptionalTime(query.Get("before"))
+	if err != nil {
+		return securecellsintegration.SecureCellOverdueFederationCounterproposalFilter{}, err
+	}
+	return securecellsintegration.SecureCellOverdueFederationCounterproposalFilter{
+		CellID:          strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID:  strings.TrimSpace(query.Get("organization_id")),
+		InvitationID:    strings.TrimSpace(query.Get("invitation_id")),
+		SponsorOfRecord: strings.TrimSpace(query.Get("sponsor_of_record")),
+		SubmittedBy:     strings.TrimSpace(query.Get("submitted_by")),
+		Before:          before,
+		Limit:           cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellFederationAutomationActionFilter(r *http.Request) (securecellsintegration.SecureCellFederationAutomationActionFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellFederationAutomationActionFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	since, err := parseSecureCellOptionalTime(query.Get("since"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationAutomationActionFilter{}, err
+	}
+	until, err := parseSecureCellOptionalTime(query.Get("until"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationAutomationActionFilter{}, err
+	}
+	return securecellsintegration.SecureCellFederationAutomationActionFilter{
+		CellID:            strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(query.Get("organization_id")),
+		InvitationID:      strings.TrimSpace(query.Get("invitation_id")),
+		CounterproposalID: strings.TrimSpace(query.Get("counterproposal_id")),
+		ContractID:        strings.TrimSpace(query.Get("contract_id")),
+		Action:            strings.TrimSpace(query.Get("action")),
+		Since:             since,
+		Until:             until,
+		Limit:             cast.ToInt(strings.TrimSpace(query.Get("limit"))),
 	}, nil
 }
 

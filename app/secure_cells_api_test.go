@@ -786,6 +786,199 @@ func TestSecureCellsHandlers_FederatedContractsRestrictSessionScope(t *testing.T
 	}
 }
 
+func TestSecureCellsHandlers_BearerFederationGovernanceOperatorViews(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{37}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UK"})
+
+	createReq := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA}, nil)))
+	createReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createRec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+	var createResp secureCellResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	cellID := createResp.Result.CellID
+
+	startReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/sessions", bytes.NewReader(mustMarshalSecureCellSessionStartRequestWithParticipants(t, owner, nil, []string{participantA.AgentID()})))
+	startReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	startRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(startRec, startReq)
+	if startRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, startRec.Code, startRec.Body.String())
+	}
+	var startResp secureCellResponse
+	if err := json.Unmarshal(startRec.Body.Bytes(), &startResp); err != nil {
+		t.Fatalf("unmarshal session response: %v", err)
+	}
+	sessionID := startResp.Result.Sessions[len(startResp.Result.Sessions)-1].ID
+
+	escalationDueAt := time.Now().UTC().Add(-10 * time.Minute).Truncate(time.Second)
+	resolutionDueAt := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Second)
+	inviteReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations", bytes.NewReader(mustMarshalSecureCellFederationInviteRequestWithGovernance(t, owner, participantB, nil, []string{sessionID}, []string{"confidential"}, []string{"uae-enclave"}, []string{"session_exchange"}, "finance_review", 2, []string{owner.AgentID()}, []securecellsintegration.SecureCellFederationEscalationTier{
+		{
+			TierID:    "tier_1",
+			TargetDID: participantA.AgentID(),
+			DueAt:     &escalationDueAt,
+			Reason:    "secondary reviewer deadline reached",
+		},
+	}, &resolutionDueAt, false)))
+	inviteReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	inviteRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(inviteRec, inviteReq)
+	if inviteRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, inviteRec.Code, inviteRec.Body.String())
+	}
+	var inviteResp secureCellResponse
+	if err := json.Unmarshal(inviteRec.Body.Bytes(), &inviteResp); err != nil {
+		t.Fatalf("unmarshal invite response: %v", err)
+	}
+	invitationID := inviteResp.Result.FederationInvitations[len(inviteResp.Result.FederationInvitations)-1].ID
+
+	counterproposalReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/invitations/"+invitationID+"/counterproposals", bytes.NewReader(mustMarshalSecureCellFederationCounterproposalRequest(t, participantB, nil, []string{sessionID}, []string{"confidential"}, nil, []string{"session_exchange"})))
+	counterproposalReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	counterproposalRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(counterproposalRec, counterproposalReq)
+	if counterproposalRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterproposalRec.Code, counterproposalRec.Body.String())
+	}
+	var counterproposalResp secureCellResponse
+	if err := json.Unmarshal(counterproposalRec.Body.Bytes(), &counterproposalResp); err != nil {
+		t.Fatalf("unmarshal counterproposal response: %v", err)
+	}
+	counterproposalID := counterproposalResp.Result.FederationCounterproposals[len(counterproposalResp.Result.FederationCounterproposals)-1].ID
+
+	ownerApproveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/counterproposals/"+counterproposalID+"/approve", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, owner, "owner casts first vote", nil, nil)))
+	ownerApproveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	ownerApproveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(ownerApproveRec, ownerApproveReq)
+	if ownerApproveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ownerApproveRec.Code, ownerApproveRec.Body.String())
+	}
+
+	counterproposalListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterproposals?cell_id="+url.QueryEscape(cellID), nil)
+	counterproposalListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterproposalListRec, counterproposalListReq)
+	if counterproposalListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterproposalListRec.Code, counterproposalListRec.Body.String())
+	}
+	var counterproposalListResp secureCellFederationCounterproposalListResponse
+	if err := json.Unmarshal(counterproposalListRec.Body.Bytes(), &counterproposalListResp); err != nil {
+		t.Fatalf("unmarshal counterproposal list response: %v", err)
+	}
+	if len(counterproposalListResp.Items) != 1 {
+		t.Fatalf("expected one counterproposal summary, got %+v", counterproposalListResp.Items)
+	}
+	if item := counterproposalListResp.Items[0]; item.Status != securecellsintegration.SecureCellFederationCounterproposalStatusPending || item.ApprovalThreshold != 2 || item.ApprovalVoteCount != 1 || item.GovernanceTemplate != "finance_review" || item.ThresholdSatisfied {
+		t.Fatalf("expected pending governed counterproposal summary, got %+v", item)
+	}
+
+	before := time.Now().UTC()
+	overdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterproposals/overdue?cell_id="+url.QueryEscape(cellID)+"&before="+url.QueryEscape(before.Format(time.RFC3339Nano)), nil)
+	overdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueRec, overdueReq)
+	if overdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueRec.Code, overdueRec.Body.String())
+	}
+	var overdueResp secureCellOverdueFederationCounterproposalListResponse
+	if err := json.Unmarshal(overdueRec.Body.Bytes(), &overdueResp); err != nil {
+		t.Fatalf("unmarshal overdue response: %v", err)
+	}
+	if len(overdueResp.Items) != 1 || overdueResp.Items[0].CounterproposalID != counterproposalID || overdueResp.Items[0].TierID != "tier_1" || overdueResp.Items[0].AutomationAction != "escalate" {
+		t.Fatalf("expected overdue escalation response, got %+v", overdueResp.Items)
+	}
+
+	overdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterproposals/overdue/export?cell_id="+url.QueryEscape(cellID)+"&before="+url.QueryEscape(before.Format(time.RFC3339Nano))+"&format=csv", nil)
+	overdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueExportRec, overdueExportReq)
+	if overdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueExportRec.Code, overdueExportRec.Body.String())
+	}
+	if body := overdueExportRec.Body.String(); !strings.Contains(body, counterproposalID) || !strings.Contains(body, "tier_1") {
+		t.Fatalf("expected overdue export to include counterproposal and tier, got %s", body)
+	}
+
+	if _, err := app.secureCellService.SweepFederationGovernance(context.Background(), before, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated federation governance sweep",
+		Metadata: map[string]string{"ticket": "SC-FED-API-SWEEP"},
+	}); err != nil {
+		t.Fatalf("SweepFederationGovernance failed: %v", err)
+	}
+
+	actionsReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/automation-actions?cell_id="+url.QueryEscape(cellID), nil)
+	actionsRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionsRec, actionsReq)
+	if actionsRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionsRec.Code, actionsRec.Body.String())
+	}
+	var actionsResp secureCellFederationAutomationActionListResponse
+	if err := json.Unmarshal(actionsRec.Body.Bytes(), &actionsResp); err != nil {
+		t.Fatalf("unmarshal automation actions response: %v", err)
+	}
+	if len(actionsResp.Items) != 1 || actionsResp.Items[0].Action != "secure_cell.federation_counterproposal_escalated" || actionsResp.Items[0].TierID != "tier_1" {
+		t.Fatalf("expected one federation escalation automation action, got %+v", actionsResp.Items)
+	}
+
+	actionsExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/automation-actions/export?cell_id="+url.QueryEscape(cellID)+"&format=csv", nil)
+	actionsExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionsExportRec, actionsExportReq)
+	if actionsExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionsExportRec.Code, actionsExportRec.Body.String())
+	}
+	if body := actionsExportRec.Body.String(); !strings.Contains(body, "secure_cell.federation_counterproposal_escalated") || !strings.Contains(body, "transition_id") {
+		t.Fatalf("expected automation export to include escalation action rows, got %s", body)
+	}
+
+	reviewerApproveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/counterproposals/"+counterproposalID+"/approve", bytes.NewReader(mustMarshalSecureCellLifecycleRequest(t, participantA, "escalated reviewer casts second vote", nil, nil)))
+	reviewerApproveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reviewerApproveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reviewerApproveRec, reviewerApproveReq)
+	if reviewerApproveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reviewerApproveRec.Code, reviewerApproveRec.Body.String())
+	}
+
+	finalListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterproposals?cell_id="+url.QueryEscape(cellID), nil)
+	finalListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(finalListRec, finalListReq)
+	if finalListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, finalListRec.Code, finalListRec.Body.String())
+	}
+	var finalListResp secureCellFederationCounterproposalListResponse
+	if err := json.Unmarshal(finalListRec.Body.Bytes(), &finalListResp); err != nil {
+		t.Fatalf("unmarshal final counterproposal list response: %v", err)
+	}
+	if len(finalListResp.Items) != 1 {
+		t.Fatalf("expected one final counterproposal summary, got %+v", finalListResp.Items)
+	}
+	if item := finalListResp.Items[0]; item.Status != securecellsintegration.SecureCellFederationCounterproposalStatusApproved || item.ApprovalVoteCount != 2 || !item.ThresholdSatisfied {
+		t.Fatalf("expected approved threshold-satisfied counterproposal summary, got %+v", item)
+	}
+
+	counterproposalExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterproposals/export?cell_id="+url.QueryEscape(cellID)+"&format=csv", nil)
+	counterproposalExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterproposalExportRec, counterproposalExportReq)
+	if counterproposalExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterproposalExportRec.Code, counterproposalExportRec.Body.String())
+	}
+	if body := counterproposalExportRec.Body.String(); !strings.Contains(body, "approval_threshold") || !strings.Contains(body, "finance_review") || !strings.Contains(body, string(securecellsintegration.SecureCellFederationCounterproposalStatusApproved)) {
+		t.Fatalf("expected counterproposal export to include governance columns and approved row, got %s", body)
+	}
+}
+
 func TestSecureCellsHandlers_BearerFederationContractRenewAndRevokeFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",
@@ -3308,11 +3501,24 @@ type secureCellDecisionGovernanceSweepStub struct {
 	lifecycle securecellsintegration.SecureCellLifecycleRequest
 }
 
+type secureCellFederationGovernanceSweepStub struct {
+	called    bool
+	at        time.Time
+	lifecycle securecellsintegration.SecureCellLifecycleRequest
+}
+
 func (s *secureCellDecisionGovernanceSweepStub) SweepDecisionGovernance(_ context.Context, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (string, error) {
 	s.called = true
 	s.at = at.UTC()
 	s.lifecycle = lifecycle
 	return "decision-governance-sweep-complete", nil
+}
+
+func (s *secureCellFederationGovernanceSweepStub) SweepFederationGovernance(_ context.Context, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (string, error) {
+	s.called = true
+	s.at = at.UTC()
+	s.lifecycle = lifecycle
+	return "federation-governance-sweep-complete", nil
 }
 
 func TestInvokeSecureCellDecisionGovernanceSweep_UsesOptionalServiceMethod(t *testing.T) {
@@ -3346,6 +3552,41 @@ func TestInvokeSecureCellDecisionGovernanceSweep_UsesOptionalServiceMethod(t *te
 	}
 	if result != "decision-governance-sweep-complete" {
 		t.Fatalf("unexpected sweep result: %#v", result)
+	}
+}
+
+func TestInvokeSecureCellFederationGovernanceSweep_UsesOptionalServiceMethod(t *testing.T) {
+	stub := &secureCellFederationGovernanceSweepStub{}
+	at := time.Date(2026, 4, 16, 8, 15, 0, 0, time.UTC)
+	lifecycle := securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: secureCellAutomatedSweepActor,
+		Reason:   "automated federation governance sweep",
+		Metadata: map[string]string{
+			"sweep_mode":            "automated",
+			"workflow":              "secure_cell",
+			"automation_mode":       "federation_governance",
+			"federation_sweep_mode": "automated",
+		},
+	}
+
+	result, ok, err := invokeSecureCellFederationGovernanceSweep(stub, at, lifecycle)
+	if err != nil {
+		t.Fatalf("invokeSecureCellFederationGovernanceSweep returned error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected federation sweep hook to report a callable method")
+	}
+	if !stub.called {
+		t.Fatal("expected federation sweep stub to be invoked")
+	}
+	if stub.at != at {
+		t.Fatalf("expected sweep at %s, got %s", at, stub.at)
+	}
+	if stub.lifecycle.ActorDID != secureCellAutomatedSweepActor || stub.lifecycle.Reason != lifecycle.Reason {
+		t.Fatalf("unexpected lifecycle passed to federation sweep hook: %+v", stub.lifecycle)
+	}
+	if result != "federation-governance-sweep-complete" {
+		t.Fatalf("unexpected federation sweep result: %#v", result)
 	}
 }
 
@@ -3543,6 +3784,47 @@ func mustMarshalSecureCellFederationInviteRequestWithOptions(t *testing.T, actor
 		t.Fatalf("marshal secure cell federation invite request with options: %v", err)
 	}
 	return body
+}
+
+func mustMarshalSecureCellFederationInviteRequestWithGovernance(t *testing.T, actor *agent.AgentIdentity, participant *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, sessionScopeIDs, dataClasses, computeZones, allowedActions []string, governanceTemplate string, approvalThreshold int, eligibleApprovers []string, escalationLadder []securecellsintegration.SecureCellFederationEscalationTier, resolutionDueAt *time.Time, autoSuspendOnOverdue bool) []byte {
+	t.Helper()
+	jurisdiction := ""
+	if len(participant.JurisdictionTags) > 0 {
+		jurisdiction = participant.JurisdictionTags[0]
+	}
+	body, err := json.Marshal(secureCellFederationInviteRequest{
+		ActorIdentity:                       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:                       receipt,
+		SponsorOfRecord:                     participant.Liability.SponsorOfRecord,
+		OrganizationName:                    participant.Liability.BusinessUnit,
+		Jurisdiction:                        jurisdiction,
+		ExpectedDID:                         participant.AgentID(),
+		Role:                                "federated_participant",
+		SessionScopeIDs:                     append([]string(nil), sessionScopeIDs...),
+		DataClasses:                         append([]string(nil), dataClasses...),
+		ComputeZones:                        append([]string(nil), computeZones...),
+		AllowedActions:                      append([]string(nil), allowedActions...),
+		CounterproposalGovernanceTemplate:   governanceTemplate,
+		CounterproposalApprovalThreshold:    intPtr(approvalThreshold),
+		CounterproposalEligibleApproverDIDs: append([]string(nil), eligibleApprovers...),
+		CounterproposalEscalationLadder:     append([]securecellsintegration.SecureCellFederationEscalationTier(nil), escalationLadder...),
+		CounterproposalResolutionDueAt:      resolutionDueAt,
+		CounterproposalAutoSuspendOnOverdue: boolPtr(autoSuspendOnOverdue),
+		Reason:                              "cross-org collaboration invite",
+		Metadata:                            map[string]string{"ticket": "SC-FED-API-GOV-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation invite request with governance: %v", err)
+	}
+	return body
+}
+
+func intPtr(v int) *int {
+	return &v
+}
+
+func boolPtr(v bool) *bool {
+	return &v
 }
 
 func mustMarshalSecureCellFederationAcceptRequestWithOptions(t *testing.T, actor *agent.AgentIdentity, invitationID string, participant *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, offeredSessionScopeIDs, offeredDataClasses, offeredComputeZones, offeredActions []string) []byte {

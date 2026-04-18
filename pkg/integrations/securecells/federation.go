@@ -66,6 +66,12 @@ type SecureCellFederationInvitation struct {
 	OfferedActions         []string                             `json:"offered_actions,omitempty"`
 	NegotiationDiffs       []SecureCellFederationPolicyDiff     `json:"negotiation_diffs,omitempty"`
 	ApprovedCounterproposalID string                            `json:"approved_counterproposal_id,omitempty"`
+	CounterproposalGovernanceTemplate string                    `json:"counterproposal_governance_template,omitempty"`
+	CounterproposalApprovalThreshold int                        `json:"counterproposal_approval_threshold,omitempty"`
+	CounterproposalEligibleApproverDIDs []string                `json:"counterproposal_eligible_approver_dids,omitempty"`
+	CounterproposalEscalationLadder []SecureCellFederationEscalationTier `json:"counterproposal_escalation_ladder,omitempty"`
+	CounterproposalResolutionDueAt *time.Time                   `json:"counterproposal_resolution_due_at,omitempty"`
+	CounterproposalAutoSuspendOnOverdue bool                    `json:"counterproposal_auto_suspend_on_overdue,omitempty"`
 	Resource               string                               `json:"resource,omitempty"`
 	CreatedBy              string                               `json:"created_by,omitempty"`
 	AcceptedBy             string                               `json:"accepted_by,omitempty"`
@@ -89,6 +95,12 @@ type SecureCellFederationInviteRequest struct {
 	DataClasses      []string          `json:"data_classes,omitempty"`
 	ComputeZones     []string          `json:"compute_zones,omitempty"`
 	AllowedActions   []string          `json:"allowed_actions,omitempty"`
+	CounterproposalGovernanceTemplate string `json:"counterproposal_governance_template,omitempty"`
+	CounterproposalApprovalThreshold int `json:"counterproposal_approval_threshold,omitempty"`
+	CounterproposalEligibleApproverDIDs []string `json:"counterproposal_eligible_approver_dids,omitempty"`
+	CounterproposalEscalationLadder []SecureCellFederationEscalationTier `json:"counterproposal_escalation_ladder,omitempty"`
+	CounterproposalResolutionDueAt *time.Time `json:"counterproposal_resolution_due_at,omitempty"`
+	CounterproposalAutoSuspendOnOverdue bool `json:"counterproposal_auto_suspend_on_overdue,omitempty"`
 	Resource         string            `json:"resource,omitempty"`
 	Reason           string            `json:"reason,omitempty"`
 	Metadata         map[string]string `json:"metadata,omitempty"`
@@ -197,6 +209,16 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 	if len(allowedActions) == 0 {
 		allowedActions = secureCellDefaultFederationContractActions()
 	}
+	counterproposalGovernanceTemplate := strings.TrimSpace(invite.CounterproposalGovernanceTemplate)
+	counterproposalApprovalThreshold := invite.CounterproposalApprovalThreshold
+	if counterproposalApprovalThreshold <= 0 {
+		counterproposalApprovalThreshold = 1
+	}
+	counterproposalEligibleApproverDIDs := normalizeSecureCellFederationApproverDIDs(run.request.OwnerIdentity.AgentID(), invite.CounterproposalEligibleApproverDIDs)
+	counterproposalEscalationLadder, err := normalizeSecureCellFederationEscalationLadder(invite.CounterproposalEscalationLadder, invite.CounterproposalResolutionDueAt)
+	if err != nil {
+		return nil, err
+	}
 	orgID := secureCellFederationOrganizationID(sponsorOfRecord)
 	resource := firstNonEmpty(strings.TrimSpace(invite.Resource), fmt.Sprintf("secure-cell:%s:federation:%s", run.result.CellID, orgID))
 
@@ -229,6 +251,12 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 		DataClasses:      dataClasses,
 		ComputeZones:     computeZones,
 		AllowedActions:   allowedActions,
+		CounterproposalGovernanceTemplate: counterproposalGovernanceTemplate,
+		CounterproposalApprovalThreshold: counterproposalApprovalThreshold,
+		CounterproposalEligibleApproverDIDs: counterproposalEligibleApproverDIDs,
+		CounterproposalEscalationLadder: cloneSecureCellFederationEscalationTiers(counterproposalEscalationLadder),
+		CounterproposalResolutionDueAt: cloneTimePtr(invite.CounterproposalResolutionDueAt),
+		CounterproposalAutoSuspendOnOverdue: invite.CounterproposalAutoSuspendOnOverdue,
 		Resource:         resource,
 		CreatedBy:        actorDID,
 		Reason:           strings.TrimSpace(invite.Reason),
@@ -244,6 +272,10 @@ func (s *Service) CreateFederationInvitation(ctx context.Context, cellID string,
 		"federation_role":              invitation.Role,
 		"federation_session_scopes":    strings.Join(invitation.SessionScopeIDs, ","),
 		"federation_allowed_actions":   strings.Join(invitation.AllowedActions, ","),
+		"federation_counterproposal_governance_template": invitation.CounterproposalGovernanceTemplate,
+		"federation_counterproposal_approval_threshold": fmt.Sprintf("%d", invitation.CounterproposalApprovalThreshold),
+		"federation_counterproposal_eligible_approvers": strings.Join(invitation.CounterproposalEligibleApproverDIDs, ","),
+		"federation_counterproposal_escalation_tiers": strings.Join(secureCellFederationEscalationTierIDs(invitation.CounterproposalEscalationLadder), ","),
 		"cell_status_before":           string(run.result.Status),
 		"transition_reason":            invitation.Reason,
 	}, actorDID)

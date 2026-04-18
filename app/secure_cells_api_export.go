@@ -155,6 +155,142 @@ func writeSecureCellDecisionAutomationActionExport(w http.ResponseWriter, r *htt
 	}
 }
 
+func writeSecureCellOverdueFederationCounterproposalExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellOverdueFederationCounterproposal) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellOverdueFederationCounterproposalListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-overdue-counterproposals.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"invitation_id",
+			"counterproposal_id",
+			"status",
+			"governance_template",
+			"automation_action",
+			"overdue_reason",
+			"tier_id",
+			"target_did",
+			"due_at",
+			"overdue_seconds",
+			"resolution_due_at",
+			"auto_suspend_on_overdue",
+			"updated_at",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.InvitationID,
+				item.CounterproposalID,
+				string(item.Status),
+				item.GovernanceTemplate,
+				item.AutomationAction,
+				item.OverdueReason,
+				item.TierID,
+				item.TargetDID,
+				item.DueAt.UTC().Format(time.RFC3339Nano),
+				strconv.FormatInt(item.OverdueSeconds, 10),
+				formatSecureCellOptionalTime(item.ResolutionDueAt),
+				strconv.FormatBool(item.AutoSuspendOnOverdue),
+				item.UpdatedAt.UTC().Format(time.RFC3339Nano),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write overdue-federation-counterproposal csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationAutomationActionExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationAutomationActionRecord) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationAutomationActionListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-automation-actions.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"invitation_id",
+			"counterproposal_id",
+			"counterproposal_status_before",
+			"counterproposal_status_after",
+			"contract_id",
+			"contract_status_before",
+			"contract_status_after",
+			"action",
+			"tier_id",
+			"target_did",
+			"trigger",
+			"due_at",
+			"actor",
+			"automated_actor",
+			"reason",
+			"transition_id",
+			"occurred_at",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.InvitationID,
+				item.CounterproposalID,
+				string(item.CounterproposalStatusBefore),
+				string(item.CounterproposalStatusAfter),
+				item.ContractID,
+				string(item.ContractStatusBefore),
+				string(item.ContractStatusAfter),
+				item.Action,
+				item.TierID,
+				item.TargetDID,
+				item.Trigger,
+				formatSecureCellOptionalTime(item.DueAt),
+				item.Actor,
+				item.AutomatedActor,
+				item.Reason,
+				item.TransitionID,
+				item.OccurredAt.UTC().Format(time.RFC3339Nano),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-automation csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellDecisionSLATemplateExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellDecisionSLATemplateSummary) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -404,6 +540,17 @@ func writeSecureCellFederationCounterproposalExport(w http.ResponseWriter, r *ht
 			"sponsor_of_record",
 			"organization_name",
 			"status",
+			"governance_template",
+			"approval_threshold",
+			"eligible_approver_count",
+			"approval_vote_count",
+			"approve_vote_count",
+			"reject_vote_count",
+			"threshold_satisfied",
+			"escalation_tier_count",
+			"escalated_tier_count",
+			"resolution_due_at",
+			"auto_suspend_on_overdue",
 			"offered_session_scope_ids",
 			"offered_data_classes",
 			"offered_compute_zones",
@@ -442,6 +589,17 @@ func writeSecureCellFederationCounterproposalExport(w http.ResponseWriter, r *ht
 				item.SponsorOfRecord,
 				item.OrganizationName,
 				string(item.Status),
+				item.GovernanceTemplate,
+				strconv.Itoa(item.ApprovalThreshold),
+				strconv.Itoa(item.EligibleApproverCount),
+				strconv.Itoa(item.ApprovalVoteCount),
+				strconv.Itoa(item.ApproveVoteCount),
+				strconv.Itoa(item.RejectVoteCount),
+				strconv.FormatBool(item.ThresholdSatisfied),
+				strconv.Itoa(item.EscalationTierCount),
+				strconv.Itoa(item.EscalatedTierCount),
+				formatSecureCellOptionalTime(item.ResolutionDueAt),
+				strconv.FormatBool(item.AutoSuspendOnOverdue),
 				strings.Join(item.OfferedSessionScopeIDs, "|"),
 				strings.Join(item.OfferedDataClasses, "|"),
 				strings.Join(item.OfferedComputeZones, "|"),

@@ -3545,6 +3545,372 @@ func TestService_FederationCounterproposalApprovalLifecycle(t *testing.T) {
 	}
 }
 
+func TestService_FederationCounterproposalCommitteeThresholdAndEscalation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Committee Cell",
+		Purpose:       "prove committee thresholds and escalation before cross-org onboarding",
+		Resource:      "cell:federation-committee",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	sessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Federation Review Room",
+		Purpose:         "committee-based federation review",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "review room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	sessionID := sessionResult.Sessions[len(sessionResult.Sessions)-1].ID
+
+	escalationDueAt := time.Now().UTC().Add(-10 * time.Minute).Truncate(time.Second)
+	resolutionDueAt := time.Now().UTC().Add(2 * time.Hour).Truncate(time.Second)
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:                            owner.AgentID(),
+		SponsorOfRecord:                     secureCellFederationSponsor(participantB),
+		OrganizationName:                    secureCellFederationOrganizationName(participantB),
+		Jurisdiction:                        "UK",
+		ExpectedDID:                         participantB.AgentID(),
+		Role:                                "bank_b_reviewer",
+		SessionScopeIDs:                     []string{sessionID},
+		DataClasses:                         []string{"confidential"},
+		ComputeZones:                        []string{"uae-enclave"},
+		AllowedActions:                      []string{secureCellFederationContractActionSessionExchange},
+		CounterproposalGovernanceTemplate:   "finance_review",
+		CounterproposalApprovalThreshold:    2,
+		CounterproposalEligibleApproverDIDs: []string{owner.AgentID()},
+		CounterproposalEscalationLadder: []SecureCellFederationEscalationTier{
+			{
+				TierID:    "tier_1",
+				TargetDID: participantA.AgentID(),
+				DueAt:     &escalationDueAt,
+				Reason:    "secondary reviewer deadline reached",
+			},
+		},
+		CounterproposalResolutionDueAt: &resolutionDueAt,
+		Reason:                         "owner-authored invitation created",
+		Metadata:                       map[string]string{"ticket": "SC-FED-COMMITTEE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	counterproposed, err := service.SubmitFederationCounterproposal(ctx, created.CellID, invitation.ID, SecureCellFederationCounterproposalRequest{
+		ActorDID:               participantB.AgentID(),
+		OfferedSessionScopeIDs: []string{sessionID},
+		OfferedDataClasses:     []string{"confidential"},
+		OfferedActions:         []string{secureCellFederationContractActionSessionExchange},
+		Resource:               "secure-cell:federation-counterproposal:committee",
+		Reason:                 "counterparty proposes narrow committee-reviewed terms",
+		Metadata:               map[string]string{"ticket": "SC-FED-COMMITTEE-02"},
+	})
+	if err != nil {
+		t.Fatalf("SubmitFederationCounterproposal failed: %v", err)
+	}
+	proposal := counterproposed.FederationCounterproposals[0]
+	if proposal.ApprovalThreshold != 2 || len(proposal.EligibleApproverDIDs) != 1 || proposal.EligibleApproverDIDs[0] != owner.AgentID() {
+		t.Fatalf("expected committee governance to persist on proposal, got %+v", proposal)
+	}
+
+	voted, err := service.ApproveFederationCounterproposal(ctx, created.CellID, proposal.ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "owner casts first committee vote",
+		Metadata: map[string]string{"ticket": "SC-FED-COMMITTEE-03"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveFederationCounterproposal owner vote failed: %v", err)
+	}
+	afterOwnerVote, ok := mustSecureCellFederationCounterproposal(t, voted, proposal.ID)
+	if !ok {
+		t.Fatalf("expected counterproposal %q after owner vote", proposal.ID)
+	}
+	if afterOwnerVote.Status != SecureCellFederationCounterproposalStatusPending || len(afterOwnerVote.ApprovalVotes) != 1 {
+		t.Fatalf("expected pending proposal with one vote, got %+v", afterOwnerVote)
+	}
+	if got := voted.Transitions[len(voted.Transitions)-1].Action; got != "secure_cell.federation_counterproposal_vote_recorded" {
+		t.Fatalf("expected vote-recorded transition, got %q", got)
+	}
+
+	before := time.Now().UTC()
+	overdue, err := service.ListOverdueFederationCounterproposals(ctx, SecureCellOverdueFederationCounterproposalFilter{
+		CellID: created.CellID,
+		Before: &before,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationCounterproposals failed: %v", err)
+	}
+	if len(overdue) != 1 {
+		t.Fatalf("expected one overdue counterproposal, got %+v", overdue)
+	}
+	if overdue[0].CounterproposalID != proposal.ID || overdue[0].AutomationAction != "escalate" || overdue[0].TierID != "tier_1" || overdue[0].TargetDID != participantA.AgentID() {
+		t.Fatalf("expected overdue escalation projection, got %+v", overdue[0])
+	}
+
+	report, err := service.SweepFederationGovernance(ctx, before, SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated federation governance sweep",
+		Metadata: map[string]string{"ticket": "SC-FED-COMMITTEE-SWEEP"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationGovernance failed: %v", err)
+	}
+	if report.CounterproposalsEscalated != 1 || report.CounterproposalsRejected != 0 {
+		t.Fatalf("expected one escalation and zero rejections, got %+v", report)
+	}
+
+	escalated, ok := mustSecureCellFederationCounterproposal(t, mustSecureCellResult(t, service, created.CellID), proposal.ID)
+	if !ok {
+		t.Fatalf("expected escalated counterproposal %q", proposal.ID)
+	}
+	if !containsStringFold(escalated.EligibleApproverDIDs, participantA.AgentID()) || !containsStringFold(escalated.EscalatedTierIDs, "tier_1") {
+		t.Fatalf("expected escalation tier to expand eligible approvers, got %+v", escalated)
+	}
+
+	actions, err := service.ListFederationAutomationActions(ctx, SecureCellFederationAutomationActionFilter{
+		CellID: created.CellID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationAutomationActions failed: %v", err)
+	}
+	if len(actions) != 1 {
+		t.Fatalf("expected one federation automation action, got %+v", actions)
+	}
+	if actions[0].Action != "secure_cell.federation_counterproposal_escalated" || actions[0].TierID != "tier_1" || actions[0].TargetDID != participantA.AgentID() || actions[0].Trigger != "tier_1" {
+		t.Fatalf("expected escalation automation action metadata, got %+v", actions[0])
+	}
+
+	approved, err := service.ApproveFederationCounterproposal(ctx, created.CellID, proposal.ID, SecureCellLifecycleRequest{
+		ActorDID: participantA.AgentID(),
+		Reason:   "escalated reviewer casts second committee vote",
+		Metadata: map[string]string{"ticket": "SC-FED-COMMITTEE-04"},
+	})
+	if err != nil {
+		t.Fatalf("ApproveFederationCounterproposal escalated reviewer failed: %v", err)
+	}
+	finalProposal, ok := mustSecureCellFederationCounterproposal(t, approved, proposal.ID)
+	if !ok {
+		t.Fatalf("expected approved counterproposal %q", proposal.ID)
+	}
+	if finalProposal.Status != SecureCellFederationCounterproposalStatusApproved || len(finalProposal.ApprovalVotes) != 2 || strings.TrimSpace(finalProposal.ApprovedBy) != participantA.AgentID() {
+		t.Fatalf("expected approved committee counterproposal, got %+v", finalProposal)
+	}
+	if got := approved.Transitions[len(approved.Transitions)-1].Action; got != "secure_cell.federation_counterproposal_approved" {
+		t.Fatalf("expected approval transition after escalated vote, got %q", got)
+	}
+}
+
+func TestService_FederationCounterproposalOverdueRejectSuspendsContracts(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+	participantC := mustSecureCellIdentity(t, "participant-c", []string{"UK"})
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Suspension Cell",
+		Purpose:       "prove overdue counterproposals suspend live federation contracts",
+		Resource:      "cell:federation-suspension",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	sessionResult, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Federation Contract Room",
+		Purpose:         "contract-bearing collaboration",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "contract room opened",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	sessionID := sessionResult.Sessions[len(sessionResult.Sessions)-1].ID
+
+	acceptedInvite, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{sessionID},
+		DataClasses:      []string{"confidential"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{secureCellFederationContractActionSessionExchange},
+		Reason:           "initial contract-bearing invitation",
+		Metadata:         map[string]string{"ticket": "SC-FED-SUSPEND-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation accepted path failed: %v", err)
+	}
+	firstInvitation := acceptedInvite.FederationInvitations[len(acceptedInvite.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: firstInvitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant:  SecureCellParticipant{Identity: participantB, Role: "bank_b_reviewer"},
+		Reason:       "counterparty joins under accepted terms",
+		Metadata:     map[string]string{"ticket": "SC-FED-SUSPEND-02"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	activeContracts := activeFederationContractsForOrganization(accepted.FederationContracts, secureCellFederationOrganizationID(secureCellFederationSponsor(participantB)))
+	if len(activeContracts) != 1 {
+		t.Fatalf("expected one active contract for organization, got %+v", accepted.FederationContracts)
+	}
+	activeContractID := activeContracts[0].ID
+
+	resolutionDueAt := time.Now().UTC().Add(-15 * time.Minute).Truncate(time.Second)
+	overdueInvite, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:                            owner.AgentID(),
+		SponsorOfRecord:                     secureCellFederationSponsor(participantB),
+		OrganizationName:                    secureCellFederationOrganizationName(participantB),
+		Jurisdiction:                        "UK",
+		ExpectedDID:                         participantC.AgentID(),
+		Role:                                "bank_b_delegate",
+		SessionScopeIDs:                     []string{sessionID},
+		DataClasses:                         []string{"confidential"},
+		ComputeZones:                        []string{"uae-enclave"},
+		AllowedActions:                      []string{secureCellFederationContractActionSessionExchange},
+		CounterproposalApprovalThreshold:    1,
+		CounterproposalEligibleApproverDIDs: []string{owner.AgentID()},
+		CounterproposalResolutionDueAt:      &resolutionDueAt,
+		CounterproposalAutoSuspendOnOverdue: true,
+		Reason:                              "follow-on negotiated invitation for same organization",
+		Metadata:                            map[string]string{"ticket": "SC-FED-SUSPEND-03"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation overdue path failed: %v", err)
+	}
+	secondInvitation := overdueInvite.FederationInvitations[len(overdueInvite.FederationInvitations)-1]
+
+	counterproposed, err := service.SubmitFederationCounterproposal(ctx, created.CellID, secondInvitation.ID, SecureCellFederationCounterproposalRequest{
+		ActorDID:               participantC.AgentID(),
+		OfferedSessionScopeIDs: []string{sessionID},
+		OfferedDataClasses:     []string{"confidential"},
+		OfferedActions:         []string{secureCellFederationContractActionSessionExchange},
+		Resource:               "secure-cell:federation-counterproposal:overdue",
+		Reason:                 "counterparty does not close review in time",
+		Metadata:               map[string]string{"ticket": "SC-FED-SUSPEND-04"},
+	})
+	if err != nil {
+		t.Fatalf("SubmitFederationCounterproposal overdue path failed: %v", err)
+	}
+	proposal := counterproposed.FederationCounterproposals[len(counterproposed.FederationCounterproposals)-1]
+
+	before := time.Now().UTC()
+	overdue, err := service.ListOverdueFederationCounterproposals(ctx, SecureCellOverdueFederationCounterproposalFilter{
+		CellID: created.CellID,
+		Before: &before,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationCounterproposals failed: %v", err)
+	}
+	if len(overdue) != 1 || overdue[0].CounterproposalID != proposal.ID || overdue[0].AutomationAction != "reject_and_suspend" {
+		t.Fatalf("expected reject-and-suspend overdue projection, got %+v", overdue)
+	}
+
+	report, err := service.SweepFederationGovernance(ctx, before, SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated federation governance sweep",
+		Metadata: map[string]string{"ticket": "SC-FED-SUSPEND-SWEEP"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationGovernance failed: %v", err)
+	}
+	if report.CounterproposalsRejected != 1 || report.ContractsSuspended != 1 {
+		t.Fatalf("expected one rejection and one suspension, got %+v", report)
+	}
+
+	afterSweep := mustSecureCellResult(t, service, created.CellID)
+	finalProposal, ok := mustSecureCellFederationCounterproposal(t, afterSweep, proposal.ID)
+	if !ok {
+		t.Fatalf("expected rejected counterproposal %q", proposal.ID)
+	}
+	if finalProposal.Status != SecureCellFederationCounterproposalStatusRejected || strings.TrimSpace(finalProposal.RejectedBy) != owner.AgentID() {
+		t.Fatalf("expected rejected counterproposal after sweep, got %+v", finalProposal)
+	}
+
+	var suspendedContract *SecureCellFederationContract
+	for idx := range afterSweep.FederationContracts {
+		contract := &afterSweep.FederationContracts[idx]
+		if strings.TrimSpace(contract.ID) == activeContractID {
+			suspendedContract = contract
+			break
+		}
+	}
+	if suspendedContract == nil || suspendedContract.Status != SecureCellFederationContractStatusSuspended {
+		t.Fatalf("expected active contract %q to be suspended, got %+v", activeContractID, suspendedContract)
+	}
+
+	remaining, err := service.ListOverdueFederationCounterproposals(ctx, SecureCellOverdueFederationCounterproposalFilter{
+		CellID: created.CellID,
+		Before: &before,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationCounterproposals after sweep failed: %v", err)
+	}
+	if len(remaining) != 0 {
+		t.Fatalf("expected overdue federation queue to clear after sweep, got %+v", remaining)
+	}
+
+	actions, err := service.ListFederationAutomationActions(ctx, SecureCellFederationAutomationActionFilter{
+		CellID: created.CellID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationAutomationActions failed: %v", err)
+	}
+	if len(actions) != 2 {
+		t.Fatalf("expected two automation actions, got %+v", actions)
+	}
+	actionMap := make(map[string]SecureCellFederationAutomationActionRecord, len(actions))
+	for _, action := range actions {
+		actionMap[action.Action] = action
+	}
+	suspendAction, ok := actionMap["secure_cell.federation_contract_suspended"]
+	if !ok || suspendAction.ContractID != activeContractID || suspendAction.ContractStatusBefore != SecureCellFederationContractStatusActive || suspendAction.ContractStatusAfter != SecureCellFederationContractStatusSuspended {
+		t.Fatalf("expected suspended contract automation action metadata, got %+v", suspendAction)
+	}
+	rejectAction, ok := actionMap["secure_cell.federation_counterproposal_rejected"]
+	if !ok || rejectAction.CounterproposalID != proposal.ID || rejectAction.CounterproposalStatusBefore != SecureCellFederationCounterproposalStatusPending || rejectAction.CounterproposalStatusAfter != SecureCellFederationCounterproposalStatusRejected || rejectAction.Trigger != "resolution_due" {
+		t.Fatalf("expected rejected counterproposal automation action metadata, got %+v", rejectAction)
+	}
+}
+
 func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
 	return newTestSecureCellServiceWithWorkflowStoreAndPublisher(t, nil, nil)
@@ -3714,6 +4080,38 @@ func mustSecureCellDecision(t *testing.T, result *SecureCellResult, decisionID s
 		}
 	}
 	return SecureCellThreadDecision{}, false
+}
+
+func mustSecureCellResult(t *testing.T, service *Service, cellID string) *SecureCellResult {
+	t.Helper()
+	result, err := service.GetCell(context.Background(), cellID)
+	if err != nil {
+		t.Fatalf("GetCell failed for %q: %v", cellID, err)
+	}
+	return result
+}
+
+func mustSecureCellFederationCounterproposal(t *testing.T, result *SecureCellResult, counterproposalID string) (SecureCellFederationCounterproposal, bool) {
+	t.Helper()
+	if result == nil {
+		t.Fatal("secure cell result is required")
+	}
+	for _, proposal := range result.FederationCounterproposals {
+		if proposal.ID == counterproposalID {
+			return proposal, true
+		}
+	}
+	return SecureCellFederationCounterproposal{}, false
+}
+
+func containsStringFold(items []string, want string) bool {
+	want = strings.TrimSpace(want)
+	for _, item := range items {
+		if strings.EqualFold(strings.TrimSpace(item), want) {
+			return true
+		}
+	}
+	return false
 }
 
 func mustSecureCellSharedOutput(t *testing.T, result *SecureCellResult, outputID string) (SecureCellSharedOutput, bool) {
