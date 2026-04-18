@@ -33,15 +33,15 @@ import (
 type ComplianceFramework string
 
 const (
-	FrameworkNIST80053  ComplianceFramework = "NIST-800-53"
-	FrameworkNISTCSF    ComplianceFramework = "NIST-CSF"
-	FrameworkSOC2       ComplianceFramework = "SOC2"
-	FrameworkISO27001   ComplianceFramework = "ISO-27001"
-	FrameworkHIPAA      ComplianceFramework = "HIPAA"
-	FrameworkGDPR       ComplianceFramework = "GDPR"
-	FrameworkFedRAMP    ComplianceFramework = "FedRAMP"
-	FrameworkEUAIAct    ComplianceFramework = "EU-AI-Act"
-	FrameworkCustom     ComplianceFramework = "custom"
+	FrameworkNIST80053 ComplianceFramework = "NIST-800-53"
+	FrameworkNISTCSF   ComplianceFramework = "NIST-CSF"
+	FrameworkSOC2      ComplianceFramework = "SOC2"
+	FrameworkISO27001  ComplianceFramework = "ISO-27001"
+	FrameworkHIPAA     ComplianceFramework = "HIPAA"
+	FrameworkGDPR      ComplianceFramework = "GDPR"
+	FrameworkFedRAMP   ComplianceFramework = "FedRAMP"
+	FrameworkEUAIAct   ComplianceFramework = "EU-AI-Act"
+	FrameworkCustom    ComplianceFramework = "custom"
 )
 
 // ControlMapping associates a compliance control ID with evidence.
@@ -71,22 +71,22 @@ type ControlMapping struct {
 type ControlStatus string
 
 const (
-	ControlSatisfied      ControlStatus = "satisfied"
-	ControlPartial        ControlStatus = "partially_satisfied"
-	ControlNotSatisfied   ControlStatus = "not_satisfied"
-	ControlNotApplicable  ControlStatus = "not_applicable"
-	ControlNotAssessed    ControlStatus = "not_assessed"
+	ControlSatisfied     ControlStatus = "satisfied"
+	ControlPartial       ControlStatus = "partially_satisfied"
+	ControlNotSatisfied  ControlStatus = "not_satisfied"
+	ControlNotApplicable ControlStatus = "not_applicable"
+	ControlNotAssessed   ControlStatus = "not_assessed"
 )
 
 // Seal represents a cryptographic verification seal from the consensus
 // process.
 type Seal struct {
-	SealID      string `json:"seal_id"`
-	JobID       string `json:"job_id"`
-	OutputHash  string `json:"output_hash"`
-	ValidatorCount int `json:"validator_count"`
-	BlockHeight int64  `json:"block_height"`
-	Timestamp   string `json:"timestamp"`
+	SealID         string `json:"seal_id"`
+	JobID          string `json:"job_id"`
+	OutputHash     string `json:"output_hash"`
+	ValidatorCount int    `json:"validator_count"`
+	BlockHeight    int64  `json:"block_height"`
+	Timestamp      string `json:"timestamp"`
 }
 
 // Attestation represents a TEE or validator attestation.
@@ -102,20 +102,20 @@ type Attestation struct {
 
 // Proof represents a cryptographic proof (zkML, replay, etc.).
 type Proof struct {
-	ProofID     string `json:"proof_id"`
-	Type        string `json:"type"` // "groth16", "plonk", "ezkl", "halo2", "stark", "replay"
-	ProofData   string `json:"proof_data,omitempty"`   // base64-encoded
-	PublicInputs string `json:"public_inputs,omitempty"` // base64-encoded
+	ProofID          string `json:"proof_id"`
+	Type             string `json:"type"`                    // "groth16", "plonk", "ezkl", "halo2", "stark", "replay"
+	ProofData        string `json:"proof_data,omitempty"`    // base64-encoded
+	PublicInputs     string `json:"public_inputs,omitempty"` // base64-encoded
 	OutputCommitment string `json:"output_commitment,omitempty"`
-	Timestamp   string `json:"timestamp"`
+	Timestamp        string `json:"timestamp"`
 }
 
 // Bundle is the top-level evidence bundle structure.
 type Bundle struct {
 	// Identity
-	ID            string              `json:"bundle_id"`
-	SchemaVersion string              `json:"schema_version"`
-	CreatedAt     string              `json:"created_at"`
+	ID            string `json:"bundle_id"`
+	SchemaVersion string `json:"schema_version"`
+	CreatedAt     string `json:"created_at"`
 
 	// Framework and controls
 	Framework ComplianceFramework `json:"framework"`
@@ -142,7 +142,6 @@ type Bundle struct {
 // BundleBuilder constructs evidence bundles incrementally.
 type BundleBuilder struct {
 	bundle Bundle
-	errors []error
 }
 
 // NewBundleBuilder creates a new builder targeting the given compliance
@@ -280,16 +279,16 @@ func VerifyBundle(bundle *Bundle) error {
 func computeBundleHash(bundle *Bundle) (string, error) {
 	// Build a canonical struct for hashing (exclude hash and signature).
 	type hashableBundle struct {
-		ID            string              `json:"bundle_id"`
-		SchemaVersion string              `json:"schema_version"`
-		CreatedAt     string              `json:"created_at"`
-		Framework     ComplianceFramework `json:"framework"`
-		Controls      []ControlMapping    `json:"controls"`
+		ID            string               `json:"bundle_id"`
+		SchemaVersion string               `json:"schema_version"`
+		CreatedAt     string               `json:"created_at"`
+		Framework     ComplianceFramework  `json:"framework"`
+		Controls      []ControlMapping     `json:"controls"`
 		Records       []keeper.AuditRecord `json:"records"`
-		Seals         []Seal              `json:"seals"`
-		Attestations  []Attestation       `json:"attestations"`
-		Proofs        []Proof             `json:"proofs"`
-		Metadata      map[string]string   `json:"metadata"`
+		Seals         []Seal               `json:"seals"`
+		Attestations  []Attestation        `json:"attestations"`
+		Proofs        []Proof              `json:"proofs"`
+		Metadata      map[string]string    `json:"metadata"`
 	}
 
 	h := hashableBundle{

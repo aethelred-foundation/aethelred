@@ -117,12 +117,9 @@ func VerifyCustodyChain(chain []CustodyEntry) error {
 		return fmt.Errorf("evidence/chain: empty custody chain")
 	}
 
-	// Verify the first entry has no previous hash.
-	if chain[0].PreviousHash != "" {
-		// Allow non-empty previous hash for cross-bundle linking.
-		// The first entry in a chain-continuation may reference the
-		// last entry of a previous bundle's custody chain.
-	}
+	// The first entry may legitimately reference a previous bundle when
+	// custody continues across exports, so a non-empty PreviousHash here is
+	// allowed and does not break chain integrity by itself.
 
 	for i, entry := range chain {
 		// Verify entry hash.

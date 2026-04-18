@@ -3,8 +3,8 @@ package confidential
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -176,21 +176,21 @@ type Policy struct {
 // VerificationSummary is the portable operator-facing summary of one
 // confidential-execution verification pass.
 type VerificationSummary struct {
-	Required           bool      `json:"required"`
-	Verified           bool      `json:"verified"`
-	Present            int       `json:"present"`
-	Checked            int       `json:"checked"`
-	Valid              int       `json:"valid"`
-	Invalid            int       `json:"invalid"`
-	MinimumRequired    int       `json:"minimum_required"`
-	Platforms          []string  `json:"platforms,omitempty"`
-	Validators         []string  `json:"validators,omitempty"`
-	EnclaveIDs         []string  `json:"enclave_ids,omitempty"`
-	AllowedMeasurements []string `json:"allowed_measurements,omitempty"`
-	BindingHash        string    `json:"binding_hash,omitempty"`
-	BoundOutputHash    string    `json:"bound_output_hash,omitempty"`
-	VerifiedAt         time.Time `json:"verified_at"`
-	Failures           []string  `json:"failures,omitempty"`
+	Required            bool      `json:"required"`
+	Verified            bool      `json:"verified"`
+	Present             int       `json:"present"`
+	Checked             int       `json:"checked"`
+	Valid               int       `json:"valid"`
+	Invalid             int       `json:"invalid"`
+	MinimumRequired     int       `json:"minimum_required"`
+	Platforms           []string  `json:"platforms,omitempty"`
+	Validators          []string  `json:"validators,omitempty"`
+	EnclaveIDs          []string  `json:"enclave_ids,omitempty"`
+	AllowedMeasurements []string  `json:"allowed_measurements,omitempty"`
+	BindingHash         string    `json:"binding_hash,omitempty"`
+	BoundOutputHash     string    `json:"bound_output_hash,omitempty"`
+	VerifiedAt          time.Time `json:"verified_at"`
+	Failures            []string  `json:"failures,omitempty"`
 }
 
 // VerifyAttestations performs strict workflow-bound attestation validation.
@@ -300,7 +300,9 @@ func BuildEvidenceAttestations(attestations []*sealtypes.TEEAttestation, req Att
 			metadata["quote_hash"] = hex.EncodeToString(quoteSum[:])
 		}
 		if key := trustedKeys[strings.TrimSpace(att.GetValidatorAddress())]; key != nil {
-			metadata["validator_public_key"] = hex.EncodeToString(elliptic.Marshal(key.Curve, key.X, key.Y))
+			if encoded, err := x509.MarshalPKIXPublicKey(key); err == nil {
+				metadata["validator_public_key"] = hex.EncodeToString(encoded)
+			}
 		}
 		if envelope, err := DecodeQuoteEnvelope(att.GetQuote()); err == nil {
 			if envelope.GeneratedAt != "" {

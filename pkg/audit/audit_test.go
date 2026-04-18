@@ -73,6 +73,72 @@ func (m *mockLogSource) TotalEmitted() uint64 {
 	return uint64(len(m.records))
 }
 
+func mustInitCustody(t *testing.T, store *CustodyStore, bundleID, custodian, signature string) {
+	t.Helper()
+	if _, err := store.InitCustody(bundleID, custodian, signature); err != nil {
+		t.Fatalf("InitCustody failed: %v", err)
+	}
+}
+
+func mustTransferCustody(t *testing.T, store *CustodyStore, bundleID, from, to, signature string) {
+	t.Helper()
+	if _, err := store.Transfer(bundleID, from, to, signature); err != nil {
+		t.Fatalf("Transfer failed: %v", err)
+	}
+}
+
+func mustRecordCustodyAction(t *testing.T, store *CustodyStore, bundleID, custodian string, action CustodyAction, signature, notes string) {
+	t.Helper()
+	if _, err := store.RecordAction(bundleID, custodian, action, signature, notes); err != nil {
+		t.Fatalf("RecordAction failed: %v", err)
+	}
+}
+
+func mustNewStudio(t *testing.T, cfg Config) *Studio {
+	t.Helper()
+	studio, err := NewStudio(cfg)
+	if err != nil {
+		t.Fatalf("NewStudio failed: %v", err)
+	}
+	return studio
+}
+
+func mustBuildActorTimeline(t *testing.T, ctx context.Context, source LogSource, actor string) *Timeline {
+	t.Helper()
+	timeline, err := BuildActorTimeline(ctx, source, actor)
+	if err != nil {
+		t.Fatalf("BuildActorTimeline failed: %v", err)
+	}
+	return timeline
+}
+
+func mustBuildBundle(t *testing.T, builder *BundleBuilder) *Bundle {
+	t.Helper()
+	bundle, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	return bundle
+}
+
+func mustCheckRetention(t *testing.T, record keeper.AuditRecord, policy RetentionPolicy) *RetentionCheckResult {
+	t.Helper()
+	result, err := CheckRetention(record, policy)
+	if err != nil {
+		t.Fatalf("CheckRetention failed: %v", err)
+	}
+	return result
+}
+
+func mustGetCustodyHistory(t *testing.T, store *CustodyStore, bundleID string) *CustodyChain {
+	t.Helper()
+	chain, err := store.GetCustodyHistory(bundleID)
+	if err != nil {
+		t.Fatalf("GetCustodyHistory failed: %v", err)
+	}
+	return chain
+}
+
 // makeTestRecord creates a test audit record with a valid hash chain.
 func makeTestRecord(seq uint64, prevHash string, cat keeper.AuditCategory, sev keeper.AuditSeverity, action, actor string, height int64, ts string, details map[string]string) keeper.AuditRecord {
 	r := keeper.AuditRecord{
@@ -376,7 +442,7 @@ func TestStudio_Query(t *testing.T) {
 
 func TestStudio_GetRecord(t *testing.T) {
 	source := newTestSource(10)
-	studio, _ := NewStudio(Config{LogSource: source})
+	studio := mustNewStudio(t, Config{LogSource: source})
 	ctx := context.Background()
 
 	r, err := studio.GetRecord(ctx, 5)
@@ -395,7 +461,7 @@ func TestStudio_GetRecord(t *testing.T) {
 
 func TestStudio_GetChain(t *testing.T) {
 	source := newTestSource(10)
-	studio, _ := NewStudio(Config{LogSource: source})
+	studio := mustNewStudio(t, Config{LogSource: source})
 	ctx := context.Background()
 
 	chain, err := studio.GetChain(ctx, 3, 7)
@@ -412,7 +478,7 @@ func TestStudio_GetChain(t *testing.T) {
 
 func TestStudio_GetStats(t *testing.T) {
 	source := newTestSource(20)
-	studio, _ := NewStudio(Config{LogSource: source})
+	studio := mustNewStudio(t, Config{LogSource: source})
 	ctx := context.Background()
 
 	stats, err := studio.GetStats(ctx, nil)
@@ -496,8 +562,8 @@ func TestMergeTimelines(t *testing.T) {
 	source := newTestSource(10)
 	ctx := context.Background()
 
-	tl1, _ := BuildActorTimeline(ctx, source, "system")
-	tl2, _ := BuildActorTimeline(ctx, source, "aethel1validator1")
+	tl1 := mustBuildActorTimeline(t, ctx, source, "system")
+	tl2 := mustBuildActorTimeline(t, ctx, source, "aethel1validator1")
 
 	merged := MergeTimelines([]*Timeline{tl1, tl2})
 	if merged.TotalEvents != tl1.TotalEvents+tl2.TotalEvents {
@@ -581,15 +647,17 @@ func TestBundleBuilder_Build_NoRecords(t *testing.T) {
 
 func TestVerifyBundle_Valid(t *testing.T) {
 	records := makeTestChain(5)
-	bundle, _ := NewBundleBuilder(FrameworkNIST80053).
-		WithID("test-bundle-002").
-		AddRecords(records).
-		AddControlMapping("AU-2", ControlMapping{
-			ControlName:  "Event Logging",
-			EvidenceRefs: []uint64{1, 2, 3},
-			Status:       ControlSatisfied,
-		}).
-		Build()
+	bundle := mustBuildBundle(
+		t,
+		NewBundleBuilder(FrameworkNIST80053).
+			WithID("test-bundle-002").
+			AddRecords(records).
+			AddControlMapping("AU-2", ControlMapping{
+				ControlName:  "Event Logging",
+				EvidenceRefs: []uint64{1, 2, 3},
+				Status:       ControlSatisfied,
+			}),
+	)
 
 	if err := VerifyBundle(bundle); err != nil {
 		t.Errorf("valid bundle should verify: %v", err)
@@ -598,10 +666,12 @@ func TestVerifyBundle_Valid(t *testing.T) {
 
 func TestVerifyBundle_TamperedContent(t *testing.T) {
 	records := makeTestChain(5)
-	bundle, _ := NewBundleBuilder(FrameworkNIST80053).
-		WithID("test-bundle-003").
-		AddRecords(records).
-		Build()
+	bundle := mustBuildBundle(
+		t,
+		NewBundleBuilder(FrameworkNIST80053).
+			WithID("test-bundle-003").
+			AddRecords(records),
+	)
 
 	// Tamper with the bundle.
 	bundle.Records = append(bundle.Records, makeTestRecord(99, "fake", keeper.AuditCategoryJob, keeper.AuditSeverityInfo, "fake", "fake", 999, "2026-03-28T14:00:00Z", nil))
@@ -614,15 +684,17 @@ func TestVerifyBundle_TamperedContent(t *testing.T) {
 
 func TestVerifyBundle_InvalidControlRef(t *testing.T) {
 	records := makeTestChain(3)
-	bundle, _ := NewBundleBuilder(FrameworkNIST80053).
-		WithID("test-bundle-004").
-		AddRecords(records).
-		AddControlMapping("AU-2", ControlMapping{
-			ControlName:  "Event Logging",
-			EvidenceRefs: []uint64{1, 999}, // 999 does not exist
-			Status:       ControlSatisfied,
-		}).
-		Build()
+	bundle := mustBuildBundle(
+		t,
+		NewBundleBuilder(FrameworkNIST80053).
+			WithID("test-bundle-004").
+			AddRecords(records).
+			AddControlMapping("AU-2", ControlMapping{
+				ControlName:  "Event Logging",
+				EvidenceRefs: []uint64{1, 999}, // 999 does not exist
+				Status:       ControlSatisfied,
+			}),
+	)
 
 	err := VerifyBundle(bundle)
 	if err == nil {
@@ -690,8 +762,8 @@ func TestCheckRetention_CriticalBuffer(t *testing.T) {
 
 	policy := PolicyGDPR()
 
-	infoResult, _ := CheckRetention(infoRecord, policy)
-	critResult, _ := CheckRetention(critRecord, policy)
+	infoResult := mustCheckRetention(t, infoRecord, policy)
+	critResult := mustCheckRetention(t, critRecord, policy)
 
 	if infoResult.Retained {
 		t.Error("info record past 6yr should not be retained")
@@ -763,7 +835,7 @@ func TestCustodyStore_InitAndTransfer(t *testing.T) {
 
 func TestCustodyStore_TransferFromWrongCustodian(t *testing.T) {
 	store := NewCustodyStore()
-	store.InitCustody("bundle-001", "custodian-a", "sig-a")
+	mustInitCustody(t, store, "bundle-001", "custodian-a", "sig-a")
 
 	_, err := store.Transfer("bundle-001", "custodian-x", "custodian-b", "sig-b")
 	if err == nil {
@@ -773,7 +845,7 @@ func TestCustodyStore_TransferFromWrongCustodian(t *testing.T) {
 
 func TestCustodyStore_DuplicateInit(t *testing.T) {
 	store := NewCustodyStore()
-	store.InitCustody("bundle-001", "custodian-a", "sig-a")
+	mustInitCustody(t, store, "bundle-001", "custodian-a", "sig-a")
 
 	_, err := store.InitCustody("bundle-001", "custodian-b", "sig-b")
 	if err == nil {
@@ -783,11 +855,11 @@ func TestCustodyStore_DuplicateInit(t *testing.T) {
 
 func TestVerifyCustody_Valid(t *testing.T) {
 	store := NewCustodyStore()
-	store.InitCustody("bundle-001", "custodian-a", "sig-a")
-	store.Transfer("bundle-001", "custodian-a", "custodian-b", "sig-b")
-	store.RecordAction("bundle-001", "custodian-b", CustodyAccess, "sig-c", "read for audit")
+	mustInitCustody(t, store, "bundle-001", "custodian-a", "sig-a")
+	mustTransferCustody(t, store, "bundle-001", "custodian-a", "custodian-b", "sig-b")
+	mustRecordCustodyAction(t, store, "bundle-001", "custodian-b", CustodyAccess, "sig-c", "read for audit")
 
-	chain, _ := store.GetCustodyHistory("bundle-001")
+	chain := mustGetCustodyHistory(t, store, "bundle-001")
 	if err := VerifyCustody(chain); err != nil {
 		t.Errorf("valid custody chain should verify: %v", err)
 	}
@@ -795,10 +867,10 @@ func TestVerifyCustody_Valid(t *testing.T) {
 
 func TestVerifyCustody_Tampered(t *testing.T) {
 	store := NewCustodyStore()
-	store.InitCustody("bundle-001", "custodian-a", "sig-a")
-	store.Transfer("bundle-001", "custodian-a", "custodian-b", "sig-b")
+	mustInitCustody(t, store, "bundle-001", "custodian-a", "sig-a")
+	mustTransferCustody(t, store, "bundle-001", "custodian-a", "custodian-b", "sig-b")
 
-	chain, _ := store.GetCustodyHistory("bundle-001")
+	chain := mustGetCustodyHistory(t, store, "bundle-001")
 	chain.Records[1].Custodian = "custodian-x" // Tamper.
 
 	if err := VerifyCustody(chain); err == nil {
@@ -1002,7 +1074,7 @@ func TestFullAuditWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Transfer failed: %v", err)
 	}
-	chain, _ := custodyStore.GetCustodyHistory(bundle.ID)
+	chain := mustGetCustodyHistory(t, custodyStore, bundle.ID)
 	if err := VerifyCustody(chain); err != nil {
 		t.Fatalf("Custody verification failed: %v", err)
 	}
@@ -1039,7 +1111,7 @@ func TestStudio_NilLogSource_ErrorIs(t *testing.T) {
 func TestStudio_GetRecordNotFound_EdgeCase(t *testing.T) {
 	t.Parallel()
 	source := newTestSource(5)
-	studio, _ := NewStudio(Config{LogSource: source})
+	studio := mustNewStudio(t, Config{LogSource: source})
 	ctx := context.Background()
 
 	_, err := studio.GetRecord(ctx, 999)
@@ -1051,7 +1123,7 @@ func TestStudio_GetRecordNotFound_EdgeCase(t *testing.T) {
 func TestStudio_GetChainInvalidRange(t *testing.T) {
 	t.Parallel()
 	source := newTestSource(10)
-	studio, _ := NewStudio(Config{LogSource: source})
+	studio := mustNewStudio(t, Config{LogSource: source})
 	ctx := context.Background()
 
 	// from > to
@@ -1254,13 +1326,13 @@ func TestRetention_MergePolicies(t *testing.T) {
 func TestCustody_TransferToSelf(t *testing.T) {
 	t.Parallel()
 	store := NewCustodyStore()
-	store.InitCustody("bundle-self", "custodian-a", "sig-a")
+	mustInitCustody(t, store, "bundle-self", "custodian-a", "sig-a")
 
 	_, err := store.Transfer("bundle-self", "custodian-a", "custodian-a", "sig-self")
 	// Self-transfer may be allowed by the implementation.
 	// The key test is that it doesn't panic and the chain remains valid.
 	if err == nil {
-		chain, _ := store.GetCustodyHistory("bundle-self")
+		chain := mustGetCustodyHistory(t, store, "bundle-self")
 		if chain != nil {
 			if verErr := VerifyCustody(chain); verErr != nil {
 				t.Errorf("custody chain invalid after self-transfer: %v", verErr)
@@ -1286,10 +1358,10 @@ func TestCustody_DoubleInit(t *testing.T) {
 func TestCustody_VerifyTampered(t *testing.T) {
 	t.Parallel()
 	store := NewCustodyStore()
-	store.InitCustody("bundle-tamper", "custodian-a", "sig-a")
-	store.Transfer("bundle-tamper", "custodian-a", "custodian-b", "sig-b")
+	mustInitCustody(t, store, "bundle-tamper", "custodian-a", "sig-a")
+	mustTransferCustody(t, store, "bundle-tamper", "custodian-a", "custodian-b", "sig-b")
 
-	chain, _ := store.GetCustodyHistory("bundle-tamper")
+	chain := mustGetCustodyHistory(t, store, "bundle-tamper")
 	chain.Records[1].Custodian = "custodian-x" // Tamper.
 
 	if err := VerifyCustody(chain); err == nil {

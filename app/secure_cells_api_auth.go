@@ -15,7 +15,6 @@ import (
 
 	"github.com/aethelred/aethelred/pkg/audit"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
-	securecellsintegration "github.com/aethelred/aethelred/pkg/integrations/securecells"
 	"github.com/aethelred/aethelred/pkg/protocol/agent"
 )
 
@@ -2765,21 +2764,6 @@ func threadLifecycleActionFromRequiredAction(requiredAction string) string {
 	}
 }
 
-func threadDecisionLifecycleActionFromRequiredAction(requiredAction string) string {
-	switch strings.TrimSpace(requiredAction) {
-	case secureCellsAuthSessionThreadDecisionApproveAction:
-		return "approve"
-	case secureCellsAuthSessionThreadDecisionResumeAction:
-		return "resume"
-	case secureCellsAuthSessionThreadDecisionQuarantineAction:
-		return "quarantine"
-	case secureCellsAuthSessionThreadDecisionCloseAction:
-		return "close"
-	default:
-		return "decision"
-	}
-}
-
 func threadDecisionActionFromRequiredAction(requiredAction string) string {
 	switch strings.TrimSpace(requiredAction) {
 	case secureCellsAuthSessionThreadDecisionVoteAction:
@@ -2809,18 +2793,4 @@ func threadDecisionActionFromRequiredAction(requiredAction string) string {
 	default:
 		return "decision"
 	}
-}
-
-func secureCellEnterpriseEnabled(appOpts servertypes.AppOptions) bool {
-	if path := resolveSecureCellEnterpriseTrustRegistryPath(appOpts); path != "" {
-		return true
-	}
-	if _, hasStaticConfig, _ := resolveSecureCellEnterpriseStaticTrustSource(appOpts); hasStaticConfig {
-		return true
-	}
-	return false
-}
-
-func secureCellNotFound(err error) bool {
-	return errors.Is(err, securecellsintegration.ErrCellNotFound)
 }

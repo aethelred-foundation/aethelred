@@ -300,6 +300,15 @@ func normalizeControlLedger(ledger any) (*controlLedgerSnapshot, error) {
 }
 
 func snapshotFromTypedLedger(ledger *evidence.ControlLedger) *controlLedgerSnapshot {
+	if ledger == nil || ledger.Bundle == nil {
+		return &controlLedgerSnapshot{
+			ControlLedgerExport: ControlLedgerExport{
+				ExportVersion: controlLedgerExportVersion,
+				ExportedAt:    time.Now().UTC().Format(time.RFC3339Nano),
+			},
+		}
+	}
+
 	snap := &controlLedgerSnapshot{
 		ControlLedgerExport: ControlLedgerExport{
 			ExportVersion:           controlLedgerExportVersion,
@@ -315,9 +324,6 @@ func snapshotFromTypedLedger(ledger *evidence.ControlLedger) *controlLedgerSnaps
 			TrustCompliancePackages: make([]ControlLedgerTrustCompliancePackage, 0, len(ledger.Bundle.TrustCompliancePackages)),
 			Controls:                make([]ControlLedgerControl, 0, len(ledger.Controls)),
 		},
-	}
-	if ledger == nil || ledger.Bundle == nil {
-		return snap
 	}
 
 	snap.LedgerID = ledger.Bundle.ID
@@ -553,9 +559,9 @@ func firstString(raw map[string]any, keys ...string) string {
 	switch x := v.(type) {
 	case string:
 		return x
-	case fmt.Stringer:
-		return x.String()
 	case json.Number:
+		return x.String()
+	case fmt.Stringer:
 		return x.String()
 	default:
 		return fmt.Sprint(x)

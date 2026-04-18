@@ -10,6 +10,211 @@ import (
 	"time"
 )
 
+func mustNewAgentIdentity(t *testing.T, caps []Capability) (*AgentIdentity, *ecdsa.PrivateKey) {
+	t.Helper()
+	identity, key, err := NewAgentIdentity(caps)
+	if err != nil {
+		t.Fatalf("NewAgentIdentity failed: %v", err)
+	}
+	return identity, key
+}
+
+func mustIssueCredential(t *testing.T, ctx context.Context, issuerKey *ecdsa.PrivateKey, issuer, subject string, credentialType CredentialType, claims []Claim, ttl time.Duration) *AgentCredential {
+	t.Helper()
+	cred, err := IssueCredential(ctx, issuerKey, issuer, subject, credentialType, claims, ttl)
+	if err != nil {
+		t.Fatalf("IssueCredential failed: %v", err)
+	}
+	return cred
+}
+
+func mustGenerateECDSAKey(t *testing.T) *ecdsa.PrivateKey {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	return key
+}
+
+func mustStoreCredential(t *testing.T, store *MemoryCredentialStore, cred *AgentCredential) {
+	t.Helper()
+	if err := store.Store(cred); err != nil {
+		t.Fatalf("Store failed: %v", err)
+	}
+}
+
+func mustGetCredential(t *testing.T, store *MemoryCredentialStore, id string) *AgentCredential {
+	t.Helper()
+	cred, err := store.Get(id)
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	return cred
+}
+
+func mustListCredentialsBySubject(t *testing.T, store *MemoryCredentialStore, subject string) []*AgentCredential {
+	t.Helper()
+	creds, err := store.ListBySubject(subject)
+	if err != nil {
+		t.Fatalf("ListBySubject failed: %v", err)
+	}
+	return creds
+}
+
+func mustDelegate(t *testing.T, dm *DelegationManager, ctx context.Context, delegator, delegatee string, scope *DelegationScope, constraints []DelegationConstraint) *DelegationChain {
+	t.Helper()
+	delegation, err := dm.Delegate(ctx, delegator, delegatee, scope, constraints)
+	if err != nil {
+		t.Fatalf("Delegate failed: %v", err)
+	}
+	return delegation
+}
+
+func mustSubDelegate(t *testing.T, dm *DelegationManager, ctx context.Context, parentID, delegatee string, scope *DelegationScope, constraints []DelegationConstraint) *DelegationChain {
+	t.Helper()
+	delegation, err := dm.SubDelegate(ctx, parentID, delegatee, scope, constraints)
+	if err != nil {
+		t.Fatalf("SubDelegate failed: %v", err)
+	}
+	return delegation
+}
+
+func mustGetDelegation(t *testing.T, dm *DelegationManager, ctx context.Context, delegationID string) *DelegationChain {
+	t.Helper()
+	delegation, err := dm.GetDelegation(ctx, delegationID)
+	if err != nil {
+		t.Fatalf("GetDelegation failed: %v", err)
+	}
+	return delegation
+}
+
+func mustRevokeDelegation(t *testing.T, dm *DelegationManager, ctx context.Context, delegationID string) {
+	t.Helper()
+	if err := dm.RevokeDelegation(ctx, delegationID); err != nil {
+		t.Fatalf("RevokeDelegation failed: %v", err)
+	}
+}
+
+func mustCreateReceipt(t *testing.T, ctx context.Context, key *ecdsa.PrivateKey, actor, action, resource, status, errorMessage string, evidence map[string]string) *ActionReceipt {
+	t.Helper()
+	receipt, err := CreateReceipt(ctx, key, actor, action, resource, status, errorMessage, evidence)
+	if err != nil {
+		t.Fatalf("CreateReceipt failed: %v", err)
+	}
+	return receipt
+}
+
+func mustAuthorize(t *testing.T, authorizer *Authorizer, ctx context.Context, authCtx *AuthorizationContext) *AuthorizationResult {
+	t.Helper()
+	result, err := authorizer.Authorize(ctx, authCtx)
+	if err != nil {
+		t.Fatalf("Authorize failed: %v", err)
+	}
+	return result
+}
+
+func mustInitiateNegotiation(t *testing.T, nm *NegotiationManager, ctx context.Context, initiator, responder string, reqs *NegotiationRequirements) *NegotiationSession {
+	t.Helper()
+	session, err := nm.InitiateNegotiation(ctx, initiator, responder, reqs)
+	if err != nil {
+		t.Fatalf("InitiateNegotiation failed: %v", err)
+	}
+	return session
+}
+
+func mustExchangeCredentials(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID string, credentials []*AgentCredential) {
+	t.Helper()
+	if err := nm.ExchangeCredentials(ctx, sessionID, credentials); err != nil {
+		t.Fatalf("ExchangeCredentials failed: %v", err)
+	}
+}
+
+func mustProposePolicy(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID, proposer string, policy *AuthorizationPolicy) {
+	t.Helper()
+	if err := nm.ProposePolicy(ctx, sessionID, proposer, policy); err != nil {
+		t.Fatalf("ProposePolicy failed: %v", err)
+	}
+}
+
+func mustAcceptPolicy(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID, accepter string) {
+	t.Helper()
+	if err := nm.AcceptPolicy(ctx, sessionID, accepter); err != nil {
+		t.Fatalf("AcceptPolicy failed: %v", err)
+	}
+}
+
+func mustRejectPolicy(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID, reason string) {
+	t.Helper()
+	if err := nm.RejectPolicy(ctx, sessionID, reason); err != nil {
+		t.Fatalf("RejectPolicy failed: %v", err)
+	}
+}
+
+func mustFailNegotiation(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID, reason string) {
+	t.Helper()
+	if err := nm.FailNegotiation(ctx, sessionID, reason); err != nil {
+		t.Fatalf("FailNegotiation failed: %v", err)
+	}
+}
+
+func mustGetNegotiationStatus(t *testing.T, nm *NegotiationManager, ctx context.Context, sessionID string) *NegotiationSession {
+	t.Helper()
+	session, err := nm.GetNegotiationStatus(ctx, sessionID)
+	if err != nil {
+		t.Fatalf("GetNegotiationStatus failed: %v", err)
+	}
+	return session
+}
+
+func mustRegisterAgent(t *testing.T, registry *AgentRegistry, ctx context.Context, identity *AgentIdentity) *AgentRegistration {
+	t.Helper()
+	registration, err := registry.RegisterAgent(ctx, identity)
+	if err != nil {
+		t.Fatalf("RegisterAgent failed: %v", err)
+	}
+	return registration
+}
+
+func mustLookupAgent(t *testing.T, registry *AgentRegistry, ctx context.Context, agentID string) *AgentRegistration {
+	t.Helper()
+	registration, err := registry.LookupAgent(ctx, agentID)
+	if err != nil {
+		t.Fatalf("LookupAgent failed: %v", err)
+	}
+	return registration
+}
+
+func mustSuspendAgent(t *testing.T, registry *AgentRegistry, ctx context.Context, agentID string) {
+	t.Helper()
+	if err := registry.SuspendAgent(ctx, agentID); err != nil {
+		t.Fatalf("SuspendAgent failed: %v", err)
+	}
+}
+
+func mustReactivateAgent(t *testing.T, registry *AgentRegistry, ctx context.Context, agentID string) {
+	t.Helper()
+	if err := registry.ReactivateAgent(ctx, agentID); err != nil {
+		t.Fatalf("ReactivateAgent failed: %v", err)
+	}
+}
+
+func mustUpdateReputation(t *testing.T, registry *AgentRegistry, ctx context.Context, agentID string, success bool) {
+	t.Helper()
+	if err := registry.UpdateReputation(ctx, agentID, success); err != nil {
+		t.Fatalf("UpdateReputation failed: %v", err)
+	}
+}
+
+func mustGetAgentReputation(t *testing.T, registry *AgentRegistry, ctx context.Context, agentID string) float64 {
+	t.Helper()
+	score, err := registry.GetAgentReputation(ctx, agentID)
+	if err != nil {
+		t.Fatalf("GetAgentReputation failed: %v", err)
+	}
+	return score
+}
+
 // ---------------------------------------------------------------------------
 // Identity tests
 // ---------------------------------------------------------------------------
@@ -109,7 +314,7 @@ func TestParseDID(t *testing.T) {
 }
 
 func TestFormatDID(t *testing.T) {
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	did := FormatDID(identity)
 	if did == "" {
 		t.Error("expected non-empty DID string")
@@ -126,7 +331,7 @@ func TestFormatDID(t *testing.T) {
 }
 
 func TestHasCapability(t *testing.T) {
-	identity, _, _ := NewAgentIdentity([]Capability{
+	identity, _ := mustNewAgentIdentity(t, []Capability{
 		{Name: "compute.execute", Version: "1.0"},
 	})
 
@@ -292,8 +497,8 @@ func TestVerifyIdentity_EnterprisePassportValidation(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestIssueAndVerifyCredential(t *testing.T) {
-	issuerID, issuerKey, _ := NewAgentIdentity(nil)
-	subjectID, _, _ := NewAgentIdentity(nil)
+	issuerID, issuerKey := mustNewAgentIdentity(t, nil)
+	subjectID, _ := mustNewAgentIdentity(t, nil)
 
 	ctx := context.Background()
 	claims := []Claim{
@@ -318,36 +523,36 @@ func TestIssueAndVerifyCredential(t *testing.T) {
 }
 
 func TestVerifyCredential_WrongKey(t *testing.T) {
-	issuerID, issuerKey, _ := NewAgentIdentity(nil)
-	subjectID, _, _ := NewAgentIdentity(nil)
+	issuerID, issuerKey := mustNewAgentIdentity(t, nil)
+	subjectID, _ := mustNewAgentIdentity(t, nil)
 
 	ctx := context.Background()
 	claims := []Claim{{Name: "test", Value: "value", Verified: true}}
-	cred, _ := IssueCredential(ctx, issuerKey, issuerID.AgentID(), subjectID.AgentID(), CapabilityCredential, claims, time.Hour)
+	cred := mustIssueCredential(t, ctx, issuerKey, issuerID.AgentID(), subjectID.AgentID(), CapabilityCredential, claims, time.Hour)
 
 	// Verify with wrong key.
-	wrongKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	wrongKey := mustGenerateECDSAKey(t)
 	if err := VerifyCredential(cred, &wrongKey.PublicKey); err == nil {
 		t.Error("expected verification failure with wrong key")
 	}
 }
 
 func TestCredential_Revocation(t *testing.T) {
-	issuerID, issuerKey, _ := NewAgentIdentity(nil)
-	subjectID, _, _ := NewAgentIdentity(nil)
+	issuerID, issuerKey := mustNewAgentIdentity(t, nil)
+	subjectID, _ := mustNewAgentIdentity(t, nil)
 
 	ctx := context.Background()
 	store := NewMemoryCredentialStore()
 	claims := []Claim{{Name: "test", Value: "value", Verified: true}}
 
-	cred, _ := IssueCredential(ctx, issuerKey, issuerID.AgentID(), subjectID.AgentID(), CapabilityCredential, claims, time.Hour)
-	store.Store(cred)
+	cred := mustIssueCredential(t, ctx, issuerKey, issuerID.AgentID(), subjectID.AgentID(), CapabilityCredential, claims, time.Hour)
+	mustStoreCredential(t, store, cred)
 
 	if err := RevokeCredential(ctx, store, cred.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	revoked, _ := store.Get(cred.ID)
+	revoked := mustGetCredential(t, store, cred.ID)
 	if !revoked.Revoked {
 		t.Error("expected credential to be revoked")
 	}
@@ -358,11 +563,11 @@ func TestCredential_Revocation(t *testing.T) {
 
 func TestMemoryCredentialStore_ListBySubject(t *testing.T) {
 	store := NewMemoryCredentialStore()
-	store.Store(&AgentCredential{ID: "c1", Subject: "did:aethelred:a", Type: CapabilityCredential, IssuedAt: time.Now()})
-	store.Store(&AgentCredential{ID: "c2", Subject: "did:aethelred:a", Type: AuthorizationCredential, IssuedAt: time.Now()})
-	store.Store(&AgentCredential{ID: "c3", Subject: "did:aethelred:b", Type: CapabilityCredential, IssuedAt: time.Now()})
+	mustStoreCredential(t, store, &AgentCredential{ID: "c1", Subject: "did:aethelred:a", Type: CapabilityCredential, IssuedAt: time.Now()})
+	mustStoreCredential(t, store, &AgentCredential{ID: "c2", Subject: "did:aethelred:a", Type: AuthorizationCredential, IssuedAt: time.Now()})
+	mustStoreCredential(t, store, &AgentCredential{ID: "c3", Subject: "did:aethelred:b", Type: CapabilityCredential, IssuedAt: time.Now()})
 
-	creds, _ := store.ListBySubject("did:aethelred:a")
+	creds := mustListCredentialsBySubject(t, store, "did:aethelred:a")
 	if len(creds) != 2 {
 		t.Errorf("expected 2 credentials for subject a, got %d", len(creds))
 	}
@@ -402,7 +607,10 @@ func TestDelegation_BasicFlow(t *testing.T) {
 	}
 
 	// Action not in scope.
-	valid, _ = dm.VerifyDelegation(ctx, d.ID, "delete")
+	valid, err = dm.VerifyDelegation(ctx, d.ID, "delete")
+	if err != nil {
+		t.Fatalf("VerifyDelegation failed: %v", err)
+	}
 	if valid {
 		t.Error("expected delegation to not cover 'delete' action")
 	}
@@ -428,7 +636,7 @@ func TestDelegation_SubDelegation(t *testing.T) {
 		TimeLimit: 24 * time.Hour,
 	}
 
-	d1, _ := dm.Delegate(ctx, "did:aethelred:alice", "did:aethelred:bob", scope, nil)
+	d1 := mustDelegate(t, dm, ctx, "did:aethelred:alice", "did:aethelred:bob", scope, nil)
 	d2, err := dm.SubDelegate(ctx, d1.ID, "did:aethelred:carol", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -450,8 +658,8 @@ func TestDelegation_MaxDepthEnforced(t *testing.T) {
 		MaxDepth: 1, // Only one level of sub-delegation allowed.
 	}
 
-	d1, _ := dm.Delegate(ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
-	d2, _ := dm.SubDelegate(ctx, d1.ID, "did:aethelred:c", nil, nil)
+	d1 := mustDelegate(t, dm, ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
+	d2 := mustSubDelegate(t, dm, ctx, d1.ID, "did:aethelred:c", nil, nil)
 	if d2 == nil {
 		t.Fatal("first sub-delegation should succeed (depth=1)")
 	}
@@ -471,7 +679,7 @@ func TestDelegation_GlobalMaxDepth(t *testing.T) {
 
 	agents := []string{"a", "b", "c", "d", "e", "f", "g"}
 
-	prev, _ = dm.Delegate(ctx, "did:aethelred:"+agents[0], "did:aethelred:"+agents[1], scope, nil)
+	prev = mustDelegate(t, dm, ctx, "did:aethelred:"+agents[0], "did:aethelred:"+agents[1], scope, nil)
 	for i := 2; i < len(agents); i++ {
 		prev, err = dm.SubDelegate(ctx, prev.ID, "did:aethelred:"+agents[i], nil, nil)
 		if prev != nil && prev.Depth > MaxDelegationDepth {
@@ -489,23 +697,23 @@ func TestDelegation_CascadingRevocation(t *testing.T) {
 	ctx := context.Background()
 
 	scope := &DelegationScope{Actions: []string{"read"}, MaxDepth: 5}
-	d1, _ := dm.Delegate(ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
-	d2, _ := dm.SubDelegate(ctx, d1.ID, "did:aethelred:c", nil, nil)
-	d3, _ := dm.SubDelegate(ctx, d2.ID, "did:aethelred:d", nil, nil)
+	d1 := mustDelegate(t, dm, ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
+	d2 := mustSubDelegate(t, dm, ctx, d1.ID, "did:aethelred:c", nil, nil)
+	d3 := mustSubDelegate(t, dm, ctx, d2.ID, "did:aethelred:d", nil, nil)
 
 	// Revoke parent.
-	dm.RevokeDelegation(ctx, d1.ID)
+	mustRevokeDelegation(t, dm, ctx, d1.ID)
 
 	// All children should be revoked.
-	d1check, _ := dm.GetDelegation(ctx, d1.ID)
+	d1check := mustGetDelegation(t, dm, ctx, d1.ID)
 	if !d1check.Revoked {
 		t.Error("expected d1 to be revoked")
 	}
-	d2check, _ := dm.GetDelegation(ctx, d2.ID)
+	d2check := mustGetDelegation(t, dm, ctx, d2.ID)
 	if !d2check.Revoked {
 		t.Error("expected d2 to be revoked (cascade)")
 	}
-	d3check, _ := dm.GetDelegation(ctx, d3.ID)
+	d3check := mustGetDelegation(t, dm, ctx, d3.ID)
 	if !d3check.Revoked {
 		t.Error("expected d3 to be revoked (cascade)")
 	}
@@ -516,11 +724,11 @@ func TestDelegation_VerifyRevokedChain(t *testing.T) {
 	ctx := context.Background()
 
 	scope := &DelegationScope{Actions: []string{"read"}, MaxDepth: 5}
-	d1, _ := dm.Delegate(ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
-	d2, _ := dm.SubDelegate(ctx, d1.ID, "did:aethelred:c", nil, nil)
+	d1 := mustDelegate(t, dm, ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
+	d2 := mustSubDelegate(t, dm, ctx, d1.ID, "did:aethelred:c", nil, nil)
 
 	// Revoke root.
-	dm.RevokeDelegation(ctx, d1.ID)
+	mustRevokeDelegation(t, dm, ctx, d1.ID)
 
 	// Verification should fail.
 	_, err := dm.VerifyDelegation(ctx, d2.ID, "read")
@@ -534,7 +742,7 @@ func TestDelegation_VerifyRevokedChain(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestCreateAndVerifyReceipt(t *testing.T) {
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	evidence := map[string]string{"model_hash": "abc123"}
@@ -556,22 +764,22 @@ func TestCreateAndVerifyReceipt(t *testing.T) {
 }
 
 func TestVerifyReceipt_WrongKey(t *testing.T) {
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
-	receipt, _ := CreateReceipt(ctx, privKey, "did:aethelred:agent1", "action", "resource", "success", "", nil)
+	receipt := mustCreateReceipt(t, ctx, privKey, "did:aethelred:agent1", "action", "resource", "success", "", nil)
 
-	wrongKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	wrongKey := mustGenerateECDSAKey(t)
 	if err := VerifyReceipt(receipt, &wrongKey.PublicKey); err == nil {
 		t.Error("expected verification failure with wrong key")
 	}
 }
 
 func TestSealReceipt(t *testing.T) {
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
-	receipt, _ := CreateReceipt(ctx, privKey, "did:aethelred:agent1", "action", "resource", "success", "", nil)
+	receipt := mustCreateReceipt(t, ctx, privKey, "did:aethelred:agent1", "action", "resource", "success", "", nil)
 
 	if err := SealReceipt(ctx, receipt); err != nil {
 		t.Fatal(err)
@@ -582,12 +790,12 @@ func TestSealReceipt(t *testing.T) {
 }
 
 func TestBuildAndVerifyReceiptChain(t *testing.T) {
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
-	r1, _ := CreateReceipt(ctx, privKey, "did:aethelred:a", "step1", "res", "success", "", nil)
-	r2, _ := CreateReceipt(ctx, privKey, "did:aethelred:a", "step2", "res", "success", "", nil)
-	r3, _ := CreateReceipt(ctx, privKey, "did:aethelred:a", "step3", "res", "success", "", nil)
+	r1 := mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step1", "res", "success", "", nil)
+	r2 := mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step2", "res", "success", "", nil)
+	r3 := mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step3", "res", "success", "", nil)
 
 	chain, err := BuildReceiptChain(ctx, []*ActionReceipt{r1, r2, r3})
 	if err != nil {
@@ -611,7 +819,7 @@ func TestBuildAndVerifyReceiptChain(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestAuthorize_Success(t *testing.T) {
-	identity, _, _ := NewAgentIdentity([]Capability{{Name: "compute.execute", Version: "1.0"}})
+	identity, _ := mustNewAgentIdentity(t, []Capability{{Name: "compute.execute", Version: "1.0"}})
 	ctx := context.Background()
 
 	policy := &AuthorizationPolicy{
@@ -633,7 +841,7 @@ func TestAuthorize_Success(t *testing.T) {
 }
 
 func TestAuthorize_ActionNotAllowed(t *testing.T) {
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	policy := &AuthorizationPolicy{
@@ -642,7 +850,7 @@ func TestAuthorize_ActionNotAllowed(t *testing.T) {
 
 	authorizer := NewAuthorizer([]*AuthorizationPolicy{policy}, nil)
 
-	result, _ := authorizer.Authorize(ctx, &AuthorizationContext{
+	result := mustAuthorize(t, authorizer, ctx, &AuthorizationContext{
 		Actor:  identity,
 		Action: "delete",
 	})
@@ -652,7 +860,7 @@ func TestAuthorize_ActionNotAllowed(t *testing.T) {
 }
 
 func TestAuthorize_MissingCredential(t *testing.T) {
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	policy := &AuthorizationPolicy{
@@ -662,7 +870,7 @@ func TestAuthorize_MissingCredential(t *testing.T) {
 
 	authorizer := NewAuthorizer([]*AuthorizationPolicy{policy}, nil)
 
-	result, _ := authorizer.Authorize(ctx, &AuthorizationContext{
+	result := mustAuthorize(t, authorizer, ctx, &AuthorizationContext{
 		Actor:       identity,
 		Action:      "deploy",
 		Credentials: nil,
@@ -676,12 +884,12 @@ func TestAuthorize_MissingCredential(t *testing.T) {
 }
 
 func TestAuthorize_WithDelegation(t *testing.T) {
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	dm := NewDelegationManager()
 	scope := &DelegationScope{Actions: []string{"read"}}
-	d, _ := dm.Delegate(ctx, "did:aethelred:alice", identity.AgentID(), scope, nil)
+	d := mustDelegate(t, dm, ctx, "did:aethelred:alice", identity.AgentID(), scope, nil)
 
 	policy := &AuthorizationPolicy{
 		AllowedActions: []string{"read"},
@@ -694,7 +902,7 @@ func TestAuthorize_WithDelegation(t *testing.T) {
 
 	authorizer := NewAuthorizer([]*AuthorizationPolicy{policy}, dm)
 
-	result, _ := authorizer.Authorize(ctx, &AuthorizationContext{
+	result := mustAuthorize(t, authorizer, ctx, &AuthorizationContext{
 		Actor:      identity,
 		Action:     "read",
 		Delegation: d,
@@ -705,12 +913,12 @@ func TestAuthorize_WithDelegation(t *testing.T) {
 }
 
 func TestAuthorize_DelegationNotAllowed(t *testing.T) {
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	dm := NewDelegationManager()
 	scope := &DelegationScope{Actions: []string{"read"}}
-	d, _ := dm.Delegate(ctx, "did:aethelred:alice", identity.AgentID(), scope, nil)
+	d := mustDelegate(t, dm, ctx, "did:aethelred:alice", identity.AgentID(), scope, nil)
 
 	policy := &AuthorizationPolicy{
 		AllowedActions: []string{"read"},
@@ -721,7 +929,7 @@ func TestAuthorize_DelegationNotAllowed(t *testing.T) {
 
 	authorizer := NewAuthorizer([]*AuthorizationPolicy{policy}, dm)
 
-	result, _ := authorizer.Authorize(ctx, &AuthorizationContext{
+	result := mustAuthorize(t, authorizer, ctx, &AuthorizationContext{
 		Actor:      identity,
 		Action:     "read",
 		Delegation: d,
@@ -743,38 +951,35 @@ func TestNegotiation_FullFlow(t *testing.T) {
 	responder := "did:aethelred:bob"
 
 	// Step 1: Initiate.
-	session, err := nm.InitiateNegotiation(ctx, initiator, responder, &NegotiationRequirements{
+	session := mustInitiateNegotiation(t, nm, ctx, initiator, responder, &NegotiationRequirements{
 		RequiredCredentials: []CredentialType{CapabilityCredential},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	if session.Status != NegotiationInitiated {
 		t.Errorf("expected Initiated, got %s", session.Status)
 	}
 
 	// Step 2: Exchange credentials.
 	cred := &AgentCredential{ID: "cred-1", Type: CapabilityCredential, IssuedAt: time.Now()}
-	nm.ExchangeCredentials(ctx, session.ID, []*AgentCredential{cred})
+	mustExchangeCredentials(t, nm, ctx, session.ID, []*AgentCredential{cred})
 
-	s, _ := nm.GetNegotiationStatus(ctx, session.ID)
+	s := mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationCredentialExchange {
 		t.Errorf("expected CredentialExchange, got %s", s.Status)
 	}
 
 	// Step 3: Propose policy.
 	policy := &AuthorizationPolicy{AllowedActions: []string{"read", "write"}}
-	nm.ProposePolicy(ctx, session.ID, initiator, policy)
+	mustProposePolicy(t, nm, ctx, session.ID, initiator, policy)
 
-	s, _ = nm.GetNegotiationStatus(ctx, session.ID)
+	s = mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationPolicyAlignment {
 		t.Errorf("expected PolicyAlignment, got %s", s.Status)
 	}
 
 	// Step 4: Accept policy.
-	nm.AcceptPolicy(ctx, session.ID, responder)
+	mustAcceptPolicy(t, nm, ctx, session.ID, responder)
 
-	s, _ = nm.GetNegotiationStatus(ctx, session.ID)
+	s = mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationAgreed {
 		t.Errorf("expected Agreed, got %s", s.Status)
 	}
@@ -797,27 +1002,27 @@ func TestNegotiation_RejectAndCounterPropose(t *testing.T) {
 	nm := NewNegotiationManager()
 	ctx := context.Background()
 
-	session, _ := nm.InitiateNegotiation(ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
-	nm.ExchangeCredentials(ctx, session.ID, nil)
+	session := mustInitiateNegotiation(t, nm, ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
+	mustExchangeCredentials(t, nm, ctx, session.ID, nil)
 
 	// Alice proposes.
-	nm.ProposePolicy(ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{AllowedActions: []string{"*"}})
+	mustProposePolicy(t, nm, ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{AllowedActions: []string{"*"}})
 
 	// Bob rejects.
-	nm.RejectPolicy(ctx, session.ID, "too broad")
+	mustRejectPolicy(t, nm, ctx, session.ID, "too broad")
 
-	s, _ := nm.GetNegotiationStatus(ctx, session.ID)
+	s := mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationCredentialExchange {
 		t.Errorf("expected CredentialExchange after rejection, got %s", s.Status)
 	}
 
 	// Bob counter-proposes.
-	nm.ProposePolicy(ctx, session.ID, "did:aethelred:bob", &AuthorizationPolicy{AllowedActions: []string{"read"}})
+	mustProposePolicy(t, nm, ctx, session.ID, "did:aethelred:bob", &AuthorizationPolicy{AllowedActions: []string{"read"}})
 
 	// Alice accepts.
-	nm.AcceptPolicy(ctx, session.ID, "did:aethelred:alice")
+	mustAcceptPolicy(t, nm, ctx, session.ID, "did:aethelred:alice")
 
-	s, _ = nm.GetNegotiationStatus(ctx, session.ID)
+	s = mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationAgreed {
 		t.Errorf("expected Agreed, got %s", s.Status)
 	}
@@ -827,8 +1032,8 @@ func TestNegotiation_ProposerCannotAccept(t *testing.T) {
 	nm := NewNegotiationManager()
 	ctx := context.Background()
 
-	session, _ := nm.InitiateNegotiation(ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
-	nm.ProposePolicy(ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{})
+	session := mustInitiateNegotiation(t, nm, ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
+	mustProposePolicy(t, nm, ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{})
 
 	err := nm.AcceptPolicy(ctx, session.ID, "did:aethelred:alice")
 	if err == nil {
@@ -840,10 +1045,10 @@ func TestNegotiation_FailNegotiation(t *testing.T) {
 	nm := NewNegotiationManager()
 	ctx := context.Background()
 
-	session, _ := nm.InitiateNegotiation(ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
-	nm.FailNegotiation(ctx, session.ID, "incompatible requirements")
+	session := mustInitiateNegotiation(t, nm, ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
+	mustFailNegotiation(t, nm, ctx, session.ID, "incompatible requirements")
 
-	s, _ := nm.GetNegotiationStatus(ctx, session.ID)
+	s := mustGetNegotiationStatus(t, nm, ctx, session.ID)
 	if s.Status != NegotiationFailed {
 		t.Errorf("expected Failed, got %s", s.Status)
 	}
@@ -857,12 +1062,9 @@ func TestRegistry_RegisterAndLookup(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity([]Capability{{Name: "compute.execute", Version: "1.0"}})
+	identity, _ := mustNewAgentIdentity(t, []Capability{{Name: "compute.execute", Version: "1.0"}})
 
-	reg, err := registry.RegisterAgent(ctx, identity)
-	if err != nil {
-		t.Fatal(err)
-	}
+	reg := mustRegisterAgent(t, registry, ctx, identity)
 	if reg.Status != AgentActive {
 		t.Errorf("expected Active, got %s", reg.Status)
 	}
@@ -871,10 +1073,7 @@ func TestRegistry_RegisterAndLookup(t *testing.T) {
 	}
 
 	// Lookup.
-	found, err := registry.LookupAgent(ctx, identity.AgentID())
-	if err != nil {
-		t.Fatal(err)
-	}
+	found := mustLookupAgent(t, registry, ctx, identity.AgentID())
 	if found.Identity.AgentID() != identity.AgentID() {
 		t.Error("lookup returned different agent")
 	}
@@ -884,8 +1083,8 @@ func TestRegistry_DuplicateRegistration(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
 
 	_, err := registry.RegisterAgent(ctx, identity)
 	if err == nil {
@@ -897,15 +1096,15 @@ func TestRegistry_Deregister(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
 
 	err := registry.DeregisterAgent(ctx, identity.AgentID())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reg, _ := registry.LookupAgent(ctx, identity.AgentID())
+	reg := mustLookupAgent(t, registry, ctx, identity.AgentID())
 	if reg.Status != AgentDeregistered {
 		t.Errorf("expected Deregistered, got %s", reg.Status)
 	}
@@ -915,17 +1114,17 @@ func TestRegistry_SuspendAndReactivate(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
 
-	registry.SuspendAgent(ctx, identity.AgentID())
-	reg, _ := registry.LookupAgent(ctx, identity.AgentID())
+	mustSuspendAgent(t, registry, ctx, identity.AgentID())
+	reg := mustLookupAgent(t, registry, ctx, identity.AgentID())
 	if reg.Status != AgentSuspended {
 		t.Errorf("expected Suspended, got %s", reg.Status)
 	}
 
-	registry.ReactivateAgent(ctx, identity.AgentID())
-	reg, _ = registry.LookupAgent(ctx, identity.AgentID())
+	mustReactivateAgent(t, registry, ctx, identity.AgentID())
+	reg = mustLookupAgent(t, registry, ctx, identity.AgentID())
 	if reg.Status != AgentActive {
 		t.Errorf("expected Active, got %s", reg.Status)
 	}
@@ -935,13 +1134,13 @@ func TestRegistry_DiscoverAgents(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	id1, _, _ := NewAgentIdentity([]Capability{{Name: "compute.execute"}, {Name: "model.deploy"}})
-	id2, _, _ := NewAgentIdentity([]Capability{{Name: "compute.execute"}})
-	id3, _, _ := NewAgentIdentity([]Capability{{Name: "data.store"}})
+	id1, _ := mustNewAgentIdentity(t, []Capability{{Name: "compute.execute"}, {Name: "model.deploy"}})
+	id2, _ := mustNewAgentIdentity(t, []Capability{{Name: "compute.execute"}})
+	id3, _ := mustNewAgentIdentity(t, []Capability{{Name: "data.store"}})
 
-	registry.RegisterAgent(ctx, id1)
-	registry.RegisterAgent(ctx, id2)
-	registry.RegisterAgent(ctx, id3)
+	mustRegisterAgent(t, registry, ctx, id1)
+	mustRegisterAgent(t, registry, ctx, id2)
+	mustRegisterAgent(t, registry, ctx, id3)
 
 	found := registry.DiscoverAgents(ctx, []string{"compute.execute"})
 	if len(found) != 2 {
@@ -958,25 +1157,25 @@ func TestRegistry_Reputation(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
 
 	// Successful actions should increase reputation.
 	for i := 0; i < 10; i++ {
-		registry.UpdateReputation(ctx, identity.AgentID(), true)
+		mustUpdateReputation(t, registry, ctx, identity.AgentID(), true)
 	}
 
-	score, _ := registry.GetAgentReputation(ctx, identity.AgentID())
+	score := mustGetAgentReputation(t, registry, ctx, identity.AgentID())
 	if score <= 0.5 {
 		t.Errorf("expected reputation above 0.5 after successes, got %f", score)
 	}
 
 	// Failed actions should decrease reputation.
 	for i := 0; i < 20; i++ {
-		registry.UpdateReputation(ctx, identity.AgentID(), false)
+		mustUpdateReputation(t, registry, ctx, identity.AgentID(), false)
 	}
 
-	score, _ = registry.GetAgentReputation(ctx, identity.AgentID())
+	score = mustGetAgentReputation(t, registry, ctx, identity.AgentID())
 	if score >= 0.5 {
 		t.Errorf("expected reputation below 0.5 after many failures, got %f", score)
 	}
@@ -1085,8 +1284,8 @@ func TestCredential_NilIssuerKey(t *testing.T) {
 
 func TestCredential_TamperedClaim(t *testing.T) {
 	t.Parallel()
-	issuerID, issuerKey, _ := NewAgentIdentity(nil)
-	subjectID, _, _ := NewAgentIdentity(nil)
+	issuerID, issuerKey := mustNewAgentIdentity(t, nil)
+	subjectID, _ := mustNewAgentIdentity(t, nil)
 
 	ctx := context.Background()
 	claims := []Claim{{Name: "role", Value: "admin", Verified: true}}
@@ -1119,7 +1318,7 @@ func TestDelegation_MaxDepthExactly_EdgeCase(t *testing.T) {
 		agents[i] = fmt.Sprintf("did:aethelred:agent_%d", i)
 	}
 
-	d, _ := dm.Delegate(ctx, agents[0], agents[1], scope, nil)
+	d := mustDelegate(t, dm, ctx, agents[0], agents[1], scope, nil)
 	for i := 2; i < len(agents); i++ {
 		next, err := dm.SubDelegate(ctx, d.ID, agents[i], nil, nil)
 		if err != nil {
@@ -1136,10 +1335,10 @@ func TestDelegation_SubDelegateOnRevoked(t *testing.T) {
 	ctx := context.Background()
 
 	scope := &DelegationScope{Actions: []string{"read"}, MaxDepth: 5}
-	d1, _ := dm.Delegate(ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
+	d1 := mustDelegate(t, dm, ctx, "did:aethelred:a", "did:aethelred:b", scope, nil)
 
 	// Revoke the root delegation.
-	dm.RevokeDelegation(ctx, d1.ID)
+	mustRevokeDelegation(t, dm, ctx, d1.ID)
 
 	// Try to sub-delegate on revoked parent.
 	_, err := dm.SubDelegate(ctx, d1.ID, "did:aethelred:c", nil, nil)
@@ -1195,7 +1394,7 @@ func TestDelegation_ConcurrentDelegation(t *testing.T) {
 
 func TestReceipt_NilActor(t *testing.T) {
 	t.Parallel()
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	_, err := CreateReceipt(ctx, privKey, "", "action", "resource", "success", "", nil)
@@ -1206,7 +1405,7 @@ func TestReceipt_NilActor(t *testing.T) {
 
 func TestReceipt_TamperedContentHash(t *testing.T) {
 	t.Parallel()
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	receipt, err := CreateReceipt(ctx, privKey, "did:aethelred:agent1", "action", "resource", "success", "", nil)
@@ -1223,12 +1422,12 @@ func TestReceipt_TamperedContentHash(t *testing.T) {
 
 func TestReceipt_ChainWithMissingLink(t *testing.T) {
 	t.Parallel()
-	_, privKey, _ := NewAgentIdentity(nil)
+	_, privKey := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
-	r1, _ := CreateReceipt(ctx, privKey, "did:aethelred:a", "step1", "res", "success", "", nil)
-	_, _ = CreateReceipt(ctx, privKey, "did:aethelred:a", "step2", "res", "success", "", nil) // skipped
-	r3, _ := CreateReceipt(ctx, privKey, "did:aethelred:a", "step3", "res", "success", "", nil)
+	r1 := mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step1", "res", "success", "", nil)
+	mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step2", "res", "success", "", nil) // skipped
+	r3 := mustCreateReceipt(t, ctx, privKey, "did:aethelred:a", "step3", "res", "success", "", nil)
 
 	// Build chain with a gap (skip r2).
 	chain, err := BuildReceiptChain(ctx, []*ActionReceipt{r1, r3})
@@ -1236,13 +1435,16 @@ func TestReceipt_ChainWithMissingLink(t *testing.T) {
 		// If chain-building fails because of the gap, that's acceptable.
 		return
 	}
-	// If it built, verify should detect the gap.
-	_ = VerifyReceiptChain(chain)
+	// The current implementation may still accept a gap here, but the call
+	// itself should remain explicit and panic-free.
+	if err := VerifyReceiptChain(chain); err != nil {
+		t.Logf("receipt chain verification rejected missing link: %v", err)
+	}
 }
 
 func TestAuthorization_NoCredentials(t *testing.T) {
 	t.Parallel()
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 	ctx := context.Background()
 
 	policy := &AuthorizationPolicy{
@@ -1251,7 +1453,7 @@ func TestAuthorization_NoCredentials(t *testing.T) {
 	}
 
 	authorizer := NewAuthorizer([]*AuthorizationPolicy{policy}, nil)
-	result, _ := authorizer.Authorize(ctx, &AuthorizationContext{
+	result := mustAuthorize(t, authorizer, ctx, &AuthorizationContext{
 		Actor:       identity,
 		Action:      "deploy",
 		Credentials: nil,
@@ -1263,7 +1465,7 @@ func TestAuthorization_NoCredentials(t *testing.T) {
 
 func TestAuthorization_ContextCancelled(t *testing.T) {
 	t.Parallel()
-	identity, _, _ := NewAgentIdentity(nil)
+	identity, _ := mustNewAgentIdentity(t, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel immediately
@@ -1295,9 +1497,9 @@ func TestNegotiation_DoubleAccept(t *testing.T) {
 	nm := NewNegotiationManager()
 	ctx := context.Background()
 
-	session, _ := nm.InitiateNegotiation(ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
-	nm.ExchangeCredentials(ctx, session.ID, nil)
-	nm.ProposePolicy(ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{AllowedActions: []string{"read"}})
+	session := mustInitiateNegotiation(t, nm, ctx, "did:aethelred:alice", "did:aethelred:bob", nil)
+	mustExchangeCredentials(t, nm, ctx, session.ID, nil)
+	mustProposePolicy(t, nm, ctx, session.ID, "did:aethelred:alice", &AuthorizationPolicy{AllowedActions: []string{"read"}})
 
 	// First accept by bob.
 	err := nm.AcceptPolicy(ctx, session.ID, "did:aethelred:bob")
@@ -1322,7 +1524,7 @@ func TestRegistry_ConcurrentRegistration(t *testing.T) {
 
 	for i := 0; i < goroutines; i++ {
 		go func() {
-			identity, _, _ := NewAgentIdentity(nil)
+			identity, _ := mustNewAgentIdentity(t, nil)
 			_, err := registry.RegisterAgent(ctx, identity)
 			errs <- err
 		}()
@@ -1340,14 +1542,14 @@ func TestRegistry_ReputationBoundary(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
 
 	// Drive reputation toward 1.0.
 	for i := 0; i < 1000; i++ {
-		registry.UpdateReputation(ctx, identity.AgentID(), true)
+		mustUpdateReputation(t, registry, ctx, identity.AgentID(), true)
 	}
-	score, _ := registry.GetAgentReputation(ctx, identity.AgentID())
+	score := mustGetAgentReputation(t, registry, ctx, identity.AgentID())
 	if score > 1.0 {
 		t.Errorf("reputation should not exceed 1.0, got %f", score)
 	}
@@ -1356,12 +1558,12 @@ func TestRegistry_ReputationBoundary(t *testing.T) {
 	}
 
 	// Drive reputation toward 0.0.
-	identity2, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity2)
+	identity2, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity2)
 	for i := 0; i < 1000; i++ {
-		registry.UpdateReputation(ctx, identity2.AgentID(), false)
+		mustUpdateReputation(t, registry, ctx, identity2.AgentID(), false)
 	}
-	score2, _ := registry.GetAgentReputation(ctx, identity2.AgentID())
+	score2 := mustGetAgentReputation(t, registry, ctx, identity2.AgentID())
 	if score2 < 0.0 {
 		t.Errorf("reputation should not be negative, got %f", score2)
 	}
@@ -1375,9 +1577,9 @@ func TestRegistry_SuspendedAgent(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	identity, _, _ := NewAgentIdentity(nil)
-	registry.RegisterAgent(ctx, identity)
-	registry.SuspendAgent(ctx, identity.AgentID())
+	identity, _ := mustNewAgentIdentity(t, nil)
+	mustRegisterAgent(t, registry, ctx, identity)
+	mustSuspendAgent(t, registry, ctx, identity.AgentID())
 
 	// Verify suspended agent is not discovered.
 	found := registry.DiscoverAgents(ctx, nil)
@@ -1388,7 +1590,7 @@ func TestRegistry_SuspendedAgent(t *testing.T) {
 	}
 
 	// Verify suspended status.
-	reg, _ := registry.LookupAgent(ctx, identity.AgentID())
+	reg := mustLookupAgent(t, registry, ctx, identity.AgentID())
 	if reg.Status != AgentSuspended {
 		t.Errorf("expected Suspended, got %s", reg.Status)
 	}
@@ -1400,15 +1602,15 @@ func TestRegistry_ListActiveAgents(t *testing.T) {
 	registry := NewAgentRegistry()
 	ctx := context.Background()
 
-	id1, _, _ := NewAgentIdentity(nil)
-	id2, _, _ := NewAgentIdentity(nil)
-	id3, _, _ := NewAgentIdentity(nil)
+	id1, _ := mustNewAgentIdentity(t, nil)
+	id2, _ := mustNewAgentIdentity(t, nil)
+	id3, _ := mustNewAgentIdentity(t, nil)
 
-	registry.RegisterAgent(ctx, id1)
-	registry.RegisterAgent(ctx, id2)
-	registry.RegisterAgent(ctx, id3)
+	mustRegisterAgent(t, registry, ctx, id1)
+	mustRegisterAgent(t, registry, ctx, id2)
+	mustRegisterAgent(t, registry, ctx, id3)
 
-	registry.SuspendAgent(ctx, id2.AgentID())
+	mustSuspendAgent(t, registry, ctx, id2.AgentID())
 
 	active := registry.ListActiveAgents(ctx)
 	if len(active) != 2 {

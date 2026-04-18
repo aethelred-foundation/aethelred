@@ -1,9 +1,7 @@
 package audit
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
@@ -198,15 +196,4 @@ func FuzzCustodyChainVerification(f *testing.F) {
 			t.Error("empty chain should be rejected")
 		}
 	})
-}
-
-// computeCustodyHashForTest is a reference implementation for cross-checking.
-func computeCustodyHashForTest(r CustodyRecord) string {
-	canonical := fmt.Sprintf(
-		"bundle=%s|custodian=%s|action=%s|prev_custodian=%s|ts=%s|sig=%s|prev_hash=%s|notes=%s",
-		r.BundleID, r.Custodian, r.Action, r.PreviousCustodian,
-		r.Timestamp, r.Signature, r.PreviousHash, r.Notes,
-	)
-	sum := sha256.Sum256([]byte(canonical))
-	return hex.EncodeToString(sum[:])
 }

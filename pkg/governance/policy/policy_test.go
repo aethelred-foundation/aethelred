@@ -10,6 +10,95 @@ import (
 	"time"
 )
 
+func mustRegisterPolicySet(t *testing.T, engine *PolicyEngine, ps *PolicySet) {
+	t.Helper()
+	if err := engine.RegisterPolicySet(ps); err != nil {
+		t.Fatalf("RegisterPolicySet failed: %v", err)
+	}
+}
+
+func mustApproveWorkflow(t *testing.T, wm *WorkflowManager, ctx context.Context, workflowID, approverID string, decision ApproverDecision, comment string) {
+	t.Helper()
+	if err := wm.Approve(ctx, workflowID, approverID, decision, comment); err != nil {
+		t.Fatalf("Approve failed: %v", err)
+	}
+}
+
+func mustCreateWorkflow(t *testing.T, wm *WorkflowManager, ctx context.Context, requestID string, approvalType ApprovalType, approvers []Approver, deadline time.Duration) *ApprovalWorkflow {
+	t.Helper()
+	wf, err := wm.CreateWorkflow(ctx, requestID, approvalType, approvers, deadline)
+	if err != nil {
+		t.Fatalf("CreateWorkflow failed: %v", err)
+	}
+	return wf
+}
+
+func mustGetWorkflowStatus(t *testing.T, wm *WorkflowManager, ctx context.Context, workflowID string) *ApprovalWorkflow {
+	t.Helper()
+	wf, err := wm.GetWorkflowStatus(ctx, workflowID)
+	if err != nil {
+		t.Fatalf("GetWorkflowStatus failed: %v", err)
+	}
+	return wf
+}
+
+func mustInitiateBreakGlass(t *testing.T, ctrl *BreakGlassController, ctx context.Context, initiator, reason string, severity BreakGlassSeverity, duration time.Duration, affectedPolicies []string) *BreakGlassEvent {
+	t.Helper()
+	event, err := ctrl.InitiateBreakGlass(ctx, initiator, reason, severity, duration, affectedPolicies)
+	if err != nil {
+		t.Fatalf("InitiateBreakGlass failed: %v", err)
+	}
+	return event
+}
+
+func mustRecordBreakGlassAction(t *testing.T, ctrl *BreakGlassController, ctx context.Context, eventID, actor, action, details string) {
+	t.Helper()
+	if err := ctrl.RecordAction(ctx, eventID, actor, action, details); err != nil {
+		t.Fatalf("RecordAction failed: %v", err)
+	}
+}
+
+func mustTerminateBreakGlass(t *testing.T, ctrl *BreakGlassController, ctx context.Context, eventID, terminator, reason string) {
+	t.Helper()
+	if err := ctrl.TerminateBreakGlass(ctx, eventID, terminator, reason); err != nil {
+		t.Fatalf("TerminateBreakGlass failed: %v", err)
+	}
+}
+
+func mustGetBreakGlassEvent(t *testing.T, ctrl *BreakGlassController, ctx context.Context, eventID string) *BreakGlassEvent {
+	t.Helper()
+	event, err := ctrl.GetBreakGlassEvent(ctx, eventID)
+	if err != nil {
+		t.Fatalf("GetBreakGlassEvent failed: %v", err)
+	}
+	return event
+}
+
+func mustApproveException(t *testing.T, handler *ExceptionHandler, ctx context.Context, exceptionID, approver string) {
+	t.Helper()
+	if err := handler.ApproveException(ctx, exceptionID, approver); err != nil {
+		t.Fatalf("ApproveException failed: %v", err)
+	}
+}
+
+func mustRequestException(t *testing.T, handler *ExceptionHandler, ctx context.Context, req *ExceptionRequest) *Exception {
+	t.Helper()
+	exc, err := handler.RequestException(ctx, req)
+	if err != nil {
+		t.Fatalf("RequestException failed: %v", err)
+	}
+	return exc
+}
+
+func mustGetException(t *testing.T, handler *ExceptionHandler, ctx context.Context, exceptionID string) *Exception {
+	t.Helper()
+	exc, err := handler.GetException(ctx, exceptionID)
+	if err != nil {
+		t.Fatalf("GetException failed: %v", err)
+	}
+	return exc
+}
+
 // ---------------------------------------------------------------------------
 // Rule evaluation tests
 // ---------------------------------------------------------------------------
@@ -597,13 +686,15 @@ func TestPolicyEngine_AuditLog(t *testing.T) {
 			NewAllowRule("allow_all", nil),
 		},
 	}
-	engine.RegisterPolicySet(ps)
+	mustRegisterPolicySet(t, engine, ps)
 
 	req := &EvaluationRequest{
 		Actor:  "auditor",
 		Action: "query",
 	}
-	engine.Evaluate(context.Background(), req)
+	if _, err := engine.Evaluate(context.Background(), req); err != nil {
+		t.Fatalf("Evaluate failed: %v", err)
+	}
 
 	log := engine.GetAuditLog()
 	if len(log) == 0 {
@@ -642,7 +733,7 @@ func TestWorkflowManager_SingleApproval(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status != Approved {
 		t.Errorf("expected Approved, got %s", wf.Status)
 	}
@@ -663,15 +754,15 @@ func TestWorkflowManager_DualControlApproval(t *testing.T) {
 	}
 
 	// First approval.
-	wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "ok")
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a1", ApproverApproved, "ok")
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status != PartiallyApproved {
 		t.Errorf("expected PartiallyApproved after first approval, got %s", wf.Status)
 	}
 
 	// Second approval.
-	wm.Approve(ctx, wf.ID, "a2", ApproverApproved, "ok")
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a2", ApproverApproved, "ok")
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status != Approved {
 		t.Errorf("expected Approved after dual approval, got %s", wf.Status)
 	}
@@ -686,12 +777,12 @@ func TestWorkflowManager_DenyOverrides(t *testing.T) {
 		{ID: "a2", Name: "Approver B", Role: "officer"},
 	}
 
-	wf, _ := wm.CreateWorkflow(ctx, "req-3", DualControl, approvers, 24*time.Hour)
+	wf := mustCreateWorkflow(t, wm, ctx, "req-3", DualControl, approvers, 24*time.Hour)
 
-	wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "ok")
-	wm.Approve(ctx, wf.ID, "a2", ApproverDenied, "rejected")
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a1", ApproverApproved, "ok")
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a2", ApproverDenied, "rejected")
 
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status != Denied {
 		t.Errorf("expected Denied when any approver denies, got %s", wf.Status)
 	}
@@ -702,8 +793,8 @@ func TestWorkflowManager_DuplicateApproval(t *testing.T) {
 	ctx := context.Background()
 
 	approvers := []Approver{{ID: "a1", Name: "A", Role: "r"}}
-	wf, _ := wm.CreateWorkflow(ctx, "req-4", Single, approvers, 24*time.Hour)
-	wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "")
+	wf := mustCreateWorkflow(t, wm, ctx, "req-4", Single, approvers, 24*time.Hour)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a1", ApproverApproved, "")
 
 	err := wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "again")
 	if err == nil {
@@ -721,18 +812,18 @@ func TestWorkflowManager_CommitteeQuorum(t *testing.T) {
 		{ID: "a3", Name: "A3", Role: "member"},
 	}
 
-	wf, _ := wm.CreateWorkflow(ctx, "req-5", Committee, approvers, 24*time.Hour)
+	wf := mustCreateWorkflow(t, wm, ctx, "req-5", Committee, approvers, 24*time.Hour)
 
 	// One approval is not enough.
-	wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "yes")
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a1", ApproverApproved, "yes")
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status == Approved {
 		t.Error("expected not-yet-approved with only 1 of 3 committee members")
 	}
 
 	// Two approvals should meet quorum (majority of 3 = 2).
-	wm.Approve(ctx, wf.ID, "a2", ApproverApproved, "yes")
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a2", ApproverApproved, "yes")
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if wf.Status != Approved {
 		t.Errorf("expected Approved with committee quorum, got %s", wf.Status)
 	}
@@ -747,8 +838,8 @@ func TestWorkflowManager_ListPendingApprovals(t *testing.T) {
 		{ID: "a2", Name: "B", Role: "r"},
 	}
 
-	wm.CreateWorkflow(ctx, "req-6", DualControl, approvers, 24*time.Hour)
-	wm.CreateWorkflow(ctx, "req-7", DualControl, approvers, 24*time.Hour)
+	mustCreateWorkflow(t, wm, ctx, "req-6", DualControl, approvers, 24*time.Hour)
+	mustCreateWorkflow(t, wm, ctx, "req-7", DualControl, approvers, 24*time.Hour)
 
 	pending := wm.ListPendingApprovals(ctx, "a1")
 	if len(pending) != 2 {
@@ -761,14 +852,14 @@ func TestWorkflowManager_EscalateWorkflow(t *testing.T) {
 	ctx := context.Background()
 
 	approvers := []Approver{{ID: "a1", Name: "A", Role: "r"}}
-	wf, _ := wm.CreateWorkflow(ctx, "req-8", Single, approvers, 24*time.Hour)
+	wf := mustCreateWorkflow(t, wm, ctx, "req-8", Single, approvers, 24*time.Hour)
 
 	err := wm.EscalateWorkflow(ctx, wf.ID, "approaching deadline")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+	wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 	if len(wf.AuditTrail) < 2 {
 		t.Error("expected audit trail to include escalation entry")
 	}
@@ -822,7 +913,7 @@ func TestBreakGlass_InitiateAndTerminate(t *testing.T) {
 	}
 
 	// Verify audit trail.
-	e, _ := ctrl.GetBreakGlassEvent(ctx, event.ID)
+	e := mustGetBreakGlassEvent(t, ctrl, ctx, event.ID)
 	if len(e.AuditTrail) != 2 {
 		t.Errorf("expected 2 audit entries, got %d", len(e.AuditTrail))
 	}
@@ -866,8 +957,8 @@ func TestBreakGlass_History(t *testing.T) {
 	ctrl := NewBreakGlassController()
 	ctx := context.Background()
 
-	ctrl.InitiateBreakGlass(ctx, "admin1", "reason1", BreakGlassLow, time.Hour, nil)
-	ctrl.InitiateBreakGlass(ctx, "admin2", "reason2", BreakGlassHigh, time.Hour, nil)
+	mustInitiateBreakGlass(t, ctrl, ctx, "admin1", "reason1", BreakGlassLow, time.Hour, nil)
+	mustInitiateBreakGlass(t, ctrl, ctx, "admin2", "reason2", BreakGlassHigh, time.Hour, nil)
 
 	history := ctrl.GetBreakGlassHistory(ctx)
 	if len(history) != 2 {
@@ -879,11 +970,11 @@ func TestBreakGlass_VerifyIntegrity(t *testing.T) {
 	ctrl := NewBreakGlassController()
 	ctx := context.Background()
 
-	event, _ := ctrl.InitiateBreakGlass(ctx, "admin1", "integrity test", BreakGlassMedium, time.Hour, nil)
+	event := mustInitiateBreakGlass(t, ctrl, ctx, "admin1", "integrity test", BreakGlassMedium, time.Hour, nil)
 
 	// Record some actions.
-	ctrl.RecordAction(ctx, event.ID, "admin1", "access_system", "accessed production DB")
-	ctrl.RecordAction(ctx, event.ID, "admin1", "restart_service", "restarted API gateway")
+	mustRecordBreakGlassAction(t, ctrl, ctx, event.ID, "admin1", "access_system", "accessed production DB")
+	mustRecordBreakGlassAction(t, ctrl, ctx, event.ID, "admin1", "restart_service", "restarted API gateway")
 
 	valid, err := ctrl.VerifyEventIntegrity(ctx, event.ID)
 	if err != nil {
@@ -898,8 +989,8 @@ func TestBreakGlass_RecordAction_OnInactive(t *testing.T) {
 	ctrl := NewBreakGlassController()
 	ctx := context.Background()
 
-	event, _ := ctrl.InitiateBreakGlass(ctx, "admin1", "test", BreakGlassMedium, time.Hour, nil)
-	ctrl.TerminateBreakGlass(ctx, event.ID, "admin1", "done")
+	event := mustInitiateBreakGlass(t, ctrl, ctx, "admin1", "test", BreakGlassMedium, time.Hour, nil)
+	mustTerminateBreakGlass(t, ctrl, ctx, event.ID, "admin1", "done")
 
 	err := ctrl.RecordAction(ctx, event.ID, "admin1", "test", "should fail")
 	if err == nil {
@@ -943,7 +1034,7 @@ func TestExceptionHandler_DenyException(t *testing.T) {
 	handler := NewExceptionHandler(nil)
 	ctx := context.Background()
 
-	exc, _ := handler.RequestException(ctx, &ExceptionRequest{
+	exc := mustRequestException(t, handler, ctx, &ExceptionRequest{
 		Type:        PermanentException,
 		Reason:      "test",
 		RequestedBy: "user1",
@@ -955,7 +1046,7 @@ func TestExceptionHandler_DenyException(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	e, _ := handler.GetException(ctx, exc.ID)
+	e := mustGetException(t, handler, ctx, exc.ID)
 	if e.Status != ExceptionDenied {
 		t.Errorf("expected Denied, got %s", e.Status)
 	}
@@ -965,7 +1056,7 @@ func TestExceptionHandler_RevokeException(t *testing.T) {
 	handler := NewExceptionHandler(nil)
 	ctx := context.Background()
 
-	exc, _ := handler.RequestException(ctx, &ExceptionRequest{
+	exc := mustRequestException(t, handler, ctx, &ExceptionRequest{
 		Type:        TemporaryException,
 		Reason:      "test",
 		RequestedBy: "user1",
@@ -973,7 +1064,7 @@ func TestExceptionHandler_RevokeException(t *testing.T) {
 		Duration:    time.Hour,
 	})
 
-	handler.ApproveException(ctx, exc.ID, "manager")
+	mustApproveException(t, handler, ctx, exc.ID, "manager")
 	err := handler.RevokeException(ctx, exc.ID, "admin", "no longer needed")
 	if err != nil {
 		t.Fatal(err)
@@ -1004,7 +1095,7 @@ func TestExceptionHandler_Escalate(t *testing.T) {
 	handler := NewExceptionHandler(nil)
 	ctx := context.Background()
 
-	exc, _ := handler.RequestException(ctx, &ExceptionRequest{
+	exc := mustRequestException(t, handler, ctx, &ExceptionRequest{
 		Type:        EmergencyException,
 		Reason:      "outage",
 		RequestedBy: "ops",
@@ -1040,9 +1131,7 @@ func TestEngine_NilContext(t *testing.T) {
 	// The engine may or may not check for nil context.
 	// The key test is it doesn't panic.
 	defer func() {
-		if r := recover(); r != nil {
-			// Panic on nil context is acceptable behavior.
-		}
+		_ = recover()
 	}()
 	//nolint:staticcheck // intentionally testing nil context
 	result, err := engine.Evaluate(nil, req)
@@ -1203,7 +1292,7 @@ func TestApproval_ExpiredWorkflow(t *testing.T) {
 	err = wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "late")
 	if err == nil {
 		// Check if the workflow status is Expired.
-		wf, _ = wm.GetWorkflowStatus(ctx, wf.ID)
+		wf = mustGetWorkflowStatus(t, wm, ctx, wf.ID)
 		if wf.Status != Expired {
 			t.Logf("workflow status after late approval: %s", wf.Status)
 		}
@@ -1216,7 +1305,7 @@ func TestApproval_SelfApproval(t *testing.T) {
 	ctx := context.Background()
 
 	approvers := []Approver{{ID: "a1", Name: "A", Role: "r"}}
-	wf, _ := wm.CreateWorkflow(ctx, "req-self", Single, approvers, 24*time.Hour)
+	wf := mustCreateWorkflow(t, wm, ctx, "req-self", Single, approvers, 24*time.Hour)
 
 	// Approver approves own request (this should be allowed per policy).
 	err := wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "self-approval")
@@ -1231,8 +1320,8 @@ func TestApproval_DuplicateApproval_EdgeCase(t *testing.T) {
 	ctx := context.Background()
 
 	approvers := []Approver{{ID: "a1", Name: "A", Role: "r"}}
-	wf, _ := wm.CreateWorkflow(ctx, "req-dup-approve", Single, approvers, 24*time.Hour)
-	wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "first")
+	wf := mustCreateWorkflow(t, wm, ctx, "req-dup-approve", Single, approvers, 24*time.Hour)
+	mustApproveWorkflow(t, wm, ctx, wf.ID, "a1", ApproverApproved, "first")
 
 	// Second approval on terminal-state workflow.
 	err := wm.Approve(ctx, wf.ID, "a1", ApproverApproved, "again")
@@ -1246,8 +1335,8 @@ func TestBreakGlass_VerifyHashIntegrity(t *testing.T) {
 	ctrl := NewBreakGlassController()
 	ctx := context.Background()
 
-	event, _ := ctrl.InitiateBreakGlass(ctx, "admin1", "hash test", BreakGlassMedium, time.Hour, nil)
-	ctrl.RecordAction(ctx, event.ID, "admin1", "access", "accessed system")
+	event := mustInitiateBreakGlass(t, ctrl, ctx, "admin1", "hash test", BreakGlassMedium, time.Hour, nil)
+	mustRecordBreakGlassAction(t, ctrl, ctx, event.ID, "admin1", "access", "accessed system")
 
 	valid, err := ctrl.VerifyEventIntegrity(ctx, event.ID)
 	if err != nil {
@@ -1258,7 +1347,7 @@ func TestBreakGlass_VerifyHashIntegrity(t *testing.T) {
 	}
 
 	// Tamper with the event hash.
-	e, _ := ctrl.GetBreakGlassEvent(ctx, event.ID)
+	e := mustGetBreakGlassEvent(t, ctrl, ctx, event.ID)
 	if e != nil && e.SealHash != "" {
 		originalHash := e.SealHash
 		_ = originalHash
@@ -1319,7 +1408,7 @@ func TestException_ExpiredException(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler.ApproveException(ctx, exc.ID, "manager")
+	mustApproveException(t, handler, ctx, exc.ID, "manager")
 
 	// Wait for expiry.
 	time.Sleep(10 * time.Millisecond)
@@ -1335,7 +1424,7 @@ func TestException_EscalationChain(t *testing.T) {
 	handler := NewExceptionHandler(nil)
 	ctx := context.Background()
 
-	exc, _ := handler.RequestException(ctx, &ExceptionRequest{
+	exc := mustRequestException(t, handler, ctx, &ExceptionRequest{
 		Type:        EmergencyException,
 		Reason:      "escalation chain test",
 		RequestedBy: "ops",

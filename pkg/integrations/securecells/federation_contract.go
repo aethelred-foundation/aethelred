@@ -850,15 +850,6 @@ func secureCellInvitationTerms(invitation SecureCellFederationInvitation) secure
 	}
 }
 
-func secureCellContractTerms(contract SecureCellFederationContract) secureCellFederationTerms {
-	return secureCellFederationTerms{
-		SessionScopeIDs: uniqueTrimmedStrings(contract.SessionScopeIDs),
-		DataClasses:     uniqueTrimmedStrings(contract.DataClasses),
-		ComputeZones:    uniqueTrimmedStrings(contract.ComputeZones),
-		AllowedActions:  uniqueTrimmedStrings(contract.AllowedActions),
-	}
-}
-
 func secureCellFederationTermsEmpty(terms secureCellFederationTerms) bool {
 	return len(uniqueTrimmedStrings(terms.SessionScopeIDs)) == 0 &&
 		len(uniqueTrimmedStrings(terms.DataClasses)) == 0 &&
