@@ -55,6 +55,9 @@ type SecureCellFederationOrganizationSummary struct {
 	PendingInvitationCount  int                                    `json:"pending_invitation_count"`
 	AcceptedInvitationCount int                                    `json:"accepted_invitation_count"`
 	RevokedInvitationCount  int                                    `json:"revoked_invitation_count"`
+	ContractCount           int                                    `json:"contract_count"`
+	ActiveContractCount     int                                    `json:"active_contract_count"`
+	RevokedContractCount    int                                    `json:"revoked_contract_count"`
 	ControlLedgerID         string                                 `json:"control_ledger_id,omitempty"`
 	PortablePackageHash     string                                 `json:"portable_package_hash,omitempty"`
 	PortablePackageSigned   bool                                   `json:"portable_package_signed"`
@@ -125,6 +128,9 @@ type SecureCellFederationOrganizationRuntime struct {
 	PendingInvitations      int       `json:"pending_invitations"`
 	AcceptedInvitations     int       `json:"accepted_invitations"`
 	RevokedInvitations      int       `json:"revoked_invitations"`
+	ContractCount           int       `json:"contract_count"`
+	ActiveContracts         int       `json:"active_contracts"`
+	RevokedContracts        int       `json:"revoked_contracts"`
 	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
 }
 
@@ -147,6 +153,7 @@ type SecureCellFederationOrganizationTrustPack struct {
 	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
 	Participants            []SecureCellParticipantState            `json:"participants,omitempty"`
 	Invitations             []SecureCellFederationInvitationSummary `json:"invitations,omitempty"`
+	Contracts               []SecureCellFederationContractSummary   `json:"contracts,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
@@ -180,6 +187,7 @@ type SecureCellFederationInvitationBundle struct {
 	Framework               string                                  `json:"framework,omitempty"`
 	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
 	Invitation              SecureCellFederationInvitationSummary   `json:"invitation"`
+	Contract                *SecureCellFederationContractSummary    `json:"contract,omitempty"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	ControlLedgerID         string                                  `json:"control_ledger_id,omitempty"`
 	ControlLedgerHash       string                                  `json:"control_ledger_hash,omitempty"`
@@ -277,6 +285,7 @@ func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID
 		return nil, err
 	}
 	invitations := secureCellFederationInvitationSummariesForOrganization(run, org.OrganizationID)
+	contracts := secureCellFederationContractsForOrganization(run, org.OrganizationID)
 	participants := secureCellFederationParticipantsForOrganization(run, *org)
 	runtime := secureCellFederationRuntimeForOrganization(run, *org)
 
@@ -295,6 +304,7 @@ func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID
 		Organization:     orgSummary,
 		Participants:     participants,
 		Invitations:      invitations,
+		Contracts:        contracts,
 		Runtime:          runtime,
 		Controls:         secureCellFederationControlsFromLedger(run.result.ControlLedger),
 		OperatorSurfaces: cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
@@ -345,6 +355,7 @@ func (s *Service) BuildFederationInvitationBundle(_ context.Context, cellID stri
 		Framework:    s.config.Framework,
 		Organization: orgSummary,
 		Invitation:   invitationSummary,
+		Contract:     secureCellFederationContractForInvitation(run, invitation.ID),
 		Controls:     secureCellFederationControlsFromLedger(run.result.ControlLedger),
 	}
 	if run.result.ControlLedger != nil {
@@ -429,6 +440,18 @@ func secureCellFederationOrganizationSummaryFromRun(run *secureCellRun, org Secu
 			summary.AcceptedInvitationCount++
 		case SecureCellFederationInvitationStatusRevoked:
 			summary.RevokedInvitationCount++
+		}
+	}
+	for _, contract := range run.result.FederationContracts {
+		if strings.TrimSpace(contract.OrganizationID) != summary.OrganizationID {
+			continue
+		}
+		summary.ContractCount++
+		switch contract.Status {
+		case SecureCellFederationContractStatusActive:
+			summary.ActiveContractCount++
+		case SecureCellFederationContractStatusRevoked:
+			summary.RevokedContractCount++
 		}
 	}
 	if run.result.ControlLedger != nil {
@@ -621,6 +644,21 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 			runtime.RevokedInvitations++
 		}
 		if updatedAt := secureCellFederationInvitationUpdatedAt(invitation); updatedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = updatedAt
+		}
+	}
+	for _, contract := range run.result.FederationContracts {
+		if strings.TrimSpace(contract.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
+			continue
+		}
+		runtime.ContractCount++
+		switch contract.Status {
+		case SecureCellFederationContractStatusActive:
+			runtime.ActiveContracts++
+		case SecureCellFederationContractStatusRevoked:
+			runtime.RevokedContracts++
+		}
+		if updatedAt := secureCellFederationContractUpdatedAt(contract); updatedAt.After(runtime.LastUpdatedAt) {
 			runtime.LastUpdatedAt = updatedAt
 		}
 	}

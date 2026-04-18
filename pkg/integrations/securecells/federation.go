@@ -364,6 +364,8 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 	run.result.FederationInvitations[inviteIdx].AcceptedAt = &acceptedAt
 	run.result.FederationInvitations[inviteIdx].ExpectedDID = participantDID
 	run.result.FederationInvitations[inviteIdx].Metadata = mergeStringMaps(run.result.FederationInvitations[inviteIdx].Metadata, acceptance.Metadata)
+	contract := newActivatedFederationContract(run.request, run.result.FederationInvitations[inviteIdx], newState, receipt, actorDID, strings.TrimSpace(acceptance.Reason), acceptance.Metadata)
+	run.result.FederationContracts = append(run.result.FederationContracts, contract)
 	orgIdx, org := findSecureCellFederationOrganization(run.result.FederationOrganizations, invitation.OrganizationID)
 	if org == nil {
 		run.result.FederationOrganizations = append(run.result.FederationOrganizations, SecureCellFederationOrganization{
@@ -404,6 +406,9 @@ func (s *Service) AcceptFederationInvitation(ctx context.Context, cellID string,
 			"federation_invitation_id":     invitation.ID,
 			"federation_organization_id":   invitation.OrganizationID,
 			"federation_sponsor_of_record": invitation.SponsorOfRecord,
+			"federation_contract_id":       contract.ID,
+			"federation_contract_actions":  strings.Join(contract.AllowedActions, ","),
+			"federation_contract_scopes":   strings.Join(contract.SessionScopeIDs, ","),
 			"target_participant_did":       participantDID,
 			"target_role":                  newState.Role,
 		}),
