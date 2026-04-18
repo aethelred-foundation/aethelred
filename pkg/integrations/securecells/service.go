@@ -72,6 +72,9 @@ const (
 	secureCellSessionMemberAdmitAction              = "secure_cells.session.member.admit"
 	secureCellSessionMemberRemoveAction             = "secure_cells.session.member.remove"
 	secureCellMemberAdmitAction                     = "secure_cells.member.admit"
+	secureCellFederationInviteAction                = "secure_cells.federation.invite"
+	secureCellFederationAcceptAction                = "secure_cells.federation.accept"
+	secureCellFederationRevokeAction                = "secure_cells.federation.revoke"
 	secureCellMemberReleaseAction                   = "secure_cells.member.release"
 	secureCellMemberQuarantineAction                = "secure_cells.member.quarantine"
 	secureCellMemberRevokeAction                    = "secure_cells.member.revoke"
@@ -448,32 +451,34 @@ type SecureCellRequest struct {
 
 // SecureCellResult is the portable buyer-facing outcome for a secure cell.
 type SecureCellResult struct {
-	CellID            string                                 `json:"cell_id"`
-	Name              string                                 `json:"name"`
-	Purpose           string                                 `json:"purpose"`
-	Status            SecureCellStatus                       `json:"status"`
-	PausedFromStatus  SecureCellStatus                       `json:"paused_from_status,omitempty"`
-	Policy            SecureCellPolicy                       `json:"policy"`
-	Participants      []SecureCellParticipantState           `json:"participants,omitempty"`
-	Sessions          []SecureCellSession                    `json:"sessions,omitempty"`
-	Threads           []SecureCellSessionThread              `json:"threads,omitempty"`
-	Decisions         []SecureCellThreadDecision             `json:"decisions,omitempty"`
-	DecisionOutcomes  []SecureCellThreadDecisionOutcome      `json:"decision_outcomes,omitempty"`
-	SharedOutputs     []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
-	SessionExchanges  []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
-	CreationReceipt   *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
-	ActivationReceipt *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
-	ReceiptChain      *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
-	ConfidentialExecution *confidential.VerificationSummary  `json:"confidential_execution,omitempty"`
-	ExecutionAttestations []evidence.Attestation             `json:"execution_attestations,omitempty"`
-	ExecutionSeal     *evidence.Seal                         `json:"execution_seal,omitempty"`
-	ControlLedger     *evidence.ControlLedger                `json:"control_ledger,omitempty"`
-	PortablePackage   *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
-	Transitions       []SecureCellTransition                 `json:"transitions,omitempty"`
-	RejectionReason   string                                 `json:"rejection_reason,omitempty"`
-	TerminatedAt      *time.Time                             `json:"terminated_at,omitempty"`
-	CreatedAt         time.Time                              `json:"created_at"`
-	UpdatedAt         time.Time                              `json:"updated_at"`
+	CellID                  string                                 `json:"cell_id"`
+	Name                    string                                 `json:"name"`
+	Purpose                 string                                 `json:"purpose"`
+	Status                  SecureCellStatus                       `json:"status"`
+	PausedFromStatus        SecureCellStatus                       `json:"paused_from_status,omitempty"`
+	Policy                  SecureCellPolicy                       `json:"policy"`
+	Participants            []SecureCellParticipantState           `json:"participants,omitempty"`
+	FederationOrganizations []SecureCellFederationOrganization     `json:"federation_organizations,omitempty"`
+	FederationInvitations   []SecureCellFederationInvitation       `json:"federation_invitations,omitempty"`
+	Sessions                []SecureCellSession                    `json:"sessions,omitempty"`
+	Threads                 []SecureCellSessionThread              `json:"threads,omitempty"`
+	Decisions               []SecureCellThreadDecision             `json:"decisions,omitempty"`
+	DecisionOutcomes        []SecureCellThreadDecisionOutcome      `json:"decision_outcomes,omitempty"`
+	SharedOutputs           []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
+	SessionExchanges        []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
+	CreationReceipt         *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
+	ActivationReceipt       *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
+	ReceiptChain            *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
+	ConfidentialExecution   *confidential.VerificationSummary      `json:"confidential_execution,omitempty"`
+	ExecutionAttestations   []evidence.Attestation                 `json:"execution_attestations,omitempty"`
+	ExecutionSeal           *evidence.Seal                         `json:"execution_seal,omitempty"`
+	ControlLedger           *evidence.ControlLedger                `json:"control_ledger,omitempty"`
+	PortablePackage         *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
+	Transitions             []SecureCellTransition                 `json:"transitions,omitempty"`
+	RejectionReason         string                                 `json:"rejection_reason,omitempty"`
+	TerminatedAt            *time.Time                             `json:"terminated_at,omitempty"`
+	CreatedAt               time.Time                              `json:"created_at"`
+	UpdatedAt               time.Time                              `json:"updated_at"`
 }
 
 // SecureCellTransition captures one evidence-bearing lifecycle mutation after
@@ -954,6 +959,7 @@ type ServiceConfig struct {
 	CredentialIssuer        string
 	Sealer                  SecureCellSealer
 	LedgerStore             evidence.ControlLedgerStore
+	WorkflowStore           SecureCellStore
 	Framework               string
 	IncludeVerificationKeys bool
 	PackageSigningKey       ed25519.PrivateKey
@@ -1007,6 +1013,9 @@ func NewService(config ServiceConfig) (*Service, error) {
 	if config.LedgerStore == nil {
 		config.LedgerStore = evidence.NewInMemoryControlLedgerStore()
 	}
+	if config.WorkflowStore == nil {
+		config.WorkflowStore = NewInMemorySecureCellStore()
+	}
 	if strings.TrimSpace(config.Framework) == "" {
 		config.Framework = "Secure Cells v1"
 	}
@@ -1024,11 +1033,15 @@ func NewService(config ServiceConfig) (*Service, error) {
 		return nil, fmt.Errorf("securecells/service: normalize decision SLA templates: %w", err)
 	}
 
-	return &Service{
+	service := &Service{
 		config:               config,
 		runs:                 make(map[string]*secureCellRun),
 		decisionSLATemplates: decisionSLATemplates,
-	}, nil
+	}
+	if err := service.loadPersistedRuns(context.Background()); err != nil {
+		return nil, fmt.Errorf("securecells/service: load persisted runs: %w", err)
+	}
+	return service, nil
 }
 
 // CreateCell provisions a new secure collaboration cell.
@@ -1044,20 +1057,24 @@ func (s *Service) CreateCell(ctx context.Context, req SecureCellRequest) (*Secur
 	}
 
 	result := &SecureCellResult{
-		CellID:          cellID(normalized),
-		Name:            normalized.Name,
-		Purpose:         normalized.Purpose,
-		Status:          SecureCellStatusActive,
-		Policy:          clonePolicy(normalized.Policy),
-		CreationReceipt: cloneSignedPolicyReceipt(createReceipt),
-		CreatedAt:       time.Now().UTC(),
-		UpdatedAt:       time.Now().UTC(),
+		CellID:                  cellID(normalized),
+		Name:                    normalized.Name,
+		Purpose:                 normalized.Purpose,
+		Status:                  SecureCellStatusActive,
+		Policy:                  clonePolicy(normalized.Policy),
+		CreationReceipt:         cloneSignedPolicyReceipt(createReceipt),
+		FederationOrganizations: deriveSecureCellFederationOrganizations(normalized, nil),
+		CreatedAt:               time.Now().UTC(),
+		UpdatedAt:               time.Now().UTC(),
 	}
 	run := &secureCellRun{request: normalized, result: result}
 
 	if createReceipt.Decision != policy.Allow.String() {
 		result.Status = SecureCellStatusRejected
 		result.RejectionReason = "secure cell creation denied by policy"
+		if err := s.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		s.setRun(run)
 		return cloneResult(result)
 	}
@@ -1066,10 +1083,14 @@ func (s *Service) CreateCell(ctx context.Context, req SecureCellRequest) (*Secur
 	if err != nil {
 		result.Status = SecureCellStatusRejected
 		result.RejectionReason = err.Error()
+		if err := s.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		s.setRun(run)
 		return cloneResult(result)
 	}
 	result.Participants = participantStates
+	result.FederationOrganizations = deriveSecureCellFederationOrganizations(normalized, result.Participants)
 
 	activationReceipt, err := s.evaluateStage(ctx, normalized, "activate", createReceipt.ContentHash, nil, normalized.OwnerIdentity.AgentID())
 	if err != nil {
@@ -1081,6 +1102,9 @@ func (s *Service) CreateCell(ctx context.Context, req SecureCellRequest) (*Secur
 		result.RejectionReason = "secure cell activation denied by policy"
 		result.ActivationReceipt = cloneSignedPolicyReceipt(activationReceipt)
 		s.markNegotiationsFailed(ctx, negotiationSessionIDs, result.RejectionReason)
+		if err := s.persistRun(ctx, run); err != nil {
+			return nil, err
+		}
 		s.setRun(run)
 		return cloneResult(result)
 	}
@@ -3889,6 +3913,9 @@ func (s *Service) rebuildArtifacts(ctx context.Context, run *secureCellRun, late
 
 	run.result.ControlLedger = ledger
 	run.result.PortablePackage = portablePkg
+	if err := s.persistRun(ctx, run); err != nil {
+		return err
+	}
 	if s.config.EventPublisher != nil {
 		s.config.EventPublisher(ctx, s.buildLifecycleEvent(run, transition))
 	}
@@ -4394,6 +4421,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("participants_active", fmt.Sprintf("%d", len(participantsByStatus(participants, SecureCellParticipantStatusActive))))
 	ledger.WithMetadata("participants_quarantined", fmt.Sprintf("%d", len(participantsByStatus(participants, SecureCellParticipantStatusQuarantined))))
 	ledger.WithMetadata("participants_revoked", fmt.Sprintf("%d", len(participantsByStatus(participants, SecureCellParticipantStatusRevoked))))
+	ledger.WithMetadata("federation_organizations_total", fmt.Sprintf("%d", len(run.result.FederationOrganizations)))
+	ledger.WithMetadata("federation_invitations_total", fmt.Sprintf("%d", len(run.result.FederationInvitations)))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
 	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
@@ -4446,6 +4475,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	containmentRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	threadLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4574,6 +4604,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 					"participant_status": string(transition.ParticipantStatusAfter),
 				},
 			})
+		}
+		if transition.Action == "secure_cell.federation_joined" {
+			if participantDID := strings.TrimSpace(data["target_participant_did"]); participantDID != "" {
+				admittedParticipants[participantDID] = struct{}{}
+			}
+			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" {
+			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.member_quarantined" || transition.Action == "secure_cell.member_revoked" || transition.Action == "secure_cell.member_released" || transition.Action == "secure_cell.quarantine_expired" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
@@ -5068,6 +5107,23 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		},
 	}); err != nil {
 		return nil, err
+	}
+	if len(federationLifecycleRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-01",
+			ControlName: "Cross-Organization Federation",
+			Description: "Cross-organization invitations and joins are governed as explicit policy-bound lifecycle transitions tied to accountable sponsor-of-record identities.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: federationLifecycleRecordIDs,
+			},
+			Metadata: map[string]string{
+				"federation_organizations_total": fmt.Sprintf("%d", len(run.result.FederationOrganizations)),
+				"federation_invitations_total":   fmt.Sprintf("%d", len(run.result.FederationInvitations)),
+			},
+		}); err != nil {
+			return nil, err
+		}
 	}
 	if err := ledger.AddControl(evidence.LedgerControl{
 		ControlID:   "CELL-NEG-01",
@@ -5714,6 +5770,51 @@ func (s *Service) signAndAnchorPackage(ctx context.Context, pkg *evidence.Portab
 	return nil
 }
 
+func (s *Service) loadPersistedRuns(ctx context.Context) error {
+	if s == nil || s.config.WorkflowStore == nil {
+		return nil
+	}
+	records, err := s.config.WorkflowStore.List(ctx)
+	if err != nil {
+		return err
+	}
+	for _, record := range records {
+		run, err := s.runFromRecord(record)
+		if err != nil {
+			return err
+		}
+		s.setRun(run)
+	}
+	return nil
+}
+
+func (s *Service) runFromRecord(record *SecureCellRecord) (*secureCellRun, error) {
+	cloned, _, err := prepareSecureCellRecordForStorage(record)
+	if err != nil {
+		return nil, err
+	}
+	return &secureCellRun{
+		request: cloned.Request,
+		result:  cloned.Result,
+	}, nil
+}
+
+func (s *Service) persistRun(ctx context.Context, run *secureCellRun) error {
+	if s == nil || s.config.WorkflowStore == nil || run == nil || run.result == nil {
+		return nil
+	}
+	record := &SecureCellRecord{
+		CellID:   run.result.CellID,
+		Request:  run.request,
+		Result:   run.result,
+		StoredAt: time.Now().UTC(),
+	}
+	if err := s.config.WorkflowStore.Save(ctx, record); err != nil {
+		return fmt.Errorf("securecells/service: persist workflow state: %w", err)
+	}
+	return nil
+}
+
 func (s *Service) getRun(id string) (*secureCellRun, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -5937,7 +6038,7 @@ func transitionRecordType(action string) string {
 	switch action {
 	case "secure_cell.activated", "secure_cell.created", "secure_cell.paused", "secure_cell.resumed", "secure_cell.terminated":
 		return "governance"
-	case "secure_cell.member_admitted":
+	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked":
 		return "trust"
 	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
@@ -5956,6 +6057,12 @@ func transitionStageForAction(action string) string {
 		return "activate"
 	case "secure_cell.member_admitted":
 		return "admit_member"
+	case "secure_cell.federation_invited":
+		return "invite_federation_member"
+	case "secure_cell.federation_joined":
+		return "accept_federation_invitation"
+	case "secure_cell.federation_invitation_revoked":
+		return "revoke_federation_invitation"
 	case "secure_cell.session_started":
 		return "start_session"
 	case "secure_cell.session_thread_started":
@@ -7616,6 +7723,9 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			Actions: []string{
 				secureCellCreateAction,
 				secureCellActivateAction,
+				secureCellFederationInviteAction,
+				secureCellFederationAcceptAction,
+				secureCellFederationRevokeAction,
 				secureCellSessionStartAction,
 				secureCellSessionThreadStartAction,
 				secureCellSessionThreadMessageAction,
@@ -7702,6 +7812,33 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
 				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
 				{Field: "participant_count", Operator: policy.GreaterThan, Value: "0"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_invite_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "invite_federation_member"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_accept_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "accept_federation_invitation"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_revoke_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "revoke_federation_invitation"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
 			}),
 			policy.NewAllowRule("secure_cell_session_start_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "start_session"},
@@ -7983,6 +8120,12 @@ func actionForStage(stage string) string {
 	switch stage {
 	case "activate":
 		return secureCellActivateAction
+	case "invite_federation_member":
+		return secureCellFederationInviteAction
+	case "accept_federation_invitation":
+		return secureCellFederationAcceptAction
+	case "revoke_federation_invitation":
+		return secureCellFederationRevokeAction
 	case "start_session":
 		return secureCellSessionStartAction
 	case "start_session_thread":

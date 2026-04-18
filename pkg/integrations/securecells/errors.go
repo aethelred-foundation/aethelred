@@ -63,6 +63,14 @@ var (
 	// current lifecycle status.
 	ErrCellImmutable = errors.New("secure cell is immutable")
 
+	// ErrFederationInvitationNotFound indicates that a federation invitation
+	// does not exist in the secure cell state.
+	ErrFederationInvitationNotFound = errors.New("secure cell federation invitation not found")
+
+	// ErrFederationInvitationImmutable indicates that a federation invitation
+	// cannot be mutated from its current lifecycle posture.
+	ErrFederationInvitationImmutable = errors.New("secure cell federation invitation is immutable")
+
 	// ErrPolicyDenied indicates that the secure-cell policy engine denied the
 	// requested lifecycle transition.
 	ErrPolicyDenied = errors.New("secure cell lifecycle transition denied by policy")

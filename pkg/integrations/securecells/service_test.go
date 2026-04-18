@@ -2563,12 +2563,226 @@ func TestService_SweepExpiredQuarantinesUsesAutomatedActor(t *testing.T) {
 	}
 }
 
+func TestService_LoadsPersistedRunsFromWorkflowStore(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	workflowStore := NewInMemorySecureCellStore()
+	service, _, owner, participantA, _ := newTestSecureCellServiceWithWorkflowStore(t, workflowStore, nil)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Persistent Federation Cell",
+		Purpose:       "restart-safe collaboration",
+		Resource:      "cell:persistent-federation",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	restarted, _, _, _, _ := newTestSecureCellServiceWithWorkflowStore(t, workflowStore, nil)
+	if got := restarted.runCount(); got != 1 {
+		t.Fatalf("expected one persisted run after restart, got %d", got)
+	}
+
+	loaded, err := restarted.GetCell(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetCell after restart failed: %v", err)
+	}
+	if loaded.CellID != created.CellID || loaded.Status != SecureCellStatusActive {
+		t.Fatalf("unexpected reloaded secure cell: %+v", loaded)
+	}
+	if loaded.ControlLedger == nil || loaded.PortablePackage == nil || loaded.ExecutionSeal == nil {
+		t.Fatalf("expected reloaded evidence chain, got %+v", loaded)
+	}
+	if err := evidence.VerifyPortableControlLedgerPackage(loaded.PortablePackage); err != nil {
+		t.Fatalf("VerifyPortableControlLedgerPackage after restart failed: %v", err)
+	}
+}
+
+func TestService_FederationInvitationAcceptsCrossOrgParticipant(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Cross-Org Federation Cell",
+		Purpose:       "federated regulated collaboration",
+		Resource:      "cell:federation-active",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "counterparty"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	sponsorOfRecord := secureCellFederationSponsor(participantB)
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  sponsorOfRecord,
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		Reason:           "cross-org invite approved",
+		Metadata:         map[string]string{"ticket": "SC-FED-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+
+	if len(invited.FederationInvitations) != 1 {
+		t.Fatalf("expected one pending federation invitation, got %+v", invited.FederationInvitations)
+	}
+	invitation := invited.FederationInvitations[0]
+	if invitation.Status != SecureCellFederationInvitationStatusPending {
+		t.Fatalf("expected pending invitation, got %+v", invitation)
+	}
+	if !controlLedgerHasControl(invited.ControlLedger, "CELL-FED-01") {
+		t.Fatalf("expected federation control after invitation, got %+v", invited.ControlLedger.Controls)
+	}
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+			Metadata: map[string]string{"bank": "b"},
+		},
+		Reason:   "joined federated review cell",
+		Metadata: map[string]string{"ticket": "SC-FED-02"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+
+	if len(accepted.Participants) != 2 {
+		t.Fatalf("expected second live participant after federation accept, got %+v", accepted.Participants)
+	}
+	state := mustSecureCellParticipantState(t, accepted, participantB.AgentID())
+	if state.Status != SecureCellParticipantStatusActive {
+		t.Fatalf("expected active participant state after federation accept, got %+v", state)
+	}
+	if len(accepted.FederationOrganizations) != 3 {
+		t.Fatalf("expected owner + initial participant + joined org, got %+v", accepted.FederationOrganizations)
+	}
+
+	orgID := secureCellFederationOrganizationID(sponsorOfRecord)
+	orgIdx, org := findSecureCellFederationOrganization(accepted.FederationOrganizations, orgID)
+	if org == nil {
+		t.Fatalf("expected joined federation organization %q", orgID)
+	}
+	if accepted.FederationOrganizations[orgIdx].Status != SecureCellFederationOrganizationStatusActive {
+		t.Fatalf("expected active federation organization, got %+v", accepted.FederationOrganizations[orgIdx])
+	}
+	if got := accepted.FederationOrganizations[orgIdx].ParticipantDIDs; len(got) != 1 || got[0] != participantB.AgentID() {
+		t.Fatalf("expected joined participant DID on federation org, got %+v", got)
+	}
+	if accepted.FederationInvitations[0].Status != SecureCellFederationInvitationStatusAccepted {
+		t.Fatalf("expected accepted invitation, got %+v", accepted.FederationInvitations[0])
+	}
+	if got := accepted.Transitions[len(accepted.Transitions)-1].Action; got != "secure_cell.federation_joined" {
+		t.Fatalf("expected final federation join transition, got %q", got)
+	}
+	if !controlLedgerHasControl(accepted.ControlLedger, "CELL-FED-01") {
+		t.Fatalf("expected federation control after accept, got %+v", accepted.ControlLedger.Controls)
+	}
+	if err := evidence.VerifyPortableControlLedgerPackage(accepted.PortablePackage); err != nil {
+		t.Fatalf("VerifyPortableControlLedgerPackage failed: %v", err)
+	}
+}
+
+func TestService_RevokeFederationInvitationMarksOrganizationRevoked(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Cross-Org Federation Revocation",
+		Purpose:       "federation revoke path",
+		Resource:      "cell:federation-revoke",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: SecureCellPolicy{RequireConfidentialCompute: boolPtr(true)},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		Reason:           "cross-org invite revoked later",
+		Metadata:         map[string]string{"ticket": "SC-FED-03"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+
+	revoked, err := service.RevokeFederationInvitation(ctx, created.CellID, invited.FederationInvitations[0].ID, SecureCellLifecycleRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "counterparty not cleared",
+		Metadata: map[string]string{"ticket": "SC-FED-04"},
+	})
+	if err != nil {
+		t.Fatalf("RevokeFederationInvitation failed: %v", err)
+	}
+
+	if revoked.FederationInvitations[0].Status != SecureCellFederationInvitationStatusRevoked {
+		t.Fatalf("expected revoked invitation, got %+v", revoked.FederationInvitations[0])
+	}
+	orgID := secureCellFederationOrganizationID(secureCellFederationSponsor(participantB))
+	orgIdx, org := findSecureCellFederationOrganization(revoked.FederationOrganizations, orgID)
+	if org == nil {
+		t.Fatalf("expected federation organization %q", orgID)
+	}
+	if revoked.FederationOrganizations[orgIdx].Status != SecureCellFederationOrganizationStatusRevoked {
+		t.Fatalf("expected revoked federation organization, got %+v", revoked.FederationOrganizations[orgIdx])
+	}
+	if got := revoked.Transitions[len(revoked.Transitions)-1].Action; got != "secure_cell.federation_invitation_revoked" {
+		t.Fatalf("expected final federation revoke transition, got %q", got)
+	}
+}
+
 func newTestSecureCellService(t *testing.T) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
-	return newTestSecureCellServiceWithPublisher(t, nil)
+	return newTestSecureCellServiceWithWorkflowStoreAndPublisher(t, nil, nil)
 }
 
 func newTestSecureCellServiceWithPublisher(t *testing.T, publisher SecureCellEventPublisher) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
+	t.Helper()
+	return newTestSecureCellServiceWithWorkflowStoreAndPublisher(t, nil, publisher)
+}
+
+func newTestSecureCellServiceWithWorkflowStore(t *testing.T, workflowStore SecureCellStore, publisher SecureCellEventPublisher) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
+	t.Helper()
+	return newTestSecureCellServiceWithWorkflowStoreAndPublisher(t, workflowStore, publisher)
+}
+
+func newTestSecureCellServiceWithWorkflowStoreAndPublisher(t *testing.T, workflowStore SecureCellStore, publisher SecureCellEventPublisher) (*Service, evidence.ControlLedgerStore, *agent.AgentIdentity, *agent.AgentIdentity, *agent.AgentIdentity) {
 	t.Helper()
 
 	policySignerKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -2580,12 +2794,12 @@ func newTestSecureCellServiceWithPublisher(t *testing.T, publisher SecureCellEve
 	sealer := &mockSecureCellSealer{}
 
 	service, err := NewService(ServiceConfig{
-		PolicySignerKey:         policySignerKey,
-		PolicySigner:            "did:aethelred:secure-cells-policy",
-		CredentialIssuerKey:     policySignerKey,
-		CredentialIssuer:        "did:aethelred:secure-cells-issuer",
-		Sealer:                  sealer,
-		ConfidentialAttestor:    &mockSecureCellConfidentialAttestor{signingKey: policySignerKey},
+		PolicySignerKey:      policySignerKey,
+		PolicySigner:         "did:aethelred:secure-cells-policy",
+		CredentialIssuerKey:  policySignerKey,
+		CredentialIssuer:     "did:aethelred:secure-cells-issuer",
+		Sealer:               sealer,
+		ConfidentialAttestor: &mockSecureCellConfidentialAttestor{signingKey: policySignerKey},
 		ConfidentialPolicy: confidential.Policy{
 			TrustedPlatforms:         []string{"aws-nitro"},
 			TrustedValidatorKeys:     map[string]*ecdsa.PublicKey{"did:aethelred:secure-cells-policy": &policySignerKey.PublicKey},
@@ -2594,6 +2808,7 @@ func newTestSecureCellServiceWithPublisher(t *testing.T, publisher SecureCellEve
 			MinimumValidAttestations: 1,
 		},
 		LedgerStore:             store,
+		WorkflowStore:           workflowStore,
 		PackageSigningKey:       packageSigningKey,
 		PackageSigner:           "validator:secure-cells",
 		IncludeVerificationKeys: true,
