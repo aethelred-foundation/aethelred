@@ -512,6 +512,26 @@ already merged.
   emergency batch revocation too, and keep the direct forced path confined to
   emergency authority rather than ordinary admin authority.
 
+### 3y. Seal emergency revocation quorum enforcement
+
+- Tightened `x/seal/keeper/revocation.go`, where the remaining explicit
+  emergency lane still allowed a single emergency authority to revoke a seal
+  immediately for any reason once they were inside the emergency set.
+- Emergency seal revocation now uses a quorumed break-glass workflow: the
+  first emergency authority records a stored emergency request and approval,
+  duplicate approvals are rejected, and execution occurs only after a second
+  independent emergency authority approves the same request.
+- The emergency lane is now restricted to genuinely urgent reasons
+  (`fraud_detected`, `model_compromised`, `privacy_breach`,
+  `compliance_violation`, `tee_compromised`, `legal_order`) instead of acting
+  as a general-purpose override for ordinary lifecycle reasons such as
+  `user_request`, `expired`, or `replaced`.
+- Emergency requests no longer enter the ordinary dispute workflow. They remain
+  an explicit break-glass path, but now emit approval-state evidence and fail
+  closed until the configured emergency quorum is satisfied.
+- Emergency batch revocation now follows the same quorumed path on a per-seal
+  basis instead of executing a direct bypass for every target in the batch.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -668,6 +688,10 @@ already merged.
   direct message shortcuts. The default privileged threshold is now multi-party
   and the emergency path is isolated as an explicit exception with mandatory
   justification on both single-seal and batch forced revocation entrypoints.
+- That emergency seal exception no longer degrades to a single-signer kill
+  switch. It now requires multi-party emergency approval, is limited to
+  explicitly urgent reasons, and fails closed until the break-glass quorum is
+  met.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

@@ -43,6 +43,9 @@ type RevocationConfig struct {
 	// RequiredAuthorityThreshold for multi-sig revocation
 	RequiredAuthorityThreshold int
 
+	// RequiredEmergencyAuthorityThreshold for break-glass revocation
+	RequiredEmergencyAuthorityThreshold int
+
 	// AllowUserRevocation allows the requester to revoke their own seals
 	AllowUserRevocation bool
 
@@ -56,11 +59,12 @@ type RevocationConfig struct {
 // DefaultRevocationConfig returns default configuration
 func DefaultRevocationConfig() RevocationConfig {
 	return RevocationConfig{
-		MinDisputePeriod:           24 * time.Hour,
-		RequiredAuthorityThreshold: 2,
-		AllowUserRevocation:        true,
-		GracePeriodForNotification: 7 * 24 * time.Hour,
-		MaxRevocationReason:        500,
+		MinDisputePeriod:                    24 * time.Hour,
+		RequiredAuthorityThreshold:          2,
+		RequiredEmergencyAuthorityThreshold: 2,
+		AllowUserRevocation:                 true,
+		GracePeriodForNotification:          7 * 24 * time.Hour,
+		MaxRevocationReason:                 500,
 	}
 }
 
@@ -132,6 +136,12 @@ type RevocationRequest struct {
 
 	// Approvals for multi-sig
 	Approvals []RevocationApproval `json:"approvals,omitempty"`
+
+	// Emergency marks a break-glass request that bypasses the normal dispute period
+	Emergency bool `json:"emergency,omitempty"`
+
+	// EmergencyJustification records the break-glass rationale
+	EmergencyJustification string `json:"emergency_justification,omitempty"`
 }
 
 // RevocationReason represents the reason for revocation
@@ -364,7 +374,7 @@ func (rm *RevocationManager) RequestRevocation(ctx context.Context, req *Revocat
 			Comments:  "requester authority approval",
 			Timestamp: req.CreatedAt,
 		})
-		if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+		if rm.countApprovedAuthorities(req) >= rm.requiredApprovalThreshold(req) {
 			req.Status = RevocationStatusApproved
 			now := req.CreatedAt
 			req.ProcessedAt = &now
@@ -422,6 +432,10 @@ func (rm *RevocationManager) ApproveRevocation(ctx context.Context, requestID, a
 		return fmt.Errorf("revocation request not found")
 	}
 
+	if req.Emergency && authority.Level < AuthorityLevelEmergency {
+		return fmt.Errorf("emergency approvals require emergency authority level")
+	}
+
 	switch req.Status {
 	case RevocationStatusExecuted, RevocationStatusCancelled, RevocationStatusRejected:
 		return fmt.Errorf("revocation request %s is no longer approvable", requestID)
@@ -440,7 +454,7 @@ func (rm *RevocationManager) ApproveRevocation(ctx context.Context, requestID, a
 		Timestamp: time.Now().UTC(),
 	}
 	req.Approvals = append(req.Approvals, approval)
-	if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+	if rm.countApprovedAuthorities(req) >= rm.requiredApprovalThreshold(req) {
 		req.Status = RevocationStatusApproved
 		now := approval.Timestamp
 		req.ProcessedAt = &now
@@ -480,24 +494,26 @@ func (rm *RevocationManager) ExecuteRevocation(ctx context.Context, requestID st
 		return nil, fmt.Errorf("revocation request %s is not approved", requestID)
 	}
 
-	if time.Now().UTC().Before(req.DisputeDeadline) {
-		rm.requestMutex.Unlock()
-		return nil, fmt.Errorf("revocation request %s is still in dispute period until %s", requestID, req.DisputeDeadline.Format(time.RFC3339))
-	}
-
-	rm.disputeMutex.RLock()
-	for _, dispute := range rm.disputes {
-		if dispute.RequestID != requestID {
-			continue
-		}
-		switch dispute.Status {
-		case DisputeStatusOpen, DisputeStatusUnderReview, DisputeStatusUpheld:
-			rm.disputeMutex.RUnlock()
+	if !req.Emergency {
+		if time.Now().UTC().Before(req.DisputeDeadline) {
 			rm.requestMutex.Unlock()
-			return nil, fmt.Errorf("revocation request %s has an unresolved dispute", requestID)
+			return nil, fmt.Errorf("revocation request %s is still in dispute period until %s", requestID, req.DisputeDeadline.Format(time.RFC3339))
 		}
+
+		rm.disputeMutex.RLock()
+		for _, dispute := range rm.disputes {
+			if dispute.RequestID != requestID {
+				continue
+			}
+			switch dispute.Status {
+			case DisputeStatusOpen, DisputeStatusUnderReview, DisputeStatusUpheld:
+				rm.disputeMutex.RUnlock()
+				rm.requestMutex.Unlock()
+				return nil, fmt.Errorf("revocation request %s has an unresolved dispute", requestID)
+			}
+		}
+		rm.disputeMutex.RUnlock()
 	}
-	rm.disputeMutex.RUnlock()
 
 	seal, err := rm.keeper.GetSeal(ctx, req.SealID)
 	if err != nil {
@@ -631,6 +647,10 @@ func (rm *RevocationManager) FileDispute(ctx context.Context, requestID, disputa
 		rm.requestMutex.Unlock()
 		return nil, fmt.Errorf("revocation request not found")
 	}
+	if req.Emergency {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("emergency revocation requests cannot enter the dispute workflow")
+	}
 	if req.Status == RevocationStatusExecuted || req.Status == RevocationStatusCancelled {
 		rm.requestMutex.Unlock()
 		return nil, fmt.Errorf("revocation request %s can no longer be disputed", requestID)
@@ -715,7 +735,7 @@ func (rm *RevocationManager) ResolveDispute(ctx context.Context, disputeID, reso
 	if req, exists := rm.requests[requestID]; exists {
 		if upheld {
 			req.Status = RevocationStatusCancelled
-		} else if rm.countApprovedAuthorities(req) >= rm.config.RequiredAuthorityThreshold {
+		} else if rm.countApprovedAuthorities(req) >= rm.requiredApprovalThreshold(req) {
 			req.Status = RevocationStatusApproved
 		} else {
 			req.Status = RevocationStatusPending
@@ -785,16 +805,116 @@ func (rm *RevocationManager) GetDisputesByRequest(requestID string) []*Revocatio
 
 // EmergencyRevoke performs immediate revocation without dispute period
 func (rm *RevocationManager) EmergencyRevoke(ctx context.Context, sealID, revoker string, reason RevocationReason, justification string) (*RevocationResult, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
 	// Check emergency authority
 	authority, hasAuthority := rm.authorities[revoker]
 	if !hasAuthority || !authority.Active || authority.Level < AuthorityLevelEmergency {
 		return nil, fmt.Errorf("not authorized for emergency revocation")
 	}
-	if strings.TrimSpace(justification) == "" {
+	justification = strings.TrimSpace(justification)
+	if justification == "" {
 		return nil, fmt.Errorf("emergency revocation justification is required")
 	}
+	if !isEmergencyRevocationReason(reason) {
+		return nil, fmt.Errorf("reason %q is not eligible for emergency revocation", reason)
+	}
 
-	result, err := rm.executeDirectRevocation(ctx, sealID, revoker, reason)
+	seal, err := rm.keeper.GetSeal(ctx, sealID)
+	if err != nil {
+		return nil, fmt.Errorf("seal not found: %w", err)
+	}
+	if seal.Status == types.SealStatusRevoked {
+		return nil, fmt.Errorf("seal is already revoked")
+	}
+
+	rm.requestMutex.Lock()
+	req := rm.findActiveEmergencyRequestLocked(sealID)
+	if req == nil {
+		now := time.Now().UTC()
+		req = &RevocationRequest{
+			RequestID:              rm.generateRequestID(&RevocationRequest{SealID: sealID, Requester: revoker, Reason: reason}),
+			SealID:                 sealID,
+			Requester:              revoker,
+			Reason:                 reason,
+			ReasonDetails:          justification,
+			Status:                 RevocationStatusPending,
+			CreatedAt:              now,
+			DisputeDeadline:        now,
+			Emergency:              true,
+			EmergencyJustification: justification,
+			Approvals:              make([]RevocationApproval, 0, rm.requiredApprovalThreshold(&RevocationRequest{Emergency: true})),
+		}
+		rm.requests[req.RequestID] = req
+	} else {
+		if req.Status == RevocationStatusExecuted {
+			rm.requestMutex.Unlock()
+			return nil, fmt.Errorf("emergency revocation request %s has already executed", req.RequestID)
+		}
+		if req.Reason != reason {
+			rm.requestMutex.Unlock()
+			return nil, fmt.Errorf("emergency revocation request %s already exists with a different reason", req.RequestID)
+		}
+		if req.EmergencyJustification != justification {
+			rm.requestMutex.Unlock()
+			return nil, fmt.Errorf("emergency revocation request %s already exists with a different justification", req.RequestID)
+		}
+	}
+	if rm.requestHasApproval(req, revoker) {
+		rm.requestMutex.Unlock()
+		return nil, fmt.Errorf("authority %s already approved emergency request %s", revoker, req.RequestID)
+	}
+
+	approvalTime := time.Now().UTC()
+	req.Approvals = append(req.Approvals, RevocationApproval{
+		Authority: revoker,
+		Approved:  true,
+		Comments:  justification,
+		Timestamp: approvalTime,
+	})
+	approvalCount := rm.countApprovedAuthorities(req)
+	required := rm.requiredApprovalThreshold(req)
+	requestID := req.RequestID
+	if approvalCount >= required {
+		req.Status = RevocationStatusApproved
+		req.ProcessedAt = &approvalTime
+		req.ProcessedBy = revoker
+	}
+	rm.requestMutex.Unlock()
+
+	sdkCtx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			"seal_emergency_revocation_approved",
+			sdk.NewAttribute("request_id", requestID),
+			sdk.NewAttribute("seal_id", sealID),
+			sdk.NewAttribute("approver", revoker),
+			sdk.NewAttribute("approvals", fmt.Sprintf("%d", approvalCount)),
+			sdk.NewAttribute("threshold", fmt.Sprintf("%d", required)),
+		),
+	)
+
+	if approvalCount < required {
+		rm.logger.Warn("Emergency revocation awaiting quorum",
+			"request_id", requestID,
+			"seal_id", sealID,
+			"approver", revoker,
+			"approvals", approvalCount,
+			"threshold", required,
+			"reason", reason,
+		)
+		return &RevocationResult{
+			Success:     false,
+			SealID:      sealID,
+			RequestID:   requestID,
+			Reason:      reason,
+			RevokedBy:   revoker,
+			RevokedAt:   approvalTime,
+			BlockHeight: sdkCtx.BlockHeight(),
+			Error:       fmt.Sprintf("awaiting %d emergency approvals before execution", required),
+		}, nil
+	}
+
+	result, err := rm.ExecuteRevocation(ctx, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -824,7 +944,7 @@ func (rm *RevocationManager) BatchRevoke(ctx context.Context, sealIDs []string, 
 			err    error
 		)
 		if useEmergencyPath {
-			result, err = rm.executeDirectRevocation(ctx, sealID, revoker, reason)
+			result, err = rm.EmergencyRevoke(ctx, sealID, revoker, reason, details)
 		} else {
 			result, err = rm.RevokeSeal(ctx, sealID, revoker, reason, details)
 		}
@@ -850,6 +970,10 @@ func (rm *RevocationManager) BatchRevoke(ctx context.Context, sealIDs []string, 
 func (rm *RevocationManager) validateRevocationRequest(ctx context.Context, req *RevocationRequest) error {
 	if req.SealID == "" {
 		return fmt.Errorf("seal ID is required")
+	}
+
+	if req.Emergency {
+		return fmt.Errorf("emergency revocation requests must use EmergencyRevoke")
 	}
 
 	if req.Requester == "" {
@@ -902,6 +1026,19 @@ func GetRevocationReasons() []RevocationReason {
 	}
 }
 
+func (rm *RevocationManager) requiredApprovalThreshold(req *RevocationRequest) int {
+	if req != nil && req.Emergency {
+		if rm.config.RequiredEmergencyAuthorityThreshold > 0 {
+			return rm.config.RequiredEmergencyAuthorityThreshold
+		}
+		return 1
+	}
+	if rm.config.RequiredAuthorityThreshold > 0 {
+		return rm.config.RequiredAuthorityThreshold
+	}
+	return 1
+}
+
 func (rm *RevocationManager) countApprovedAuthorities(req *RevocationRequest) int {
 	approved := 0
 	for _, approval := range req.Approvals {
@@ -919,6 +1056,35 @@ func (rm *RevocationManager) requestHasApproval(req *RevocationRequest, authorit
 		}
 	}
 	return false
+}
+
+func (rm *RevocationManager) findActiveEmergencyRequestLocked(sealID string) *RevocationRequest {
+	for _, req := range rm.requests {
+		if req.SealID != sealID || !req.Emergency {
+			continue
+		}
+		switch req.Status {
+		case RevocationStatusCancelled, RevocationStatusRejected:
+			continue
+		default:
+			return req
+		}
+	}
+	return nil
+}
+
+func isEmergencyRevocationReason(reason RevocationReason) bool {
+	switch reason {
+	case RevocationReasonFraud,
+		RevocationReasonModelCompromised,
+		RevocationReasonPrivacyBreach,
+		RevocationReasonComplianceViolation,
+		RevocationReasonTEECompromised,
+		RevocationReasonLegalOrder:
+		return true
+	default:
+		return false
+	}
 }
 
 func cloneRevocationRequest(req *RevocationRequest) *RevocationRequest {
