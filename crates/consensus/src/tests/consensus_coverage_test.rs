@@ -59,14 +59,17 @@ fn make_useful_work_result(
         sla_deadline: 200,
     };
 
+    bind_mock_sgx_quote(&mut result);
+    result
+}
+
+fn bind_mock_sgx_quote(result: &mut UsefulWorkResult) {
     let mut quote = vec![0u8; 436];
     quote[0..2].copy_from_slice(&3u16.to_le_bytes());
     quote[4..8].copy_from_slice(&0u32.to_le_bytes());
     quote[112..144].copy_from_slice(&[9u8; 32]);
     quote[368..400].copy_from_slice(&result.hash());
     result.tee_attestation = quote;
-
-    result
 }
 
 fn make_block_header(proposer: [u8; 32], slot: u64) -> PoUWBlockHeader {
@@ -1669,6 +1672,7 @@ fn test_score_contribution_medical_category_higher() {
         .unwrap();
     let mut result_med = make_useful_work_result(addr, VerificationMethod::TeeAttestation, 1000);
     result_med.category = crate::pouw::config::UtilityCategory::Medical;
+    bind_mock_sgx_quote(&mut result_med);
     let proc_med = consensus_med
         .process_useful_work_results(&header, &[result_med])
         .unwrap();
