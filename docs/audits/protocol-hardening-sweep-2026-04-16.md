@@ -706,6 +706,22 @@ already merged.
 - Added focused regressions in `services/tee-worker/l1-verifier/nitro_test.go`
   covering blocked remote executor and attestation-verifier endpoints.
 
+### 3zl. Drand relay boundary hardening
+
+- Tightened `x/pouw/keeper/drand_pulse.go`, where the consensus-facing drand
+  pulse provider still trusted configured relay endpoint shape implicitly even
+  though that path can influence scheduler entropy and reach out to external
+  infrastructure.
+- `NewHTTPDrandPulseProvider(...)` now validates the configured drand relay
+  endpoint with the shared endpoint safety guard and carries any failure
+  forward so `LatestPulse(...)` fails closed on malformed, metadata, or
+  private-address targets instead of probing them.
+- The localhost JSON fallback now decodes through a bounded reader, so local
+  test relay responses no longer have an unbounded body path compared with the
+  stricter verifier surfaces elsewhere in the protocol.
+- Added focused regressions in `x/pouw/keeper/drand_pulse_test.go` covering
+  blocked relay endpoints and oversized local fallback payloads.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -914,6 +930,10 @@ already merged.
   verifier on remote endpoint safety. Its remote executor and attestation
   verifier paths now fail closed on unsafe endpoints and bound remote error
   bodies with the same shared HTTP safety utilities.
+- The consensus drand pulse provider no longer treats relay configuration as a
+  trusted string. Relay endpoints now have to satisfy the shared endpoint
+  safety contract, and the localhost fallback no longer decodes unbounded JSON
+  bodies.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

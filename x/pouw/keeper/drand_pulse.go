@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aethelred/aethelred/x/verify/httputil"
 	drandclient "github.com/drand/drand/client"
 	drandhttp "github.com/drand/drand/client/http"
 )
@@ -51,6 +52,7 @@ type HTTPDrandPulseProvider struct {
 	scheme               string
 	source               string
 	chainHash            []byte
+	endpointErr          error
 	useLocalTestFallback bool
 }
 
@@ -77,6 +79,8 @@ func NewHTTPDrandPulseProvider(endpoint string, timeout time.Duration) *HTTPDran
 		chainHash = nil
 	}
 
+	endpointErr := httputil.ValidateEndpointURL(trimmed)
+
 	return &HTTPDrandPulseProvider{
 		endpoint: strings.TrimRight(trimmed, "/"),
 		client: &nethttp.Client{
@@ -85,6 +89,7 @@ func NewHTTPDrandPulseProvider(endpoint string, timeout time.Duration) *HTTPDran
 		scheme:               drandBeaconSchemeV1,
 		source:               "drand-public",
 		chainHash:            chainHash,
+		endpointErr:          endpointErr,
 		useLocalTestFallback: isLocalDrandEndpoint(trimmed),
 	}
 }
@@ -93,6 +98,9 @@ func NewHTTPDrandPulseProvider(endpoint string, timeout time.Duration) *HTTPDran
 func (p *HTTPDrandPulseProvider) LatestPulse(ctx context.Context) (DrandPulse, error) {
 	if p == nil {
 		return DrandPulse{}, fmt.Errorf("drand provider is nil")
+	}
+	if p.endpointErr != nil {
+		return DrandPulse{}, fmt.Errorf("invalid drand endpoint: %w", p.endpointErr)
 	}
 	if p.useLocalTestFallback {
 		return p.latestPulseLocalHTTP(ctx)
@@ -169,7 +177,8 @@ func (p *HTTPDrandPulseProvider) latestPulseLocalHTTP(ctx context.Context) (Dran
 	}
 
 	var payload drandHTTPPulse
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	const maxLocalDrandPayloadSize = 16 * 1024
+	if err := json.NewDecoder(httputil.LimitedReader(resp.Body, maxLocalDrandPayloadSize)).Decode(&payload); err != nil {
 		return DrandPulse{}, fmt.Errorf("decode drand payload: %w", err)
 	}
 	if payload.Round == 0 {
