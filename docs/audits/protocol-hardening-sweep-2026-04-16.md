@@ -586,6 +586,21 @@ already merged.
 - Added focused regressions in `app/health_test.go` covering overall status
   precedence, simulated/degraded truthfulness, and HTTP status signaling.
 
+### 3zd. Metrics endpoint boundary hardening
+
+- Tightened `app/metrics_exporter.go`, where the `/metrics/aethelred` route was
+  exposed without an explicit handler-level access boundary and relied on outer
+  routing or deployment conventions for both method and network restriction.
+- The metrics handler now enforces `GET` at the boundary, is loopback-only by
+  default, and allows deliberate remote scraping only through
+  `AETHELRED_METRICS_API_TOKEN` bearer-token authorization.
+- Refactored the loopback-or-bearer guard into shared operational route auth so
+  admin and metrics surfaces follow the same boundary model instead of drifting
+  independently.
+- Added focused regressions in `app/metrics_exporter_test.go` covering
+  method rejection, off-loopback rejection, bearer-token authorization, invalid
+  token rejection, and nil-app error behavior.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -763,6 +778,10 @@ already merged.
   verification states as fully `healthy`. Overall health now distinguishes
   `simulated`, `degraded`, and `unhealthy` states more honestly, with `503`
   reserved for genuinely unhealthy runtime posture.
+- The metrics endpoint no longer behaves like a casually public operational
+  surface. It now enforces its own `GET`-only boundary, defaults to loopback
+  access, and requires explicit bearer-token authorization for deliberate
+  remote scraping.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
