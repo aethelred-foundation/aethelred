@@ -61,6 +61,31 @@ type secureCellAdmitMemberRequest struct {
 	Metadata      map[string]string                            `json:"metadata,omitempty"`
 }
 
+type secureCellFederationInviteRequest struct {
+	ActorIdentity    json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt    *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	SponsorOfRecord  string                      `json:"sponsor_of_record,omitempty"`
+	OrganizationName string                      `json:"organization_name,omitempty"`
+	Jurisdiction     string                      `json:"jurisdiction,omitempty"`
+	ExpectedDID      string                      `json:"expected_did,omitempty"`
+	Role             string                      `json:"role,omitempty"`
+	SessionScopeIDs  []string                    `json:"session_scope_ids,omitempty"`
+	DataClasses      []string                    `json:"data_classes,omitempty"`
+	ComputeZones     []string                    `json:"compute_zones,omitempty"`
+	Resource         string                      `json:"resource,omitempty"`
+	Reason           string                      `json:"reason,omitempty"`
+	Metadata         map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellFederationAcceptRequest struct {
+	ActorIdentity json.RawMessage                              `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt                  `json:"policy_receipt,omitempty"`
+	InvitationID  string                                       `json:"invitation_id,omitempty"`
+	Participant   securecellsintegration.SecureCellParticipant `json:"participant"`
+	Reason        string                                       `json:"reason,omitempty"`
+	Metadata      map[string]string                            `json:"metadata,omitempty"`
+}
+
 type secureCellMemberMutationRequest struct {
 	ActorIdentity       json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt       *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -208,27 +233,29 @@ type secureCellResponse struct {
 }
 
 type secureCellArtifactsResponse struct {
-	CellID                   string                                                   `json:"cell_id"`
-	Status                   securecellsintegration.SecureCellStatus                  `json:"status"`
-	Participants             []securecellsintegration.SecureCellParticipantState      `json:"participants,omitempty"`
-	Sessions                 []securecellsintegration.SecureCellSession               `json:"sessions,omitempty"`
-	Threads                  []securecellsintegration.SecureCellSessionThread         `json:"threads,omitempty"`
-	Decisions                []securecellsintegration.SecureCellThreadDecision        `json:"decisions,omitempty"`
-	DecisionOutcomes         []securecellsintegration.SecureCellThreadDecisionOutcome `json:"decision_outcomes,omitempty"`
-	SharedOutputs            []securecellsintegration.SecureCellSharedOutput          `json:"shared_outputs,omitempty"`
-	SessionExchanges         []securecellsintegration.SecureCellSessionExchange       `json:"session_exchanges,omitempty"`
-	Transitions              []securecellsintegration.SecureCellTransition            `json:"transitions,omitempty"`
-	CreationReceipt          *policy.SignedPolicyReceipt                              `json:"creation_receipt,omitempty"`
-	ActivationReceipt        *policy.SignedPolicyReceipt                              `json:"activation_receipt,omitempty"`
-	ConfidentialExecution    *confidential.VerificationSummary                        `json:"confidential_execution,omitempty"`
-	ExecutionAttestations    []evidence.Attestation                                   `json:"execution_attestations,omitempty"`
-	ExecutionSeal            *evidence.Seal                                           `json:"execution_seal,omitempty"`
-	ControlLedgerID          string                                                   `json:"control_ledger_id,omitempty"`
-	ControlLedgerContentHash string                                                   `json:"control_ledger_content_hash,omitempty"`
-	ControlSummary           *evidence.ControlLedgerSummary                           `json:"control_summary,omitempty"`
-	PortablePackageHash      string                                                   `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned    bool                                                     `json:"portable_package_signed"`
-	PortablePackageAnchored  bool                                                     `json:"portable_package_anchored"`
+	CellID                   string                                                    `json:"cell_id"`
+	Status                   securecellsintegration.SecureCellStatus                   `json:"status"`
+	Participants             []securecellsintegration.SecureCellParticipantState       `json:"participants,omitempty"`
+	FederationOrganizations  []securecellsintegration.SecureCellFederationOrganization `json:"federation_organizations,omitempty"`
+	FederationInvitations    []securecellsintegration.SecureCellFederationInvitation   `json:"federation_invitations,omitempty"`
+	Sessions                 []securecellsintegration.SecureCellSession                `json:"sessions,omitempty"`
+	Threads                  []securecellsintegration.SecureCellSessionThread          `json:"threads,omitempty"`
+	Decisions                []securecellsintegration.SecureCellThreadDecision         `json:"decisions,omitempty"`
+	DecisionOutcomes         []securecellsintegration.SecureCellThreadDecisionOutcome  `json:"decision_outcomes,omitempty"`
+	SharedOutputs            []securecellsintegration.SecureCellSharedOutput           `json:"shared_outputs,omitempty"`
+	SessionExchanges         []securecellsintegration.SecureCellSessionExchange        `json:"session_exchanges,omitempty"`
+	Transitions              []securecellsintegration.SecureCellTransition             `json:"transitions,omitempty"`
+	CreationReceipt          *policy.SignedPolicyReceipt                               `json:"creation_receipt,omitempty"`
+	ActivationReceipt        *policy.SignedPolicyReceipt                               `json:"activation_receipt,omitempty"`
+	ConfidentialExecution    *confidential.VerificationSummary                         `json:"confidential_execution,omitempty"`
+	ExecutionAttestations    []evidence.Attestation                                    `json:"execution_attestations,omitempty"`
+	ExecutionSeal            *evidence.Seal                                            `json:"execution_seal,omitempty"`
+	ControlLedgerID          string                                                    `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash string                                                    `json:"control_ledger_content_hash,omitempty"`
+	ControlSummary           *evidence.ControlLedgerSummary                            `json:"control_summary,omitempty"`
+	PortablePackageHash      string                                                    `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned    bool                                                      `json:"portable_package_signed"`
+	PortablePackageAnchored  bool                                                      `json:"portable_package_anchored"`
 }
 
 type secureCellListResponse struct {
@@ -241,6 +268,15 @@ type secureCellQuarantineExpiryListResponse struct {
 
 type secureCellBulkMutationResponse struct {
 	Result *securecellsintegration.SecureCellBulkMemberTransitionResult `json:"result,omitempty"`
+}
+
+type secureCellFederationResponse struct {
+	CellID                  string                                                    `json:"cell_id"`
+	Organizations           []securecellsintegration.SecureCellFederationOrganization `json:"organizations,omitempty"`
+	Invitations             []securecellsintegration.SecureCellFederationInvitation   `json:"invitations,omitempty"`
+	PortablePackageHash     string                                                    `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                                      `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                                      `json:"portable_package_anchored"`
 }
 
 type secureCellDecisionListResponse struct {
@@ -345,6 +381,15 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 		)
 		return
 	}
+	workflowStoreDir := resolveSecureCellWorkflowStoreDir(appOpts)
+	workflowStore, err := securecellsintegration.NewFileSecureCellStore(workflowStoreDir)
+	if err != nil {
+		app.Logger().Error("Secure Cells API initialization failed while creating the workflow store",
+			"error", err,
+			"workflow_store_dir", workflowStoreDir,
+		)
+		return
+	}
 
 	policySignerKey, policySigner, signerMode, signerMessage, err := resolveSecureCellPolicySigner(appOpts)
 	if err != nil {
@@ -369,6 +414,7 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 			requestedBy: requestedBy,
 		},
 		LedgerStore:          ledgerStore,
+		WorkflowStore:        workflowStore,
 		Framework:            "Secure Cells v1",
 		ConfidentialAttestor: newWorkflowTEEAttestor(app, "secure_cell", policySigner, policySignerKey),
 		ConfidentialPolicy:   confidentialPolicy,
@@ -398,11 +444,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 	secureCellAuth, authMode, authMessage := resolveSecureCellAuthorizer(app, appOpts)
 	app.secureCellAuth = secureCellAuth
 	app.secureCellControlLedgerDir = controlLedgerDir
+	app.secureCellWorkflowStoreDir = workflowStoreDir
 	app.secureCellRuntime = secureCellRuntime
 	app.secureCellExpirySweeper = newSecureCellExpirySweeper(app, service, resolveSecureCellExpirySweepInterval(appOpts))
 	if signerMode == "ephemeral" {
 		app.Logger().Warn("Secure Cells API initialized with an ephemeral policy signer",
 			"control_ledger_dir", controlLedgerDir,
+			"workflow_store_dir", workflowStoreDir,
 			"policy_signer", policySigner,
 			"policy_signer_mode", signerMode,
 			"policy_signer_message", signerMessage,
@@ -415,6 +463,7 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 	}
 	app.Logger().Info("Secure Cells API initialized",
 		"control_ledger_dir", controlLedgerDir,
+		"workflow_store_dir", workflowStoreDir,
 		"policy_signer", policySigner,
 		"policy_signer_mode", signerMode,
 		"policy_signer_message", signerMessage,
@@ -716,6 +765,21 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if strings.HasSuffix(r.URL.Path, "/federation") {
+			cellID, err := parseSecureCellID(r.URL.Path, "/federation")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			result, err := app.secureCellService.GetCell(r.Context(), cellID)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationProjection(result))
+			return
+		}
+
 		if strings.HasSuffix(r.URL.Path, "/decisions") && strings.Contains(r.URL.Path, "/threads/") {
 			cellID, sessionID, threadID, err := parseSecureCellSessionThreadActionPath(r.URL.Path, "/decisions")
 			if err != nil {
@@ -772,6 +836,102 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 		}
 
 		switch {
+		case strings.HasSuffix(r.URL.Path, "/federation/invitations"):
+			cellID, err := parseSecureCellID(r.URL.Path, "/federation/invitations")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationInviteRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation invitation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationInvite(r, cellID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.CreateFederationInvitation(r.Context(), cellID, securecellsintegration.SecureCellFederationInviteRequest{
+				ActorDID:         safeSecureCellActorDID(authCtx),
+				SponsorOfRecord:  req.SponsorOfRecord,
+				OrganizationName: req.OrganizationName,
+				Jurisdiction:     req.Jurisdiction,
+				ExpectedDID:      req.ExpectedDID,
+				Role:             req.Role,
+				SessionScopeIDs:  append([]string(nil), req.SessionScopeIDs...),
+				DataClasses:      append([]string(nil), req.DataClasses...),
+				ComputeZones:     append([]string(nil), req.ComputeZones...),
+				Resource:         req.Resource,
+				Reason:           req.Reason,
+				Metadata:         req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/accept") && strings.Contains(r.URL.Path, "/federation/invitations/"):
+			cellID, invitationID, err := parseSecureCellFederationInvitationActionPath(r.URL.Path, "/accept")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationAcceptRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation acceptance request: "+err.Error())
+				return
+			}
+			req.InvitationID = firstNonEmpty(req.InvitationID, invitationID)
+			authCtx, err := app.authorizeSecureCellFederationAccept(r, cellID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcceptFederationInvitation(r.Context(), cellID, securecellsintegration.SecureCellFederationAcceptRequest{
+				InvitationID: req.InvitationID,
+				ActorDID:     safeSecureCellActorDID(authCtx),
+				Participant:  req.Participant,
+				Reason:       req.Reason,
+				Metadata:     req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/revoke") && strings.Contains(r.URL.Path, "/federation/invitations/"):
+			cellID, invitationID, err := parseSecureCellFederationInvitationActionPath(r.URL.Path, "/revoke")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellLifecycleRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation revoke request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationRevoke(r, cellID, invitationID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.RevokeFederationInvitation(r.Context(), cellID, invitationID, securecellsintegration.SecureCellLifecycleRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/outcome-bundles/fetch") && strings.Contains(r.URL.Path, "/decisions/"):
 			cellID, sessionID, threadID, decisionID, err := parseSecureCellSessionThreadDecisionOutcomeBundleFetchPath(r.URL.Path)
 			if err != nil {
@@ -1581,6 +1741,8 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.CellID = result.CellID
 	projection.Status = result.Status
 	projection.Participants = append([]securecellsintegration.SecureCellParticipantState(nil), result.Participants...)
+	projection.FederationOrganizations = append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...)
+	projection.FederationInvitations = append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...)
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
 	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
 	projection.Decisions = append([]securecellsintegration.SecureCellThreadDecision(nil), result.Decisions...)
@@ -1605,6 +1767,28 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 		projection.PortablePackageAnchored = result.PortablePackage.AuditAnchor != nil
 	}
 	return projection
+}
+
+func secureCellFederationProjection(result *securecellsintegration.SecureCellResult) secureCellFederationResponse {
+	if result == nil {
+		return secureCellFederationResponse{}
+	}
+	packageHash := ""
+	packageSigned := false
+	packageAnchored := false
+	if result.PortablePackage != nil {
+		packageHash = result.PortablePackage.PackageHash
+		packageSigned = result.PortablePackage.Signature != nil
+		packageAnchored = result.PortablePackage.AuditAnchor != nil
+	}
+	return secureCellFederationResponse{
+		CellID:                  result.CellID,
+		Organizations:           append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...),
+		Invitations:             append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...),
+		PortablePackageHash:     packageHash,
+		PortablePackageSigned:   packageSigned,
+		PortablePackageAnchored: packageAnchored,
+	}
 }
 
 func secureCellDecisionVoteChoiceAllowed(raw string) bool {
@@ -1914,6 +2098,26 @@ func resolveSecureCellControlLedgerDir(appOpts servertypes.AppOptions) string {
 	return filepath.Join(homePath, "data", "secure-cells", "control-ledgers")
 }
 
+func resolveSecureCellWorkflowStoreDir(appOpts servertypes.AppOptions) string {
+	configuredDir := firstNonEmpty(
+		cast.ToString(appOpts.Get("aethelred.secure_cells.workflow_store_dir")),
+		cast.ToString(appOpts.Get("secure_cells.workflow_store_dir")),
+		os.Getenv("AETHELRED_SECURE_CELLS_WORKFLOW_STORE_DIR"),
+	)
+	if configuredDir != "" {
+		return filepath.Clean(configuredDir)
+	}
+
+	homePath := cast.ToString(appOpts.Get(flags.FlagHome))
+	if homePath == "" {
+		homePath = DefaultNodeHome
+	}
+	if homePath == "" {
+		return filepath.Clean(filepath.Join(".", "data", "secure-cells", "workflows"))
+	}
+	return filepath.Join(homePath, "data", "secure-cells", "workflows")
+}
+
 func resolveSecureCellPolicySigner(appOpts servertypes.AppOptions) (*ecdsa.PrivateKey, string, string, string, error) {
 	signer := firstNonEmpty(
 		cast.ToString(appOpts.Get("aethelred.secure_cells.policy_signer")),
@@ -2012,6 +2216,29 @@ func parseSecureCellLifecycleActionPath(path string) (cellID string, action stri
 		return "", "", fmt.Errorf("invalid secure cell lifecycle path")
 	}
 	return cellID, action, nil
+}
+
+func parseSecureCellFederationInvitationActionPath(path string, suffix string) (cellID string, invitationID string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", fmt.Errorf("invalid secure cell federation invitation path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", fmt.Errorf("invalid secure cell federation invitation action path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 4 || parts[1] != "federation" || parts[2] != "invitations" {
+		return "", "", fmt.Errorf("invalid secure cell federation invitation action path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	invitationID = strings.TrimSpace(parts[3])
+	if cellID == "" || invitationID == "" {
+		return "", "", fmt.Errorf("invalid secure cell federation invitation action path")
+	}
+	return cellID, invitationID, nil
 }
 
 func parseSecureCellSessionActionPath(path string, suffix string) (cellID string, sessionID string, err error) {
@@ -2456,6 +2683,10 @@ func secureCellErrorStatus(err error, fallback int) int {
 	case errors.Is(err, securecellsintegration.ErrDecisionNotActive):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrDecisionImmutable):
+		return http.StatusConflict
+	case errors.Is(err, securecellsintegration.ErrFederationInvitationNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, securecellsintegration.ErrFederationInvitationImmutable):
 		return http.StatusConflict
 	case errors.Is(err, securecellsintegration.ErrCellImmutable):
 		return http.StatusConflict

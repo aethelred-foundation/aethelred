@@ -50,6 +50,9 @@ const (
 	secureCellsAuthSessionMemberAdmitAction                       = "secure_cells.session.member.admit"
 	secureCellsAuthSessionMemberRemoveAction                      = "secure_cells.session.member.remove"
 	secureCellsAuthAdmitAction                                    = "secure_cells.member.admit"
+	secureCellsAuthFederationInviteAction                         = "secure_cells.federation.invite"
+	secureCellsAuthFederationAcceptAction                         = "secure_cells.federation.accept"
+	secureCellsAuthFederationRevokeAction                         = "secure_cells.federation.revoke"
 	secureCellsAuthReleaseAction                                  = "secure_cells.member.release"
 	secureCellsAuthQuarantineAction                               = "secure_cells.member.quarantine"
 	secureCellsAuthRevokeAction                                   = "secure_cells.member.revoke"
@@ -109,6 +112,9 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeSessionMemberAdmit(r *http.Request, cellID string, sessionID string, req *secureCellSessionMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeSessionMemberRemove(r *http.Request, cellID string, sessionID string, req *secureCellSessionMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeAdmit(r *http.Request, cellID string, req *secureCellAdmitMemberRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationInvite(r *http.Request, cellID string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationAccept(r *http.Request, cellID string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error)
 	AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeQuarantine(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeRevoke(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
@@ -158,6 +164,24 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeAdmit(r *http.Request, _ s
 		return a.AuthorizeCreate(r, nil)
 	}
 	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationInvite(r *http.Request, _ string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationAccept(r *http.Request, _ string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationRevoke(r *http.Request, _ string, _ string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.AuthorizeClose(r, "", "", req)
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeStart(r *http.Request, _ string, req *secureCellSessionStartRequest) (*secureCellAuthContext, error) {
@@ -349,6 +373,24 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeCreate(r *http.Request, req 
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeAdmit(r *http.Request, cellID string, req *secureCellAdmitMemberRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeAdmit(r, cellID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationInvite(r *http.Request, cellID string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationInvite(r, cellID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationAccept(r *http.Request, cellID string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationAccept(r, cellID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationRevoke(r, cellID, invitationID, req)
 	})
 }
 
@@ -648,6 +690,87 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeAdmit(r *http.Request, 
 		req.PolicyReceipt,
 		secureCellsAuthAdmitAction,
 		resourceCandidatesForSecureCellAdmit(cellID, participantIdentityDID(req.Participant.Identity)),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationInvite(r *http.Request, cellID string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID is required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation invitation request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationInviteAction,
+		resourceCandidatesForSecureCellFederationInvite(cellID, strings.TrimSpace(req.SponsorOfRecord), strings.TrimSpace(req.ExpectedDID)),
+		resolveSecureCellAuthJurisdiction(strings.TrimSpace(req.Jurisdiction), actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationAccept(r *http.Request, cellID string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID is required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation acceptance request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationAcceptAction,
+		resourceCandidatesForSecureCellFederationInvitationAction(cellID, strings.TrimSpace(req.InvitationID), "accept", participantIdentityDID(req.Participant.Identity)),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(invitationID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and invitation ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation revoke request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationRevokeAction,
+		resourceCandidatesForSecureCellFederationInvitationAction(cellID, invitationID, "revoke", ""),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
@@ -1755,6 +1878,20 @@ func (app *AethelredApp) authorizeSecureCellAdmit(r *http.Request, cellID string
 	return app.secureCellAuth.AuthorizeAdmit(r, cellID, req)
 }
 
+func (app *AethelredApp) authorizeSecureCellFederationInvite(r *http.Request, cellID string, req *secureCellFederationInviteRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationInvite(r, cellID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationAccept(r *http.Request, cellID string, req *secureCellFederationAcceptRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationAccept(r, cellID, req)
+}
+
 func (app *AethelredApp) authorizeSecureCellRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, nil
@@ -1774,6 +1911,13 @@ func (app *AethelredApp) authorizeSecureCellRevoke(r *http.Request, cellID strin
 		return nil, nil
 	}
 	return app.secureCellAuth.AuthorizeRevoke(r, cellID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationRevoke(r *http.Request, cellID string, invitationID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationRevoke(r, cellID, invitationID, req)
 }
 
 func (app *AethelredApp) authorizeSecureCellExpire(r *http.Request, cellID string, req *secureCellLifecycleRequest) (*secureCellAuthContext, error) {
@@ -1879,6 +2023,48 @@ func resourceCandidatesForSecureCellAdmit(cellID, participantDID string) []strin
 		cellID,
 	}
 	if participantDID = strings.TrimSpace(participantDID); participantDID != "" {
+		candidates = append(candidates, "participant:"+participantDID)
+	}
+	return candidates
+}
+
+func resourceCandidatesForSecureCellFederationInvite(cellID, sponsorOfRecord, expectedDID string) []string {
+	cellID = strings.TrimSpace(cellID)
+	sponsorOfRecord = strings.TrimSpace(sponsorOfRecord)
+	expectedDID = strings.TrimSpace(expectedDID)
+	candidates := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		secureCellsItemPrefix + cellID + "/federation/invitations",
+		"secure-cell:" + cellID + ":federation:invite",
+	}
+	if sponsorOfRecord != "" {
+		candidates = append(candidates, "sponsor_of_record:"+sponsorOfRecord, sponsorOfRecord)
+	}
+	if expectedDID != "" {
+		candidates = append(candidates, "participant:"+expectedDID)
+	}
+	return candidates
+}
+
+func resourceCandidatesForSecureCellFederationInvitationAction(cellID, invitationID, action, participantDID string) []string {
+	cellID = strings.TrimSpace(cellID)
+	invitationID = strings.TrimSpace(invitationID)
+	action = strings.TrimSpace(action)
+	participantDID = strings.TrimSpace(participantDID)
+	candidates := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		"federation-invitation:" + invitationID,
+		invitationID,
+	}
+	if invitationID != "" && action != "" {
+		candidates = append(candidates,
+			secureCellsItemPrefix+cellID+"/federation/invitations/"+invitationID+"/"+action,
+			"secure-cell:"+cellID+":federation:invitation:"+invitationID+":"+action,
+		)
+	}
+	if participantDID != "" {
 		candidates = append(candidates, "participant:"+participantDID)
 	}
 	return candidates

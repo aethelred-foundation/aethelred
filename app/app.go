@@ -284,6 +284,10 @@ type AethelredApp struct {
 	// cell control-ledger snapshots.
 	secureCellControlLedgerDir string
 
+	// secureCellWorkflowStoreDir is the durable filesystem path used for secure
+	// cell runtime snapshots.
+	secureCellWorkflowStoreDir string
+
 	// secureCellRuntime publishes lifecycle audit records and asynchronous
 	// webhook deliveries for secure-cell transitions.
 	secureCellRuntime *secureCellLifecycleRuntime
