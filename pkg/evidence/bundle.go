@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aethelred/aethelred/pkg/governance/policy"
@@ -594,6 +595,36 @@ func validateTraceability(bundle *EvidenceBundle) error {
 			return fmt.Errorf("traceability seal is missing seal ID")
 		}
 		sealIDs[seal.SealID] = seal
+	}
+	for _, attestation := range bundle.Attestations {
+		if strings.TrimSpace(attestation.ID) == "" &&
+			strings.TrimSpace(attestation.Type) == "" &&
+			strings.TrimSpace(attestation.Platform) == "" &&
+			strings.TrimSpace(attestation.EnclaveID) == "" &&
+			strings.TrimSpace(attestation.Measurement) == "" &&
+			strings.TrimSpace(attestation.Timestamp) == "" {
+			continue
+		}
+		if strings.TrimSpace(attestation.ID) == "" {
+			return fmt.Errorf("traceability attestation is missing ID")
+		}
+		if strings.TrimSpace(attestation.Type) == "" {
+			return fmt.Errorf("traceability attestation %q is missing type", attestation.ID)
+		}
+		if attestation.Type == "tee" {
+			if strings.TrimSpace(attestation.Timestamp) == "" {
+				return fmt.Errorf("traceability tee attestation %q is missing timestamp", attestation.ID)
+			}
+			if strings.TrimSpace(attestation.Platform) == "" {
+				return fmt.Errorf("traceability tee attestation %q is missing platform", attestation.ID)
+			}
+			if strings.TrimSpace(attestation.EnclaveID) == "" {
+				return fmt.Errorf("traceability tee attestation %q is missing enclave ID", attestation.ID)
+			}
+			if strings.TrimSpace(attestation.Measurement) == "" {
+				return fmt.Errorf("traceability tee attestation %q is missing measurement", attestation.ID)
+			}
+		}
 	}
 
 	for _, link := range bundle.TraceLinks {

@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/aethelred/aethelred/pkg/audit"
+	"github.com/aethelred/aethelred/pkg/confidential"
 	"github.com/aethelred/aethelred/pkg/enterprise/billing"
 	"github.com/aethelred/aethelred/pkg/evidence"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
@@ -34,8 +35,11 @@ import (
 
 const (
 	financeTreasuryReleaseCollectionRoute = "/api/v1/finance/treasury/releases"
+	financeTreasuryReleaseExportRoute     = "/api/v1/finance/treasury/releases/export"
 	financeTreasuryReleaseItemPrefix      = "/api/v1/finance/treasury/releases/"
 	financeTreasurySettlementQuoteRoute   = "/api/v1/finance/treasury/settlement-quote"
+	financeTrustPackRoute                 = "/api/v1/finance/trust-pack"
+	financeTrustPackExportRoute           = "/api/v1/finance/trust-pack/export"
 )
 
 type financeAPIErrorResponse struct {
@@ -67,9 +71,17 @@ type financeTreasuryReleaseResponse struct {
 	Error  string                                    `json:"error,omitempty"`
 }
 
+type financeTreasuryReleaseListResponse struct {
+	Items []financeintegration.TreasuryReleaseSummary `json:"items,omitempty"`
+}
+
 type financeTreasurySettlementQuoteResponse struct {
 	Quote *financeintegration.TreasurySettlementQuote `json:"quote,omitempty"`
 	Error string                                      `json:"error,omitempty"`
+}
+
+type financeTrustPackResponse struct {
+	Pack *financeintegration.FinanceTrustPack `json:"pack,omitempty"`
 }
 
 type financeTreasuryReleaseSettlementResponse struct {
@@ -77,6 +89,7 @@ type financeTreasuryReleaseSettlementResponse struct {
 	Status              financeintegration.TreasuryReleaseWorkflowStatus `json:"status"`
 	Ready               bool                                             `json:"ready"`
 	ApprovalStatus      *financeintegration.ApprovalStatus               `json:"approval_status,omitempty"`
+	ConfidentialExecution *confidential.VerificationSummary              `json:"confidential_execution,omitempty"`
 	Settlement          *evidence.ValueSettlementEvidence                `json:"settlement,omitempty"`
 	SettlementReceipt   *policy.SignedPolicyReceipt                      `json:"settlement_receipt,omitempty"`
 	ExecutionSealID     string                                           `json:"execution_seal_id,omitempty"`
@@ -87,6 +100,8 @@ type financeTreasuryReleaseSettlementResponse struct {
 type financeTreasuryReleaseSettlementArtifactsResponse struct {
 	WorkflowID               string                                           `json:"workflow_id"`
 	Status                   financeintegration.TreasuryReleaseWorkflowStatus `json:"status"`
+	ConfidentialExecution    *confidential.VerificationSummary                `json:"confidential_execution,omitempty"`
+	ExecutionAttestations    []evidence.Attestation                           `json:"execution_attestations,omitempty"`
 	Settlement               *evidence.ValueSettlementEvidence                `json:"settlement,omitempty"`
 	SettlementReceipt        *policy.SignedPolicyReceipt                      `json:"settlement_receipt,omitempty"`
 	ExecutionSeal            *evidence.Seal                                   `json:"execution_seal,omitempty"`
@@ -161,12 +176,26 @@ func (app *AethelredApp) initFinanceInfrastructure(appOpts servertypes.AppOption
 		)
 		return
 	}
+	workflowStoreDir := resolveFinanceWorkflowStoreDir(appOpts)
+	workflowStore, err := financeintegration.NewFileTreasuryReleaseStore(workflowStoreDir)
+	if err != nil {
+		app.Logger().Error("Finance API initialization failed while creating the workflow store",
+			"error", err,
+			"workflow_store_dir", workflowStoreDir,
+		)
+		return
+	}
 
 	policySignerKey, policySigner, signerMode, signerMessage, err := resolveFinancePolicySigner(appOpts)
 	if err != nil {
 		app.Logger().Error("Finance API initialization failed while resolving the finance policy signer", "error", err)
 		return
 	}
+	requestedBy := firstNonEmpty(cast.ToString(appOpts.Get("aethelred.finance.signer_address")), cast.ToString(appOpts.Get("finance.signer_address")), app.PouwKeeper.GetAuthority(), authtypes.NewModuleAddress(pouwtypes.ModuleName).String())
+	confidentialKeys := map[string]*ecdsa.PublicKey{
+		policySigner: &policySignerKey.PublicKey,
+	}
+	confidentialPolicy := resolveConfidentialExecutionPolicy(appOpts, "aethelred.finance", "finance", app.teeClient != nil, confidentialKeys)
 
 	workflow, err := financeintegration.NewTreasuryReleaseWorkflow(financeintegration.TreasuryReleaseWorkflowConfig{
 		Controller:      financeintegration.NewTreasuryController(resolveFinanceApprovalPolicy(appOpts)),
@@ -176,11 +205,14 @@ func (app *AethelredApp) initFinanceInfrastructure(appOpts servertypes.AppOption
 		PolicySigner:    policySigner,
 		Sealer: &appFinanceTreasuryReleaseSealer{
 			app:         app,
-			requestedBy: firstNonEmpty(cast.ToString(appOpts.Get("aethelred.finance.signer_address")), cast.ToString(appOpts.Get("finance.signer_address")), app.PouwKeeper.GetAuthority(), authtypes.NewModuleAddress(pouwtypes.ModuleName).String()),
+			requestedBy: requestedBy,
 		},
-		LedgerStore:    ledgerStore,
-		SettlementRail: resolveFinanceSettlementRail(appOpts),
-		Framework:      "SOX Treasury Release",
+		LedgerStore:            ledgerStore,
+		WorkflowStore:          workflowStore,
+		SettlementRail:         resolveFinanceSettlementRail(appOpts),
+		Framework:              "SOX Treasury Release",
+		ConfidentialAttestor:   newWorkflowTEEAttestor(app, "treasury_release", policySigner, policySignerKey),
+		ConfidentialPolicy:     confidentialPolicy,
 		PackageSignerFunc: func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
 			if !ok {
@@ -209,6 +241,7 @@ func (app *AethelredApp) initFinanceInfrastructure(appOpts servertypes.AppOption
 	if signerMode == "ephemeral" {
 		app.Logger().Warn("Finance API initialized with an ephemeral policy signer",
 			"control_ledger_dir", controlLedgerDir,
+			"workflow_store_dir", workflowStoreDir,
 			"policy_signer", policySigner,
 			"policy_signer_mode", signerMode,
 			"policy_signer_message", signerMessage,
@@ -219,6 +252,7 @@ func (app *AethelredApp) initFinanceInfrastructure(appOpts servertypes.AppOption
 	}
 	app.Logger().Info("Finance API initialized",
 		"control_ledger_dir", controlLedgerDir,
+		"workflow_store_dir", workflowStoreDir,
 		"policy_signer", policySigner,
 		"policy_signer_mode", signerMode,
 		"policy_signer_message", signerMessage,
@@ -272,6 +306,54 @@ func (app *AethelredApp) FinanceTreasurySettlementQuoteHandler() http.Handler {
 			return
 		}
 		writeFinanceJSON(w, http.StatusOK, financeTreasurySettlementQuoteResponse{Quote: quote})
+	})
+}
+
+// FinanceTreasuryReleaseCollectionHandler returns operator summaries over
+// persisted treasury releases.
+func (app *AethelredApp) FinanceTreasuryReleaseCollectionHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeFinanceAPIError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if app == nil || app.financeTreasuryReleaseWorkflow == nil {
+			writeFinanceAPIError(w, http.StatusServiceUnavailable, "finance treasury release workflow is unavailable")
+			return
+		}
+		filter, err := financeReleaseListFilterFromRequest(r)
+		if err != nil {
+			writeFinanceAPIError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		items, err := app.financeTreasuryReleaseWorkflow.ListReleases(r.Context(), filter)
+		if err != nil {
+			writeFinanceAPIError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeFinanceJSON(w, http.StatusOK, financeTreasuryReleaseListResponse{Items: items})
+	})
+}
+
+// FinanceTrustPackHandler returns the buyer-facing finance trust-pack summary.
+func (app *AethelredApp) FinanceTrustPackHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			writeFinanceAPIError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if app == nil || app.financeTreasuryReleaseWorkflow == nil {
+			writeFinanceAPIError(w, http.StatusServiceUnavailable, "finance treasury release workflow is unavailable")
+			return
+		}
+		pack, err := app.financeTreasuryReleaseWorkflow.BuildTrustPack(r.Context(), financeintegration.FinanceTrustPackOptions{
+			OperatorSurfaces: financeTrustPackOperatorSurfaces(),
+		})
+		if err != nil {
+			writeFinanceAPIError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeFinanceJSON(w, http.StatusOK, financeTrustPackResponse{Pack: pack})
 	})
 }
 
@@ -453,6 +535,26 @@ func resolveFinanceControlLedgerDir(appOpts servertypes.AppOptions) string {
 		return filepath.Clean(filepath.Join(".", "data", "finance", "control-ledgers"))
 	}
 	return filepath.Join(homePath, "data", "finance", "control-ledgers")
+}
+
+func resolveFinanceWorkflowStoreDir(appOpts servertypes.AppOptions) string {
+	configuredDir := firstNonEmpty(
+		cast.ToString(appOpts.Get("aethelred.finance.workflow_store_dir")),
+		cast.ToString(appOpts.Get("finance.workflow_store_dir")),
+		os.Getenv("AETHELRED_FINANCE_WORKFLOW_STORE_DIR"),
+	)
+	if configuredDir != "" {
+		return filepath.Clean(configuredDir)
+	}
+
+	homePath := cast.ToString(appOpts.Get(flags.FlagHome))
+	if homePath == "" {
+		homePath = DefaultNodeHome
+	}
+	if homePath == "" {
+		return filepath.Clean(filepath.Join(".", "data", "finance", "workflows"))
+	}
+	return filepath.Join(homePath, "data", "finance", "workflows")
 }
 
 func resolveFinanceApprovalPolicy(appOpts servertypes.AppOptions) financeintegration.ApprovalPolicy {
@@ -671,12 +773,13 @@ func financeSettlementProjection(result *financeintegration.TreasuryReleaseResul
 		return financeTreasuryReleaseSettlementResponse{}
 	}
 	resp := financeTreasuryReleaseSettlementResponse{
-		WorkflowID:        result.WorkflowID,
-		Status:            result.Status,
-		Ready:             result.Settlement != nil && result.SettlementReceipt != nil && result.ExecutionSeal != nil,
-		ApprovalStatus:    result.ApprovalStatus,
-		Settlement:        result.Settlement,
-		SettlementReceipt: result.SettlementReceipt,
+		WorkflowID:            result.WorkflowID,
+		Status:                result.Status,
+		Ready:                 result.Settlement != nil && result.SettlementReceipt != nil && result.ExecutionSeal != nil,
+		ApprovalStatus:        result.ApprovalStatus,
+		ConfidentialExecution: result.ConfidentialExecution,
+		Settlement:            result.Settlement,
+		SettlementReceipt:     result.SettlementReceipt,
 	}
 	if result.ExecutionSeal != nil {
 		resp.ExecutionSealID = result.ExecutionSeal.SealID
@@ -695,11 +798,13 @@ func financeSettlementArtifactsProjection(result *financeintegration.TreasuryRel
 		return financeTreasuryReleaseSettlementArtifactsResponse{}
 	}
 	resp := financeTreasuryReleaseSettlementArtifactsResponse{
-		WorkflowID:        result.WorkflowID,
-		Status:            result.Status,
-		Settlement:        result.Settlement,
-		SettlementReceipt: result.SettlementReceipt,
-		ExecutionSeal:     result.ExecutionSeal,
+		WorkflowID:            result.WorkflowID,
+		Status:                result.Status,
+		ConfidentialExecution: result.ConfidentialExecution,
+		ExecutionAttestations: append([]evidence.Attestation(nil), result.ExecutionAttestations...),
+		Settlement:            result.Settlement,
+		SettlementReceipt:     result.SettlementReceipt,
+		ExecutionSeal:         result.ExecutionSeal,
 	}
 	if result.ControlLedger != nil {
 		resp.ControlSummary = &result.ControlLedger.Summary

@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/aethelred/aethelred/pkg/audit"
+	"github.com/aethelred/aethelred/pkg/confidential"
 	"github.com/aethelred/aethelred/pkg/evidence"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
 	securecellsintegration "github.com/aethelred/aethelred/pkg/integrations/securecells"
@@ -219,6 +220,8 @@ type secureCellArtifactsResponse struct {
 	Transitions              []securecellsintegration.SecureCellTransition            `json:"transitions,omitempty"`
 	CreationReceipt          *policy.SignedPolicyReceipt                              `json:"creation_receipt,omitempty"`
 	ActivationReceipt        *policy.SignedPolicyReceipt                              `json:"activation_receipt,omitempty"`
+	ConfidentialExecution    *confidential.VerificationSummary                        `json:"confidential_execution,omitempty"`
+	ExecutionAttestations    []evidence.Attestation                                   `json:"execution_attestations,omitempty"`
 	ExecutionSeal            *evidence.Seal                                           `json:"execution_seal,omitempty"`
 	ControlLedgerID          string                                                   `json:"control_ledger_id,omitempty"`
 	ControlLedgerContentHash string                                                   `json:"control_ledger_content_hash,omitempty"`
@@ -351,6 +354,11 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 
 	webhookConfig := resolveSecureCellWebhookConfig(appOpts)
 	secureCellRuntime := newSecureCellLifecycleRuntime(app, webhookConfig)
+	requestedBy := firstNonEmpty(cast.ToString(appOpts.Get("aethelred.secure_cells.signer_address")), cast.ToString(appOpts.Get("secure_cells.signer_address")), app.PouwKeeper.GetAuthority(), authtypes.NewModuleAddress(pouwtypes.ModuleName).String())
+	confidentialKeys := map[string]*ecdsa.PublicKey{
+		policySigner: &policySignerKey.PublicKey,
+	}
+	confidentialPolicy := resolveConfidentialExecutionPolicy(appOpts, "aethelred.secure_cells", "secure_cells", false, confidentialKeys)
 	service, err := securecellsintegration.NewService(securecellsintegration.ServiceConfig{
 		PolicySignerKey:     policySignerKey,
 		PolicySigner:        policySigner,
@@ -358,10 +366,12 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 		CredentialIssuer:    policySigner,
 		Sealer: &appSecureCellSealer{
 			app:         app,
-			requestedBy: firstNonEmpty(cast.ToString(appOpts.Get("aethelred.secure_cells.signer_address")), cast.ToString(appOpts.Get("secure_cells.signer_address")), app.PouwKeeper.GetAuthority(), authtypes.NewModuleAddress(pouwtypes.ModuleName).String()),
+			requestedBy: requestedBy,
 		},
-		LedgerStore: ledgerStore,
-		Framework:   "Secure Cells v1",
+		LedgerStore:          ledgerStore,
+		Framework:            "Secure Cells v1",
+		ConfidentialAttestor: newWorkflowTEEAttestor(app, "secure_cell", policySigner, policySignerKey),
+		ConfidentialPolicy:   confidentialPolicy,
 		PackageSignerFunc: func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
 			if !ok {
@@ -1580,6 +1590,8 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.Transitions = append([]securecellsintegration.SecureCellTransition(nil), result.Transitions...)
 	projection.CreationReceipt = result.CreationReceipt
 	projection.ActivationReceipt = result.ActivationReceipt
+	projection.ConfidentialExecution = result.ConfidentialExecution
+	projection.ExecutionAttestations = append([]evidence.Attestation(nil), result.ExecutionAttestations...)
 	projection.ExecutionSeal = result.ExecutionSeal
 	if result.ControlLedger != nil && result.ControlLedger.Bundle != nil {
 		projection.ControlLedgerID = result.ControlLedger.Bundle.ID

@@ -527,9 +527,12 @@ func TestVerifyPortable(t *testing.T) {
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	})
 	bundle.AddAttestation(Attestation{
-		ID:       "att-1",
-		Type:     "tee",
-		Platform: "sgx",
+		ID:          "att-1",
+		Type:        "tee",
+		Platform:    "sgx",
+		EnclaveID:   "sgx-enclave-1",
+		Measurement: "abc123",
+		Timestamp:   time.Now().UTC().Format(time.RFC3339Nano),
 	})
 	_ = bundle.Finalize("")
 
@@ -647,9 +650,12 @@ func TestVerifyPortable_UntrustedPlatform(t *testing.T) {
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	})
 	bundle.AddAttestation(Attestation{
-		ID:       "att-1",
-		Type:     "tee",
-		Platform: "unknown-platform",
+		ID:          "att-1",
+		Type:        "tee",
+		Platform:    "unknown-platform",
+		EnclaveID:   "unknown-enclave",
+		Measurement: "abc123",
+		Timestamp:   time.Now().UTC().Format(time.RFC3339Nano),
 	})
 	_ = bundle.Finalize("")
 
@@ -786,9 +792,12 @@ func TestStandaloneVerifier_StrictMode_UntrustedPlatform(t *testing.T) {
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	})
 	bundle.AddAttestation(Attestation{
-		ID:       "att-1",
-		Type:     "tee",
-		Platform: "unknown",
+		ID:          "att-1",
+		Type:        "tee",
+		Platform:    "unknown",
+		EnclaveID:   "unknown-enclave",
+		Measurement: "abc123",
+		Timestamp:   time.Now().UTC().Format(time.RFC3339Nano),
 	})
 	_ = bundle.Finalize("")
 

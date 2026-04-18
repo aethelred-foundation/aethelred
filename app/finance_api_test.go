@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -616,6 +617,261 @@ func TestFinanceTreasuryReleaseHandlers_EnterpriseApprovalEvidencePersists(t *te
 	}
 	if finalResp.Result.ControlLedger.Summary.TotalTraceLinks != 3 {
 		t.Fatalf("expected 3 trace links, got %d", finalResp.Result.ControlLedger.Summary.TotalTraceLinks)
+	}
+}
+
+func TestFinanceTreasuryReleaseHandlers_PersistAcrossAppRestart(t *testing.T) {
+	homeDir := t.TempDir()
+	opts := sims.AppOptionsMap{
+		"aethelred.pqc.mode":                "simulated",
+		"aethelred.finance.api.write_token": "finance-secret",
+		flags.FlagHome:                      homeDir,
+	}
+	validatorKey := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{9}, ed25519.SeedSize))
+
+	appOne := newAuditEnabledTestApp(t, opts)
+	if err := appOne.SetValidatorPrivateKey(validatorKey); err != nil {
+		t.Fatalf("SetValidatorPrivateKey app one: %v", err)
+	}
+
+	identity := mustFinanceAgentIdentity(t)
+	initReq := mustMarshalFinanceInitiateRequest(t, identity, financeintegration.TreasuryOperation{
+		Type:         financeintegration.OpTransfer,
+		Amount:       75000,
+		Currency:     "USD",
+		Initiator:    "controller@bank.example",
+		Description:  "Persistent treasury release",
+		Counterparty: "Trusted Vendor",
+	}, financeintegration.ScreeningEntity{
+		Name:       "Trusted Vendor",
+		EntityType: "organization",
+		Country:    "UAE",
+	})
+
+	createReq := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseCollectionRoute, bytes.NewReader(initReq))
+	createReq.Header.Set("Authorization", "Bearer finance-secret")
+	createRec := httptest.NewRecorder()
+	appOne.FinanceTreasuryReleaseInitiateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusAccepted, createRec.Code, createRec.Body.String())
+	}
+
+	var createResp financeTreasuryReleaseResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+
+	firstApproveBody, err := json.Marshal(financeTreasuryReleaseApproveRequest{
+		Approver: "treasurer@bank.example",
+		Comment:  "persistent first approval",
+	})
+	if err != nil {
+		t.Fatalf("marshal first approval request: %v", err)
+	}
+	firstApproveReq := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseItemPrefix+createResp.Result.WorkflowID+"/approve", bytes.NewReader(firstApproveBody))
+	firstApproveReq.Header.Set("Authorization", "Bearer finance-secret")
+	firstApproveRec := httptest.NewRecorder()
+	appOne.FinanceTreasuryReleaseApproveHandler().ServeHTTP(firstApproveRec, firstApproveReq)
+	if firstApproveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, firstApproveRec.Code, firstApproveRec.Body.String())
+	}
+
+	appTwo := newAuditEnabledTestApp(t, opts)
+	if err := appTwo.SetValidatorPrivateKey(validatorKey); err != nil {
+		t.Fatalf("SetValidatorPrivateKey app two: %v", err)
+	}
+
+	getReq := httptest.NewRequest(http.MethodGet, financeTreasuryReleaseItemPrefix+createResp.Result.WorkflowID, nil)
+	getRec := httptest.NewRecorder()
+	appTwo.FinanceTreasuryReleaseGetHandler().ServeHTTP(getRec, getReq)
+	if getRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, getRec.Code, getRec.Body.String())
+	}
+
+	var getResp financeTreasuryReleaseResponse
+	if err := json.Unmarshal(getRec.Body.Bytes(), &getResp); err != nil {
+		t.Fatalf("unmarshal persisted get response: %v", err)
+	}
+	if getResp.Result == nil || getResp.Result.Status != financeintegration.ReleaseStatusPendingApproval {
+		t.Fatalf("expected persisted pending workflow, got %+v", getResp.Result)
+	}
+	if getResp.Result.ApprovalStatus == nil || getResp.Result.ApprovalStatus.CurrentApprovals != 1 {
+		t.Fatalf("expected persisted approval status, got %+v", getResp.Result.ApprovalStatus)
+	}
+
+	secondApproveBody, err := json.Marshal(financeTreasuryReleaseApproveRequest{
+		Approver: "cfo@bank.example",
+		Comment:  "restart final approval",
+	})
+	if err != nil {
+		t.Fatalf("marshal second approval request: %v", err)
+	}
+	secondApproveReq := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseItemPrefix+createResp.Result.WorkflowID+"/approve", bytes.NewReader(secondApproveBody))
+	secondApproveReq.Header.Set("Authorization", "Bearer finance-secret")
+	secondApproveRec := httptest.NewRecorder()
+	appTwo.FinanceTreasuryReleaseApproveHandler().ServeHTTP(secondApproveRec, secondApproveReq)
+	if secondApproveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, secondApproveRec.Code, secondApproveRec.Body.String())
+	}
+
+	var secondApproveResp financeTreasuryReleaseResponse
+	if err := json.Unmarshal(secondApproveRec.Body.Bytes(), &secondApproveResp); err != nil {
+		t.Fatalf("unmarshal second approval response: %v", err)
+	}
+	if secondApproveResp.Result == nil || secondApproveResp.Result.Status != financeintegration.ReleaseStatusCompleted {
+		t.Fatalf("expected completed persisted workflow, got %+v", secondApproveResp.Result)
+	}
+}
+
+func TestFinanceTreasuryReleaseCollectionAndExportHandlers(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                "simulated",
+		"aethelred.finance.api.write_token": "finance-secret",
+		flags.FlagHome:                      t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{8}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	identity := mustFinanceAgentIdentity(t)
+	pendingReq := mustMarshalFinanceInitiateRequest(t, identity, financeintegration.TreasuryOperation{
+		Type:         financeintegration.OpTransfer,
+		Amount:       75000,
+		Currency:     "USD",
+		Initiator:    "controller@bank.example",
+		Description:  "Collection pending release",
+		Counterparty: "Trusted Vendor",
+	}, financeintegration.ScreeningEntity{
+		Name:       "Trusted Vendor",
+		EntityType: "organization",
+		Country:    "UAE",
+	})
+	pendingHTTP := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseCollectionRoute, bytes.NewReader(pendingReq))
+	pendingHTTP.Header.Set("Authorization", "Bearer finance-secret")
+	pendingRec := httptest.NewRecorder()
+	app.FinanceTreasuryReleaseInitiateHandler().ServeHTTP(pendingRec, pendingHTTP)
+	if pendingRec.Code != http.StatusAccepted {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusAccepted, pendingRec.Code, pendingRec.Body.String())
+	}
+
+	rejectedReq := mustMarshalFinanceInitiateRequest(t, identity, financeintegration.TreasuryOperation{
+		Type:         financeintegration.OpPayment,
+		Amount:       6000,
+		Currency:     "USD",
+		Initiator:    "treasury.bot",
+		Description:  "Collection rejected release",
+		Counterparty: "Blocked Entity",
+	}, financeintegration.ScreeningEntity{
+		Name:       "Blocked Entity",
+		EntityType: "organization",
+		Country:    "UAE",
+	})
+	rejectedHTTP := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseCollectionRoute, bytes.NewReader(rejectedReq))
+	rejectedHTTP.Header.Set("Authorization", "Bearer finance-secret")
+	rejectedRec := httptest.NewRecorder()
+	app.FinanceTreasuryReleaseInitiateHandler().ServeHTTP(rejectedRec, rejectedHTTP)
+	if rejectedRec.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusForbidden, rejectedRec.Code, rejectedRec.Body.String())
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, financeTreasuryReleaseCollectionRoute+"?status=pending_approval", nil)
+	listRec := httptest.NewRecorder()
+	app.FinanceTreasuryReleaseCollectionHandler().ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, listRec.Code, listRec.Body.String())
+	}
+
+	var listResp financeTreasuryReleaseListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatalf("unmarshal list response: %v", err)
+	}
+	if len(listResp.Items) != 1 || listResp.Items[0].Status != financeintegration.ReleaseStatusPendingApproval {
+		t.Fatalf("expected one pending workflow, got %+v", listResp.Items)
+	}
+
+	exportReq := httptest.NewRequest(http.MethodGet, financeTreasuryReleaseExportRoute+"?format=csv", nil)
+	exportRec := httptest.NewRecorder()
+	app.FinanceTreasuryReleaseCollectionExportHandler().ServeHTTP(exportRec, exportReq)
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, exportRec.Code, exportRec.Body.String())
+	}
+	body := exportRec.Body.String()
+	if !strings.Contains(body, "workflow_id,status") || !strings.Contains(body, "pending_approval") || !strings.Contains(body, "rejected") {
+		t.Fatalf("expected CSV export to include workflow statuses, got %s", body)
+	}
+}
+
+func TestFinanceTrustPackHandlers_ReturnPackAndExport(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                                      "simulated",
+		"aethelred.finance.api.write_token":                       "finance-secret",
+		"aethelred.finance.settlement.provider_id":                "partner-bank-1",
+		"aethelred.finance.settlement.corridor_id":                "uae-usd-vendors",
+		"aethelred.finance.settlement.allowed_jurisdictions":      "UAE,UK",
+		"aethelred.finance.settlement.required_reason_codes":      "vendor_payment,treasury_release",
+		"aethelred.finance.confidential_execution.required":       "true",
+		"aethelred.finance.confidential_execution.trusted_platforms": "mock-tee,aws-nitro",
+		flags.FlagHome: t.TempDir(),
+	})
+
+	identity := mustFinanceAgentIdentity(t)
+	initReq := mustMarshalFinanceInitiateRequest(t, identity, financeintegration.TreasuryOperation{
+		Type:         financeintegration.OpPayment,
+		Amount:       5000,
+		Currency:     "USD",
+		Initiator:    "treasury.bot",
+		Description:  "Trust pack runtime sample",
+		Counterparty: "Trusted Vendor",
+	}, financeintegration.ScreeningEntity{
+		Name:       "Trusted Vendor",
+		EntityType: "organization",
+		Country:    "UAE",
+	})
+
+	createReq := httptest.NewRequest(http.MethodPost, financeTreasuryReleaseCollectionRoute, bytes.NewReader(initReq))
+	createReq.Header.Set("Authorization", "Bearer finance-secret")
+	createRec := httptest.NewRecorder()
+	app.FinanceTreasuryReleaseInitiateHandler().ServeHTTP(createRec, createReq)
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, createRec.Code, createRec.Body.String())
+	}
+
+	packReq := httptest.NewRequest(http.MethodGet, financeTrustPackRoute, nil)
+	packRec := httptest.NewRecorder()
+	app.FinanceTrustPackHandler().ServeHTTP(packRec, packReq)
+	if packRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, packRec.Code, packRec.Body.String())
+	}
+
+	var packResp financeTrustPackResponse
+	if err := json.Unmarshal(packRec.Body.Bytes(), &packResp); err != nil {
+		t.Fatalf("unmarshal trust pack response: %v", err)
+	}
+	if packResp.Pack == nil {
+		t.Fatal("expected finance trust pack")
+	}
+	if packResp.Pack.Settlement.ProviderID != "partner-bank-1" || packResp.Pack.Settlement.CorridorID != "uae-usd-vendors" {
+		t.Fatalf("unexpected settlement profile: %+v", packResp.Pack.Settlement)
+	}
+	if !packResp.Pack.ConfidentialExecution.Required {
+		t.Fatalf("expected confidential execution requirement, got %+v", packResp.Pack.ConfidentialExecution)
+	}
+	if len(packResp.Pack.Controls) < 5 || len(packResp.Pack.OperatorSurfaces) == 0 {
+		t.Fatalf("expected controls and operator surfaces, got %+v", packResp.Pack)
+	}
+	if packResp.Pack.Runtime.TotalWorkflows == 0 {
+		t.Fatalf("expected runtime summary to include workflows, got %+v", packResp.Pack.Runtime)
+	}
+
+	exportReq := httptest.NewRequest(http.MethodGet, financeTrustPackExportRoute+"?format=csv", nil)
+	exportRec := httptest.NewRecorder()
+	app.FinanceTrustPackExportHandler().ServeHTTP(exportRec, exportReq)
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, exportRec.Code, exportRec.Body.String())
+	}
+	exportBody := exportRec.Body.String()
+	if !strings.Contains(exportBody, "TREASURY-TEE-01") || !strings.Contains(exportBody, financeTrustPackRoute) {
+		t.Fatalf("expected trust pack CSV export to include controls and operator surfaces, got %s", exportBody)
 	}
 }
 

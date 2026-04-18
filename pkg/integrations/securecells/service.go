@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aethelred/aethelred/pkg/confidential"
 	"github.com/aethelred/aethelred/pkg/evidence"
 	"github.com/aethelred/aethelred/pkg/governance/policy"
 	"github.com/aethelred/aethelred/pkg/protocol/agent"
@@ -463,6 +464,8 @@ type SecureCellResult struct {
 	CreationReceipt   *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
 	ActivationReceipt *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
 	ReceiptChain      *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
+	ConfidentialExecution *confidential.VerificationSummary  `json:"confidential_execution,omitempty"`
+	ExecutionAttestations []evidence.Attestation             `json:"execution_attestations,omitempty"`
 	ExecutionSeal     *evidence.Seal                         `json:"execution_seal,omitempty"`
 	ControlLedger     *evidence.ControlLedger                `json:"control_ledger,omitempty"`
 	PortablePackage   *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
@@ -960,6 +963,8 @@ type ServiceConfig struct {
 	EventPublisher          SecureCellEventPublisher
 	TrustAnchors            []evidence.PlatformTrustAnchor
 	DecisionSLATemplates    []SecureCellDecisionSLATemplate
+	ConfidentialAttestor    confidential.Attestor
+	ConfidentialPolicy      confidential.Policy
 }
 
 type secureCellRun struct {
@@ -3806,9 +3811,40 @@ func (s *Service) rebuildArtifacts(ctx context.Context, run *secureCellRun, late
 		return fmt.Errorf("securecells/service: build receipt chain: %w", err)
 	}
 
-	sealResp, err := s.config.Sealer.CreateSeal(ctx, s.buildSealRequest(run.request, run.result.Participants, receiptChain, latestReceipt, stage))
+	sealReq := s.buildSealRequest(run.request, run.result.Participants, receiptChain, latestReceipt, stage)
+	confidentialReq := s.buildConfidentialExecutionRequest(run.request, receiptChain, latestReceipt, sealReq, stage)
+	confidentialPolicy := s.confidentialPolicyForRequest(run.request)
+	if confidentialPolicy.Required {
+		if s.config.ConfidentialAttestor == nil {
+			return fmt.Errorf("securecells/service: confidential execution is required for cell %q but no attestor is configured", run.result.CellID)
+		}
+		teeAttestations, err := s.config.ConfidentialAttestor.Attest(ctx, confidentialReq)
+		if err != nil {
+			return fmt.Errorf("securecells/service: attest confidential execution: %w", err)
+		}
+		sealReq.TEEAttestations = teeAttestations
+	}
+
+	sealResp, err := s.config.Sealer.CreateSeal(ctx, sealReq)
 	if err != nil {
 		return fmt.Errorf("securecells/service: create seal: %w", err)
+	}
+	if len(sealResp.Attestations) > 0 || confidentialPolicy.Required {
+		summary, err := confidential.VerifyAttestations(sealResp.Attestations, confidentialReq, confidentialPolicy)
+		if err != nil {
+			return fmt.Errorf("securecells/service: verify confidential execution: %w", err)
+		}
+		run.result.ConfidentialExecution = &summary
+		run.result.ExecutionAttestations = confidential.BuildEvidenceAttestations(sealResp.Attestations, confidentialReq, summary, confidentialPolicy.TrustedValidatorKeys)
+		if transition.Metadata == nil {
+			transition.Metadata = make(map[string]string)
+		}
+		transition.Metadata["confidential_execution_verified"] = fmt.Sprintf("%t", summary.Verified)
+		transition.Metadata["confidential_execution_valid_attestations"] = fmt.Sprintf("%d", summary.Valid)
+		transition.Metadata["confidential_execution_binding_hash"] = summary.BindingHash
+	} else {
+		run.result.ConfidentialExecution = nil
+		run.result.ExecutionAttestations = nil
 	}
 	executionSeal := s.buildExecutionSeal(cellID(run.request), latestReceipt, sealResp)
 	traceLink, err := evidence.NewTraceLink(run.request.OwnerIdentity, latestReceipt, *executionSeal, transition.Action+" trace")
@@ -4378,6 +4414,13 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("session_exchanges_total", fmt.Sprintf("%d", len(run.result.SessionExchanges)))
 	ledger.WithMetadata("contained_shared_outputs_total", fmt.Sprintf("%d", secureCellContainedSharedOutputTotal(run.result.SharedOutputs)))
 	ledger.WithMetadata("contained_session_exchanges_total", fmt.Sprintf("%d", secureCellContainedSessionExchangeTotal(run.result.SessionExchanges)))
+	if run.result.ConfidentialExecution != nil {
+		ledger.WithMetadata("confidential_execution_verified", fmt.Sprintf("%t", run.result.ConfidentialExecution.Verified))
+		ledger.WithMetadata("confidential_execution_present", fmt.Sprintf("%d", run.result.ConfidentialExecution.Present))
+		ledger.WithMetadata("confidential_execution_valid", fmt.Sprintf("%d", run.result.ConfidentialExecution.Valid))
+		ledger.WithMetadata("confidential_execution_binding_hash", run.result.ConfidentialExecution.BindingHash)
+		ledger.WithMetadata("confidential_execution_output_hash", run.result.ConfidentialExecution.BoundOutputHash)
+	}
 	if run.result.PausedFromStatus != "" {
 		ledger.WithMetadata("paused_from_status", string(run.result.PausedFromStatus))
 	}
@@ -4424,6 +4467,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	sharedOutputPolicyReceiptIDs := make([]string, 0, len(run.result.SharedOutputs))
 	sharedOutputSealIDs := make([]string, 0, len(run.result.SharedOutputs))
 	sharedOutputTraceLinkIDs := make([]string, 0, len(run.result.SharedOutputs))
+	executionAttestationIDs := make([]string, 0, len(run.result.ExecutionAttestations))
 	admittedParticipants := make(map[string]struct{}, len(run.result.Transitions))
 	sharedOutputTransitions := make(map[string]SecureCellTransition, len(run.result.SharedOutputs))
 
@@ -4433,6 +4477,10 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			return nil, fmt.Errorf("securecells/service: create participant passport evidence: %w", err)
 		}
 		ledger.AddAgentPassport(passport)
+	}
+	for _, attestation := range run.result.ExecutionAttestations {
+		ledger.AddAttestation(attestation)
+		executionAttestationIDs = append(executionAttestationIDs, attestation.ID)
 	}
 
 	for idx, transition := range run.result.Transitions {
@@ -5057,16 +5105,36 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		Description: "The secure cell and all lifecycle mutations are sealed under confidential-compute and compute-zone policy.",
 		Status:      evidence.ControlSatisfied,
 		EvidenceRefs: evidence.ControlEvidenceRefs{
-			RecordIDs:    recordIDs,
-			SealIDs:      sealIDs,
-			TraceLinkIDs: traceLinkIDs,
+			RecordIDs:      recordIDs,
+			AttestationIDs: executionAttestationIDs,
+			SealIDs:        sealIDs,
+			TraceLinkIDs:   traceLinkIDs,
 		},
 		Metadata: map[string]string{
-			"data_classes":  strings.Join(req.Policy.DataClasses, ","),
-			"compute_zones": strings.Join(req.Policy.ComputeZones, ","),
+			"data_classes":                 strings.Join(req.Policy.DataClasses, ","),
+			"compute_zones":                strings.Join(req.Policy.ComputeZones, ","),
+			"confidential_execution_valid": fmt.Sprintf("%d", len(executionAttestationIDs)),
 		},
 	}); err != nil {
 		return nil, err
+	}
+	if len(executionAttestationIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-TEE-01",
+			ControlName: "Bound Confidential Execution Attestation",
+			Description: "Each sealed secure-cell mutation carries verifier-checked TEE attestations bound to the exact workflow stage and output hash.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				AttestationIDs: executionAttestationIDs,
+				SealIDs:        sealIDs,
+				TraceLinkIDs:   traceLinkIDs,
+			},
+			Metadata: map[string]string{
+				"attestation_count": fmt.Sprintf("%d", len(executionAttestationIDs)),
+			},
+		}); err != nil {
+			return nil, err
+		}
 	}
 	if len(lifecycleRecordIDs) > 0 {
 		if err := ledger.AddControl(evidence.LedgerControl{
@@ -5357,6 +5425,37 @@ func (s *Service) buildSealRequest(req SecureCellRequest, participants []SecureC
 			"compute_zones":                 strings.Join(req.Policy.ComputeZones, ","),
 		},
 	}
+}
+
+func (s *Service) buildConfidentialExecutionRequest(req SecureCellRequest, receiptChain *policy.PolicyReceiptChain, latestReceipt *policy.SignedPolicyReceipt, sealReq sdk.SealRequest, stage string) confidential.AttestationRequest {
+	return confidential.AttestationRequest{
+		JobID:             cellID(req),
+		Workflow:          "secure_cell",
+		Stage:             stage,
+		Purpose:           req.Purpose,
+		Resource:          req.Resource,
+		Jurisdiction:      req.Jurisdiction,
+		InputHash:         append([]byte(nil), sealReq.InputHash...),
+		OutputHash:        append([]byte(nil), sealReq.OutputHash...),
+		PolicyReceiptID:   safeString(latestReceipt, func(in *policy.SignedPolicyReceipt) string { return in.ID }),
+		PolicyReceiptHash: safeString(latestReceipt, func(in *policy.SignedPolicyReceipt) string { return in.ContentHash }),
+		ReceiptChainHash:  safeChainHash(receiptChain),
+		Metadata: map[string]string{
+			"workflow":                      "secure_cell",
+			"cell_id":                       cellID(req),
+			"purpose":                       req.Purpose,
+			"resource":                      req.Resource,
+			"jurisdiction":                  req.Jurisdiction,
+			"confidential_compute_required": fmt.Sprintf("%t", confidentialComputeRequired(req.Policy)),
+			"cell_stage":                    stage,
+		},
+	}
+}
+
+func (s *Service) confidentialPolicyForRequest(req SecureCellRequest) confidential.Policy {
+	policy := s.config.ConfidentialPolicy
+	policy.Required = policy.Required || confidentialComputeRequired(req.Policy)
+	return policy
 }
 
 func (s *Service) buildExecutionSeal(cellID string, activationReceipt *policy.SignedPolicyReceipt, sealResp *sdk.SealResponse) *evidence.Seal {

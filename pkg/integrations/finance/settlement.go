@@ -121,6 +121,20 @@ func NewPolicyBoundSettlementRail(config PolicyBoundSettlementConfig) *PolicyBou
 	return &PolicyBoundSettlementRail{config: config}
 }
 
+// Config returns a defensive copy of the current settlement-rail policy.
+func (r *PolicyBoundSettlementRail) Config() PolicyBoundSettlementConfig {
+	if r == nil {
+		return PolicyBoundSettlementConfig{}
+	}
+	out := r.config
+	out.AllowedCounterparties = append([]string(nil), r.config.AllowedCounterparties...)
+	out.AllowedJurisdictions = append([]string(nil), r.config.AllowedJurisdictions...)
+	out.AllowedCurrencies = append([]string(nil), r.config.AllowedCurrencies...)
+	out.RequiredReasonCodes = append([]string(nil), r.config.RequiredReasonCodes...)
+	out.Metadata = cloneStringMap(r.config.Metadata)
+	return out
+}
+
 // Quote evaluates the configured corridor and returns a side-effect-free
 // admissibility projection for the requested settlement.
 func (r *PolicyBoundSettlementRail) Quote(ctx context.Context, req TreasurySettlementRequest) (*TreasurySettlementQuote, error) {
