@@ -202,20 +202,9 @@ impl NitroVerifier {
             ));
         }
 
-        // In production, use a proper CBOR parser
-        // For now, return a placeholder
-        Ok(NitroAttestationDocument {
-            module_id: "placeholder".to_string(),
-            digest: "SHA384".to_string(),
-            timestamp: 0,
-            pcrs: HashMap::new(),
-            certificate: Vec::new(),
-            cabundle: Vec::new(),
-            public_key: None,
-            user_data: None,
-            nonce: None,
-            signature: Vec::new(),
-        })
+        Err(AttestationError::AwsNitro(
+            "Nitro COSE/CBOR parsing backend is not implemented".to_string(),
+        ))
     }
 
     // ========================================================================
@@ -455,6 +444,13 @@ mod tests {
         let verifier = NitroVerifier::new(AttestationConfig::default());
         let result = verifier.parse_document(&[0x00, 0x01, 0x02]);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_document_fails_closed_when_backend_missing() {
+        let verifier = NitroVerifier::new(AttestationConfig::default());
+        let result = verifier.parse_document(&[0x84, 0x40, 0x40, 0x40]);
+        assert!(matches!(result, Err(AttestationError::AwsNitro(_))));
     }
 
     #[test]

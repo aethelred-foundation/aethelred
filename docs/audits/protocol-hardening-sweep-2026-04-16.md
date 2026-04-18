@@ -754,6 +754,39 @@ already merged.
   Intel and AMD lightweight-engine collateral paths under the
   `attestation-evidence` feature.
 
+### 3zo. Nitro parser fail-closed hardening
+
+- Tightened `services/tee-worker/nitro-sdk/src/attestation/aws_nitro.rs`,
+  where the Nitro wrapper still returned a placeholder attestation document
+  after only checking the outer COSE marker, leaving later verification steps
+  to fail on fabricated empty fields.
+- `parse_document(...)` now fails closed with an explicit
+  `AwsNitro("Nitro COSE/CBOR parsing backend is not implemented")` error
+  instead of constructing fake attestation state that could be mistaken for a
+  partially parsed real document.
+- Added a focused regression in
+  `services/tee-worker/nitro-sdk/src/attestation/aws_nitro.rs` covering the
+  fail-closed parse behavior under the `attestation-evidence` feature.
+
+### 3zp. ARM attestation parser and signature fail-closed hardening
+
+- Tightened `services/tee-worker/nitro-sdk/src/attestation/arm_trustzone.rs`,
+  where the ARM TrustZone / CCA wrapper still relied on placeholder token
+  parsing and signature-verification methods that returned success once a
+  non-empty signature was present.
+- `parse_cca_token(...)` and `parse_psa_token(...)` now fail closed with
+  explicit backend-unavailable errors instead of fabricating placeholder token
+  state.
+- `verify_platform_signature(...)`, `verify_realm_signature(...)`, and
+  `verify_tz_signature(...)` now fail closed with explicit
+  `ArmTrustZone("...not implemented")` errors once signature presence has been
+  checked, instead of returning `Ok(())` without real cryptographic
+  verification.
+- Added focused regressions in
+  `services/tee-worker/nitro-sdk/src/attestation/arm_trustzone.rs` covering
+  fail-closed parser and signature paths under the `attestation-evidence`
+  feature.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -974,6 +1007,13 @@ already merged.
   AMD collateral bundles that could be mistaken for partial verification state.
   Those collateral paths now fail closed until a real fetch backend is wired
   into that engine surface.
+- The Nitro attestation wrapper no longer fabricates a placeholder parsed
+  document after only recognizing a COSE shell. Nitro parsing now stops
+  immediately with an explicit backend-unavailable error until a real CBOR/COSE
+  parser is wired in.
+- The ARM attestation wrapper no longer fabricates placeholder token state or
+  report success from signature-verification methods that lack real crypto
+  backends. Its parser and signature paths now fail closed explicitly.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

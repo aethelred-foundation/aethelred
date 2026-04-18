@@ -388,6 +388,8 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Drand relay boundary regression | `go test ./x/pouw/keeper -run 'TestHTTPDrandPulseProvider_|TestAssignmentEntropyFromContext_'` | `x/pouw/keeper/drand_pulse_test.go` |
 | Worker backend proxy boundary regression | `go test ./services/tee-worker/executor` | `services/tee-worker/executor/main_test.go` |
 | Lightweight attestation collateral fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence fails_closed_without_backend` | `services/tee-worker/nitro-sdk/src/attestation/engine.rs` |
+| Nitro parser fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence nitro` | `services/tee-worker/nitro-sdk/src/attestation/aws_nitro.rs` |
+| ARM attestation fail-closed regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features attestation-evidence arm` | `services/tee-worker/nitro-sdk/src/attestation/arm_trustzone.rs` |
 | Seal verifier regression | `go test ./x/seal/keeper/...` | `x/seal/keeper/` |
 | Vault relay governance regression | `go test ./x/vault/keeper` | `x/vault/keeper/keeper_test.go` |
 | Sovereign access-control regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk lib_full::sovereign::` | `services/tee-worker/nitro-sdk/src/sovereign/` |
