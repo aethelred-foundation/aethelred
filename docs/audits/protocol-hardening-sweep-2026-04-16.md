@@ -532,6 +532,21 @@ already merged.
 - Emergency batch revocation now follows the same quorumed path on a per-seal
   basis instead of executing a direct bypass for every target in the batch.
 
+### 3z. Vault governance authority enforcement
+
+- Tightened `x/vault/keeper/keeper.go`, where several exported keeper methods
+  were documented as governance-only but still relied on call-site convention
+  instead of explicit authority checks at the keeper boundary.
+- `RegisterVendorRootKey(...)`, `RegisterEnclave(...)`,
+  `RegisterOperator(...)`, `RevokeEnclave(...)`, `RevokeOperator(...)`,
+  `RegisterAttestationRelay(...)`, `InitiateRelayRotation(...)`,
+  `FinalizeRelayRotation(...)`, `CancelRelayRotation(...)`, and
+  `RevokeRelay(...)` now all require the module authority explicitly instead of
+  leaving that restriction as a comment-level assumption.
+- Added focused regressions in `x/vault/keeper/keeper_test.go` proving those
+  governance-only keeper paths reject non-authority callers before mutating any
+  enclave, operator, root-key, or attestation-relay state.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -692,6 +707,9 @@ already merged.
   switch. It now requires multi-party emergency approval, is limited to
   explicitly urgent reasons, and fails closed until the break-glass quorum is
   met.
+- The vault keeper no longer leaves governance-only TEE and relay management
+  methods protected only by documentation. Those state-mutating keeper entry
+  points now enforce module authority directly at the boundary.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way
