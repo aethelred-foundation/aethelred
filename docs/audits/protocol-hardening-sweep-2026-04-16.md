@@ -562,6 +562,18 @@ already merged.
   replaced, expired challenge state is cleared, and governance can safely
   re-issue a fresh challenge after expiry.
 
+### 3zb. Admin consensus-audit endpoint boundary hardening
+
+- Tightened `app/consensus_evidence_handler.go`, where the
+  `/admin/consensus/evidence/audit` route was mounted as an admin endpoint but
+  still accepted unauthenticated requests from arbitrary remote addresses.
+- The handler is now loopback-only by default, supports explicit bearer-token
+  authorization through `AETHELRED_ADMIN_API_TOKEN` when intentionally exposed
+  beyond loopback, and rejects oversized request bodies before decoding.
+- Added focused regressions in `app/consensus_evidence_handler_test.go`
+  covering off-loopback rejection, bearer-token authorization, invalid token
+  rejection, and fast-fail oversized request handling.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -731,6 +743,10 @@ already merged.
   is now authority-gated, live challenges cannot be silently overwritten,
   expired challenge state rolls forward cleanly, and successful challenge
   issuance / response are recorded in the runtime audit trail.
+- The `/admin/consensus/evidence/audit` route no longer behaves like an
+  unauthenticated remote admin surface. It is now loopback-only by default,
+  supports explicit bearer-token authorization for deliberate remote exposure,
+  and rejects oversized request bodies before they reach the JSON decoder.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

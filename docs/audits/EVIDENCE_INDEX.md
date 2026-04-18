@@ -372,6 +372,7 @@ The current evidence branch is a pre-audit hardening candidate on top of
 | Full remediation bundle | `bash scripts/run-audit-remediation-evidence-bundle.sh .` | CI logs / local output |
 | Contract regression tests | `forge test` + `npx hardhat test` | `contracts/test/` |
 | Deployment governance regression | `npx hardhat test test/deployment.governance.config.test.ts test/institutional.reserve.automation.keeper.test.ts` | `contracts/test/deployment.governance.config.test.ts` |
+| Admin endpoint boundary regression | `go test ./app` | `app/consensus_evidence_handler_test.go` |
 | Seal verifier regression | `go test ./x/seal/keeper/...` | `x/seal/keeper/` |
 | Vault relay governance regression | `go test ./x/vault/keeper` | `x/vault/keeper/keeper_test.go` |
 | Sovereign access-control regression | `cargo test --manifest-path services/tee-worker/nitro-sdk/Cargo.toml --features full-sdk lib_full::sovereign::` | `services/tee-worker/nitro-sdk/src/sovereign/` |

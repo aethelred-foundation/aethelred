@@ -43,6 +43,7 @@ func TestConsensusEvidenceAuditHandler_Post(t *testing.T) {
 
 	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
 	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", bytes.NewReader(body))
+	req.RemoteAddr = "127.0.0.1:26657"
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -62,6 +63,7 @@ func TestConsensusEvidenceAuditHandler_Post(t *testing.T) {
 func TestConsensusEvidenceAuditHandler_InvalidRequestBody(t *testing.T) {
 	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
 	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", strings.NewReader("{"))
+	req.RemoteAddr = "127.0.0.1:26657"
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -79,10 +81,91 @@ func TestConsensusEvidenceAuditHandler_InvalidTxPayload(t *testing.T) {
 
 	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
 	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", strings.NewReader(body))
+	req.RemoteAddr = "127.0.0.1:26657"
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestConsensusEvidenceAuditHandler_RejectsNonLoopbackWithoutToken(t *testing.T) {
+	t.Setenv(adminAuditAuthTokenEnv, "")
+
+	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
+	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", strings.NewReader(`{}`))
+	req.RemoteAddr = "203.0.113.10:8443"
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestConsensusEvidenceAuditHandler_AllowsBearerTokenOffLoopback(t *testing.T) {
+	t.Setenv(adminAuditAuthTokenEnv, "test-admin-token")
+
+	reqPayload := ConsensusEvidenceAuditRequest{
+		ConsensusThreshold: 67,
+		ProposedLastCommit: testConsensusAuditCommit(),
+		Txs: []json.RawMessage{
+			mustMarshalRawJSON(t, map[string]interface{}{
+				"type":            "create_seal_from_consensus",
+				"job_id":          "job-handler-token",
+				"output_hash":     make32Bytes(),
+				"validator_count": 2,
+				"total_votes":     2,
+				"agreement_power": 2,
+				"total_power":     2,
+			}),
+		},
+	}
+	body, err := json.Marshal(reqPayload)
+	if err != nil {
+		t.Fatalf("marshal request: %v", err)
+	}
+
+	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
+	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", bytes.NewReader(body))
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer test-admin-token")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestConsensusEvidenceAuditHandler_RejectsInvalidBearerToken(t *testing.T) {
+	t.Setenv(adminAuditAuthTokenEnv, "expected-token")
+
+	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
+	req := httptest.NewRequest(http.MethodPost, "/admin/consensus/evidence/audit", strings.NewReader(`{}`))
+	req.RemoteAddr = "203.0.113.10:8443"
+	req.Header.Set("Authorization", "Bearer wrong-token")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestConsensusEvidenceAuditHandler_RejectsOversizedBody(t *testing.T) {
+	handler := (&AethelredApp{}).ConsensusEvidenceAuditHandler()
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/admin/consensus/evidence/audit",
+		strings.NewReader(strings.Repeat("x", adminAuditMaxBodyBytes+1)),
+	)
+	req.RemoteAddr = "127.0.0.1:26657"
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected 413, got %d body=%s", rec.Code, rec.Body.String())
 	}
 }
