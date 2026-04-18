@@ -803,6 +803,26 @@ already merged.
   explicit localhost allowances plus blocked literal IPv4/IPv6 bypass cases,
   including non-canonical loopback and private IPv6 forms.
 
+### 3zr. Worker API loopback-or-bearer hardening
+
+- Tightened `services/tee-worker/executor/main.go`, where the TEE worker
+  control plane still relied on ambient network placement instead of
+  code-enforced caller authentication for `/health`, `/capabilities`,
+  `/execute`, and `/verify`.
+- The worker now defaults to explicit loopback binding
+  (`127.0.0.1:8545`), requires `AETHELRED_TEE_API_TOKEN` whenever it is bound
+  beyond loopback, and enforces loopback-or-bearer authorization on all HTTP
+  routes while refusing forwarded-header loopback trust.
+- Tightened `app/tee_client.go` so `RemoteTEEClient` automatically presents the
+  configured `AETHELRED_TEE_API_TOKEN` as a bearer token on health,
+  capabilities, and execution requests when remote exposure is intentionally
+  enabled.
+- Added focused regressions in
+  `services/tee-worker/executor/main_test.go` and `app/tee_client_test.go`
+  covering remote request rejection without a bearer token, remote acceptance
+  with the configured bearer token, and token-aware remote client health
+  probing.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -1034,6 +1054,10 @@ already merged.
   IP forms centrally instead of relying on DNS resolution to catch those
   inputs after the fact, which closes an SSRF-style bypass class across the
   app, verify, and worker startup paths that reuse that helper.
+- The TEE worker control plane no longer relies only on topology for safety.
+  Non-loopback exposure now requires an explicit API token, the worker enforces
+  loopback-or-bearer access on its HTTP routes, and the remote Go client
+  participates in that contract by attaching the configured bearer token.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

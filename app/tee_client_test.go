@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -106,6 +108,32 @@ func TestRemoteTEEClient_IsHealthyRejectsBlockedEndpoint(t *testing.T) {
 
 	if client.IsHealthy(context.Background()) {
 		t.Fatal("expected blocked endpoint health probe to fail closed")
+	}
+}
+
+func TestRemoteTEEClient_IsHealthyUsesBearerTokenWhenConfigured(t *testing.T) {
+	t.Setenv("AETHELRED_TEE_API_TOKEN", "worker-secret")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/health" {
+			http.NotFound(w, r)
+			return
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer worker-secret" {
+			http.Error(w, "missing auth", http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewRemoteTEEClient(log.NewNopLogger(), server.URL)
+	if err != nil {
+		t.Fatalf("expected local test server endpoint to be accepted, got %v", err)
+	}
+
+	if !client.IsHealthy(context.Background()) {
+		t.Fatal("expected health probe to succeed with configured bearer token")
 	}
 }
 

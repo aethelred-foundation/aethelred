@@ -5,13 +5,16 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strings"
@@ -23,12 +26,16 @@ import (
 	"github.com/aethelred/aethelred/x/verify/tee"
 )
 
-const defaultListenAddr = ":8545"
+const (
+	defaultListenAddr = "127.0.0.1:8545"
+	apiTokenEnv       = "AETHELRED_TEE_API_TOKEN"
+)
 
 type config struct {
 	ListenAddr         string
 	BackendURL         string
 	AllowSimulated     bool
+	APIToken           string
 	Platform           string
 	EnclaveID          string
 	MaxAttestationAge  time.Duration
@@ -110,6 +117,9 @@ func main() {
 			log.Fatalf("invalid tee worker backend URL: %v", err)
 		}
 	}
+	if err := validateListenAddrSecurity(cfg.ListenAddr, cfg.APIToken); err != nil {
+		log.Fatalf("invalid tee worker exposure: %v", err)
+	}
 	srv := &server{
 		cfg: cfg,
 		client: &http.Client{
@@ -175,6 +185,7 @@ func loadConfig() config {
 		ListenAddr:         envOrDefault("AETHELRED_TEE_LISTEN_ADDR", defaultListenAddr),
 		BackendURL:         strings.TrimRight(strings.TrimSpace(os.Getenv("AETHELRED_TEE_BACKEND_URL")), "/"),
 		AllowSimulated:     allowSimulated,
+		APIToken:           strings.TrimSpace(os.Getenv(apiTokenEnv)),
 		Platform:           envOrDefault("AETHELRED_TEE_PLATFORM", "aws-nitro"),
 		EnclaveID:          envOrDefault("AETHELRED_TEE_ENCLAVE_ID", "aethelred-tee-worker"),
 		MaxAttestationAge:  maxAge,
@@ -229,6 +240,118 @@ func validateBackendURL(endpoint string) error {
 	return httputil.ValidateEndpointURL(endpoint)
 }
 
+func validateListenAddrSecurity(listenAddr, apiToken string) error {
+	if isLoopbackListenAddr(listenAddr) {
+		return nil
+	}
+	if strings.TrimSpace(apiToken) == "" {
+		return fmt.Errorf("%s is required when the tee worker listens beyond explicit loopback addresses", apiTokenEnv)
+	}
+	return nil
+}
+
+func isLoopbackListenAddr(listenAddr string) bool {
+	listenAddr = strings.TrimSpace(listenAddr)
+	if listenAddr == "" || strings.HasPrefix(listenAddr, ":") {
+		return false
+	}
+
+	host := listenAddr
+	if parsedHost, _, err := net.SplitHostPort(listenAddr); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return false
+	}
+	return addr.IsLoopback()
+}
+
+func (s *server) authorizeRequest(r *http.Request) error {
+	if isDirectLoopbackRequest(r) {
+		return nil
+	}
+
+	expectedToken := strings.TrimSpace(s.cfg.APIToken)
+	if expectedToken == "" {
+		return errors.New("authorization required")
+	}
+
+	providedToken, ok := parseBearerToken(r.Header.Get("Authorization"))
+	if !ok {
+		return errors.New("authorization required")
+	}
+	if subtle.ConstantTimeCompare([]byte(providedToken), []byte(expectedToken)) != 1 {
+		return errors.New("authorization required")
+	}
+	return nil
+}
+
+func isDirectLoopbackRequest(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	if !isLoopbackRemoteAddr(r.RemoteAddr) {
+		return false
+	}
+	return !hasForwardingHeaders(r.Header)
+}
+
+func isLoopbackRemoteAddr(remoteAddr string) bool {
+	remoteAddr = strings.TrimSpace(remoteAddr)
+	if remoteAddr == "" {
+		return false
+	}
+
+	host := remoteAddr
+	if parsedHost, _, err := net.SplitHostPort(remoteAddr); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(host, "[]")
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return false
+	}
+	return addr.IsLoopback()
+}
+
+func hasForwardingHeaders(header http.Header) bool {
+	if header == nil {
+		return false
+	}
+	for _, key := range []string{"Forwarded", "X-Forwarded-For", "X-Real-IP"} {
+		if strings.TrimSpace(header.Get(key)) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func parseBearerToken(header string) (string, bool) {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return "", false
+	}
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return "", false
+	}
+	token := strings.TrimSpace(parts[1])
+	if token == "" {
+		return "", false
+	}
+	return token, true
+}
+
 func (s *server) rateLimitKey(r *http.Request, endpoint string) string {
 	if r == nil {
 		return endpoint + "|unknown"
@@ -276,6 +399,10 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"service":         "aethelred-tee-worker",
@@ -289,6 +416,10 @@ func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -308,6 +439,10 @@ func (s *server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleExecute(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 	if allowed, retryAfter := s.allowRequest(r, "/execute"); !allowed {
@@ -362,6 +497,10 @@ func (s *server) handleExecute(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleVerify(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if err := s.authorizeRequest(r); err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 	if allowed, retryAfter := s.allowRequest(r, "/verify"); !allowed {

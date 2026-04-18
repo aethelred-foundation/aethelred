@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -146,6 +147,7 @@ type RemoteTEEClient struct {
 	endpoint string
 	client   *http.Client
 	breaker  *circuitbreaker.Breaker
+	apiToken string
 }
 
 // NewRemoteTEEClient creates a new HTTP-based TEE client.
@@ -160,6 +162,7 @@ func NewRemoteTEEClient(logger log.Logger, endpoint string) (*RemoteTEEClient, e
 		logger:   logger,
 		endpoint: endpoint,
 		breaker:  circuitbreaker.NewDefault("tee_remote_execute"),
+		apiToken: strings.TrimSpace(os.Getenv("AETHELRED_TEE_API_TOKEN")),
 		client: httpclient.NewPooledClient(httpclient.PoolConfig{
 			Timeout:             60 * time.Second,
 			MaxIdleConns:        100,
@@ -200,6 +203,7 @@ func (c *RemoteTEEClient) Execute(ctx context.Context, request *TEEExecutionRequ
 		return nil, fmt.Errorf("failed to create TEE request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	c.applyAuth(httpReq)
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -257,6 +261,7 @@ func (c *RemoteTEEClient) GetCapabilities() *TEECapabilities {
 		c.logger.Warn("Failed to create capabilities request", "error", err)
 		return &TEECapabilities{Platform: "remote"}
 	}
+	c.applyAuth(httpReq)
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -314,6 +319,7 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 		}
 		return false
 	}
+	c.applyAuth(httpReq)
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
 		if c.breaker != nil {
@@ -339,6 +345,13 @@ func (c *RemoteTEEClient) IsHealthy(ctx context.Context) bool {
 // Close closes the client (no-op for HTTP).
 func (c *RemoteTEEClient) Close() error {
 	return nil
+}
+
+func (c *RemoteTEEClient) applyAuth(req *http.Request) {
+	if c == nil || req == nil || c.apiToken == "" {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+c.apiToken)
 }
 
 // Breaker exposes the circuit breaker for metrics.

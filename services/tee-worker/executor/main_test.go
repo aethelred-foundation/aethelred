@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,12 @@ import (
 
 	"github.com/aethelred/aethelred/x/verify/tee"
 )
+
+func newLoopbackRequest(method, target string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(method, target, body)
+	req.RemoteAddr = "127.0.0.1:1234"
+	return req
+}
 
 func TestHandleExecuteFailClosedWhenSimulationDisabled(t *testing.T) {
 	s := &server{cfg: config{AllowSimulated: false}}
@@ -20,7 +27,7 @@ func TestHandleExecuteFailClosedWhenSimulationDisabled(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	s.handleExecute(rec, req)
 
 	if rec.Code != http.StatusServiceUnavailable {
@@ -47,7 +54,7 @@ func TestSimulatedEnclaveExecuteAndVerify(t *testing.T) {
 	})
 
 	execRec := httptest.NewRecorder()
-	execReq := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	execReq := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	s.handleExecute(execRec, execReq)
 	if execRec.Code != http.StatusOK {
 		t.Fatalf("expected execute status %d, got %d", http.StatusOK, execRec.Code)
@@ -66,7 +73,7 @@ func TestSimulatedEnclaveExecuteAndVerify(t *testing.T) {
 
 	verifyBody, _ := json.Marshal(execResp.AttestationDocument)
 	verifyRec := httptest.NewRecorder()
-	verifyReq := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	verifyReq := newLoopbackRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
 	s.handleVerify(verifyRec, verifyReq)
 	if verifyRec.Code != http.StatusOK {
 		t.Fatalf("expected verify status %d, got %d", http.StatusOK, verifyRec.Code)
@@ -100,7 +107,7 @@ func TestSimulatedVerifyRejectsTamperedAttestation(t *testing.T) {
 	})
 
 	execRec := httptest.NewRecorder()
-	execReq := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	execReq := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	s.handleExecute(execRec, execReq)
 	if execRec.Code != http.StatusOK {
 		t.Fatalf("expected execute status %d, got %d", http.StatusOK, execRec.Code)
@@ -117,7 +124,7 @@ func TestSimulatedVerifyRejectsTamperedAttestation(t *testing.T) {
 
 	verifyBody, _ := json.Marshal(execResp.AttestationDocument)
 	verifyRec := httptest.NewRecorder()
-	verifyReq := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	verifyReq := newLoopbackRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
 	s.handleVerify(verifyRec, verifyReq)
 	if verifyRec.Code != http.StatusOK {
 		t.Fatalf("expected verify status %d, got %d", http.StatusOK, verifyRec.Code)
@@ -157,7 +164,7 @@ func TestSimulatedVerifyRejectsUnsignedAttestation(t *testing.T) {
 
 	verifyBody, _ := json.Marshal(doc)
 	verifyRec := httptest.NewRecorder()
-	verifyReq := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	verifyReq := newLoopbackRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
 	s.handleVerify(verifyRec, verifyReq)
 	if verifyRec.Code != http.StatusOK {
 		t.Fatalf("expected verify status %d, got %d", http.StatusOK, verifyRec.Code)
@@ -190,7 +197,7 @@ func TestSimulatedAppExecute(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	s.handleExecute(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected execute status %d, got %d", http.StatusOK, rec.Code)
@@ -227,7 +234,7 @@ func TestHandleExecuteRateLimit(t *testing.T) {
 		InputData: []byte("payload"),
 	})
 
-	req1 := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req1 := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	req1.RemoteAddr = "127.0.0.1:9999"
 	rec1 := httptest.NewRecorder()
 	s.handleExecute(rec1, req1)
@@ -235,7 +242,7 @@ func TestHandleExecuteRateLimit(t *testing.T) {
 		t.Fatalf("first request expected %d, got %d", http.StatusOK, rec1.Code)
 	}
 
-	req2 := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req2 := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	req2.RemoteAddr = "127.0.0.1:9999"
 	rec2 := httptest.NewRecorder()
 	s.handleExecute(rec2, req2)
@@ -258,7 +265,7 @@ func TestHandleExecuteRejectsInvalidBackendEndpoint(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req := newLoopbackRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
 	s.handleExecute(rec, req)
 
 	if rec.Code != http.StatusBadGateway {
@@ -285,10 +292,62 @@ func TestHandleVerifyRejectsInvalidBackendEndpoint(t *testing.T) {
 	})
 
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	req := newLoopbackRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
 	s.handleVerify(rec, req)
 
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("expected status %d, got %d", http.StatusBadGateway, rec.Code)
+	}
+}
+
+func TestHandleExecuteRejectsRemoteRequestWithoutBearerToken(t *testing.T) {
+	s := &server{
+		cfg: config{
+			AllowSimulated: true,
+			Platform:       "aws-nitro",
+			EnclaveID:      "enclave-auth",
+		},
+	}
+	reqBody, _ := json.Marshal(appExecutionRequest{
+		JobID:     "job-auth",
+		ModelHash: []byte("model"),
+		InputHash: []byte("input"),
+		InputData: []byte("payload"),
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req.RemoteAddr = "203.0.113.10:4321"
+	s.handleExecute(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, rec.Code)
+	}
+}
+
+func TestHandleExecuteAcceptsRemoteBearerToken(t *testing.T) {
+	s := &server{
+		cfg: config{
+			AllowSimulated: true,
+			Platform:       "aws-nitro",
+			EnclaveID:      "enclave-auth",
+			APIToken:       "secret-token",
+		},
+	}
+	reqBody, _ := json.Marshal(appExecutionRequest{
+		JobID:     "job-auth-ok",
+		ModelHash: []byte("model"),
+		InputHash: []byte("input"),
+		InputData: []byte("payload"),
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	req.RemoteAddr = "203.0.113.10:4321"
+	req.Header.Set("Authorization", "Bearer secret-token")
+	s.handleExecute(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 }
