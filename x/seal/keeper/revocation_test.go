@@ -205,6 +205,10 @@ func TestRevocationEmergencyAndBatch(t *testing.T) {
 	seal2 := newSealForTest(5)
 	_ = k.SetSeal(context.Background(), seal2)
 
+	if _, err := rm.BatchRevoke(ctx, []string{seal2.Id}, auth.Address, RevocationReasonOther, ""); err == nil {
+		t.Fatalf("expected emergency batch revoke without justification to fail")
+	}
+
 	results, err := rm.BatchRevoke(ctx, []string{seal2.Id, "missing"}, auth.Address, RevocationReasonOther, "details")
 	if err != nil {
 		t.Fatalf("unexpected batch revoke error: %v", err)

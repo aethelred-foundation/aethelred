@@ -814,6 +814,9 @@ func (rm *RevocationManager) BatchRevoke(ctx context.Context, sealIDs []string, 
 	results := make([]*RevocationResult, 0, len(sealIDs))
 	authority, hasAuthority := rm.authorities[revoker]
 	useEmergencyPath := hasAuthority && authority.Active && authority.Level >= AuthorityLevelEmergency
+	if useEmergencyPath && strings.TrimSpace(details) == "" {
+		return nil, fmt.Errorf("emergency batch revocation justification is required")
+	}
 
 	for _, sealID := range sealIDs {
 		var (

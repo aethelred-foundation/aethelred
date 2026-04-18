@@ -504,9 +504,13 @@ already merged.
   `MsgRevokeSeal` as an immediate revoke shortcut; governance-controlled
   revocation must now flow through the governed revocation workflow instead of
   bypassing dispute and approval controls on the direct message path.
+- Removed the exported raw keeper revoke entrypoint from the normal review
+  surface by narrowing it to an internal direct self-revocation helper instead
+  of leaving an ungoverned direct revoke method on the keeper API.
 - Preserved the explicit emergency lane, but now require non-empty
-  justification for `EmergencyRevoke(...)` and keep the direct forced path
-  confined to emergency authority rather than ordinary admin authority.
+  justification for `EmergencyRevoke(...)`, require non-empty justification for
+  emergency batch revocation too, and keep the direct forced path confined to
+  emergency authority rather than ordinary admin authority.
 
 ### 4. Cruzible deployability and reviewability
 
@@ -663,7 +667,7 @@ already merged.
   authority bypass the governed dispute/approval path through direct helper or
   direct message shortcuts. The default privileged threshold is now multi-party
   and the emergency path is isolated as an explicit exception with mandatory
-  justification.
+  justification on both single-seal and batch forced revocation entrypoints.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

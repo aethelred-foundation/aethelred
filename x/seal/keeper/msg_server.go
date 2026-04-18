@@ -80,7 +80,7 @@ func (k msgServer) RevokeSeal(goCtx context.Context, msg *types.MsgRevokeSeal) (
 	}
 
 	// Revoke the seal
-	if err := k.Keeper.RevokeSeal(ctx, msg.SealId, msg.Reason); err != nil {
+	if err := k.Keeper.revokeSealDirect(ctx, msg.SealId, msg.Reason); err != nil {
 		return nil, err
 	}
 
