@@ -722,6 +722,22 @@ already merged.
 - Added focused regressions in `x/pouw/keeper/drand_pulse_test.go` covering
   blocked relay endpoints and oversized local fallback payloads.
 
+### 3zm. TEE worker backend proxy boundary hardening
+
+- Tightened `services/tee-worker/executor/main.go`, where the worker's
+  `/execute` and `/verify` proxy paths still forwarded to the configured
+  backend URL without enforcing the same endpoint safety contract already used
+  across the verifier stack.
+- The worker now validates `AETHELRED_TEE_BACKEND_URL` at startup so obviously
+  unsafe backend configuration fails closed before the service begins
+  advertising a ready remote-execution surface.
+- The runtime proxy path also validates the derived backend target before
+  building the forwarded request, so direct server construction or drifted
+  config cannot bypass the startup check and reach metadata or private-address
+  targets.
+- Added focused regressions in `services/tee-worker/executor/main_test.go`
+  covering blocked backend endpoints for both `/execute` and `/verify`.
+
 ### 4. Cruzible deployability and reviewability
 
 - Reduced `Cruzible.sol` deployed bytecode under the EIP-170 limit without
@@ -934,6 +950,10 @@ already merged.
   trusted string. Relay endpoints now have to satisfy the shared endpoint
   safety contract, and the localhost fallback no longer decodes unbounded JSON
   bodies.
+- The worker executor no longer treats its configured backend URL as implicitly
+  safe. Both startup and request-time proxying now fail closed on unsafe
+  backend targets instead of forwarding execution and attestation verification
+  traffic by convention.
 - The built-in security audit and threat model now describe the same hardened
   governance posture the runtime enforces, which removes an internal
   claim-vs-control mismatch around consensus threshold policy, one-way

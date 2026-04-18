@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aethelred/aethelred/x/verify/httputil"
 	"github.com/aethelred/aethelred/x/verify/tee"
 )
 
@@ -104,6 +105,11 @@ type appCapabilities struct {
 
 func main() {
 	cfg := loadConfig()
+	if cfg.BackendURL != "" {
+		if err := validateBackendURL(cfg.BackendURL); err != nil {
+			log.Fatalf("invalid tee worker backend URL: %v", err)
+		}
+	}
 	srv := &server{
 		cfg: cfg,
 		client: &http.Client{
@@ -214,6 +220,13 @@ func envHex(key string) []byte {
 		return nil
 	}
 	return decoded
+}
+
+func validateBackendURL(endpoint string) error {
+	if strings.TrimSpace(endpoint) == "" {
+		return nil
+	}
+	return httputil.ValidateEndpointURL(endpoint)
 }
 
 func (s *server) rateLimitKey(r *http.Request, endpoint string) string {
@@ -547,6 +560,10 @@ func (s *server) verifyAttestation(doc *tee.NitroAttestationDocument) (bool, str
 
 func (s *server) proxy(w http.ResponseWriter, r *http.Request, path string, body []byte) {
 	target := s.cfg.BackendURL + path
+	if err := validateBackendURL(target); err != nil {
+		writeError(w, http.StatusBadGateway, "backend endpoint not allowed")
+		return
+	}
 	req, err := http.NewRequestWithContext(r.Context(), r.Method, target, bytes.NewReader(body))
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "failed to build backend request")

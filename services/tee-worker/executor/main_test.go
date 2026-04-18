@@ -243,3 +243,52 @@ func TestHandleExecuteRateLimit(t *testing.T) {
 		t.Fatalf("second request expected %d, got %d", http.StatusTooManyRequests, rec2.Code)
 	}
 }
+
+func TestHandleExecuteRejectsInvalidBackendEndpoint(t *testing.T) {
+	s := &server{
+		cfg: config{
+			BackendURL: "https://169.254.169.254",
+		},
+		client: &http.Client{Timeout: time.Second},
+	}
+	reqBody, _ := json.Marshal(appExecutionRequest{
+		JobID:     "job-invalid-backend",
+		ModelHash: []byte("model"),
+		InputHash: []byte("input"),
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(reqBody))
+	s.handleExecute(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected status %d, got %d", http.StatusBadGateway, rec.Code)
+	}
+}
+
+func TestHandleVerifyRejectsInvalidBackendEndpoint(t *testing.T) {
+	s := &server{
+		cfg: config{
+			BackendURL: "https://169.254.169.254",
+		},
+		client: &http.Client{Timeout: time.Second},
+	}
+	verifyBody, _ := json.Marshal(tee.NitroAttestationDocument{
+		ModuleID:  "enclave-1",
+		Timestamp: time.Now().UTC(),
+		Digest:    "SHA256",
+		PCRs: map[int][]byte{
+			0: []byte("pcr0"),
+		},
+		UserData: []byte("user-data"),
+		Nonce:    []byte("nonce"),
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/verify", bytes.NewReader(verifyBody))
+	s.handleVerify(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected status %d, got %d", http.StatusBadGateway, rec.Code)
+	}
+}
