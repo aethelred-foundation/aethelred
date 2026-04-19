@@ -319,17 +319,23 @@ impl Eip1559Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    };
+
+    static NEXT_TEST_NONCE: AtomicU64 = AtomicU64::new(1);
 
     fn create_test_context() -> super::super::MiddlewareContext {
         let config = Arc::new(super::super::MiddlewareConfig::default());
         let mut ctx = super::super::MiddlewareContext::new(vec![0; 100], config);
+        let nonce = NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed);
 
         ctx.parsed_tx = Some(super::super::ParsedTransaction {
             tx_id: [0; 32],
             sender: [0; 21],
             tx_type: 0x01, // Transfer
-            nonce: 0,
+            nonce,
             gas_price: 1,
             gas_limit: 23_000,
             chain_id: 1,

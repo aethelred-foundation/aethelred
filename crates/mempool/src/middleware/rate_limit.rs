@@ -292,6 +292,9 @@ pub struct RateLimitStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static NEXT_TEST_NONCE: AtomicU64 = AtomicU64::new(1);
 
     #[test]
     fn test_token_bucket() {
@@ -347,12 +350,13 @@ mod tests {
         // Create mock context
         let config = Arc::new(super::super::MiddlewareConfig::default());
         let mut ctx = super::super::MiddlewareContext::new(vec![0; 100], config);
+        let nonce = NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed);
 
         ctx.parsed_tx = Some(super::super::ParsedTransaction {
             tx_id: [0; 32],
             sender: [1; 21],
             tx_type: 0x01,
-            nonce: 0,
+            nonce,
             gas_price: 1,
             gas_limit: 21000,
             chain_id: 1,

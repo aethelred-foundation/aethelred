@@ -742,18 +742,24 @@ impl ComplianceReport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    };
+
+    static NEXT_TEST_NONCE: AtomicU64 = AtomicU64::new(1);
 
     fn create_test_context(tx_bytes: Vec<u8>) -> MiddlewareContext {
         let config = Arc::new(super::super::MiddlewareConfig::default());
         let mut ctx = MiddlewareContext::new(tx_bytes, config);
+        let nonce = NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed);
 
         // Set up parsed transaction
         ctx.parsed_tx = Some(super::super::ParsedTransaction {
             tx_id: [0; 32],
             sender: [0; 21],
             tx_type: TX_TYPE_COMPUTE_JOB,
-            nonce: 0,
+            nonce,
             gas_price: 1,
             gas_limit: 100000,
             chain_id: 1,
@@ -848,11 +854,12 @@ mod tests {
         cfg.enabled_frameworks.clear();
         let config = Arc::new(cfg);
         let mut ctx = MiddlewareContext::new(vec![0; 100], config);
+        let nonce = NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed);
         ctx.parsed_tx = Some(super::super::ParsedTransaction {
             tx_id: [0; 32],
             sender: [0; 21],
             tx_type: TX_TYPE_COMPUTE_JOB,
-            nonce: 0,
+            nonce,
             gas_price: 1,
             gas_limit: 100000,
             chain_id: 1,
