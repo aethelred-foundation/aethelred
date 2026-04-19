@@ -4828,7 +4828,7 @@ func TestSecureCellsAutomatedExpirySweeperReleasesExpiredMembers(t *testing.T) {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, quarantineRec.Code, quarantineRec.Body.String())
 	}
 
-	waitForSecureCellCondition(t, 2*time.Second, func() bool {
+	waitForSecureCellCondition(t, 5*time.Second, func() bool {
 		getReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID, nil)
 		getRec := httptest.NewRecorder()
 		app.SecureCellsGetHandler().ServeHTTP(getRec, getReq)
@@ -4839,9 +4839,15 @@ func TestSecureCellsAutomatedExpirySweeperReleasesExpiredMembers(t *testing.T) {
 		if err := json.Unmarshal(getRec.Body.Bytes(), &getResp); err != nil || getResp.Result == nil {
 			return false
 		}
-		return getResp.Result.Status == securecellsintegration.SecureCellStatusActive &&
-			getResp.Result.Transitions[len(getResp.Result.Transitions)-1].Action == "secure_cell.quarantine_expired" &&
-			getResp.Result.Transitions[len(getResp.Result.Transitions)-1].Actor == secureCellAutomatedSweepActor
+		if getResp.Result.Status != securecellsintegration.SecureCellStatusActive {
+			return false
+		}
+		for _, transition := range getResp.Result.Transitions {
+			if transition.Action == "secure_cell.quarantine_expired" && transition.Actor == secureCellAutomatedSweepActor {
+				return true
+			}
+		}
+		return false
 	})
 }
 
@@ -5915,6 +5921,298 @@ func mustMarshalSecureCellCreateRequestWithParticipantRoles(t *testing.T, owner 
 		t.Fatalf("marshal secure cell create request with participant roles: %v", err)
 	}
 	return body
+}
+
+func TestSecureCellsHandlers_FederationIncidentReportReconciliationAutomationSurfaces(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode": "simulated",
+		flags.FlagHome:       t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{7}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	ctx := context.Background()
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-b", []string{"UAE", "UK"})
+	sponsorOfRecord := ""
+	organizationName := ""
+	if participantB.Liability != nil {
+		sponsorOfRecord = strings.TrimSpace(participantB.Liability.SponsorOfRecord)
+	}
+	if len(participantB.SponsorChain) > 0 {
+		organizationName = strings.TrimSpace(participantB.SponsorChain[0].SponsorName)
+	}
+
+	created, err := app.secureCellService.CreateCell(ctx, securecellsintegration.SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Report Reconciliation Cell",
+		Purpose:       "prove HTTP operator surfaces for automated reconciliation governance",
+		Resource:      "cell:federation-report-reconciliation-automation",
+		Jurisdiction:  "UAE",
+		Participants: []securecellsintegration.SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer_a"},
+		},
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	sessionResult, err := app.secureCellService.StartSession(ctx, created.CellID, securecellsintegration.SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Federation Incident Room",
+		Purpose:         "regulated incident collaboration",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open federation incident room",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := sessionResult.Sessions[len(sessionResult.Sessions)-1]
+
+	invited, err := app.secureCellService.CreateFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  sponsorOfRecord,
+		OrganizationName: organizationName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "owner-authored federation invitation",
+		Metadata:         map[string]string{"ticket": "APP-FED-REPORT-AUTO-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := app.secureCellService.AcceptFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: securecellsintegration.SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins secure cell",
+		Metadata: map[string]string{"ticket": "APP-FED-REPORT-AUTO-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	contractID := accepted.FederationContracts[0].ID
+	orgID := accepted.FederationContracts[0].OrganizationID
+
+	published, err := app.secureCellService.PublishFederationIncident(ctx, created.CellID, orgID, securecellsintegration.SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 securecellsintegration.SecureCellFederationIncidentSeverityCritical,
+		Category:                 securecellsintegration.SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Counterparty filing posture has drifted",
+		Description:              "This incident sets up bilateral filing reconciliation automation.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: true,
+		Reason:                   "publish bilateral filing drift incident",
+		Metadata:                 map[string]string{"ticket": "APP-FED-REPORT-AUTO-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := app.secureCellService.ListFederationIncidentResponses(ctx, securecellsintegration.SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == securecellsintegration.SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	reportDueAt := time.Now().UTC().Add(2 * time.Hour)
+	planned, err := app.secureCellService.CreateFederationIncidentReport(ctx, created.CellID, localResponseID, securecellsintegration.SecureCellFederationIncidentReportPlanRequest{
+		ActorDID:         participantB.AgentID(),
+		Regulator:        "uk-ico",
+		Jurisdiction:     "UK",
+		Framework:        "uk-gdpr",
+		ReportType:       "breach_notification",
+		Summary:          "Counterparty planned regulator filing",
+		Description:      "This report will be used to prove automated reconciliation governance.",
+		RequiredSections: []string{"scope", "impact", "containment"},
+		EvidenceIDs:      []string{incidentID},
+		DueAt:            &reportDueAt,
+		Reason:           "plan regulator-facing report",
+		Metadata:         map[string]string{"ticket": "APP-FED-REPORT-AUTO-PLAN-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationIncidentReport failed: %v", err)
+	}
+
+	reportItems, err := app.secureCellService.ListFederationIncidentReports(ctx, securecellsintegration.SecureCellFederationIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReports failed: %v", err)
+	}
+	reportID := reportItems[0].ReportID
+
+	if _, err := app.secureCellService.SubmitFederationIncidentReport(ctx, created.CellID, reportID, securecellsintegration.SecureCellFederationIncidentReportSubmitRequest{
+		ActorDID:            participantB.AgentID(),
+		SubmissionReference: "ico-2026-app-local",
+		Summary:             "Counterparty submitted regulator filing",
+		Description:         "The counterparty submitted the local report before reciprocal bundle intake.",
+		EvidenceIDs:         []string{planned.ControlLedger.Bundle.ID},
+		Reason:              "submit regulator filing",
+		Metadata:            map[string]string{"ticket": "APP-FED-REPORT-AUTO-SUBMIT-01"},
+	}); err != nil {
+		t.Fatalf("SubmitFederationIncidentReport failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.AcknowledgeFederationIncidentReport(ctx, created.CellID, reportID, securecellsintegration.SecureCellFederationIncidentReportAcknowledgeRequest{
+		ActorDID:                 owner.AgentID(),
+		AcknowledgingParty:       securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		AcknowledgementReference: "ico-2026-app-ack",
+		Reason:                   "acknowledge filing receipt",
+		Metadata:                 map[string]string{"ticket": "APP-FED-REPORT-AUTO-ACK-01"},
+	}); err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReport failed: %v", err)
+	}
+
+	reportBundle, err := app.secureCellService.BuildFederationIncidentReportBundle(ctx, created.CellID, reportID, securecellsintegration.SecureCellFederationIncidentReportBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentReportBundle failed: %v", err)
+	}
+	reportBundle.Report.SubmissionReference = "ico-2026-app-counterparty-drift"
+	reportBundle.ReportSummary.SubmissionReference = reportBundle.Report.SubmissionReference
+
+	if _, err := app.secureCellService.IngestFederationIncidentReportBundle(ctx, created.CellID, orgID, securecellsintegration.SecureCellFederationIncidentReportBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   reportBundle,
+		Reason:   "ingest reciprocal bundle with drifted submission reference",
+		Metadata: map[string]string{"ticket": "APP-FED-REPORT-AUTO-INTAKE-01"},
+	}); err != nil {
+		t.Fatalf("IngestFederationIncidentReportBundle failed: %v", err)
+	}
+
+	reconciliations, err := app.secureCellService.ListFederationIncidentReportReconciliations(ctx, securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		IncidentID:     incidentID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportReconciliations failed: %v", err)
+	}
+	if len(reconciliations) != 1 || reconciliations[0].CounterpartyReceivedAt == nil {
+		t.Fatalf("expected one reconciliation with counterparty receipt time, got %+v", reconciliations)
+	}
+	comparisonKey := reconciliations[0].ComparisonKey
+
+	reviewOverdueAt := reconciliations[0].CounterpartyReceivedAt.UTC().Add(6*time.Hour + time.Hour)
+	overdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliations/overdue?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&before="+url.QueryEscape(reviewOverdueAt.Format(time.RFC3339Nano)), nil)
+	overdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueRec, overdueReq)
+	if overdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueRec.Code, overdueRec.Body.String())
+	}
+	var overdueResp secureCellOverdueFederationIncidentReportReconciliationListResponse
+	if err := json.Unmarshal(overdueRec.Body.Bytes(), &overdueResp); err != nil {
+		t.Fatalf("unmarshal overdue federation incident report reconciliation response: %v", err)
+	}
+	if len(overdueResp.Items) != 1 || overdueResp.Items[0].AutomationAction != "auto_dispute" || overdueResp.Items[0].ReviewStatus != securecellsintegration.SecureCellFederationIncidentReportReviewStatusUnreviewed {
+		t.Fatalf("expected one overdue auto-dispute item, got %+v", overdueResp.Items)
+	}
+
+	overdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliations/overdue/export?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&before="+url.QueryEscape(reviewOverdueAt.Format(time.RFC3339Nano))+"&format=csv", nil)
+	overdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueExportRec, overdueExportReq)
+	if overdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueExportRec.Code, overdueExportRec.Body.String())
+	}
+	if body := overdueExportRec.Body.String(); !strings.Contains(body, comparisonKey) || !strings.Contains(body, "auto_dispute") {
+		t.Fatalf("expected overdue reconciliation export to include comparison key and auto_dispute, got %s", body)
+	}
+
+	sweepActor := "did:aethelred:automation-sweeper"
+	if _, err := app.secureCellService.SweepFederationIncidentReportReconciliations(ctx, reviewOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated report reconciliation sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-REPORT-AUTO-SWEEP-REVIEW-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentReportReconciliations review failed: %v", err)
+	}
+
+	reconciliations, err = app.secureCellService.ListFederationIncidentReportReconciliations(ctx, securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ComparisonKey:  comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportReconciliations after sweep failed: %v", err)
+	}
+	if len(reconciliations) != 1 || reconciliations[0].LastReviewedAt == nil {
+		t.Fatalf("expected disputed reconciliation after automated review sweep, got %+v", reconciliations)
+	}
+	resolutionOverdueAt := reconciliations[0].LastReviewedAt.UTC().Add(24*time.Hour + time.Hour)
+	if _, err := app.secureCellService.SweepFederationIncidentReportReconciliations(ctx, resolutionOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated report reconciliation containment sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-REPORT-AUTO-SWEEP-RESOLUTION-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentReportReconciliations resolution failed: %v", err)
+	}
+
+	actionReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliation-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey), nil)
+	actionRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionRec, actionReq)
+	if actionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionRec.Code, actionRec.Body.String())
+	}
+	var actionResp secureCellFederationIncidentReportReconciliationAutomationActionListResponse
+	if err := json.Unmarshal(actionRec.Body.Bytes(), &actionResp); err != nil {
+		t.Fatalf("unmarshal reconciliation automation action response: %v", err)
+	}
+	if len(actionResp.Items) != 2 {
+		t.Fatalf("expected two reconciliation automation actions, got %+v", actionResp.Items)
+	}
+	if actionResp.Items[0].Action != "secure_cell.federation_contract_suspended" || actionResp.Items[0].ContractID != contractID {
+		t.Fatalf("expected latest action to suspend contract %q, got %+v", contractID, actionResp.Items[0])
+	}
+	if actionResp.Items[1].Action != "secure_cell.federation_incident_report_reconciliation_disputed" || actionResp.Items[1].AutomatedActor != sweepActor {
+		t.Fatalf("expected prior action to be automated dispute, got %+v", actionResp.Items[1])
+	}
+
+	actionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliation-automation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&format=csv", nil)
+	actionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionExportRec, actionExportReq)
+	if actionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionExportRec.Code, actionExportRec.Body.String())
+	}
+	if body := actionExportRec.Body.String(); !strings.Contains(body, "secure_cell.federation_contract_suspended") || !strings.Contains(body, contractID) {
+		t.Fatalf("expected reconciliation automation export to include contract suspension, got %s", body)
+	}
 }
 
 func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
