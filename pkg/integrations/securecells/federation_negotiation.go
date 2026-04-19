@@ -1008,6 +1008,16 @@ func secureCellFederationEscalationTierIDs(items []SecureCellFederationEscalatio
 	return out
 }
 
+func secureCellFederationEscalationTierTargets(items []SecureCellFederationEscalationTier) []string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if targetDID := strings.TrimSpace(item.TargetDID); targetDID != "" {
+			out = append(out, targetDID)
+		}
+	}
+	return out
+}
+
 func secureCellFederationNextDueEscalationTier(item SecureCellFederationCounterproposal, at time.Time) (SecureCellFederationEscalationTier, bool) {
 	if len(item.EscalationLadder) == 0 {
 		return SecureCellFederationEscalationTier{}, false

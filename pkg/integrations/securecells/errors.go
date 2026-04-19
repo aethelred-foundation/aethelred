@@ -103,6 +103,15 @@ var (
 	// for the requested organization, but it is currently suspended.
 	ErrFederationContractSuspended = errors.New("secure cell federation contract is suspended")
 
+	// ErrFederationIncidentResponseNotFound indicates that a bilateral
+	// incident-response case does not exist in the secure cell state.
+	ErrFederationIncidentResponseNotFound = errors.New("secure cell federation incident response not found")
+
+	// ErrFederationIncidentResponseImmutable indicates that a bilateral
+	// incident-response case cannot be mutated from its current lifecycle
+	// posture.
+	ErrFederationIncidentResponseImmutable = errors.New("secure cell federation incident response is immutable")
+
 	// ErrFederationNegotiationConflict indicates that the owner-authored
 	// invitation/renewal terms and the counterparty-offered terms do not yield a
 	// mutually valid federation contract.

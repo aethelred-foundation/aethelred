@@ -162,6 +162,15 @@ type SecureCellFederationOrganizationRuntime struct {
 	HighIncidents           int       `json:"high_incidents"`
 	CounterpartyIncidentSnapshots int `json:"counterparty_incident_snapshots"`
 	CounterpartyOpenIncidents int    `json:"counterparty_open_incidents"`
+	IncidentResponseCount           int `json:"incident_response_count"`
+	PendingLocalAckResponses        int `json:"pending_local_ack_responses"`
+	PendingCounterpartyAckResponses int `json:"pending_counterparty_ack_responses"`
+	AcknowledgedResponses           int `json:"acknowledged_responses"`
+	EscalatedResponses              int `json:"escalated_responses"`
+	RemediatingResponses            int `json:"remediating_responses"`
+	RemediatedResponses             int `json:"remediated_responses"`
+	ClosedResponses                 int `json:"closed_responses"`
+	IncidentRemediationCount        int `json:"incident_remediation_count"`
 	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
 }
 
@@ -190,6 +199,8 @@ type SecureCellFederationOrganizationTrustPack struct {
 	CounterpartyAssurance   []SecureCellFederationCounterpartyAssuranceSummary `json:"counterparty_assurance,omitempty"`
 	Incidents               []SecureCellFederationIncidentSummary   `json:"incidents,omitempty"`
 	CounterpartyIncidents   []SecureCellFederationCounterpartyIncidentSummary `json:"counterparty_incidents,omitempty"`
+	IncidentResponses       []SecureCellFederationIncidentResponseSummary `json:"incident_responses,omitempty"`
+	IncidentRemediations    []SecureCellFederationIncidentRemediationSummary `json:"incident_remediations,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
@@ -392,6 +403,22 @@ func (s *Service) BuildFederationOrganizationTrustPack(ctx context.Context, cell
 		return nil, err
 	}
 	pack.CounterpartyIncidents = counterpartyIncidents
+	incidentResponses, err := s.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentResponses = incidentResponses
+	incidentRemediations, err := s.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentRemediations = incidentRemediations
 	return pack, nil
 }
 
@@ -818,6 +845,32 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 		}
 		if snapshot.ReceivedAt.After(runtime.LastUpdatedAt) {
 			runtime.LastUpdatedAt = snapshot.ReceivedAt.UTC()
+		}
+	}
+	for _, response := range run.result.FederationIncidentResponses {
+		if strings.TrimSpace(response.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
+			continue
+		}
+		runtime.IncidentResponseCount++
+		switch response.Status {
+		case SecureCellFederationIncidentResponseStatusPendingLocalAck:
+			runtime.PendingLocalAckResponses++
+		case SecureCellFederationIncidentResponseStatusPendingCounterpartyAck:
+			runtime.PendingCounterpartyAckResponses++
+		case SecureCellFederationIncidentResponseStatusAcknowledged:
+			runtime.AcknowledgedResponses++
+		case SecureCellFederationIncidentResponseStatusEscalated:
+			runtime.EscalatedResponses++
+		case SecureCellFederationIncidentResponseStatusRemediating:
+			runtime.RemediatingResponses++
+		case SecureCellFederationIncidentResponseStatusRemediated:
+			runtime.RemediatedResponses++
+		case SecureCellFederationIncidentResponseStatusClosed:
+			runtime.ClosedResponses++
+		}
+		runtime.IncidentRemediationCount += len(response.RemediationAttestations)
+		if response.UpdatedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = response.UpdatedAt.UTC()
 		}
 	}
 	if org.UpdatedAt.After(runtime.LastUpdatedAt) {

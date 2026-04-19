@@ -428,6 +428,7 @@ func (s *Service) PublishFederationIncident(ctx context.Context, cellID string, 
 		Metadata:                 cloneStringMap(req.Metadata),
 	}
 	run.result.FederationIncidents = append(run.result.FederationIncidents, incident)
+	responseID := secureCellUpsertFederationIncidentResponseForLocalIncident(run, incident)
 	run.result.UpdatedAt = reportedAt
 	transition := SecureCellTransition{
 		ID:               transitionID(run.request, "federation_incident_published", incident.ID),
@@ -440,19 +441,20 @@ func (s *Service) PublishFederationIncident(ctx context.Context, cellID string, 
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_id":         incident.ID,
-			"federation_organization_id":     incident.OrganizationID,
-			"federation_sponsor_of_record":   incident.SponsorOfRecord,
-			"federation_incident_status":     string(incident.Status),
-			"federation_incident_severity":   string(incident.Severity),
-			"federation_incident_category":   string(incident.Category),
-			"federation_contract_ids":        strings.Join(incident.ContractIDs, ","),
-			"federation_session_ids":         strings.Join(incident.SessionIDs, ","),
-			"federation_thread_ids":          strings.Join(incident.ThreadIDs, ","),
-			"federation_shared_output_ids":   strings.Join(incident.SharedOutputIDs, ","),
+			"federation_incident_id":           incident.ID,
+			"federation_organization_id":       incident.OrganizationID,
+			"federation_sponsor_of_record":     incident.SponsorOfRecord,
+			"federation_incident_status":       string(incident.Status),
+			"federation_incident_severity":     string(incident.Severity),
+			"federation_incident_category":     string(incident.Category),
+			"federation_contract_ids":          strings.Join(incident.ContractIDs, ","),
+			"federation_session_ids":           strings.Join(incident.SessionIDs, ","),
+			"federation_thread_ids":            strings.Join(incident.ThreadIDs, ","),
+			"federation_shared_output_ids":     strings.Join(incident.SharedOutputIDs, ","),
 			"federation_session_exchange_ids": strings.Join(incident.SessionExchangeIDs, ","),
-			"federation_incident_summary":    incident.Summary,
+			"federation_incident_summary":      incident.Summary,
 			"federation_incident_auto_containment": fmt.Sprintf("%t", incident.AutoContainmentRequested),
+			"federation_incident_response_id": responseID,
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -508,6 +510,7 @@ func (s *Service) ResolveFederationIncident(ctx context.Context, cellID string, 
 	run.result.FederationIncidents[incidentIdx].ResolvedAt = cloneTimePtr(&now)
 	run.result.FederationIncidents[incidentIdx].ResolutionReason = strings.TrimSpace(req.Reason)
 	run.result.FederationIncidents[incidentIdx].Metadata = mergeStringMaps(run.result.FederationIncidents[incidentIdx].Metadata, req.Metadata)
+	secureCellUpdateFederationIncidentResponseStatusForResolution(run.result, incident.ID, now, actorDID)
 	run.result.UpdatedAt = now
 	transition := SecureCellTransition{
 		ID:               transitionID(run.request, "federation_incident_resolved", incident.ID),
@@ -520,12 +523,13 @@ func (s *Service) ResolveFederationIncident(ctx context.Context, cellID string, 
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           strings.TrimSpace(req.Reason),
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_id":       incident.ID,
-			"federation_organization_id":   incident.OrganizationID,
-			"federation_sponsor_of_record": incident.SponsorOfRecord,
-			"federation_incident_status":   string(SecureCellFederationIncidentStatusResolved),
-			"federation_incident_severity": string(incident.Severity),
-			"federation_incident_category": string(incident.Category),
+			"federation_incident_id":            incident.ID,
+			"federation_organization_id":        incident.OrganizationID,
+			"federation_sponsor_of_record":      incident.SponsorOfRecord,
+			"federation_incident_status":        string(SecureCellFederationIncidentStatusResolved),
+			"federation_incident_severity":      string(incident.Severity),
+			"federation_incident_category":      string(incident.Category),
+			"federation_incident_response_ids":  strings.Join(secureCellFederationIncidentResponseIDsForIncident(run.result.FederationIncidentResponses, incident.ID), ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -782,6 +786,7 @@ func (s *Service) IngestFederationIncidentBulletin(ctx context.Context, cellID s
 		return nil, fmt.Errorf("securecells/federation-incident: %w", ErrPolicyDenied)
 	}
 	run.result.FederationCounterpartyIncidents = append(run.result.FederationCounterpartyIncidents, snapshot)
+	responseIDs := secureCellUpsertFederationIncidentResponsesForCounterpartySnapshot(run, snapshot)
 	run.result.UpdatedAt = now
 	transition := SecureCellTransition{
 		ID:               transitionID(run.request, "federation_incident_bulletin_ingested", snapshot.SnapshotID),
@@ -794,12 +799,13 @@ func (s *Service) IngestFederationIncidentBulletin(ctx context.Context, cellID s
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           strings.TrimSpace(intake.Reason),
 		Metadata: mergeStringMaps(intake.Metadata, map[string]string{
-			"federation_organization_id":      snapshot.OrganizationID,
-			"federation_sponsor_of_record":    summary.SponsorOfRecord,
-			"federation_incident_bulletin_id": snapshot.Bulletin.ID,
+			"federation_organization_id":          snapshot.OrganizationID,
+			"federation_sponsor_of_record":        summary.SponsorOfRecord,
+			"federation_incident_bulletin_id":     snapshot.Bulletin.ID,
 			"federation_incident_bulletin_status": string(snapshot.Status),
-			"federation_contract_ids":         strings.Join(snapshot.ContractIDs, ","),
-			"federation_incident_count":       fmt.Sprintf("%d", len(snapshot.Bulletin.Incidents)),
+			"federation_contract_ids":             strings.Join(snapshot.ContractIDs, ","),
+			"federation_incident_count":           fmt.Sprintf("%d", len(snapshot.Bulletin.Incidents)),
+			"federation_incident_response_ids":    strings.Join(responseIDs, ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}

@@ -3500,6 +3500,101 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected one verified counterparty incident summary, got %+v", counterpartyItems)
 	}
 
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	if len(responses) < 2 {
+		t.Fatalf("expected local and counterparty incident responses, got %+v", responses)
+	}
+	var localResponseID, counterpartyResponseID string
+	for _, item := range responses {
+		switch item.SourceType {
+		case SecureCellFederationIncidentResponseSourceLocalIncident:
+			localResponseID = item.ResponseID
+		case SecureCellFederationIncidentResponseSourceCounterpartyIncident:
+			counterpartyResponseID = item.ResponseID
+		}
+	}
+	if localResponseID == "" || counterpartyResponseID == "" {
+		t.Fatalf("expected both local and counterparty response IDs, got %+v", responses)
+	}
+
+	acknowledged, err := service.AcknowledgeFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentResponseAcknowledgeRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "local incident desk acknowledged counterparty incident",
+		Metadata: map[string]string{"ticket": "FED-RESP-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentResponse failed: %v", err)
+	}
+	ackResponse, err := service.GetFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse after acknowledge failed: %v", err)
+	}
+	if ackResponse.AcknowledgedBy != owner.AgentID() || ackResponse.Status != SecureCellFederationIncidentResponseStatusAcknowledged {
+		t.Fatalf("expected acknowledged counterparty response, got %+v", ackResponse)
+	}
+
+	remediated, err := service.AttestFederationIncidentRemediation(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentRemediationAttestationRequest{
+		ActorDID:       owner.AgentID(),
+		Summary:        "Local controls rotated and counterparty incident intake completed",
+		Description:    "The local organization rotated scoped secrets, validated containment, and documented remediation.",
+		EvidenceIDs:    []string{acknowledged.ControlLedger.Bundle.ID},
+		Reason:         "submit bilateral remediation evidence",
+		Metadata:       map[string]string{"ticket": "FED-RESP-REMEDIATE-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentRemediation failed: %v", err)
+	}
+	finalCounterpartyResponse, err := service.GetFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse after remediation failed: %v", err)
+	}
+	if finalCounterpartyResponse.Status != SecureCellFederationIncidentResponseStatusRemediated || len(finalCounterpartyResponse.RemediationAttestations) != 1 {
+		t.Fatalf("expected remediated counterparty response with attestation, got %+v", finalCounterpartyResponse)
+	}
+
+	remediations, err := service.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentRemediations failed: %v", err)
+	}
+	if len(remediations) != 1 || remediations[0].ResponseID != counterpartyResponseID {
+		t.Fatalf("expected one remediation attestation summary, got %+v", remediations)
+	}
+
+	overdueAt := time.Now().UTC().Add(72 * time.Hour)
+	overdue, err := service.ListOverdueFederationIncidentResponses(ctx, SecureCellOverdueFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Before:         &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentResponses failed: %v", err)
+	}
+	if len(overdue) == 0 {
+		t.Fatalf("expected overdue local incident response before automated sweep, got %+v", overdue)
+	}
+
+	responseSweep, err := service.SweepFederationIncidentResponses(ctx, overdueAt, SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:incident-response-sweeper",
+		Reason:   "automated bilateral response escalation sweep",
+		Metadata: map[string]string{"ticket": "FED-RESP-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentResponses failed: %v", err)
+	}
+	if responseSweep.ResponsesScanned == 0 || responseSweep.ResponsesEscalated == 0 {
+		t.Fatalf("expected response sweep to scan and escalate at least one response, got %+v", responseSweep)
+	}
+
 	sweep, err := service.SweepFederationIncidents(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
 		ActorDID: "did:aethelred:automation-sweeper",
 		Reason:   "automated reciprocal federation incident sweep",
@@ -3551,6 +3646,18 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected incident action records after sweep, got %+v", actions)
 	}
 
+	responseActions, err := service.ListFederationIncidentResponseActions(ctx, SecureCellFederationIncidentResponseActionFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponseActions failed: %v", err)
+	}
+	if len(responseActions) < 2 {
+		t.Fatalf("expected response acknowledgement and remediation actions, got %+v", responseActions)
+	}
+
 	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, orgID, SecureCellFederationOrganizationTrustPackOptions{})
 	if err != nil {
 		t.Fatalf("BuildFederationOrganizationTrustPack failed: %v", err)
@@ -3560,6 +3667,12 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	}
 	if len(trustPack.CounterpartyIncidents) != 1 || trustPack.CounterpartyIncidents[0].BulletinID != bulletin.ID {
 		t.Fatalf("expected trust pack to include imported counterparty incident summary, got %+v", trustPack.CounterpartyIncidents)
+	}
+	if len(trustPack.IncidentResponses) < 2 || len(trustPack.IncidentRemediations) != 1 {
+		t.Fatalf("expected trust pack to include incident response and remediation summaries, got responses=%+v remediations=%+v", trustPack.IncidentResponses, trustPack.IncidentRemediations)
+	}
+	if !controlLedgerHasControl(remediated.ControlLedger, "CELL-FED-06") {
+		t.Fatalf("expected control ledger to include federation incident command fabric control, got %+v", remediated.ControlLedger.Controls)
 	}
 }
 

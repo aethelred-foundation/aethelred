@@ -88,6 +88,9 @@ const (
 	secureCellFederationIncidentResolveAction         = "secure_cells.federation.incident.resolve"
 	secureCellFederationIncidentIntakeAction          = "secure_cells.federation.incident.intake"
 	secureCellFederationIncidentContainAction         = "secure_cells.federation.incident.contain_artifacts"
+	secureCellFederationIncidentResponseAcknowledgeAction = "secure_cells.federation.incident.response.acknowledge"
+	secureCellFederationIncidentResponseEscalateAction    = "secure_cells.federation.incident.response.escalate"
+	secureCellFederationIncidentRemediationAttestAction   = "secure_cells.federation.incident.response.attest_remediation"
 	secureCellMemberReleaseAction                     = "secure_cells.member.release"
 	secureCellMemberQuarantineAction                  = "secure_cells.member.quarantine"
 	secureCellMemberRevokeAction                      = "secure_cells.member.revoke"
@@ -494,6 +497,7 @@ type SecureCellResult struct {
 	FederationCounterpartyAssurance []SecureCellFederationCounterpartyAssuranceSnapshot `json:"federation_counterparty_assurance,omitempty"`
 	FederationIncidents             []SecureCellFederationIncident                      `json:"federation_incidents,omitempty"`
 	FederationCounterpartyIncidents []SecureCellFederationCounterpartyIncidentSnapshot  `json:"federation_counterparty_incidents,omitempty"`
+	FederationIncidentResponses     []SecureCellFederationIncidentResponse              `json:"federation_incident_responses,omitempty"`
 	Sessions                        []SecureCellSession                                 `json:"sessions,omitempty"`
 	Threads                         []SecureCellSessionThread                           `json:"threads,omitempty"`
 	Decisions                       []SecureCellThreadDecision                          `json:"decisions,omitempty"`
@@ -4511,6 +4515,15 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("federation_counterparty_incidents_stale", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusStale))))
 	ledger.WithMetadata("federation_counterparty_incidents_expired", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusExpired))))
 	ledger.WithMetadata("federation_counterparty_incidents_invalid", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusInvalid))))
+	ledger.WithMetadata("federation_incident_responses_total", fmt.Sprintf("%d", len(run.result.FederationIncidentResponses)))
+	ledger.WithMetadata("federation_incident_responses_pending_local_ack", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusPendingLocalAck))))
+	ledger.WithMetadata("federation_incident_responses_pending_counterparty_ack", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusPendingCounterpartyAck))))
+	ledger.WithMetadata("federation_incident_responses_acknowledged", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusAcknowledged))))
+	ledger.WithMetadata("federation_incident_responses_escalated", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusEscalated))))
+	ledger.WithMetadata("federation_incident_responses_remediating", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusRemediating))))
+	ledger.WithMetadata("federation_incident_responses_remediated", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusRemediated))))
+	ledger.WithMetadata("federation_incident_responses_closed", fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusClosed))))
+	ledger.WithMetadata("federation_incident_remediations_total", fmt.Sprintf("%d", secureCellFederationIncidentResponseRemediationTotal(run.result.FederationIncidentResponses)))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
 	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
@@ -4571,6 +4584,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentRecordIDs := make([]string, 0, len(run.result.FederationIncidents))
 	federationCounterpartyIncidentRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyIncidents))
 	federationIncidentActionRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentResponseRecordIDs := make([]string, 0, len(run.result.FederationIncidentResponses))
+	federationIncidentResponseActionRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentRemediationRecordIDs := make([]string, 0, secureCellFederationIncidentResponseRemediationTotal(run.result.FederationIncidentResponses))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4706,7 +4722,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" || transition.Action == "secure_cell.federation_assurance_ingested" || transition.Action == "secure_cell.federation_incident_published" || transition.Action == "secure_cell.federation_incident_resolved" || transition.Action == "secure_cell.federation_incident_bulletin_ingested" {
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" || transition.Action == "secure_cell.federation_assurance_ingested" || transition.Action == "secure_cell.federation_incident_published" || transition.Action == "secure_cell.federation_incident_resolved" || transition.Action == "secure_cell.federation_incident_bulletin_ingested" || transition.Action == "secure_cell.federation_incident_response_acknowledged" || transition.Action == "secure_cell.federation_incident_response_escalated" || transition.Action == "secure_cell.federation_incident_response_remediation_attested" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_assurance_ingested" {
@@ -4720,6 +4736,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if strings.TrimSpace(data["federation_incident_id"]) != "" {
 			federationIncidentActionRecordIDs = append(federationIncidentActionRecordIDs, recordID)
+		}
+		if strings.TrimSpace(data["federation_incident_response_id"]) != "" {
+			federationIncidentResponseActionRecordIDs = append(federationIncidentResponseActionRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.member_quarantined" || transition.Action == "secure_cell.member_revoked" || transition.Action == "secure_cell.member_released" || transition.Action == "secure_cell.quarantine_expired" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
@@ -4861,6 +4880,95 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			Timestamp: secureCellFederationCounterproposalUpdatedAt(proposal).UTC().Format(time.RFC3339Nano),
 			Data:      data,
 		})
+	}
+	for _, response := range run.result.FederationIncidentResponses {
+		recordID := fmt.Sprintf("%s-federation-incident-response-%x", cellID(req), sha256.Sum256([]byte(response.ID)))
+		federationIncidentResponseRecordIDs = append(federationIncidentResponseRecordIDs, recordID)
+		ackDueAt, ackStatus := secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeAcknowledge)
+		remediationDueAt, remediationStatus := secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeRemediate)
+		data := map[string]string{
+			"federation_incident_response_id":                response.ID,
+			"federation_organization_id":                     response.OrganizationID,
+			"federation_sponsor_of_record":                   response.SponsorOfRecord,
+			"organization_name":                              response.OrganizationName,
+			"federation_incident_response_source":            string(response.SourceType),
+			"federation_incident_snapshot_id":                response.SourceSnapshotID,
+			"federation_incident_bulletin_id":                response.SourceBulletinID,
+			"federation_incident_id":                         response.IncidentID,
+			"federation_incident_status":                     string(response.IncidentStatus),
+			"federation_incident_severity":                   string(response.IncidentSeverity),
+			"federation_incident_category":                   string(response.IncidentCategory),
+			"federation_incident_summary":                    response.IncidentSummary,
+			"federation_incident_description":                response.IncidentDescription,
+			"federation_incident_response_status":            string(response.Status),
+			"federation_incident_required_acknowledgement":   string(response.RequiredAcknowledgement),
+			"federation_incident_expected_remediation_from":  string(response.ExpectedRemediationFrom),
+			"federation_contract_ids":                        strings.Join(response.ContractIDs, ","),
+			"federation_session_ids":                         strings.Join(response.SessionIDs, ","),
+			"federation_thread_ids":                          strings.Join(response.ThreadIDs, ","),
+			"federation_shared_output_ids":                   strings.Join(response.SharedOutputIDs, ","),
+			"federation_session_exchange_ids":                strings.Join(response.SessionExchangeIDs, ","),
+			"federation_incident_playbook_template":          response.PlaybookTemplate,
+			"federation_incident_escalation_ladder_tier_ids": strings.Join(secureCellFederationEscalationTierIDs(response.EscalationLadder), ","),
+			"federation_incident_escalation_targets":         strings.Join(secureCellFederationEscalationTierTargets(response.EscalationLadder), ","),
+			"federation_incident_escalated_tier_ids":         strings.Join(response.EscalatedTierIDs, ","),
+			"federation_incident_remediation_count":          fmt.Sprintf("%d", len(response.RemediationAttestations)),
+			"federation_incident_playbook_step_count":        fmt.Sprintf("%d", len(response.PlaybookSteps)),
+			"federation_incident_ack_status":                 string(ackStatus),
+			"federation_incident_remediation_status":         string(remediationStatus),
+		}
+		if ackDueAt != nil {
+			data["federation_incident_ack_due_at"] = ackDueAt.UTC().Format(time.RFC3339Nano)
+		}
+		if remediationDueAt != nil {
+			data["federation_incident_remediation_due_at"] = remediationDueAt.UTC().Format(time.RFC3339Nano)
+		}
+		if response.AcknowledgedBy != "" {
+			data["federation_incident_acknowledged_by"] = response.AcknowledgedBy
+		}
+		if response.AcknowledgedAt != nil {
+			data["federation_incident_acknowledged_at"] = response.AcknowledgedAt.UTC().Format(time.RFC3339Nano)
+		}
+		if response.RemediatedBy != "" {
+			data["federation_incident_remediated_by"] = response.RemediatedBy
+		}
+		if response.RemediatedAt != nil {
+			data["federation_incident_remediated_at"] = response.RemediatedAt.UTC().Format(time.RFC3339Nano)
+		}
+		ledger.AddRecord(evidence.Record{
+			ID:        recordID,
+			Type:      "trust",
+			Action:    "secure_cell.federation_incident_response_state",
+			Actor:     firstNonEmpty(response.RemediatedBy, response.AcknowledgedBy, req.OwnerIdentity.AgentID()),
+			Timestamp: response.UpdatedAt.UTC().Format(time.RFC3339Nano),
+			Data:      data,
+		})
+		for _, attestation := range response.RemediationAttestations {
+			attestationRecordID := fmt.Sprintf("%s-federation-incident-remediation-%x", cellID(req), sha256.Sum256([]byte(attestation.ID)))
+			federationIncidentRemediationRecordIDs = append(federationIncidentRemediationRecordIDs, attestationRecordID)
+			ledger.AddRecord(evidence.Record{
+				ID:        attestationRecordID,
+				Type:      "trust",
+				Action:    "secure_cell.federation_incident_remediation_attestation",
+				Actor:     firstNonEmpty(attestation.SubmittedBy, req.OwnerIdentity.AgentID()),
+				Timestamp: attestation.CreatedAt.UTC().Format(time.RFC3339Nano),
+				Data: map[string]string{
+					"federation_incident_response_id":      response.ID,
+					"federation_incident_remediation_id":   attestation.ID,
+					"federation_organization_id":           attestation.OrganizationID,
+					"federation_sponsor_of_record":         attestation.SponsorOfRecord,
+					"federation_incident_id":               attestation.IncidentID,
+					"federation_incident_remediation_party": string(attestation.AttestingParty),
+					"federation_incident_remediation_summary": attestation.Summary,
+					"federation_incident_remediation_description": attestation.Description,
+					"federation_incident_remediation_evidence_ids": strings.Join(attestation.EvidenceIDs, ","),
+					"policy_receipt_id":                    attestation.PolicyReceiptID,
+					"policy_receipt_hash":                  attestation.PolicyReceiptHash,
+					"seal_id":                              attestation.SealID,
+					"trace_link_id":                        attestation.TraceLinkID,
+				},
+			})
+		}
 	}
 
 	for _, session := range run.result.Sessions {
@@ -5429,6 +5537,36 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_counterparty_incidents_stale":   fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusStale))),
 				"federation_counterparty_incidents_expired": fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusExpired))),
 				"federation_counterparty_incidents_invalid": fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentsByStatus(run.result.FederationCounterpartyIncidents, SecureCellFederationCounterpartyIncidentStatusInvalid))),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentResponseRecordIDs) > 0 || len(federationIncidentResponseActionRecordIDs) > 0 || len(federationIncidentRemediationRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-06",
+			ControlName: "Federation Incident Command Fabric",
+			Description: "Cross-organization incident acknowledgements, escalations, timed playbooks, and remediation attestations are preserved as bilateral command evidence instead of ad hoc containment logs.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append(
+					append(
+						append([]string(nil), federationIncidentResponseRecordIDs...),
+						federationIncidentResponseActionRecordIDs...,
+					),
+					federationIncidentRemediationRecordIDs...,
+				),
+			},
+			Metadata: map[string]string{
+				"federation_incident_responses_total":                    fmt.Sprintf("%d", len(run.result.FederationIncidentResponses)),
+				"federation_incident_responses_pending_local_ack":        fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusPendingLocalAck))),
+				"federation_incident_responses_pending_counterparty_ack": fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusPendingCounterpartyAck))),
+				"federation_incident_responses_acknowledged":             fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusAcknowledged))),
+				"federation_incident_responses_escalated":                fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusEscalated))),
+				"federation_incident_responses_remediating":              fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusRemediating))),
+				"federation_incident_responses_remediated":               fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusRemediated))),
+				"federation_incident_responses_closed":                   fmt.Sprintf("%d", len(secureCellFederationIncidentResponsesByStatus(run.result.FederationIncidentResponses, SecureCellFederationIncidentResponseStatusClosed))),
+				"federation_incident_remediations_total":                 fmt.Sprintf("%d", secureCellFederationIncidentResponseRemediationTotal(run.result.FederationIncidentResponses)),
 			},
 		}); err != nil {
 			return nil, err
@@ -6347,7 +6485,7 @@ func transitionRecordType(action string) string {
 	switch action {
 	case "secure_cell.activated", "secure_cell.created", "secure_cell.paused", "secure_cell.resumed", "secure_cell.terminated":
 		return "governance"
-	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_vote_recorded", "secure_cell.federation_counterproposal_escalated", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed", "secure_cell.federation_assurance_ingested", "secure_cell.federation_incident_published", "secure_cell.federation_incident_resolved", "secure_cell.federation_incident_bulletin_ingested":
+	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_vote_recorded", "secure_cell.federation_counterproposal_escalated", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed", "secure_cell.federation_assurance_ingested", "secure_cell.federation_incident_published", "secure_cell.federation_incident_resolved", "secure_cell.federation_incident_bulletin_ingested", "secure_cell.federation_incident_response_acknowledged", "secure_cell.federation_incident_response_escalated", "secure_cell.federation_incident_response_remediation_attested":
 		return "trust"
 	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
@@ -6400,6 +6538,12 @@ func transitionStageForAction(action string) string {
 		return "intake_federation_incident_bulletin"
 	case "secure_cell.federation_incident_artifacts_contained":
 		return "contain_federation_incident_artifacts"
+	case "secure_cell.federation_incident_response_acknowledged":
+		return "acknowledge_federation_incident_response"
+	case "secure_cell.federation_incident_response_escalated":
+		return "escalate_federation_incident_response"
+	case "secure_cell.federation_incident_response_remediation_attested":
+		return "attest_federation_incident_remediation"
 	case "secure_cell.session_started":
 		return "start_session"
 	case "secure_cell.session_thread_started":
@@ -8067,6 +8211,9 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationIncidentResolveAction,
 				secureCellFederationIncidentIntakeAction,
 				secureCellFederationIncidentContainAction,
+				secureCellFederationIncidentResponseAcknowledgeAction,
+				secureCellFederationIncidentResponseEscalateAction,
+				secureCellFederationIncidentRemediationAttestAction,
 				secureCellSessionStartAction,
 				secureCellSessionThreadStartAction,
 				secureCellSessionThreadMessageAction,
@@ -8291,6 +8438,33 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_incident_contain_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "contain_federation_incident_artifacts"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_response_acknowledge_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "acknowledge_federation_incident_response"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_response_escalate_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "escalate_federation_incident_response"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_remediation_attest_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "attest_federation_incident_remediation"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -8610,6 +8784,12 @@ func actionForStage(stage string) string {
 		return secureCellFederationIncidentIntakeAction
 	case "contain_federation_incident_artifacts":
 		return secureCellFederationIncidentContainAction
+	case "acknowledge_federation_incident_response":
+		return secureCellFederationIncidentResponseAcknowledgeAction
+	case "escalate_federation_incident_response":
+		return secureCellFederationIncidentResponseEscalateAction
+	case "attest_federation_incident_remediation":
+		return secureCellFederationIncidentRemediationAttestAction
 	case "start_session":
 		return secureCellSessionStartAction
 	case "start_session_thread":

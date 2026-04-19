@@ -1145,10 +1145,129 @@ func TestSecureCellsHandlers_FederationIncidentBulletinViewsAndAutomatedContainm
 		t.Fatalf("expected counterparty incident csv export to include bulletin and verified status, got %s", body)
 	}
 
+	responseListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-responses?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&source_type=counterparty_incident", nil)
+	responseListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(responseListRec, responseListReq)
+	if responseListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, responseListRec.Code, responseListRec.Body.String())
+	}
+	var responseListResp secureCellFederationIncidentResponseListResponse
+	if err := json.Unmarshal(responseListRec.Body.Bytes(), &responseListResp); err != nil {
+		t.Fatalf("unmarshal federation incident response list response: %v", err)
+	}
+	if len(responseListResp.Items) != 1 {
+		t.Fatalf("expected one counterparty incident response summary, got %+v", responseListResp.Items)
+	}
+	responseID := responseListResp.Items[0].ResponseID
+
+	responseDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID, nil)
+	responseDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(responseDetailRec, responseDetailReq)
+	if responseDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, responseDetailRec.Code, responseDetailRec.Body.String())
+	}
+	var responseDetailResp secureCellFederationIncidentResponseQueryResponse
+	if err := json.Unmarshal(responseDetailRec.Body.Bytes(), &responseDetailResp); err != nil {
+		t.Fatalf("unmarshal federation incident response detail: %v", err)
+	}
+	if responseDetailResp.Result == nil || responseDetailResp.Result.ID != responseID {
+		t.Fatalf("expected response detail for %q, got %+v", responseID, responseDetailResp.Result)
+	}
+
+	ackReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID+"/acknowledge", bytes.NewReader(mustMarshalSecureCellFederationIncidentResponseAcknowledgeRequest(t, owner, nil)))
+	ackReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	ackRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(ackRec, ackReq)
+	if ackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ackRec.Code, ackRec.Body.String())
+	}
+
+	remediationReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID+"/remediations", bytes.NewReader(mustMarshalSecureCellFederationIncidentRemediationAttestationRequest(t, owner, nil, incidentID)))
+	remediationReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	remediationRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(remediationRec, remediationReq)
+	if remediationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, remediationRec.Code, remediationRec.Body.String())
+	}
+
+	remediationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-remediations?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID), nil)
+	remediationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(remediationListRec, remediationListReq)
+	if remediationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, remediationListRec.Code, remediationListRec.Body.String())
+	}
+	var remediationListResp secureCellFederationIncidentRemediationListResponse
+	if err := json.Unmarshal(remediationListRec.Body.Bytes(), &remediationListResp); err != nil {
+		t.Fatalf("unmarshal federation incident remediation list response: %v", err)
+	}
+	if len(remediationListResp.Items) != 1 || remediationListResp.Items[0].ResponseID != responseID {
+		t.Fatalf("expected one remediation attestation for response %q, got %+v", responseID, remediationListResp.Items)
+	}
+
+	remediationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-remediations/export?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID)+"&format=csv", nil)
+	remediationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(remediationExportRec, remediationExportReq)
+	if remediationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, remediationExportRec.Code, remediationExportRec.Body.String())
+	}
+	if body := remediationExportRec.Body.String(); !strings.Contains(body, responseID) || !strings.Contains(body, incidentID) {
+		t.Fatalf("expected remediation csv export to include response and incident IDs, got %s", body)
+	}
+
+	overdueAt := time.Now().UTC().Add(72 * time.Hour)
+	overdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-responses/overdue?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&before="+url.QueryEscape(overdueAt.Format(time.RFC3339Nano)), nil)
+	overdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueRec, overdueReq)
+	if overdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueRec.Code, overdueRec.Body.String())
+	}
+	var overdueResp secureCellOverdueFederationIncidentResponseListResponse
+	if err := json.Unmarshal(overdueRec.Body.Bytes(), &overdueResp); err != nil {
+		t.Fatalf("unmarshal overdue federation incident response list: %v", err)
+	}
+	if len(overdueResp.Items) == 0 {
+		t.Fatalf("expected overdue federation incident responses, got %+v", overdueResp.Items)
+	}
+
+	overdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-responses/overdue/export?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&before="+url.QueryEscape(overdueAt.Format(time.RFC3339Nano))+"&format=csv", nil)
+	overdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueExportRec, overdueExportReq)
+	if overdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueExportRec.Code, overdueExportRec.Body.String())
+	}
+	if body := overdueExportRec.Body.String(); !strings.Contains(body, acceptedOrgID) || !strings.Contains(body, "overdue") {
+		t.Fatalf("expected overdue response csv export to include organization and overdue state, got %s", body)
+	}
+
 	if app.secureCellExpirySweeper == nil {
 		t.Fatal("expected secure cell sweeper to be initialized")
 	}
+	app.secureCellExpirySweeper.runFederationIncidentResponseSweep(overdueAt)
 	app.secureCellExpirySweeper.runFederationIncidentSweep(time.Now().UTC())
+
+	responseActionReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-response-actions?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID), nil)
+	responseActionRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(responseActionRec, responseActionReq)
+	if responseActionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, responseActionRec.Code, responseActionRec.Body.String())
+	}
+	var responseActionResp secureCellFederationIncidentResponseActionListResponse
+	if err := json.Unmarshal(responseActionRec.Body.Bytes(), &responseActionResp); err != nil {
+		t.Fatalf("unmarshal federation incident response action response: %v", err)
+	}
+	if len(responseActionResp.Items) < 2 {
+		t.Fatalf("expected response actions after acknowledge/remediation, got %+v", responseActionResp.Items)
+	}
+
+	responseActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-response-actions/export?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID)+"&format=csv", nil)
+	responseActionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(responseActionExportRec, responseActionExportReq)
+	if responseActionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, responseActionExportRec.Code, responseActionExportRec.Body.String())
+	}
+	if body := responseActionExportRec.Body.String(); !strings.Contains(body, responseID) || !strings.Contains(body, "acknowledge") {
+		t.Fatalf("expected response action csv export to include response and acknowledge action, got %s", body)
+	}
 
 	actionReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-actions?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&incident_id="+url.QueryEscape(incidentID), nil)
 	actionRec := httptest.NewRecorder()
@@ -4673,6 +4792,38 @@ func mustMarshalSecureCellFederationIncidentBulletinIntakeRequest(t *testing.T, 
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell federation incident bulletin intake request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentResponseAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentResponseAcknowledgeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "acknowledge coordinated federation incident response",
+		Metadata:      map[string]string{"ticket": "SC-FED-RESP-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident response acknowledge request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentRemediationAttestationRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, incidentID string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentRemediationAttestationRequest{
+		ActorIdentity:  mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:  receipt,
+		AttestingParty: securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Summary:        "Local federation remediation attested",
+		Description:    "The local organization rotated scoped credentials and documented remediation evidence.",
+		EvidenceIDs:    []string{incidentID},
+		Reason:         "submit remediation attestation",
+		Metadata:       map[string]string{"ticket": "SC-FED-RESP-REMEDIATE-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident remediation attestation request: %v", err)
 	}
 	return body
 }
