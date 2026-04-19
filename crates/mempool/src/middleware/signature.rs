@@ -392,7 +392,12 @@ mod tests {
         crypto::hybrid::HybridKeyPair,
         types::{Address, AddressType, Transaction},
     };
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    };
+
+    static NEXT_TEST_NONCE: AtomicU64 = AtomicU64::new(1);
 
     fn create_test_context(tx_bytes: Vec<u8>) -> MiddlewareContext {
         let config = Arc::new(super::super::MiddlewareConfig::default());
@@ -403,8 +408,9 @@ mod tests {
         let keypair = HybridKeyPair::generate().unwrap();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], AddressType::User);
+        let nonce = NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed);
 
-        Transaction::transfer(sender, recipient, 1_000, 0)
+        Transaction::transfer(sender, recipient, 1_000, nonce)
             .with_chain_id(1)
             .sign(&keypair)
             .unwrap()
