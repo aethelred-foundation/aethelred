@@ -50,6 +50,7 @@ type SecureCellFederationIncidentPlaybookStepType string
 const (
 	SecureCellFederationIncidentPlaybookStepTypeAcknowledge SecureCellFederationIncidentPlaybookStepType = "acknowledge"
 	SecureCellFederationIncidentPlaybookStepTypeRemediate   SecureCellFederationIncidentPlaybookStepType = "remediate"
+	SecureCellFederationIncidentPlaybookStepTypeVerify      SecureCellFederationIncidentPlaybookStepType = "verify_remediation"
 )
 
 // SecureCellFederationIncidentPlaybookStepStatus captures whether a timed
@@ -100,6 +101,85 @@ type SecureCellFederationIncidentRemediationAttestation struct {
 	Metadata          map[string]string                        `json:"metadata,omitempty"`
 }
 
+// SecureCellFederationIncidentRemediationVerificationDecision captures the
+// reviewing party's disposition on one submitted remediation package.
+type SecureCellFederationIncidentRemediationVerificationDecision string
+
+const (
+	SecureCellFederationIncidentRemediationVerificationDecisionAccepted SecureCellFederationIncidentRemediationVerificationDecision = "accepted"
+	SecureCellFederationIncidentRemediationVerificationDecisionRejected SecureCellFederationIncidentRemediationVerificationDecision = "rejected"
+)
+
+// SecureCellFederationIncidentRemediationVerification captures the opposite
+// party's evidence-bearing verification or rejection of remediation.
+type SecureCellFederationIncidentRemediationVerification struct {
+	ID                      string                                                    `json:"id"`
+	ResponseID              string                                                    `json:"response_id"`
+	OrganizationID          string                                                    `json:"organization_id"`
+	SponsorOfRecord         string                                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID              string                                                    `json:"incident_id"`
+	ReviewingParty          SecureCellFederationIncidentResponseParty                 `json:"reviewing_party"`
+	Decision                SecureCellFederationIncidentRemediationVerificationDecision `json:"decision"`
+	VerifiedAttestationID   string                                                    `json:"verified_attestation_id,omitempty"`
+	SubmittedBy             string                                                    `json:"submitted_by,omitempty"`
+	Summary                 string                                                    `json:"summary"`
+	Description             string                                                    `json:"description,omitempty"`
+	EvidenceIDs             []string                                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID         string                                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash       string                                                    `json:"policy_receipt_hash,omitempty"`
+	SealID                  string                                                    `json:"seal_id,omitempty"`
+	TraceLinkID             string                                                    `json:"trace_link_id,omitempty"`
+	CreatedAt               time.Time                                                 `json:"created_at"`
+	Metadata                map[string]string                                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentClosureAttestation captures the non-closing
+// party's evidence-bearing acknowledgement that one coordinated response can
+// stay closed.
+type SecureCellFederationIncidentClosureAttestation struct {
+	ID                string                                    `json:"id"`
+	ResponseID        string                                    `json:"response_id"`
+	OrganizationID    string                                    `json:"organization_id"`
+	SponsorOfRecord   string                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID        string                                    `json:"incident_id"`
+	AttestingParty    SecureCellFederationIncidentResponseParty `json:"attesting_party"`
+	SubmittedBy       string                                    `json:"submitted_by,omitempty"`
+	Summary           string                                    `json:"summary"`
+	Description       string                                    `json:"description,omitempty"`
+	EvidenceIDs       []string                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID   string                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                    `json:"policy_receipt_hash,omitempty"`
+	SealID            string                                    `json:"seal_id,omitempty"`
+	TraceLinkID       string                                    `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time                                 `json:"created_at"`
+	Metadata          map[string]string                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDisputeRecord captures one party's decision to
+// reopen or dispute a coordinated response outcome.
+type SecureCellFederationIncidentDisputeRecord struct {
+	ID                     string                                    `json:"id"`
+	ResponseID             string                                    `json:"response_id"`
+	OrganizationID         string                                    `json:"organization_id"`
+	SponsorOfRecord        string                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID             string                                    `json:"incident_id"`
+	DisputingParty         SecureCellFederationIncidentResponseParty `json:"disputing_party"`
+	SubmittedBy            string                                    `json:"submitted_by,omitempty"`
+	RelatedVerificationID  string                                    `json:"related_verification_id,omitempty"`
+	RelatedClosureID       string                                    `json:"related_closure_id,omitempty"`
+	Summary                string                                    `json:"summary"`
+	Description            string                                    `json:"description,omitempty"`
+	EvidenceIDs            []string                                  `json:"evidence_ids,omitempty"`
+	Reopened               bool                                      `json:"reopened"`
+	ReopenedResponseStatus SecureCellFederationIncidentResponseStatus `json:"reopened_response_status,omitempty"`
+	PolicyReceiptID        string                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                                    `json:"policy_receipt_hash,omitempty"`
+	SealID                 string                                    `json:"seal_id,omitempty"`
+	TraceLinkID            string                                    `json:"trace_link_id,omitempty"`
+	CreatedAt              time.Time                                 `json:"created_at"`
+	Metadata               map[string]string                         `json:"metadata,omitempty"`
+}
+
 // SecureCellFederationIncidentResponse is the canonical bilateral command case
 // for one local or imported federation incident.
 type SecureCellFederationIncidentResponse struct {
@@ -124,15 +204,28 @@ type SecureCellFederationIncidentResponse struct {
 	Status                  SecureCellFederationIncidentResponseStatus  `json:"status"`
 	RequiredAcknowledgement SecureCellFederationIncidentResponseParty   `json:"required_acknowledgement"`
 	ExpectedRemediationFrom SecureCellFederationIncidentResponseParty   `json:"expected_remediation_from"`
+	VerificationRequiredFrom SecureCellFederationIncidentResponseParty  `json:"verification_required_from"`
 	PlaybookTemplate        string                                      `json:"playbook_template,omitempty"`
 	EscalationLadder        []SecureCellFederationEscalationTier        `json:"escalation_ladder,omitempty"`
 	EscalatedTierIDs        []string                                    `json:"escalated_tier_ids,omitempty"`
 	PlaybookSteps           []SecureCellFederationIncidentPlaybookStep  `json:"playbook_steps,omitempty"`
 	RemediationAttestations []SecureCellFederationIncidentRemediationAttestation `json:"remediation_attestations,omitempty"`
+	RemediationVerifications []SecureCellFederationIncidentRemediationVerification `json:"remediation_verifications,omitempty"`
+	ClosureAttestations    []SecureCellFederationIncidentClosureAttestation `json:"closure_attestations,omitempty"`
+	Disputes               []SecureCellFederationIncidentDisputeRecord      `json:"disputes,omitempty"`
 	AcknowledgedBy          string                                      `json:"acknowledged_by,omitempty"`
 	AcknowledgedAt          *time.Time                                  `json:"acknowledged_at,omitempty"`
 	RemediatedBy            string                                      `json:"remediated_by,omitempty"`
 	RemediatedAt            *time.Time                                  `json:"remediated_at,omitempty"`
+	VerifiedBy              string                                      `json:"verified_by,omitempty"`
+	VerifiedAt              *time.Time                                  `json:"verified_at,omitempty"`
+	ClosedBy                string                                      `json:"closed_by,omitempty"`
+	ClosedAt                *time.Time                                  `json:"closed_at,omitempty"`
+	LastDisputedBy          string                                      `json:"last_disputed_by,omitempty"`
+	LastDisputedAt          *time.Time                                  `json:"last_disputed_at,omitempty"`
+	ReopenedBy              string                                      `json:"reopened_by,omitempty"`
+	ReopenedAt              *time.Time                                  `json:"reopened_at,omitempty"`
+	ReopenReason            string                                      `json:"reopen_reason,omitempty"`
 	CreatedAt               time.Time                                   `json:"created_at"`
 	UpdatedAt               time.Time                                   `json:"updated_at"`
 	Metadata                map[string]string                           `json:"metadata,omitempty"`
@@ -165,6 +258,46 @@ type SecureCellFederationIncidentRemediationAttestationRequest struct {
 	EvidenceIDs    []string                                 `json:"evidence_ids,omitempty"`
 	Reason         string                                   `json:"reason,omitempty"`
 	Metadata       map[string]string                        `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentRemediationVerificationRequest submits one
+// evidence-bearing verification or rejection against remediation.
+type SecureCellFederationIncidentRemediationVerificationRequest struct {
+	ActorDID              string                                                    `json:"actor_did,omitempty"`
+	ReviewingParty        SecureCellFederationIncidentResponseParty                 `json:"reviewing_party,omitempty"`
+	Decision              SecureCellFederationIncidentRemediationVerificationDecision `json:"decision,omitempty"`
+	VerifiedAttestationID string                                                    `json:"verified_attestation_id,omitempty"`
+	Summary               string                                                    `json:"summary,omitempty"`
+	Description           string                                                    `json:"description,omitempty"`
+	EvidenceIDs           []string                                                  `json:"evidence_ids,omitempty"`
+	Reason                string                                                    `json:"reason,omitempty"`
+	Metadata              map[string]string                                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentClosureAttestationRequest submits one
+// evidence-bearing closure acknowledgement from the non-closing party.
+type SecureCellFederationIncidentClosureAttestationRequest struct {
+	ActorDID       string                                    `json:"actor_did,omitempty"`
+	AttestingParty SecureCellFederationIncidentResponseParty `json:"attesting_party,omitempty"`
+	Summary        string                                    `json:"summary,omitempty"`
+	Description    string                                    `json:"description,omitempty"`
+	EvidenceIDs    []string                                  `json:"evidence_ids,omitempty"`
+	Reason         string                                    `json:"reason,omitempty"`
+	Metadata       map[string]string                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentResponseDisputeRequest disputes one coordinated
+// outcome and reopens the bilateral response workflow.
+type SecureCellFederationIncidentResponseDisputeRequest struct {
+	ActorDID             string                                    `json:"actor_did,omitempty"`
+	DisputingParty       SecureCellFederationIncidentResponseParty `json:"disputing_party,omitempty"`
+	RelatedVerificationID string                                   `json:"related_verification_id,omitempty"`
+	RelatedClosureID     string                                    `json:"related_closure_id,omitempty"`
+	Summary              string                                    `json:"summary,omitempty"`
+	Description          string                                    `json:"description,omitempty"`
+	EvidenceIDs          []string                                  `json:"evidence_ids,omitempty"`
+	Reason               string                                    `json:"reason,omitempty"`
+	Metadata             map[string]string                         `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponseFilter narrows operator queries across
@@ -203,6 +336,7 @@ type SecureCellFederationIncidentResponseSummary struct {
 	Status                   SecureCellFederationIncidentResponseStatus  `json:"status"`
 	RequiredAcknowledgement  SecureCellFederationIncidentResponseParty   `json:"required_acknowledgement"`
 	ExpectedRemediationFrom  SecureCellFederationIncidentResponseParty   `json:"expected_remediation_from"`
+	VerificationRequiredFrom SecureCellFederationIncidentResponseParty   `json:"verification_required_from"`
 	PlaybookTemplate         string                                      `json:"playbook_template,omitempty"`
 	ContractIDs              []string                                    `json:"contract_ids,omitempty"`
 	SessionIDs               []string                                    `json:"session_ids,omitempty"`
@@ -218,15 +352,30 @@ type SecureCellFederationIncidentResponseSummary struct {
 	AckStatus                SecureCellFederationIncidentPlaybookStepStatus `json:"ack_status,omitempty"`
 	RemediationDueAt         *time.Time                                  `json:"remediation_due_at,omitempty"`
 	RemediationStatus        SecureCellFederationIncidentPlaybookStepStatus `json:"remediation_status,omitempty"`
+	VerificationDueAt        *time.Time                                  `json:"verification_due_at,omitempty"`
+	VerificationStatus       SecureCellFederationIncidentPlaybookStepStatus `json:"verification_status,omitempty"`
 	EscalationTierCount      int                                         `json:"escalation_tier_count"`
 	EscalatedTierCount       int                                         `json:"escalated_tier_count"`
 	NextEscalationTierID     string                                      `json:"next_escalation_tier_id,omitempty"`
 	NextEscalationTargetDID  string                                      `json:"next_escalation_target_did,omitempty"`
 	RemediationCount         int                                         `json:"remediation_count"`
+	VerificationCount        int                                         `json:"verification_count"`
+	ClosureAttestationCount  int                                         `json:"closure_attestation_count"`
+	DisputeCount             int                                         `json:"dispute_count"`
+	LastVerificationDecision SecureCellFederationIncidentRemediationVerificationDecision `json:"last_verification_decision,omitempty"`
 	AcknowledgedBy           string                                      `json:"acknowledged_by,omitempty"`
 	AcknowledgedAt           *time.Time                                  `json:"acknowledged_at,omitempty"`
 	RemediatedBy             string                                      `json:"remediated_by,omitempty"`
 	RemediatedAt             *time.Time                                  `json:"remediated_at,omitempty"`
+	VerifiedBy               string                                      `json:"verified_by,omitempty"`
+	VerifiedAt               *time.Time                                  `json:"verified_at,omitempty"`
+	ClosedBy                 string                                      `json:"closed_by,omitempty"`
+	ClosedAt                 *time.Time                                  `json:"closed_at,omitempty"`
+	LastDisputedBy           string                                      `json:"last_disputed_by,omitempty"`
+	LastDisputedAt           *time.Time                                  `json:"last_disputed_at,omitempty"`
+	ReopenedBy               string                                      `json:"reopened_by,omitempty"`
+	ReopenedAt               *time.Time                                  `json:"reopened_at,omitempty"`
+	ClosureReady             bool                                        `json:"closure_ready"`
 	CreatedAt                time.Time                                   `json:"created_at"`
 	UpdatedAt                time.Time                                   `json:"updated_at"`
 }
@@ -272,6 +421,8 @@ type SecureCellOverdueFederationIncidentResponse struct {
 	OverdueSeconds           int64                                       `json:"overdue_seconds"`
 	AcknowledgedAt           *time.Time                                  `json:"acknowledged_at,omitempty"`
 	RemediatedAt             *time.Time                                  `json:"remediated_at,omitempty"`
+	VerifiedAt               *time.Time                                  `json:"verified_at,omitempty"`
+	ClosedAt                 *time.Time                                  `json:"closed_at,omitempty"`
 	UpdatedAt                time.Time                                   `json:"updated_at"`
 }
 
@@ -352,6 +503,127 @@ type SecureCellFederationIncidentRemediationSummary struct {
 	TraceLinkID       string                                   `json:"trace_link_id,omitempty"`
 	CreatedAt         time.Time                                `json:"created_at"`
 	Metadata          map[string]string                        `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentVerificationFilter narrows operator queries over
+// remediation verifications recorded for bilateral incident responses.
+type SecureCellFederationIncidentVerificationFilter struct {
+	CellID         string                                                    `json:"cell_id,omitempty"`
+	OrganizationID string                                                    `json:"organization_id,omitempty"`
+	IncidentID     string                                                    `json:"incident_id,omitempty"`
+	ResponseID     string                                                    `json:"response_id,omitempty"`
+	ReviewingParty SecureCellFederationIncidentResponseParty                 `json:"reviewing_party,omitempty"`
+	Decision       SecureCellFederationIncidentRemediationVerificationDecision `json:"decision,omitempty"`
+	Since          *time.Time                                                `json:"since,omitempty"`
+	Until          *time.Time                                                `json:"until,omitempty"`
+	Limit          int                                                       `json:"limit,omitempty"`
+}
+
+// SecureCellFederationIncidentVerificationSummary projects one remediation
+// verification decision for operator export and audit use.
+type SecureCellFederationIncidentVerificationSummary struct {
+	CellID                string                                                    `json:"cell_id"`
+	CellName              string                                                    `json:"cell_name,omitempty"`
+	Jurisdiction          string                                                    `json:"jurisdiction,omitempty"`
+	CellStatus            SecureCellStatus                                          `json:"cell_status"`
+	ResponseID            string                                                    `json:"response_id"`
+	OrganizationID        string                                                    `json:"organization_id"`
+	SponsorOfRecord       string                                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID            string                                                    `json:"incident_id"`
+	VerificationID        string                                                    `json:"verification_id"`
+	ReviewingParty        SecureCellFederationIncidentResponseParty                 `json:"reviewing_party"`
+	Decision              SecureCellFederationIncidentRemediationVerificationDecision `json:"decision"`
+	VerifiedAttestationID string                                                    `json:"verified_attestation_id,omitempty"`
+	SubmittedBy           string                                                    `json:"submitted_by,omitempty"`
+	Summary               string                                                    `json:"summary"`
+	Description           string                                                    `json:"description,omitempty"`
+	EvidenceIDs           []string                                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID       string                                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash     string                                                    `json:"policy_receipt_hash,omitempty"`
+	SealID                string                                                    `json:"seal_id,omitempty"`
+	TraceLinkID           string                                                    `json:"trace_link_id,omitempty"`
+	CreatedAt             time.Time                                                 `json:"created_at"`
+	Metadata              map[string]string                                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentClosureAttestationFilter narrows operator
+// queries over bilateral closure attestations.
+type SecureCellFederationIncidentClosureAttestationFilter struct {
+	CellID         string                                    `json:"cell_id,omitempty"`
+	OrganizationID string                                    `json:"organization_id,omitempty"`
+	IncidentID     string                                    `json:"incident_id,omitempty"`
+	ResponseID     string                                    `json:"response_id,omitempty"`
+	AttestingParty SecureCellFederationIncidentResponseParty `json:"attesting_party,omitempty"`
+	Since          *time.Time                                `json:"since,omitempty"`
+	Until          *time.Time                                `json:"until,omitempty"`
+	Limit          int                                       `json:"limit,omitempty"`
+}
+
+// SecureCellFederationIncidentClosureAttestationSummary projects one closure
+// attestation for operator export and audit use.
+type SecureCellFederationIncidentClosureAttestationSummary struct {
+	CellID            string                                    `json:"cell_id"`
+	CellName          string                                    `json:"cell_name,omitempty"`
+	Jurisdiction      string                                    `json:"jurisdiction,omitempty"`
+	CellStatus        SecureCellStatus                          `json:"cell_status"`
+	ResponseID        string                                    `json:"response_id"`
+	OrganizationID    string                                    `json:"organization_id"`
+	SponsorOfRecord   string                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID        string                                    `json:"incident_id"`
+	AttestationID     string                                    `json:"attestation_id"`
+	AttestingParty    SecureCellFederationIncidentResponseParty `json:"attesting_party"`
+	SubmittedBy       string                                    `json:"submitted_by,omitempty"`
+	Summary           string                                    `json:"summary"`
+	Description       string                                    `json:"description,omitempty"`
+	EvidenceIDs       []string                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID   string                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                    `json:"policy_receipt_hash,omitempty"`
+	SealID            string                                    `json:"seal_id,omitempty"`
+	TraceLinkID       string                                    `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time                                 `json:"created_at"`
+	Metadata          map[string]string                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDisputeFilter narrows operator queries across
+// response disputes and reopen events.
+type SecureCellFederationIncidentDisputeFilter struct {
+	CellID         string                                    `json:"cell_id,omitempty"`
+	OrganizationID string                                    `json:"organization_id,omitempty"`
+	IncidentID     string                                    `json:"incident_id,omitempty"`
+	ResponseID     string                                    `json:"response_id,omitempty"`
+	DisputingParty SecureCellFederationIncidentResponseParty `json:"disputing_party,omitempty"`
+	Since          *time.Time                                `json:"since,omitempty"`
+	Until          *time.Time                                `json:"until,omitempty"`
+	Limit          int                                       `json:"limit,omitempty"`
+}
+
+// SecureCellFederationIncidentDisputeSummary projects one bilateral dispute
+// or reopen event for operator export and audit use.
+type SecureCellFederationIncidentDisputeSummary struct {
+	CellID                string                                     `json:"cell_id"`
+	CellName              string                                     `json:"cell_name,omitempty"`
+	Jurisdiction          string                                     `json:"jurisdiction,omitempty"`
+	CellStatus            SecureCellStatus                           `json:"cell_status"`
+	ResponseID            string                                     `json:"response_id"`
+	OrganizationID        string                                     `json:"organization_id"`
+	SponsorOfRecord       string                                     `json:"sponsor_of_record,omitempty"`
+	IncidentID            string                                     `json:"incident_id"`
+	DisputeID             string                                     `json:"dispute_id"`
+	DisputingParty        SecureCellFederationIncidentResponseParty  `json:"disputing_party"`
+	SubmittedBy           string                                     `json:"submitted_by,omitempty"`
+	RelatedVerificationID string                                     `json:"related_verification_id,omitempty"`
+	RelatedClosureID      string                                     `json:"related_closure_id,omitempty"`
+	Summary               string                                     `json:"summary"`
+	Description           string                                     `json:"description,omitempty"`
+	EvidenceIDs           []string                                   `json:"evidence_ids,omitempty"`
+	Reopened              bool                                       `json:"reopened"`
+	ReopenedResponseStatus SecureCellFederationIncidentResponseStatus `json:"reopened_response_status,omitempty"`
+	PolicyReceiptID       string                                     `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash     string                                     `json:"policy_receipt_hash,omitempty"`
+	SealID                string                                     `json:"seal_id,omitempty"`
+	TraceLinkID           string                                     `json:"trace_link_id,omitempty"`
+	CreatedAt             time.Time                                  `json:"created_at"`
+	Metadata              map[string]string                          `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponseSweepResult summarizes one automated
@@ -621,6 +893,11 @@ func (s *Service) AttestFederationIncidentRemediation(ctx context.Context, cellI
 		secureCellCompleteFederationIncidentPlaybookStep(&run.result.FederationIncidentResponses[idx], SecureCellFederationIncidentPlaybookStepTypeRemediate, actorDID, now, attestation.ID)
 		run.result.FederationIncidentResponses[idx].RemediatedBy = actorDID
 		run.result.FederationIncidentResponses[idx].RemediatedAt = cloneTimePtr(&now)
+		run.result.FederationIncidentResponses[idx].VerifiedBy = ""
+		run.result.FederationIncidentResponses[idx].VerifiedAt = nil
+		run.result.FederationIncidentResponses[idx].ClosedBy = ""
+		run.result.FederationIncidentResponses[idx].ClosedAt = nil
+		secureCellResetFederationIncidentPlaybookStep(&run.result.FederationIncidentResponses[idx], SecureCellFederationIncidentPlaybookStepTypeVerify, now, secureCellFederationIncidentResponseVerifyDeadline(run.result.FederationIncidentResponses[idx], now), false)
 		if run.result.FederationIncidentResponses[idx].AcknowledgedAt != nil && !run.result.FederationIncidentResponses[idx].AcknowledgedAt.IsZero() {
 			run.result.FederationIncidentResponses[idx].Status = SecureCellFederationIncidentResponseStatusRemediated
 		} else {
@@ -655,6 +932,356 @@ func (s *Service) AttestFederationIncidentRemediation(ctx context.Context, cellI
 			"federation_incident_remediation_party":       string(attestation.AttestingParty),
 			"federation_incident_remediation_evidence":    strings.Join(attestation.EvidenceIDs, ","),
 			"federation_contract_ids":                     strings.Join(response.ContractIDs, ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+func (s *Service) VerifyFederationIncidentRemediation(ctx context.Context, cellID string, responseID string, req SecureCellFederationIncidentRemediationVerificationRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	idx, response := findSecureCellFederationIncidentResponse(run.result.FederationIncidentResponses, responseID)
+	if response == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: %q", ErrFederationIncidentResponseNotFound, responseID)
+	}
+	if secureCellFederationIncidentResponseClosed(*response) {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: response %q is %s", ErrFederationIncidentResponseImmutable, responseID, response.Status)
+	}
+	if strings.TrimSpace(req.Summary) == "" {
+		return nil, fmt.Errorf("securecells/federation-incident-response: remediation verification summary is required")
+	}
+	decision := secureCellNormalizedFederationIncidentRemediationVerificationDecision(req.Decision)
+	if decision == "" {
+		decision = SecureCellFederationIncidentRemediationVerificationDecisionAccepted
+	}
+	party := secureCellNormalizedFederationIncidentResponseParty(req.ReviewingParty)
+	if party == "" {
+		party = response.VerificationRequiredFrom
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, party) {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: actor %q is not permitted to verify remediation for response %q", ErrPolicyDenied, actorDID, responseID)
+	}
+	verifiedAttestationID := strings.TrimSpace(req.VerifiedAttestationID)
+	if verifiedAttestationID == "" {
+		verifiedAttestationID = secureCellLatestFederationIncidentRemediationAttestationID(*response, response.ExpectedRemediationFrom)
+	}
+	if verifiedAttestationID == "" {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: response %q has no remediation attestation to verify", ErrFederationIncidentResponseImmutable, responseID)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, "verify_federation_incident_remediation", lastReceiptHash(run.result), map[string]string{
+		"federation_incident_response_id":              response.ID,
+		"federation_organization_id":                   response.OrganizationID,
+		"federation_sponsor_of_record":                 response.SponsorOfRecord,
+		"federation_incident_id":                       response.IncidentID,
+		"federation_incident_response_source":          string(response.SourceType),
+		"federation_incident_response_status":          string(response.Status),
+		"federation_incident_verification_party":       string(party),
+		"federation_incident_verification_decision":    string(decision),
+		"federation_incident_verified_attestation_id":  verifiedAttestationID,
+		"federation_incident_verification_evidence":    strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason":                            firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w", ErrPolicyDenied)
+	}
+
+	now := time.Now().UTC()
+	statusBefore := response.Status
+	verification := SecureCellFederationIncidentRemediationVerification{
+		ID:                    secureCellFederationIncidentRemediationVerificationID(*response, actorDID, now, len(run.result.FederationIncidentResponses[idx].RemediationVerifications)),
+		ResponseID:            response.ID,
+		OrganizationID:        response.OrganizationID,
+		SponsorOfRecord:       response.SponsorOfRecord,
+		IncidentID:            response.IncidentID,
+		ReviewingParty:        party,
+		Decision:              decision,
+		VerifiedAttestationID: verifiedAttestationID,
+		SubmittedBy:           actorDID,
+		Summary:               strings.TrimSpace(req.Summary),
+		Description:           strings.TrimSpace(req.Description),
+		EvidenceIDs:           append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		PolicyReceiptID:       receipt.ID,
+		PolicyReceiptHash:     receipt.ContentHash,
+		CreatedAt:             now,
+		Metadata:              cloneStringMap(req.Metadata),
+	}
+	run.result.FederationIncidentResponses[idx].RemediationVerifications = append(run.result.FederationIncidentResponses[idx].RemediationVerifications, verification)
+	run.result.FederationIncidentResponses[idx].UpdatedAt = now
+	run.result.FederationIncidentResponses[idx].Metadata = mergeStringMaps(run.result.FederationIncidentResponses[idx].Metadata, req.Metadata)
+	switch decision {
+	case SecureCellFederationIncidentRemediationVerificationDecisionAccepted:
+		secureCellCompleteFederationIncidentPlaybookStep(&run.result.FederationIncidentResponses[idx], SecureCellFederationIncidentPlaybookStepTypeVerify, actorDID, now, verification.ID)
+		run.result.FederationIncidentResponses[idx].VerifiedBy = actorDID
+		run.result.FederationIncidentResponses[idx].VerifiedAt = cloneTimePtr(&now)
+		if run.result.FederationIncidentResponses[idx].IncidentStatus == SecureCellFederationIncidentStatusResolved && run.result.FederationIncidentResponses[idx].AcknowledgedAt != nil && run.result.FederationIncidentResponses[idx].RemediatedAt != nil {
+			run.result.FederationIncidentResponses[idx].Status = SecureCellFederationIncidentResponseStatusClosed
+			run.result.FederationIncidentResponses[idx].ClosedBy = actorDID
+			run.result.FederationIncidentResponses[idx].ClosedAt = cloneTimePtr(&now)
+		} else {
+			run.result.FederationIncidentResponses[idx].Status = SecureCellFederationIncidentResponseStatusRemediated
+		}
+	case SecureCellFederationIncidentRemediationVerificationDecisionRejected:
+		dispute := secureCellReopenFederationIncidentResponse(&run.result.FederationIncidentResponses[idx], SecureCellFederationIncidentResponseDisputeRequest{
+			ActorDID:             actorDID,
+			DisputingParty:       party,
+			RelatedVerificationID: verification.ID,
+			Summary:              firstNonEmpty(strings.TrimSpace(req.Summary), "Remediation verification rejected"),
+			Description:          strings.TrimSpace(req.Description),
+			EvidenceIDs:          append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+			Reason:               firstNonEmpty(strings.TrimSpace(req.Reason), "verification rejected"),
+			Metadata:             mergeStringMaps(req.Metadata, map[string]string{"reopened_from_verification_decision": string(verification.Decision)}),
+		}, receipt, now)
+		verification.Metadata = mergeStringMaps(verification.Metadata, map[string]string{"reopened_dispute_id": dispute.ID})
+		run.result.FederationIncidentResponses[idx].RemediationVerifications[len(run.result.FederationIncidentResponses[idx].RemediationVerifications)-1] = verification
+	}
+	run.result.UpdatedAt = now
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_remediation_verified", response.ID),
+		Action:           "secure_cell.federation_incident_remediation_verified",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_response",
+		TargetDID:        response.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_incident_response_id":              response.ID,
+			"federation_incident_response_status_before":   string(statusBefore),
+			"federation_incident_response_status_after":    string(run.result.FederationIncidentResponses[idx].Status),
+			"federation_incident_response_source":          string(response.SourceType),
+			"federation_organization_id":                   response.OrganizationID,
+			"federation_sponsor_of_record":                 response.SponsorOfRecord,
+			"federation_incident_id":                       response.IncidentID,
+			"federation_incident_status":                   string(response.IncidentStatus),
+			"federation_incident_severity":                 string(response.IncidentSeverity),
+			"federation_incident_category":                 string(response.IncidentCategory),
+			"federation_incident_response_action":          "verify_remediation",
+			"federation_incident_verification_id":          verification.ID,
+			"federation_incident_verification_party":       string(verification.ReviewingParty),
+			"federation_incident_verification_decision":    string(verification.Decision),
+			"federation_incident_verified_attestation_id":  verification.VerifiedAttestationID,
+			"federation_incident_verification_evidence":    strings.Join(verification.EvidenceIDs, ","),
+			"federation_contract_ids":                      strings.Join(response.ContractIDs, ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+func (s *Service) AttestFederationIncidentClosure(ctx context.Context, cellID string, responseID string, req SecureCellFederationIncidentClosureAttestationRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	idx, response := findSecureCellFederationIncidentResponse(run.result.FederationIncidentResponses, responseID)
+	if response == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: %q", ErrFederationIncidentResponseNotFound, responseID)
+	}
+	if strings.TrimSpace(req.Summary) == "" {
+		return nil, fmt.Errorf("securecells/federation-incident-response: closure attestation summary is required")
+	}
+	if response.Status != SecureCellFederationIncidentResponseStatusClosed && !secureCellFederationIncidentResponseClosureReady(*response) {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: response %q is not ready for closure attestation", ErrFederationIncidentResponseImmutable, responseID)
+	}
+	party := secureCellNormalizedFederationIncidentResponseParty(req.AttestingParty)
+	if party == "" {
+		party = secureCellFederationIncidentResponseClosureParty(*response)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, party) {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: actor %q is not permitted to attest closure for response %q", ErrPolicyDenied, actorDID, responseID)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, "attest_federation_incident_closure", lastReceiptHash(run.result), map[string]string{
+		"federation_incident_response_id":            response.ID,
+		"federation_organization_id":                 response.OrganizationID,
+		"federation_sponsor_of_record":               response.SponsorOfRecord,
+		"federation_incident_id":                     response.IncidentID,
+		"federation_incident_response_source":        string(response.SourceType),
+		"federation_incident_response_status":        string(response.Status),
+		"federation_incident_closure_attesting_party": string(party),
+		"federation_incident_closure_evidence":       strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason":                          firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w", ErrPolicyDenied)
+	}
+
+	now := time.Now().UTC()
+	if run.result.FederationIncidentResponses[idx].Status != SecureCellFederationIncidentResponseStatusClosed {
+		run.result.FederationIncidentResponses[idx].Status = SecureCellFederationIncidentResponseStatusClosed
+		if strings.TrimSpace(run.result.FederationIncidentResponses[idx].ClosedBy) == "" {
+			run.result.FederationIncidentResponses[idx].ClosedBy = strings.TrimSpace(actorDID)
+		}
+		if run.result.FederationIncidentResponses[idx].ClosedAt == nil {
+			run.result.FederationIncidentResponses[idx].ClosedAt = cloneTimePtr(&now)
+		}
+	}
+	attestation := SecureCellFederationIncidentClosureAttestation{
+		ID:                secureCellFederationIncidentClosureAttestationID(*response, actorDID, now, len(run.result.FederationIncidentResponses[idx].ClosureAttestations)),
+		ResponseID:        response.ID,
+		OrganizationID:    response.OrganizationID,
+		SponsorOfRecord:   response.SponsorOfRecord,
+		IncidentID:        response.IncidentID,
+		AttestingParty:    party,
+		SubmittedBy:       actorDID,
+		Summary:           strings.TrimSpace(req.Summary),
+		Description:       strings.TrimSpace(req.Description),
+		EvidenceIDs:       append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         now,
+		Metadata:          cloneStringMap(req.Metadata),
+	}
+	run.result.FederationIncidentResponses[idx].ClosureAttestations = append(run.result.FederationIncidentResponses[idx].ClosureAttestations, attestation)
+	run.result.FederationIncidentResponses[idx].UpdatedAt = now
+	run.result.FederationIncidentResponses[idx].Metadata = mergeStringMaps(run.result.FederationIncidentResponses[idx].Metadata, req.Metadata)
+	run.result.UpdatedAt = now
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_closure_attested", response.ID),
+		Action:           "secure_cell.federation_incident_closure_attested",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_response",
+		TargetDID:        response.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_incident_response_id":            response.ID,
+			"federation_incident_response_status_before": string(response.Status),
+			"federation_incident_response_status_after":  string(run.result.FederationIncidentResponses[idx].Status),
+			"federation_incident_response_source":        string(response.SourceType),
+			"federation_organization_id":                 response.OrganizationID,
+			"federation_sponsor_of_record":               response.SponsorOfRecord,
+			"federation_incident_id":                     response.IncidentID,
+			"federation_incident_status":                 string(response.IncidentStatus),
+			"federation_incident_severity":               string(response.IncidentSeverity),
+			"federation_incident_category":               string(response.IncidentCategory),
+			"federation_incident_response_action":        "attest_closure",
+			"federation_incident_closure_attestation_id": attestation.ID,
+			"federation_incident_closure_party":          string(attestation.AttestingParty),
+			"federation_incident_closure_evidence":       strings.Join(attestation.EvidenceIDs, ","),
+			"federation_contract_ids":                    strings.Join(response.ContractIDs, ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+func (s *Service) DisputeFederationIncidentResponse(ctx context.Context, cellID string, responseID string, req SecureCellFederationIncidentResponseDisputeRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	idx, response := findSecureCellFederationIncidentResponse(run.result.FederationIncidentResponses, responseID)
+	if response == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: %q", ErrFederationIncidentResponseNotFound, responseID)
+	}
+	if strings.TrimSpace(req.Summary) == "" {
+		return nil, fmt.Errorf("securecells/federation-incident-response: dispute summary is required")
+	}
+	party := secureCellNormalizedFederationIncidentResponseParty(req.DisputingParty)
+	if party == "" {
+		party = secureCellFederationIncidentResponseClosureParty(*response)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, party) {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w: actor %q is not permitted to dispute response %q", ErrPolicyDenied, actorDID, responseID)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, "dispute_federation_incident_response", lastReceiptHash(run.result), map[string]string{
+		"federation_incident_response_id":             response.ID,
+		"federation_organization_id":                  response.OrganizationID,
+		"federation_sponsor_of_record":                response.SponsorOfRecord,
+		"federation_incident_id":                      response.IncidentID,
+		"federation_incident_response_source":         string(response.SourceType),
+		"federation_incident_response_status":         string(response.Status),
+		"federation_incident_disputing_party":         string(party),
+		"federation_incident_related_verification_id": strings.TrimSpace(req.RelatedVerificationID),
+		"federation_incident_related_closure_id":      strings.TrimSpace(req.RelatedClosureID),
+		"federation_incident_dispute_evidence":        strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason":                           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-response: %w", ErrPolicyDenied)
+	}
+
+	now := time.Now().UTC()
+	statusBefore := response.Status
+	dispute := secureCellReopenFederationIncidentResponse(&run.result.FederationIncidentResponses[idx], req, receipt, now)
+	run.result.UpdatedAt = now
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_response_disputed", response.ID),
+		Action:           "secure_cell.federation_incident_response_disputed",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_response",
+		TargetDID:        response.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_incident_response_id":            response.ID,
+			"federation_incident_response_status_before": string(statusBefore),
+			"federation_incident_response_status_after":  string(run.result.FederationIncidentResponses[idx].Status),
+			"federation_incident_response_source":        string(response.SourceType),
+			"federation_organization_id":                 response.OrganizationID,
+			"federation_sponsor_of_record":               response.SponsorOfRecord,
+			"federation_incident_id":                     response.IncidentID,
+			"federation_incident_status":                 string(response.IncidentStatus),
+			"federation_incident_severity":               string(response.IncidentSeverity),
+			"federation_incident_category":               string(response.IncidentCategory),
+			"federation_incident_response_action":        "dispute",
+			"federation_incident_dispute_id":             dispute.ID,
+			"federation_incident_disputing_party":        string(dispute.DisputingParty),
+			"federation_incident_dispute_evidence":       strings.Join(dispute.EvidenceIDs, ","),
+			"federation_contract_ids":                    strings.Join(response.ContractIDs, ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -784,6 +1411,8 @@ func (s *Service) ListOverdueFederationIncidentResponses(_ context.Context, filt
 				OverdueSeconds:   int64(at.Sub(dueAt.UTC()).Seconds()),
 				AcknowledgedAt:   summary.AcknowledgedAt,
 				RemediatedAt:     summary.RemediatedAt,
+				VerifiedAt:       summary.VerifiedAt,
+				ClosedAt:         summary.ClosedAt,
 				UpdatedAt:        summary.UpdatedAt,
 			})
 		}
@@ -889,6 +1518,162 @@ func (s *Service) ListFederationIncidentRemediations(_ context.Context, filter S
 	return items, nil
 }
 
+func (s *Service) ListFederationIncidentVerifications(_ context.Context, filter SecureCellFederationIncidentVerificationFilter) ([]SecureCellFederationIncidentVerificationSummary, error) {
+	if s == nil {
+		return nil, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]SecureCellFederationIncidentVerificationSummary, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if !secureCellFederationRunMatchesCellFilter(run, strings.TrimSpace(filter.CellID)) {
+			continue
+		}
+		for _, response := range run.result.FederationIncidentResponses {
+			if filter.OrganizationID != "" && !strings.EqualFold(strings.TrimSpace(response.OrganizationID), strings.TrimSpace(filter.OrganizationID)) {
+				continue
+			}
+			if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(response.IncidentID), strings.TrimSpace(filter.IncidentID)) {
+				continue
+			}
+			if filter.ResponseID != "" && !strings.EqualFold(strings.TrimSpace(response.ID), strings.TrimSpace(filter.ResponseID)) {
+				continue
+			}
+			for _, verification := range response.RemediationVerifications {
+				if filter.ReviewingParty != "" && verification.ReviewingParty != filter.ReviewingParty {
+					continue
+				}
+				if filter.Decision != "" && verification.Decision != filter.Decision {
+					continue
+				}
+				if filter.Since != nil && verification.CreatedAt.Before(filter.Since.UTC()) {
+					continue
+				}
+				if filter.Until != nil && verification.CreatedAt.After(filter.Until.UTC()) {
+					continue
+				}
+				items = append(items, secureCellFederationIncidentVerificationSummaryFromRun(run, response, verification))
+			}
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].CreatedAt.Equal(items[j].CreatedAt) {
+			return items[i].VerificationID > items[j].VerificationID
+		}
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
+func (s *Service) ListFederationIncidentClosureAttestations(_ context.Context, filter SecureCellFederationIncidentClosureAttestationFilter) ([]SecureCellFederationIncidentClosureAttestationSummary, error) {
+	if s == nil {
+		return nil, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]SecureCellFederationIncidentClosureAttestationSummary, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if !secureCellFederationRunMatchesCellFilter(run, strings.TrimSpace(filter.CellID)) {
+			continue
+		}
+		for _, response := range run.result.FederationIncidentResponses {
+			if filter.OrganizationID != "" && !strings.EqualFold(strings.TrimSpace(response.OrganizationID), strings.TrimSpace(filter.OrganizationID)) {
+				continue
+			}
+			if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(response.IncidentID), strings.TrimSpace(filter.IncidentID)) {
+				continue
+			}
+			if filter.ResponseID != "" && !strings.EqualFold(strings.TrimSpace(response.ID), strings.TrimSpace(filter.ResponseID)) {
+				continue
+			}
+			for _, attestation := range response.ClosureAttestations {
+				if filter.AttestingParty != "" && attestation.AttestingParty != filter.AttestingParty {
+					continue
+				}
+				if filter.Since != nil && attestation.CreatedAt.Before(filter.Since.UTC()) {
+					continue
+				}
+				if filter.Until != nil && attestation.CreatedAt.After(filter.Until.UTC()) {
+					continue
+				}
+				items = append(items, secureCellFederationIncidentClosureAttestationSummaryFromRun(run, response, attestation))
+			}
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].CreatedAt.Equal(items[j].CreatedAt) {
+			return items[i].AttestationID > items[j].AttestationID
+		}
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
+func (s *Service) ListFederationIncidentDisputes(_ context.Context, filter SecureCellFederationIncidentDisputeFilter) ([]SecureCellFederationIncidentDisputeSummary, error) {
+	if s == nil {
+		return nil, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]SecureCellFederationIncidentDisputeSummary, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if !secureCellFederationRunMatchesCellFilter(run, strings.TrimSpace(filter.CellID)) {
+			continue
+		}
+		for _, response := range run.result.FederationIncidentResponses {
+			if filter.OrganizationID != "" && !strings.EqualFold(strings.TrimSpace(response.OrganizationID), strings.TrimSpace(filter.OrganizationID)) {
+				continue
+			}
+			if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(response.IncidentID), strings.TrimSpace(filter.IncidentID)) {
+				continue
+			}
+			if filter.ResponseID != "" && !strings.EqualFold(strings.TrimSpace(response.ID), strings.TrimSpace(filter.ResponseID)) {
+				continue
+			}
+			for _, dispute := range response.Disputes {
+				if filter.DisputingParty != "" && dispute.DisputingParty != filter.DisputingParty {
+					continue
+				}
+				if filter.Since != nil && dispute.CreatedAt.Before(filter.Since.UTC()) {
+					continue
+				}
+				if filter.Until != nil && dispute.CreatedAt.After(filter.Until.UTC()) {
+					continue
+				}
+				items = append(items, secureCellFederationIncidentDisputeSummaryFromRun(run, response, dispute))
+			}
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].CreatedAt.Equal(items[j].CreatedAt) {
+			return items[i].DisputeID > items[j].DisputeID
+		}
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
 func (s *Service) SweepFederationIncidentResponses(ctx context.Context, at time.Time, lifecycle SecureCellLifecycleRequest) (*SecureCellFederationIncidentResponseSweepResult, error) {
 	if s == nil {
 		return nil, fmt.Errorf("securecells/federation-incident-response: service is required")
@@ -984,7 +1769,7 @@ func secureCellUpsertFederationIncidentResponsesForCounterpartySnapshot(run *sec
 		response := secureCellNewFederationIncidentResponse(run, snapshot.OrganizationID, summary.SponsorOfRecord, summary.OrganizationName, SecureCellFederationIncidentResponseSourceCounterpartyIncident, snapshot.SnapshotID, snapshot.Bulletin.ID, summary)
 		if idx, existing := findSecureCellFederationIncidentResponse(run.result.FederationIncidentResponses, response.ID); existing != nil {
 			merged := secureCellMergeFederationIncidentResponse(run.result.FederationIncidentResponses[idx], response)
-			if summary.Status == SecureCellFederationIncidentStatusResolved && merged.Status == SecureCellFederationIncidentResponseStatusRemediated {
+			if summary.Status == SecureCellFederationIncidentStatusResolved && secureCellFederationIncidentResponseClosureReady(merged) {
 				merged.Status = SecureCellFederationIncidentResponseStatusClosed
 			}
 			run.result.FederationIncidentResponses[idx] = merged
@@ -1007,8 +1792,14 @@ func secureCellUpdateFederationIncidentResponseStatusForResolution(result *Secur
 			continue
 		}
 		result.FederationIncidentResponses[idx].IncidentStatus = SecureCellFederationIncidentStatusResolved
-		if result.FederationIncidentResponses[idx].Status == SecureCellFederationIncidentResponseStatusRemediated {
+		if secureCellFederationIncidentResponseClosureReady(result.FederationIncidentResponses[idx]) {
 			result.FederationIncidentResponses[idx].Status = SecureCellFederationIncidentResponseStatusClosed
+			if strings.TrimSpace(result.FederationIncidentResponses[idx].ClosedBy) == "" {
+				result.FederationIncidentResponses[idx].ClosedBy = strings.TrimSpace(resolvedBy)
+			}
+			if result.FederationIncidentResponses[idx].ClosedAt == nil {
+				result.FederationIncidentResponses[idx].ClosedAt = cloneTimePtr(&resolvedAt)
+			}
 		}
 		if strings.TrimSpace(result.FederationIncidentResponses[idx].RemediatedBy) == "" {
 			result.FederationIncidentResponses[idx].RemediatedBy = strings.TrimSpace(resolvedBy)
@@ -1027,7 +1818,8 @@ func secureCellNewFederationIncidentResponse(run *secureCellRun, organizationID 
 	}
 	responseID := secureCellFederationIncidentResponseID(run, organizationID, sourceType, incident.IncidentID)
 	requiredAck := secureCellFederationIncidentResponsePartyForSource(sourceType)
-	template, steps, ladder := secureCellFederationIncidentResponsePlaybook(run, responseID, organizationID, requiredAck, incident, now)
+	verificationParty := secureCellFederationIncidentResponseOppositeParty(requiredAck)
+	template, steps, ladder := secureCellFederationIncidentResponsePlaybook(run, responseID, organizationID, requiredAck, verificationParty, incident, now)
 	status := SecureCellFederationIncidentResponseStatusPendingCounterpartyAck
 	if requiredAck == SecureCellFederationIncidentResponsePartyLocalOrg {
 		status = SecureCellFederationIncidentResponseStatusPendingLocalAck
@@ -1054,6 +1846,7 @@ func secureCellNewFederationIncidentResponse(run *secureCellRun, organizationID 
 		Status:                  status,
 		RequiredAcknowledgement: requiredAck,
 		ExpectedRemediationFrom: requiredAck,
+		VerificationRequiredFrom: verificationParty,
 		PlaybookTemplate:        template,
 		EscalationLadder:        ladder,
 		PlaybookSteps:           steps,
@@ -1080,6 +1873,7 @@ func secureCellMergeFederationIncidentResponse(existing SecureCellFederationInci
 	merged.ThreadIDs = uniqueTrimmedStrings(append(append([]string(nil), merged.ThreadIDs...), incoming.ThreadIDs...))
 	merged.SharedOutputIDs = uniqueTrimmedStrings(append(append([]string(nil), merged.SharedOutputIDs...), incoming.SharedOutputIDs...))
 	merged.SessionExchangeIDs = uniqueTrimmedStrings(append(append([]string(nil), merged.SessionExchangeIDs...), incoming.SessionExchangeIDs...))
+	merged.VerificationRequiredFrom = firstNonEmptyFederationIncidentResponseParty(incoming.VerificationRequiredFrom, merged.VerificationRequiredFrom)
 	if len(merged.PlaybookSteps) == 0 {
 		merged.PlaybookTemplate = incoming.PlaybookTemplate
 		merged.PlaybookSteps = incoming.PlaybookSteps
@@ -1108,6 +1902,21 @@ func secureCellFederationIncidentRemediationAttestationID(response SecureCellFed
 	return fmt.Sprintf("%s-remediation-%x", strings.TrimSpace(response.ID), sha256.Sum256([]byte(seed)))
 }
 
+func secureCellFederationIncidentRemediationVerificationID(response SecureCellFederationIncidentResponse, actorDID string, at time.Time, ordinal int) string {
+	seed := fmt.Sprintf("%s|%s|%s|%d|%s", strings.TrimSpace(response.ID), strings.TrimSpace(actorDID), at.UTC().Format(time.RFC3339Nano), ordinal+1, strings.TrimSpace(response.IncidentID))
+	return fmt.Sprintf("%s-verification-%x", strings.TrimSpace(response.ID), sha256.Sum256([]byte(seed)))
+}
+
+func secureCellFederationIncidentClosureAttestationID(response SecureCellFederationIncidentResponse, actorDID string, at time.Time, ordinal int) string {
+	seed := fmt.Sprintf("%s|%s|%s|%d|closure|%s", strings.TrimSpace(response.ID), strings.TrimSpace(actorDID), at.UTC().Format(time.RFC3339Nano), ordinal+1, strings.TrimSpace(response.IncidentID))
+	return fmt.Sprintf("%s-closure-%x", strings.TrimSpace(response.ID), sha256.Sum256([]byte(seed)))
+}
+
+func secureCellFederationIncidentDisputeID(response SecureCellFederationIncidentResponse, actorDID string, at time.Time, ordinal int) string {
+	seed := fmt.Sprintf("%s|%s|%s|%d|dispute|%s", strings.TrimSpace(response.ID), strings.TrimSpace(actorDID), at.UTC().Format(time.RFC3339Nano), ordinal+1, strings.TrimSpace(response.IncidentID))
+	return fmt.Sprintf("%s-dispute-%x", strings.TrimSpace(response.ID), sha256.Sum256([]byte(seed)))
+}
+
 func findSecureCellFederationIncidentResponse(items []SecureCellFederationIncidentResponse, responseID string) (int, *SecureCellFederationIncidentResponse) {
 	responseID = strings.TrimSpace(responseID)
 	if responseID == "" {
@@ -1130,12 +1939,53 @@ func secureCellFederationIncidentResponsePartyForSource(source SecureCellFederat
 	}
 }
 
+func secureCellFederationIncidentResponseOppositeParty(party SecureCellFederationIncidentResponseParty) SecureCellFederationIncidentResponseParty {
+	switch secureCellNormalizedFederationIncidentResponseParty(party) {
+	case SecureCellFederationIncidentResponsePartyCounterpartyOrg:
+		return SecureCellFederationIncidentResponsePartyLocalOrg
+	case SecureCellFederationIncidentResponsePartyLocalOrg:
+		return SecureCellFederationIncidentResponsePartyCounterpartyOrg
+	default:
+		return ""
+	}
+}
+
+func secureCellFederationIncidentResponseClosureParty(response SecureCellFederationIncidentResponse) SecureCellFederationIncidentResponseParty {
+	if party := secureCellFederationIncidentResponseOppositeParty(response.VerificationRequiredFrom); party != "" {
+		return party
+	}
+	if party := secureCellFederationIncidentResponseOppositeParty(response.ExpectedRemediationFrom); party != "" {
+		return party
+	}
+	return secureCellFederationIncidentResponseOppositeParty(response.RequiredAcknowledgement)
+}
+
+func firstNonEmptyFederationIncidentResponseParty(values ...SecureCellFederationIncidentResponseParty) SecureCellFederationIncidentResponseParty {
+	for _, value := range values {
+		if normalized := secureCellNormalizedFederationIncidentResponseParty(value); normalized != "" {
+			return normalized
+		}
+	}
+	return ""
+}
+
 func secureCellNormalizedFederationIncidentResponseParty(value SecureCellFederationIncidentResponseParty) SecureCellFederationIncidentResponseParty {
 	switch SecureCellFederationIncidentResponseParty(strings.ToLower(strings.TrimSpace(string(value)))) {
 	case SecureCellFederationIncidentResponsePartyLocalOrg:
 		return SecureCellFederationIncidentResponsePartyLocalOrg
 	case SecureCellFederationIncidentResponsePartyCounterpartyOrg:
 		return SecureCellFederationIncidentResponsePartyCounterpartyOrg
+	default:
+		return ""
+	}
+}
+
+func secureCellNormalizedFederationIncidentRemediationVerificationDecision(value SecureCellFederationIncidentRemediationVerificationDecision) SecureCellFederationIncidentRemediationVerificationDecision {
+	switch SecureCellFederationIncidentRemediationVerificationDecision(strings.ToLower(strings.TrimSpace(string(value)))) {
+	case SecureCellFederationIncidentRemediationVerificationDecisionAccepted:
+		return SecureCellFederationIncidentRemediationVerificationDecisionAccepted
+	case SecureCellFederationIncidentRemediationVerificationDecisionRejected:
+		return SecureCellFederationIncidentRemediationVerificationDecisionRejected
 	default:
 		return ""
 	}
@@ -1165,12 +2015,14 @@ func secureCellFederationIncidentResponsePartyAllowed(run *secureCellRun, respon
 	return false
 }
 
-func secureCellFederationIncidentResponsePlaybook(run *secureCellRun, responseID string, organizationID string, party SecureCellFederationIncidentResponseParty, incident SecureCellFederationIncidentSummary, createdAt time.Time) (string, []SecureCellFederationIncidentPlaybookStep, []SecureCellFederationEscalationTier) {
-	template, ackAfter, remediationAfter := secureCellFederationIncidentPlaybookDefaults(incident.Severity)
+func secureCellFederationIncidentResponsePlaybook(run *secureCellRun, responseID string, organizationID string, party SecureCellFederationIncidentResponseParty, verificationParty SecureCellFederationIncidentResponseParty, incident SecureCellFederationIncidentSummary, createdAt time.Time) (string, []SecureCellFederationIncidentPlaybookStep, []SecureCellFederationEscalationTier) {
+	template, ackAfter, remediationAfter, verificationAfter := secureCellFederationIncidentPlaybookDefaults(incident.Severity)
 	ackDueAt := createdAt.Add(ackAfter).UTC()
 	remediationDueAt := createdAt.Add(remediationAfter).UTC()
+	verificationDueAt := createdAt.Add(verificationAfter).UTC()
 	ackTarget := secureCellFederationIncidentEscalationTarget(run, organizationID, party, "")
 	remediationTarget := secureCellFederationIncidentEscalationTarget(run, organizationID, SecureCellFederationIncidentResponsePartyLocalOrg, ackTarget)
+	verificationTarget := secureCellFederationIncidentEscalationTarget(run, organizationID, verificationParty, remediationTarget)
 	steps := []SecureCellFederationIncidentPlaybookStep{
 		{
 			StepID:           responseID + "-acknowledge",
@@ -1192,8 +2044,18 @@ func secureCellFederationIncidentResponsePlaybook(run *secureCellRun, responseID
 			DueAt:            cloneTimePtr(&remediationDueAt),
 			Status:           SecureCellFederationIncidentPlaybookStepStatusPending,
 		},
+		{
+			StepID:           responseID + "-verify",
+			ResponseID:       responseID,
+			Type:             SecureCellFederationIncidentPlaybookStepTypeVerify,
+			ResponsibleParty: verificationParty,
+			Title:            "Verify bilateral remediation",
+			Description:      "The opposite organization verifies whether remediation evidence is sufficient to close the incident.",
+			DueAt:            cloneTimePtr(&verificationDueAt),
+			Status:           SecureCellFederationIncidentPlaybookStepStatusPending,
+		},
 	}
-	ladder := make([]SecureCellFederationEscalationTier, 0, 2)
+	ladder := make([]SecureCellFederationEscalationTier, 0, 3)
 	if strings.TrimSpace(ackTarget) != "" {
 		ladder = append(ladder, SecureCellFederationEscalationTier{
 			TierID:    "acknowledge",
@@ -1210,19 +2072,27 @@ func secureCellFederationIncidentResponsePlaybook(run *secureCellRun, responseID
 			Reason:    "incident remediation deadline reached",
 		})
 	}
+	if strings.TrimSpace(verificationTarget) != "" {
+		ladder = append(ladder, SecureCellFederationEscalationTier{
+			TierID:    "verify_remediation",
+			TargetDID: verificationTarget,
+			DueAt:     cloneTimePtr(&verificationDueAt),
+			Reason:    "incident remediation verification deadline reached",
+		})
+	}
 	return template, steps, ladder
 }
 
-func secureCellFederationIncidentPlaybookDefaults(severity SecureCellFederationIncidentSeverity) (string, time.Duration, time.Duration) {
+func secureCellFederationIncidentPlaybookDefaults(severity SecureCellFederationIncidentSeverity) (string, time.Duration, time.Duration, time.Duration) {
 	switch severity {
 	case SecureCellFederationIncidentSeverityCritical:
-		return "critical_incident_bilateral_v1", 15 * time.Minute, 2 * time.Hour
+		return "critical_incident_bilateral_v1", 15 * time.Minute, 2 * time.Hour, 4 * time.Hour
 	case SecureCellFederationIncidentSeverityHigh:
-		return "high_incident_bilateral_v1", 30 * time.Minute, 6 * time.Hour
+		return "high_incident_bilateral_v1", 30 * time.Minute, 6 * time.Hour, 12 * time.Hour
 	case SecureCellFederationIncidentSeverityWarning:
-		return "warning_incident_bilateral_v1", 2 * time.Hour, 24 * time.Hour
+		return "warning_incident_bilateral_v1", 2 * time.Hour, 24 * time.Hour, 36 * time.Hour
 	default:
-		return "standard_incident_bilateral_v1", 4 * time.Hour, 48 * time.Hour
+		return "standard_incident_bilateral_v1", 4 * time.Hour, 48 * time.Hour, 72 * time.Hour
 	}
 }
 
@@ -1268,6 +2138,24 @@ func secureCellCompleteFederationIncidentPlaybookStep(response *SecureCellFedera
 	}
 }
 
+func secureCellResetFederationIncidentPlaybookStep(response *SecureCellFederationIncidentResponse, stepType SecureCellFederationIncidentPlaybookStepType, at time.Time, dueAt time.Time, clearAttachment bool) {
+	if response == nil {
+		return
+	}
+	for idx := range response.PlaybookSteps {
+		if response.PlaybookSteps[idx].Type != stepType {
+			continue
+		}
+		response.PlaybookSteps[idx].Status = SecureCellFederationIncidentPlaybookStepStatusPending
+		response.PlaybookSteps[idx].CompletedBy = ""
+		response.PlaybookSteps[idx].CompletedAt = nil
+		if clearAttachment {
+			response.PlaybookSteps[idx].RemediationAttestationID = ""
+		}
+		response.PlaybookSteps[idx].DueAt = cloneTimePtr(&dueAt)
+	}
+}
+
 func secureCellMarkFederationIncidentPlaybookStepOverdue(response *SecureCellFederationIncidentResponse, stepType SecureCellFederationIncidentPlaybookStepType, at time.Time) {
 	if response == nil {
 		return
@@ -1294,6 +2182,76 @@ func secureCellFederationIncidentResponseHasExpectedRemediation(response SecureC
 	return false
 }
 
+func secureCellFederationIncidentResponseHasAcceptedVerification(response SecureCellFederationIncidentResponse) bool {
+	for idx := len(response.RemediationVerifications) - 1; idx >= 0; idx-- {
+		switch response.RemediationVerifications[idx].Decision {
+		case SecureCellFederationIncidentRemediationVerificationDecisionAccepted:
+			return true
+		case SecureCellFederationIncidentRemediationVerificationDecisionRejected:
+			return false
+		}
+	}
+	return false
+}
+
+func secureCellFederationIncidentResponseClosureReady(response SecureCellFederationIncidentResponse) bool {
+	return response.IncidentStatus == SecureCellFederationIncidentStatusResolved &&
+		response.AcknowledgedAt != nil && !response.AcknowledgedAt.IsZero() &&
+		response.RemediatedAt != nil && !response.RemediatedAt.IsZero() &&
+		secureCellFederationIncidentResponseHasAcceptedVerification(response)
+}
+
+func secureCellReopenFederationIncidentResponse(response *SecureCellFederationIncidentResponse, req SecureCellFederationIncidentResponseDisputeRequest, receipt *policy.SignedPolicyReceipt, at time.Time) SecureCellFederationIncidentDisputeRecord {
+	if response == nil {
+		return SecureCellFederationIncidentDisputeRecord{}
+	}
+	actorDID := strings.TrimSpace(req.ActorDID)
+	disputingParty := secureCellNormalizedFederationIncidentResponseParty(req.DisputingParty)
+	if disputingParty == "" {
+		disputingParty = secureCellFederationIncidentResponseClosureParty(*response)
+	}
+	dispute := SecureCellFederationIncidentDisputeRecord{
+		ID:                     secureCellFederationIncidentDisputeID(*response, actorDID, at, len(response.Disputes)),
+		ResponseID:             response.ID,
+		OrganizationID:         response.OrganizationID,
+		SponsorOfRecord:        response.SponsorOfRecord,
+		IncidentID:             response.IncidentID,
+		DisputingParty:         disputingParty,
+		SubmittedBy:            actorDID,
+		RelatedVerificationID:  strings.TrimSpace(req.RelatedVerificationID),
+		RelatedClosureID:       strings.TrimSpace(req.RelatedClosureID),
+		Summary:                strings.TrimSpace(req.Summary),
+		Description:            strings.TrimSpace(req.Description),
+		EvidenceIDs:            append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		Reopened:               true,
+		ReopenedResponseStatus: SecureCellFederationIncidentResponseStatusRemediating,
+		CreatedAt:              at.UTC(),
+		Metadata:               cloneStringMap(req.Metadata),
+	}
+	if receipt != nil {
+		dispute.PolicyReceiptID = strings.TrimSpace(receipt.ID)
+		dispute.PolicyReceiptHash = strings.TrimSpace(receipt.ContentHash)
+	}
+	response.Disputes = append(response.Disputes, dispute)
+	response.Status = SecureCellFederationIncidentResponseStatusRemediating
+	response.RemediatedBy = ""
+	response.RemediatedAt = nil
+	response.VerifiedBy = ""
+	response.VerifiedAt = nil
+	response.ClosedBy = ""
+	response.ClosedAt = nil
+	response.LastDisputedBy = actorDID
+	response.LastDisputedAt = cloneTimePtr(&at)
+	response.ReopenedBy = actorDID
+	response.ReopenedAt = cloneTimePtr(&at)
+	response.ReopenReason = firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary))
+	response.UpdatedAt = at.UTC()
+	response.Metadata = mergeStringMaps(response.Metadata, req.Metadata)
+	secureCellResetFederationIncidentPlaybookStep(response, SecureCellFederationIncidentPlaybookStepTypeRemediate, at, secureCellFederationIncidentResponseRemediationDeadline(*response, at), true)
+	secureCellResetFederationIncidentPlaybookStep(response, SecureCellFederationIncidentPlaybookStepTypeVerify, at, secureCellFederationIncidentResponseVerifyDeadline(*response, at), false)
+	return dispute
+}
+
 func secureCellFederationIncidentResponseClosed(response SecureCellFederationIncidentResponse) bool {
 	switch response.Status {
 	case SecureCellFederationIncidentResponseStatusClosed:
@@ -1312,11 +2270,14 @@ func secureCellResolveFederationIncidentResponseEscalation(response SecureCellFe
 			if secureCellStringSliceContains(response.EscalatedTierIDs, tier.TierID) {
 				return SecureCellFederationEscalationTier{}, "", "", fmt.Errorf("securecells/federation-incident-response: %w: escalation tier %q already applied", ErrFederationIncidentResponseImmutable, requestedTierID)
 			}
-			stepType := SecureCellFederationIncidentPlaybookStepTypeAcknowledge
-			reason := firstNonEmpty(strings.TrimSpace(tier.Reason), "incident response escalation requested")
-			if strings.EqualFold(strings.TrimSpace(tier.TierID), "remediate") {
-				stepType = SecureCellFederationIncidentPlaybookStepTypeRemediate
+			stepType := secureCellFederationIncidentResponseTierStepType(tier.TierID)
+			if stepType == "" {
+				stepType = SecureCellFederationIncidentPlaybookStepTypeAcknowledge
 			}
+			if secureCellFederationIncidentResponseStepStatus(response, stepType) == SecureCellFederationIncidentPlaybookStepStatusCompleted {
+				return SecureCellFederationEscalationTier{}, "", "", fmt.Errorf("securecells/federation-incident-response: %w: escalation tier %q already satisfied", ErrFederationIncidentResponseImmutable, requestedTierID)
+			}
+			reason := firstNonEmpty(strings.TrimSpace(tier.Reason), "incident response escalation requested")
 			return tier, stepType, reason, nil
 		}
 		return SecureCellFederationEscalationTier{}, "", "", fmt.Errorf("securecells/federation-incident-response: %w: escalation tier %q is not configured", ErrFederationIncidentResponseImmutable, requestedTierID)
@@ -1334,7 +2295,7 @@ func secureCellResolveFederationIncidentResponseEscalation(response SecureCellFe
 }
 
 func secureCellFederationIncidentResponseOverdueAction(response SecureCellFederationIncidentResponse, at time.Time) (SecureCellFederationIncidentPlaybookStepType, string, string, string, string, time.Time, bool) {
-	if response.Status == SecureCellFederationIncidentResponseStatusRemediated || response.Status == SecureCellFederationIncidentResponseStatusClosed {
+	if response.Status == SecureCellFederationIncidentResponseStatusClosed {
 		return "", "", "", "", "", time.Time{}, false
 	}
 	for _, tier := range response.EscalationLadder {
@@ -1344,16 +2305,25 @@ func secureCellFederationIncidentResponseOverdueAction(response SecureCellFedera
 		if secureCellStringSliceContains(response.EscalatedTierIDs, tier.TierID) {
 			continue
 		}
+		stepType := secureCellFederationIncidentResponseTierStepType(tier.TierID)
+		if stepType != "" && secureCellFederationIncidentResponseStepStatus(response, stepType) == SecureCellFederationIncidentPlaybookStepStatusCompleted {
+			continue
+		}
 		if tier.DueAt.After(at.UTC()) {
 			continue
 		}
-		stepType := SecureCellFederationIncidentPlaybookStepTypeAcknowledge
+		if stepType == "" {
+			stepType = SecureCellFederationIncidentPlaybookStepTypeAcknowledge
+		}
 		action := "escalate_ack"
 		reason := firstNonEmpty(strings.TrimSpace(tier.Reason), "incident acknowledgement deadline reached")
-		if strings.EqualFold(strings.TrimSpace(tier.TierID), "remediate") {
+		if stepType == SecureCellFederationIncidentPlaybookStepTypeRemediate {
 			stepType = SecureCellFederationIncidentPlaybookStepTypeRemediate
 			action = "escalate_remediation"
 			reason = firstNonEmpty(strings.TrimSpace(tier.Reason), "incident remediation deadline reached")
+		} else if stepType == SecureCellFederationIncidentPlaybookStepTypeVerify {
+			action = "escalate_verification"
+			reason = firstNonEmpty(strings.TrimSpace(tier.Reason), "incident remediation verification deadline reached")
 		}
 		return stepType, action, reason, strings.TrimSpace(tier.TierID), strings.TrimSpace(tier.TargetDID), tier.DueAt.UTC(), true
 	}
@@ -1382,6 +2352,7 @@ func secureCellFederationIncidentResponseSummaryFromRun(run *secureCellRun, resp
 		Status:                  response.Status,
 		RequiredAcknowledgement: response.RequiredAcknowledgement,
 		ExpectedRemediationFrom: response.ExpectedRemediationFrom,
+		VerificationRequiredFrom: response.VerificationRequiredFrom,
 		PlaybookTemplate:        strings.TrimSpace(response.PlaybookTemplate),
 		ContractIDs:             append([]string(nil), response.ContractIDs...),
 		SessionIDs:              append([]string(nil), response.SessionIDs...),
@@ -1396,15 +2367,29 @@ func secureCellFederationIncidentResponseSummaryFromRun(run *secureCellRun, resp
 		EscalationTierCount:     len(response.EscalationLadder),
 		EscalatedTierCount:      len(uniqueTrimmedStrings(response.EscalatedTierIDs)),
 		RemediationCount:        len(response.RemediationAttestations),
+		VerificationCount:       len(response.RemediationVerifications),
+		ClosureAttestationCount: len(response.ClosureAttestations),
+		DisputeCount:            len(response.Disputes),
 		AcknowledgedBy:          strings.TrimSpace(response.AcknowledgedBy),
 		AcknowledgedAt:          cloneTimePtr(response.AcknowledgedAt),
 		RemediatedBy:            strings.TrimSpace(response.RemediatedBy),
 		RemediatedAt:            cloneTimePtr(response.RemediatedAt),
+		VerifiedBy:              strings.TrimSpace(response.VerifiedBy),
+		VerifiedAt:              cloneTimePtr(response.VerifiedAt),
+		ClosedBy:                strings.TrimSpace(response.ClosedBy),
+		ClosedAt:                cloneTimePtr(response.ClosedAt),
+		LastDisputedBy:          strings.TrimSpace(response.LastDisputedBy),
+		LastDisputedAt:          cloneTimePtr(response.LastDisputedAt),
+		ReopenedBy:              strings.TrimSpace(response.ReopenedBy),
+		ReopenedAt:              cloneTimePtr(response.ReopenedAt),
+		ClosureReady:            secureCellFederationIncidentResponseClosureReady(response),
 		CreatedAt:               response.CreatedAt.UTC(),
 		UpdatedAt:               response.UpdatedAt.UTC(),
 	}
 	summary.AckDueAt, summary.AckStatus = secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeAcknowledge)
 	summary.RemediationDueAt, summary.RemediationStatus = secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeRemediate)
+	summary.VerificationDueAt, summary.VerificationStatus = secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeVerify)
+	summary.LastVerificationDecision = secureCellLatestFederationIncidentVerificationDecision(response)
 	if nextTier, ok := secureCellFederationIncidentResponseNextEscalationTier(response); ok {
 		summary.NextEscalationTierID = strings.TrimSpace(nextTier.TierID)
 		summary.NextEscalationTargetDID = strings.TrimSpace(nextTier.TargetDID)
@@ -1417,9 +2402,26 @@ func secureCellFederationIncidentResponseNextEscalationTier(response SecureCellF
 		if secureCellStringSliceContains(response.EscalatedTierIDs, tier.TierID) {
 			continue
 		}
+		stepType := secureCellFederationIncidentResponseTierStepType(tier.TierID)
+		if stepType != "" && secureCellFederationIncidentResponseStepStatus(response, stepType) == SecureCellFederationIncidentPlaybookStepStatusCompleted {
+			continue
+		}
 		return tier, true
 	}
 	return SecureCellFederationEscalationTier{}, false
+}
+
+func secureCellFederationIncidentResponseTierStepType(tierID string) SecureCellFederationIncidentPlaybookStepType {
+	switch strings.ToLower(strings.TrimSpace(tierID)) {
+	case "acknowledge":
+		return SecureCellFederationIncidentPlaybookStepTypeAcknowledge
+	case "remediate":
+		return SecureCellFederationIncidentPlaybookStepTypeRemediate
+	case "verify_remediation":
+		return SecureCellFederationIncidentPlaybookStepTypeVerify
+	default:
+		return ""
+	}
 }
 
 func secureCellFederationIncidentResponseStepDueAndStatus(response SecureCellFederationIncidentResponse, stepType SecureCellFederationIncidentPlaybookStepType) (*time.Time, SecureCellFederationIncidentPlaybookStepStatus) {
@@ -1434,6 +2436,49 @@ func secureCellFederationIncidentResponseStepDueAndStatus(response SecureCellFed
 func secureCellFederationIncidentResponseStepStatus(response SecureCellFederationIncidentResponse, stepType SecureCellFederationIncidentPlaybookStepType) SecureCellFederationIncidentPlaybookStepStatus {
 	_, status := secureCellFederationIncidentResponseStepDueAndStatus(response, stepType)
 	return status
+}
+
+func secureCellFederationIncidentResponseRemediationDeadline(response SecureCellFederationIncidentResponse, from time.Time) time.Time {
+	_, _, remediationAfter, _ := secureCellFederationIncidentPlaybookDefaults(response.IncidentSeverity)
+	return from.UTC().Add(remediationAfter).UTC()
+}
+
+func secureCellFederationIncidentResponseVerifyDeadline(response SecureCellFederationIncidentResponse, from time.Time) time.Time {
+	_, _, _, verifyAfter := secureCellFederationIncidentPlaybookDefaults(response.IncidentSeverity)
+	return from.UTC().Add(verifyAfter).UTC()
+}
+
+func secureCellLatestFederationIncidentRemediationAttestationID(response SecureCellFederationIncidentResponse, party SecureCellFederationIncidentResponseParty) string {
+	for idx := len(response.RemediationAttestations) - 1; idx >= 0; idx-- {
+		if party != "" && response.RemediationAttestations[idx].AttestingParty != party {
+			continue
+		}
+		return strings.TrimSpace(response.RemediationAttestations[idx].ID)
+	}
+	return ""
+}
+
+func secureCellLatestFederationIncidentVerificationDecision(response SecureCellFederationIncidentResponse) SecureCellFederationIncidentRemediationVerificationDecision {
+	for idx := len(response.RemediationVerifications) - 1; idx >= 0; idx-- {
+		if normalized := secureCellNormalizedFederationIncidentRemediationVerificationDecision(response.RemediationVerifications[idx].Decision); normalized != "" {
+			return normalized
+		}
+	}
+	return ""
+}
+
+func secureCellLatestFederationIncidentClosureAttestationID(response SecureCellFederationIncidentResponse) string {
+	for idx := len(response.ClosureAttestations) - 1; idx >= 0; idx-- {
+		return strings.TrimSpace(response.ClosureAttestations[idx].ID)
+	}
+	return ""
+}
+
+func secureCellLatestFederationIncidentDisputeID(response SecureCellFederationIncidentResponse) string {
+	for idx := len(response.Disputes) - 1; idx >= 0; idx-- {
+		return strings.TrimSpace(response.Disputes[idx].ID)
+	}
+	return ""
 }
 
 func matchesSecureCellFederationIncidentResponseFilter(summary SecureCellFederationIncidentResponseSummary, filter SecureCellFederationIncidentResponseFilter) bool {
@@ -1540,6 +2585,87 @@ func secureCellFederationIncidentRemediationSummaryFromRun(run *secureCellRun, r
 	}
 }
 
+func secureCellFederationIncidentVerificationSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, verification SecureCellFederationIncidentRemediationVerification) SecureCellFederationIncidentVerificationSummary {
+	return SecureCellFederationIncidentVerificationSummary{
+		CellID:                strings.TrimSpace(run.result.CellID),
+		CellName:              strings.TrimSpace(run.result.Name),
+		Jurisdiction:          strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:            run.result.Status,
+		ResponseID:            strings.TrimSpace(response.ID),
+		OrganizationID:        strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:       strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:            strings.TrimSpace(response.IncidentID),
+		VerificationID:        strings.TrimSpace(verification.ID),
+		ReviewingParty:        verification.ReviewingParty,
+		Decision:              verification.Decision,
+		VerifiedAttestationID: strings.TrimSpace(verification.VerifiedAttestationID),
+		SubmittedBy:           strings.TrimSpace(verification.SubmittedBy),
+		Summary:               strings.TrimSpace(verification.Summary),
+		Description:           strings.TrimSpace(verification.Description),
+		EvidenceIDs:           append([]string(nil), verification.EvidenceIDs...),
+		PolicyReceiptID:       strings.TrimSpace(verification.PolicyReceiptID),
+		PolicyReceiptHash:     strings.TrimSpace(verification.PolicyReceiptHash),
+		SealID:                strings.TrimSpace(verification.SealID),
+		TraceLinkID:           strings.TrimSpace(verification.TraceLinkID),
+		CreatedAt:             verification.CreatedAt.UTC(),
+		Metadata:              cloneStringMap(verification.Metadata),
+	}
+}
+
+func secureCellFederationIncidentClosureAttestationSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, attestation SecureCellFederationIncidentClosureAttestation) SecureCellFederationIncidentClosureAttestationSummary {
+	return SecureCellFederationIncidentClosureAttestationSummary{
+		CellID:            strings.TrimSpace(run.result.CellID),
+		CellName:          strings.TrimSpace(run.result.Name),
+		Jurisdiction:      strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:        run.result.Status,
+		ResponseID:        strings.TrimSpace(response.ID),
+		OrganizationID:    strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:   strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:        strings.TrimSpace(response.IncidentID),
+		AttestationID:     strings.TrimSpace(attestation.ID),
+		AttestingParty:    attestation.AttestingParty,
+		SubmittedBy:       strings.TrimSpace(attestation.SubmittedBy),
+		Summary:           strings.TrimSpace(attestation.Summary),
+		Description:       strings.TrimSpace(attestation.Description),
+		EvidenceIDs:       append([]string(nil), attestation.EvidenceIDs...),
+		PolicyReceiptID:   strings.TrimSpace(attestation.PolicyReceiptID),
+		PolicyReceiptHash: strings.TrimSpace(attestation.PolicyReceiptHash),
+		SealID:            strings.TrimSpace(attestation.SealID),
+		TraceLinkID:       strings.TrimSpace(attestation.TraceLinkID),
+		CreatedAt:         attestation.CreatedAt.UTC(),
+		Metadata:          cloneStringMap(attestation.Metadata),
+	}
+}
+
+func secureCellFederationIncidentDisputeSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, dispute SecureCellFederationIncidentDisputeRecord) SecureCellFederationIncidentDisputeSummary {
+	return SecureCellFederationIncidentDisputeSummary{
+		CellID:                 strings.TrimSpace(run.result.CellID),
+		CellName:               strings.TrimSpace(run.result.Name),
+		Jurisdiction:           strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:             run.result.Status,
+		ResponseID:             strings.TrimSpace(response.ID),
+		OrganizationID:         strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:        strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:             strings.TrimSpace(response.IncidentID),
+		DisputeID:              strings.TrimSpace(dispute.ID),
+		DisputingParty:         dispute.DisputingParty,
+		SubmittedBy:            strings.TrimSpace(dispute.SubmittedBy),
+		RelatedVerificationID:  strings.TrimSpace(dispute.RelatedVerificationID),
+		RelatedClosureID:       strings.TrimSpace(dispute.RelatedClosureID),
+		Summary:                strings.TrimSpace(dispute.Summary),
+		Description:            strings.TrimSpace(dispute.Description),
+		EvidenceIDs:            append([]string(nil), dispute.EvidenceIDs...),
+		Reopened:               dispute.Reopened,
+		ReopenedResponseStatus: dispute.ReopenedResponseStatus,
+		PolicyReceiptID:        strings.TrimSpace(dispute.PolicyReceiptID),
+		PolicyReceiptHash:      strings.TrimSpace(dispute.PolicyReceiptHash),
+		SealID:                 strings.TrimSpace(dispute.SealID),
+		TraceLinkID:            strings.TrimSpace(dispute.TraceLinkID),
+		CreatedAt:              dispute.CreatedAt.UTC(),
+		Metadata:               cloneStringMap(dispute.Metadata),
+	}
+}
+
 func secureCellFederationIncidentResponsesByStatus(items []SecureCellFederationIncidentResponse, status SecureCellFederationIncidentResponseStatus) []SecureCellFederationIncidentResponse {
 	if len(items) == 0 {
 		return nil
@@ -1572,6 +2698,30 @@ func secureCellFederationIncidentResponseRemediationTotal(items []SecureCellFede
 	total := 0
 	for _, item := range items {
 		total += len(item.RemediationAttestations)
+	}
+	return total
+}
+
+func secureCellFederationIncidentResponseVerificationTotal(items []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, item := range items {
+		total += len(item.RemediationVerifications)
+	}
+	return total
+}
+
+func secureCellFederationIncidentResponseClosureAttestationTotal(items []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, item := range items {
+		total += len(item.ClosureAttestations)
+	}
+	return total
+}
+
+func secureCellFederationIncidentResponseDisputeTotal(items []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, item := range items {
+		total += len(item.Disputes)
 	}
 	return total
 }

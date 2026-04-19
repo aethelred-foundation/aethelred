@@ -3539,13 +3539,13 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected acknowledged counterparty response, got %+v", ackResponse)
 	}
 
-	remediated, err := service.AttestFederationIncidentRemediation(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentRemediationAttestationRequest{
-		ActorDID:       owner.AgentID(),
-		Summary:        "Local controls rotated and counterparty incident intake completed",
-		Description:    "The local organization rotated scoped secrets, validated containment, and documented remediation.",
-		EvidenceIDs:    []string{acknowledged.ControlLedger.Bundle.ID},
-		Reason:         "submit bilateral remediation evidence",
-		Metadata:       map[string]string{"ticket": "FED-RESP-REMEDIATE-01"},
+	_, err = service.AttestFederationIncidentRemediation(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentRemediationAttestationRequest{
+		ActorDID:    owner.AgentID(),
+		Summary:     "Local controls rotated and counterparty incident intake completed",
+		Description: "The local organization rotated scoped secrets, validated containment, and documented remediation.",
+		EvidenceIDs: []string{acknowledged.ControlLedger.Bundle.ID},
+		Reason:      "submit bilateral remediation evidence",
+		Metadata:    map[string]string{"ticket": "FED-RESP-REMEDIATE-01"},
 	})
 	if err != nil {
 		t.Fatalf("AttestFederationIncidentRemediation failed: %v", err)
@@ -3568,6 +3568,40 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	}
 	if len(remediations) != 1 || remediations[0].ResponseID != counterpartyResponseID {
 		t.Fatalf("expected one remediation attestation summary, got %+v", remediations)
+	}
+
+	verified, err := service.VerifyFederationIncidentRemediation(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentRemediationVerificationRequest{
+		ActorDID:              participantB.AgentID(),
+		ReviewingParty:        SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Decision:              SecureCellFederationIncidentRemediationVerificationDecisionAccepted,
+		VerifiedAttestationID: remediations[0].AttestationID,
+		Summary:               "Counterparty verified local remediation evidence",
+		Description:           "The counterparty reviewed the local remediation attestation and accepted the coordinated response state.",
+		EvidenceIDs:           []string{remediations[0].AttestationID},
+		Reason:                "verify bilateral remediation evidence",
+		Metadata:              map[string]string{"ticket": "FED-RESP-VERIFY-01"},
+	})
+	if err != nil {
+		t.Fatalf("VerifyFederationIncidentRemediation failed: %v", err)
+	}
+	verifiedCounterpartyResponse, err := service.GetFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse after verification failed: %v", err)
+	}
+	if verifiedCounterpartyResponse.Status != SecureCellFederationIncidentResponseStatusRemediated || verifiedCounterpartyResponse.VerifiedBy != participantB.AgentID() || len(verifiedCounterpartyResponse.RemediationVerifications) != 1 {
+		t.Fatalf("expected verified remediated counterparty response, got %+v", verifiedCounterpartyResponse)
+	}
+
+	verifications, err := service.ListFederationIncidentVerifications(ctx, SecureCellFederationIncidentVerificationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentVerifications failed: %v", err)
+	}
+	if len(verifications) != 1 || verifications[0].ResponseID != counterpartyResponseID || verifications[0].Decision != SecureCellFederationIncidentRemediationVerificationDecisionAccepted {
+		t.Fatalf("expected one accepted remediation verification summary, got %+v", verifications)
 	}
 
 	overdueAt := time.Now().UTC().Add(72 * time.Hour)
@@ -3654,8 +3688,8 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListFederationIncidentResponseActions failed: %v", err)
 	}
-	if len(responseActions) < 2 {
-		t.Fatalf("expected response acknowledgement and remediation actions, got %+v", responseActions)
+	if len(responseActions) < 3 {
+		t.Fatalf("expected response acknowledgement, remediation, and verification actions, got %+v", responseActions)
 	}
 
 	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, orgID, SecureCellFederationOrganizationTrustPackOptions{})
@@ -3671,8 +3705,146 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	if len(trustPack.IncidentResponses) < 2 || len(trustPack.IncidentRemediations) != 1 {
 		t.Fatalf("expected trust pack to include incident response and remediation summaries, got responses=%+v remediations=%+v", trustPack.IncidentResponses, trustPack.IncidentRemediations)
 	}
-	if !controlLedgerHasControl(remediated.ControlLedger, "CELL-FED-06") {
-		t.Fatalf("expected control ledger to include federation incident command fabric control, got %+v", remediated.ControlLedger.Controls)
+	if len(trustPack.IncidentVerifications) != 1 || trustPack.IncidentVerifications[0].ResponseID != counterpartyResponseID {
+		t.Fatalf("expected trust pack to include incident verification summary, got %+v", trustPack.IncidentVerifications)
+	}
+	if !controlLedgerHasControl(verified.ControlLedger, "CELL-FED-06") {
+		t.Fatalf("expected control ledger to include federation incident command fabric control, got %+v", verified.ControlLedger.Controls)
+	}
+
+	if _, err := service.AcknowledgeFederationIncidentResponse(ctx, created.CellID, localResponseID, SecureCellFederationIncidentResponseAcknowledgeRequest{
+		ActorDID: participantB.AgentID(),
+		Reason:   "counterparty acknowledged local incident response",
+		Metadata: map[string]string{"ticket": "FED-LOCAL-ACK-01"},
+	}); err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentResponse local failed: %v", err)
+	}
+	localRemediated, err := service.AttestFederationIncidentRemediation(ctx, created.CellID, localResponseID, SecureCellFederationIncidentRemediationAttestationRequest{
+		ActorDID:       participantB.AgentID(),
+		AttestingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:        "Counterparty completed coordinated remediation",
+		Description:    "The counterparty rotated scoped credentials, confirmed containment, and provided bilateral remediation evidence.",
+		EvidenceIDs:    []string{verified.ControlLedger.Bundle.ID},
+		Reason:         "submit counterparty remediation evidence",
+		Metadata:       map[string]string{"ticket": "FED-LOCAL-REMEDIATE-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentRemediation local failed: %v", err)
+	}
+	if _, err := service.ResolveFederationIncident(ctx, created.CellID, orgID, incidentID, SecureCellFederationIncidentResolveRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "local incident resolved after bilateral remediation",
+		Metadata: map[string]string{"ticket": "FED-LOCAL-RESOLVE-01"},
+	}); err != nil {
+		t.Fatalf("ResolveFederationIncident failed: %v", err)
+	}
+	localClosedResult, err := service.VerifyFederationIncidentRemediation(ctx, created.CellID, localResponseID, SecureCellFederationIncidentRemediationVerificationRequest{
+		ActorDID:       owner.AgentID(),
+		ReviewingParty: SecureCellFederationIncidentResponsePartyLocalOrg,
+		Decision:       SecureCellFederationIncidentRemediationVerificationDecisionAccepted,
+		Summary:        "Local organization verified counterparty remediation",
+		Description:    "The local organization reviewed the counterparty remediation evidence and accepted closure readiness.",
+		EvidenceIDs:    []string{localRemediated.ControlLedger.Bundle.ID},
+		Reason:         "close bilateral local incident response",
+		Metadata:       map[string]string{"ticket": "FED-LOCAL-VERIFY-01"},
+	})
+	if err != nil {
+		t.Fatalf("VerifyFederationIncidentRemediation local failed: %v", err)
+	}
+	localClosedResponse, err := service.GetFederationIncidentResponse(ctx, created.CellID, localResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse local after close failed: %v", err)
+	}
+	if localClosedResponse.Status != SecureCellFederationIncidentResponseStatusClosed || localClosedResponse.VerifiedBy != owner.AgentID() || localClosedResponse.ClosedBy != owner.AgentID() || localClosedResponse.ClosedAt == nil {
+		t.Fatalf("expected resolved local response to close after accepted verification, got %+v", localClosedResponse)
+	}
+	_, err = service.AttestFederationIncidentClosure(ctx, created.CellID, localResponseID, SecureCellFederationIncidentClosureAttestationRequest{
+		ActorDID:       participantB.AgentID(),
+		AttestingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:        "Counterparty attested coordinated closure",
+		Description:    "The counterparty confirmed the local response is jointly ready for closure.",
+		EvidenceIDs:    []string{localClosedResult.ControlLedger.Bundle.ID},
+		Reason:         "record bilateral closure acknowledgement",
+		Metadata:       map[string]string{"ticket": "FED-LOCAL-CLOSE-ATTEST-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentClosure failed: %v", err)
+	}
+	localClosedResponse, err = service.GetFederationIncidentResponse(ctx, created.CellID, localResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse local after closure attestation failed: %v", err)
+	}
+	if len(localClosedResponse.ClosureAttestations) != 1 || localClosedResponse.ClosureAttestations[0].SubmittedBy != participantB.AgentID() {
+		t.Fatalf("expected one closure attestation recorded on local response, got %+v", localClosedResponse.ClosureAttestations)
+	}
+	closures, err := service.ListFederationIncidentClosureAttestations(ctx, SecureCellFederationIncidentClosureAttestationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentClosureAttestations failed: %v", err)
+	}
+	if len(closures) != 1 || closures[0].ResponseID != localResponseID {
+		t.Fatalf("expected one closure attestation summary, got %+v", closures)
+	}
+	closedBundle, err := service.BuildFederationIncidentResponseBundle(ctx, created.CellID, localResponseID, SecureCellFederationIncidentResponseBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentResponseBundle before dispute failed: %v", err)
+	}
+	if err := VerifyFederationIncidentResponseBundle(closedBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentResponseBundle before dispute failed: %v", err)
+	}
+	if closedBundle.ResponseSummary.ClosureAttestationCount != 1 || len(closedBundle.Response.ClosureAttestations) != 1 {
+		t.Fatalf("expected closure attestation to appear in response bundle, got %+v", closedBundle.ResponseSummary)
+	}
+	disputed, err := service.DisputeFederationIncidentResponse(ctx, created.CellID, localResponseID, SecureCellFederationIncidentResponseDisputeRequest{
+		ActorDID:              participantB.AgentID(),
+		DisputingParty:        SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		RelatedVerificationID: localClosedResponse.RemediationVerifications[0].ID,
+		RelatedClosureID:      localClosedResponse.ClosureAttestations[0].ID,
+		Summary:               "Counterparty reopened local incident response for follow-up validation",
+		Description:           "The counterparty disputed final closure readiness and reopened the response pending additional validation.",
+		EvidenceIDs:           []string{localClosedResponse.ClosureAttestations[0].ID},
+		Reason:                "reopen local response after closure challenge",
+		Metadata:              map[string]string{"ticket": "FED-LOCAL-DISPUTE-01"},
+	})
+	if err != nil {
+		t.Fatalf("DisputeFederationIncidentResponse failed: %v", err)
+	}
+	disputedResponse, err := service.GetFederationIncidentResponse(ctx, created.CellID, localResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse local after dispute failed: %v", err)
+	}
+	if disputedResponse.Status != SecureCellFederationIncidentResponseStatusRemediating || disputedResponse.VerifiedAt != nil || disputedResponse.ClosedAt != nil || len(disputedResponse.Disputes) != 1 {
+		t.Fatalf("expected disputed local response to reopen with one dispute, got %+v", disputedResponse)
+	}
+	disputes, err := service.ListFederationIncidentDisputes(ctx, SecureCellFederationIncidentDisputeFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDisputes failed: %v", err)
+	}
+	if len(disputes) != 1 || disputes[0].ResponseID != localResponseID || !disputes[0].Reopened {
+		t.Fatalf("expected one reopening dispute summary, got %+v", disputes)
+	}
+	reopenedBundle, err := service.BuildFederationIncidentResponseBundle(ctx, created.CellID, localResponseID, SecureCellFederationIncidentResponseBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentResponseBundle after dispute failed: %v", err)
+	}
+	if err := VerifyFederationIncidentResponseBundle(reopenedBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentResponseBundle after dispute failed: %v", err)
+	}
+	if reopenedBundle.ResponseSummary.DisputeCount != 1 || len(reopenedBundle.Response.Disputes) != 1 || reopenedBundle.ResponseSummary.Status != SecureCellFederationIncidentResponseStatusRemediating {
+		t.Fatalf("expected dispute to appear in reopened response bundle, got %+v", reopenedBundle.ResponseSummary)
+	}
+	if !controlLedgerHasControl(localClosedResult.ControlLedger, "CELL-FED-06") {
+		t.Fatalf("expected closed local response control ledger to retain federation incident command fabric control, got %+v", localClosedResult.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(disputed.ControlLedger, "CELL-FED-06") {
+		t.Fatalf("expected disputed local response control ledger to retain federation incident command fabric control, got %+v", disputed.ControlLedger.Controls)
 	}
 }
 

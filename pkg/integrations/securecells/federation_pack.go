@@ -171,6 +171,13 @@ type SecureCellFederationOrganizationRuntime struct {
 	RemediatedResponses             int `json:"remediated_responses"`
 	ClosedResponses                 int `json:"closed_responses"`
 	IncidentRemediationCount        int `json:"incident_remediation_count"`
+	PendingVerificationResponses    int `json:"pending_verification_responses"`
+	VerifiedResponses               int `json:"verified_responses"`
+	ClosureReadyResponses           int `json:"closure_ready_responses"`
+	IncidentVerificationCount       int `json:"incident_verification_count"`
+	IncidentClosureAttestationCount int `json:"incident_closure_attestation_count"`
+	DisputedResponses               int `json:"disputed_responses"`
+	IncidentDisputeCount            int `json:"incident_dispute_count"`
 	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
 }
 
@@ -201,6 +208,9 @@ type SecureCellFederationOrganizationTrustPack struct {
 	CounterpartyIncidents   []SecureCellFederationCounterpartyIncidentSummary `json:"counterparty_incidents,omitempty"`
 	IncidentResponses       []SecureCellFederationIncidentResponseSummary `json:"incident_responses,omitempty"`
 	IncidentRemediations    []SecureCellFederationIncidentRemediationSummary `json:"incident_remediations,omitempty"`
+	IncidentVerifications   []SecureCellFederationIncidentVerificationSummary `json:"incident_verifications,omitempty"`
+	IncidentClosures        []SecureCellFederationIncidentClosureAttestationSummary `json:"incident_closures,omitempty"`
+	IncidentDisputes        []SecureCellFederationIncidentDisputeSummary `json:"incident_disputes,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
@@ -419,6 +429,30 @@ func (s *Service) BuildFederationOrganizationTrustPack(ctx context.Context, cell
 		return nil, err
 	}
 	pack.IncidentRemediations = incidentRemediations
+	incidentVerifications, err := s.ListFederationIncidentVerifications(ctx, SecureCellFederationIncidentVerificationFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentVerifications = incidentVerifications
+	incidentClosures, err := s.ListFederationIncidentClosureAttestations(ctx, SecureCellFederationIncidentClosureAttestationFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentClosures = incidentClosures
+	incidentDisputes, err := s.ListFederationIncidentDisputes(ctx, SecureCellFederationIncidentDisputeFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentDisputes = incidentDisputes
 	return pack, nil
 }
 
@@ -869,6 +903,21 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 			runtime.ClosedResponses++
 		}
 		runtime.IncidentRemediationCount += len(response.RemediationAttestations)
+		runtime.IncidentVerificationCount += len(response.RemediationVerifications)
+		runtime.IncidentClosureAttestationCount += len(response.ClosureAttestations)
+		runtime.IncidentDisputeCount += len(response.Disputes)
+		if response.VerificationRequiredFrom != "" && secureCellFederationIncidentResponseStepStatus(response, SecureCellFederationIncidentPlaybookStepTypeVerify) != SecureCellFederationIncidentPlaybookStepStatusCompleted {
+			runtime.PendingVerificationResponses++
+		}
+		if secureCellFederationIncidentResponseHasAcceptedVerification(response) {
+			runtime.VerifiedResponses++
+		}
+		if secureCellFederationIncidentResponseClosureReady(response) {
+			runtime.ClosureReadyResponses++
+		}
+		if response.LastDisputedAt != nil && !response.LastDisputedAt.IsZero() {
+			runtime.DisputedResponses++
+		}
 		if response.UpdatedAt.After(runtime.LastUpdatedAt) {
 			runtime.LastUpdatedAt = response.UpdatedAt.UTC()
 		}
