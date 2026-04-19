@@ -3628,6 +3628,44 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected signed federation incident report bundle with response linkage, got %+v", reportBundle)
 	}
 
+	reportIntakeResult, err := service.IngestFederationIncidentReportBundle(ctx, created.CellID, orgID, SecureCellFederationIncidentReportBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   reportBundle,
+		Reason:   "ingest reciprocal incident report bundle",
+		Metadata: map[string]string{"ticket": "FED-REPORT-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentReportBundle failed: %v", err)
+	}
+	if len(reportIntakeResult.FederationCounterpartyIncidentReports) != 1 || reportIntakeResult.FederationCounterpartyIncidentReports[0].Status != SecureCellFederationCounterpartyIncidentReportStatusVerified {
+		t.Fatalf("expected one verified counterparty incident report snapshot, got %+v", reportIntakeResult.FederationCounterpartyIncidentReports)
+	}
+	counterpartyReportItems, err := service.ListFederationCounterpartyIncidentReports(ctx, SecureCellFederationCounterpartyIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Status:         SecureCellFederationCounterpartyIncidentReportStatusVerified,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidentReports failed: %v", err)
+	}
+	if len(counterpartyReportItems) != 1 || counterpartyReportItems[0].ReportID != reportID || counterpartyReportItems[0].ReconciliationStatus != SecureCellFederationIncidentReportReconciliationStatusAligned {
+		t.Fatalf("expected one aligned verified counterparty incident report summary, got %+v", counterpartyReportItems)
+	}
+	reconciliations, err := service.ListFederationIncidentReportReconciliations(ctx, SecureCellFederationIncidentReportReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		IncidentID:     incidentID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportReconciliations failed: %v", err)
+	}
+	if len(reconciliations) != 1 || reconciliations[0].LocalReportID != reportID || reconciliations[0].Status != SecureCellFederationIncidentReportReconciliationStatusAligned {
+		t.Fatalf("expected one aligned incident report reconciliation summary, got %+v", reconciliations)
+	}
+	if !controlLedgerHasControl(reportIntakeResult.ControlLedger, "CELL-FED-07") {
+		t.Fatalf("expected control ledger to include reciprocal incident reporting control, got %+v", reportIntakeResult.ControlLedger.Controls)
+	}
+
 	acknowledged, err := service.AcknowledgeFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentResponseAcknowledgeRequest{
 		ActorDID: owner.AgentID(),
 		Reason:   "local incident desk acknowledged counterparty incident",
@@ -3807,11 +3845,17 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	if len(trustPack.CounterpartyIncidents) != 1 || trustPack.CounterpartyIncidents[0].BulletinID != bulletin.ID {
 		t.Fatalf("expected trust pack to include imported counterparty incident summary, got %+v", trustPack.CounterpartyIncidents)
 	}
+	if len(trustPack.CounterpartyIncidentReports) != 1 || trustPack.CounterpartyIncidentReports[0].ReportID != reportID || trustPack.CounterpartyIncidentReports[0].ReconciliationStatus != SecureCellFederationIncidentReportReconciliationStatusAligned {
+		t.Fatalf("expected trust pack to include aligned imported counterparty incident report summary, got %+v", trustPack.CounterpartyIncidentReports)
+	}
 	if len(trustPack.IncidentResponses) < 2 || len(trustPack.IncidentRemediations) != 1 {
 		t.Fatalf("expected trust pack to include incident response and remediation summaries, got responses=%+v remediations=%+v", trustPack.IncidentResponses, trustPack.IncidentRemediations)
 	}
 	if len(trustPack.IncidentReports) != 1 || trustPack.IncidentReports[0].ReportID != reportID || trustPack.IncidentReports[0].Status != SecureCellFederationIncidentReportStatusAcknowledged {
 		t.Fatalf("expected trust pack to include acknowledged incident report summary, got %+v", trustPack.IncidentReports)
+	}
+	if len(trustPack.IncidentReportReconciliations) != 1 || trustPack.IncidentReportReconciliations[0].LocalReportID != reportID || trustPack.IncidentReportReconciliations[0].Status != SecureCellFederationIncidentReportReconciliationStatusAligned {
+		t.Fatalf("expected trust pack to include aligned incident report reconciliation summary, got %+v", trustPack.IncidentReportReconciliations)
 	}
 	if len(trustPack.IncidentVerifications) != 1 || trustPack.IncidentVerifications[0].ResponseID != counterpartyResponseID {
 		t.Fatalf("expected trust pack to include incident verification summary, got %+v", trustPack.IncidentVerifications)

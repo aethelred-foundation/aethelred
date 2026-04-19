@@ -164,6 +164,14 @@ type secureCellFederationIncidentBulletinIntakeRequest struct {
 	Metadata      map[string]string                                            `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentReportBundleIntakeRequest struct {
+	ActorIdentity json.RawMessage                                                  `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
+	Bundle        *securecellsintegration.SecureCellFederationIncidentReportBundle `json:"bundle,omitempty"`
+	Reason        string                                                           `json:"reason,omitempty"`
+	Metadata      map[string]string                                                `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentResponseAcknowledgeRequest struct {
 	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -411,35 +419,36 @@ type secureCellResponse struct {
 }
 
 type secureCellArtifactsResponse struct {
-	CellID                          string                                                                     `json:"cell_id"`
-	Status                          securecellsintegration.SecureCellStatus                                    `json:"status"`
-	Participants                    []securecellsintegration.SecureCellParticipantState                        `json:"participants,omitempty"`
-	FederationOrganizations         []securecellsintegration.SecureCellFederationOrganization                  `json:"federation_organizations,omitempty"`
-	FederationInvitations           []securecellsintegration.SecureCellFederationInvitation                    `json:"federation_invitations,omitempty"`
-	FederationCounterproposals      []securecellsintegration.SecureCellFederationCounterproposal               `json:"federation_counterproposals,omitempty"`
-	FederationContracts             []securecellsintegration.SecureCellFederationContract                      `json:"federation_contracts,omitempty"`
-	FederationCounterpartyAssurance []securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot `json:"federation_counterparty_assurance,omitempty"`
-	FederationIncidents             []securecellsintegration.SecureCellFederationIncident                      `json:"federation_incidents,omitempty"`
-	FederationCounterpartyIncidents []securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot  `json:"federation_counterparty_incidents,omitempty"`
-	FederationIncidentResponses     []securecellsintegration.SecureCellFederationIncidentResponse              `json:"federation_incident_responses,omitempty"`
-	Sessions                        []securecellsintegration.SecureCellSession                                 `json:"sessions,omitempty"`
-	Threads                         []securecellsintegration.SecureCellSessionThread                           `json:"threads,omitempty"`
-	Decisions                       []securecellsintegration.SecureCellThreadDecision                          `json:"decisions,omitempty"`
-	DecisionOutcomes                []securecellsintegration.SecureCellThreadDecisionOutcome                   `json:"decision_outcomes,omitempty"`
-	SharedOutputs                   []securecellsintegration.SecureCellSharedOutput                            `json:"shared_outputs,omitempty"`
-	SessionExchanges                []securecellsintegration.SecureCellSessionExchange                         `json:"session_exchanges,omitempty"`
-	Transitions                     []securecellsintegration.SecureCellTransition                              `json:"transitions,omitempty"`
-	CreationReceipt                 *policy.SignedPolicyReceipt                                                `json:"creation_receipt,omitempty"`
-	ActivationReceipt               *policy.SignedPolicyReceipt                                                `json:"activation_receipt,omitempty"`
-	ConfidentialExecution           *confidential.VerificationSummary                                          `json:"confidential_execution,omitempty"`
-	ExecutionAttestations           []evidence.Attestation                                                     `json:"execution_attestations,omitempty"`
-	ExecutionSeal                   *evidence.Seal                                                             `json:"execution_seal,omitempty"`
-	ControlLedgerID                 string                                                                     `json:"control_ledger_id,omitempty"`
-	ControlLedgerContentHash        string                                                                     `json:"control_ledger_content_hash,omitempty"`
-	ControlSummary                  *evidence.ControlLedgerSummary                                             `json:"control_summary,omitempty"`
-	PortablePackageHash             string                                                                     `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned           bool                                                                       `json:"portable_package_signed"`
-	PortablePackageAnchored         bool                                                                       `json:"portable_package_anchored"`
+	CellID                                string                                                                          `json:"cell_id"`
+	Status                                securecellsintegration.SecureCellStatus                                         `json:"status"`
+	Participants                          []securecellsintegration.SecureCellParticipantState                             `json:"participants,omitempty"`
+	FederationOrganizations               []securecellsintegration.SecureCellFederationOrganization                       `json:"federation_organizations,omitempty"`
+	FederationInvitations                 []securecellsintegration.SecureCellFederationInvitation                         `json:"federation_invitations,omitempty"`
+	FederationCounterproposals            []securecellsintegration.SecureCellFederationCounterproposal                    `json:"federation_counterproposals,omitempty"`
+	FederationContracts                   []securecellsintegration.SecureCellFederationContract                           `json:"federation_contracts,omitempty"`
+	FederationCounterpartyAssurance       []securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot      `json:"federation_counterparty_assurance,omitempty"`
+	FederationIncidents                   []securecellsintegration.SecureCellFederationIncident                           `json:"federation_incidents,omitempty"`
+	FederationCounterpartyIncidents       []securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot       `json:"federation_counterparty_incidents,omitempty"`
+	FederationCounterpartyIncidentReports []securecellsintegration.SecureCellFederationCounterpartyIncidentReportSnapshot `json:"federation_counterparty_incident_reports,omitempty"`
+	FederationIncidentResponses           []securecellsintegration.SecureCellFederationIncidentResponse                   `json:"federation_incident_responses,omitempty"`
+	Sessions                              []securecellsintegration.SecureCellSession                                      `json:"sessions,omitempty"`
+	Threads                               []securecellsintegration.SecureCellSessionThread                                `json:"threads,omitempty"`
+	Decisions                             []securecellsintegration.SecureCellThreadDecision                               `json:"decisions,omitempty"`
+	DecisionOutcomes                      []securecellsintegration.SecureCellThreadDecisionOutcome                        `json:"decision_outcomes,omitempty"`
+	SharedOutputs                         []securecellsintegration.SecureCellSharedOutput                                 `json:"shared_outputs,omitempty"`
+	SessionExchanges                      []securecellsintegration.SecureCellSessionExchange                              `json:"session_exchanges,omitempty"`
+	Transitions                           []securecellsintegration.SecureCellTransition                                   `json:"transitions,omitempty"`
+	CreationReceipt                       *policy.SignedPolicyReceipt                                                     `json:"creation_receipt,omitempty"`
+	ActivationReceipt                     *policy.SignedPolicyReceipt                                                     `json:"activation_receipt,omitempty"`
+	ConfidentialExecution                 *confidential.VerificationSummary                                               `json:"confidential_execution,omitempty"`
+	ExecutionAttestations                 []evidence.Attestation                                                          `json:"execution_attestations,omitempty"`
+	ExecutionSeal                         *evidence.Seal                                                                  `json:"execution_seal,omitempty"`
+	ControlLedgerID                       string                                                                          `json:"control_ledger_id,omitempty"`
+	ControlLedgerContentHash              string                                                                          `json:"control_ledger_content_hash,omitempty"`
+	ControlSummary                        *evidence.ControlLedgerSummary                                                  `json:"control_summary,omitempty"`
+	PortablePackageHash                   string                                                                          `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned                 bool                                                                            `json:"portable_package_signed"`
+	PortablePackageAnchored               bool                                                                            `json:"portable_package_anchored"`
 }
 
 type secureCellListResponse struct {
@@ -455,18 +464,19 @@ type secureCellBulkMutationResponse struct {
 }
 
 type secureCellFederationResponse struct {
-	CellID                  string                                                                     `json:"cell_id"`
-	Organizations           []securecellsintegration.SecureCellFederationOrganization                  `json:"organizations,omitempty"`
-	Invitations             []securecellsintegration.SecureCellFederationInvitation                    `json:"invitations,omitempty"`
-	Counterproposals        []securecellsintegration.SecureCellFederationCounterproposal               `json:"counterproposals,omitempty"`
-	Contracts               []securecellsintegration.SecureCellFederationContract                      `json:"contracts,omitempty"`
-	CounterpartyAssurance   []securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot `json:"counterparty_assurance,omitempty"`
-	Incidents               []securecellsintegration.SecureCellFederationIncident                      `json:"incidents,omitempty"`
-	CounterpartyIncidents   []securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot  `json:"counterparty_incidents,omitempty"`
-	IncidentResponses       []securecellsintegration.SecureCellFederationIncidentResponse              `json:"incident_responses,omitempty"`
-	PortablePackageHash     string                                                                     `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                                       `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                                       `json:"portable_package_anchored"`
+	CellID                      string                                                                          `json:"cell_id"`
+	Organizations               []securecellsintegration.SecureCellFederationOrganization                       `json:"organizations,omitempty"`
+	Invitations                 []securecellsintegration.SecureCellFederationInvitation                         `json:"invitations,omitempty"`
+	Counterproposals            []securecellsintegration.SecureCellFederationCounterproposal                    `json:"counterproposals,omitempty"`
+	Contracts                   []securecellsintegration.SecureCellFederationContract                           `json:"contracts,omitempty"`
+	CounterpartyAssurance       []securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot      `json:"counterparty_assurance,omitempty"`
+	Incidents                   []securecellsintegration.SecureCellFederationIncident                           `json:"incidents,omitempty"`
+	CounterpartyIncidents       []securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot       `json:"counterparty_incidents,omitempty"`
+	CounterpartyIncidentReports []securecellsintegration.SecureCellFederationCounterpartyIncidentReportSnapshot `json:"counterparty_incident_reports,omitempty"`
+	IncidentResponses           []securecellsintegration.SecureCellFederationIncidentResponse                   `json:"incident_responses,omitempty"`
+	PortablePackageHash         string                                                                          `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned       bool                                                                            `json:"portable_package_signed"`
+	PortablePackageAnchored     bool                                                                            `json:"portable_package_anchored"`
 }
 
 type secureCellFederationOrganizationListResponse struct {
@@ -503,6 +513,10 @@ type secureCellFederationIncidentListResponse struct {
 
 type secureCellFederationCounterpartyIncidentListResponse struct {
 	Items []securecellsintegration.SecureCellFederationCounterpartyIncidentSummary `json:"items"`
+}
+
+type secureCellFederationCounterpartyIncidentReportListResponse struct {
+	Items []securecellsintegration.SecureCellFederationCounterpartyIncidentReportSummary `json:"items"`
 }
 
 type secureCellFederationIncidentActionListResponse struct {
@@ -543,6 +557,10 @@ type secureCellFederationIncidentReportListResponse struct {
 
 type secureCellOverdueFederationIncidentReportListResponse struct {
 	Items []securecellsintegration.SecureCellOverdueFederationIncidentReport `json:"items"`
+}
+
+type secureCellFederationIncidentReportReconciliationListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentReportReconciliationSummary `json:"items"`
 }
 
 type secureCellFederationIncidentResponseQueryResponse struct {
@@ -1619,6 +1637,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incident-reports" {
+			filter, err := parseSecureCellFederationCounterpartyIncidentReportFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterpartyIncidentReports(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterpartyIncidentReportListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incident-reports/export" {
+			filter, err := parseSecureCellFederationCounterpartyIncidentReportFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterpartyIncidentReports(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationCounterpartyIncidentReportExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-report-reconciliations" {
+			filter, err := parseSecureCellFederationIncidentReportReconciliationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentReportReconciliations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportReconciliationListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-report-reconciliations/export" {
+			filter, err := parseSecureCellFederationIncidentReportReconciliationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentReportReconciliations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentReportReconciliationExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incidents" {
 			filter, err := parseSecureCellFederationCounterpartyIncidentFilter(r)
 			if err != nil {
@@ -2290,6 +2372,35 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			result, err := app.secureCellService.IngestFederationIncidentBulletin(r.Context(), cellID, organizationID, securecellsintegration.SecureCellFederationIncidentBulletinIntakeRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Bulletin: req.Bulletin,
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/incident-report-bundles/intake") && strings.Contains(r.URL.Path, "/federation/organizations/"):
+			cellID, organizationID, err := parseSecureCellFederationOrganizationActionPath(r.URL.Path, "/incident-report-bundles/intake")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentReportBundleIntakeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident report bundle intake request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentReportIntake(r, cellID, organizationID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.IngestFederationIncidentReportBundle(r.Context(), cellID, organizationID, securecellsintegration.SecureCellFederationIncidentReportBundleIntakeRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Bundle:   req.Bundle,
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
 			})
@@ -3648,6 +3759,7 @@ func secureCellArtifactsProjection(result *securecellsintegration.SecureCellResu
 	projection.FederationCounterpartyAssurance = append([]securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot(nil), result.FederationCounterpartyAssurance...)
 	projection.FederationIncidents = append([]securecellsintegration.SecureCellFederationIncident(nil), result.FederationIncidents...)
 	projection.FederationCounterpartyIncidents = append([]securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot(nil), result.FederationCounterpartyIncidents...)
+	projection.FederationCounterpartyIncidentReports = append([]securecellsintegration.SecureCellFederationCounterpartyIncidentReportSnapshot(nil), result.FederationCounterpartyIncidentReports...)
 	projection.FederationIncidentResponses = append([]securecellsintegration.SecureCellFederationIncidentResponse(nil), result.FederationIncidentResponses...)
 	projection.Sessions = append([]securecellsintegration.SecureCellSession(nil), result.Sessions...)
 	projection.Threads = append([]securecellsintegration.SecureCellSessionThread(nil), result.Threads...)
@@ -3688,18 +3800,19 @@ func secureCellFederationProjection(result *securecellsintegration.SecureCellRes
 		packageAnchored = result.PortablePackage.AuditAnchor != nil
 	}
 	return secureCellFederationResponse{
-		CellID:                  result.CellID,
-		Organizations:           append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...),
-		Invitations:             append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...),
-		Counterproposals:        append([]securecellsintegration.SecureCellFederationCounterproposal(nil), result.FederationCounterproposals...),
-		Contracts:               append([]securecellsintegration.SecureCellFederationContract(nil), result.FederationContracts...),
-		CounterpartyAssurance:   append([]securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot(nil), result.FederationCounterpartyAssurance...),
-		Incidents:               append([]securecellsintegration.SecureCellFederationIncident(nil), result.FederationIncidents...),
-		CounterpartyIncidents:   append([]securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot(nil), result.FederationCounterpartyIncidents...),
-		IncidentResponses:       append([]securecellsintegration.SecureCellFederationIncidentResponse(nil), result.FederationIncidentResponses...),
-		PortablePackageHash:     packageHash,
-		PortablePackageSigned:   packageSigned,
-		PortablePackageAnchored: packageAnchored,
+		CellID:                      result.CellID,
+		Organizations:               append([]securecellsintegration.SecureCellFederationOrganization(nil), result.FederationOrganizations...),
+		Invitations:                 append([]securecellsintegration.SecureCellFederationInvitation(nil), result.FederationInvitations...),
+		Counterproposals:            append([]securecellsintegration.SecureCellFederationCounterproposal(nil), result.FederationCounterproposals...),
+		Contracts:                   append([]securecellsintegration.SecureCellFederationContract(nil), result.FederationContracts...),
+		CounterpartyAssurance:       append([]securecellsintegration.SecureCellFederationCounterpartyAssuranceSnapshot(nil), result.FederationCounterpartyAssurance...),
+		Incidents:                   append([]securecellsintegration.SecureCellFederationIncident(nil), result.FederationIncidents...),
+		CounterpartyIncidents:       append([]securecellsintegration.SecureCellFederationCounterpartyIncidentSnapshot(nil), result.FederationCounterpartyIncidents...),
+		CounterpartyIncidentReports: append([]securecellsintegration.SecureCellFederationCounterpartyIncidentReportSnapshot(nil), result.FederationCounterpartyIncidentReports...),
+		IncidentResponses:           append([]securecellsintegration.SecureCellFederationIncidentResponse(nil), result.FederationIncidentResponses...),
+		PortablePackageHash:         packageHash,
+		PortablePackageSigned:       packageSigned,
+		PortablePackageAnchored:     packageAnchored,
 	}
 }
 
@@ -4010,6 +4123,34 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "counterparty-incident-reports",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterparty-incident-reports?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List imported signed counterparty incident report bundles for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "counterparty-incident-reports-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterparty-incident-reports/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export imported signed counterparty incident report bundles for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-report-reconciliations",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliations?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List local-vs-counterparty incident report reconciliations for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-report-reconciliations-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliations/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export local-vs-counterparty incident report reconciliations for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "counterparty-incidents",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/counterparty-incidents?cell_id=" + cellID + "&organization_id=" + organizationID,
@@ -4036,6 +4177,13 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Path:        secureCellsItemPrefix + cellID + "/federation/organizations/" + organizationID + "/incident-bulletin/export?format=csv",
 				Description: "Export the signed portable federation incident bulletin for this organization.",
 				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "organization-incident-report-intake",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/organizations/" + organizationID + "/incident-report-bundles/intake",
+				Description: "Ingest one signed counterparty incident report bundle for this organization.",
+				Formats:     []string{"json"},
 			},
 			{
 				ID:          "organization-incident-publish",
@@ -5340,6 +5488,58 @@ func parseSecureCellFederationCounterpartyIncidentFilter(r *http.Request) (secur
 	}, nil
 }
 
+func parseSecureCellFederationCounterpartyIncidentReportFilter(r *http.Request) (securecellsintegration.SecureCellFederationCounterpartyIncidentReportFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	status, err := parseSecureCellFederationCounterpartyIncidentReportStatus(query.Get("status"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportFilter{}, err
+	}
+	reconciliationStatus, err := parseSecureCellFederationIncidentReportReconciliationStatus(query.Get("reconciliation_status"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportFilter{}, err
+	}
+	return securecellsintegration.SecureCellFederationCounterpartyIncidentReportFilter{
+		CellID:               strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID:       strings.TrimSpace(query.Get("organization_id")),
+		ContractID:           strings.TrimSpace(query.Get("contract_id")),
+		IncidentID:           strings.TrimSpace(query.Get("incident_id")),
+		ResponseID:           strings.TrimSpace(query.Get("response_id")),
+		ReportID:             strings.TrimSpace(query.Get("report_id")),
+		Status:               status,
+		ReconciliationStatus: reconciliationStatus,
+		Signer:               strings.TrimSpace(query.Get("signer")),
+		Regulator:            strings.TrimSpace(query.Get("regulator")),
+		Limit:                cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellFederationIncidentReportReconciliationFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	reportingParty, err := parseSecureCellFederationIncidentResponseParty(query.Get("reporting_party"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{}, err
+	}
+	status, err := parseSecureCellFederationIncidentReportReconciliationStatus(query.Get("status"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{}, err
+	}
+	return securecellsintegration.SecureCellFederationIncidentReportReconciliationFilter{
+		CellID:         strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID: strings.TrimSpace(query.Get("organization_id")),
+		IncidentID:     strings.TrimSpace(query.Get("incident_id")),
+		Regulator:      strings.TrimSpace(query.Get("regulator")),
+		ReportingParty: reportingParty,
+		Status:         status,
+		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
 func parseSecureCellFederationIncidentResponseStatus(raw string) (securecellsintegration.SecureCellFederationIncidentResponseStatus, error) {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "":
@@ -5559,6 +5759,46 @@ func parseSecureCellFederationCounterpartyIncidentStatus(raw string) (securecell
 		return securecellsintegration.SecureCellFederationCounterpartyIncidentStatusInvalid, nil
 	default:
 		return "", fmt.Errorf("unsupported federation counterparty incident status %q", raw)
+	}
+}
+
+func parseSecureCellFederationCounterpartyIncidentReportStatus(raw string) (securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatus, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return "", nil
+	case string(securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusVerified):
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusVerified, nil
+	case string(securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusStale):
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusStale, nil
+	case string(securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusExpired):
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusExpired, nil
+	case string(securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusInvalid):
+		return securecellsintegration.SecureCellFederationCounterpartyIncidentReportStatusInvalid, nil
+	default:
+		return "", fmt.Errorf("unsupported federation counterparty incident report status %q", raw)
+	}
+}
+
+func parseSecureCellFederationIncidentReportReconciliationStatus(raw string) (securecellsintegration.SecureCellFederationIncidentReportReconciliationStatus, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return "", nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusAligned):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusAligned, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusLocalOnly):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusLocalOnly, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyOnly):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyOnly, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusDivergent):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusDivergent, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyInvalid):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyInvalid, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyStale):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyStale, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyExpired):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyExpired, nil
+	default:
+		return "", fmt.Errorf("unsupported federation incident report reconciliation status %q", raw)
 	}
 }
 
