@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776591973089,
+  "lastUpdate": 1776599089478,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -1019,6 +1019,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 1",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f653a15722a6ed70b8f4f47946acdb5e3dec9e85",
+          "message": "core: remove literal nonces from signed transaction tests (#144)\n\n* core: normalize signed transaction test nonces\n\n* core: eliminate literal nonce increments in tests",
+          "timestamp": "2026-04-19T15:43:20+04:00",
+          "tree_id": "a519d6ba3c702b16aff8065713a2a430d302c321",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/f653a15722a6ed70b8f4f47946acdb5e3dec9e85"
+        },
+        "date": 1776599088327,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 3",
             "unit": "ns/iter"
           }
         ]
