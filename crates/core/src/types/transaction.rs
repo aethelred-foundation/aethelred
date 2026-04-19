@@ -789,9 +789,16 @@ fn verifier_config_for(threat_level: QuantumThreatLevel, chain_id: u64) -> Verif
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static NEXT_TEST_NONCE: AtomicU64 = AtomicU64::new(1);
 
     fn create_test_keypair() -> HybridKeyPair {
         HybridKeyPair::generate().unwrap()
+    }
+
+    fn next_test_nonce() -> u64 {
+        NEXT_TEST_NONCE.fetch_add(1, Ordering::Relaxed)
     }
 
     #[test]
@@ -810,8 +817,9 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let nonce = next_test_nonce();
 
-        let tx = Transaction::transfer(sender, recipient, 1000, 0);
+        let tx = Transaction::transfer(sender, recipient, 1000, nonce);
         let signed = tx.sign(&keypair).unwrap();
 
         assert!(signed.verify().unwrap());
@@ -822,8 +830,9 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let nonce = next_test_nonce();
 
-        let tx = Transaction::transfer(sender, recipient, 1000, 0);
+        let tx = Transaction::transfer(sender, recipient, 1000, nonce);
         let signed = tx.sign(&keypair).unwrap();
 
         // Should verify at all threat levels
@@ -838,9 +847,10 @@ mod tests {
         let wrong_sender =
             Address::from_bytes([0x11; 20], super::super::address::AddressType::User);
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let nonce = next_test_nonce();
 
         // Create transaction with wrong sender
-        let tx = Transaction::transfer(wrong_sender, recipient, 1000, 0);
+        let tx = Transaction::transfer(wrong_sender, recipient, 1000, nonce);
         let signed = tx.sign(&keypair).unwrap();
 
         // Verification should fail because sender doesn't match public key
@@ -852,12 +862,13 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let nonce = next_test_nonce();
 
-        let tx = Transaction::transfer(sender, recipient, 1000, 0);
+        let tx = Transaction::transfer(sender, recipient, 1000, nonce);
         let id = tx.id();
 
         // Same transaction should have same ID
-        let tx2 = Transaction::transfer(sender, recipient, 1000, 0);
+        let tx2 = Transaction::transfer(sender, recipient, 1000, nonce);
         assert_eq!(id.to_hex(), tx2.id().to_hex());
     }
 
@@ -866,15 +877,18 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let first_nonce = next_test_nonce();
+        let second_nonce = next_test_nonce();
+        let third_nonce = next_test_nonce();
 
         // Create multiple transactions
-        let tx1 = Transaction::transfer(sender, recipient, 100, 0)
+        let tx1 = Transaction::transfer(sender, recipient, 100, first_nonce)
             .sign(&keypair)
             .unwrap();
-        let tx2 = Transaction::transfer(sender, recipient, 200, 1)
+        let tx2 = Transaction::transfer(sender, recipient, 200, second_nonce)
             .sign(&keypair)
             .unwrap();
-        let tx3 = Transaction::transfer(sender, recipient, 300, 2)
+        let tx3 = Transaction::transfer(sender, recipient, 300, third_nonce)
             .sign(&keypair)
             .unwrap();
 
@@ -892,13 +906,16 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
+        let active_nonce = next_test_nonce();
+        let expired_nonce = next_test_nonce();
+        let future_nonce = next_test_nonce();
 
         // Non-expiring transaction
-        let tx1 = Transaction::transfer(sender, recipient, 1000, 0);
+        let tx1 = Transaction::transfer(sender, recipient, 1000, active_nonce);
         assert!(!tx1.is_expired());
 
         // Expired transaction
-        let tx2 = Transaction::transfer(sender, recipient, 1000, 0).with_expiry(1);
+        let tx2 = Transaction::transfer(sender, recipient, 1000, expired_nonce).with_expiry(1);
         assert!(tx2.is_expired());
 
         // Future expiry
@@ -907,7 +924,7 @@ mod tests {
             .unwrap()
             .as_secs()
             + 3600;
-        let tx3 = Transaction::transfer(sender, recipient, 1000, 0).with_expiry(future);
+        let tx3 = Transaction::transfer(sender, recipient, 1000, future_nonce).with_expiry(future);
         assert!(!tx3.is_expired());
     }
 
@@ -917,8 +934,9 @@ mod tests {
         let sender = Address::from_public_key(keypair.public_key());
         let model_hash = sha256(b"model weights");
         let input_hash = sha256(b"input data");
+        let nonce = next_test_nonce();
 
-        let tx = Transaction::compute_job(sender, model_hash, input_hash, 0);
+        let tx = Transaction::compute_job(sender, model_hash, input_hash, nonce);
         assert_eq!(tx.tx_type, TransactionType::ComputeJob);
         assert!(tx.tx_type.requires_compute());
 
