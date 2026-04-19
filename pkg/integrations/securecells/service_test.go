@@ -3291,6 +3291,278 @@ func TestService_FederationCounterpartyAssuranceBundleIntakeAndDriftContainment(
 	}
 }
 
+func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Incident Cell",
+		Purpose:       "reciprocal federation incident containment",
+		Resource:      "cell:federation-incidents",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Federated Incident Session",
+		Purpose:         "exchange under monitored federation",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential"},
+		Reason:          "open incident-capable collaboration room",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session, ok := mustSecureCellSession(t, started, started.Sessions[len(started.Sessions)-1].ID)
+	if !ok {
+		t.Fatalf("expected session, got %+v", started.Sessions)
+	}
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "counterparty_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite reciprocal incident counterparty",
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitationID := invited.FederationInvitations[len(invited.FederationInvitations)-1].ID
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID:           invitationID,
+		ActorDID:               participantB.AgentID(),
+		Participant:            SecureCellParticipant{Identity: participantB, Role: "counterparty_reviewer"},
+		OfferedSessionScopeIDs: []string{session.ID},
+		OfferedDataClasses:     []string{"confidential"},
+		OfferedActions:         []string{"share_output", "session_exchange"},
+		Reason:                 "counterparty accepted federated incident collaboration",
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	contractID := accepted.FederationContracts[0].ID
+	orgID := secureCellFederationOrganizationID(secureCellFederationSponsor(participantB))
+
+	withMember, err := service.AddSessionMember(ctx, created.CellID, SecureCellSessionMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "admit federated participant into scoped session",
+	}, session.ID)
+	if err != nil {
+		t.Fatalf("AddSessionMember failed: %v", err)
+	}
+	if _, ok := mustSecureCellSession(t, withMember, session.ID); !ok {
+		t.Fatalf("expected updated session after federated member admit, got %+v", withMember.Sessions)
+	}
+
+	shared, err := service.ShareOutput(ctx, created.CellID, SecureCellSessionShareRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Counterparty Evidence Packet",
+		ArtifactType:   "document",
+		Classification: "confidential",
+		Resource:       "secure-cell:incident-packet",
+		Summary:        "counterparty shared sensitive incident packet",
+		SharedWith:     []string{participantA.AgentID()},
+		IntegrityHash:  "sha256:incident-packet",
+		Reason:         "share regulated incident packet",
+		Metadata:       map[string]string{"scenario": "federation_incident"},
+	})
+	if err != nil {
+		t.Fatalf("ShareOutput failed: %v", err)
+	}
+	sharedOutput, ok := mustSecureCellSharedOutput(t, shared, shared.SharedOutputs[len(shared.SharedOutputs)-1].ID)
+	if !ok {
+		t.Fatalf("expected shared output, got %+v", shared.SharedOutputs)
+	}
+	if !secureCellStringSliceContains(sharedOutput.FederationOrgIDs, orgID) || !secureCellStringSliceContains(sharedOutput.FederationContractIDs, contractID) {
+		t.Fatalf("expected shared output to bind to federation org %q and contract %q, got %+v", orgID, contractID, sharedOutput)
+	}
+
+	exchanged, err := service.RecordExchange(ctx, created.CellID, SecureCellSessionExchangeRequest{
+		ActorDID:       participantB.AgentID(),
+		SessionID:      session.ID,
+		Name:           "Counterparty Incident Exchange",
+		ExchangeType:   "message",
+		Classification: "confidential",
+		Resource:       "secure-cell:incident-exchange",
+		Summary:        "counterparty exchanged sensitive incident details",
+		Recipients:     []string{participantA.AgentID()},
+		IntegrityHash:  "sha256:incident-exchange",
+		Reason:         "exchange regulated incident details",
+		Metadata:       map[string]string{"scenario": "federation_incident"},
+	})
+	if err != nil {
+		t.Fatalf("RecordExchange failed: %v", err)
+	}
+	var sessionExchange SecureCellSessionExchange
+	for _, item := range exchanged.SessionExchanges {
+		if item.ID == exchanged.SessionExchanges[len(exchanged.SessionExchanges)-1].ID {
+			sessionExchange = item
+			break
+		}
+	}
+	if sessionExchange.ID == "" {
+		t.Fatalf("expected session exchange, got %+v", exchanged.SessionExchanges)
+	}
+	if !secureCellStringSliceContains(sessionExchange.FederationOrgIDs, orgID) || !secureCellStringSliceContains(sessionExchange.FederationContractIDs, contractID) {
+		t.Fatalf("expected session exchange to bind to federation org %q and contract %q, got %+v", orgID, contractID, sessionExchange)
+	}
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, orgID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityCritical,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Counterparty exchange is now considered compromised",
+		Description:              "Reciprocal bulletin should suspend the contract and contain scoped artifacts.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		SharedOutputIDs:          []string{sharedOutput.ID},
+		SessionExchangeIDs:       []string{sessionExchange.ID},
+		AutoContainmentRequested: true,
+		Reason:                   "publish reciprocal incident bulletin",
+		Metadata:                 map[string]string{"ticket": "FED-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	if len(published.FederationIncidents) != 1 {
+		t.Fatalf("expected one local federation incident, got %+v", published.FederationIncidents)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	localIncidents, err := service.ListFederationIncidents(ctx, SecureCellFederationIncidentFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Status:         SecureCellFederationIncidentStatusOpen,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidents failed: %v", err)
+	}
+	if len(localIncidents) != 1 || localIncidents[0].IncidentID != incidentID {
+		t.Fatalf("expected one open federation incident summary, got %+v", localIncidents)
+	}
+
+	bulletin, err := service.BuildFederationIncidentBulletin(ctx, created.CellID, orgID, SecureCellFederationIncidentBulletinOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentBulletin failed: %v", err)
+	}
+	if bulletin.Signature == nil || bulletin.ContentHash == "" || len(bulletin.Incidents) != 1 || bulletin.Incidents[0].IncidentID != incidentID {
+		t.Fatalf("expected signed bulletin with one incident, got %+v", bulletin)
+	}
+
+	intakeResult, err := service.IngestFederationIncidentBulletin(ctx, created.CellID, orgID, SecureCellFederationIncidentBulletinIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bulletin: bulletin,
+		Reason:   "ingest reciprocal federation incident bulletin",
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentBulletin failed: %v", err)
+	}
+	if len(intakeResult.FederationCounterpartyIncidents) != 1 || intakeResult.FederationCounterpartyIncidents[0].Status != SecureCellFederationCounterpartyIncidentStatusVerified {
+		t.Fatalf("expected verified counterparty incident bulletin, got %+v", intakeResult.FederationCounterpartyIncidents)
+	}
+
+	counterpartyItems, err := service.ListFederationCounterpartyIncidents(ctx, SecureCellFederationCounterpartyIncidentFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Status:         SecureCellFederationCounterpartyIncidentStatusVerified,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidents failed: %v", err)
+	}
+	if len(counterpartyItems) != 1 || counterpartyItems[0].BulletinID != bulletin.ID || counterpartyItems[0].OpenIncidentCount != 1 {
+		t.Fatalf("expected one verified counterparty incident summary, got %+v", counterpartyItems)
+	}
+
+	sweep, err := service.SweepFederationIncidents(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated reciprocal federation incident sweep",
+		Metadata: map[string]string{"ticket": "FED-INC-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidents failed: %v", err)
+	}
+	if sweep.ContractsSuspended != 1 || sweep.SessionsQuarantined != 1 || sweep.ArtifactsContained < 2 {
+		t.Fatalf("expected incident sweep to suspend contract, quarantine session, and contain artifacts, got %+v", sweep)
+	}
+
+	final, err := service.GetCell(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetCell failed: %v", err)
+	}
+	_, finalContract := findSecureCellFederationContract(final.FederationContracts, contractID)
+	if finalContract == nil || finalContract.Status != SecureCellFederationContractStatusSuspended {
+		t.Fatalf("expected contract %q to be suspended after incident sweep, got %+v", contractID, final.FederationContracts)
+	}
+	finalSession, ok := mustSecureCellSession(t, final, session.ID)
+	if !ok || finalSession.Status != SecureCellSessionStatusQuarantined {
+		t.Fatalf("expected session %q to be quarantined after incident sweep, got %+v", session.ID, final.Sessions)
+	}
+	finalOutput, ok := mustSecureCellSharedOutput(t, final, sharedOutput.ID)
+	if !ok || finalOutput.ContainmentStatus != SecureCellArtifactContainmentStatusContained || finalOutput.ContainmentSourceType != "federation_incident" || finalOutput.ContainmentSourceID != incidentID {
+		t.Fatalf("expected shared output containment from federation incident %q, got %+v", incidentID, finalOutput)
+	}
+	var finalExchange SecureCellSessionExchange
+	for _, item := range final.SessionExchanges {
+		if item.ID == sessionExchange.ID {
+			finalExchange = item
+			break
+		}
+	}
+	if finalExchange.ID == "" || finalExchange.ContainmentStatus != SecureCellArtifactContainmentStatusContained || finalExchange.ContainmentSourceType != "federation_incident" || finalExchange.ContainmentSourceID != incidentID {
+		t.Fatalf("expected session exchange containment from federation incident %q, got %+v", incidentID, finalExchange)
+	}
+
+	actions, err := service.ListFederationIncidentActions(ctx, SecureCellFederationIncidentActionFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		IncidentID:     incidentID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentActions failed: %v", err)
+	}
+	if len(actions) == 0 {
+		t.Fatalf("expected incident action records after sweep, got %+v", actions)
+	}
+
+	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, orgID, SecureCellFederationOrganizationTrustPackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationOrganizationTrustPack failed: %v", err)
+	}
+	if len(trustPack.Incidents) != 1 || trustPack.Incidents[0].IncidentID != incidentID {
+		t.Fatalf("expected trust pack to include local incident summary, got %+v", trustPack.Incidents)
+	}
+	if len(trustPack.CounterpartyIncidents) != 1 || trustPack.CounterpartyIncidents[0].BulletinID != bulletin.ID {
+		t.Fatalf("expected trust pack to include imported counterparty incident summary, got %+v", trustPack.CounterpartyIncidents)
+	}
+}
+
 func TestService_FederatedExchangeContractsRestrictSessionScope(t *testing.T) {
 	t.Parallel()
 

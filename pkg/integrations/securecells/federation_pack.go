@@ -156,6 +156,12 @@ type SecureCellFederationOrganizationRuntime struct {
 	ActiveContracts         int       `json:"active_contracts"`
 	SuspendedContracts      int       `json:"suspended_contracts"`
 	RevokedContracts        int       `json:"revoked_contracts"`
+	IncidentCount           int       `json:"incident_count"`
+	OpenIncidents           int       `json:"open_incidents"`
+	CriticalIncidents       int       `json:"critical_incidents"`
+	HighIncidents           int       `json:"high_incidents"`
+	CounterpartyIncidentSnapshots int `json:"counterparty_incident_snapshots"`
+	CounterpartyOpenIncidents int    `json:"counterparty_open_incidents"`
 	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
 }
 
@@ -182,6 +188,8 @@ type SecureCellFederationOrganizationTrustPack struct {
 	Contracts               []SecureCellFederationContractSummary   `json:"contracts,omitempty"`
 	Assurance               *SecureCellFederationAssuranceReport    `json:"assurance,omitempty"`
 	CounterpartyAssurance   []SecureCellFederationCounterpartyAssuranceSummary `json:"counterparty_assurance,omitempty"`
+	Incidents               []SecureCellFederationIncidentSummary   `json:"incidents,omitempty"`
+	CounterpartyIncidents   []SecureCellFederationCounterpartyIncidentSummary `json:"counterparty_incidents,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
@@ -368,6 +376,22 @@ func (s *Service) BuildFederationOrganizationTrustPack(ctx context.Context, cell
 		return nil, err
 	}
 	pack.CounterpartyAssurance = counterpartyAssurance
+	incidents, err := s.ListFederationIncidents(ctx, SecureCellFederationIncidentFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.Incidents = incidents
+	counterpartyIncidents, err := s.ListFederationCounterpartyIncidents(ctx, SecureCellFederationCounterpartyIncidentFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.CounterpartyIncidents = counterpartyIncidents
 	return pack, nil
 }
 
@@ -759,6 +783,41 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 		}
 		if updatedAt := secureCellFederationContractUpdatedAt(contract); updatedAt.After(runtime.LastUpdatedAt) {
 			runtime.LastUpdatedAt = updatedAt
+		}
+	}
+	for _, incident := range run.result.FederationIncidents {
+		if strings.TrimSpace(incident.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
+			continue
+		}
+		runtime.IncidentCount++
+		if incident.Status == SecureCellFederationIncidentStatusOpen {
+			runtime.OpenIncidents++
+		}
+		switch incident.Severity {
+		case SecureCellFederationIncidentSeverityCritical:
+			runtime.CriticalIncidents++
+		case SecureCellFederationIncidentSeverityHigh:
+			runtime.HighIncidents++
+		}
+		if incident.ReportedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = incident.ReportedAt.UTC()
+		}
+		if incident.ResolvedAt != nil && incident.ResolvedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = incident.ResolvedAt.UTC()
+		}
+	}
+	for _, snapshot := range run.result.FederationCounterpartyIncidents {
+		if strings.TrimSpace(snapshot.OrganizationID) != strings.TrimSpace(org.OrganizationID) {
+			continue
+		}
+		runtime.CounterpartyIncidentSnapshots++
+		for _, incident := range snapshot.Bulletin.Incidents {
+			if incident.Status == SecureCellFederationIncidentStatusOpen {
+				runtime.CounterpartyOpenIncidents++
+			}
+		}
+		if snapshot.ReceivedAt.After(runtime.LastUpdatedAt) {
+			runtime.LastUpdatedAt = snapshot.ReceivedAt.UTC()
 		}
 	}
 	if org.UpdatedAt.After(runtime.LastUpdatedAt) {
