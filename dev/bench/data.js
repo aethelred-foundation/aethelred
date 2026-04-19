@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776521415874,
+  "lastUpdate": 1776591973089,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -989,6 +989,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2992,
             "range": "± 4",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d56068f8c5b9bc8ae327543923bf39285b71e7f",
+          "message": "mempool: remove literal nonce fixtures from middleware tests (#143)\n\n* mempool: avoid literal test nonce in signature middleware\n\n* mempool: normalize middleware test nonces",
+          "timestamp": "2026-04-19T13:44:40+04:00",
+          "tree_id": "8fe896b3fd8da2d0a7ed686a6d646bd980fc3477",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/1d56068f8c5b9bc8ae327543923bf39285b71e7f"
+        },
+        "date": 1776591971754,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 1",
             "unit": "ns/iter"
           }
         ]
