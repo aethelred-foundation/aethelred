@@ -1708,6 +1708,69 @@ func writeSecureCellFederationIncidentReportExport(w http.ResponseWriter, r *htt
 	}
 }
 
+func writeSecureCellFederationIncidentReportAmendmentExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentReportAmendmentSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportAmendmentListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-report-amendments.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id", "cell_name", "jurisdiction", "cell_status", "response_id", "organization_id", "sponsor_of_record", "incident_id",
+			"report_id", "report_regulator", "report_framework", "report_type", "report_status", "amendment_id", "sequence", "supersedes_amendment_id",
+			"status", "summary", "description", "changed_sections", "evidence_ids", "submission_reference", "submitted_by", "submitted_at",
+			"acknowledgement_reference", "acknowledged_by", "acknowledged_at", "created_by", "created_at", "updated_at", "metadata",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.ResponseID,
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.IncidentID,
+				item.ReportID,
+				item.ReportRegulator,
+				item.ReportFramework,
+				item.ReportType,
+				string(item.ReportStatus),
+				item.AmendmentID,
+				strconv.Itoa(item.Sequence),
+				item.SupersedesAmendmentID,
+				string(item.Status),
+				item.Summary,
+				item.Description,
+				strings.Join(item.ChangedSections, "|"),
+				strings.Join(item.EvidenceIDs, "|"),
+				item.SubmissionReference,
+				item.SubmittedBy,
+				formatSecureCellOptionalTime(item.SubmittedAt),
+				item.AcknowledgementReference,
+				item.AcknowledgedBy,
+				formatSecureCellOptionalTime(item.AcknowledgedAt),
+				item.CreatedBy,
+				item.CreatedAt.UTC().Format(time.RFC3339Nano),
+				item.UpdatedAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellStringMap(item.Metadata),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-report-amendment csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellOverdueFederationIncidentReportExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellOverdueFederationIncidentReport) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -2119,6 +2182,87 @@ func writeSecureCellFederationCounterpartyIncidentReportExport(w http.ResponseWr
 		for _, row := range rows {
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("write federation-counterparty-incident-report csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentReportAmendmentBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentReportAmendmentBundle) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportAmendmentBundleResponse{Result: bundle})
+		return nil
+	case "csv":
+		if bundle == nil {
+			return fmt.Errorf("federation incident report amendment bundle is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-report-amendment-bundle.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
+			"organization_id", "sponsor_of_record", "organization_name", "response_id", "incident_id", "report_id", "report_status",
+			"amendment_id", "amendment_sequence", "amendment_status", "report_bundle_hash", "contract_ids", "control_ids",
+			"operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash", "portable_package_hash",
+			"portable_package_signed", "portable_package_anchored", "content_hash", "signature_algorithm", "signature_signer",
+			"signature_key_id", "signature_signed_at", "metadata",
+		}}
+		signatureAlgorithm := ""
+		signatureSigner := ""
+		signatureKeyID := ""
+		signatureSignedAt := ""
+		if bundle.Signature != nil {
+			signatureAlgorithm = bundle.Signature.Algorithm
+			signatureSigner = bundle.Signature.Signer
+			signatureKeyID = bundle.Signature.KeyID
+			signatureSignedAt = bundle.Signature.SignedAt.UTC().Format(time.RFC3339Nano)
+		}
+		rows = append(rows, []string{
+			bundle.ID,
+			bundle.Version,
+			bundle.Name,
+			bundle.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			formatSecureCellOptionalTime(bundle.ExpiresAt),
+			bundle.CellID,
+			bundle.CellName,
+			string(bundle.CellStatus),
+			bundle.Jurisdiction,
+			bundle.Framework,
+			bundle.Organization.OrganizationID,
+			bundle.Organization.SponsorOfRecord,
+			bundle.Organization.OrganizationName,
+			bundle.ResponseSummary.ResponseID,
+			bundle.ResponseSummary.IncidentID,
+			bundle.ReportSummary.ReportID,
+			string(bundle.ReportSummary.Status),
+			bundle.AmendmentSummary.AmendmentID,
+			strconv.Itoa(bundle.AmendmentSummary.Sequence),
+			string(bundle.AmendmentSummary.Status),
+			bundle.ReportBundleHash,
+			joinSecureCellFederationContractIDs(bundle.Contracts),
+			joinSecureCellFederationControlIDs(bundle.Controls),
+			joinSecureCellFederationOperatorSurfaceIDs(bundle.OperatorSurfaces),
+			joinSecureCellFederationOperatorSurfacePaths(bundle.OperatorSurfaces),
+			bundle.ControlLedgerID,
+			bundle.ControlLedgerHash,
+			bundle.PortablePackageHash,
+			strconv.FormatBool(bundle.PortablePackageSigned),
+			strconv.FormatBool(bundle.PortablePackageAnchored),
+			bundle.ContentHash,
+			signatureAlgorithm,
+			signatureSigner,
+			signatureKeyID,
+			signatureSignedAt,
+			formatSecureCellStringMap(bundle.Metadata),
+		})
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-report-amendment-bundle csv row: %w", err)
 			}
 		}
 		writer.Flush()

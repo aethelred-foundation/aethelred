@@ -5503,6 +5503,264 @@ func mustSecureCellFederationCounterproposal(t *testing.T, result *SecureCellRes
 	return SecureCellFederationCounterproposal{}, false
 }
 
+func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Report Amendment Cell",
+		Purpose:       "governed incident report amendment handling",
+		Resource:      "cell:federation-report-amendment",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Regulator Coordination Room",
+		Purpose:         "prepare bilateral regulator coordination steps",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "regulator coordination opened",
+		Metadata:        map[string]string{"ticket": "FED-REPORT-AMEND-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	sponsorOfRecord := secureCellFederationSponsor(participantB)
+	organizationName := secureCellFederationOrganizationName(participantB)
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  sponsorOfRecord,
+		OrganizationName: organizationName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty regulator reviewer",
+		Metadata:         map[string]string{"ticket": "FED-REPORT-AMEND-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins regulator room",
+		Metadata: map[string]string{"ticket": "FED-REPORT-AMEND-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, organizationID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityCritical,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Local filing posture drift detected",
+		Description:              "The local organization needs to coordinate an updated regulator notification with the counterparty.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish local filing drift incident",
+		Metadata:                 map[string]string{"ticket": "FED-REPORT-AMEND-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := service.CreateFederationIncidentReport(ctx, created.CellID, localResponseID, SecureCellFederationIncidentReportPlanRequest{
+		ActorDID:         owner.AgentID(),
+		ReportingParty:   SecureCellFederationIncidentResponsePartyLocalOrg,
+		Regulator:        "uk-ico",
+		Jurisdiction:     "UK",
+		Framework:        "uk-gdpr",
+		ReportType:       "breach_notification",
+		Summary:          "Local regulator notification",
+		Description:      "The local organization prepared an initial regulator notification.",
+		RequiredSections: []string{"scope", "impact", "containment"},
+		EvidenceIDs:      []string{incidentID},
+		DueAt:            &dueAt,
+		Reason:           "plan local regulator notification",
+		Metadata:         map[string]string{"ticket": "FED-REPORT-AMEND-PLAN-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentReport failed: %v", err)
+	}
+
+	reports, err := service.ListFederationIncidentReports(ctx, SecureCellFederationIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReports failed: %v", err)
+	}
+	if len(reports) != 1 {
+		t.Fatalf("expected one federation incident report, got %+v", reports)
+	}
+	reportID := reports[0].ReportID
+
+	submitted, err := service.SubmitFederationIncidentReport(ctx, created.CellID, reportID, SecureCellFederationIncidentReportSubmitRequest{
+		ActorDID:            owner.AgentID(),
+		SubmissionReference: "ico-2026-local-0001",
+		Summary:             "Local submitted regulator notification",
+		Description:         "The local organization submitted the initial regulator notification package.",
+		EvidenceIDs:         []string{incidentID},
+		Reason:              "submit local regulator notification",
+		Metadata:            map[string]string{"ticket": "FED-REPORT-AMEND-SUBMIT-01"},
+	})
+	if err != nil {
+		t.Fatalf("SubmitFederationIncidentReport failed: %v", err)
+	}
+
+	acknowledged, err := service.AcknowledgeFederationIncidentReport(ctx, created.CellID, reportID, SecureCellFederationIncidentReportAcknowledgeRequest{
+		ActorDID:                 participantB.AgentID(),
+		AcknowledgingParty:       SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		AcknowledgementReference: "counterparty-ack-0001",
+		Reason:                   "counterparty acknowledged local filing",
+		Metadata:                 map[string]string{"ticket": "FED-REPORT-AMEND-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReport failed: %v", err)
+	}
+
+	amended, err := service.AmendFederationIncidentReport(ctx, created.CellID, reportID, SecureCellFederationIncidentReportAmendRequest{
+		ActorDID:        owner.AgentID(),
+		Summary:         "Local amended regulator notification",
+		Description:     "The local organization amended the filing with narrowed impact and updated evidence.",
+		ChangedSections: []string{"scope", "impact"},
+		EvidenceIDs:     []string{acknowledged.ControlLedger.Bundle.ID},
+		Reason:          "amend local regulator notification",
+		Metadata:        map[string]string{"ticket": "FED-REPORT-AMEND-01"},
+	})
+	if err != nil {
+		t.Fatalf("AmendFederationIncidentReport failed: %v", err)
+	}
+
+	amendments, err := service.ListFederationIncidentReportAmendments(ctx, SecureCellFederationIncidentReportAmendmentFilter{
+		CellID:   created.CellID,
+		ReportID: reportID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendments failed: %v", err)
+	}
+	if len(amendments) != 1 || amendments[0].Status != SecureCellFederationIncidentReportAmendmentStatusPendingSubmission || amendments[0].Sequence != 1 {
+		t.Fatalf("expected one pending amendment, got %+v", amendments)
+	}
+	amendmentID := amendments[0].AmendmentID
+
+	amendSubmitted, err := service.SubmitFederationIncidentReportAmendment(ctx, created.CellID, amendmentID, SecureCellFederationIncidentReportAmendmentSubmitRequest{
+		ActorDID:            owner.AgentID(),
+		SubmissionReference: "ico-2026-local-amend-0001",
+		Summary:             "Local submitted regulator amendment",
+		Description:         "The local organization submitted the regulator amendment package.",
+		EvidenceIDs:         []string{submitted.ControlLedger.Bundle.ID},
+		Reason:              "submit local regulator amendment",
+		Metadata:            map[string]string{"ticket": "FED-REPORT-AMEND-SUBMIT-02"},
+	})
+	if err != nil {
+		t.Fatalf("SubmitFederationIncidentReportAmendment failed: %v", err)
+	}
+
+	amendAcknowledged, err := service.AcknowledgeFederationIncidentReportAmendment(ctx, created.CellID, amendmentID, SecureCellFederationIncidentReportAmendmentAcknowledgeRequest{
+		ActorDID:                 participantB.AgentID(),
+		AcknowledgingParty:       SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		AcknowledgementReference: "counterparty-amend-ack-0001",
+		Reason:                   "counterparty acknowledged regulator amendment",
+		Metadata:                 map[string]string{"ticket": "FED-REPORT-AMEND-ACK-02"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReportAmendment failed: %v", err)
+	}
+
+	amendments, err = service.ListFederationIncidentReportAmendments(ctx, SecureCellFederationIncidentReportAmendmentFilter{
+		CellID:   created.CellID,
+		ReportID: reportID,
+		Status:   SecureCellFederationIncidentReportAmendmentStatusAcknowledged,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendments after acknowledgement failed: %v", err)
+	}
+	if len(amendments) != 1 || amendments[0].AmendmentID != amendmentID || amendments[0].AcknowledgedBy != participantB.AgentID() {
+		t.Fatalf("expected one acknowledged amendment, got %+v", amendments)
+	}
+
+	responseWithReport, err := service.GetFederationIncidentResponse(ctx, created.CellID, localResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse failed: %v", err)
+	}
+	if len(responseWithReport.IncidentReports) != 1 || len(responseWithReport.IncidentReports[0].Amendments) != 1 || responseWithReport.IncidentReports[0].Amendments[0].Status != SecureCellFederationIncidentReportAmendmentStatusAcknowledged {
+		t.Fatalf("expected acknowledged amendment on local report, got %+v", responseWithReport.IncidentReports)
+	}
+
+	amendmentBundle, err := service.BuildFederationIncidentReportAmendmentBundle(ctx, created.CellID, amendmentID, SecureCellFederationIncidentReportAmendmentBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentReportAmendmentBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentReportAmendmentBundle(amendmentBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentReportAmendmentBundle failed: %v", err)
+	}
+	if amendmentBundle.ReportSummary.ReportID != reportID || amendmentBundle.AmendmentSummary.AmendmentID != amendmentID || amendmentBundle.AmendmentSummary.Status != SecureCellFederationIncidentReportAmendmentStatusAcknowledged {
+		t.Fatalf("expected acknowledged amendment bundle projection, got %+v", amendmentBundle.AmendmentSummary)
+	}
+	if amendmentBundle.ReportBundleHash == "" || amendmentBundle.Signature == nil {
+		t.Fatalf("expected signed amendment bundle with report linkage, got %+v", amendmentBundle)
+	}
+	if len(amended.Transitions) == 0 || len(amendSubmitted.Transitions) == 0 || len(amendAcknowledged.Transitions) == 0 {
+		t.Fatalf("expected amendment lifecycle mutations to append transitions")
+	}
+}
+
 func containsStringFold(items []string, want string) bool {
 	want = strings.TrimSpace(want)
 	for _, item := range items {
