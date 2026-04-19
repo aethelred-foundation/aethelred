@@ -129,6 +129,7 @@ type SecureCellFederationIncidentReportReconciliationFilter struct {
 	CellID         string                                                 `json:"cell_id,omitempty"`
 	OrganizationID string                                                 `json:"organization_id,omitempty"`
 	IncidentID     string                                                 `json:"incident_id,omitempty"`
+	ComparisonKey  string                                                 `json:"comparison_key,omitempty"`
 	Regulator      string                                                 `json:"regulator,omitempty"`
 	ReportingParty SecureCellFederationIncidentResponseParty              `json:"reporting_party,omitempty"`
 	Status         SecureCellFederationIncidentReportReconciliationStatus `json:"status,omitempty"`
@@ -170,6 +171,10 @@ type SecureCellFederationIncidentReportReconciliationSummary struct {
 	CounterpartyReceivedAt               *time.Time                                             `json:"counterparty_received_at,omitempty"`
 	CounterpartySubmissionReference      string                                                 `json:"counterparty_submission_reference,omitempty"`
 	CounterpartyAcknowledgementReference string                                                 `json:"counterparty_acknowledgement_reference,omitempty"`
+	ReviewStatus                         SecureCellFederationIncidentReportReviewStatus         `json:"review_status,omitempty"`
+	LastReviewedBy                       string                                                 `json:"last_reviewed_by,omitempty"`
+	LastReviewedAt                       *time.Time                                             `json:"last_reviewed_at,omitempty"`
+	ReviewActionCount                    int                                                    `json:"review_action_count"`
 	Divergences                          []string                                               `json:"divergences,omitempty"`
 }
 
@@ -486,6 +491,9 @@ func matchesSecureCellFederationIncidentReportReconciliationFilter(item SecureCe
 	if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(item.IncidentID), strings.TrimSpace(filter.IncidentID)) {
 		return false
 	}
+	if filter.ComparisonKey != "" && !strings.EqualFold(strings.TrimSpace(item.ComparisonKey), strings.TrimSpace(filter.ComparisonKey)) {
+		return false
+	}
 	if filter.Regulator != "" && !strings.EqualFold(strings.TrimSpace(item.Regulator), strings.TrimSpace(filter.Regulator)) {
 		return false
 	}
@@ -559,6 +567,7 @@ func secureCellFederationIncidentReportReconciliationSummaryFromRefs(run *secure
 		item.CounterpartyAcknowledgementReference = strings.TrimSpace(counterparty.Bundle.Report.AcknowledgementReference)
 	}
 	item.Status, item.Divergences = secureCellFederationIncidentReportReconciliationStatusAndDivergences(local, counterparty)
+	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentReportReconciliationReviewState(run, key)
 	return item
 }
 

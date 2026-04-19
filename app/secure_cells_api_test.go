@@ -1318,6 +1318,79 @@ func TestSecureCellsHandlers_FederationIncidentBulletinViewsAndAutomatedContainm
 		t.Fatalf("expected reconciliation csv export to include report and aligned status, got %s", body)
 	}
 
+	comparisonKey := reconciliationListResp.Items[0].ComparisonKey
+	reconciliationAckReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+url.PathEscape(comparisonKey)+"/acknowledge", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t, owner, nil)))
+	reconciliationAckReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reconciliationAckRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reconciliationAckRec, reconciliationAckReq)
+	if reconciliationAckRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationAckRec.Code, reconciliationAckRec.Body.String())
+	}
+
+	reconciliationDisputeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+url.PathEscape(comparisonKey)+"/dispute", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportReconciliationDisputeRequest(t, owner, nil)))
+	reconciliationDisputeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reconciliationDisputeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reconciliationDisputeRec, reconciliationDisputeReq)
+	if reconciliationDisputeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationDisputeRec.Code, reconciliationDisputeRec.Body.String())
+	}
+
+	reconciliationResolveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+url.PathEscape(comparisonKey)+"/resolve", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportReconciliationResolveRequest(t, owner, nil)))
+	reconciliationResolveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reconciliationResolveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reconciliationResolveRec, reconciliationResolveReq)
+	if reconciliationResolveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationResolveRec.Code, reconciliationResolveRec.Body.String())
+	}
+
+	reconciliationActionListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliation-actions?cell_id="+url.QueryEscape(cellID)+"&comparison_key="+url.QueryEscape(comparisonKey), nil)
+	reconciliationActionListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reconciliationActionListRec, reconciliationActionListReq)
+	if reconciliationActionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationActionListRec.Code, reconciliationActionListRec.Body.String())
+	}
+	var reconciliationActionListResp secureCellFederationIncidentReportReconciliationActionListResponse
+	if err := json.Unmarshal(reconciliationActionListRec.Body.Bytes(), &reconciliationActionListResp); err != nil {
+		t.Fatalf("unmarshal incident report reconciliation action list response: %v", err)
+	}
+	if len(reconciliationActionListResp.Items) != 3 || reconciliationActionListResp.Items[0].Action != securecellsintegration.SecureCellFederationIncidentReportReconciliationActionResolve {
+		t.Fatalf("expected three reconciliation actions ending in resolve, got %+v", reconciliationActionListResp.Items)
+	}
+
+	reconciliationActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-reconciliation-actions/export?cell_id="+url.QueryEscape(cellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&format=csv", nil)
+	reconciliationActionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reconciliationActionExportRec, reconciliationActionExportReq)
+	if reconciliationActionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationActionExportRec.Code, reconciliationActionExportRec.Body.String())
+	}
+	if body := reconciliationActionExportRec.Body.String(); !strings.Contains(body, "resolve") || !strings.Contains(body, comparisonKey) {
+		t.Fatalf("expected reconciliation action export to include resolve action and comparison key, got %s", body)
+	}
+
+	reconciliationBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+url.PathEscape(comparisonKey)+"/bundle", nil)
+	reconciliationBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reconciliationBundleRec, reconciliationBundleReq)
+	if reconciliationBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationBundleRec.Code, reconciliationBundleRec.Body.String())
+	}
+	var reconciliationBundleResp secureCellFederationIncidentReportReconciliationBundleResponse
+	if err := json.Unmarshal(reconciliationBundleRec.Body.Bytes(), &reconciliationBundleResp); err != nil {
+		t.Fatalf("unmarshal incident report reconciliation bundle response: %v", err)
+	}
+	if reconciliationBundleResp.Result == nil || reconciliationBundleResp.Result.Reconciliation.ReviewStatus != securecellsintegration.SecureCellFederationIncidentReportReviewStatusResolved || len(reconciliationBundleResp.Result.Actions) != 3 {
+		t.Fatalf("expected resolved reconciliation bundle with three actions, got %+v", reconciliationBundleResp.Result)
+	}
+
+	reconciliationBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+url.PathEscape(comparisonKey)+"/bundle/export?format=csv", nil)
+	reconciliationBundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reconciliationBundleExportRec, reconciliationBundleExportReq)
+	if reconciliationBundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reconciliationBundleExportRec.Code, reconciliationBundleExportRec.Body.String())
+	}
+	if body := reconciliationBundleExportRec.Body.String(); !strings.Contains(body, "resolved") || !strings.Contains(body, comparisonKey) {
+		t.Fatalf("expected reconciliation bundle export to include resolved review state and comparison key, got %s", body)
+	}
+
 	responseDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID, nil)
 	responseDetailRec := httptest.NewRecorder()
 	app.SecureCellsGetHandler().ServeHTTP(responseDetailRec, responseDetailReq)
@@ -1765,7 +1838,7 @@ func TestSecureCellsHandlers_FederationIncidentBulletinViewsAndAutomatedContainm
 	if len(trustPackResp.Result.IncidentReports) != 1 || trustPackResp.Result.IncidentReports[0].ReportID != reportID || trustPackResp.Result.IncidentReports[0].Status != securecellsintegration.SecureCellFederationIncidentReportStatusAcknowledged {
 		t.Fatalf("expected trust pack to include acknowledged incident report summary, got %+v", trustPackResp.Result)
 	}
-	if len(trustPackResp.Result.IncidentReportReconciliations) != 1 || trustPackResp.Result.IncidentReportReconciliations[0].LocalReportID != reportID || trustPackResp.Result.IncidentReportReconciliations[0].Status != securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusAligned {
+	if len(trustPackResp.Result.IncidentReportReconciliations) != 1 || trustPackResp.Result.IncidentReportReconciliations[0].LocalReportID != reportID || trustPackResp.Result.IncidentReportReconciliations[0].Status != securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusAligned || trustPackResp.Result.IncidentReportReconciliations[0].ReviewStatus != securecellsintegration.SecureCellFederationIncidentReportReviewStatusResolved || trustPackResp.Result.IncidentReportReconciliations[0].ReviewActionCount != 3 {
 		t.Fatalf("expected trust pack to include aligned incident report reconciliation summary, got %+v", trustPackResp.Result)
 	}
 	verificationByResponse := map[string]bool{}
@@ -5840,6 +5913,46 @@ func mustMarshalSecureCellCreateRequestWithParticipantRoles(t *testing.T, owner 
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell create request with participant roles: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportReconciliationAcknowledgeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "reviewed and accepted reciprocal filing alignment",
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report reconciliation acknowledge request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportReconciliationDisputeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportReconciliationDisputeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "capture bilateral filing review dispute",
+		Divergences:   []string{"counterparty report requires enhanced bilateral review notes"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report reconciliation dispute request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportReconciliationResolveRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportReconciliationResolveRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "bilateral filing review completed and dispute closed",
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report reconciliation resolve request: %v", err)
 	}
 	return body
 }

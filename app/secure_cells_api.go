@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -270,6 +271,28 @@ type secureCellFederationIncidentReportAcknowledgeRequest struct {
 	AcknowledgementReference string                                                           `json:"acknowledgement_reference,omitempty"`
 	Reason                   string                                                           `json:"reason,omitempty"`
 	Metadata                 map[string]string                                                `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentReportReconciliationAcknowledgeRequest struct {
+	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	Metadata      map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentReportReconciliationDisputeRequest struct {
+	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	Divergences   []string                    `json:"divergences,omitempty"`
+	Metadata      map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentReportReconciliationResolveRequest struct {
+	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	Metadata      map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellMemberMutationRequest struct {
@@ -563,6 +586,10 @@ type secureCellFederationIncidentReportReconciliationListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentReportReconciliationSummary `json:"items"`
 }
 
+type secureCellFederationIncidentReportReconciliationActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentReportReconciliationActionRecord `json:"items"`
+}
+
 type secureCellFederationIncidentResponseQueryResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentResponse `json:"result,omitempty"`
 }
@@ -573,6 +600,10 @@ type secureCellFederationIncidentResponseBundleResponse struct {
 
 type secureCellFederationIncidentReportBundleResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentReportBundle `json:"result,omitempty"`
+}
+
+type secureCellFederationIncidentReportReconciliationBundleResponse struct {
+	Result *securecellsintegration.SecureCellFederationIncidentReportReconciliationBundle `json:"result,omitempty"`
 }
 
 type secureCellFederationTrustPackResponse struct {
@@ -773,6 +804,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 				return nil
 			}
 			return securecellsintegration.SignFederationIncidentReportBundleEd25519(bundle, privateKey, signer, true)
+		},
+		FederationIncidentReportReconciliationBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentReportReconciliationBundle) error {
+			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
+			if !ok {
+				return nil
+			}
+			return securecellsintegration.SignFederationIncidentReportReconciliationBundleEd25519(bundle, privateKey, signer, true)
 		},
 		PackageSignerFunc: func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
@@ -1701,6 +1739,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-report-reconciliation-actions" {
+			filter, err := parseSecureCellFederationIncidentReportReconciliationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentReportReconciliationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportReconciliationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-report-reconciliation-actions/export" {
+			filter, err := parseSecureCellFederationIncidentReportReconciliationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentReportReconciliationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentReportReconciliationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incidents" {
 			filter, err := parseSecureCellFederationCounterpartyIncidentFilter(r)
 			if err != nil {
@@ -1916,6 +1986,32 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 					return
 				}
 				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportBundleResponse{Result: bundle})
+				return
+			}
+		}
+
+		if strings.Contains(r.URL.Path, "/federation/incident-report-reconciliations/") {
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentReportReconciliationActionPath(r.URL.Path, "/bundle/export")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentReportReconciliationBundle(r.Context(), cellID, comparisonKey, secureCellFederationIncidentReportReconciliationBundleOptions(cellID, comparisonKey))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				if err := writeSecureCellFederationIncidentReportReconciliationBundleExport(w, r, bundle); err != nil {
+					writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				}
+				return
+			}
+
+			cellID, comparisonKey, err = parseSecureCellFederationIncidentReportReconciliationActionPath(r.URL.Path, "/bundle")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentReportReconciliationBundle(r.Context(), cellID, comparisonKey, secureCellFederationIncidentReportReconciliationBundleOptions(cellID, comparisonKey))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportReconciliationBundleResponse{Result: bundle})
 				return
 			}
 		}
@@ -2759,6 +2855,91 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				AcknowledgementReference: req.AcknowledgementReference,
 				Reason:                   req.Reason,
 				Metadata:                 req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/acknowledge") && strings.Contains(r.URL.Path, "/federation/incident-report-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentReportReconciliationActionPath(r.URL.Path, "/acknowledge")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentReportReconciliationAcknowledgeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident report reconciliation acknowledge request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentReportReconciliationAcknowledge(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcknowledgeFederationIncidentReportReconciliation(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentReportReconciliationAcknowledgeRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/dispute") && strings.Contains(r.URL.Path, "/federation/incident-report-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentReportReconciliationActionPath(r.URL.Path, "/dispute")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentReportReconciliationDisputeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident report reconciliation dispute request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentReportReconciliationDispute(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.DisputeFederationIncidentReportReconciliation(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentReportReconciliationDisputeRequest{
+				ActorDID:    safeSecureCellActorDID(authCtx),
+				Reason:      req.Reason,
+				Divergences: append([]string(nil), req.Divergences...),
+				Metadata:    req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/resolve") && strings.Contains(r.URL.Path, "/federation/incident-report-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentReportReconciliationActionPath(r.URL.Path, "/resolve")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentReportReconciliationResolveRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident report reconciliation resolve request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentReportReconciliationResolve(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.ResolveFederationIncidentReportReconciliation(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentReportReconciliationResolveRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -4776,6 +4957,43 @@ func secureCellFederationIncidentReportBundleOptions(cellID string, reportID str
 	}
 }
 
+func secureCellFederationIncidentReportReconciliationBundleOptions(cellID string, comparisonKey string) securecellsintegration.SecureCellFederationIncidentReportReconciliationBundleOptions {
+	cellID = strings.TrimSpace(cellID)
+	comparisonKey = url.PathEscape(strings.TrimSpace(comparisonKey))
+	return securecellsintegration.SecureCellFederationIncidentReportReconciliationBundleOptions{
+		OperatorSurfaces: []securecellsintegration.SecureCellFederationOperatorSurface{
+			{
+				ID:          "incident-report-reconciliation-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliations?cell_id=" + cellID + "&comparison_key=" + comparisonKey,
+				Description: "List the bilateral incident-report reconciliation state for this comparison key.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-report-reconciliation-list-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliations/export?cell_id=" + cellID + "&comparison_key=" + comparisonKey + "&format=csv",
+				Description: "Export the bilateral incident-report reconciliation state for this comparison key.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-report-reconciliation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliation-actions?cell_id=" + cellID + "&comparison_key=" + comparisonKey,
+				Description: "List governed review actions for this bilateral incident-report reconciliation.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-report-reconciliation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-report-reconciliation-actions/export?cell_id=" + cellID + "&comparison_key=" + comparisonKey + "&format=csv",
+				Description: "Export governed review actions for this bilateral incident-report reconciliation.",
+				Formats:     []string{"json", "csv"},
+			},
+		},
+	}
+}
+
 func secureCellDecisionVoteChoiceAllowed(raw string) bool {
 	switch securecellsintegration.SecureCellThreadDecisionVoteChoice(strings.ToLower(strings.TrimSpace(raw))) {
 	case securecellsintegration.SecureCellThreadDecisionVoteChoiceApprove,
@@ -5533,9 +5751,35 @@ func parseSecureCellFederationIncidentReportReconciliationFilter(r *http.Request
 		CellID:         strings.TrimSpace(query.Get("cell_id")),
 		OrganizationID: strings.TrimSpace(query.Get("organization_id")),
 		IncidentID:     strings.TrimSpace(query.Get("incident_id")),
+		ComparisonKey:  strings.TrimSpace(query.Get("comparison_key")),
 		Regulator:      strings.TrimSpace(query.Get("regulator")),
 		ReportingParty: reportingParty,
 		Status:         status,
+		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
+	}, nil
+}
+
+func parseSecureCellFederationIncidentReportReconciliationActionFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentReportReconciliationActionFilter, error) {
+	if r == nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionFilter{}, fmt.Errorf("request is required")
+	}
+	query := r.URL.Query()
+	action, err := parseSecureCellFederationIncidentReportReconciliationActionType(query.Get("action"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionFilter{}, err
+	}
+	reviewStatus, err := parseSecureCellFederationIncidentReportReviewStatus(query.Get("review_status"))
+	if err != nil {
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionFilter{}, err
+	}
+	return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionFilter{
+		CellID:         strings.TrimSpace(query.Get("cell_id")),
+		OrganizationID: strings.TrimSpace(query.Get("organization_id")),
+		IncidentID:     strings.TrimSpace(query.Get("incident_id")),
+		ComparisonKey:  strings.TrimSpace(query.Get("comparison_key")),
+		Action:         action,
+		ReviewStatus:   reviewStatus,
+		ActorDID:       strings.TrimSpace(query.Get("actor_did")),
 		Limit:          cast.ToInt(strings.TrimSpace(query.Get("limit"))),
 	}, nil
 }
@@ -5799,6 +6043,38 @@ func parseSecureCellFederationIncidentReportReconciliationStatus(raw string) (se
 		return securecellsintegration.SecureCellFederationIncidentReportReconciliationStatusCounterpartyExpired, nil
 	default:
 		return "", fmt.Errorf("unsupported federation incident report reconciliation status %q", raw)
+	}
+}
+
+func parseSecureCellFederationIncidentReportReconciliationActionType(raw string) (securecellsintegration.SecureCellFederationIncidentReportReconciliationActionType, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return "", nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationActionAcknowledge):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionAcknowledge, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationActionDispute):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionDispute, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReconciliationActionResolve):
+		return securecellsintegration.SecureCellFederationIncidentReportReconciliationActionResolve, nil
+	default:
+		return "", fmt.Errorf("unsupported federation incident report reconciliation action %q", raw)
+	}
+}
+
+func parseSecureCellFederationIncidentReportReviewStatus(raw string) (securecellsintegration.SecureCellFederationIncidentReportReviewStatus, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return "", nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReviewStatusUnreviewed):
+		return securecellsintegration.SecureCellFederationIncidentReportReviewStatusUnreviewed, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReviewStatusAcknowledged):
+		return securecellsintegration.SecureCellFederationIncidentReportReviewStatusAcknowledged, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReviewStatusDisputed):
+		return securecellsintegration.SecureCellFederationIncidentReportReviewStatusDisputed, nil
+	case string(securecellsintegration.SecureCellFederationIncidentReportReviewStatusResolved):
+		return securecellsintegration.SecureCellFederationIncidentReportReviewStatusResolved, nil
+	default:
+		return "", fmt.Errorf("unsupported federation incident report review status %q", raw)
 	}
 }
 
@@ -6250,6 +6526,32 @@ func parseSecureCellFederationIncidentReportActionPath(path string, suffix strin
 		return "", "", fmt.Errorf("invalid secure cell federation incident report action path")
 	}
 	return cellID, reportID, nil
+}
+
+func parseSecureCellFederationIncidentReportReconciliationActionPath(path string, suffix string) (cellID string, comparisonKey string, err error) {
+	if !strings.HasPrefix(path, secureCellsItemPrefix) {
+		return "", "", fmt.Errorf("invalid secure cell federation incident report reconciliation path")
+	}
+	remainder := strings.TrimPrefix(path, secureCellsItemPrefix)
+	if suffix != "" {
+		if !strings.HasSuffix(remainder, suffix) {
+			return "", "", fmt.Errorf("invalid secure cell federation incident report reconciliation action path")
+		}
+		remainder = strings.TrimSuffix(remainder, suffix)
+	}
+	parts := strings.Split(strings.Trim(remainder, "/"), "/")
+	if len(parts) != 4 || parts[1] != "federation" || parts[2] != "incident-report-reconciliations" {
+		return "", "", fmt.Errorf("invalid secure cell federation incident report reconciliation action path")
+	}
+	cellID = strings.TrimSpace(parts[0])
+	comparisonKey, err = url.PathUnescape(strings.TrimSpace(parts[3]))
+	if err != nil {
+		return "", "", fmt.Errorf("invalid secure cell federation incident report reconciliation key: %w", err)
+	}
+	if cellID == "" || strings.TrimSpace(comparisonKey) == "" {
+		return "", "", fmt.Errorf("invalid secure cell federation incident report reconciliation action path")
+	}
+	return cellID, strings.TrimSpace(comparisonKey), nil
 }
 
 func parseSecureCellFederationContractActionPath(path string, suffix string) (cellID string, contractID string, err error) {

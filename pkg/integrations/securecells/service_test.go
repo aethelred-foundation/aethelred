@@ -3864,6 +3864,71 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected control ledger to include federation incident command fabric control, got %+v", verified.ControlLedger.Controls)
 	}
 
+	comparisonKey := reconciliations[0].ComparisonKey
+	acknowledgedReconciliation, err := service.AcknowledgeFederationIncidentReportReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportReconciliationAcknowledgeRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "reviewed and accepted reciprocal report alignment",
+		Metadata: map[string]string{"ticket": "FED-REPORT-RECON-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReportReconciliation failed: %v", err)
+	}
+
+	disputedReconciliation, err := service.DisputeFederationIncidentReportReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportReconciliationDisputeRequest{
+		ActorDID:    owner.AgentID(),
+		Reason:      "capture bilateral filing review challenge for auditor traceability",
+		Divergences: []string{"counterparty report requires enhanced bilateral review notes"},
+		Metadata:    map[string]string{"ticket": "FED-REPORT-RECON-DISPUTE-01"},
+	})
+	if err != nil {
+		t.Fatalf("DisputeFederationIncidentReportReconciliation failed: %v", err)
+	}
+
+	resolvedReconciliation, err := service.ResolveFederationIncidentReportReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportReconciliationResolveRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "bilateral report review completed and dispute closed",
+		Metadata: map[string]string{"ticket": "FED-REPORT-RECON-RESOLVE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ResolveFederationIncidentReportReconciliation failed: %v", err)
+	}
+
+	reconciliationActions, err := service.ListFederationIncidentReportReconciliationActions(ctx, SecureCellFederationIncidentReportReconciliationActionFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportReconciliationActions failed: %v", err)
+	}
+	if len(reconciliationActions) != 3 || reconciliationActions[0].Action != SecureCellFederationIncidentReportReconciliationActionResolve || reconciliationActions[0].ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved {
+		t.Fatalf("expected three governed reconciliation actions ending in resolve, got %+v", reconciliationActions)
+	}
+
+	reconciliationBundle, err := service.BuildFederationIncidentReportReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportReconciliationBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentReportReconciliationBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentReportReconciliationBundle(reconciliationBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentReportReconciliationBundle failed: %v", err)
+	}
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || len(reconciliationBundle.Actions) != 3 {
+		t.Fatalf("expected resolved reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
+	}
+
+	reviewedTrustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, orgID, SecureCellFederationOrganizationTrustPackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationOrganizationTrustPack after reconciliation review failed: %v", err)
+	}
+	if len(reviewedTrustPack.IncidentReportReconciliations) != 1 || reviewedTrustPack.IncidentReportReconciliations[0].ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || reviewedTrustPack.IncidentReportReconciliations[0].ReviewActionCount != 3 {
+		t.Fatalf("expected trust pack reconciliation review state to be resolved with three actions, got %+v", reviewedTrustPack.IncidentReportReconciliations)
+	}
+	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-08") {
+		t.Fatalf("expected control ledger to include bilateral report reconciliation control, got %+v", resolvedReconciliation.ControlLedger.Controls)
+	}
+	if len(acknowledgedReconciliation.Transitions) == 0 || len(disputedReconciliation.Transitions) == 0 || len(resolvedReconciliation.Transitions) == 0 {
+		t.Fatalf("expected reconciliation lifecycle mutations to append transitions")
+	}
+
 	if _, err := service.AcknowledgeFederationIncidentResponse(ctx, created.CellID, localResponseID, SecureCellFederationIncidentResponseAcknowledgeRequest{
 		ActorDID: participantB.AgentID(),
 		Reason:   "counterparty acknowledged local incident response",

@@ -2171,6 +2171,10 @@ func writeSecureCellFederationIncidentReportReconciliationExport(w http.Response
 			"counterparty_received_at",
 			"counterparty_submission_reference",
 			"counterparty_acknowledgement_reference",
+			"review_status",
+			"last_reviewed_by",
+			"last_reviewed_at",
+			"review_action_count",
 			"divergences",
 		}}
 		for _, item := range items {
@@ -2207,12 +2211,191 @@ func writeSecureCellFederationIncidentReportReconciliationExport(w http.Response
 				formatSecureCellOptionalTime(item.CounterpartyReceivedAt),
 				item.CounterpartySubmissionReference,
 				item.CounterpartyAcknowledgementReference,
+				string(item.ReviewStatus),
+				item.LastReviewedBy,
+				formatSecureCellOptionalTime(item.LastReviewedAt),
+				strconv.Itoa(item.ReviewActionCount),
 				strings.Join(item.Divergences, "|"),
 			})
 		}
 		for _, row := range rows {
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("write federation-incident-report-reconciliation csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentReportReconciliationActionExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentReportReconciliationActionRecord) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportReconciliationActionListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-report-reconciliation-actions.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"comparison_key",
+			"incident_id",
+			"local_report_id",
+			"local_response_id",
+			"counterparty_snapshot_id",
+			"counterparty_bundle_id",
+			"counterparty_report_id",
+			"counterparty_response_id",
+			"reconciliation_status",
+			"review_status",
+			"action",
+			"transition_id",
+			"policy_receipt_id",
+			"policy_receipt_hash",
+			"seal_id",
+			"trace_link_id",
+			"actor_did",
+			"reason",
+			"divergences",
+			"occurred_at",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.ComparisonKey,
+				item.IncidentID,
+				item.LocalReportID,
+				item.LocalResponseID,
+				item.CounterpartySnapshotID,
+				item.CounterpartyBundleID,
+				item.CounterpartyReportID,
+				item.CounterpartyResponseID,
+				string(item.ReconciliationStatus),
+				string(item.ReviewStatus),
+				string(item.Action),
+				item.TransitionID,
+				item.PolicyReceiptID,
+				item.PolicyReceiptHash,
+				item.SealID,
+				item.TraceLinkID,
+				item.ActorDID,
+				item.Reason,
+				strings.Join(item.Divergences, "|"),
+				item.OccurredAt.UTC().Format(time.RFC3339Nano),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-report-reconciliation-action csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentReportReconciliationBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentReportReconciliationBundle) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportReconciliationBundleResponse{Result: bundle})
+		return nil
+	case "csv":
+		if bundle == nil {
+			return fmt.Errorf("federation incident report reconciliation bundle is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-report-reconciliation-bundle.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"id",
+			"version",
+			"name",
+			"generated_at",
+			"expires_at",
+			"cell_id",
+			"cell_name",
+			"cell_status",
+			"jurisdiction",
+			"framework",
+			"organization_id",
+			"organization_name",
+			"comparison_key",
+			"incident_id",
+			"reconciliation_status",
+			"review_status",
+			"action_count",
+			"local_report_id",
+			"counterparty_report_id",
+			"control_ledger_id",
+			"control_ledger_hash",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+			"content_hash",
+			"signature_key_id",
+			"signature_signer",
+			"signature_signed_at",
+		}}
+		signatureKeyID := ""
+		signatureSigner := ""
+		signatureSignedAt := ""
+		if bundle.Signature != nil {
+			signatureKeyID = bundle.Signature.KeyID
+			signatureSigner = bundle.Signature.Signer
+			signatureSignedAt = bundle.Signature.SignedAt.UTC().Format(time.RFC3339Nano)
+		}
+		rows = append(rows, []string{
+			bundle.ID,
+			bundle.Version,
+			bundle.Name,
+			bundle.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			formatSecureCellOptionalTime(bundle.ExpiresAt),
+			bundle.CellID,
+			bundle.CellName,
+			string(bundle.CellStatus),
+			bundle.Jurisdiction,
+			bundle.Framework,
+			bundle.Organization.OrganizationID,
+			bundle.Organization.OrganizationName,
+			bundle.Reconciliation.ComparisonKey,
+			bundle.Reconciliation.IncidentID,
+			string(bundle.Reconciliation.Status),
+			string(bundle.Reconciliation.ReviewStatus),
+			strconv.Itoa(len(bundle.Actions)),
+			bundle.Reconciliation.LocalReportID,
+			bundle.Reconciliation.CounterpartyReportID,
+			bundle.ControlLedgerID,
+			bundle.ControlLedgerHash,
+			bundle.PortablePackageHash,
+			strconv.FormatBool(bundle.PortablePackageSigned),
+			strconv.FormatBool(bundle.PortablePackageAnchored),
+			bundle.ContentHash,
+			signatureKeyID,
+			signatureSigner,
+			signatureSignedAt,
+		})
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-report-reconciliation-bundle csv row: %w", err)
 			}
 		}
 		writer.Flush()
