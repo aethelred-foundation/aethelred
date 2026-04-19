@@ -40,81 +40,81 @@ type SecureCellFederationInvitationFilter struct {
 // SecureCellFederationOrganizationSummary is the operator-facing summary of one
 // federated organization inside one secure cell.
 type SecureCellFederationOrganizationSummary struct {
-	CellID                  string                                 `json:"cell_id"`
-	CellName                string                                 `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                       `json:"cell_status"`
-	Jurisdiction            string                                 `json:"jurisdiction,omitempty"`
-	OrganizationID          string                                 `json:"organization_id"`
-	SponsorOfRecord         string                                 `json:"sponsor_of_record,omitempty"`
-	OrganizationName        string                                 `json:"organization_name,omitempty"`
-	Status                  SecureCellFederationOrganizationStatus `json:"status"`
-	ParticipantDIDs         []string                               `json:"participant_dids,omitempty"`
-	ParticipantCount        int                                    `json:"participant_count"`
-	ActiveParticipantCount  int                                    `json:"active_participant_count"`
-	InvitationCount         int                                    `json:"invitation_count"`
-	PendingInvitationCount  int                                    `json:"pending_invitation_count"`
-	AcceptedInvitationCount int                                    `json:"accepted_invitation_count"`
-	RevokedInvitationCount  int                                    `json:"revoked_invitation_count"`
-	CounterproposalCount    int                                    `json:"counterproposal_count"`
-	PendingCounterproposalCount int                                 `json:"pending_counterproposal_count"`
-	ApprovedCounterproposalCount int                                `json:"approved_counterproposal_count"`
-	RejectedCounterproposalCount int                                `json:"rejected_counterproposal_count"`
-	SupersededCounterproposalCount int                              `json:"superseded_counterproposal_count"`
-	ContractCount           int                                    `json:"contract_count"`
-	ActiveContractCount     int                                    `json:"active_contract_count"`
-	SuspendedContractCount  int                                    `json:"suspended_contract_count"`
-	RevokedContractCount    int                                    `json:"revoked_contract_count"`
-	ControlLedgerID         string                                 `json:"control_ledger_id,omitempty"`
-	PortablePackageHash     string                                 `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                   `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                   `json:"portable_package_anchored"`
-	CreatedAt               time.Time                              `json:"created_at,omitempty"`
-	UpdatedAt               time.Time                              `json:"updated_at,omitempty"`
+	CellID                         string                                 `json:"cell_id"`
+	CellName                       string                                 `json:"cell_name,omitempty"`
+	CellStatus                     SecureCellStatus                       `json:"cell_status"`
+	Jurisdiction                   string                                 `json:"jurisdiction,omitempty"`
+	OrganizationID                 string                                 `json:"organization_id"`
+	SponsorOfRecord                string                                 `json:"sponsor_of_record,omitempty"`
+	OrganizationName               string                                 `json:"organization_name,omitempty"`
+	Status                         SecureCellFederationOrganizationStatus `json:"status"`
+	ParticipantDIDs                []string                               `json:"participant_dids,omitempty"`
+	ParticipantCount               int                                    `json:"participant_count"`
+	ActiveParticipantCount         int                                    `json:"active_participant_count"`
+	InvitationCount                int                                    `json:"invitation_count"`
+	PendingInvitationCount         int                                    `json:"pending_invitation_count"`
+	AcceptedInvitationCount        int                                    `json:"accepted_invitation_count"`
+	RevokedInvitationCount         int                                    `json:"revoked_invitation_count"`
+	CounterproposalCount           int                                    `json:"counterproposal_count"`
+	PendingCounterproposalCount    int                                    `json:"pending_counterproposal_count"`
+	ApprovedCounterproposalCount   int                                    `json:"approved_counterproposal_count"`
+	RejectedCounterproposalCount   int                                    `json:"rejected_counterproposal_count"`
+	SupersededCounterproposalCount int                                    `json:"superseded_counterproposal_count"`
+	ContractCount                  int                                    `json:"contract_count"`
+	ActiveContractCount            int                                    `json:"active_contract_count"`
+	SuspendedContractCount         int                                    `json:"suspended_contract_count"`
+	RevokedContractCount           int                                    `json:"revoked_contract_count"`
+	ControlLedgerID                string                                 `json:"control_ledger_id,omitempty"`
+	PortablePackageHash            string                                 `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned          bool                                   `json:"portable_package_signed"`
+	PortablePackageAnchored        bool                                   `json:"portable_package_anchored"`
+	CreatedAt                      time.Time                              `json:"created_at,omitempty"`
+	UpdatedAt                      time.Time                              `json:"updated_at,omitempty"`
 }
 
 // SecureCellFederationInvitationSummary is the operator-facing summary of one
 // federation invitation.
 type SecureCellFederationInvitationSummary struct {
-	CellID                   string                               `json:"cell_id"`
-	CellName                 string                               `json:"cell_name,omitempty"`
-	CellStatus               SecureCellStatus                     `json:"cell_status"`
-	Jurisdiction             string                               `json:"jurisdiction,omitempty"`
-	InvitationID             string                               `json:"invitation_id"`
-	OrganizationID           string                               `json:"organization_id"`
-	SponsorOfRecord          string                               `json:"sponsor_of_record,omitempty"`
-	OrganizationName         string                               `json:"organization_name,omitempty"`
-	Status                   SecureCellFederationInvitationStatus `json:"status"`
-	ExpectedDID              string                               `json:"expected_did,omitempty"`
-	Role                     string                               `json:"role,omitempty"`
-	SessionScopeCount        int                                  `json:"session_scope_count"`
-	OfferedSessionScopeCount int                                  `json:"offered_session_scope_count"`
-	DataClassCount           int                                  `json:"data_class_count"`
-	OfferedDataClassCount    int                                  `json:"offered_data_class_count"`
-	ComputeZoneCount         int                                  `json:"compute_zone_count"`
-	OfferedComputeZoneCount  int                                  `json:"offered_compute_zone_count"`
-	AllowedActionCount       int                                  `json:"allowed_action_count"`
-	OfferedActionCount       int                                  `json:"offered_action_count"`
-	NegotiationDiffCount     int                                  `json:"negotiation_diff_count"`
-	ApprovedCounterproposalID string                              `json:"approved_counterproposal_id,omitempty"`
-	CounterproposalGovernanceTemplate string                      `json:"counterproposal_governance_template,omitempty"`
-	CounterproposalApprovalThreshold int                          `json:"counterproposal_approval_threshold,omitempty"`
-	CounterproposalEligibleApproverCount int                      `json:"counterproposal_eligible_approver_count"`
-	CounterproposalEscalationTierCount int                        `json:"counterproposal_escalation_tier_count"`
-	CounterproposalResolutionDueAt *time.Time                     `json:"counterproposal_resolution_due_at,omitempty"`
-	CounterproposalAutoSuspendOnOverdue bool                      `json:"counterproposal_auto_suspend_on_overdue"`
-	Resource                 string                               `json:"resource,omitempty"`
-	CreatedBy                string                               `json:"created_by,omitempty"`
-	AcceptedBy               string                               `json:"accepted_by,omitempty"`
-	RevokedBy                string                               `json:"revoked_by,omitempty"`
-	Reason                   string                               `json:"reason,omitempty"`
-	ControlLedgerID          string                               `json:"control_ledger_id,omitempty"`
-	PortablePackageHash      string                               `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned    bool                                 `json:"portable_package_signed"`
-	PortablePackageAnchored  bool                                 `json:"portable_package_anchored"`
-	CreatedAt                time.Time                            `json:"created_at,omitempty"`
-	AcceptedAt               *time.Time                           `json:"accepted_at,omitempty"`
-	RevokedAt                *time.Time                           `json:"revoked_at,omitempty"`
-	UpdatedAt                time.Time                            `json:"updated_at,omitempty"`
+	CellID                               string                               `json:"cell_id"`
+	CellName                             string                               `json:"cell_name,omitempty"`
+	CellStatus                           SecureCellStatus                     `json:"cell_status"`
+	Jurisdiction                         string                               `json:"jurisdiction,omitempty"`
+	InvitationID                         string                               `json:"invitation_id"`
+	OrganizationID                       string                               `json:"organization_id"`
+	SponsorOfRecord                      string                               `json:"sponsor_of_record,omitempty"`
+	OrganizationName                     string                               `json:"organization_name,omitempty"`
+	Status                               SecureCellFederationInvitationStatus `json:"status"`
+	ExpectedDID                          string                               `json:"expected_did,omitempty"`
+	Role                                 string                               `json:"role,omitempty"`
+	SessionScopeCount                    int                                  `json:"session_scope_count"`
+	OfferedSessionScopeCount             int                                  `json:"offered_session_scope_count"`
+	DataClassCount                       int                                  `json:"data_class_count"`
+	OfferedDataClassCount                int                                  `json:"offered_data_class_count"`
+	ComputeZoneCount                     int                                  `json:"compute_zone_count"`
+	OfferedComputeZoneCount              int                                  `json:"offered_compute_zone_count"`
+	AllowedActionCount                   int                                  `json:"allowed_action_count"`
+	OfferedActionCount                   int                                  `json:"offered_action_count"`
+	NegotiationDiffCount                 int                                  `json:"negotiation_diff_count"`
+	ApprovedCounterproposalID            string                               `json:"approved_counterproposal_id,omitempty"`
+	CounterproposalGovernanceTemplate    string                               `json:"counterproposal_governance_template,omitempty"`
+	CounterproposalApprovalThreshold     int                                  `json:"counterproposal_approval_threshold,omitempty"`
+	CounterproposalEligibleApproverCount int                                  `json:"counterproposal_eligible_approver_count"`
+	CounterproposalEscalationTierCount   int                                  `json:"counterproposal_escalation_tier_count"`
+	CounterproposalResolutionDueAt       *time.Time                           `json:"counterproposal_resolution_due_at,omitempty"`
+	CounterproposalAutoSuspendOnOverdue  bool                                 `json:"counterproposal_auto_suspend_on_overdue"`
+	Resource                             string                               `json:"resource,omitempty"`
+	CreatedBy                            string                               `json:"created_by,omitempty"`
+	AcceptedBy                           string                               `json:"accepted_by,omitempty"`
+	RevokedBy                            string                               `json:"revoked_by,omitempty"`
+	Reason                               string                               `json:"reason,omitempty"`
+	ControlLedgerID                      string                               `json:"control_ledger_id,omitempty"`
+	PortablePackageHash                  string                               `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned                bool                                 `json:"portable_package_signed"`
+	PortablePackageAnchored              bool                                 `json:"portable_package_anchored"`
+	CreatedAt                            time.Time                            `json:"created_at,omitempty"`
+	AcceptedAt                           *time.Time                           `json:"accepted_at,omitempty"`
+	RevokedAt                            *time.Time                           `json:"revoked_at,omitempty"`
+	UpdatedAt                            time.Time                            `json:"updated_at,omitempty"`
 }
 
 // SecureCellFederationOperatorSurface documents one buyer- or operator-facing
@@ -139,86 +139,91 @@ type SecureCellFederationTrustPackControl struct {
 // SecureCellFederationOrganizationRuntime summarizes current runtime posture
 // for one participating organization.
 type SecureCellFederationOrganizationRuntime struct {
-	ParticipantCount        int       `json:"participant_count"`
-	ActiveParticipantCount  int       `json:"active_participant_count"`
-	QuarantinedParticipants int       `json:"quarantined_participants"`
-	RevokedParticipants     int       `json:"revoked_participants"`
-	InvitationCount         int       `json:"invitation_count"`
-	PendingInvitations      int       `json:"pending_invitations"`
-	AcceptedInvitations     int       `json:"accepted_invitations"`
-	RevokedInvitations      int       `json:"revoked_invitations"`
-	CounterproposalCount    int       `json:"counterproposal_count"`
-	PendingCounterproposals int       `json:"pending_counterproposals"`
-	ApprovedCounterproposals int      `json:"approved_counterproposals"`
-	RejectedCounterproposals int      `json:"rejected_counterproposals"`
-	SupersededCounterproposals int     `json:"superseded_counterproposals"`
-	ContractCount           int       `json:"contract_count"`
-	ActiveContracts         int       `json:"active_contracts"`
-	SuspendedContracts      int       `json:"suspended_contracts"`
-	RevokedContracts        int       `json:"revoked_contracts"`
-	IncidentCount           int       `json:"incident_count"`
-	OpenIncidents           int       `json:"open_incidents"`
-	CriticalIncidents       int       `json:"critical_incidents"`
-	HighIncidents           int       `json:"high_incidents"`
-	CounterpartyIncidentSnapshots int `json:"counterparty_incident_snapshots"`
-	CounterpartyOpenIncidents int    `json:"counterparty_open_incidents"`
-	IncidentResponseCount           int `json:"incident_response_count"`
-	PendingLocalAckResponses        int `json:"pending_local_ack_responses"`
-	PendingCounterpartyAckResponses int `json:"pending_counterparty_ack_responses"`
-	AcknowledgedResponses           int `json:"acknowledged_responses"`
-	EscalatedResponses              int `json:"escalated_responses"`
-	RemediatingResponses            int `json:"remediating_responses"`
-	RemediatedResponses             int `json:"remediated_responses"`
-	ClosedResponses                 int `json:"closed_responses"`
-	IncidentRemediationCount        int `json:"incident_remediation_count"`
-	PendingVerificationResponses    int `json:"pending_verification_responses"`
-	VerifiedResponses               int `json:"verified_responses"`
-	ClosureReadyResponses           int `json:"closure_ready_responses"`
-	IncidentVerificationCount       int `json:"incident_verification_count"`
-	IncidentClosureAttestationCount int `json:"incident_closure_attestation_count"`
-	DisputedResponses               int `json:"disputed_responses"`
-	IncidentDisputeCount            int `json:"incident_dispute_count"`
-	LastUpdatedAt           time.Time `json:"last_updated_at,omitempty"`
+	ParticipantCount                int       `json:"participant_count"`
+	ActiveParticipantCount          int       `json:"active_participant_count"`
+	QuarantinedParticipants         int       `json:"quarantined_participants"`
+	RevokedParticipants             int       `json:"revoked_participants"`
+	InvitationCount                 int       `json:"invitation_count"`
+	PendingInvitations              int       `json:"pending_invitations"`
+	AcceptedInvitations             int       `json:"accepted_invitations"`
+	RevokedInvitations              int       `json:"revoked_invitations"`
+	CounterproposalCount            int       `json:"counterproposal_count"`
+	PendingCounterproposals         int       `json:"pending_counterproposals"`
+	ApprovedCounterproposals        int       `json:"approved_counterproposals"`
+	RejectedCounterproposals        int       `json:"rejected_counterproposals"`
+	SupersededCounterproposals      int       `json:"superseded_counterproposals"`
+	ContractCount                   int       `json:"contract_count"`
+	ActiveContracts                 int       `json:"active_contracts"`
+	SuspendedContracts              int       `json:"suspended_contracts"`
+	RevokedContracts                int       `json:"revoked_contracts"`
+	IncidentCount                   int       `json:"incident_count"`
+	OpenIncidents                   int       `json:"open_incidents"`
+	CriticalIncidents               int       `json:"critical_incidents"`
+	HighIncidents                   int       `json:"high_incidents"`
+	CounterpartyIncidentSnapshots   int       `json:"counterparty_incident_snapshots"`
+	CounterpartyOpenIncidents       int       `json:"counterparty_open_incidents"`
+	IncidentResponseCount           int       `json:"incident_response_count"`
+	PendingLocalAckResponses        int       `json:"pending_local_ack_responses"`
+	PendingCounterpartyAckResponses int       `json:"pending_counterparty_ack_responses"`
+	AcknowledgedResponses           int       `json:"acknowledged_responses"`
+	EscalatedResponses              int       `json:"escalated_responses"`
+	RemediatingResponses            int       `json:"remediating_responses"`
+	RemediatedResponses             int       `json:"remediated_responses"`
+	ClosedResponses                 int       `json:"closed_responses"`
+	IncidentRemediationCount        int       `json:"incident_remediation_count"`
+	PendingVerificationResponses    int       `json:"pending_verification_responses"`
+	VerifiedResponses               int       `json:"verified_responses"`
+	ClosureReadyResponses           int       `json:"closure_ready_responses"`
+	IncidentVerificationCount       int       `json:"incident_verification_count"`
+	IncidentReportCount             int       `json:"incident_report_count"`
+	PendingIncidentReports          int       `json:"pending_incident_reports"`
+	AcknowledgedIncidentReports     int       `json:"acknowledged_incident_reports"`
+	OverdueIncidentReports          int       `json:"overdue_incident_reports"`
+	IncidentClosureAttestationCount int       `json:"incident_closure_attestation_count"`
+	DisputedResponses               int       `json:"disputed_responses"`
+	IncidentDisputeCount            int       `json:"incident_dispute_count"`
+	LastUpdatedAt                   time.Time `json:"last_updated_at,omitempty"`
 }
 
 // SecureCellFederationOrganizationTrustPack is the buyer- and operator-facing
 // trust-pack summary for one collaborating organization inside one secure cell.
 type SecureCellFederationOrganizationTrustPack struct {
-	ID                      string                                  `json:"id"`
-	Version                 string                                  `json:"version"`
-	Name                    string                                  `json:"name"`
-	Sector                  string                                  `json:"sector"`
-	GeneratedAt             time.Time                               `json:"generated_at"`
-	CellID                  string                                  `json:"cell_id"`
-	CellName                string                                  `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                        `json:"cell_status"`
-	Jurisdiction            string                                  `json:"jurisdiction,omitempty"`
-	Framework               string                                  `json:"framework,omitempty"`
-	PolicySetID             string                                  `json:"policy_set_id,omitempty"`
-	PolicySetName           string                                  `json:"policy_set_name,omitempty"`
-	RequiredTool            string                                  `json:"required_tool,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
-	Participants            []SecureCellParticipantState            `json:"participants,omitempty"`
-	Invitations             []SecureCellFederationInvitationSummary `json:"invitations,omitempty"`
-	Counterproposals        []SecureCellFederationCounterproposalSummary `json:"counterproposals,omitempty"`
-	Contracts               []SecureCellFederationContractSummary   `json:"contracts,omitempty"`
-	Assurance               *SecureCellFederationAssuranceReport    `json:"assurance,omitempty"`
-	CounterpartyAssurance   []SecureCellFederationCounterpartyAssuranceSummary `json:"counterparty_assurance,omitempty"`
-	Incidents               []SecureCellFederationIncidentSummary   `json:"incidents,omitempty"`
-	CounterpartyIncidents   []SecureCellFederationCounterpartyIncidentSummary `json:"counterparty_incidents,omitempty"`
-	IncidentResponses       []SecureCellFederationIncidentResponseSummary `json:"incident_responses,omitempty"`
-	IncidentRemediations    []SecureCellFederationIncidentRemediationSummary `json:"incident_remediations,omitempty"`
-	IncidentVerifications   []SecureCellFederationIncidentVerificationSummary `json:"incident_verifications,omitempty"`
+	ID                      string                                                  `json:"id"`
+	Version                 string                                                  `json:"version"`
+	Name                    string                                                  `json:"name"`
+	Sector                  string                                                  `json:"sector"`
+	GeneratedAt             time.Time                                               `json:"generated_at"`
+	CellID                  string                                                  `json:"cell_id"`
+	CellName                string                                                  `json:"cell_name,omitempty"`
+	CellStatus              SecureCellStatus                                        `json:"cell_status"`
+	Jurisdiction            string                                                  `json:"jurisdiction,omitempty"`
+	Framework               string                                                  `json:"framework,omitempty"`
+	PolicySetID             string                                                  `json:"policy_set_id,omitempty"`
+	PolicySetName           string                                                  `json:"policy_set_name,omitempty"`
+	RequiredTool            string                                                  `json:"required_tool,omitempty"`
+	Organization            SecureCellFederationOrganizationSummary                 `json:"organization"`
+	Participants            []SecureCellParticipantState                            `json:"participants,omitempty"`
+	Invitations             []SecureCellFederationInvitationSummary                 `json:"invitations,omitempty"`
+	Counterproposals        []SecureCellFederationCounterproposalSummary            `json:"counterproposals,omitempty"`
+	Contracts               []SecureCellFederationContractSummary                   `json:"contracts,omitempty"`
+	Assurance               *SecureCellFederationAssuranceReport                    `json:"assurance,omitempty"`
+	CounterpartyAssurance   []SecureCellFederationCounterpartyAssuranceSummary      `json:"counterparty_assurance,omitempty"`
+	Incidents               []SecureCellFederationIncidentSummary                   `json:"incidents,omitempty"`
+	CounterpartyIncidents   []SecureCellFederationCounterpartyIncidentSummary       `json:"counterparty_incidents,omitempty"`
+	IncidentResponses       []SecureCellFederationIncidentResponseSummary           `json:"incident_responses,omitempty"`
+	IncidentReports         []SecureCellFederationIncidentReportSummary             `json:"incident_reports,omitempty"`
+	IncidentRemediations    []SecureCellFederationIncidentRemediationSummary        `json:"incident_remediations,omitempty"`
+	IncidentVerifications   []SecureCellFederationIncidentVerificationSummary       `json:"incident_verifications,omitempty"`
 	IncidentClosures        []SecureCellFederationIncidentClosureAttestationSummary `json:"incident_closures,omitempty"`
-	IncidentDisputes        []SecureCellFederationIncidentDisputeSummary `json:"incident_disputes,omitempty"`
-	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
-	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
-	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
-	ControlLedgerID         string                                  `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                  `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                  `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                    `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                    `json:"portable_package_anchored"`
+	IncidentDisputes        []SecureCellFederationIncidentDisputeSummary            `json:"incident_disputes,omitempty"`
+	Runtime                 SecureCellFederationOrganizationRuntime                 `json:"runtime"`
+	Controls                []SecureCellFederationTrustPackControl                  `json:"controls,omitempty"`
+	OperatorSurfaces        []SecureCellFederationOperatorSurface                   `json:"operator_surfaces,omitempty"`
+	ControlLedgerID         string                                                  `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash       string                                                  `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash     string                                                  `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                                    `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                                    `json:"portable_package_anchored"`
 }
 
 // SecureCellFederationOrganizationTrustPackOptions lets callers enrich pack
@@ -233,25 +238,25 @@ type SecureCellFederationOrganizationTrustPackOptions struct {
 // SecureCellFederationInvitationBundle is the portable onboarding summary for
 // one federation invitation.
 type SecureCellFederationInvitationBundle struct {
-	ID                      string                                  `json:"id"`
-	Version                 string                                  `json:"version"`
-	Name                    string                                  `json:"name"`
-	GeneratedAt             time.Time                               `json:"generated_at"`
-	CellID                  string                                  `json:"cell_id"`
-	CellName                string                                  `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                        `json:"cell_status"`
-	Jurisdiction            string                                  `json:"jurisdiction,omitempty"`
-	Framework               string                                  `json:"framework,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary `json:"organization"`
-	Invitation              SecureCellFederationInvitationSummary   `json:"invitation"`
+	ID                      string                                       `json:"id"`
+	Version                 string                                       `json:"version"`
+	Name                    string                                       `json:"name"`
+	GeneratedAt             time.Time                                    `json:"generated_at"`
+	CellID                  string                                       `json:"cell_id"`
+	CellName                string                                       `json:"cell_name,omitempty"`
+	CellStatus              SecureCellStatus                             `json:"cell_status"`
+	Jurisdiction            string                                       `json:"jurisdiction,omitempty"`
+	Framework               string                                       `json:"framework,omitempty"`
+	Organization            SecureCellFederationOrganizationSummary      `json:"organization"`
+	Invitation              SecureCellFederationInvitationSummary        `json:"invitation"`
 	Counterproposals        []SecureCellFederationCounterproposalSummary `json:"counterproposals,omitempty"`
-	Contract                *SecureCellFederationContractSummary    `json:"contract,omitempty"`
-	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
-	ControlLedgerID         string                                  `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                  `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                  `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                    `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                    `json:"portable_package_anchored"`
+	Contract                *SecureCellFederationContractSummary         `json:"contract,omitempty"`
+	Controls                []SecureCellFederationTrustPackControl       `json:"controls,omitempty"`
+	ControlLedgerID         string                                       `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash       string                                       `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash     string                                       `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                         `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                         `json:"portable_package_anchored"`
 }
 
 // ListFederationOrganizations returns operator-facing federation organization
@@ -421,6 +426,14 @@ func (s *Service) BuildFederationOrganizationTrustPack(ctx context.Context, cell
 		return nil, err
 	}
 	pack.IncidentResponses = incidentResponses
+	incidentReports, err := s.ListFederationIncidentReports(ctx, SecureCellFederationIncidentReportFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.IncidentReports = incidentReports
 	incidentRemediations, err := s.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
 		CellID:         cellID,
 		OrganizationID: organizationID,
@@ -475,20 +488,20 @@ func (s *Service) BuildFederationInvitationBundle(_ context.Context, cellID stri
 		return nil, err
 	}
 	bundle := &SecureCellFederationInvitationBundle{
-		ID:           fmt.Sprintf("%s-%s-bundle", run.result.CellID, invitation.ID),
-		Version:      "1.0",
-		Name:         fmt.Sprintf("Federation Invitation Bundle %s", invitation.ID),
-		GeneratedAt:  time.Now().UTC(),
-		CellID:       run.result.CellID,
-		CellName:     run.result.Name,
-		CellStatus:   run.result.Status,
-		Jurisdiction: run.request.Jurisdiction,
-		Framework:    s.config.Framework,
-		Organization: orgSummary,
-		Invitation:   invitationSummary,
+		ID:               fmt.Sprintf("%s-%s-bundle", run.result.CellID, invitation.ID),
+		Version:          "1.0",
+		Name:             fmt.Sprintf("Federation Invitation Bundle %s", invitation.ID),
+		GeneratedAt:      time.Now().UTC(),
+		CellID:           run.result.CellID,
+		CellName:         run.result.Name,
+		CellStatus:       run.result.Status,
+		Jurisdiction:     run.request.Jurisdiction,
+		Framework:        s.config.Framework,
+		Organization:     orgSummary,
+		Invitation:       invitationSummary,
 		Counterproposals: secureCellFederationCounterproposalsForInvitation(run, invitation.ID),
-		Contract:     secureCellFederationContractForInvitation(run, invitation.ID),
-		Controls:     secureCellFederationControlsFromLedger(run.result.ControlLedger),
+		Contract:         secureCellFederationContractForInvitation(run, invitation.ID),
+		Controls:         secureCellFederationControlsFromLedger(run.result.ControlLedger),
 	}
 	if run.result.ControlLedger != nil {
 		bundle.ControlLedgerID = strings.TrimSpace(run.result.ControlLedger.Bundle.ID)
@@ -617,42 +630,42 @@ func secureCellFederationOrganizationSummaryFromRun(run *secureCellRun, org Secu
 
 func secureCellFederationInvitationSummaryFromRun(run *secureCellRun, invitation SecureCellFederationInvitation) SecureCellFederationInvitationSummary {
 	summary := SecureCellFederationInvitationSummary{
-		CellID:                   safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
-		CellName:                 safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
-		CellStatus:               safeSecureCellStatus(run),
-		Jurisdiction:             firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
-		InvitationID:             strings.TrimSpace(invitation.ID),
-		OrganizationID:           strings.TrimSpace(invitation.OrganizationID),
-		SponsorOfRecord:          strings.TrimSpace(invitation.SponsorOfRecord),
-		OrganizationName:         strings.TrimSpace(invitation.OrganizationName),
-		Status:                   invitation.Status,
-		ExpectedDID:              strings.TrimSpace(invitation.ExpectedDID),
-		Role:                     strings.TrimSpace(invitation.Role),
-		SessionScopeCount:        len(uniqueTrimmedStrings(invitation.SessionScopeIDs)),
-		OfferedSessionScopeCount: len(uniqueTrimmedStrings(invitation.OfferedSessionScopeIDs)),
-		DataClassCount:           len(uniqueTrimmedStrings(invitation.DataClasses)),
-		OfferedDataClassCount:    len(uniqueTrimmedStrings(invitation.OfferedDataClasses)),
-		ComputeZoneCount:         len(uniqueTrimmedStrings(invitation.ComputeZones)),
-		OfferedComputeZoneCount:  len(uniqueTrimmedStrings(invitation.OfferedComputeZones)),
-		AllowedActionCount:       len(uniqueTrimmedStrings(invitation.AllowedActions)),
-		OfferedActionCount:       len(uniqueTrimmedStrings(invitation.OfferedActions)),
-		NegotiationDiffCount:     len(invitation.NegotiationDiffs),
-		ApprovedCounterproposalID: strings.TrimSpace(invitation.ApprovedCounterproposalID),
-		CounterproposalGovernanceTemplate: strings.TrimSpace(invitation.CounterproposalGovernanceTemplate),
-		CounterproposalApprovalThreshold: secureCellMaxInt(1, invitation.CounterproposalApprovalThreshold),
+		CellID:                               safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
+		CellName:                             safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
+		CellStatus:                           safeSecureCellStatus(run),
+		Jurisdiction:                         firstNonEmpty(strings.TrimSpace(invitation.Jurisdiction), safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) })),
+		InvitationID:                         strings.TrimSpace(invitation.ID),
+		OrganizationID:                       strings.TrimSpace(invitation.OrganizationID),
+		SponsorOfRecord:                      strings.TrimSpace(invitation.SponsorOfRecord),
+		OrganizationName:                     strings.TrimSpace(invitation.OrganizationName),
+		Status:                               invitation.Status,
+		ExpectedDID:                          strings.TrimSpace(invitation.ExpectedDID),
+		Role:                                 strings.TrimSpace(invitation.Role),
+		SessionScopeCount:                    len(uniqueTrimmedStrings(invitation.SessionScopeIDs)),
+		OfferedSessionScopeCount:             len(uniqueTrimmedStrings(invitation.OfferedSessionScopeIDs)),
+		DataClassCount:                       len(uniqueTrimmedStrings(invitation.DataClasses)),
+		OfferedDataClassCount:                len(uniqueTrimmedStrings(invitation.OfferedDataClasses)),
+		ComputeZoneCount:                     len(uniqueTrimmedStrings(invitation.ComputeZones)),
+		OfferedComputeZoneCount:              len(uniqueTrimmedStrings(invitation.OfferedComputeZones)),
+		AllowedActionCount:                   len(uniqueTrimmedStrings(invitation.AllowedActions)),
+		OfferedActionCount:                   len(uniqueTrimmedStrings(invitation.OfferedActions)),
+		NegotiationDiffCount:                 len(invitation.NegotiationDiffs),
+		ApprovedCounterproposalID:            strings.TrimSpace(invitation.ApprovedCounterproposalID),
+		CounterproposalGovernanceTemplate:    strings.TrimSpace(invitation.CounterproposalGovernanceTemplate),
+		CounterproposalApprovalThreshold:     secureCellMaxInt(1, invitation.CounterproposalApprovalThreshold),
 		CounterproposalEligibleApproverCount: len(uniqueTrimmedStrings(invitation.CounterproposalEligibleApproverDIDs)),
-		CounterproposalEscalationTierCount: len(invitation.CounterproposalEscalationLadder),
-		CounterproposalResolutionDueAt: cloneTimePtr(invitation.CounterproposalResolutionDueAt),
-		CounterproposalAutoSuspendOnOverdue: invitation.CounterproposalAutoSuspendOnOverdue,
-		Resource:                 strings.TrimSpace(invitation.Resource),
-		CreatedBy:                strings.TrimSpace(invitation.CreatedBy),
-		AcceptedBy:               strings.TrimSpace(invitation.AcceptedBy),
-		RevokedBy:                strings.TrimSpace(invitation.RevokedBy),
-		Reason:                   strings.TrimSpace(invitation.Reason),
-		CreatedAt:                invitation.CreatedAt.UTC(),
-		AcceptedAt:               cloneTimePtr(invitation.AcceptedAt),
-		RevokedAt:                cloneTimePtr(invitation.RevokedAt),
-		UpdatedAt:                secureCellFederationInvitationUpdatedAt(invitation),
+		CounterproposalEscalationTierCount:   len(invitation.CounterproposalEscalationLadder),
+		CounterproposalResolutionDueAt:       cloneTimePtr(invitation.CounterproposalResolutionDueAt),
+		CounterproposalAutoSuspendOnOverdue:  invitation.CounterproposalAutoSuspendOnOverdue,
+		Resource:                             strings.TrimSpace(invitation.Resource),
+		CreatedBy:                            strings.TrimSpace(invitation.CreatedBy),
+		AcceptedBy:                           strings.TrimSpace(invitation.AcceptedBy),
+		RevokedBy:                            strings.TrimSpace(invitation.RevokedBy),
+		Reason:                               strings.TrimSpace(invitation.Reason),
+		CreatedAt:                            invitation.CreatedAt.UTC(),
+		AcceptedAt:                           cloneTimePtr(invitation.AcceptedAt),
+		RevokedAt:                            cloneTimePtr(invitation.RevokedAt),
+		UpdatedAt:                            secureCellFederationInvitationUpdatedAt(invitation),
 	}
 	if run.result.ControlLedger != nil {
 		summary.ControlLedgerID = strings.TrimSpace(run.result.ControlLedger.Bundle.ID)
@@ -904,6 +917,10 @@ func secureCellFederationRuntimeForOrganization(run *secureCellRun, org SecureCe
 		}
 		runtime.IncidentRemediationCount += len(response.RemediationAttestations)
 		runtime.IncidentVerificationCount += len(response.RemediationVerifications)
+		runtime.IncidentReportCount += len(response.IncidentReports)
+		runtime.PendingIncidentReports += secureCellFederationIncidentReportCountByStatus(response.IncidentReports, SecureCellFederationIncidentReportStatusPendingSubmission)
+		runtime.AcknowledgedIncidentReports += secureCellFederationIncidentReportCountByStatus(response.IncidentReports, SecureCellFederationIncidentReportStatusAcknowledged)
+		runtime.OverdueIncidentReports += secureCellFederationIncidentReportOverdueCount(response.IncidentReports, time.Now().UTC())
 		runtime.IncidentClosureAttestationCount += len(response.ClosureAttestations)
 		runtime.IncidentDisputeCount += len(response.Disputes)
 		if response.VerificationRequiredFrom != "" && secureCellFederationIncidentResponseStepStatus(response, SecureCellFederationIncidentPlaybookStepTypeVerify) != SecureCellFederationIncidentPlaybookStepStatusCompleted {

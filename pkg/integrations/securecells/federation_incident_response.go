@@ -37,10 +37,10 @@ const (
 	SecureCellFederationIncidentResponseStatusPendingLocalAck        SecureCellFederationIncidentResponseStatus = "pending_local_ack"
 	SecureCellFederationIncidentResponseStatusPendingCounterpartyAck SecureCellFederationIncidentResponseStatus = "pending_counterparty_ack"
 	SecureCellFederationIncidentResponseStatusAcknowledged           SecureCellFederationIncidentResponseStatus = "acknowledged"
-	SecureCellFederationIncidentResponseStatusEscalated             SecureCellFederationIncidentResponseStatus = "escalated"
-	SecureCellFederationIncidentResponseStatusRemediating           SecureCellFederationIncidentResponseStatus = "remediating"
-	SecureCellFederationIncidentResponseStatusRemediated            SecureCellFederationIncidentResponseStatus = "remediated"
-	SecureCellFederationIncidentResponseStatusClosed                SecureCellFederationIncidentResponseStatus = "closed"
+	SecureCellFederationIncidentResponseStatusEscalated              SecureCellFederationIncidentResponseStatus = "escalated"
+	SecureCellFederationIncidentResponseStatusRemediating            SecureCellFederationIncidentResponseStatus = "remediating"
+	SecureCellFederationIncidentResponseStatusRemediated             SecureCellFederationIncidentResponseStatus = "remediated"
+	SecureCellFederationIncidentResponseStatusClosed                 SecureCellFederationIncidentResponseStatus = "closed"
 )
 
 // SecureCellFederationIncidentPlaybookStepType identifies one timed command
@@ -66,39 +66,39 @@ const (
 // SecureCellFederationIncidentPlaybookStep stores one timed bilateral
 // response milestone.
 type SecureCellFederationIncidentPlaybookStep struct {
-	StepID                    string                                       `json:"step_id"`
-	ResponseID                string                                       `json:"response_id"`
-	Type                      SecureCellFederationIncidentPlaybookStepType  `json:"type"`
-	ResponsibleParty          SecureCellFederationIncidentResponseParty     `json:"responsible_party"`
-	Title                     string                                       `json:"title,omitempty"`
-	Description               string                                       `json:"description,omitempty"`
-	DueAt                     *time.Time                                   `json:"due_at,omitempty"`
-	Status                    SecureCellFederationIncidentPlaybookStepStatus `json:"status"`
-	CompletedBy               string                                       `json:"completed_by,omitempty"`
-	CompletedAt               *time.Time                                   `json:"completed_at,omitempty"`
-	RemediationAttestationID  string                                       `json:"remediation_attestation_id,omitempty"`
-	Metadata                  map[string]string                            `json:"metadata,omitempty"`
+	StepID                   string                                         `json:"step_id"`
+	ResponseID               string                                         `json:"response_id"`
+	Type                     SecureCellFederationIncidentPlaybookStepType   `json:"type"`
+	ResponsibleParty         SecureCellFederationIncidentResponseParty      `json:"responsible_party"`
+	Title                    string                                         `json:"title,omitempty"`
+	Description              string                                         `json:"description,omitempty"`
+	DueAt                    *time.Time                                     `json:"due_at,omitempty"`
+	Status                   SecureCellFederationIncidentPlaybookStepStatus `json:"status"`
+	CompletedBy              string                                         `json:"completed_by,omitempty"`
+	CompletedAt              *time.Time                                     `json:"completed_at,omitempty"`
+	RemediationAttestationID string                                         `json:"remediation_attestation_id,omitempty"`
+	Metadata                 map[string]string                              `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentRemediationAttestation captures one evidence-
 // bearing remediation statement inside a coordinated bilateral response.
 type SecureCellFederationIncidentRemediationAttestation struct {
-	ID                string                                   `json:"id"`
-	ResponseID        string                                   `json:"response_id"`
-	OrganizationID    string                                   `json:"organization_id"`
-	SponsorOfRecord   string                                   `json:"sponsor_of_record,omitempty"`
-	IncidentID        string                                   `json:"incident_id"`
+	ID                string                                    `json:"id"`
+	ResponseID        string                                    `json:"response_id"`
+	OrganizationID    string                                    `json:"organization_id"`
+	SponsorOfRecord   string                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID        string                                    `json:"incident_id"`
 	AttestingParty    SecureCellFederationIncidentResponseParty `json:"attesting_party"`
-	SubmittedBy       string                                   `json:"submitted_by,omitempty"`
-	Summary           string                                   `json:"summary"`
-	Description       string                                   `json:"description,omitempty"`
-	EvidenceIDs       []string                                 `json:"evidence_ids,omitempty"`
-	PolicyReceiptID   string                                   `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash string                                   `json:"policy_receipt_hash,omitempty"`
-	SealID            string                                   `json:"seal_id,omitempty"`
-	TraceLinkID       string                                   `json:"trace_link_id,omitempty"`
-	CreatedAt         time.Time                                `json:"created_at"`
-	Metadata          map[string]string                        `json:"metadata,omitempty"`
+	SubmittedBy       string                                    `json:"submitted_by,omitempty"`
+	Summary           string                                    `json:"summary"`
+	Description       string                                    `json:"description,omitempty"`
+	EvidenceIDs       []string                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID   string                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                    `json:"policy_receipt_hash,omitempty"`
+	SealID            string                                    `json:"seal_id,omitempty"`
+	TraceLinkID       string                                    `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time                                 `json:"created_at"`
+	Metadata          map[string]string                         `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentRemediationVerificationDecision captures the
@@ -113,24 +113,24 @@ const (
 // SecureCellFederationIncidentRemediationVerification captures the opposite
 // party's evidence-bearing verification or rejection of remediation.
 type SecureCellFederationIncidentRemediationVerification struct {
-	ID                      string                                                    `json:"id"`
-	ResponseID              string                                                    `json:"response_id"`
-	OrganizationID          string                                                    `json:"organization_id"`
-	SponsorOfRecord         string                                                    `json:"sponsor_of_record,omitempty"`
-	IncidentID              string                                                    `json:"incident_id"`
-	ReviewingParty          SecureCellFederationIncidentResponseParty                 `json:"reviewing_party"`
-	Decision                SecureCellFederationIncidentRemediationVerificationDecision `json:"decision"`
-	VerifiedAttestationID   string                                                    `json:"verified_attestation_id,omitempty"`
-	SubmittedBy             string                                                    `json:"submitted_by,omitempty"`
-	Summary                 string                                                    `json:"summary"`
-	Description             string                                                    `json:"description,omitempty"`
-	EvidenceIDs             []string                                                  `json:"evidence_ids,omitempty"`
-	PolicyReceiptID         string                                                    `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash       string                                                    `json:"policy_receipt_hash,omitempty"`
-	SealID                  string                                                    `json:"seal_id,omitempty"`
-	TraceLinkID             string                                                    `json:"trace_link_id,omitempty"`
-	CreatedAt               time.Time                                                 `json:"created_at"`
-	Metadata                map[string]string                                         `json:"metadata,omitempty"`
+	ID                    string                                                      `json:"id"`
+	ResponseID            string                                                      `json:"response_id"`
+	OrganizationID        string                                                      `json:"organization_id"`
+	SponsorOfRecord       string                                                      `json:"sponsor_of_record,omitempty"`
+	IncidentID            string                                                      `json:"incident_id"`
+	ReviewingParty        SecureCellFederationIncidentResponseParty                   `json:"reviewing_party"`
+	Decision              SecureCellFederationIncidentRemediationVerificationDecision `json:"decision"`
+	VerifiedAttestationID string                                                      `json:"verified_attestation_id,omitempty"`
+	SubmittedBy           string                                                      `json:"submitted_by,omitempty"`
+	Summary               string                                                      `json:"summary"`
+	Description           string                                                      `json:"description,omitempty"`
+	EvidenceIDs           []string                                                    `json:"evidence_ids,omitempty"`
+	PolicyReceiptID       string                                                      `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash     string                                                      `json:"policy_receipt_hash,omitempty"`
+	SealID                string                                                      `json:"seal_id,omitempty"`
+	TraceLinkID           string                                                      `json:"trace_link_id,omitempty"`
+	CreatedAt             time.Time                                                   `json:"created_at"`
+	Metadata              map[string]string                                           `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentClosureAttestation captures the non-closing
@@ -158,77 +158,78 @@ type SecureCellFederationIncidentClosureAttestation struct {
 // SecureCellFederationIncidentDisputeRecord captures one party's decision to
 // reopen or dispute a coordinated response outcome.
 type SecureCellFederationIncidentDisputeRecord struct {
-	ID                     string                                    `json:"id"`
-	ResponseID             string                                    `json:"response_id"`
-	OrganizationID         string                                    `json:"organization_id"`
-	SponsorOfRecord        string                                    `json:"sponsor_of_record,omitempty"`
-	IncidentID             string                                    `json:"incident_id"`
-	DisputingParty         SecureCellFederationIncidentResponseParty `json:"disputing_party"`
-	SubmittedBy            string                                    `json:"submitted_by,omitempty"`
-	RelatedVerificationID  string                                    `json:"related_verification_id,omitempty"`
-	RelatedClosureID       string                                    `json:"related_closure_id,omitempty"`
-	Summary                string                                    `json:"summary"`
-	Description            string                                    `json:"description,omitempty"`
-	EvidenceIDs            []string                                  `json:"evidence_ids,omitempty"`
-	Reopened               bool                                      `json:"reopened"`
+	ID                     string                                     `json:"id"`
+	ResponseID             string                                     `json:"response_id"`
+	OrganizationID         string                                     `json:"organization_id"`
+	SponsorOfRecord        string                                     `json:"sponsor_of_record,omitempty"`
+	IncidentID             string                                     `json:"incident_id"`
+	DisputingParty         SecureCellFederationIncidentResponseParty  `json:"disputing_party"`
+	SubmittedBy            string                                     `json:"submitted_by,omitempty"`
+	RelatedVerificationID  string                                     `json:"related_verification_id,omitempty"`
+	RelatedClosureID       string                                     `json:"related_closure_id,omitempty"`
+	Summary                string                                     `json:"summary"`
+	Description            string                                     `json:"description,omitempty"`
+	EvidenceIDs            []string                                   `json:"evidence_ids,omitempty"`
+	Reopened               bool                                       `json:"reopened"`
 	ReopenedResponseStatus SecureCellFederationIncidentResponseStatus `json:"reopened_response_status,omitempty"`
-	PolicyReceiptID        string                                    `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash      string                                    `json:"policy_receipt_hash,omitempty"`
-	SealID                 string                                    `json:"seal_id,omitempty"`
-	TraceLinkID            string                                    `json:"trace_link_id,omitempty"`
-	CreatedAt              time.Time                                 `json:"created_at"`
-	Metadata               map[string]string                         `json:"metadata,omitempty"`
+	PolicyReceiptID        string                                     `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                                     `json:"policy_receipt_hash,omitempty"`
+	SealID                 string                                     `json:"seal_id,omitempty"`
+	TraceLinkID            string                                     `json:"trace_link_id,omitempty"`
+	CreatedAt              time.Time                                  `json:"created_at"`
+	Metadata               map[string]string                          `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponse is the canonical bilateral command case
 // for one local or imported federation incident.
 type SecureCellFederationIncidentResponse struct {
-	ID                      string                                      `json:"id"`
-	OrganizationID          string                                      `json:"organization_id"`
-	SponsorOfRecord         string                                      `json:"sponsor_of_record,omitempty"`
-	OrganizationName        string                                      `json:"organization_name,omitempty"`
-	SourceType              SecureCellFederationIncidentResponseSource  `json:"source_type"`
-	SourceSnapshotID        string                                      `json:"source_snapshot_id,omitempty"`
-	SourceBulletinID        string                                      `json:"source_bulletin_id,omitempty"`
-	IncidentID              string                                      `json:"incident_id"`
-	IncidentStatus          SecureCellFederationIncidentStatus          `json:"incident_status"`
-	IncidentSeverity        SecureCellFederationIncidentSeverity        `json:"incident_severity"`
-	IncidentCategory        SecureCellFederationIncidentCategory        `json:"incident_category"`
-	IncidentSummary         string                                      `json:"incident_summary"`
-	IncidentDescription     string                                      `json:"incident_description,omitempty"`
-	ContractIDs             []string                                    `json:"contract_ids,omitempty"`
-	SessionIDs              []string                                    `json:"session_ids,omitempty"`
-	ThreadIDs               []string                                    `json:"thread_ids,omitempty"`
-	SharedOutputIDs         []string                                    `json:"shared_output_ids,omitempty"`
-	SessionExchangeIDs      []string                                    `json:"session_exchange_ids,omitempty"`
-	Status                  SecureCellFederationIncidentResponseStatus  `json:"status"`
-	RequiredAcknowledgement SecureCellFederationIncidentResponseParty   `json:"required_acknowledgement"`
-	ExpectedRemediationFrom SecureCellFederationIncidentResponseParty   `json:"expected_remediation_from"`
-	VerificationRequiredFrom SecureCellFederationIncidentResponseParty  `json:"verification_required_from"`
-	PlaybookTemplate        string                                      `json:"playbook_template,omitempty"`
-	EscalationLadder        []SecureCellFederationEscalationTier        `json:"escalation_ladder,omitempty"`
-	EscalatedTierIDs        []string                                    `json:"escalated_tier_ids,omitempty"`
-	PlaybookSteps           []SecureCellFederationIncidentPlaybookStep  `json:"playbook_steps,omitempty"`
-	RemediationAttestations []SecureCellFederationIncidentRemediationAttestation `json:"remediation_attestations,omitempty"`
+	ID                       string                                                `json:"id"`
+	OrganizationID           string                                                `json:"organization_id"`
+	SponsorOfRecord          string                                                `json:"sponsor_of_record,omitempty"`
+	OrganizationName         string                                                `json:"organization_name,omitempty"`
+	SourceType               SecureCellFederationIncidentResponseSource            `json:"source_type"`
+	SourceSnapshotID         string                                                `json:"source_snapshot_id,omitempty"`
+	SourceBulletinID         string                                                `json:"source_bulletin_id,omitempty"`
+	IncidentID               string                                                `json:"incident_id"`
+	IncidentStatus           SecureCellFederationIncidentStatus                    `json:"incident_status"`
+	IncidentSeverity         SecureCellFederationIncidentSeverity                  `json:"incident_severity"`
+	IncidentCategory         SecureCellFederationIncidentCategory                  `json:"incident_category"`
+	IncidentSummary          string                                                `json:"incident_summary"`
+	IncidentDescription      string                                                `json:"incident_description,omitempty"`
+	ContractIDs              []string                                              `json:"contract_ids,omitempty"`
+	SessionIDs               []string                                              `json:"session_ids,omitempty"`
+	ThreadIDs                []string                                              `json:"thread_ids,omitempty"`
+	SharedOutputIDs          []string                                              `json:"shared_output_ids,omitempty"`
+	SessionExchangeIDs       []string                                              `json:"session_exchange_ids,omitempty"`
+	Status                   SecureCellFederationIncidentResponseStatus            `json:"status"`
+	RequiredAcknowledgement  SecureCellFederationIncidentResponseParty             `json:"required_acknowledgement"`
+	ExpectedRemediationFrom  SecureCellFederationIncidentResponseParty             `json:"expected_remediation_from"`
+	VerificationRequiredFrom SecureCellFederationIncidentResponseParty             `json:"verification_required_from"`
+	PlaybookTemplate         string                                                `json:"playbook_template,omitempty"`
+	EscalationLadder         []SecureCellFederationEscalationTier                  `json:"escalation_ladder,omitempty"`
+	EscalatedTierIDs         []string                                              `json:"escalated_tier_ids,omitempty"`
+	PlaybookSteps            []SecureCellFederationIncidentPlaybookStep            `json:"playbook_steps,omitempty"`
+	RemediationAttestations  []SecureCellFederationIncidentRemediationAttestation  `json:"remediation_attestations,omitempty"`
 	RemediationVerifications []SecureCellFederationIncidentRemediationVerification `json:"remediation_verifications,omitempty"`
-	ClosureAttestations    []SecureCellFederationIncidentClosureAttestation `json:"closure_attestations,omitempty"`
-	Disputes               []SecureCellFederationIncidentDisputeRecord      `json:"disputes,omitempty"`
-	AcknowledgedBy          string                                      `json:"acknowledged_by,omitempty"`
-	AcknowledgedAt          *time.Time                                  `json:"acknowledged_at,omitempty"`
-	RemediatedBy            string                                      `json:"remediated_by,omitempty"`
-	RemediatedAt            *time.Time                                  `json:"remediated_at,omitempty"`
-	VerifiedBy              string                                      `json:"verified_by,omitempty"`
-	VerifiedAt              *time.Time                                  `json:"verified_at,omitempty"`
-	ClosedBy                string                                      `json:"closed_by,omitempty"`
-	ClosedAt                *time.Time                                  `json:"closed_at,omitempty"`
-	LastDisputedBy          string                                      `json:"last_disputed_by,omitempty"`
-	LastDisputedAt          *time.Time                                  `json:"last_disputed_at,omitempty"`
-	ReopenedBy              string                                      `json:"reopened_by,omitempty"`
-	ReopenedAt              *time.Time                                  `json:"reopened_at,omitempty"`
-	ReopenReason            string                                      `json:"reopen_reason,omitempty"`
-	CreatedAt               time.Time                                   `json:"created_at"`
-	UpdatedAt               time.Time                                   `json:"updated_at"`
-	Metadata                map[string]string                           `json:"metadata,omitempty"`
+	IncidentReports          []SecureCellFederationIncidentReport                  `json:"incident_reports,omitempty"`
+	ClosureAttestations      []SecureCellFederationIncidentClosureAttestation      `json:"closure_attestations,omitempty"`
+	Disputes                 []SecureCellFederationIncidentDisputeRecord           `json:"disputes,omitempty"`
+	AcknowledgedBy           string                                                `json:"acknowledged_by,omitempty"`
+	AcknowledgedAt           *time.Time                                            `json:"acknowledged_at,omitempty"`
+	RemediatedBy             string                                                `json:"remediated_by,omitempty"`
+	RemediatedAt             *time.Time                                            `json:"remediated_at,omitempty"`
+	VerifiedBy               string                                                `json:"verified_by,omitempty"`
+	VerifiedAt               *time.Time                                            `json:"verified_at,omitempty"`
+	ClosedBy                 string                                                `json:"closed_by,omitempty"`
+	ClosedAt                 *time.Time                                            `json:"closed_at,omitempty"`
+	LastDisputedBy           string                                                `json:"last_disputed_by,omitempty"`
+	LastDisputedAt           *time.Time                                            `json:"last_disputed_at,omitempty"`
+	ReopenedBy               string                                                `json:"reopened_by,omitempty"`
+	ReopenedAt               *time.Time                                            `json:"reopened_at,omitempty"`
+	ReopenReason             string                                                `json:"reopen_reason,omitempty"`
+	CreatedAt                time.Time                                             `json:"created_at"`
+	UpdatedAt                time.Time                                             `json:"updated_at"`
+	Metadata                 map[string]string                                     `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponseAcknowledgeRequest records cross-org or
@@ -251,27 +252,27 @@ type SecureCellFederationIncidentResponseEscalateRequest struct {
 // SecureCellFederationIncidentRemediationAttestationRequest submits one
 // evidence-bearing remediation attestation into a bilateral response.
 type SecureCellFederationIncidentRemediationAttestationRequest struct {
-	ActorDID       string                                   `json:"actor_did,omitempty"`
+	ActorDID       string                                    `json:"actor_did,omitempty"`
 	AttestingParty SecureCellFederationIncidentResponseParty `json:"attesting_party,omitempty"`
-	Summary        string                                   `json:"summary,omitempty"`
-	Description    string                                   `json:"description,omitempty"`
-	EvidenceIDs    []string                                 `json:"evidence_ids,omitempty"`
-	Reason         string                                   `json:"reason,omitempty"`
-	Metadata       map[string]string                        `json:"metadata,omitempty"`
+	Summary        string                                    `json:"summary,omitempty"`
+	Description    string                                    `json:"description,omitempty"`
+	EvidenceIDs    []string                                  `json:"evidence_ids,omitempty"`
+	Reason         string                                    `json:"reason,omitempty"`
+	Metadata       map[string]string                         `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentRemediationVerificationRequest submits one
 // evidence-bearing verification or rejection against remediation.
 type SecureCellFederationIncidentRemediationVerificationRequest struct {
-	ActorDID              string                                                    `json:"actor_did,omitempty"`
-	ReviewingParty        SecureCellFederationIncidentResponseParty                 `json:"reviewing_party,omitempty"`
+	ActorDID              string                                                      `json:"actor_did,omitempty"`
+	ReviewingParty        SecureCellFederationIncidentResponseParty                   `json:"reviewing_party,omitempty"`
 	Decision              SecureCellFederationIncidentRemediationVerificationDecision `json:"decision,omitempty"`
-	VerifiedAttestationID string                                                    `json:"verified_attestation_id,omitempty"`
-	Summary               string                                                    `json:"summary,omitempty"`
-	Description           string                                                    `json:"description,omitempty"`
-	EvidenceIDs           []string                                                  `json:"evidence_ids,omitempty"`
-	Reason                string                                                    `json:"reason,omitempty"`
-	Metadata              map[string]string                                         `json:"metadata,omitempty"`
+	VerifiedAttestationID string                                                      `json:"verified_attestation_id,omitempty"`
+	Summary               string                                                      `json:"summary,omitempty"`
+	Description           string                                                      `json:"description,omitempty"`
+	EvidenceIDs           []string                                                    `json:"evidence_ids,omitempty"`
+	Reason                string                                                      `json:"reason,omitempty"`
+	Metadata              map[string]string                                           `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentClosureAttestationRequest submits one
@@ -289,15 +290,15 @@ type SecureCellFederationIncidentClosureAttestationRequest struct {
 // SecureCellFederationIncidentResponseDisputeRequest disputes one coordinated
 // outcome and reopens the bilateral response workflow.
 type SecureCellFederationIncidentResponseDisputeRequest struct {
-	ActorDID             string                                    `json:"actor_did,omitempty"`
-	DisputingParty       SecureCellFederationIncidentResponseParty `json:"disputing_party,omitempty"`
-	RelatedVerificationID string                                   `json:"related_verification_id,omitempty"`
-	RelatedClosureID     string                                    `json:"related_closure_id,omitempty"`
-	Summary              string                                    `json:"summary,omitempty"`
-	Description          string                                    `json:"description,omitempty"`
-	EvidenceIDs          []string                                  `json:"evidence_ids,omitempty"`
-	Reason               string                                    `json:"reason,omitempty"`
-	Metadata             map[string]string                         `json:"metadata,omitempty"`
+	ActorDID              string                                    `json:"actor_did,omitempty"`
+	DisputingParty        SecureCellFederationIncidentResponseParty `json:"disputing_party,omitempty"`
+	RelatedVerificationID string                                    `json:"related_verification_id,omitempty"`
+	RelatedClosureID      string                                    `json:"related_closure_id,omitempty"`
+	Summary               string                                    `json:"summary,omitempty"`
+	Description           string                                    `json:"description,omitempty"`
+	EvidenceIDs           []string                                  `json:"evidence_ids,omitempty"`
+	Reason                string                                    `json:"reason,omitempty"`
+	Metadata              map[string]string                         `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponseFilter narrows operator queries across
@@ -316,68 +317,73 @@ type SecureCellFederationIncidentResponseFilter struct {
 // SecureCellFederationIncidentResponseSummary is the operator-facing projection
 // of one bilateral incident response case.
 type SecureCellFederationIncidentResponseSummary struct {
-	CellID                   string                                      `json:"cell_id"`
-	CellName                 string                                      `json:"cell_name,omitempty"`
-	CellStatus               SecureCellStatus                            `json:"cell_status"`
-	Jurisdiction             string                                      `json:"jurisdiction,omitempty"`
-	ResponseID               string                                      `json:"response_id"`
-	OrganizationID           string                                      `json:"organization_id"`
-	SponsorOfRecord          string                                      `json:"sponsor_of_record,omitempty"`
-	OrganizationName         string                                      `json:"organization_name,omitempty"`
-	SourceType               SecureCellFederationIncidentResponseSource  `json:"source_type"`
-	SourceSnapshotID         string                                      `json:"source_snapshot_id,omitempty"`
-	SourceBulletinID         string                                      `json:"source_bulletin_id,omitempty"`
-	IncidentID               string                                      `json:"incident_id"`
-	IncidentStatus           SecureCellFederationIncidentStatus          `json:"incident_status"`
-	IncidentSeverity         SecureCellFederationIncidentSeverity        `json:"incident_severity"`
-	IncidentCategory         SecureCellFederationIncidentCategory        `json:"incident_category"`
-	IncidentSummary          string                                      `json:"incident_summary"`
-	IncidentDescription      string                                      `json:"incident_description,omitempty"`
-	Status                   SecureCellFederationIncidentResponseStatus  `json:"status"`
-	RequiredAcknowledgement  SecureCellFederationIncidentResponseParty   `json:"required_acknowledgement"`
-	ExpectedRemediationFrom  SecureCellFederationIncidentResponseParty   `json:"expected_remediation_from"`
-	VerificationRequiredFrom SecureCellFederationIncidentResponseParty   `json:"verification_required_from"`
-	PlaybookTemplate         string                                      `json:"playbook_template,omitempty"`
-	ContractIDs              []string                                    `json:"contract_ids,omitempty"`
-	SessionIDs               []string                                    `json:"session_ids,omitempty"`
-	ThreadIDs                []string                                    `json:"thread_ids,omitempty"`
-	SharedOutputIDs          []string                                    `json:"shared_output_ids,omitempty"`
-	SessionExchangeIDs       []string                                    `json:"session_exchange_ids,omitempty"`
-	ContractCount            int                                         `json:"contract_count"`
-	SessionCount             int                                         `json:"session_count"`
-	ThreadCount              int                                         `json:"thread_count"`
-	SharedOutputCount        int                                         `json:"shared_output_count"`
-	SessionExchangeCount     int                                         `json:"session_exchange_count"`
-	AckDueAt                 *time.Time                                  `json:"ack_due_at,omitempty"`
-	AckStatus                SecureCellFederationIncidentPlaybookStepStatus `json:"ack_status,omitempty"`
-	RemediationDueAt         *time.Time                                  `json:"remediation_due_at,omitempty"`
-	RemediationStatus        SecureCellFederationIncidentPlaybookStepStatus `json:"remediation_status,omitempty"`
-	VerificationDueAt        *time.Time                                  `json:"verification_due_at,omitempty"`
-	VerificationStatus       SecureCellFederationIncidentPlaybookStepStatus `json:"verification_status,omitempty"`
-	EscalationTierCount      int                                         `json:"escalation_tier_count"`
-	EscalatedTierCount       int                                         `json:"escalated_tier_count"`
-	NextEscalationTierID     string                                      `json:"next_escalation_tier_id,omitempty"`
-	NextEscalationTargetDID  string                                      `json:"next_escalation_target_did,omitempty"`
-	RemediationCount         int                                         `json:"remediation_count"`
-	VerificationCount        int                                         `json:"verification_count"`
-	ClosureAttestationCount  int                                         `json:"closure_attestation_count"`
-	DisputeCount             int                                         `json:"dispute_count"`
+	CellID                   string                                                      `json:"cell_id"`
+	CellName                 string                                                      `json:"cell_name,omitempty"`
+	CellStatus               SecureCellStatus                                            `json:"cell_status"`
+	Jurisdiction             string                                                      `json:"jurisdiction,omitempty"`
+	ResponseID               string                                                      `json:"response_id"`
+	OrganizationID           string                                                      `json:"organization_id"`
+	SponsorOfRecord          string                                                      `json:"sponsor_of_record,omitempty"`
+	OrganizationName         string                                                      `json:"organization_name,omitempty"`
+	SourceType               SecureCellFederationIncidentResponseSource                  `json:"source_type"`
+	SourceSnapshotID         string                                                      `json:"source_snapshot_id,omitempty"`
+	SourceBulletinID         string                                                      `json:"source_bulletin_id,omitempty"`
+	IncidentID               string                                                      `json:"incident_id"`
+	IncidentStatus           SecureCellFederationIncidentStatus                          `json:"incident_status"`
+	IncidentSeverity         SecureCellFederationIncidentSeverity                        `json:"incident_severity"`
+	IncidentCategory         SecureCellFederationIncidentCategory                        `json:"incident_category"`
+	IncidentSummary          string                                                      `json:"incident_summary"`
+	IncidentDescription      string                                                      `json:"incident_description,omitempty"`
+	Status                   SecureCellFederationIncidentResponseStatus                  `json:"status"`
+	RequiredAcknowledgement  SecureCellFederationIncidentResponseParty                   `json:"required_acknowledgement"`
+	ExpectedRemediationFrom  SecureCellFederationIncidentResponseParty                   `json:"expected_remediation_from"`
+	VerificationRequiredFrom SecureCellFederationIncidentResponseParty                   `json:"verification_required_from"`
+	PlaybookTemplate         string                                                      `json:"playbook_template,omitempty"`
+	ContractIDs              []string                                                    `json:"contract_ids,omitempty"`
+	SessionIDs               []string                                                    `json:"session_ids,omitempty"`
+	ThreadIDs                []string                                                    `json:"thread_ids,omitempty"`
+	SharedOutputIDs          []string                                                    `json:"shared_output_ids,omitempty"`
+	SessionExchangeIDs       []string                                                    `json:"session_exchange_ids,omitempty"`
+	ContractCount            int                                                         `json:"contract_count"`
+	SessionCount             int                                                         `json:"session_count"`
+	ThreadCount              int                                                         `json:"thread_count"`
+	SharedOutputCount        int                                                         `json:"shared_output_count"`
+	SessionExchangeCount     int                                                         `json:"session_exchange_count"`
+	AckDueAt                 *time.Time                                                  `json:"ack_due_at,omitempty"`
+	AckStatus                SecureCellFederationIncidentPlaybookStepStatus              `json:"ack_status,omitempty"`
+	RemediationDueAt         *time.Time                                                  `json:"remediation_due_at,omitempty"`
+	RemediationStatus        SecureCellFederationIncidentPlaybookStepStatus              `json:"remediation_status,omitempty"`
+	VerificationDueAt        *time.Time                                                  `json:"verification_due_at,omitempty"`
+	VerificationStatus       SecureCellFederationIncidentPlaybookStepStatus              `json:"verification_status,omitempty"`
+	EscalationTierCount      int                                                         `json:"escalation_tier_count"`
+	EscalatedTierCount       int                                                         `json:"escalated_tier_count"`
+	NextEscalationTierID     string                                                      `json:"next_escalation_tier_id,omitempty"`
+	NextEscalationTargetDID  string                                                      `json:"next_escalation_target_did,omitempty"`
+	RemediationCount         int                                                         `json:"remediation_count"`
+	VerificationCount        int                                                         `json:"verification_count"`
+	ReportCount              int                                                         `json:"report_count"`
+	PendingReportCount       int                                                         `json:"pending_report_count"`
+	AcknowledgedReportCount  int                                                         `json:"acknowledged_report_count"`
+	OverdueReportCount       int                                                         `json:"overdue_report_count"`
+	NextReportDueAt          *time.Time                                                  `json:"next_report_due_at,omitempty"`
+	ClosureAttestationCount  int                                                         `json:"closure_attestation_count"`
+	DisputeCount             int                                                         `json:"dispute_count"`
 	LastVerificationDecision SecureCellFederationIncidentRemediationVerificationDecision `json:"last_verification_decision,omitempty"`
-	AcknowledgedBy           string                                      `json:"acknowledged_by,omitempty"`
-	AcknowledgedAt           *time.Time                                  `json:"acknowledged_at,omitempty"`
-	RemediatedBy             string                                      `json:"remediated_by,omitempty"`
-	RemediatedAt             *time.Time                                  `json:"remediated_at,omitempty"`
-	VerifiedBy               string                                      `json:"verified_by,omitempty"`
-	VerifiedAt               *time.Time                                  `json:"verified_at,omitempty"`
-	ClosedBy                 string                                      `json:"closed_by,omitempty"`
-	ClosedAt                 *time.Time                                  `json:"closed_at,omitempty"`
-	LastDisputedBy           string                                      `json:"last_disputed_by,omitempty"`
-	LastDisputedAt           *time.Time                                  `json:"last_disputed_at,omitempty"`
-	ReopenedBy               string                                      `json:"reopened_by,omitempty"`
-	ReopenedAt               *time.Time                                  `json:"reopened_at,omitempty"`
-	ClosureReady             bool                                        `json:"closure_ready"`
-	CreatedAt                time.Time                                   `json:"created_at"`
-	UpdatedAt                time.Time                                   `json:"updated_at"`
+	AcknowledgedBy           string                                                      `json:"acknowledged_by,omitempty"`
+	AcknowledgedAt           *time.Time                                                  `json:"acknowledged_at,omitempty"`
+	RemediatedBy             string                                                      `json:"remediated_by,omitempty"`
+	RemediatedAt             *time.Time                                                  `json:"remediated_at,omitempty"`
+	VerifiedBy               string                                                      `json:"verified_by,omitempty"`
+	VerifiedAt               *time.Time                                                  `json:"verified_at,omitempty"`
+	ClosedBy                 string                                                      `json:"closed_by,omitempty"`
+	ClosedAt                 *time.Time                                                  `json:"closed_at,omitempty"`
+	LastDisputedBy           string                                                      `json:"last_disputed_by,omitempty"`
+	LastDisputedAt           *time.Time                                                  `json:"last_disputed_at,omitempty"`
+	ReopenedBy               string                                                      `json:"reopened_by,omitempty"`
+	ReopenedAt               *time.Time                                                  `json:"reopened_at,omitempty"`
+	ClosureReady             bool                                                        `json:"closure_ready"`
+	CreatedAt                time.Time                                                   `json:"created_at"`
+	UpdatedAt                time.Time                                                   `json:"updated_at"`
 }
 
 // SecureCellOverdueFederationIncidentResponseFilter narrows operator queries
@@ -397,33 +403,33 @@ type SecureCellOverdueFederationIncidentResponseFilter struct {
 // incident response that crossed its next acknowledgement or remediation
 // automation milestone.
 type SecureCellOverdueFederationIncidentResponse struct {
-	CellID                   string                                      `json:"cell_id"`
-	CellName                 string                                      `json:"cell_name,omitempty"`
-	Jurisdiction             string                                      `json:"jurisdiction,omitempty"`
-	CellStatus               SecureCellStatus                            `json:"cell_status"`
-	ResponseID               string                                      `json:"response_id"`
-	OrganizationID           string                                      `json:"organization_id"`
-	SponsorOfRecord          string                                      `json:"sponsor_of_record,omitempty"`
-	IncidentID               string                                      `json:"incident_id"`
-	IncidentSeverity         SecureCellFederationIncidentSeverity        `json:"incident_severity"`
-	IncidentCategory         SecureCellFederationIncidentCategory        `json:"incident_category"`
-	IncidentSummary          string                                      `json:"incident_summary"`
-	ResponseStatus           SecureCellFederationIncidentResponseStatus  `json:"response_status"`
-	SourceType               SecureCellFederationIncidentResponseSource  `json:"source_type"`
-	PlaybookTemplate         string                                      `json:"playbook_template,omitempty"`
-	OverdueStepType          SecureCellFederationIncidentPlaybookStepType `json:"overdue_step_type"`
-	OverdueStepStatus        SecureCellFederationIncidentPlaybookStepStatus `json:"overdue_step_status"`
-	AutomationAction         string                                      `json:"automation_action"`
-	OverdueReason            string                                      `json:"overdue_reason"`
-	TierID                   string                                      `json:"tier_id,omitempty"`
-	TargetDID                string                                      `json:"target_did,omitempty"`
-	DueAt                    time.Time                                   `json:"due_at"`
-	OverdueSeconds           int64                                       `json:"overdue_seconds"`
-	AcknowledgedAt           *time.Time                                  `json:"acknowledged_at,omitempty"`
-	RemediatedAt             *time.Time                                  `json:"remediated_at,omitempty"`
-	VerifiedAt               *time.Time                                  `json:"verified_at,omitempty"`
-	ClosedAt                 *time.Time                                  `json:"closed_at,omitempty"`
-	UpdatedAt                time.Time                                   `json:"updated_at"`
+	CellID            string                                         `json:"cell_id"`
+	CellName          string                                         `json:"cell_name,omitempty"`
+	Jurisdiction      string                                         `json:"jurisdiction,omitempty"`
+	CellStatus        SecureCellStatus                               `json:"cell_status"`
+	ResponseID        string                                         `json:"response_id"`
+	OrganizationID    string                                         `json:"organization_id"`
+	SponsorOfRecord   string                                         `json:"sponsor_of_record,omitempty"`
+	IncidentID        string                                         `json:"incident_id"`
+	IncidentSeverity  SecureCellFederationIncidentSeverity           `json:"incident_severity"`
+	IncidentCategory  SecureCellFederationIncidentCategory           `json:"incident_category"`
+	IncidentSummary   string                                         `json:"incident_summary"`
+	ResponseStatus    SecureCellFederationIncidentResponseStatus     `json:"response_status"`
+	SourceType        SecureCellFederationIncidentResponseSource     `json:"source_type"`
+	PlaybookTemplate  string                                         `json:"playbook_template,omitempty"`
+	OverdueStepType   SecureCellFederationIncidentPlaybookStepType   `json:"overdue_step_type"`
+	OverdueStepStatus SecureCellFederationIncidentPlaybookStepStatus `json:"overdue_step_status"`
+	AutomationAction  string                                         `json:"automation_action"`
+	OverdueReason     string                                         `json:"overdue_reason"`
+	TierID            string                                         `json:"tier_id,omitempty"`
+	TargetDID         string                                         `json:"target_did,omitempty"`
+	DueAt             time.Time                                      `json:"due_at"`
+	OverdueSeconds    int64                                          `json:"overdue_seconds"`
+	AcknowledgedAt    *time.Time                                     `json:"acknowledged_at,omitempty"`
+	RemediatedAt      *time.Time                                     `json:"remediated_at,omitempty"`
+	VerifiedAt        *time.Time                                     `json:"verified_at,omitempty"`
+	ClosedAt          *time.Time                                     `json:"closed_at,omitempty"`
+	UpdatedAt         time.Time                                      `json:"updated_at"`
 }
 
 // SecureCellFederationIncidentResponseActionFilter narrows operator queries
@@ -443,107 +449,107 @@ type SecureCellFederationIncidentResponseActionFilter struct {
 // SecureCellFederationIncidentResponseActionRecord projects one evidence-
 // bearing command action inside the bilateral response fabric.
 type SecureCellFederationIncidentResponseActionRecord struct {
-	CellID               string                                      `json:"cell_id"`
-	CellName             string                                      `json:"cell_name,omitempty"`
-	Jurisdiction         string                                      `json:"jurisdiction,omitempty"`
-	CellStatus           SecureCellStatus                            `json:"cell_status"`
-	OrganizationID       string                                      `json:"organization_id,omitempty"`
-	SponsorOfRecord      string                                      `json:"sponsor_of_record,omitempty"`
-	IncidentID           string                                      `json:"incident_id,omitempty"`
-	ResponseID           string                                      `json:"response_id,omitempty"`
-	ContractIDs          []string                                    `json:"contract_ids,omitempty"`
-	SourceType           SecureCellFederationIncidentResponseSource  `json:"source_type,omitempty"`
-	ResponseStatusBefore SecureCellFederationIncidentResponseStatus  `json:"response_status_before,omitempty"`
-	ResponseStatusAfter  SecureCellFederationIncidentResponseStatus  `json:"response_status_after,omitempty"`
-	Action               string                                      `json:"action"`
-	Trigger              string                                      `json:"trigger,omitempty"`
-	TierID               string                                      `json:"tier_id,omitempty"`
-	TargetDID            string                                      `json:"target_did,omitempty"`
-	Actor                string                                      `json:"actor"`
-	AutomatedActor       string                                      `json:"automated_actor,omitempty"`
-	Reason               string                                      `json:"reason,omitempty"`
-	TransitionID         string                                      `json:"transition_id"`
-	OccurredAt           time.Time                                   `json:"occurred_at"`
-	Metadata             map[string]string                           `json:"metadata,omitempty"`
+	CellID               string                                     `json:"cell_id"`
+	CellName             string                                     `json:"cell_name,omitempty"`
+	Jurisdiction         string                                     `json:"jurisdiction,omitempty"`
+	CellStatus           SecureCellStatus                           `json:"cell_status"`
+	OrganizationID       string                                     `json:"organization_id,omitempty"`
+	SponsorOfRecord      string                                     `json:"sponsor_of_record,omitempty"`
+	IncidentID           string                                     `json:"incident_id,omitempty"`
+	ResponseID           string                                     `json:"response_id,omitempty"`
+	ContractIDs          []string                                   `json:"contract_ids,omitempty"`
+	SourceType           SecureCellFederationIncidentResponseSource `json:"source_type,omitempty"`
+	ResponseStatusBefore SecureCellFederationIncidentResponseStatus `json:"response_status_before,omitempty"`
+	ResponseStatusAfter  SecureCellFederationIncidentResponseStatus `json:"response_status_after,omitempty"`
+	Action               string                                     `json:"action"`
+	Trigger              string                                     `json:"trigger,omitempty"`
+	TierID               string                                     `json:"tier_id,omitempty"`
+	TargetDID            string                                     `json:"target_did,omitempty"`
+	Actor                string                                     `json:"actor"`
+	AutomatedActor       string                                     `json:"automated_actor,omitempty"`
+	Reason               string                                     `json:"reason,omitempty"`
+	TransitionID         string                                     `json:"transition_id"`
+	OccurredAt           time.Time                                  `json:"occurred_at"`
+	Metadata             map[string]string                          `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentRemediationFilter narrows operator queries
 // across submitted remediation attestations.
 type SecureCellFederationIncidentRemediationFilter struct {
-	CellID         string                                   `json:"cell_id,omitempty"`
-	OrganizationID string                                   `json:"organization_id,omitempty"`
-	IncidentID     string                                   `json:"incident_id,omitempty"`
-	ResponseID     string                                   `json:"response_id,omitempty"`
+	CellID         string                                    `json:"cell_id,omitempty"`
+	OrganizationID string                                    `json:"organization_id,omitempty"`
+	IncidentID     string                                    `json:"incident_id,omitempty"`
+	ResponseID     string                                    `json:"response_id,omitempty"`
 	AttestingParty SecureCellFederationIncidentResponseParty `json:"attesting_party,omitempty"`
-	Since          *time.Time                               `json:"since,omitempty"`
-	Until          *time.Time                               `json:"until,omitempty"`
-	Limit          int                                      `json:"limit,omitempty"`
+	Since          *time.Time                                `json:"since,omitempty"`
+	Until          *time.Time                                `json:"until,omitempty"`
+	Limit          int                                       `json:"limit,omitempty"`
 }
 
 // SecureCellFederationIncidentRemediationSummary projects one evidence-
 // bearing remediation attestation for operator export and audit use.
 type SecureCellFederationIncidentRemediationSummary struct {
-	CellID            string                                   `json:"cell_id"`
-	CellName          string                                   `json:"cell_name,omitempty"`
-	Jurisdiction      string                                   `json:"jurisdiction,omitempty"`
-	CellStatus        SecureCellStatus                         `json:"cell_status"`
-	ResponseID        string                                   `json:"response_id"`
-	OrganizationID    string                                   `json:"organization_id"`
-	SponsorOfRecord   string                                   `json:"sponsor_of_record,omitempty"`
-	IncidentID        string                                   `json:"incident_id"`
-	AttestationID     string                                   `json:"attestation_id"`
+	CellID            string                                    `json:"cell_id"`
+	CellName          string                                    `json:"cell_name,omitempty"`
+	Jurisdiction      string                                    `json:"jurisdiction,omitempty"`
+	CellStatus        SecureCellStatus                          `json:"cell_status"`
+	ResponseID        string                                    `json:"response_id"`
+	OrganizationID    string                                    `json:"organization_id"`
+	SponsorOfRecord   string                                    `json:"sponsor_of_record,omitempty"`
+	IncidentID        string                                    `json:"incident_id"`
+	AttestationID     string                                    `json:"attestation_id"`
 	AttestingParty    SecureCellFederationIncidentResponseParty `json:"attesting_party"`
-	SubmittedBy       string                                   `json:"submitted_by,omitempty"`
-	Summary           string                                   `json:"summary"`
-	Description       string                                   `json:"description,omitempty"`
-	EvidenceIDs       []string                                 `json:"evidence_ids,omitempty"`
-	PolicyReceiptID   string                                   `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash string                                   `json:"policy_receipt_hash,omitempty"`
-	SealID            string                                   `json:"seal_id,omitempty"`
-	TraceLinkID       string                                   `json:"trace_link_id,omitempty"`
-	CreatedAt         time.Time                                `json:"created_at"`
-	Metadata          map[string]string                        `json:"metadata,omitempty"`
+	SubmittedBy       string                                    `json:"submitted_by,omitempty"`
+	Summary           string                                    `json:"summary"`
+	Description       string                                    `json:"description,omitempty"`
+	EvidenceIDs       []string                                  `json:"evidence_ids,omitempty"`
+	PolicyReceiptID   string                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                    `json:"policy_receipt_hash,omitempty"`
+	SealID            string                                    `json:"seal_id,omitempty"`
+	TraceLinkID       string                                    `json:"trace_link_id,omitempty"`
+	CreatedAt         time.Time                                 `json:"created_at"`
+	Metadata          map[string]string                         `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentVerificationFilter narrows operator queries over
 // remediation verifications recorded for bilateral incident responses.
 type SecureCellFederationIncidentVerificationFilter struct {
-	CellID         string                                                    `json:"cell_id,omitempty"`
-	OrganizationID string                                                    `json:"organization_id,omitempty"`
-	IncidentID     string                                                    `json:"incident_id,omitempty"`
-	ResponseID     string                                                    `json:"response_id,omitempty"`
-	ReviewingParty SecureCellFederationIncidentResponseParty                 `json:"reviewing_party,omitempty"`
+	CellID         string                                                      `json:"cell_id,omitempty"`
+	OrganizationID string                                                      `json:"organization_id,omitempty"`
+	IncidentID     string                                                      `json:"incident_id,omitempty"`
+	ResponseID     string                                                      `json:"response_id,omitempty"`
+	ReviewingParty SecureCellFederationIncidentResponseParty                   `json:"reviewing_party,omitempty"`
 	Decision       SecureCellFederationIncidentRemediationVerificationDecision `json:"decision,omitempty"`
-	Since          *time.Time                                                `json:"since,omitempty"`
-	Until          *time.Time                                                `json:"until,omitempty"`
-	Limit          int                                                       `json:"limit,omitempty"`
+	Since          *time.Time                                                  `json:"since,omitempty"`
+	Until          *time.Time                                                  `json:"until,omitempty"`
+	Limit          int                                                         `json:"limit,omitempty"`
 }
 
 // SecureCellFederationIncidentVerificationSummary projects one remediation
 // verification decision for operator export and audit use.
 type SecureCellFederationIncidentVerificationSummary struct {
-	CellID                string                                                    `json:"cell_id"`
-	CellName              string                                                    `json:"cell_name,omitempty"`
-	Jurisdiction          string                                                    `json:"jurisdiction,omitempty"`
-	CellStatus            SecureCellStatus                                          `json:"cell_status"`
-	ResponseID            string                                                    `json:"response_id"`
-	OrganizationID        string                                                    `json:"organization_id"`
-	SponsorOfRecord       string                                                    `json:"sponsor_of_record,omitempty"`
-	IncidentID            string                                                    `json:"incident_id"`
-	VerificationID        string                                                    `json:"verification_id"`
-	ReviewingParty        SecureCellFederationIncidentResponseParty                 `json:"reviewing_party"`
+	CellID                string                                                      `json:"cell_id"`
+	CellName              string                                                      `json:"cell_name,omitempty"`
+	Jurisdiction          string                                                      `json:"jurisdiction,omitempty"`
+	CellStatus            SecureCellStatus                                            `json:"cell_status"`
+	ResponseID            string                                                      `json:"response_id"`
+	OrganizationID        string                                                      `json:"organization_id"`
+	SponsorOfRecord       string                                                      `json:"sponsor_of_record,omitempty"`
+	IncidentID            string                                                      `json:"incident_id"`
+	VerificationID        string                                                      `json:"verification_id"`
+	ReviewingParty        SecureCellFederationIncidentResponseParty                   `json:"reviewing_party"`
 	Decision              SecureCellFederationIncidentRemediationVerificationDecision `json:"decision"`
-	VerifiedAttestationID string                                                    `json:"verified_attestation_id,omitempty"`
-	SubmittedBy           string                                                    `json:"submitted_by,omitempty"`
-	Summary               string                                                    `json:"summary"`
-	Description           string                                                    `json:"description,omitempty"`
-	EvidenceIDs           []string                                                  `json:"evidence_ids,omitempty"`
-	PolicyReceiptID       string                                                    `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash     string                                                    `json:"policy_receipt_hash,omitempty"`
-	SealID                string                                                    `json:"seal_id,omitempty"`
-	TraceLinkID           string                                                    `json:"trace_link_id,omitempty"`
-	CreatedAt             time.Time                                                 `json:"created_at"`
-	Metadata              map[string]string                                         `json:"metadata,omitempty"`
+	VerifiedAttestationID string                                                      `json:"verified_attestation_id,omitempty"`
+	SubmittedBy           string                                                      `json:"submitted_by,omitempty"`
+	Summary               string                                                      `json:"summary"`
+	Description           string                                                      `json:"description,omitempty"`
+	EvidenceIDs           []string                                                    `json:"evidence_ids,omitempty"`
+	PolicyReceiptID       string                                                      `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash     string                                                      `json:"policy_receipt_hash,omitempty"`
+	SealID                string                                                      `json:"seal_id,omitempty"`
+	TraceLinkID           string                                                      `json:"trace_link_id,omitempty"`
+	CreatedAt             time.Time                                                   `json:"created_at"`
+	Metadata              map[string]string                                           `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentClosureAttestationFilter narrows operator
@@ -600,30 +606,30 @@ type SecureCellFederationIncidentDisputeFilter struct {
 // SecureCellFederationIncidentDisputeSummary projects one bilateral dispute
 // or reopen event for operator export and audit use.
 type SecureCellFederationIncidentDisputeSummary struct {
-	CellID                string                                     `json:"cell_id"`
-	CellName              string                                     `json:"cell_name,omitempty"`
-	Jurisdiction          string                                     `json:"jurisdiction,omitempty"`
-	CellStatus            SecureCellStatus                           `json:"cell_status"`
-	ResponseID            string                                     `json:"response_id"`
-	OrganizationID        string                                     `json:"organization_id"`
-	SponsorOfRecord       string                                     `json:"sponsor_of_record,omitempty"`
-	IncidentID            string                                     `json:"incident_id"`
-	DisputeID             string                                     `json:"dispute_id"`
-	DisputingParty        SecureCellFederationIncidentResponseParty  `json:"disputing_party"`
-	SubmittedBy           string                                     `json:"submitted_by,omitempty"`
-	RelatedVerificationID string                                     `json:"related_verification_id,omitempty"`
-	RelatedClosureID      string                                     `json:"related_closure_id,omitempty"`
-	Summary               string                                     `json:"summary"`
-	Description           string                                     `json:"description,omitempty"`
-	EvidenceIDs           []string                                   `json:"evidence_ids,omitempty"`
-	Reopened              bool                                       `json:"reopened"`
+	CellID                 string                                     `json:"cell_id"`
+	CellName               string                                     `json:"cell_name,omitempty"`
+	Jurisdiction           string                                     `json:"jurisdiction,omitempty"`
+	CellStatus             SecureCellStatus                           `json:"cell_status"`
+	ResponseID             string                                     `json:"response_id"`
+	OrganizationID         string                                     `json:"organization_id"`
+	SponsorOfRecord        string                                     `json:"sponsor_of_record,omitempty"`
+	IncidentID             string                                     `json:"incident_id"`
+	DisputeID              string                                     `json:"dispute_id"`
+	DisputingParty         SecureCellFederationIncidentResponseParty  `json:"disputing_party"`
+	SubmittedBy            string                                     `json:"submitted_by,omitempty"`
+	RelatedVerificationID  string                                     `json:"related_verification_id,omitempty"`
+	RelatedClosureID       string                                     `json:"related_closure_id,omitempty"`
+	Summary                string                                     `json:"summary"`
+	Description            string                                     `json:"description,omitempty"`
+	EvidenceIDs            []string                                   `json:"evidence_ids,omitempty"`
+	Reopened               bool                                       `json:"reopened"`
 	ReopenedResponseStatus SecureCellFederationIncidentResponseStatus `json:"reopened_response_status,omitempty"`
-	PolicyReceiptID       string                                     `json:"policy_receipt_id,omitempty"`
-	PolicyReceiptHash     string                                     `json:"policy_receipt_hash,omitempty"`
-	SealID                string                                     `json:"seal_id,omitempty"`
-	TraceLinkID           string                                     `json:"trace_link_id,omitempty"`
-	CreatedAt             time.Time                                  `json:"created_at"`
-	Metadata              map[string]string                          `json:"metadata,omitempty"`
+	PolicyReceiptID        string                                     `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash      string                                     `json:"policy_receipt_hash,omitempty"`
+	SealID                 string                                     `json:"seal_id,omitempty"`
+	TraceLinkID            string                                     `json:"trace_link_id,omitempty"`
+	CreatedAt              time.Time                                  `json:"created_at"`
+	Metadata               map[string]string                          `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentResponseSweepResult summarizes one automated
@@ -759,16 +765,16 @@ func (s *Service) EscalateFederationIncidentResponse(ctx context.Context, cellID
 		return nil, err
 	}
 	receipt, err := s.evaluateStage(ctx, run.request, "escalate_federation_incident_response", lastReceiptHash(run.result), map[string]string{
-		"federation_incident_response_id":            response.ID,
-		"federation_organization_id":                 response.OrganizationID,
-		"federation_sponsor_of_record":               response.SponsorOfRecord,
-		"federation_incident_id":                     response.IncidentID,
-		"federation_incident_response_source":        string(response.SourceType),
-		"federation_incident_response_status":        string(response.Status),
-		"federation_incident_response_tier_id":       tier.TierID,
-		"federation_incident_response_target_did":    tier.TargetDID,
-		"federation_incident_response_overdue_step":  string(stepType),
-		"transition_reason":                          firstNonEmpty(strings.TrimSpace(req.Reason), overdueReason),
+		"federation_incident_response_id":           response.ID,
+		"federation_organization_id":                response.OrganizationID,
+		"federation_sponsor_of_record":              response.SponsorOfRecord,
+		"federation_incident_id":                    response.IncidentID,
+		"federation_incident_response_source":       string(response.SourceType),
+		"federation_incident_response_status":       string(response.Status),
+		"federation_incident_response_tier_id":      tier.TierID,
+		"federation_incident_response_target_did":   tier.TargetDID,
+		"federation_incident_response_overdue_step": string(stepType),
+		"transition_reason":                         firstNonEmpty(strings.TrimSpace(req.Reason), overdueReason),
 	}, actorDID)
 	if err != nil {
 		return nil, err
@@ -983,17 +989,17 @@ func (s *Service) VerifyFederationIncidentRemediation(ctx context.Context, cellI
 		return nil, fmt.Errorf("securecells/federation-incident-response: %w: response %q has no remediation attestation to verify", ErrFederationIncidentResponseImmutable, responseID)
 	}
 	receipt, err := s.evaluateStage(ctx, run.request, "verify_federation_incident_remediation", lastReceiptHash(run.result), map[string]string{
-		"federation_incident_response_id":              response.ID,
-		"federation_organization_id":                   response.OrganizationID,
-		"federation_sponsor_of_record":                 response.SponsorOfRecord,
-		"federation_incident_id":                       response.IncidentID,
-		"federation_incident_response_source":          string(response.SourceType),
-		"federation_incident_response_status":          string(response.Status),
-		"federation_incident_verification_party":       string(party),
-		"federation_incident_verification_decision":    string(decision),
-		"federation_incident_verified_attestation_id":  verifiedAttestationID,
-		"federation_incident_verification_evidence":    strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
-		"transition_reason":                            firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+		"federation_incident_response_id":             response.ID,
+		"federation_organization_id":                  response.OrganizationID,
+		"federation_sponsor_of_record":                response.SponsorOfRecord,
+		"federation_incident_id":                      response.IncidentID,
+		"federation_incident_response_source":         string(response.SourceType),
+		"federation_incident_response_status":         string(response.Status),
+		"federation_incident_verification_party":      string(party),
+		"federation_incident_verification_decision":   string(decision),
+		"federation_incident_verified_attestation_id": verifiedAttestationID,
+		"federation_incident_verification_evidence":   strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason":                           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
 	}, actorDID)
 	if err != nil {
 		return nil, err
@@ -1039,14 +1045,14 @@ func (s *Service) VerifyFederationIncidentRemediation(ctx context.Context, cellI
 		}
 	case SecureCellFederationIncidentRemediationVerificationDecisionRejected:
 		dispute := secureCellReopenFederationIncidentResponse(&run.result.FederationIncidentResponses[idx], SecureCellFederationIncidentResponseDisputeRequest{
-			ActorDID:             actorDID,
-			DisputingParty:       party,
+			ActorDID:              actorDID,
+			DisputingParty:        party,
 			RelatedVerificationID: verification.ID,
-			Summary:              firstNonEmpty(strings.TrimSpace(req.Summary), "Remediation verification rejected"),
-			Description:          strings.TrimSpace(req.Description),
-			EvidenceIDs:          append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
-			Reason:               firstNonEmpty(strings.TrimSpace(req.Reason), "verification rejected"),
-			Metadata:             mergeStringMaps(req.Metadata, map[string]string{"reopened_from_verification_decision": string(verification.Decision)}),
+			Summary:               firstNonEmpty(strings.TrimSpace(req.Summary), "Remediation verification rejected"),
+			Description:           strings.TrimSpace(req.Description),
+			EvidenceIDs:           append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+			Reason:                firstNonEmpty(strings.TrimSpace(req.Reason), "verification rejected"),
+			Metadata:              mergeStringMaps(req.Metadata, map[string]string{"reopened_from_verification_decision": string(verification.Decision)}),
 		}, receipt, now)
 		verification.Metadata = mergeStringMaps(verification.Metadata, map[string]string{"reopened_dispute_id": dispute.ID})
 		run.result.FederationIncidentResponses[idx].RemediationVerifications[len(run.result.FederationIncidentResponses[idx].RemediationVerifications)-1] = verification
@@ -1064,23 +1070,23 @@ func (s *Service) VerifyFederationIncidentRemediation(ctx context.Context, cellI
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_response_id":              response.ID,
-			"federation_incident_response_status_before":   string(statusBefore),
-			"federation_incident_response_status_after":    string(run.result.FederationIncidentResponses[idx].Status),
-			"federation_incident_response_source":          string(response.SourceType),
-			"federation_organization_id":                   response.OrganizationID,
-			"federation_sponsor_of_record":                 response.SponsorOfRecord,
-			"federation_incident_id":                       response.IncidentID,
-			"federation_incident_status":                   string(response.IncidentStatus),
-			"federation_incident_severity":                 string(response.IncidentSeverity),
-			"federation_incident_category":                 string(response.IncidentCategory),
-			"federation_incident_response_action":          "verify_remediation",
-			"federation_incident_verification_id":          verification.ID,
-			"federation_incident_verification_party":       string(verification.ReviewingParty),
-			"federation_incident_verification_decision":    string(verification.Decision),
-			"federation_incident_verified_attestation_id":  verification.VerifiedAttestationID,
-			"federation_incident_verification_evidence":    strings.Join(verification.EvidenceIDs, ","),
-			"federation_contract_ids":                      strings.Join(response.ContractIDs, ","),
+			"federation_incident_response_id":             response.ID,
+			"federation_incident_response_status_before":  string(statusBefore),
+			"federation_incident_response_status_after":   string(run.result.FederationIncidentResponses[idx].Status),
+			"federation_incident_response_source":         string(response.SourceType),
+			"federation_organization_id":                  response.OrganizationID,
+			"federation_sponsor_of_record":                response.SponsorOfRecord,
+			"federation_incident_id":                      response.IncidentID,
+			"federation_incident_status":                  string(response.IncidentStatus),
+			"federation_incident_severity":                string(response.IncidentSeverity),
+			"federation_incident_category":                string(response.IncidentCategory),
+			"federation_incident_response_action":         "verify_remediation",
+			"federation_incident_verification_id":         verification.ID,
+			"federation_incident_verification_party":      string(verification.ReviewingParty),
+			"federation_incident_verification_decision":   string(verification.Decision),
+			"federation_incident_verified_attestation_id": verification.VerifiedAttestationID,
+			"federation_incident_verification_evidence":   strings.Join(verification.EvidenceIDs, ","),
+			"federation_contract_ids":                     strings.Join(response.ContractIDs, ","),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -1121,15 +1127,15 @@ func (s *Service) AttestFederationIncidentClosure(ctx context.Context, cellID st
 		return nil, fmt.Errorf("securecells/federation-incident-response: %w: actor %q is not permitted to attest closure for response %q", ErrPolicyDenied, actorDID, responseID)
 	}
 	receipt, err := s.evaluateStage(ctx, run.request, "attest_federation_incident_closure", lastReceiptHash(run.result), map[string]string{
-		"federation_incident_response_id":            response.ID,
-		"federation_organization_id":                 response.OrganizationID,
-		"federation_sponsor_of_record":               response.SponsorOfRecord,
-		"federation_incident_id":                     response.IncidentID,
-		"federation_incident_response_source":        string(response.SourceType),
-		"federation_incident_response_status":        string(response.Status),
+		"federation_incident_response_id":             response.ID,
+		"federation_organization_id":                  response.OrganizationID,
+		"federation_sponsor_of_record":                response.SponsorOfRecord,
+		"federation_incident_id":                      response.IncidentID,
+		"federation_incident_response_source":         string(response.SourceType),
+		"federation_incident_response_status":         string(response.Status),
 		"federation_incident_closure_attesting_party": string(party),
-		"federation_incident_closure_evidence":       strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
-		"transition_reason":                          firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
+		"federation_incident_closure_evidence":        strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason":                           firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Summary)),
 	}, actorDID)
 	if err != nil {
 		return nil, err
@@ -1387,33 +1393,33 @@ func (s *Service) ListOverdueFederationIncidentResponses(_ context.Context, filt
 				continue
 			}
 			items = append(items, SecureCellOverdueFederationIncidentResponse{
-				CellID:           summary.CellID,
-				CellName:         summary.CellName,
-				Jurisdiction:     summary.Jurisdiction,
-				CellStatus:       summary.CellStatus,
-				ResponseID:       summary.ResponseID,
-				OrganizationID:   summary.OrganizationID,
-				SponsorOfRecord:  summary.SponsorOfRecord,
-				IncidentID:       summary.IncidentID,
-				IncidentSeverity: summary.IncidentSeverity,
-				IncidentCategory: summary.IncidentCategory,
-				IncidentSummary:  summary.IncidentSummary,
-				ResponseStatus:   summary.Status,
-				SourceType:       summary.SourceType,
-				PlaybookTemplate: summary.PlaybookTemplate,
-				OverdueStepType:  stepType,
+				CellID:            summary.CellID,
+				CellName:          summary.CellName,
+				Jurisdiction:      summary.Jurisdiction,
+				CellStatus:        summary.CellStatus,
+				ResponseID:        summary.ResponseID,
+				OrganizationID:    summary.OrganizationID,
+				SponsorOfRecord:   summary.SponsorOfRecord,
+				IncidentID:        summary.IncidentID,
+				IncidentSeverity:  summary.IncidentSeverity,
+				IncidentCategory:  summary.IncidentCategory,
+				IncidentSummary:   summary.IncidentSummary,
+				ResponseStatus:    summary.Status,
+				SourceType:        summary.SourceType,
+				PlaybookTemplate:  summary.PlaybookTemplate,
+				OverdueStepType:   stepType,
 				OverdueStepStatus: secureCellFederationIncidentResponseStepStatus(response, stepType),
-				AutomationAction: action,
-				OverdueReason:    reason,
-				TierID:           tierID,
-				TargetDID:        targetDID,
-				DueAt:            dueAt.UTC(),
-				OverdueSeconds:   int64(at.Sub(dueAt.UTC()).Seconds()),
-				AcknowledgedAt:   summary.AcknowledgedAt,
-				RemediatedAt:     summary.RemediatedAt,
-				VerifiedAt:       summary.VerifiedAt,
-				ClosedAt:         summary.ClosedAt,
-				UpdatedAt:        summary.UpdatedAt,
+				AutomationAction:  action,
+				OverdueReason:     reason,
+				TierID:            tierID,
+				TargetDID:         targetDID,
+				DueAt:             dueAt.UTC(),
+				OverdueSeconds:    int64(at.Sub(dueAt.UTC()).Seconds()),
+				AcknowledgedAt:    summary.AcknowledgedAt,
+				RemediatedAt:      summary.RemediatedAt,
+				VerifiedAt:        summary.VerifiedAt,
+				ClosedAt:          summary.ClosedAt,
+				UpdatedAt:         summary.UpdatedAt,
 			})
 		}
 	}
@@ -1706,9 +1712,9 @@ func (s *Service) SweepFederationIncidentResponses(ctx context.Context, at time.
 				continue
 			}
 			metadata := mergeStringMaps(lifecycle.Metadata, map[string]string{
-				"federation_incident_response_mode":      "automated",
-				"federation_incident_response_trigger":   "playbook_overdue",
-				"federation_incident_response_action":    action,
+				"federation_incident_response_mode":         "automated",
+				"federation_incident_response_trigger":      "playbook_overdue",
+				"federation_incident_response_action":       action,
 				"federation_incident_response_overdue_step": string(stepType),
 			})
 			if automatedActor := strings.TrimSpace(lifecycle.ActorDID); automatedActor != "" && automatedActor != run.request.OwnerIdentity.AgentID() {
@@ -1825,33 +1831,33 @@ func secureCellNewFederationIncidentResponse(run *secureCellRun, organizationID 
 		status = SecureCellFederationIncidentResponseStatusPendingLocalAck
 	}
 	return SecureCellFederationIncidentResponse{
-		ID:                      responseID,
-		OrganizationID:          strings.TrimSpace(organizationID),
-		SponsorOfRecord:         strings.TrimSpace(sponsorOfRecord),
-		OrganizationName:        strings.TrimSpace(organizationName),
-		SourceType:              sourceType,
-		SourceSnapshotID:        strings.TrimSpace(snapshotID),
-		SourceBulletinID:        strings.TrimSpace(bulletinID),
-		IncidentID:              strings.TrimSpace(incident.IncidentID),
-		IncidentStatus:          incident.Status,
-		IncidentSeverity:        incident.Severity,
-		IncidentCategory:        incident.Category,
-		IncidentSummary:         strings.TrimSpace(incident.Summary),
-		IncidentDescription:     strings.TrimSpace(incident.Description),
-		ContractIDs:             append([]string(nil), uniqueTrimmedStrings(incident.ContractIDs)...),
-		SessionIDs:              append([]string(nil), uniqueTrimmedStrings(incident.SessionIDs)...),
-		ThreadIDs:               append([]string(nil), uniqueTrimmedStrings(incident.ThreadIDs)...),
-		SharedOutputIDs:         append([]string(nil), uniqueTrimmedStrings(incident.SharedOutputIDs)...),
-		SessionExchangeIDs:      append([]string(nil), uniqueTrimmedStrings(incident.SessionExchangeIDs)...),
-		Status:                  status,
-		RequiredAcknowledgement: requiredAck,
-		ExpectedRemediationFrom: requiredAck,
+		ID:                       responseID,
+		OrganizationID:           strings.TrimSpace(organizationID),
+		SponsorOfRecord:          strings.TrimSpace(sponsorOfRecord),
+		OrganizationName:         strings.TrimSpace(organizationName),
+		SourceType:               sourceType,
+		SourceSnapshotID:         strings.TrimSpace(snapshotID),
+		SourceBulletinID:         strings.TrimSpace(bulletinID),
+		IncidentID:               strings.TrimSpace(incident.IncidentID),
+		IncidentStatus:           incident.Status,
+		IncidentSeverity:         incident.Severity,
+		IncidentCategory:         incident.Category,
+		IncidentSummary:          strings.TrimSpace(incident.Summary),
+		IncidentDescription:      strings.TrimSpace(incident.Description),
+		ContractIDs:              append([]string(nil), uniqueTrimmedStrings(incident.ContractIDs)...),
+		SessionIDs:               append([]string(nil), uniqueTrimmedStrings(incident.SessionIDs)...),
+		ThreadIDs:                append([]string(nil), uniqueTrimmedStrings(incident.ThreadIDs)...),
+		SharedOutputIDs:          append([]string(nil), uniqueTrimmedStrings(incident.SharedOutputIDs)...),
+		SessionExchangeIDs:       append([]string(nil), uniqueTrimmedStrings(incident.SessionExchangeIDs)...),
+		Status:                   status,
+		RequiredAcknowledgement:  requiredAck,
+		ExpectedRemediationFrom:  requiredAck,
 		VerificationRequiredFrom: verificationParty,
-		PlaybookTemplate:        template,
-		EscalationLadder:        ladder,
-		PlaybookSteps:           steps,
-		CreatedAt:               now,
-		UpdatedAt:               now,
+		PlaybookTemplate:         template,
+		EscalationLadder:         ladder,
+		PlaybookSteps:            steps,
+		CreatedAt:                now,
+		UpdatedAt:                now,
 	}
 }
 
@@ -2332,59 +2338,63 @@ func secureCellFederationIncidentResponseOverdueAction(response SecureCellFedera
 
 func secureCellFederationIncidentResponseSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse) SecureCellFederationIncidentResponseSummary {
 	summary := SecureCellFederationIncidentResponseSummary{
-		CellID:                  strings.TrimSpace(run.result.CellID),
-		CellName:                strings.TrimSpace(run.result.Name),
-		CellStatus:              run.result.Status,
-		Jurisdiction:            strings.TrimSpace(run.request.Jurisdiction),
-		ResponseID:              strings.TrimSpace(response.ID),
-		OrganizationID:          strings.TrimSpace(response.OrganizationID),
-		SponsorOfRecord:         strings.TrimSpace(response.SponsorOfRecord),
-		OrganizationName:        strings.TrimSpace(response.OrganizationName),
-		SourceType:              response.SourceType,
-		SourceSnapshotID:        strings.TrimSpace(response.SourceSnapshotID),
-		SourceBulletinID:        strings.TrimSpace(response.SourceBulletinID),
-		IncidentID:              strings.TrimSpace(response.IncidentID),
-		IncidentStatus:          response.IncidentStatus,
-		IncidentSeverity:        response.IncidentSeverity,
-		IncidentCategory:        response.IncidentCategory,
-		IncidentSummary:         strings.TrimSpace(response.IncidentSummary),
-		IncidentDescription:     strings.TrimSpace(response.IncidentDescription),
-		Status:                  response.Status,
-		RequiredAcknowledgement: response.RequiredAcknowledgement,
-		ExpectedRemediationFrom: response.ExpectedRemediationFrom,
+		CellID:                   strings.TrimSpace(run.result.CellID),
+		CellName:                 strings.TrimSpace(run.result.Name),
+		CellStatus:               run.result.Status,
+		Jurisdiction:             strings.TrimSpace(run.request.Jurisdiction),
+		ResponseID:               strings.TrimSpace(response.ID),
+		OrganizationID:           strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:          strings.TrimSpace(response.SponsorOfRecord),
+		OrganizationName:         strings.TrimSpace(response.OrganizationName),
+		SourceType:               response.SourceType,
+		SourceSnapshotID:         strings.TrimSpace(response.SourceSnapshotID),
+		SourceBulletinID:         strings.TrimSpace(response.SourceBulletinID),
+		IncidentID:               strings.TrimSpace(response.IncidentID),
+		IncidentStatus:           response.IncidentStatus,
+		IncidentSeverity:         response.IncidentSeverity,
+		IncidentCategory:         response.IncidentCategory,
+		IncidentSummary:          strings.TrimSpace(response.IncidentSummary),
+		IncidentDescription:      strings.TrimSpace(response.IncidentDescription),
+		Status:                   response.Status,
+		RequiredAcknowledgement:  response.RequiredAcknowledgement,
+		ExpectedRemediationFrom:  response.ExpectedRemediationFrom,
 		VerificationRequiredFrom: response.VerificationRequiredFrom,
-		PlaybookTemplate:        strings.TrimSpace(response.PlaybookTemplate),
-		ContractIDs:             append([]string(nil), response.ContractIDs...),
-		SessionIDs:              append([]string(nil), response.SessionIDs...),
-		ThreadIDs:               append([]string(nil), response.ThreadIDs...),
-		SharedOutputIDs:         append([]string(nil), response.SharedOutputIDs...),
-		SessionExchangeIDs:      append([]string(nil), response.SessionExchangeIDs...),
-		ContractCount:           len(response.ContractIDs),
-		SessionCount:            len(response.SessionIDs),
-		ThreadCount:             len(response.ThreadIDs),
-		SharedOutputCount:       len(response.SharedOutputIDs),
-		SessionExchangeCount:    len(response.SessionExchangeIDs),
-		EscalationTierCount:     len(response.EscalationLadder),
-		EscalatedTierCount:      len(uniqueTrimmedStrings(response.EscalatedTierIDs)),
-		RemediationCount:        len(response.RemediationAttestations),
-		VerificationCount:       len(response.RemediationVerifications),
-		ClosureAttestationCount: len(response.ClosureAttestations),
-		DisputeCount:            len(response.Disputes),
-		AcknowledgedBy:          strings.TrimSpace(response.AcknowledgedBy),
-		AcknowledgedAt:          cloneTimePtr(response.AcknowledgedAt),
-		RemediatedBy:            strings.TrimSpace(response.RemediatedBy),
-		RemediatedAt:            cloneTimePtr(response.RemediatedAt),
-		VerifiedBy:              strings.TrimSpace(response.VerifiedBy),
-		VerifiedAt:              cloneTimePtr(response.VerifiedAt),
-		ClosedBy:                strings.TrimSpace(response.ClosedBy),
-		ClosedAt:                cloneTimePtr(response.ClosedAt),
-		LastDisputedBy:          strings.TrimSpace(response.LastDisputedBy),
-		LastDisputedAt:          cloneTimePtr(response.LastDisputedAt),
-		ReopenedBy:              strings.TrimSpace(response.ReopenedBy),
-		ReopenedAt:              cloneTimePtr(response.ReopenedAt),
-		ClosureReady:            secureCellFederationIncidentResponseClosureReady(response),
-		CreatedAt:               response.CreatedAt.UTC(),
-		UpdatedAt:               response.UpdatedAt.UTC(),
+		PlaybookTemplate:         strings.TrimSpace(response.PlaybookTemplate),
+		ContractIDs:              append([]string(nil), response.ContractIDs...),
+		SessionIDs:               append([]string(nil), response.SessionIDs...),
+		ThreadIDs:                append([]string(nil), response.ThreadIDs...),
+		SharedOutputIDs:          append([]string(nil), response.SharedOutputIDs...),
+		SessionExchangeIDs:       append([]string(nil), response.SessionExchangeIDs...),
+		ContractCount:            len(response.ContractIDs),
+		SessionCount:             len(response.SessionIDs),
+		ThreadCount:              len(response.ThreadIDs),
+		SharedOutputCount:        len(response.SharedOutputIDs),
+		SessionExchangeCount:     len(response.SessionExchangeIDs),
+		EscalationTierCount:      len(response.EscalationLadder),
+		EscalatedTierCount:       len(uniqueTrimmedStrings(response.EscalatedTierIDs)),
+		RemediationCount:         len(response.RemediationAttestations),
+		VerificationCount:        len(response.RemediationVerifications),
+		ReportCount:              len(response.IncidentReports),
+		PendingReportCount:       secureCellFederationIncidentReportCountByStatus(response.IncidentReports, SecureCellFederationIncidentReportStatusPendingSubmission),
+		AcknowledgedReportCount:  secureCellFederationIncidentReportCountByStatus(response.IncidentReports, SecureCellFederationIncidentReportStatusAcknowledged),
+		OverdueReportCount:       secureCellFederationIncidentReportOverdueCount(response.IncidentReports, time.Now().UTC()),
+		ClosureAttestationCount:  len(response.ClosureAttestations),
+		DisputeCount:             len(response.Disputes),
+		AcknowledgedBy:           strings.TrimSpace(response.AcknowledgedBy),
+		AcknowledgedAt:           cloneTimePtr(response.AcknowledgedAt),
+		RemediatedBy:             strings.TrimSpace(response.RemediatedBy),
+		RemediatedAt:             cloneTimePtr(response.RemediatedAt),
+		VerifiedBy:               strings.TrimSpace(response.VerifiedBy),
+		VerifiedAt:               cloneTimePtr(response.VerifiedAt),
+		ClosedBy:                 strings.TrimSpace(response.ClosedBy),
+		ClosedAt:                 cloneTimePtr(response.ClosedAt),
+		LastDisputedBy:           strings.TrimSpace(response.LastDisputedBy),
+		LastDisputedAt:           cloneTimePtr(response.LastDisputedAt),
+		ReopenedBy:               strings.TrimSpace(response.ReopenedBy),
+		ReopenedAt:               cloneTimePtr(response.ReopenedAt),
+		ClosureReady:             secureCellFederationIncidentResponseClosureReady(response),
+		CreatedAt:                response.CreatedAt.UTC(),
+		UpdatedAt:                response.UpdatedAt.UTC(),
 	}
 	summary.AckDueAt, summary.AckStatus = secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeAcknowledge)
 	summary.RemediationDueAt, summary.RemediationStatus = secureCellFederationIncidentResponseStepDueAndStatus(response, SecureCellFederationIncidentPlaybookStepTypeRemediate)
@@ -2394,6 +2404,7 @@ func secureCellFederationIncidentResponseSummaryFromRun(run *secureCellRun, resp
 		summary.NextEscalationTierID = strings.TrimSpace(nextTier.TierID)
 		summary.NextEscalationTargetDID = strings.TrimSpace(nextTier.TargetDID)
 	}
+	summary.NextReportDueAt = secureCellFederationIncidentReportNextDueAt(response.IncidentReports, time.Now().UTC())
 	return summary
 }
 

@@ -3523,6 +3523,111 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 		t.Fatalf("expected both local and counterparty response IDs, got %+v", responses)
 	}
 
+	reportDueAt := time.Now().UTC().Add(2 * time.Hour)
+	plannedReportResult, err := service.CreateFederationIncidentReport(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentReportPlanRequest{
+		ActorDID:         participantB.AgentID(),
+		Regulator:        "uk-ico",
+		Jurisdiction:     "UK",
+		Framework:        "uk-gdpr",
+		ReportType:       "breach_notification",
+		Summary:          "Counterparty planned regulator notification for coordinated incident response",
+		Description:      "The counterparty is preparing a regulator-facing notification linked to the bilateral incident response.",
+		RequiredSections: []string{"scope", "impact", "containment"},
+		EvidenceIDs:      []string{incidentID},
+		DueAt:            &reportDueAt,
+		Reason:           "plan coordinated regulator notification",
+		Metadata:         map[string]string{"ticket": "FED-REPORT-PLAN-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationIncidentReport failed: %v", err)
+	}
+
+	reportItems, err := service.ListFederationIncidentReports(ctx, SecureCellFederationIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReports failed: %v", err)
+	}
+	if len(reportItems) != 1 || reportItems[0].Status != SecureCellFederationIncidentReportStatusPendingSubmission {
+		t.Fatalf("expected one pending federation incident report, got %+v", reportItems)
+	}
+	reportID := reportItems[0].ReportID
+
+	overdueReportAt := reportDueAt.Add(time.Hour)
+	overdueReports, err := service.ListOverdueFederationIncidentReports(ctx, SecureCellOverdueFederationIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+		Before:         &overdueReportAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentReports failed: %v", err)
+	}
+	if len(overdueReports) != 1 || overdueReports[0].ReportID != reportID {
+		t.Fatalf("expected one overdue federation incident report, got %+v", overdueReports)
+	}
+
+	_, err = service.SubmitFederationIncidentReport(ctx, created.CellID, reportID, SecureCellFederationIncidentReportSubmitRequest{
+		ActorDID:            participantB.AgentID(),
+		SubmissionReference: "ico-2026-0001",
+		Summary:             "Counterparty submitted regulator notification for bilateral incident response",
+		Description:         "The counterparty submitted a regulator-ready notification package with scoped evidence.",
+		EvidenceIDs:         []string{plannedReportResult.ControlLedger.Bundle.ID},
+		Reason:              "submit coordinated regulator notification",
+		Metadata:            map[string]string{"ticket": "FED-REPORT-SUBMIT-01"},
+	})
+	if err != nil {
+		t.Fatalf("SubmitFederationIncidentReport failed: %v", err)
+	}
+
+	_, err = service.AcknowledgeFederationIncidentReport(ctx, created.CellID, reportID, SecureCellFederationIncidentReportAcknowledgeRequest{
+		ActorDID:                 owner.AgentID(),
+		AcknowledgingParty:       SecureCellFederationIncidentResponsePartyLocalOrg,
+		AcknowledgementReference: "local-intake-ack-0001",
+		Reason:                   "acknowledge counterparty regulator notification",
+		Metadata:                 map[string]string{"ticket": "FED-REPORT-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReport failed: %v", err)
+	}
+
+	reportItems, err = service.ListFederationIncidentReports(ctx, SecureCellFederationIncidentReportFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ResponseID:     counterpartyResponseID,
+		Status:         SecureCellFederationIncidentReportStatusAcknowledged,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReports after acknowledgement failed: %v", err)
+	}
+	if len(reportItems) != 1 || reportItems[0].ReportID != reportID || reportItems[0].AcknowledgedBy != owner.AgentID() {
+		t.Fatalf("expected one acknowledged federation incident report, got %+v", reportItems)
+	}
+
+	counterpartyResponseWithReport, err := service.GetFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse after report acknowledgement failed: %v", err)
+	}
+	if len(counterpartyResponseWithReport.IncidentReports) != 1 || counterpartyResponseWithReport.IncidentReports[0].ID != reportID || counterpartyResponseWithReport.IncidentReports[0].Status != SecureCellFederationIncidentReportStatusAcknowledged {
+		t.Fatalf("expected acknowledged report on counterparty response, got %+v", counterpartyResponseWithReport.IncidentReports)
+	}
+
+	reportBundle, err := service.BuildFederationIncidentReportBundle(ctx, created.CellID, reportID, SecureCellFederationIncidentReportBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentReportBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentReportBundle(reportBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentReportBundle failed: %v", err)
+	}
+	if reportBundle.ReportSummary.ReportID != reportID || reportBundle.ReportSummary.Status != SecureCellFederationIncidentReportStatusAcknowledged || reportBundle.ResponseSummary.ReportCount != 1 || reportBundle.ResponseSummary.AcknowledgedReportCount != 1 {
+		t.Fatalf("expected acknowledged federation incident report bundle projection, got %+v", reportBundle.ReportSummary)
+	}
+	if reportBundle.ResponseBundleHash == "" || reportBundle.Signature == nil {
+		t.Fatalf("expected signed federation incident report bundle with response linkage, got %+v", reportBundle)
+	}
+
 	acknowledged, err := service.AcknowledgeFederationIncidentResponse(ctx, created.CellID, counterpartyResponseID, SecureCellFederationIncidentResponseAcknowledgeRequest{
 		ActorDID: owner.AgentID(),
 		Reason:   "local incident desk acknowledged counterparty incident",
@@ -3704,6 +3809,9 @@ func TestService_FederationIncidentBulletinIntakeAndContainment(t *testing.T) {
 	}
 	if len(trustPack.IncidentResponses) < 2 || len(trustPack.IncidentRemediations) != 1 {
 		t.Fatalf("expected trust pack to include incident response and remediation summaries, got responses=%+v remediations=%+v", trustPack.IncidentResponses, trustPack.IncidentRemediations)
+	}
+	if len(trustPack.IncidentReports) != 1 || trustPack.IncidentReports[0].ReportID != reportID || trustPack.IncidentReports[0].Status != SecureCellFederationIncidentReportStatusAcknowledged {
+		t.Fatalf("expected trust pack to include acknowledged incident report summary, got %+v", trustPack.IncidentReports)
 	}
 	if len(trustPack.IncidentVerifications) != 1 || trustPack.IncidentVerifications[0].ResponseID != counterpartyResponseID {
 		t.Fatalf("expected trust pack to include incident verification summary, got %+v", trustPack.IncidentVerifications)

@@ -1159,6 +1159,108 @@ func TestSecureCellsHandlers_FederationIncidentBulletinViewsAndAutomatedContainm
 		t.Fatalf("expected one counterparty incident response summary, got %+v", responseListResp.Items)
 	}
 	responseID := responseListResp.Items[0].ResponseID
+	reportDueAt := time.Now().UTC().Add(2 * time.Hour)
+
+	reportPlanReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID+"/reports", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportPlanRequest(t, participantB, nil, reportDueAt)))
+	reportPlanReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reportPlanRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reportPlanRec, reportPlanReq)
+	if reportPlanRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportPlanRec.Code, reportPlanRec.Body.String())
+	}
+
+	reportListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-reports?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID), nil)
+	reportListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reportListRec, reportListReq)
+	if reportListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportListRec.Code, reportListRec.Body.String())
+	}
+	var reportListResp secureCellFederationIncidentReportListResponse
+	if err := json.Unmarshal(reportListRec.Body.Bytes(), &reportListResp); err != nil {
+		t.Fatalf("unmarshal federation incident report list response: %v", err)
+	}
+	if len(reportListResp.Items) != 1 || reportListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentReportStatusPendingSubmission {
+		t.Fatalf("expected one pending federation incident report, got %+v", reportListResp.Items)
+	}
+	reportID := reportListResp.Items[0].ReportID
+
+	reportExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-reports/export?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID)+"&format=csv", nil)
+	reportExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reportExportRec, reportExportReq)
+	if reportExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportExportRec.Code, reportExportRec.Body.String())
+	}
+	if body := reportExportRec.Body.String(); !strings.Contains(body, reportID) || !strings.Contains(body, "uk-ico") {
+		t.Fatalf("expected federation incident report csv export to include report and regulator, got %s", body)
+	}
+
+	reportOverdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-reports/overdue?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID)+"&before="+url.QueryEscape(reportDueAt.Add(time.Hour).UTC().Format(time.RFC3339Nano)), nil)
+	reportOverdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reportOverdueRec, reportOverdueReq)
+	if reportOverdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportOverdueRec.Code, reportOverdueRec.Body.String())
+	}
+	var reportOverdueResp secureCellOverdueFederationIncidentReportListResponse
+	if err := json.Unmarshal(reportOverdueRec.Body.Bytes(), &reportOverdueResp); err != nil {
+		t.Fatalf("unmarshal overdue federation incident report list response: %v", err)
+	}
+	if len(reportOverdueResp.Items) != 1 || reportOverdueResp.Items[0].ReportID != reportID {
+		t.Fatalf("expected one overdue federation incident report, got %+v", reportOverdueResp.Items)
+	}
+
+	reportSubmitReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-reports/"+reportID+"/submit", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportSubmitRequest(t, participantB, nil, incidentID)))
+	reportSubmitReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reportSubmitRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reportSubmitRec, reportSubmitReq)
+	if reportSubmitRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportSubmitRec.Code, reportSubmitRec.Body.String())
+	}
+
+	reportAcknowledgeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+cellID+"/federation/incident-reports/"+reportID+"/acknowledge", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportAcknowledgeRequest(t, owner, nil)))
+	reportAcknowledgeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	reportAcknowledgeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(reportAcknowledgeRec, reportAcknowledgeReq)
+	if reportAcknowledgeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportAcknowledgeRec.Code, reportAcknowledgeRec.Body.String())
+	}
+
+	acknowledgedReportListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-reports?cell_id="+url.QueryEscape(cellID)+"&organization_id="+url.QueryEscape(acceptedOrgID)+"&response_id="+url.QueryEscape(responseID)+"&status=acknowledged", nil)
+	acknowledgedReportListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(acknowledgedReportListRec, acknowledgedReportListReq)
+	if acknowledgedReportListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, acknowledgedReportListRec.Code, acknowledgedReportListRec.Body.String())
+	}
+	reportListResp = secureCellFederationIncidentReportListResponse{}
+	if err := json.Unmarshal(acknowledgedReportListRec.Body.Bytes(), &reportListResp); err != nil {
+		t.Fatalf("unmarshal acknowledged federation incident report list response: %v", err)
+	}
+	if len(reportListResp.Items) != 1 || reportListResp.Items[0].AcknowledgedBy != owner.AgentID() {
+		t.Fatalf("expected one acknowledged federation incident report, got %+v", reportListResp.Items)
+	}
+
+	reportBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-reports/"+reportID+"/bundle", nil)
+	reportBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reportBundleRec, reportBundleReq)
+	if reportBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportBundleRec.Code, reportBundleRec.Body.String())
+	}
+	var reportBundleResp secureCellFederationIncidentReportBundleResponse
+	if err := json.Unmarshal(reportBundleRec.Body.Bytes(), &reportBundleResp); err != nil {
+		t.Fatalf("unmarshal federation incident report bundle response: %v", err)
+	}
+	if reportBundleResp.Result == nil || reportBundleResp.Result.ReportSummary.ReportID != reportID || reportBundleResp.Result.Signature == nil || reportBundleResp.Result.ResponseSummary.ReportCount != 1 {
+		t.Fatalf("expected signed federation incident report bundle, got %+v", reportBundleResp.Result)
+	}
+
+	reportBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-reports/"+reportID+"/bundle/export?format=csv", nil)
+	reportBundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(reportBundleExportRec, reportBundleExportReq)
+	if reportBundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, reportBundleExportRec.Code, reportBundleExportRec.Body.String())
+	}
+	if body := reportBundleExportRec.Body.String(); !strings.Contains(body, reportID) || !strings.Contains(body, responseID) {
+		t.Fatalf("expected federation incident report bundle csv export to include report and response IDs, got %s", body)
+	}
 
 	responseDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+cellID+"/federation/incident-responses/"+responseID, nil)
 	responseDetailRec := httptest.NewRecorder()
@@ -1597,6 +1699,9 @@ func TestSecureCellsHandlers_FederationIncidentBulletinViewsAndAutomatedContainm
 	}
 	if len(trustPackResp.Result.CounterpartyIncidents) != 1 || trustPackResp.Result.CounterpartyIncidents[0].BulletinID != bulletinResp.Result.ID {
 		t.Fatalf("expected trust pack to include imported counterparty incident summary, got %+v", trustPackResp.Result)
+	}
+	if len(trustPackResp.Result.IncidentReports) != 1 || trustPackResp.Result.IncidentReports[0].ReportID != reportID || trustPackResp.Result.IncidentReports[0].Status != securecellsintegration.SecureCellFederationIncidentReportStatusAcknowledged {
+		t.Fatalf("expected trust pack to include acknowledged incident report summary, got %+v", trustPackResp.Result)
 	}
 	verificationByResponse := map[string]bool{}
 	for _, item := range trustPackResp.Result.IncidentVerifications {
@@ -5173,6 +5278,64 @@ func mustMarshalSecureCellFederationIncidentResponseDisputeRequest(t *testing.T,
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell federation incident response dispute request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportPlanRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, dueAt time.Time) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportPlanRequest{
+		ActorIdentity:    mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:    receipt,
+		ReportingParty:   securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Regulator:        "uk-ico",
+		Jurisdiction:     "UK",
+		Framework:        "uk-gdpr",
+		ReportType:       "breach_notification",
+		Summary:          "Counterparty planned regulator notification",
+		Description:      "The counterparty is preparing a regulator-facing notification linked to the bilateral incident response.",
+		RequiredSections: []string{"scope", "impact", "containment"},
+		EvidenceIDs:      []string{"incident-source"},
+		DueAt:            &dueAt,
+		Reason:           "plan coordinated regulator notification",
+		Metadata:         map[string]string{"ticket": "SC-FED-REPORT-PLAN-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report plan request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportSubmitRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportSubmitRequest{
+		ActorIdentity:       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:       receipt,
+		SubmissionReference: "ico-2026-0001",
+		Summary:             "Counterparty submitted regulator notification",
+		Description:         "The counterparty submitted a regulator-ready notification package with scoped evidence.",
+		EvidenceIDs:         []string{evidenceID},
+		Reason:              "submit coordinated regulator notification",
+		Metadata:            map[string]string{"ticket": "SC-FED-REPORT-SUBMIT-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report submit request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportAcknowledgeRequest{
+		ActorIdentity:            mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:            receipt,
+		AcknowledgingParty:       securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		AcknowledgementReference: "local-intake-ack-0001",
+		Reason:                   "acknowledge counterparty regulator notification",
+		Metadata:                 map[string]string{"ticket": "SC-FED-REPORT-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report acknowledge request: %v", err)
 	}
 	return body
 }
