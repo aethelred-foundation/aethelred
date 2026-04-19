@@ -877,16 +877,18 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
-        let base_nonce = next_test_nonce();
+        let first_nonce = next_test_nonce();
+        let second_nonce = next_test_nonce();
+        let third_nonce = next_test_nonce();
 
         // Create multiple transactions
-        let tx1 = Transaction::transfer(sender, recipient, 100, base_nonce)
+        let tx1 = Transaction::transfer(sender, recipient, 100, first_nonce)
             .sign(&keypair)
             .unwrap();
-        let tx2 = Transaction::transfer(sender, recipient, 200, base_nonce + 1)
+        let tx2 = Transaction::transfer(sender, recipient, 200, second_nonce)
             .sign(&keypair)
             .unwrap();
-        let tx3 = Transaction::transfer(sender, recipient, 300, base_nonce + 2)
+        let tx3 = Transaction::transfer(sender, recipient, 300, third_nonce)
             .sign(&keypair)
             .unwrap();
 
@@ -904,14 +906,16 @@ mod tests {
         let keypair = create_test_keypair();
         let sender = Address::from_public_key(keypair.public_key());
         let recipient = Address::from_bytes([0x42; 20], super::super::address::AddressType::User);
-        let nonce = next_test_nonce();
+        let active_nonce = next_test_nonce();
+        let expired_nonce = next_test_nonce();
+        let future_nonce = next_test_nonce();
 
         // Non-expiring transaction
-        let tx1 = Transaction::transfer(sender, recipient, 1000, nonce);
+        let tx1 = Transaction::transfer(sender, recipient, 1000, active_nonce);
         assert!(!tx1.is_expired());
 
         // Expired transaction
-        let tx2 = Transaction::transfer(sender, recipient, 1000, nonce + 1).with_expiry(1);
+        let tx2 = Transaction::transfer(sender, recipient, 1000, expired_nonce).with_expiry(1);
         assert!(tx2.is_expired());
 
         // Future expiry
@@ -920,7 +924,7 @@ mod tests {
             .unwrap()
             .as_secs()
             + 3600;
-        let tx3 = Transaction::transfer(sender, recipient, 1000, nonce + 2).with_expiry(future);
+        let tx3 = Transaction::transfer(sender, recipient, 1000, future_nonce).with_expiry(future);
         assert!(!tx3.is_expired());
     }
 
