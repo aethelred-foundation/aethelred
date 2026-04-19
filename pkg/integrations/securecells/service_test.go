@@ -2930,6 +2930,15 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 	if len(trustPack.Contracts) != 1 || trustPack.Contracts[0].ContractID == "" {
 		t.Fatalf("expected contract projection in trust pack, got %+v", trustPack.Contracts)
 	}
+	if trustPack.Assurance == nil || trustPack.Assurance.Organization.OrganizationID != acceptedOrgID {
+		t.Fatalf("expected assurance summary in trust pack, got %+v", trustPack.Assurance)
+	}
+	if trustPack.Assurance.FindingCount != 1 || trustPack.Assurance.CriticalFindingCount != 1 || len(trustPack.Assurance.Findings) != 1 || trustPack.Assurance.Findings[0].Category != SecureCellFederationAssuranceCategoryCounterpartyAssuranceMissing {
+		t.Fatalf("expected reciprocal-assurance missing finding in baseline trust pack, got %+v", trustPack.Assurance)
+	}
+	if len(trustPack.CounterpartyAssurance) != 0 {
+		t.Fatalf("expected no imported counterparty assurance in baseline trust pack, got %+v", trustPack.CounterpartyAssurance)
+	}
 	if !trustPack.PortablePackageSigned || !trustPack.PortablePackageAnchored || trustPack.ControlLedgerID == "" || trustPack.ControlLedgerHash == "" {
 		t.Fatalf("expected anchored and signed trust pack evidence, got %+v", trustPack)
 	}
@@ -2970,6 +2979,315 @@ func TestService_FederationOperatorViewsAndTrustArtifacts(t *testing.T) {
 	}
 	if !bundle.PortablePackageSigned || !bundle.PortablePackageAnchored || bundle.ControlLedgerID == "" || bundle.ControlLedgerHash == "" {
 		t.Fatalf("expected portable evidence on invitation bundle, got %+v", bundle)
+	}
+}
+
+func TestService_FederationAssuranceDetectsExposureAndSuspendsContract(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Assurance Cell",
+		Purpose:       "continuous federation assurance",
+		Resource:      "cell:federation-assurance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		ExpectedDID:      participantB.AgentID(),
+		Reason:           "invite counterparty into assurance cell",
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitationID := invited.FederationInvitations[len(invited.FederationInvitations)-1].ID
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitationID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "counterparty_reviewer",
+		},
+		Reason: "counterparty accepted assurance invitation",
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	contractID := accepted.FederationContracts[0].ID
+	orgID := secureCellFederationOrganizationID(secureCellFederationSponsor(participantB))
+
+	drifted, err := service.RevokeMember(ctx, created.CellID, SecureCellMemberTransitionRequest{
+		ParticipantDID: participantB.AgentID(),
+		ActorDID:       owner.AgentID(),
+		Reason:         "federated participant credential revoked",
+		Metadata:       map[string]string{"incident": "FED-ASSURE-01"},
+	})
+	if err != nil {
+		t.Fatalf("RevokeMember failed: %v", err)
+	}
+	if len(drifted.FederationContracts) != 1 || drifted.FederationContracts[0].Status != SecureCellFederationContractStatusActive {
+		t.Fatalf("expected contract to remain active before assurance sweep, got %+v", drifted.FederationContracts)
+	}
+
+	findings, err := service.ListFederationAssuranceFindings(ctx, SecureCellFederationAssuranceFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationAssuranceFindings failed: %v", err)
+	}
+	if len(findings) == 0 {
+		t.Fatal("expected federation assurance findings after participant revoke")
+	}
+	var continuityFound bool
+	for _, finding := range findings {
+		if finding.ContractID == contractID && finding.Category == SecureCellFederationAssuranceCategoryParticipantContinuity && finding.Severity == SecureCellFederationAssuranceSeverityCritical && finding.AutoContainmentEligible {
+			continuityFound = true
+			break
+		}
+	}
+	if !continuityFound {
+		t.Fatalf("expected critical participant continuity finding for contract %q, got %+v", contractID, findings)
+	}
+
+	report, err := service.BuildFederationAssuranceReport(ctx, created.CellID, orgID, SecureCellFederationAssuranceReportOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationAssuranceReport failed: %v", err)
+	}
+	if report == nil || report.Organization.OrganizationID != orgID || report.CriticalFindingCount == 0 || report.AutoContainmentEligibleCount == 0 {
+		t.Fatalf("expected assurance report with critical findings, got %+v", report)
+	}
+
+	sweep, err := service.SweepFederationAssurance(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated federation assurance sweep",
+		Metadata: map[string]string{"ticket": "FED-ASSURE-SWEEP"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationAssurance failed: %v", err)
+	}
+	if sweep.ContractsSuspended != 1 {
+		t.Fatalf("expected one contract suspension from assurance sweep, got %+v", sweep)
+	}
+
+	final, err := service.GetCell(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetCell failed: %v", err)
+	}
+	_, finalContract := findSecureCellFederationContract(final.FederationContracts, contractID)
+	if finalContract == nil || finalContract.Status != SecureCellFederationContractStatusSuspended {
+		t.Fatalf("expected contract %q to be suspended after assurance sweep, got %+v", contractID, final.FederationContracts)
+	}
+
+	actions, err := service.ListFederationAssuranceActions(ctx, SecureCellFederationAssuranceActionFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ContractID:     contractID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationAssuranceActions failed: %v", err)
+	}
+	if len(actions) != 1 || actions[0].ContractID != contractID || actions[0].Action != "suspend_contract" || actions[0].FindingID == "" {
+		t.Fatalf("expected one assurance containment action, got %+v", actions)
+	}
+}
+
+func TestService_FederationCounterpartyAssuranceBundleIntakeAndDriftContainment(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Reciprocal Assurance Cell",
+		Purpose:       "reciprocal federation assurance intake",
+		Resource:      "cell:federation-reciprocal-assurance",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		ExpectedDID:      participantB.AgentID(),
+		Reason:           "invite reciprocal counterparty",
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitationID := invited.FederationInvitations[len(invited.FederationInvitations)-1].ID
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitationID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "counterparty_reviewer",
+		},
+		Reason: "counterparty accepted reciprocal assurance invitation",
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	contractID := accepted.FederationContracts[0].ID
+	orgID := secureCellFederationOrganizationID(secureCellFederationSponsor(participantB))
+
+	bundle, err := service.BuildFederationAssuranceBundle(ctx, created.CellID, orgID, SecureCellFederationAssuranceBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationAssuranceBundle failed: %v", err)
+	}
+	if bundle.Signature == nil || bundle.ContentHash == "" || bundle.Organization.OrganizationID != orgID {
+		t.Fatalf("expected signed federation assurance bundle for org %q, got %+v", orgID, bundle)
+	}
+
+	intakeResult, err := service.IngestFederationAssuranceBundle(ctx, created.CellID, orgID, SecureCellFederationAssuranceIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   bundle,
+		Reason:   "ingest reciprocal assurance bundle",
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationAssuranceBundle valid failed: %v", err)
+	}
+	if len(intakeResult.FederationCounterpartyAssurance) != 1 || intakeResult.FederationCounterpartyAssurance[0].Status != SecureCellFederationCounterpartyAssuranceStatusVerified {
+		t.Fatalf("expected verified counterparty assurance snapshot, got %+v", intakeResult.FederationCounterpartyAssurance)
+	}
+
+	items, err := service.ListFederationCounterpartyAssurance(ctx, SecureCellFederationCounterpartyAssuranceFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Status:         SecureCellFederationCounterpartyAssuranceStatusVerified,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyAssurance verified failed: %v", err)
+	}
+	if len(items) != 1 || items[0].BundleID != bundle.ID || !items[0].Verified {
+		t.Fatalf("expected one verified counterparty assurance summary, got %+v", items)
+	}
+
+	tampered := secureCellCloneFederationAssuranceBundle(*bundle)
+	tampered.Assurance.CriticalFindingCount = 3
+	tampered.Assurance.FindingCount = 3
+	tampered.Assurance.Findings = append(tampered.Assurance.Findings, SecureCellFederationAssuranceFinding{
+		ID:       "tampered-finding",
+		CellID:   tampered.CellID,
+		Severity: SecureCellFederationAssuranceSeverityCritical,
+		Category: SecureCellFederationAssuranceCategoryPolicyDrift,
+		Summary:  "tampered critical finding",
+	})
+
+	invalidResult, err := service.IngestFederationAssuranceBundle(ctx, created.CellID, orgID, SecureCellFederationAssuranceIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   &tampered,
+		Reason:   "ingest tampered reciprocal assurance bundle",
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationAssuranceBundle invalid failed: %v", err)
+	}
+	if len(invalidResult.FederationCounterpartyAssurance) != 2 {
+		t.Fatalf("expected two counterparty assurance snapshots after tampered ingest, got %+v", invalidResult.FederationCounterpartyAssurance)
+	}
+	latestSnapshot := invalidResult.FederationCounterpartyAssurance[len(invalidResult.FederationCounterpartyAssurance)-1]
+	if latestSnapshot.Status != SecureCellFederationCounterpartyAssuranceStatusInvalid || latestSnapshot.Verified {
+		t.Fatalf("expected latest counterparty assurance snapshot to be invalid, got %+v", latestSnapshot)
+	}
+
+	invalidItems, err := service.ListFederationCounterpartyAssurance(ctx, SecureCellFederationCounterpartyAssuranceFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		Status:         SecureCellFederationCounterpartyAssuranceStatusInvalid,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyAssurance invalid failed: %v", err)
+	}
+	if len(invalidItems) != 1 || invalidItems[0].BundleID != tampered.ID || len(invalidItems[0].ContractIDs) == 0 || invalidItems[0].ContractIDs[0] != contractID {
+		t.Fatalf("expected invalid counterparty assurance summary tied to contract %q, got %+v", contractID, invalidItems)
+	}
+
+	findings, err := service.ListFederationAssuranceFindings(ctx, SecureCellFederationAssuranceFilter{
+		CellID:         created.CellID,
+		OrganizationID: orgID,
+		ContractID:     contractID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationAssuranceFindings failed: %v", err)
+	}
+	var invalidFound bool
+	for _, finding := range findings {
+		if finding.ContractID == contractID && finding.Category == SecureCellFederationAssuranceCategoryCounterpartyAssuranceInvalid && finding.Severity == SecureCellFederationAssuranceSeverityCritical && finding.AutoContainmentEligible {
+			invalidFound = true
+			break
+		}
+	}
+	if !invalidFound {
+		t.Fatalf("expected invalid counterparty assurance finding for contract %q, got %+v", contractID, findings)
+	}
+
+	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, orgID, SecureCellFederationOrganizationTrustPackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationOrganizationTrustPack failed: %v", err)
+	}
+	if trustPack.Assurance == nil || trustPack.Assurance.CriticalFindingCount == 0 {
+		t.Fatalf("expected trust pack assurance summary to capture critical findings, got %+v", trustPack.Assurance)
+	}
+	if len(trustPack.CounterpartyAssurance) == 0 || trustPack.CounterpartyAssurance[0].Status != SecureCellFederationCounterpartyAssuranceStatusInvalid {
+		t.Fatalf("expected trust pack to surface invalid counterparty assurance, got %+v", trustPack.CounterpartyAssurance)
+	}
+
+	sweep, err := service.SweepFederationAssurance(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
+		ActorDID: "did:aethelred:automation-sweeper",
+		Reason:   "automated reciprocal assurance sweep",
+		Metadata: map[string]string{"ticket": "FED-RECIPROCAL-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationAssurance failed: %v", err)
+	}
+	if sweep.ContractsSuspended != 1 {
+		t.Fatalf("expected one contract suspension from reciprocal assurance sweep, got %+v", sweep)
+	}
+
+	final, err := service.GetCell(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetCell failed: %v", err)
+	}
+	_, finalContract := findSecureCellFederationContract(final.FederationContracts, contractID)
+	if finalContract == nil || finalContract.Status != SecureCellFederationContractStatusSuspended {
+		t.Fatalf("expected contract %q to be suspended after reciprocal assurance sweep, got %+v", contractID, final.FederationContracts)
 	}
 }
 

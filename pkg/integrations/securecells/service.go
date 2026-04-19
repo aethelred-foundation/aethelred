@@ -83,6 +83,7 @@ const (
 	secureCellFederationContractSuspendAction         = "secure_cells.federation.contract.suspend"
 	secureCellFederationContractResumeAction          = "secure_cells.federation.contract.resume"
 	secureCellFederationContractRevokeAction          = "secure_cells.federation.contract.revoke"
+	secureCellFederationAssuranceIntakeAction         = "secure_cells.federation.assurance.intake"
 	secureCellMemberReleaseAction                     = "secure_cells.member.release"
 	secureCellMemberQuarantineAction                  = "secure_cells.member.quarantine"
 	secureCellMemberRevokeAction                      = "secure_cells.member.revoke"
@@ -160,6 +161,10 @@ type SecureCellSealer interface {
 
 // SecureCellPackageSigner signs a portable control-ledger package.
 type SecureCellPackageSigner func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error
+
+// SecureCellFederationAssuranceBundleSigner signs a portable federation
+// assurance bundle for reciprocal cross-organization exchange.
+type SecureCellFederationAssuranceBundleSigner func(ctx context.Context, bundle *SecureCellFederationAssuranceBundle) error
 
 // SecureCellPackageAnchorer anchors a portable package into external audit or governance state.
 type SecureCellPackageAnchorer func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error
@@ -463,36 +468,37 @@ type SecureCellRequest struct {
 
 // SecureCellResult is the portable buyer-facing outcome for a secure cell.
 type SecureCellResult struct {
-	CellID                     string                                 `json:"cell_id"`
-	Name                       string                                 `json:"name"`
-	Purpose                    string                                 `json:"purpose"`
-	Status                     SecureCellStatus                       `json:"status"`
-	PausedFromStatus           SecureCellStatus                       `json:"paused_from_status,omitempty"`
-	Policy                     SecureCellPolicy                       `json:"policy"`
-	Participants               []SecureCellParticipantState           `json:"participants,omitempty"`
-	FederationOrganizations    []SecureCellFederationOrganization     `json:"federation_organizations,omitempty"`
-	FederationInvitations      []SecureCellFederationInvitation       `json:"federation_invitations,omitempty"`
-	FederationCounterproposals []SecureCellFederationCounterproposal  `json:"federation_counterproposals,omitempty"`
-	FederationContracts        []SecureCellFederationContract         `json:"federation_contracts,omitempty"`
-	Sessions                   []SecureCellSession                    `json:"sessions,omitempty"`
-	Threads                    []SecureCellSessionThread              `json:"threads,omitempty"`
-	Decisions                  []SecureCellThreadDecision             `json:"decisions,omitempty"`
-	DecisionOutcomes           []SecureCellThreadDecisionOutcome      `json:"decision_outcomes,omitempty"`
-	SharedOutputs              []SecureCellSharedOutput               `json:"shared_outputs,omitempty"`
-	SessionExchanges           []SecureCellSessionExchange            `json:"session_exchanges,omitempty"`
-	CreationReceipt            *policy.SignedPolicyReceipt            `json:"creation_receipt,omitempty"`
-	ActivationReceipt          *policy.SignedPolicyReceipt            `json:"activation_receipt,omitempty"`
-	ReceiptChain               *policy.PolicyReceiptChain             `json:"receipt_chain,omitempty"`
-	ConfidentialExecution      *confidential.VerificationSummary      `json:"confidential_execution,omitempty"`
-	ExecutionAttestations      []evidence.Attestation                 `json:"execution_attestations,omitempty"`
-	ExecutionSeal              *evidence.Seal                         `json:"execution_seal,omitempty"`
-	ControlLedger              *evidence.ControlLedger                `json:"control_ledger,omitempty"`
-	PortablePackage            *evidence.PortableControlLedgerPackage `json:"portable_package,omitempty"`
-	Transitions                []SecureCellTransition                 `json:"transitions,omitempty"`
-	RejectionReason            string                                 `json:"rejection_reason,omitempty"`
-	TerminatedAt               *time.Time                             `json:"terminated_at,omitempty"`
-	CreatedAt                  time.Time                              `json:"created_at"`
-	UpdatedAt                  time.Time                              `json:"updated_at"`
+	CellID                          string                                              `json:"cell_id"`
+	Name                            string                                              `json:"name"`
+	Purpose                         string                                              `json:"purpose"`
+	Status                          SecureCellStatus                                    `json:"status"`
+	PausedFromStatus                SecureCellStatus                                    `json:"paused_from_status,omitempty"`
+	Policy                          SecureCellPolicy                                    `json:"policy"`
+	Participants                    []SecureCellParticipantState                        `json:"participants,omitempty"`
+	FederationOrganizations         []SecureCellFederationOrganization                  `json:"federation_organizations,omitempty"`
+	FederationInvitations           []SecureCellFederationInvitation                    `json:"federation_invitations,omitempty"`
+	FederationCounterproposals      []SecureCellFederationCounterproposal               `json:"federation_counterproposals,omitempty"`
+	FederationContracts             []SecureCellFederationContract                      `json:"federation_contracts,omitempty"`
+	FederationCounterpartyAssurance []SecureCellFederationCounterpartyAssuranceSnapshot `json:"federation_counterparty_assurance,omitempty"`
+	Sessions                        []SecureCellSession                                 `json:"sessions,omitempty"`
+	Threads                         []SecureCellSessionThread                           `json:"threads,omitempty"`
+	Decisions                       []SecureCellThreadDecision                          `json:"decisions,omitempty"`
+	DecisionOutcomes                []SecureCellThreadDecisionOutcome                   `json:"decision_outcomes,omitempty"`
+	SharedOutputs                   []SecureCellSharedOutput                            `json:"shared_outputs,omitempty"`
+	SessionExchanges                []SecureCellSessionExchange                         `json:"session_exchanges,omitempty"`
+	CreationReceipt                 *policy.SignedPolicyReceipt                         `json:"creation_receipt,omitempty"`
+	ActivationReceipt               *policy.SignedPolicyReceipt                         `json:"activation_receipt,omitempty"`
+	ReceiptChain                    *policy.PolicyReceiptChain                          `json:"receipt_chain,omitempty"`
+	ConfidentialExecution           *confidential.VerificationSummary                   `json:"confidential_execution,omitempty"`
+	ExecutionAttestations           []evidence.Attestation                              `json:"execution_attestations,omitempty"`
+	ExecutionSeal                   *evidence.Seal                                      `json:"execution_seal,omitempty"`
+	ControlLedger                   *evidence.ControlLedger                             `json:"control_ledger,omitempty"`
+	PortablePackage                 *evidence.PortableControlLedgerPackage              `json:"portable_package,omitempty"`
+	Transitions                     []SecureCellTransition                              `json:"transitions,omitempty"`
+	RejectionReason                 string                                              `json:"rejection_reason,omitempty"`
+	TerminatedAt                    *time.Time                                          `json:"terminated_at,omitempty"`
+	CreatedAt                       time.Time                                           `json:"created_at"`
+	UpdatedAt                       time.Time                                           `json:"updated_at"`
 }
 
 // SecureCellTransition captures one evidence-bearing lifecycle mutation after
@@ -964,27 +970,28 @@ type SecureCellQuarantineExpiry struct {
 
 // ServiceConfig configures Secure Cells v1.
 type ServiceConfig struct {
-	Negotiations            *agent.NegotiationManager
-	PolicyEngine            *policy.PolicyEngine
-	PolicySet               *policy.PolicySet
-	PolicySignerKey         *ecdsa.PrivateKey
-	PolicySigner            string
-	CredentialIssuerKey     *ecdsa.PrivateKey
-	CredentialIssuer        string
-	Sealer                  SecureCellSealer
-	LedgerStore             evidence.ControlLedgerStore
-	WorkflowStore           SecureCellStore
-	Framework               string
-	IncludeVerificationKeys bool
-	PackageSigningKey       ed25519.PrivateKey
-	PackageSigner           string
-	PackageSignerFunc       SecureCellPackageSigner
-	PackageAnchorer         SecureCellPackageAnchorer
-	EventPublisher          SecureCellEventPublisher
-	TrustAnchors            []evidence.PlatformTrustAnchor
-	DecisionSLATemplates    []SecureCellDecisionSLATemplate
-	ConfidentialAttestor    confidential.Attestor
-	ConfidentialPolicy      confidential.Policy
+	Negotiations                    *agent.NegotiationManager
+	PolicyEngine                    *policy.PolicyEngine
+	PolicySet                       *policy.PolicySet
+	PolicySignerKey                 *ecdsa.PrivateKey
+	PolicySigner                    string
+	CredentialIssuerKey             *ecdsa.PrivateKey
+	CredentialIssuer                string
+	Sealer                          SecureCellSealer
+	LedgerStore                     evidence.ControlLedgerStore
+	WorkflowStore                   SecureCellStore
+	Framework                       string
+	IncludeVerificationKeys         bool
+	PackageSigningKey               ed25519.PrivateKey
+	PackageSigner                   string
+	PackageSignerFunc               SecureCellPackageSigner
+	FederationAssuranceBundleSigner SecureCellFederationAssuranceBundleSigner
+	PackageAnchorer                 SecureCellPackageAnchorer
+	EventPublisher                  SecureCellEventPublisher
+	TrustAnchors                    []evidence.PlatformTrustAnchor
+	DecisionSLATemplates            []SecureCellDecisionSLATemplate
+	ConfidentialAttestor            confidential.Attestor
+	ConfidentialPolicy              confidential.Policy
 }
 
 type secureCellRun struct {
@@ -4470,6 +4477,11 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("federation_contracts_active", fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusActive))))
 	ledger.WithMetadata("federation_contracts_suspended", fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusSuspended))))
 	ledger.WithMetadata("federation_contracts_revoked", fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))))
+	ledger.WithMetadata("federation_counterparty_assurance_total", fmt.Sprintf("%d", len(run.result.FederationCounterpartyAssurance)))
+	ledger.WithMetadata("federation_counterparty_assurance_verified", fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusVerified))))
+	ledger.WithMetadata("federation_counterparty_assurance_stale", fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusStale))))
+	ledger.WithMetadata("federation_counterparty_assurance_expired", fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusExpired))))
+	ledger.WithMetadata("federation_counterparty_assurance_invalid", fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusInvalid))))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
 	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
@@ -4526,6 +4538,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationCounterproposalRecordIDs := make([]string, 0, len(run.result.FederationCounterproposals))
 	federationContractRecordIDs := make([]string, 0, len(run.result.FederationContracts))
 	federationContractPolicyReceiptIDs := make([]string, 0, len(run.result.FederationContracts))
+	federationCounterpartyAssuranceRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyAssurance))
 	sessionEvidenceRecordIDs := make([]string, 0, len(run.result.Sessions))
 	threadEvidenceRecordIDs := make([]string, 0, len(run.result.Threads))
 	decisionLifecycleRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4661,8 +4674,11 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" {
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" || transition.Action == "secure_cell.federation_assurance_ingested" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_assurance_ingested" {
+			federationCounterpartyAssuranceRecordIDs = append(federationCounterpartyAssuranceRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.member_quarantined" || transition.Action == "secure_cell.member_revoked" || transition.Action == "secure_cell.member_released" || transition.Action == "secure_cell.quarantine_expired" {
 			containmentRecordIDs = append(containmentRecordIDs, recordID)
@@ -5322,6 +5338,26 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_contracts_suspended":      fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusSuspended))),
 				"federation_contracts_revoked":        fmt.Sprintf("%d", len(secureCellFederationContractsByStatus(run.result.FederationContracts, SecureCellFederationContractStatusRevoked))),
 				"federation_contract_revisions_total": fmt.Sprintf("%d", len(run.result.FederationContracts)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationCounterpartyAssuranceRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-04",
+			ControlName: "Reciprocal Federation Assurance",
+			Description: "Counterparty federation posture bundles are imported, verified, and preserved as policy-bound reciprocal assurance evidence before continued cross-organization collaboration.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: federationCounterpartyAssuranceRecordIDs,
+			},
+			Metadata: map[string]string{
+				"federation_counterparty_assurance_total":    fmt.Sprintf("%d", len(run.result.FederationCounterpartyAssurance)),
+				"federation_counterparty_assurance_verified": fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusVerified))),
+				"federation_counterparty_assurance_stale":    fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusStale))),
+				"federation_counterparty_assurance_expired":  fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusExpired))),
+				"federation_counterparty_assurance_invalid":  fmt.Sprintf("%d", len(secureCellFederationCounterpartyAssuranceByStatus(run.result.FederationCounterpartyAssurance, SecureCellFederationCounterpartyAssuranceStatusInvalid))),
 			},
 		}); err != nil {
 			return nil, err
@@ -6240,7 +6276,7 @@ func transitionRecordType(action string) string {
 	switch action {
 	case "secure_cell.activated", "secure_cell.created", "secure_cell.paused", "secure_cell.resumed", "secure_cell.terminated":
 		return "governance"
-	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_vote_recorded", "secure_cell.federation_counterproposal_escalated", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed":
+	case "secure_cell.member_admitted", "secure_cell.federation_invited", "secure_cell.federation_joined", "secure_cell.federation_invitation_revoked", "secure_cell.federation_counterproposed", "secure_cell.federation_counterproposal_vote_recorded", "secure_cell.federation_counterproposal_escalated", "secure_cell.federation_counterproposal_approved", "secure_cell.federation_counterproposal_rejected", "secure_cell.federation_contract_revoked", "secure_cell.federation_contract_renewed", "secure_cell.federation_contract_suspended", "secure_cell.federation_contract_resumed", "secure_cell.federation_assurance_ingested":
 		return "trust"
 	case "secure_cell.session_started", "secure_cell.session_closed", "secure_cell.session_paused", "secure_cell.session_resumed", "secure_cell.session_member_admitted", "secure_cell.session_member_removed", "secure_cell.session_thread_started", "secure_cell.session_thread_closed", "secure_cell.session_thread_resumed", "secure_cell.session_thread_decision_created", "secure_cell.session_thread_decision_voted", "secure_cell.session_thread_decision_approved", "secure_cell.session_thread_decision_quorum_failed", "secure_cell.session_thread_decision_commented", "secure_cell.session_thread_decision_delegated", "secure_cell.session_thread_decision_escalated", "secure_cell.session_thread_decision_resumed", "secure_cell.session_thread_decision_closed":
 		return "collaboration"
@@ -6283,6 +6319,8 @@ func transitionStageForAction(action string) string {
 		return "suspend_federation_contract"
 	case "secure_cell.federation_contract_resumed":
 		return "resume_federation_contract"
+	case "secure_cell.federation_assurance_ingested":
+		return "intake_federation_assurance"
 	case "secure_cell.session_started":
 		return "start_session"
 	case "secure_cell.session_thread_started":
@@ -7945,6 +7983,7 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationContractSuspendAction,
 				secureCellFederationContractResumeAction,
 				secureCellFederationContractRevokeAction,
+				secureCellFederationAssuranceIntakeAction,
 				secureCellSessionStartAction,
 				secureCellSessionThreadStartAction,
 				secureCellSessionThreadMessageAction,
@@ -8124,6 +8163,15 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_contract_revoke_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "revoke_federation_contract"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_assurance_intake_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "intake_federation_assurance"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -8433,6 +8481,8 @@ func actionForStage(stage string) string {
 		return secureCellFederationContractResumeAction
 	case "revoke_federation_contract":
 		return secureCellFederationContractRevokeAction
+	case "intake_federation_assurance":
+		return secureCellFederationAssuranceIntakeAction
 	case "start_session":
 		return secureCellSessionStartAction
 	case "start_session_thread":

@@ -180,6 +180,8 @@ type SecureCellFederationOrganizationTrustPack struct {
 	Invitations             []SecureCellFederationInvitationSummary `json:"invitations,omitempty"`
 	Counterproposals        []SecureCellFederationCounterproposalSummary `json:"counterproposals,omitempty"`
 	Contracts               []SecureCellFederationContractSummary   `json:"contracts,omitempty"`
+	Assurance               *SecureCellFederationAssuranceReport    `json:"assurance,omitempty"`
+	CounterpartyAssurance   []SecureCellFederationCounterpartyAssuranceSummary `json:"counterparty_assurance,omitempty"`
 	Runtime                 SecureCellFederationOrganizationRuntime `json:"runtime"`
 	Controls                []SecureCellFederationTrustPackControl  `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface   `json:"operator_surfaces,omitempty"`
@@ -299,7 +301,7 @@ func (s *Service) ListFederationInvitations(_ context.Context, filter SecureCell
 
 // BuildFederationOrganizationTrustPack returns the buyer- and operator-facing
 // federation trust pack for one organization in one secure cell.
-func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID string, organizationID string, options SecureCellFederationOrganizationTrustPackOptions) (*SecureCellFederationOrganizationTrustPack, error) {
+func (s *Service) BuildFederationOrganizationTrustPack(ctx context.Context, cellID string, organizationID string, options SecureCellFederationOrganizationTrustPackOptions) (*SecureCellFederationOrganizationTrustPack, error) {
 	if s == nil {
 		return nil, fmt.Errorf("securecells/federation: service is required")
 	}
@@ -351,6 +353,21 @@ func (s *Service) BuildFederationOrganizationTrustPack(_ context.Context, cellID
 		pack.PortablePackageSigned = run.result.PortablePackage.Signature != nil
 		pack.PortablePackageAnchored = run.result.PortablePackage.AuditAnchor != nil
 	}
+	report, err := s.BuildFederationAssuranceReport(ctx, cellID, organizationID, SecureCellFederationAssuranceReportOptions{
+		OperatorSurfaces: cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.Assurance = report
+	counterpartyAssurance, err := s.ListFederationCounterpartyAssurance(ctx, SecureCellFederationCounterpartyAssuranceFilter{
+		CellID:         cellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	pack.CounterpartyAssurance = counterpartyAssurance
 	return pack, nil
 }
 

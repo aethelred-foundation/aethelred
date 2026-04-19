@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -282,6 +283,253 @@ func writeSecureCellFederationAutomationActionExport(w http.ResponseWriter, r *h
 		for _, row := range rows {
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("write federation-automation csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationAssuranceFindingExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationAssuranceFinding) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationAssuranceFindingListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-assurance-findings.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"finding_id",
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"invitation_id",
+			"contract_id",
+			"contract_revision",
+			"contract_status",
+			"participant_did",
+			"expected_did",
+			"credential_id",
+			"severity",
+			"category",
+			"summary",
+			"reason",
+			"suggested_action",
+			"auto_containment_eligible",
+			"session_ids",
+			"artifact_ids",
+			"artifact_type",
+			"detected_at",
+			"metadata",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.ID,
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.InvitationID,
+				item.ContractID,
+				strconv.Itoa(item.ContractRevision),
+				string(item.ContractStatus),
+				item.ParticipantDID,
+				item.ExpectedDID,
+				item.CredentialID,
+				string(item.Severity),
+				string(item.Category),
+				item.Summary,
+				item.Reason,
+				item.SuggestedAction,
+				strconv.FormatBool(item.AutoContainmentEligible),
+				strings.Join(item.SessionIDs, "|"),
+				strings.Join(item.ArtifactIDs, "|"),
+				item.ArtifactType,
+				item.DetectedAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellStringMap(item.Metadata),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-assurance-finding csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationAssuranceActionExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationAssuranceActionRecord) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationAssuranceActionListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-assurance-actions.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"contract_id",
+			"invitation_id",
+			"finding_id",
+			"category",
+			"severity",
+			"action",
+			"trigger",
+			"actor",
+			"automated_actor",
+			"reason",
+			"transition_id",
+			"occurred_at",
+			"metadata",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.ContractID,
+				item.InvitationID,
+				item.FindingID,
+				string(item.Category),
+				string(item.Severity),
+				item.Action,
+				item.Trigger,
+				item.Actor,
+				item.AutomatedActor,
+				item.Reason,
+				item.TransitionID,
+				item.OccurredAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellStringMap(item.Metadata),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-assurance-action csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationAssuranceReportExport(w http.ResponseWriter, r *http.Request, report *securecellsintegration.SecureCellFederationAssuranceReport) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationAssuranceReportResponse{Result: report})
+		return nil
+	case "csv":
+		if report == nil {
+			return fmt.Errorf("federation assurance report is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-assurance-report.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"id",
+			"version",
+			"name",
+			"generated_at",
+			"cell_id",
+			"cell_name",
+			"cell_status",
+			"jurisdiction",
+			"framework",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"organization_status",
+			"runtime_active_participants",
+			"runtime_active_contracts",
+			"finding_count",
+			"critical_finding_count",
+			"warning_finding_count",
+			"info_finding_count",
+			"auto_containment_eligible_count",
+			"require_confidential_compute",
+			"confidential_execution_verified",
+			"confidential_execution_present",
+			"confidential_execution_valid",
+			"confidential_execution_binding_hash",
+			"contract_ids",
+			"finding_ids",
+			"finding_categories",
+			"automation_action_ids",
+			"operator_surface_ids",
+			"operator_surface_paths",
+			"control_ledger_id",
+			"control_ledger_hash",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+		}}
+		rows = append(rows, []string{
+			report.ID,
+			report.Version,
+			report.Name,
+			report.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			report.CellID,
+			report.CellName,
+			string(report.CellStatus),
+			report.Jurisdiction,
+			report.Framework,
+			report.Organization.OrganizationID,
+			report.Organization.SponsorOfRecord,
+			report.Organization.OrganizationName,
+			string(report.Organization.Status),
+			strconv.Itoa(report.Runtime.ActiveParticipantCount),
+			strconv.Itoa(report.Runtime.ActiveContracts),
+			strconv.Itoa(report.FindingCount),
+			strconv.Itoa(report.CriticalFindingCount),
+			strconv.Itoa(report.WarningFindingCount),
+			strconv.Itoa(report.InfoFindingCount),
+			strconv.Itoa(report.AutoContainmentEligibleCount),
+			strconv.FormatBool(report.RequireConfidentialCompute),
+			strconv.FormatBool(report.ConfidentialExecutionVerified),
+			strconv.Itoa(report.ConfidentialExecutionPresent),
+			strconv.Itoa(report.ConfidentialExecutionValid),
+			report.ConfidentialExecutionBindingHash,
+			joinSecureCellFederationContractIDs(report.Contracts),
+			joinSecureCellFederationAssuranceFindingIDs(report.Findings),
+			joinSecureCellFederationAssuranceFindingCategories(report.Findings),
+			joinSecureCellFederationAssuranceActionIDs(report.AutomationActions),
+			joinSecureCellFederationOperatorSurfaceIDs(report.OperatorSurfaces),
+			joinSecureCellFederationOperatorSurfacePaths(report.OperatorSurfaces),
+			report.ControlLedgerID,
+			report.ControlLedgerHash,
+			report.PortablePackageHash,
+			strconv.FormatBool(report.PortablePackageSigned),
+			strconv.FormatBool(report.PortablePackageAnchored),
+		})
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-assurance-report csv row: %w", err)
 			}
 		}
 		writer.Flush()
@@ -753,6 +1001,205 @@ func writeSecureCellFederationContractExport(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func writeSecureCellFederationCounterpartyAssuranceExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationCounterpartyAssuranceSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterpartyAssuranceListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-counterparty-assurance.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"snapshot_id",
+			"bundle_id",
+			"bundle_name",
+			"bundle_version",
+			"status",
+			"verified",
+			"signer",
+			"key_id",
+			"generated_at",
+			"expires_at",
+			"received_at",
+			"contract_ids",
+			"finding_count",
+			"critical_finding_count",
+			"warning_finding_count",
+			"info_finding_count",
+			"control_ledger_id",
+			"control_ledger_hash",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+			"verification_message",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.SnapshotID,
+				item.BundleID,
+				item.BundleName,
+				item.BundleVersion,
+				string(item.Status),
+				strconv.FormatBool(item.Verified),
+				item.Signer,
+				item.KeyID,
+				item.GeneratedAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellOptionalTime(item.ExpiresAt),
+				item.ReceivedAt.UTC().Format(time.RFC3339Nano),
+				strings.Join(item.ContractIDs, "|"),
+				strconv.Itoa(item.FindingCount),
+				strconv.Itoa(item.CriticalFindingCount),
+				strconv.Itoa(item.WarningFindingCount),
+				strconv.Itoa(item.InfoFindingCount),
+				item.ControlLedgerID,
+				item.ControlLedgerHash,
+				item.PortablePackageHash,
+				strconv.FormatBool(item.PortablePackageSigned),
+				strconv.FormatBool(item.PortablePackageAnchored),
+				item.VerificationMessage,
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-counterparty-assurance csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationAssuranceBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationAssuranceBundle) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationAssuranceBundleResponse{Result: bundle})
+		return nil
+	case "csv":
+		if bundle == nil {
+			return fmt.Errorf("federation assurance bundle is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-assurance-bundle.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"id",
+			"version",
+			"name",
+			"generated_at",
+			"expires_at",
+			"cell_id",
+			"cell_name",
+			"cell_status",
+			"jurisdiction",
+			"framework",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"runtime_active_participants",
+			"runtime_active_contracts",
+			"contract_ids",
+			"assurance_finding_count",
+			"assurance_critical_finding_count",
+			"assurance_warning_finding_count",
+			"assurance_info_finding_count",
+			"require_confidential_compute",
+			"confidential_execution_verified",
+			"control_ledger_id",
+			"control_ledger_hash",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+			"content_hash",
+			"signature_algorithm",
+			"signature_signer",
+			"signature_key_id",
+			"signature_signed_at",
+			"operator_surface_ids",
+			"metadata",
+		}}
+		signatureAlgorithm := ""
+		signatureSigner := ""
+		signatureKeyID := ""
+		signatureSignedAt := ""
+		if bundle.Signature != nil {
+			signatureAlgorithm = bundle.Signature.Algorithm
+			signatureSigner = bundle.Signature.Signer
+			signatureKeyID = bundle.Signature.KeyID
+			signatureSignedAt = bundle.Signature.SignedAt.UTC().Format(time.RFC3339Nano)
+		}
+		operatorSurfaceIDs := make([]string, 0, len(bundle.OperatorSurfaces))
+		for _, item := range bundle.OperatorSurfaces {
+			if trimmed := strings.TrimSpace(item.ID); trimmed != "" {
+				operatorSurfaceIDs = append(operatorSurfaceIDs, trimmed)
+			}
+		}
+		rows = append(rows, []string{
+			bundle.ID,
+			bundle.Version,
+			bundle.Name,
+			bundle.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			formatSecureCellOptionalTime(bundle.ExpiresAt),
+			bundle.CellID,
+			bundle.CellName,
+			string(bundle.CellStatus),
+			bundle.Jurisdiction,
+			bundle.Framework,
+			bundle.Organization.OrganizationID,
+			bundle.Organization.SponsorOfRecord,
+			bundle.Organization.OrganizationName,
+			strconv.Itoa(bundle.Runtime.ActiveParticipantCount),
+			strconv.Itoa(bundle.Runtime.ActiveContracts),
+			joinSecureCellFederationContractIDs(bundle.Contracts),
+			strconv.Itoa(bundle.Assurance.FindingCount),
+			strconv.Itoa(bundle.Assurance.CriticalFindingCount),
+			strconv.Itoa(bundle.Assurance.WarningFindingCount),
+			strconv.Itoa(bundle.Assurance.InfoFindingCount),
+			strconv.FormatBool(bundle.Assurance.RequireConfidentialCompute),
+			strconv.FormatBool(bundle.Assurance.ConfidentialExecutionVerified),
+			bundle.ControlLedgerID,
+			bundle.ControlLedgerHash,
+			bundle.PortablePackageHash,
+			strconv.FormatBool(bundle.PortablePackageSigned),
+			strconv.FormatBool(bundle.PortablePackageAnchored),
+			bundle.ContentHash,
+			signatureAlgorithm,
+			signatureSigner,
+			signatureKeyID,
+			signatureSignedAt,
+			strings.Join(operatorSurfaceIDs, "|"),
+			formatSecureCellStringMap(bundle.Metadata),
+		})
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-assurance-bundle csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellFederationTrustPackExport(w http.ResponseWriter, r *http.Request, pack *securecellsintegration.SecureCellFederationOrganizationTrustPack) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -808,6 +1255,16 @@ func writeSecureCellFederationTrustPackExport(w http.ResponseWriter, r *http.Req
 			"invitation_ids",
 			"counterproposal_ids",
 			"contract_ids",
+			"assurance_report_id",
+			"assurance_generated_at",
+			"assurance_finding_count",
+			"assurance_critical_finding_count",
+			"assurance_warning_finding_count",
+			"assurance_info_finding_count",
+			"assurance_auto_containment_eligible_count",
+			"counterparty_assurance_snapshot_ids",
+			"counterparty_assurance_bundle_ids",
+			"counterparty_assurance_statuses",
 			"control_ids",
 			"operator_surface_ids",
 			"operator_surface_paths",
@@ -859,6 +1316,16 @@ func writeSecureCellFederationTrustPackExport(w http.ResponseWriter, r *http.Req
 			joinSecureCellFederationInvitationIDs(pack.Invitations),
 			joinSecureCellFederationCounterproposalIDs(pack.Counterproposals),
 			joinSecureCellFederationContractIDs(pack.Contracts),
+			safeSecureCellFederationAssuranceReportID(pack.Assurance),
+			safeSecureCellFederationAssuranceGeneratedAt(pack.Assurance),
+			strconv.Itoa(safeSecureCellFederationAssuranceFindingCount(pack.Assurance)),
+			strconv.Itoa(safeSecureCellFederationAssuranceCriticalFindingCount(pack.Assurance)),
+			strconv.Itoa(safeSecureCellFederationAssuranceWarningFindingCount(pack.Assurance)),
+			strconv.Itoa(safeSecureCellFederationAssuranceInfoFindingCount(pack.Assurance)),
+			strconv.Itoa(safeSecureCellFederationAssuranceAutoContainmentEligibleCount(pack.Assurance)),
+			joinSecureCellFederationCounterpartyAssuranceSnapshotIDs(pack.CounterpartyAssurance),
+			joinSecureCellFederationCounterpartyAssuranceBundleIDs(pack.CounterpartyAssurance),
+			joinSecureCellFederationCounterpartyAssuranceStatuses(pack.CounterpartyAssurance),
 			joinSecureCellFederationControlIDs(pack.Controls),
 			joinSecureCellFederationOperatorSurfaceIDs(pack.OperatorSurfaces),
 			joinSecureCellFederationOperatorSurfacePaths(pack.OperatorSurfaces),
@@ -1118,6 +1585,22 @@ func formatSecureCellOptionalTime(in *time.Time) string {
 	return in.UTC().Format(time.RFC3339Nano)
 }
 
+func formatSecureCellStringMap(in map[string]string) string {
+	if len(in) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(in))
+	for key := range in {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	items := make([]string, 0, len(keys))
+	for _, key := range keys {
+		items = append(items, key+"="+in[key])
+	}
+	return strings.Join(items, "|")
+}
+
 func joinSecureCellDecisionVoteChoiceStrings(choices []securecellsintegration.SecureCellThreadDecisionVoteChoice) string {
 	out := make([]string, 0, len(choices))
 	for _, choice := range choices {
@@ -1188,6 +1671,66 @@ func joinSecureCellFederationContractIDs(items []securecellsintegration.SecureCe
 	return strings.Join(out, "|")
 }
 
+func joinSecureCellFederationAssuranceFindingIDs(items []securecellsintegration.SecureCellFederationAssuranceFinding) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item.ID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationAssuranceFindingCategories(items []securecellsintegration.SecureCellFederationAssuranceFinding) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(string(item.Category)); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationAssuranceActionIDs(items []securecellsintegration.SecureCellFederationAssuranceActionRecord) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item.TransitionID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationCounterpartyAssuranceSnapshotIDs(items []securecellsintegration.SecureCellFederationCounterpartyAssuranceSummary) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item.SnapshotID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationCounterpartyAssuranceBundleIDs(items []securecellsintegration.SecureCellFederationCounterpartyAssuranceSummary) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item.BundleID); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+func joinSecureCellFederationCounterpartyAssuranceStatuses(items []securecellsintegration.SecureCellFederationCounterpartyAssuranceSummary) string {
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(string(item.Status)); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return strings.Join(out, "|")
+}
+
 func joinSecureCellFederationOperatorSurfaceIDs(items []securecellsintegration.SecureCellFederationOperatorSurface) string {
 	out := make([]string, 0, len(items))
 	for _, item := range items {
@@ -1206,6 +1749,55 @@ func joinSecureCellFederationOperatorSurfacePaths(items []securecellsintegration
 		}
 	}
 	return strings.Join(out, "|")
+}
+
+func safeSecureCellFederationAssuranceReportID(report *securecellsintegration.SecureCellFederationAssuranceReport) string {
+	if report == nil {
+		return ""
+	}
+	return strings.TrimSpace(report.ID)
+}
+
+func safeSecureCellFederationAssuranceGeneratedAt(report *securecellsintegration.SecureCellFederationAssuranceReport) string {
+	if report == nil || report.GeneratedAt.IsZero() {
+		return ""
+	}
+	return report.GeneratedAt.UTC().Format(time.RFC3339Nano)
+}
+
+func safeSecureCellFederationAssuranceFindingCount(report *securecellsintegration.SecureCellFederationAssuranceReport) int {
+	if report == nil {
+		return 0
+	}
+	return report.FindingCount
+}
+
+func safeSecureCellFederationAssuranceCriticalFindingCount(report *securecellsintegration.SecureCellFederationAssuranceReport) int {
+	if report == nil {
+		return 0
+	}
+	return report.CriticalFindingCount
+}
+
+func safeSecureCellFederationAssuranceWarningFindingCount(report *securecellsintegration.SecureCellFederationAssuranceReport) int {
+	if report == nil {
+		return 0
+	}
+	return report.WarningFindingCount
+}
+
+func safeSecureCellFederationAssuranceInfoFindingCount(report *securecellsintegration.SecureCellFederationAssuranceReport) int {
+	if report == nil {
+		return 0
+	}
+	return report.InfoFindingCount
+}
+
+func safeSecureCellFederationAssuranceAutoContainmentEligibleCount(report *securecellsintegration.SecureCellFederationAssuranceReport) int {
+	if report == nil {
+		return 0
+	}
+	return report.AutoContainmentEligibleCount
 }
 
 func secureCellOptionalFederationContractID(contract *securecellsintegration.SecureCellFederationContractSummary) string {
