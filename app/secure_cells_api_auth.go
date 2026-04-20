@@ -19,76 +19,79 @@ import (
 )
 
 const (
-	secureCellsAuthDefaultResource                                         = "cell:regulated-collaboration"
-	secureCellsAuthRequestAction                                           = "secure_cells.create"
-	secureCellsAuthSessionStartAction                                      = "secure_cells.session.start"
-	secureCellsAuthSessionThreadStartAction                                = "secure_cells.session.thread.start"
-	secureCellsAuthSessionShareAction                                      = "secure_cells.session.share"
-	secureCellsAuthSessionExchangeAction                                   = "secure_cells.session.exchange"
-	secureCellsAuthSessionThreadMessageAction                              = "secure_cells.session.thread.message"
-	secureCellsAuthSessionThreadDecisionCreateAction                       = "secure_cells.session.thread.decision.create"
-	secureCellsAuthSessionThreadDecisionVoteAction                         = "secure_cells.session.thread.decision.vote"
-	secureCellsAuthSessionThreadDecisionApproveAction                      = "secure_cells.session.thread.decision.approve"
-	secureCellsAuthSessionThreadDecisionCommentAction                      = "secure_cells.session.thread.decision.comment"
-	secureCellsAuthSessionThreadDecisionContainAction                      = "secure_cells.session.thread.decision.contain_outputs"
-	secureCellsAuthSessionThreadDecisionReleaseAction                      = "secure_cells.session.thread.decision.release_outputs"
-	secureCellsAuthSessionThreadDecisionDelegateAction                     = "secure_cells.session.thread.decision.delegate"
-	secureCellsAuthSessionThreadDecisionEscalateAction                     = "secure_cells.session.thread.decision.escalate"
-	secureCellsAuthSessionThreadDecisionOutcomeBundleCreateAction          = "secure_cells.session.thread.decision.outcome_bundle.create"
-	secureCellsAuthSessionThreadDecisionOutcomeBundleGetAction             = "secure_cells.session.thread.decision.outcome_bundle.get"
-	secureCellsAuthSessionThreadDecisionResumeAction                       = "secure_cells.session.thread.decision.resume"
-	secureCellsAuthSessionThreadDecisionQuarantineAction                   = "secure_cells.session.thread.decision.quarantine"
-	secureCellsAuthSessionThreadDecisionCloseAction                        = "secure_cells.session.thread.decision.close"
-	secureCellsAuthSessionCloseAction                                      = "secure_cells.session.close"
-	secureCellsAuthSessionPauseAction                                      = "secure_cells.session.pause"
-	secureCellsAuthSessionResumeAction                                     = "secure_cells.session.resume"
-	secureCellsAuthSessionQuarantineAction                                 = "secure_cells.session.quarantine"
-	secureCellsAuthSessionThreadCloseAction                                = "secure_cells.session.thread.close"
-	secureCellsAuthSessionThreadResumeAction                               = "secure_cells.session.thread.resume"
-	secureCellsAuthSessionThreadQuarantineAction                           = "secure_cells.session.thread.quarantine"
-	secureCellsAuthSessionMemberAdmitAction                                = "secure_cells.session.member.admit"
-	secureCellsAuthSessionMemberRemoveAction                               = "secure_cells.session.member.remove"
-	secureCellsAuthAdmitAction                                             = "secure_cells.member.admit"
-	secureCellsAuthFederationInviteAction                                  = "secure_cells.federation.invite"
-	secureCellsAuthFederationAcceptAction                                  = "secure_cells.federation.accept"
-	secureCellsAuthFederationRevokeAction                                  = "secure_cells.federation.revoke"
-	secureCellsAuthFederationCounterproposalSubmitAction                   = "secure_cells.federation.counterproposal.submit"
-	secureCellsAuthFederationCounterproposalApproveAction                  = "secure_cells.federation.counterproposal.approve"
-	secureCellsAuthFederationCounterproposalRejectAction                   = "secure_cells.federation.counterproposal.reject"
-	secureCellsAuthFederationContractRenewAction                           = "secure_cells.federation.contract.renew"
-	secureCellsAuthFederationContractSuspendAction                         = "secure_cells.federation.contract.suspend"
-	secureCellsAuthFederationContractResumeAction                          = "secure_cells.federation.contract.resume"
-	secureCellsAuthFederationContractRevokeAction                          = "secure_cells.federation.contract.revoke"
-	secureCellsAuthFederationAssuranceIntakeAction                         = "secure_cells.federation.assurance.intake"
-	secureCellsAuthFederationIncidentPublishAction                         = "secure_cells.federation.incident.publish"
-	secureCellsAuthFederationIncidentResolveAction                         = "secure_cells.federation.incident.resolve"
-	secureCellsAuthFederationIncidentIntakeAction                          = "secure_cells.federation.incident.intake"
-	secureCellsAuthFederationIncidentReportPlanAction                      = "secure_cells.federation.incident.response.report.plan"
-	secureCellsAuthFederationIncidentReportIntakeAction                    = "secure_cells.federation.incident.report.intake"
-	secureCellsAuthFederationIncidentReportAmendAction                     = "secure_cells.federation.incident.report.amend"
-	secureCellsAuthFederationIncidentReportSubmitAction                    = "secure_cells.federation.incident.report.submit"
-	secureCellsAuthFederationIncidentReportAcknowledgeAction               = "secure_cells.federation.incident.report.acknowledge"
-	secureCellsAuthFederationIncidentReportAmendmentIntakeAction           = "secure_cells.federation.incident.report.amendment.intake"
-	secureCellsAuthFederationIncidentReportAmendmentSubmitAction           = "secure_cells.federation.incident.report.amendment.submit"
-	secureCellsAuthFederationIncidentReportAmendmentAcknowledgeAction      = "secure_cells.federation.incident.report.amendment.acknowledge"
-	secureCellsAuthFederationIncidentReportReconciliationAcknowledgeAction = "secure_cells.federation.incident.report.reconciliation.acknowledge"
-	secureCellsAuthFederationIncidentReportReconciliationDisputeAction     = "secure_cells.federation.incident.report.reconciliation.dispute"
-	secureCellsAuthFederationIncidentReportReconciliationResolveAction     = "secure_cells.federation.incident.report.reconciliation.resolve"
-	secureCellsAuthFederationIncidentResponseAcknowledgeAction             = "secure_cells.federation.incident.response.acknowledge"
-	secureCellsAuthFederationIncidentResponseEscalateAction                = "secure_cells.federation.incident.response.escalate"
-	secureCellsAuthFederationIncidentRemediationAttestAction               = "secure_cells.federation.incident.response.attest_remediation"
-	secureCellsAuthFederationIncidentRemediationVerifyAction               = "secure_cells.federation.incident.response.verify_remediation"
-	secureCellsAuthFederationIncidentClosureAttestAction                   = "secure_cells.federation.incident.response.attest_closure"
-	secureCellsAuthFederationIncidentResponseDisputeAction                 = "secure_cells.federation.incident.response.dispute"
-	secureCellsAuthReleaseAction                                           = "secure_cells.member.release"
-	secureCellsAuthQuarantineAction                                        = "secure_cells.member.quarantine"
-	secureCellsAuthRevokeAction                                            = "secure_cells.member.revoke"
-	secureCellsAuthExpireAction                                            = "secure_cells.quarantine.expire"
-	secureCellsAuthPauseAction                                             = "secure_cells.pause"
-	secureCellsAuthResumeAction                                            = "secure_cells.resume"
-	secureCellsAuthTerminateAction                                         = "secure_cells.terminate"
-	secureCellsAuthRequiredTool                                            = "secure_cells"
-	secureCellsEnterpriseActionModeBase                                    = "enterprise_policy_receipt"
+	secureCellsAuthDefaultResource                                                  = "cell:regulated-collaboration"
+	secureCellsAuthRequestAction                                                    = "secure_cells.create"
+	secureCellsAuthSessionStartAction                                               = "secure_cells.session.start"
+	secureCellsAuthSessionThreadStartAction                                         = "secure_cells.session.thread.start"
+	secureCellsAuthSessionShareAction                                               = "secure_cells.session.share"
+	secureCellsAuthSessionExchangeAction                                            = "secure_cells.session.exchange"
+	secureCellsAuthSessionThreadMessageAction                                       = "secure_cells.session.thread.message"
+	secureCellsAuthSessionThreadDecisionCreateAction                                = "secure_cells.session.thread.decision.create"
+	secureCellsAuthSessionThreadDecisionVoteAction                                  = "secure_cells.session.thread.decision.vote"
+	secureCellsAuthSessionThreadDecisionApproveAction                               = "secure_cells.session.thread.decision.approve"
+	secureCellsAuthSessionThreadDecisionCommentAction                               = "secure_cells.session.thread.decision.comment"
+	secureCellsAuthSessionThreadDecisionContainAction                               = "secure_cells.session.thread.decision.contain_outputs"
+	secureCellsAuthSessionThreadDecisionReleaseAction                               = "secure_cells.session.thread.decision.release_outputs"
+	secureCellsAuthSessionThreadDecisionDelegateAction                              = "secure_cells.session.thread.decision.delegate"
+	secureCellsAuthSessionThreadDecisionEscalateAction                              = "secure_cells.session.thread.decision.escalate"
+	secureCellsAuthSessionThreadDecisionOutcomeBundleCreateAction                   = "secure_cells.session.thread.decision.outcome_bundle.create"
+	secureCellsAuthSessionThreadDecisionOutcomeBundleGetAction                      = "secure_cells.session.thread.decision.outcome_bundle.get"
+	secureCellsAuthSessionThreadDecisionResumeAction                                = "secure_cells.session.thread.decision.resume"
+	secureCellsAuthSessionThreadDecisionQuarantineAction                            = "secure_cells.session.thread.decision.quarantine"
+	secureCellsAuthSessionThreadDecisionCloseAction                                 = "secure_cells.session.thread.decision.close"
+	secureCellsAuthSessionCloseAction                                               = "secure_cells.session.close"
+	secureCellsAuthSessionPauseAction                                               = "secure_cells.session.pause"
+	secureCellsAuthSessionResumeAction                                              = "secure_cells.session.resume"
+	secureCellsAuthSessionQuarantineAction                                          = "secure_cells.session.quarantine"
+	secureCellsAuthSessionThreadCloseAction                                         = "secure_cells.session.thread.close"
+	secureCellsAuthSessionThreadResumeAction                                        = "secure_cells.session.thread.resume"
+	secureCellsAuthSessionThreadQuarantineAction                                    = "secure_cells.session.thread.quarantine"
+	secureCellsAuthSessionMemberAdmitAction                                         = "secure_cells.session.member.admit"
+	secureCellsAuthSessionMemberRemoveAction                                        = "secure_cells.session.member.remove"
+	secureCellsAuthAdmitAction                                                      = "secure_cells.member.admit"
+	secureCellsAuthFederationInviteAction                                           = "secure_cells.federation.invite"
+	secureCellsAuthFederationAcceptAction                                           = "secure_cells.federation.accept"
+	secureCellsAuthFederationRevokeAction                                           = "secure_cells.federation.revoke"
+	secureCellsAuthFederationCounterproposalSubmitAction                            = "secure_cells.federation.counterproposal.submit"
+	secureCellsAuthFederationCounterproposalApproveAction                           = "secure_cells.federation.counterproposal.approve"
+	secureCellsAuthFederationCounterproposalRejectAction                            = "secure_cells.federation.counterproposal.reject"
+	secureCellsAuthFederationContractRenewAction                                    = "secure_cells.federation.contract.renew"
+	secureCellsAuthFederationContractSuspendAction                                  = "secure_cells.federation.contract.suspend"
+	secureCellsAuthFederationContractResumeAction                                   = "secure_cells.federation.contract.resume"
+	secureCellsAuthFederationContractRevokeAction                                   = "secure_cells.federation.contract.revoke"
+	secureCellsAuthFederationAssuranceIntakeAction                                  = "secure_cells.federation.assurance.intake"
+	secureCellsAuthFederationIncidentPublishAction                                  = "secure_cells.federation.incident.publish"
+	secureCellsAuthFederationIncidentResolveAction                                  = "secure_cells.federation.incident.resolve"
+	secureCellsAuthFederationIncidentIntakeAction                                   = "secure_cells.federation.incident.intake"
+	secureCellsAuthFederationIncidentReportPlanAction                               = "secure_cells.federation.incident.response.report.plan"
+	secureCellsAuthFederationIncidentReportIntakeAction                             = "secure_cells.federation.incident.report.intake"
+	secureCellsAuthFederationIncidentReportAmendAction                              = "secure_cells.federation.incident.report.amend"
+	secureCellsAuthFederationIncidentReportSubmitAction                             = "secure_cells.federation.incident.report.submit"
+	secureCellsAuthFederationIncidentReportAcknowledgeAction                        = "secure_cells.federation.incident.report.acknowledge"
+	secureCellsAuthFederationIncidentReportAmendmentIntakeAction                    = "secure_cells.federation.incident.report.amendment.intake"
+	secureCellsAuthFederationIncidentReportAmendmentSubmitAction                    = "secure_cells.federation.incident.report.amendment.submit"
+	secureCellsAuthFederationIncidentReportAmendmentAcknowledgeAction               = "secure_cells.federation.incident.report.amendment.acknowledge"
+	secureCellsAuthFederationIncidentReportReconciliationAcknowledgeAction          = "secure_cells.federation.incident.report.reconciliation.acknowledge"
+	secureCellsAuthFederationIncidentReportReconciliationDisputeAction              = "secure_cells.federation.incident.report.reconciliation.dispute"
+	secureCellsAuthFederationIncidentReportReconciliationResolveAction              = "secure_cells.federation.incident.report.reconciliation.resolve"
+	secureCellsAuthFederationIncidentReportAmendmentReconciliationAcknowledgeAction = "secure_cells.federation.incident.report.amendment.reconciliation.acknowledge"
+	secureCellsAuthFederationIncidentReportAmendmentReconciliationDisputeAction     = "secure_cells.federation.incident.report.amendment.reconciliation.dispute"
+	secureCellsAuthFederationIncidentReportAmendmentReconciliationResolveAction     = "secure_cells.federation.incident.report.amendment.reconciliation.resolve"
+	secureCellsAuthFederationIncidentResponseAcknowledgeAction                      = "secure_cells.federation.incident.response.acknowledge"
+	secureCellsAuthFederationIncidentResponseEscalateAction                         = "secure_cells.federation.incident.response.escalate"
+	secureCellsAuthFederationIncidentRemediationAttestAction                        = "secure_cells.federation.incident.response.attest_remediation"
+	secureCellsAuthFederationIncidentRemediationVerifyAction                        = "secure_cells.federation.incident.response.verify_remediation"
+	secureCellsAuthFederationIncidentClosureAttestAction                            = "secure_cells.federation.incident.response.attest_closure"
+	secureCellsAuthFederationIncidentResponseDisputeAction                          = "secure_cells.federation.incident.response.dispute"
+	secureCellsAuthReleaseAction                                                    = "secure_cells.member.release"
+	secureCellsAuthQuarantineAction                                                 = "secure_cells.member.quarantine"
+	secureCellsAuthRevokeAction                                                     = "secure_cells.member.revoke"
+	secureCellsAuthExpireAction                                                     = "secure_cells.quarantine.expire"
+	secureCellsAuthPauseAction                                                      = "secure_cells.pause"
+	secureCellsAuthResumeAction                                                     = "secure_cells.resume"
+	secureCellsAuthTerminateAction                                                  = "secure_cells.terminate"
+	secureCellsAuthRequiredTool                                                     = "secure_cells"
+	secureCellsEnterpriseActionModeBase                                             = "enterprise_policy_receipt"
 )
 
 type secureCellAuthContext struct {
@@ -164,6 +167,9 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationIncidentReportReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportReconciliationAcknowledgeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportReconciliationDisputeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportReconciliationResolveRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationResolveRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentResponseAcknowledge(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentResponseAcknowledgeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentResponseEscalate(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentResponseEscalateRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentRemediationAttest(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentRemediationAttestationRequest) (*secureCellAuthContext, error)
@@ -372,6 +378,27 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportRe
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportReconciliationResolve(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportReconciliationResolveRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportAmendmentReconciliationResolveRequest) (*secureCellAuthContext, error) {
 	if req == nil {
 		return a.AuthorizeCreate(r, nil)
 	}
@@ -759,6 +786,24 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportReco
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportReconciliationResolveRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeFederationIncidentReportReconciliationResolve(r, cellID, comparisonKey, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r, cellID, comparisonKey, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r, cellID, comparisonKey, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationResolveRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r, cellID, comparisonKey, req)
 	})
 }
 
@@ -1769,6 +1814,87 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentRepor
 		req.PolicyReceipt,
 		secureCellsAuthFederationIncidentReportReconciliationResolveAction,
 		resourceCandidatesForSecureCellFederationIncidentReportReconciliationAction(cellID, comparisonKey, "resolve"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(comparisonKey) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and comparison key are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident report amendment reconciliation acknowledge request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentReportAmendmentReconciliationAcknowledgeAction,
+		resourceCandidatesForSecureCellFederationIncidentReportAmendmentReconciliationAction(cellID, comparisonKey, "acknowledge"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(comparisonKey) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and comparison key are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident report amendment reconciliation dispute request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentReportAmendmentReconciliationDisputeAction,
+		resourceCandidatesForSecureCellFederationIncidentReportAmendmentReconciliationAction(cellID, comparisonKey, "dispute"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationResolveRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(comparisonKey) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and comparison key are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident report amendment reconciliation resolve request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentReportAmendmentReconciliationResolveAction,
+		resourceCandidatesForSecureCellFederationIncidentReportAmendmentReconciliationAction(cellID, comparisonKey, "resolve"),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
@@ -3234,6 +3360,27 @@ func (app *AethelredApp) authorizeSecureCellFederationIncidentReportReconciliati
 	return app.secureCellAuth.AuthorizeFederationIncidentReportReconciliationResolve(r, cellID, comparisonKey, req)
 }
 
+func (app *AethelredApp) authorizeSecureCellFederationIncidentReportAmendmentReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentReportAmendmentReconciliationAcknowledge(r, cellID, comparisonKey, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentReportAmendmentReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentReportAmendmentReconciliationDispute(r, cellID, comparisonKey, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentReportAmendmentReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentReportAmendmentReconciliationResolveRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentReportAmendmentReconciliationResolve(r, cellID, comparisonKey, req)
+}
+
 func (app *AethelredApp) authorizeSecureCellFederationIncidentResponseAcknowledge(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentResponseAcknowledgeRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, nil
@@ -3557,6 +3704,28 @@ func resourceCandidatesForSecureCellFederationIncidentReportReconciliationAction
 		candidates = append(candidates,
 			secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+comparisonKey+"/"+action,
 			"secure-cell:"+cellID+":federation:incident-report-reconciliation:"+comparisonKey+":"+action,
+		)
+	}
+	return candidates
+}
+
+func resourceCandidatesForSecureCellFederationIncidentReportAmendmentReconciliationAction(cellID, comparisonKey, action string) []string {
+	cellID = strings.TrimSpace(cellID)
+	comparisonKey = strings.TrimSpace(comparisonKey)
+	action = strings.TrimSpace(action)
+	candidates := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		"federation-incident-report-amendment-reconciliation:" + comparisonKey,
+		comparisonKey,
+	}
+	if comparisonKey != "" {
+		candidates = append(candidates, secureCellsItemPrefix+cellID+"/federation/incident-report-amendment-reconciliations/"+comparisonKey)
+	}
+	if comparisonKey != "" && action != "" {
+		candidates = append(candidates,
+			secureCellsItemPrefix+cellID+"/federation/incident-report-amendment-reconciliations/"+comparisonKey+"/"+action,
+			"secure-cell:"+cellID+":federation:incident-report-amendment-reconciliation:"+comparisonKey+":"+action,
 		)
 	}
 	return candidates

@@ -6580,6 +6580,79 @@ func TestSecureCellsHandlers_FederationIncidentReportAmendmentSurfaces(t *testin
 	if body := amendmentReconciliationExportRec.Body.String(); !strings.Contains(body, amendmentID) || !strings.Contains(body, "aligned") {
 		t.Fatalf("expected amendment reconciliation csv export to include amendment and aligned status, got %s", body)
 	}
+
+	amendmentComparisonKey := amendmentReconciliationListResp.Items[0].ComparisonKey
+	amendmentReconciliationAckReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-report-amendment-reconciliations/"+url.PathEscape(amendmentComparisonKey)+"/acknowledge", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest(t, owner, nil)))
+	amendmentReconciliationAckReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	amendmentReconciliationAckRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(amendmentReconciliationAckRec, amendmentReconciliationAckReq)
+	if amendmentReconciliationAckRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationAckRec.Code, amendmentReconciliationAckRec.Body.String())
+	}
+
+	amendmentReconciliationDisputeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-report-amendment-reconciliations/"+url.PathEscape(amendmentComparisonKey)+"/dispute", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationDisputeRequest(t, owner, nil)))
+	amendmentReconciliationDisputeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	amendmentReconciliationDisputeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(amendmentReconciliationDisputeRec, amendmentReconciliationDisputeReq)
+	if amendmentReconciliationDisputeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationDisputeRec.Code, amendmentReconciliationDisputeRec.Body.String())
+	}
+
+	amendmentReconciliationResolveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-report-amendment-reconciliations/"+url.PathEscape(amendmentComparisonKey)+"/resolve", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationResolveRequest(t, owner, nil)))
+	amendmentReconciliationResolveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	amendmentReconciliationResolveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(amendmentReconciliationResolveRec, amendmentReconciliationResolveReq)
+	if amendmentReconciliationResolveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationResolveRec.Code, amendmentReconciliationResolveRec.Body.String())
+	}
+
+	amendmentReconciliationActionListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-amendment-reconciliation-actions?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(amendmentComparisonKey), nil)
+	amendmentReconciliationActionListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationActionListRec, amendmentReconciliationActionListReq)
+	if amendmentReconciliationActionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationActionListRec.Code, amendmentReconciliationActionListRec.Body.String())
+	}
+	var amendmentReconciliationActionListResp secureCellFederationIncidentReportAmendmentReconciliationActionListResponse
+	if err := json.Unmarshal(amendmentReconciliationActionListRec.Body.Bytes(), &amendmentReconciliationActionListResp); err != nil {
+		t.Fatalf("unmarshal incident report amendment reconciliation action list response: %v", err)
+	}
+	if len(amendmentReconciliationActionListResp.Items) != 3 || amendmentReconciliationActionListResp.Items[0].Action != securecellsintegration.SecureCellFederationIncidentReportAmendmentReconciliationActionResolve {
+		t.Fatalf("expected three amendment reconciliation actions ending in resolve, got %+v", amendmentReconciliationActionListResp.Items)
+	}
+
+	amendmentReconciliationActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-amendment-reconciliation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(amendmentComparisonKey)+"&format=csv", nil)
+	amendmentReconciliationActionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationActionExportRec, amendmentReconciliationActionExportReq)
+	if amendmentReconciliationActionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationActionExportRec.Code, amendmentReconciliationActionExportRec.Body.String())
+	}
+	if body := amendmentReconciliationActionExportRec.Body.String(); !strings.Contains(body, "resolve") || !strings.Contains(body, amendmentComparisonKey) {
+		t.Fatalf("expected amendment reconciliation action export to include resolve action and comparison key, got %s", body)
+	}
+
+	amendmentReconciliationBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-report-amendment-reconciliations/"+url.PathEscape(amendmentComparisonKey)+"/bundle", nil)
+	amendmentReconciliationBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationBundleRec, amendmentReconciliationBundleReq)
+	if amendmentReconciliationBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationBundleRec.Code, amendmentReconciliationBundleRec.Body.String())
+	}
+	var amendmentReconciliationBundleResp secureCellFederationIncidentReportAmendmentReconciliationBundleResponse
+	if err := json.Unmarshal(amendmentReconciliationBundleRec.Body.Bytes(), &amendmentReconciliationBundleResp); err != nil {
+		t.Fatalf("unmarshal incident report amendment reconciliation bundle response: %v", err)
+	}
+	if amendmentReconciliationBundleResp.Result == nil || amendmentReconciliationBundleResp.Result.Reconciliation.ReviewStatus != securecellsintegration.SecureCellFederationIncidentReportReviewStatusResolved || len(amendmentReconciliationBundleResp.Result.Actions) != 3 {
+		t.Fatalf("expected resolved amendment reconciliation bundle with three actions, got %+v", amendmentReconciliationBundleResp.Result)
+	}
+
+	amendmentReconciliationBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-report-amendment-reconciliations/"+url.PathEscape(amendmentComparisonKey)+"/bundle/export?format=csv", nil)
+	amendmentReconciliationBundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationBundleExportRec, amendmentReconciliationBundleExportReq)
+	if amendmentReconciliationBundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationBundleExportRec.Code, amendmentReconciliationBundleExportRec.Body.String())
+	}
+	if body := amendmentReconciliationBundleExportRec.Body.String(); !strings.Contains(body, "resolved") || !strings.Contains(body, amendmentComparisonKey) {
+		t.Fatalf("expected amendment reconciliation bundle export to include resolved review state and comparison key, got %s", body)
+	}
 }
 
 func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
@@ -6618,6 +6691,46 @@ func mustMarshalSecureCellFederationIncidentReportReconciliationResolveRequest(t
 	})
 	if err != nil {
 		t.Fatalf("marshal secure cell federation incident report reconciliation resolve request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportAmendmentReconciliationAcknowledgeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "reviewed and accepted reciprocal amendment alignment",
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report amendment reconciliation acknowledge request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationDisputeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportAmendmentReconciliationDisputeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "capture bilateral amendment review dispute",
+		Divergences:   []string{"counterparty amendment requires enhanced bilateral correction notes"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report amendment reconciliation dispute request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentReportAmendmentReconciliationResolveRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportAmendmentReconciliationResolveRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Reason:        "bilateral amendment review completed and dispute closed",
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report amendment reconciliation resolve request: %v", err)
 	}
 	return body
 }

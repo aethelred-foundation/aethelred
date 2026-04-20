@@ -179,6 +179,10 @@ type SecureCellFederationIncidentReportAmendmentReconciliationSummary struct {
 	CounterpartyReceivedAt               *time.Time                                                      `json:"counterparty_received_at,omitempty"`
 	CounterpartySubmissionReference      string                                                          `json:"counterparty_submission_reference,omitempty"`
 	CounterpartyAcknowledgementReference string                                                          `json:"counterparty_acknowledgement_reference,omitempty"`
+	ReviewStatus                         SecureCellFederationIncidentReportReviewStatus                  `json:"review_status,omitempty"`
+	LastReviewedBy                       string                                                          `json:"last_reviewed_by,omitempty"`
+	LastReviewedAt                       *time.Time                                                      `json:"last_reviewed_at,omitempty"`
+	ReviewActionCount                    int                                                             `json:"review_action_count"`
 	Divergences                          []string                                                        `json:"divergences,omitempty"`
 }
 
@@ -571,6 +575,7 @@ func secureCellFederationIncidentReportAmendmentReconciliationSummaryFromRefs(ru
 		item.CounterpartyAcknowledgementReference = strings.TrimSpace(counterparty.Bundle.Amendment.AcknowledgementReference)
 	}
 	item.Status, item.Divergences = secureCellFederationIncidentReportAmendmentReconciliationStatusAndDivergences(local, counterparty)
+	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentReportAmendmentReconciliationReviewState(run, key)
 	return item
 }
 
@@ -835,6 +840,9 @@ func secureCellFederationIncidentReportAmendmentReconciliationDivergentCount(ite
 }
 
 func secureCellFederationIncidentReportAmendmentReconciliationUpdatedAt(item SecureCellFederationIncidentReportAmendmentReconciliationSummary) time.Time {
+	if item.LastReviewedAt != nil && !item.LastReviewedAt.IsZero() {
+		return item.LastReviewedAt.UTC()
+	}
 	if item.CounterpartyReceivedAt != nil {
 		return item.CounterpartyReceivedAt.UTC()
 	}
