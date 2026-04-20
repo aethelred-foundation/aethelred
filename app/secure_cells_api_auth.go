@@ -68,6 +68,7 @@ const (
 	secureCellsAuthFederationIncidentReportAmendAction                     = "secure_cells.federation.incident.report.amend"
 	secureCellsAuthFederationIncidentReportSubmitAction                    = "secure_cells.federation.incident.report.submit"
 	secureCellsAuthFederationIncidentReportAcknowledgeAction               = "secure_cells.federation.incident.report.acknowledge"
+	secureCellsAuthFederationIncidentReportAmendmentIntakeAction           = "secure_cells.federation.incident.report.amendment.intake"
 	secureCellsAuthFederationIncidentReportAmendmentSubmitAction           = "secure_cells.federation.incident.report.amendment.submit"
 	secureCellsAuthFederationIncidentReportAmendmentAcknowledgeAction      = "secure_cells.federation.incident.report.amendment.acknowledge"
 	secureCellsAuthFederationIncidentReportReconciliationAcknowledgeAction = "secure_cells.federation.incident.report.reconciliation.acknowledge"
@@ -154,6 +155,7 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationIncidentIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentBulletinIntakeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportPlan(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentReportPlanRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportBundleIntakeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentReportAmendmentIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportAmendmentBundleIntakeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportAmend(r *http.Request, cellID string, reportID string, req *secureCellFederationIncidentReportAmendRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportSubmit(r *http.Request, cellID string, reportID string, req *secureCellFederationIncidentReportSubmitRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentReportAcknowledge(r *http.Request, cellID string, reportID string, req *secureCellFederationIncidentReportAcknowledgeRequest) (*secureCellAuthContext, error)
@@ -307,6 +309,13 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportPl
 }
 
 func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportIntake(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportBundleIntakeRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentIntake(r *http.Request, _ string, _ string, req *secureCellFederationIncidentReportAmendmentBundleIntakeRequest) (*secureCellAuthContext, error) {
 	if req == nil {
 		return a.AuthorizeCreate(r, nil)
 	}
@@ -696,6 +705,12 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportPlan
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportBundleIntakeRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeFederationIncidentReportIntake(r, cellID, organizationID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportAmendmentBundleIntakeRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentReportAmendmentIntake(r, cellID, organizationID, req)
 	})
 }
 
@@ -1511,6 +1526,33 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentRepor
 		req.PolicyReceipt,
 		secureCellsAuthFederationIncidentReportIntakeAction,
 		resourceCandidatesForSecureCellFederationOrganizationAction(cellID, organizationID, "incident-report-bundles/intake"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentReportAmendmentIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportAmendmentBundleIntakeRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(organizationID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and organization ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident report amendment bundle intake request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentReportAmendmentIntakeAction,
+		resourceCandidatesForSecureCellFederationOrganizationAction(cellID, organizationID, "incident-report-amendment-bundles/intake"),
 		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
 	)
 }
@@ -3127,6 +3169,13 @@ func (app *AethelredApp) authorizeSecureCellFederationIncidentReportIntake(r *ht
 		return nil, nil
 	}
 	return app.secureCellAuth.AuthorizeFederationIncidentReportIntake(r, cellID, organizationID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentReportAmendmentIntake(r *http.Request, cellID string, organizationID string, req *secureCellFederationIncidentReportAmendmentBundleIntakeRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, nil
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentReportAmendmentIntake(r, cellID, organizationID, req)
 }
 
 func (app *AethelredApp) authorizeSecureCellFederationIncidentReportAmend(r *http.Request, cellID string, reportID string, req *secureCellFederationIncidentReportAmendRequest) (*secureCellAuthContext, error) {

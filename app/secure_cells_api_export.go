@@ -2191,6 +2191,120 @@ func writeSecureCellFederationCounterpartyIncidentReportExport(w http.ResponseWr
 	}
 }
 
+func writeSecureCellFederationCounterpartyIncidentReportAmendmentExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationCounterpartyIncidentReportAmendmentSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterpartyIncidentReportAmendmentListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-counterparty-incident-report-amendments.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"snapshot_id",
+			"bundle_id",
+			"bundle_version",
+			"bundle_name",
+			"status",
+			"verified",
+			"signer",
+			"key_id",
+			"contract_ids",
+			"incident_id",
+			"response_id",
+			"report_id",
+			"amendment_id",
+			"sequence",
+			"reporting_party",
+			"regulator",
+			"framework",
+			"report_type",
+			"amendment_status",
+			"changed_sections",
+			"submission_reference",
+			"acknowledgement_reference",
+			"generated_at",
+			"expires_at",
+			"received_at",
+			"control_ledger_id",
+			"control_ledger_hash",
+			"portable_package_hash",
+			"portable_package_signed",
+			"portable_package_anchored",
+			"verification_message",
+			"matched_local_amendment_id",
+			"matched_local_report_id",
+			"matched_local_response_id",
+			"reconciliation_status",
+			"reconciliation_divergence_count",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.SnapshotID,
+				item.BundleID,
+				item.BundleVersion,
+				item.BundleName,
+				string(item.Status),
+				strconv.FormatBool(item.Verified),
+				item.Signer,
+				item.KeyID,
+				strings.Join(item.ContractIDs, "|"),
+				item.IncidentID,
+				item.ResponseID,
+				item.ReportID,
+				item.AmendmentID,
+				strconv.Itoa(item.Sequence),
+				string(item.ReportingParty),
+				item.Regulator,
+				item.Framework,
+				item.ReportType,
+				string(item.AmendmentStatus),
+				strings.Join(item.ChangedSections, "|"),
+				item.SubmissionReference,
+				item.AcknowledgementReference,
+				item.GeneratedAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellOptionalTime(item.ExpiresAt),
+				item.ReceivedAt.UTC().Format(time.RFC3339Nano),
+				item.ControlLedgerID,
+				item.ControlLedgerHash,
+				item.PortablePackageHash,
+				strconv.FormatBool(item.PortablePackageSigned),
+				strconv.FormatBool(item.PortablePackageAnchored),
+				item.VerificationMessage,
+				item.MatchedLocalAmendmentID,
+				item.MatchedLocalReportID,
+				item.MatchedLocalResponseID,
+				string(item.ReconciliationStatus),
+				strconv.Itoa(item.ReconciliationDivergenceCount),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-counterparty-incident-report-amendment csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellFederationIncidentReportAmendmentBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentReportAmendmentBundle) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -2365,6 +2479,108 @@ func writeSecureCellFederationIncidentReportReconciliationExport(w http.Response
 		for _, row := range rows {
 			if err := writer.Write(row); err != nil {
 				return fmt.Errorf("write federation-incident-report-reconciliation csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentReportAmendmentReconciliationExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentReportAmendmentReconciliationSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentReportAmendmentReconciliationListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-report-amendment-reconciliations.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"comparison_key",
+			"incident_id",
+			"regulator",
+			"framework",
+			"report_type",
+			"reporting_party",
+			"status",
+			"local_report_id",
+			"local_response_id",
+			"local_amendment_id",
+			"local_amendment_status",
+			"local_sequence",
+			"local_changed_sections",
+			"local_updated_at",
+			"local_submission_reference",
+			"local_acknowledgement_reference",
+			"counterparty_snapshot_id",
+			"counterparty_bundle_id",
+			"counterparty_report_id",
+			"counterparty_response_id",
+			"counterparty_amendment_id",
+			"counterparty_bundle_status",
+			"counterparty_amendment_status",
+			"counterparty_sequence",
+			"counterparty_changed_sections",
+			"counterparty_generated_at",
+			"counterparty_received_at",
+			"counterparty_submission_reference",
+			"counterparty_acknowledgement_reference",
+			"divergences",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.ComparisonKey,
+				item.IncidentID,
+				item.Regulator,
+				item.Framework,
+				item.ReportType,
+				string(item.ReportingParty),
+				string(item.Status),
+				item.LocalReportID,
+				item.LocalResponseID,
+				item.LocalAmendmentID,
+				string(item.LocalAmendmentStatus),
+				strconv.Itoa(item.LocalSequence),
+				strings.Join(item.LocalChangedSections, "|"),
+				formatSecureCellOptionalTime(item.LocalUpdatedAt),
+				item.LocalSubmissionReference,
+				item.LocalAcknowledgementReference,
+				item.CounterpartySnapshotID,
+				item.CounterpartyBundleID,
+				item.CounterpartyReportID,
+				item.CounterpartyResponseID,
+				item.CounterpartyAmendmentID,
+				string(item.CounterpartyBundleStatus),
+				string(item.CounterpartyAmendmentStatus),
+				strconv.Itoa(item.CounterpartySequence),
+				strings.Join(item.CounterpartyChangedSections, "|"),
+				formatSecureCellOptionalTime(item.CounterpartyGeneratedAt),
+				formatSecureCellOptionalTime(item.CounterpartyReceivedAt),
+				item.CounterpartySubmissionReference,
+				item.CounterpartyAcknowledgementReference,
+				strings.Join(item.Divergences, "|"),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-report-amendment-reconciliation csv row: %w", err)
 			}
 		}
 		writer.Flush()

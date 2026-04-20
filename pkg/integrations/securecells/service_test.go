@@ -5759,6 +5759,60 @@ func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	if len(amended.Transitions) == 0 || len(amendSubmitted.Transitions) == 0 || len(amendAcknowledged.Transitions) == 0 {
 		t.Fatalf("expected amendment lifecycle mutations to append transitions")
 	}
+
+	intakeResult, err := service.IngestFederationIncidentReportAmendmentBundle(ctx, created.CellID, organizationID, SecureCellFederationIncidentReportAmendmentBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   amendmentBundle,
+		Reason:   "ingest reciprocal incident report amendment bundle",
+		Metadata: map[string]string{"ticket": "FED-REPORT-AMEND-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentReportAmendmentBundle failed: %v", err)
+	}
+	if len(intakeResult.FederationCounterpartyIncidentReportAmendments) != 1 || intakeResult.FederationCounterpartyIncidentReportAmendments[0].Status != SecureCellFederationCounterpartyIncidentReportAmendmentStatusVerified || intakeResult.FederationCounterpartyIncidentReportAmendments[0].Bundle.Amendment.ID != amendmentID {
+		t.Fatalf("expected one verified counterparty incident report amendment snapshot, got %+v", intakeResult.FederationCounterpartyIncidentReportAmendments)
+	}
+
+	counterpartyAmendments, err := service.ListFederationCounterpartyIncidentReportAmendments(ctx, SecureCellFederationCounterpartyIncidentReportAmendmentFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		Status:         SecureCellFederationCounterpartyIncidentReportAmendmentStatusVerified,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidentReportAmendments failed: %v", err)
+	}
+	if len(counterpartyAmendments) != 1 || counterpartyAmendments[0].AmendmentID != amendmentID || counterpartyAmendments[0].ReportID != reportID || counterpartyAmendments[0].ReconciliationStatus != SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected one aligned verified counterparty amendment summary, got %+v", counterpartyAmendments)
+	}
+
+	amendmentReconciliations, err := service.ListFederationIncidentReportAmendmentReconciliations(ctx, SecureCellFederationIncidentReportAmendmentReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		IncidentID:     incidentID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendmentReconciliations failed: %v", err)
+	}
+	if len(amendmentReconciliations) != 1 || amendmentReconciliations[0].LocalAmendmentID != amendmentID || amendmentReconciliations[0].LocalReportID != reportID || amendmentReconciliations[0].Status != SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected one aligned incident report amendment reconciliation summary, got %+v", amendmentReconciliations)
+	}
+
+	trustPack, err := service.BuildFederationOrganizationTrustPack(ctx, created.CellID, organizationID, SecureCellFederationOrganizationTrustPackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationOrganizationTrustPack failed: %v", err)
+	}
+	if len(trustPack.CounterpartyIncidentReportAmendments) != 1 || trustPack.CounterpartyIncidentReportAmendments[0].AmendmentID != amendmentID || trustPack.CounterpartyIncidentReportAmendments[0].ReconciliationStatus != SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected trust pack to include aligned imported incident report amendment summary, got %+v", trustPack.CounterpartyIncidentReportAmendments)
+	}
+	if len(trustPack.IncidentReportAmendments) != 1 || trustPack.IncidentReportAmendments[0].AmendmentID != amendmentID || trustPack.IncidentReportAmendments[0].Status != SecureCellFederationIncidentReportAmendmentStatusAcknowledged {
+		t.Fatalf("expected trust pack to include acknowledged local incident report amendment summary, got %+v", trustPack.IncidentReportAmendments)
+	}
+	if len(trustPack.IncidentReportAmendmentReconciliations) != 1 || trustPack.IncidentReportAmendmentReconciliations[0].LocalAmendmentID != amendmentID || trustPack.IncidentReportAmendmentReconciliations[0].Status != SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected trust pack to include aligned incident report amendment reconciliation summary, got %+v", trustPack.IncidentReportAmendmentReconciliations)
+	}
+	if !controlLedgerHasControl(intakeResult.ControlLedger, "CELL-FED-09") {
+		t.Fatalf("expected control ledger to include reciprocal incident report amendment control, got %+v", intakeResult.ControlLedger.Controls)
+	}
 }
 
 func containsStringFold(items []string, want string) bool {

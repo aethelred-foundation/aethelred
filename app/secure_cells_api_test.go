@@ -5551,6 +5551,21 @@ func mustMarshalSecureCellFederationIncidentReportBundleIntakeRequest(t *testing
 	return body
 }
 
+func mustMarshalSecureCellFederationIncidentReportAmendmentBundleIntakeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, bundle *securecellsintegration.SecureCellFederationIncidentReportAmendmentBundle) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentReportAmendmentBundleIntakeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Bundle:        bundle,
+		Reason:        "ingest reciprocal incident report amendment bundle",
+		Metadata:      map[string]string{"ticket": "SC-FED-REPORT-AMEND-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident report amendment bundle intake request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellMemberMutationRequest(t *testing.T, actor *agent.AgentIdentity, participantDID string, reason string, receipt *policy.SignedPolicyReceipt) []byte {
 	return mustMarshalSecureCellMemberMutationRequestWithExpiry(t, actor, participantDID, reason, receipt, nil)
 }
@@ -6508,6 +6523,62 @@ func TestSecureCellsHandlers_FederationIncidentReportAmendmentSurfaces(t *testin
 	}
 	if body := amendBundleExportRec.Body.String(); !strings.Contains(body, amendmentID) || !strings.Contains(body, "report_bundle_hash") {
 		t.Fatalf("expected amendment bundle export to include amendment ID and report linkage, got %s", body)
+	}
+
+	amendBundleIntakeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/organizations/"+organizationID+"/incident-report-amendment-bundles/intake", bytes.NewReader(mustMarshalSecureCellFederationIncidentReportAmendmentBundleIntakeRequest(t, owner, nil, amendBundleResp.Result)))
+	amendBundleIntakeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	amendBundleIntakeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(amendBundleIntakeRec, amendBundleIntakeReq)
+	if amendBundleIntakeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendBundleIntakeRec.Code, amendBundleIntakeRec.Body.String())
+	}
+
+	counterpartyAmendListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterparty-incident-report-amendments?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&status=verified", nil)
+	counterpartyAmendListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyAmendListRec, counterpartyAmendListReq)
+	if counterpartyAmendListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyAmendListRec.Code, counterpartyAmendListRec.Body.String())
+	}
+	var counterpartyAmendListResp secureCellFederationCounterpartyIncidentReportAmendmentListResponse
+	if err := json.Unmarshal(counterpartyAmendListRec.Body.Bytes(), &counterpartyAmendListResp); err != nil {
+		t.Fatalf("unmarshal counterparty incident report amendment list response: %v", err)
+	}
+	if len(counterpartyAmendListResp.Items) != 1 || counterpartyAmendListResp.Items[0].AmendmentID != amendmentID || counterpartyAmendListResp.Items[0].ReconciliationStatus != securecellsintegration.SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected one aligned counterparty incident report amendment summary, got %+v", counterpartyAmendListResp.Items)
+	}
+
+	counterpartyAmendExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterparty-incident-report-amendments/export?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&format=csv", nil)
+	counterpartyAmendExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyAmendExportRec, counterpartyAmendExportReq)
+	if counterpartyAmendExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyAmendExportRec.Code, counterpartyAmendExportRec.Body.String())
+	}
+	if body := counterpartyAmendExportRec.Body.String(); !strings.Contains(body, amendmentID) || !strings.Contains(body, "aligned") {
+		t.Fatalf("expected counterparty incident report amendment csv export to include amendment and aligned status, got %s", body)
+	}
+
+	amendmentReconciliationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-amendment-reconciliations?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&incident_id="+url.QueryEscape(incidentID), nil)
+	amendmentReconciliationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationListRec, amendmentReconciliationListReq)
+	if amendmentReconciliationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationListRec.Code, amendmentReconciliationListRec.Body.String())
+	}
+	var amendmentReconciliationListResp secureCellFederationIncidentReportAmendmentReconciliationListResponse
+	if err := json.Unmarshal(amendmentReconciliationListRec.Body.Bytes(), &amendmentReconciliationListResp); err != nil {
+		t.Fatalf("unmarshal incident report amendment reconciliation list response: %v", err)
+	}
+	if len(amendmentReconciliationListResp.Items) != 1 || amendmentReconciliationListResp.Items[0].LocalAmendmentID != amendmentID || amendmentReconciliationListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentReportAmendmentReconciliationStatusAligned {
+		t.Fatalf("expected one aligned incident report amendment reconciliation summary, got %+v", amendmentReconciliationListResp.Items)
+	}
+
+	amendmentReconciliationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-report-amendment-reconciliations/export?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&format=csv", nil)
+	amendmentReconciliationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(amendmentReconciliationExportRec, amendmentReconciliationExportReq)
+	if amendmentReconciliationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, amendmentReconciliationExportRec.Code, amendmentReconciliationExportRec.Body.String())
+	}
+	if body := amendmentReconciliationExportRec.Body.String(); !strings.Contains(body, amendmentID) || !strings.Contains(body, "aligned") {
+		t.Fatalf("expected amendment reconciliation csv export to include amendment and aligned status, got %s", body)
 	}
 }
 
