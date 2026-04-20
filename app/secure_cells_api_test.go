@@ -6770,6 +6770,30 @@ func TestSecureCellsHandlers_FederationIncidentReportAmendmentSurfaces(t *testin
 	if body := amendmentReconciliationBundleExportRec.Body.String(); !strings.Contains(body, "resolved") || !strings.Contains(body, amendmentComparisonKey) {
 		t.Fatalf("expected amendment reconciliation bundle export to include resolved review state and comparison key, got %s", body)
 	}
+
+	casePackReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	var casePackResp secureCellFederationIncidentCasePackResponse
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal federation incident case pack response: %v", err)
+	}
+	if casePackResp.Result == nil || casePackResp.Result.ResponseSummary.ResponseID != localResponseID || len(casePackResp.Result.AmendmentBundles) != 1 || len(casePackResp.Result.AmendmentReconciliationBundles) != 1 || len(casePackResp.Result.AmendmentReconciliationAttestations) != 3 {
+		t.Fatalf("expected incident case pack with amendment governance artifacts, got %+v", casePackResp.Result)
+	}
+
+	casePackExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack/export?format=csv", nil)
+	casePackExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackExportRec, casePackExportReq)
+	if casePackExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackExportRec.Code, casePackExportRec.Body.String())
+	}
+	if body := casePackExportRec.Body.String(); !strings.Contains(body, localResponseID) || !strings.Contains(body, "-case-pack") {
+		t.Fatalf("expected incident case pack export to include response ID and case-pack artifact ID, got %s", body)
+	}
 }
 
 func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {

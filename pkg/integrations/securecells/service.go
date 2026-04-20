@@ -218,6 +218,10 @@ type SecureCellFederationIncidentReportReconciliationBundleSigner func(ctx conte
 // portable bilateral incident-report amendment reconciliation bundle.
 type SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentReportAmendmentReconciliationBundle) error
 
+// SecureCellFederationIncidentCasePackSigner signs a portable bilateral
+// incident case pack for auditor and operator exchange.
+type SecureCellFederationIncidentCasePackSigner func(ctx context.Context, pack *SecureCellFederationIncidentCasePack) error
+
 // SecureCellPackageAnchorer anchors a portable package into external audit or governance state.
 type SecureCellPackageAnchorer func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error
 
@@ -1053,6 +1057,7 @@ type ServiceConfig struct {
 	FederationIncidentReportAmendmentBundleSigner               SecureCellFederationIncidentReportAmendmentBundleSigner
 	FederationIncidentReportReconciliationBundleSigner          SecureCellFederationIncidentReportReconciliationBundleSigner
 	FederationIncidentReportAmendmentReconciliationBundleSigner SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
+	FederationIncidentCasePackSigner                            SecureCellFederationIncidentCasePackSigner
 	PackageAnchorer                                             SecureCellPackageAnchorer
 	EventPublisher                                              SecureCellEventPublisher
 	TrustAnchors                                                []evidence.PlatformTrustAnchor

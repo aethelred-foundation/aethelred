@@ -722,6 +722,10 @@ type secureCellFederationIncidentResponseBundleResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentResponseBundle `json:"result,omitempty"`
 }
 
+type secureCellFederationIncidentCasePackResponse struct {
+	Result *securecellsintegration.SecureCellFederationIncidentCasePack `json:"result,omitempty"`
+}
+
 type secureCellFederationIncidentReportBundleResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentReportBundle `json:"result,omitempty"`
 }
@@ -957,6 +961,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 				return nil
 			}
 			return securecellsintegration.SignFederationIncidentReportAmendmentReconciliationBundleEd25519(bundle, privateKey, signer, true)
+		},
+		FederationIncidentCasePackSigner: func(ctx context.Context, pack *securecellsintegration.SecureCellFederationIncidentCasePack) error {
+			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
+			if !ok {
+				return nil
+			}
+			return securecellsintegration.SignFederationIncidentCasePackEd25519(pack, privateKey, signer, true)
 		},
 		PackageSignerFunc: func(ctx context.Context, pkg *evidence.PortableControlLedgerPackage) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
@@ -2362,7 +2373,31 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 
 		if strings.Contains(r.URL.Path, "/federation/incident-responses/") {
-			cellID, responseID, err := parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/bundle/export")
+			cellID, responseID, err := parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/case-pack/export")
+			if err == nil {
+				pack, err := app.secureCellService.BuildFederationIncidentCasePack(r.Context(), cellID, responseID, secureCellFederationIncidentCasePackOptions(cellID, responseID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				if err := writeSecureCellFederationIncidentCasePackExport(w, r, pack); err != nil {
+					writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				}
+				return
+			}
+
+			cellID, responseID, err = parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/case-pack")
+			if err == nil {
+				pack, err := app.secureCellService.BuildFederationIncidentCasePack(r.Context(), cellID, responseID, secureCellFederationIncidentCasePackOptions(cellID, responseID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentCasePackResponse{Result: pack})
+				return
+			}
+
+			cellID, responseID, err = parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/bundle/export")
 			if err == nil {
 				bundle, err := app.secureCellService.BuildFederationIncidentResponseBundle(r.Context(), cellID, responseID, secureCellFederationIncidentResponseBundleOptions(cellID, responseID))
 				if err != nil {
@@ -5748,6 +5783,57 @@ func secureCellFederationIncidentResponseBundleOptions(cellID string, responseID
 				Path:        secureCellsCollectionRoute + "/federation/incident-disputes/export?cell_id=" + cellID + "&response_id=" + responseID + "&format=csv",
 				Description: "Export disputes and reopen events linked to this bilateral incident response.",
 				Formats:     []string{"json", "csv"},
+			},
+		},
+	}
+}
+
+func secureCellFederationIncidentCasePackOptions(cellID string, responseID string) securecellsintegration.SecureCellFederationIncidentCasePackOptions {
+	cellID = strings.TrimSpace(cellID)
+	responseID = strings.TrimSpace(responseID)
+	return securecellsintegration.SecureCellFederationIncidentCasePackOptions{
+		OperatorSurfaces: []securecellsintegration.SecureCellFederationOperatorSurface{
+			{
+				ID:          "incident-case-pack",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-responses/" + responseID + "/case-pack",
+				Description: "Retrieve the signed bilateral incident case pack for this response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-case-pack-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-responses/" + responseID + "/case-pack/export?format=csv",
+				Description: "Export the signed bilateral incident case pack for this response.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-response-bundle",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-responses/" + responseID + "/bundle",
+				Description: "Retrieve the signed bilateral incident response bundle for this response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-reports-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-reports?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List regulator-facing incident reports for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-remediations-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-remediations?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List remediation attestations recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-disputes-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-disputes?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List disputes or reopen events recorded for this bilateral response.",
+				Formats:     []string{"json"},
 			},
 		},
 	}

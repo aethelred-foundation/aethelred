@@ -5964,6 +5964,20 @@ func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	if len(reviewedTrustPack.IncidentReportAmendmentReconciliations) != 1 || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewActionCount != 3 || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].CounterpartyAttestationStatus != SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationStatusResolved || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].CounterpartyAttestationCount != 3 {
 		t.Fatalf("expected trust pack amendment reconciliation review state to be resolved with three actions, got %+v", reviewedTrustPack.IncidentReportAmendmentReconciliations)
 	}
+
+	casePack, err := service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack failed: %v", err)
+	}
+	if err := VerifyFederationIncidentCasePack(casePack); err != nil {
+		t.Fatalf("VerifyFederationIncidentCasePack failed: %v", err)
+	}
+	if casePack.ResponseSummary.ResponseID != localResponseID || len(casePack.ReportBundles) != 1 || len(casePack.AmendmentBundles) != 1 || len(casePack.AmendmentReconciliationBundles) != 1 || len(casePack.AmendmentReconciliationAttestations) != 3 || len(casePack.ResponseActions) == 0 {
+		t.Fatalf("expected signed incident case pack with bundled filing governance artifacts, got %+v", casePack)
+	}
+	if len(casePack.ReportReconciliationAutomationActions) != 0 || len(casePack.AmendmentReconciliationAutomationActions) != 1 {
+		t.Fatalf("expected case pack to include amendment automation trail and no report automation actions, got report=%+v amendment=%+v", casePack.ReportReconciliationAutomationActions, casePack.AmendmentReconciliationAutomationActions)
+	}
 	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-10") {
 		t.Fatalf("expected control ledger to include bilateral amendment reconciliation control, got %+v", resolvedReconciliation.ControlLedger.Controls)
 	}

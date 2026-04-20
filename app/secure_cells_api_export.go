@@ -1997,6 +1997,146 @@ func writeSecureCellFederationIncidentResponseBundleExport(w http.ResponseWriter
 	}
 }
 
+func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *http.Request, pack *securecellsintegration.SecureCellFederationIncidentCasePack) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentCasePackResponse{Result: pack})
+		return nil
+	case "csv":
+		if pack == nil {
+			return fmt.Errorf("federation incident case pack is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-case-pack.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
+			"organization_id", "sponsor_of_record", "organization_name", "response_id", "response_status", "incident_id", "source_type",
+			"report_bundle_ids", "report_bundle_count", "amendment_bundle_ids", "amendment_bundle_count",
+			"report_reconciliation_bundle_ids", "report_reconciliation_bundle_count",
+			"amendment_reconciliation_bundle_ids", "amendment_reconciliation_bundle_count",
+			"response_action_count", "remediation_count", "verification_count", "closure_count", "dispute_count",
+			"report_reconciliation_automation_action_count", "amendment_reconciliation_attestation_count", "amendment_reconciliation_automation_action_count",
+			"control_ids", "operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash", "portable_package_hash",
+			"portable_package_signed", "portable_package_anchored", "content_hash", "signature_algorithm", "signature_signer",
+			"signature_key_id", "signature_signed_at", "metadata",
+		}}
+		signatureAlgorithm := ""
+		signatureSigner := ""
+		signatureKeyID := ""
+		signatureSignedAt := ""
+		if pack.Signature != nil {
+			signatureAlgorithm = pack.Signature.Algorithm
+			signatureSigner = pack.Signature.Signer
+			signatureKeyID = pack.Signature.KeyID
+			signatureSignedAt = pack.Signature.SignedAt.UTC().Format(time.RFC3339Nano)
+		}
+		rows = append(rows, []string{
+			pack.ID,
+			pack.Version,
+			pack.Name,
+			pack.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			formatSecureCellOptionalTime(pack.ExpiresAt),
+			pack.CellID,
+			pack.CellName,
+			string(pack.CellStatus),
+			pack.Jurisdiction,
+			pack.Framework,
+			pack.Organization.OrganizationID,
+			pack.Organization.SponsorOfRecord,
+			pack.Organization.OrganizationName,
+			pack.ResponseSummary.ResponseID,
+			string(pack.ResponseSummary.Status),
+			pack.ResponseSummary.IncidentID,
+			string(pack.ResponseSummary.SourceType),
+			joinSecureCellFederationIncidentReportBundleIDs(pack.ReportBundles),
+			strconv.Itoa(len(pack.ReportBundles)),
+			joinSecureCellFederationIncidentReportAmendmentBundleIDs(pack.AmendmentBundles),
+			strconv.Itoa(len(pack.AmendmentBundles)),
+			joinSecureCellFederationIncidentReportReconciliationBundleIDs(pack.ReportReconciliationBundles),
+			strconv.Itoa(len(pack.ReportReconciliationBundles)),
+			joinSecureCellFederationIncidentReportAmendmentReconciliationBundleIDs(pack.AmendmentReconciliationBundles),
+			strconv.Itoa(len(pack.AmendmentReconciliationBundles)),
+			strconv.Itoa(len(pack.ResponseActions)),
+			strconv.Itoa(len(pack.Remediations)),
+			strconv.Itoa(len(pack.Verifications)),
+			strconv.Itoa(len(pack.Closures)),
+			strconv.Itoa(len(pack.Disputes)),
+			strconv.Itoa(len(pack.ReportReconciliationAutomationActions)),
+			strconv.Itoa(len(pack.AmendmentReconciliationAttestations)),
+			strconv.Itoa(len(pack.AmendmentReconciliationAutomationActions)),
+			joinSecureCellFederationControlIDs(pack.Controls),
+			joinSecureCellFederationOperatorSurfaceIDs(pack.OperatorSurfaces),
+			joinSecureCellFederationOperatorSurfacePaths(pack.OperatorSurfaces),
+			pack.ControlLedgerID,
+			pack.ControlLedgerHash,
+			pack.PortablePackageHash,
+			strconv.FormatBool(pack.PortablePackageSigned),
+			strconv.FormatBool(pack.PortablePackageAnchored),
+			pack.ContentHash,
+			signatureAlgorithm,
+			signatureSigner,
+			signatureKeyID,
+			signatureSignedAt,
+			formatSecureCellStringMap(pack.Metadata),
+		})
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-case-pack csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func joinSecureCellFederationIncidentReportBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentReportBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
+}
+
+func joinSecureCellFederationIncidentReportAmendmentBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentReportAmendmentBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
+}
+
+func joinSecureCellFederationIncidentReportReconciliationBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentReportReconciliationBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
+}
+
+func joinSecureCellFederationIncidentReportAmendmentReconciliationBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentReportAmendmentReconciliationBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
+}
+
 func writeSecureCellFederationCounterpartyIncidentExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationCounterpartyIncidentSummary) error {
 	format := secureCellExportFormat(r)
 	switch format {
