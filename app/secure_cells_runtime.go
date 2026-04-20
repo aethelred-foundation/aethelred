@@ -297,6 +297,7 @@ func (s *secureCellExpirySweeper) runSweep() {
 	s.runFederationIncidentSweep(now)
 	s.runFederationIncidentResponseSweep(now)
 	s.runFederationIncidentReportReconciliationSweep(now)
+	s.runFederationIncidentReportAmendmentReconciliationSweep(now)
 }
 
 func (s *secureCellExpirySweeper) runDecisionGovernanceSweep(at time.Time) {
@@ -463,6 +464,34 @@ func (s *secureCellExpirySweeper) runFederationIncidentReportReconciliationSweep
 	}
 	if s.app != nil {
 		s.app.Logger().Info("Secure Cells automated federation-incident-report-reconciliation sweep completed", "result", result)
+	}
+}
+
+func (s *secureCellExpirySweeper) runFederationIncidentReportAmendmentReconciliationSweep(at time.Time) {
+	if s == nil {
+		return
+	}
+	result, ok, err := invokeSecureCellFederationIncidentReportAmendmentReconciliationSweep(s.service, at, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: secureCellAutomatedSweepActor,
+		Reason:   "automated federation incident report amendment reconciliation sweep",
+		Metadata: map[string]string{
+			"sweep_mode":      "automated",
+			"workflow":        "secure_cell",
+			"automation_mode": "federation_incident_report_amendment_reconciliation",
+			"federation_incident_report_amendment_reconciliation_sweep_mode": "automated",
+		},
+	})
+	if err != nil {
+		if s.app != nil {
+			s.app.Logger().Error("Secure Cells automated federation-incident-report-amendment-reconciliation sweep failed", "error", err)
+		}
+		return
+	}
+	if !ok {
+		return
+	}
+	if s.app != nil {
+		s.app.Logger().Info("Secure Cells automated federation-incident-report-amendment-reconciliation sweep completed", "result", result)
 	}
 }
 
@@ -706,6 +735,52 @@ func invokeSecureCellFederationIncidentReportReconciliationSweep(service any, at
 	}
 	var method reflect.Value
 	for _, name := range []string{"SweepFederationIncidentReportReconciliations", "SweepAutomatedFederationIncidentReportReconciliations", "SweepFederationIncidentReportReconciliationAutomation"} {
+		method = value.MethodByName(name)
+		if method.IsValid() {
+			break
+		}
+	}
+	if !method.IsValid() {
+		return nil, false, nil
+	}
+	in := []reflect.Value{
+		reflect.ValueOf(context.Background()),
+		reflect.ValueOf(at.UTC()),
+		reflect.ValueOf(lifecycle),
+	}
+	out := method.Call(in)
+	switch len(out) {
+	case 0:
+		return nil, true, nil
+	case 1:
+		if err, ok := out[0].Interface().(error); ok && err != nil {
+			return nil, true, err
+		}
+		return out[0].Interface(), true, nil
+	default:
+		var result any
+		if out[0].IsValid() {
+			result = out[0].Interface()
+		}
+		if len(out) > 1 {
+			if err, ok := out[1].Interface().(error); ok && err != nil {
+				return result, true, err
+			}
+		}
+		return result, true, nil
+	}
+}
+
+func invokeSecureCellFederationIncidentReportAmendmentReconciliationSweep(service any, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (any, bool, error) {
+	if service == nil {
+		return nil, false, nil
+	}
+	value := reflect.ValueOf(service)
+	if !value.IsValid() {
+		return nil, false, nil
+	}
+	var method reflect.Value
+	for _, name := range []string{"SweepFederationIncidentReportAmendmentReconciliations", "SweepAutomatedFederationIncidentReportAmendmentReconciliations", "SweepFederationIncidentReportAmendmentReconciliationAutomation"} {
 		method = value.MethodByName(name)
 		if method.IsValid() {
 			break

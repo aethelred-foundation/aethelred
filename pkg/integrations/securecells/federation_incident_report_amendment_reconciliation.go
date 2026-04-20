@@ -113,32 +113,33 @@ type SecureCellFederationIncidentReportAmendmentReconciliationBundleSignature st
 // SecureCellFederationIncidentReportAmendmentReconciliationBundle is the signed
 // auditor-facing package for one bilateral amendment reconciliation.
 type SecureCellFederationIncidentReportAmendmentReconciliationBundle struct {
-	ID                      string                                                                    `json:"id"`
-	Version                 string                                                                    `json:"version"`
-	Name                    string                                                                    `json:"name"`
-	GeneratedAt             time.Time                                                                 `json:"generated_at"`
-	ExpiresAt               *time.Time                                                                `json:"expires_at,omitempty"`
-	CellID                  string                                                                    `json:"cell_id"`
-	CellName                string                                                                    `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                                                          `json:"cell_status"`
-	Jurisdiction            string                                                                    `json:"jurisdiction,omitempty"`
-	Framework               string                                                                    `json:"framework,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary                                   `json:"organization"`
-	Reconciliation          SecureCellFederationIncidentReportAmendmentReconciliationSummary          `json:"reconciliation"`
-	LocalAmendment          *SecureCellFederationIncidentReportAmendmentSummary                       `json:"local_amendment,omitempty"`
-	CounterpartyAmendment   *SecureCellFederationCounterpartyIncidentReportAmendmentSummary           `json:"counterparty_amendment,omitempty"`
-	Actions                 []SecureCellFederationIncidentReportAmendmentReconciliationActionRecord   `json:"actions,omitempty"`
-	Contracts               []SecureCellFederationContractSummary                                     `json:"contracts,omitempty"`
-	Controls                []SecureCellFederationTrustPackControl                                    `json:"controls,omitempty"`
-	OperatorSurfaces        []SecureCellFederationOperatorSurface                                     `json:"operator_surfaces,omitempty"`
-	ControlLedgerID         string                                                                    `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                                                    `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                                                    `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                                      `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                                      `json:"portable_package_anchored"`
-	ContentHash             string                                                                    `json:"content_hash,omitempty"`
-	Signature               *SecureCellFederationIncidentReportAmendmentReconciliationBundleSignature `json:"signature,omitempty"`
-	Metadata                map[string]string                                                         `json:"metadata,omitempty"`
+	ID                      string                                                                                   `json:"id"`
+	Version                 string                                                                                   `json:"version"`
+	Name                    string                                                                                   `json:"name"`
+	GeneratedAt             time.Time                                                                                `json:"generated_at"`
+	ExpiresAt               *time.Time                                                                               `json:"expires_at,omitempty"`
+	CellID                  string                                                                                   `json:"cell_id"`
+	CellName                string                                                                                   `json:"cell_name,omitempty"`
+	CellStatus              SecureCellStatus                                                                         `json:"cell_status"`
+	Jurisdiction            string                                                                                   `json:"jurisdiction,omitempty"`
+	Framework               string                                                                                   `json:"framework,omitempty"`
+	Organization            SecureCellFederationOrganizationSummary                                                  `json:"organization"`
+	Reconciliation          SecureCellFederationIncidentReportAmendmentReconciliationSummary                         `json:"reconciliation"`
+	LocalAmendment          *SecureCellFederationIncidentReportAmendmentSummary                                      `json:"local_amendment,omitempty"`
+	CounterpartyAmendment   *SecureCellFederationCounterpartyIncidentReportAmendmentSummary                          `json:"counterparty_amendment,omitempty"`
+	Actions                 []SecureCellFederationIncidentReportAmendmentReconciliationActionRecord                  `json:"actions,omitempty"`
+	Attestations            []SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationRecord `json:"attestations,omitempty"`
+	Contracts               []SecureCellFederationContractSummary                                                    `json:"contracts,omitempty"`
+	Controls                []SecureCellFederationTrustPackControl                                                   `json:"controls,omitempty"`
+	OperatorSurfaces        []SecureCellFederationOperatorSurface                                                    `json:"operator_surfaces,omitempty"`
+	ControlLedgerID         string                                                                                   `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash       string                                                                                   `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash     string                                                                                   `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                                                                     `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                                                                     `json:"portable_package_anchored"`
+	ContentHash             string                                                                                   `json:"content_hash,omitempty"`
+	Signature               *SecureCellFederationIncidentReportAmendmentReconciliationBundleSignature                `json:"signature,omitempty"`
+	Metadata                map[string]string                                                                        `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentReportAmendmentReconciliationBundleOptions lets
@@ -224,6 +225,13 @@ func (s *Service) BuildFederationIncidentReportAmendmentReconciliationBundle(ctx
 	if err != nil {
 		return nil, err
 	}
+	attestations, err := s.ListFederationIncidentReportAmendmentReconciliationCounterpartyAttestations(ctx, SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationFilter{
+		CellID:        cellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	now := time.Now().UTC()
 	expiresAt := now.Add(72 * time.Hour)
@@ -246,6 +254,7 @@ func (s *Service) BuildFederationIncidentReportAmendmentReconciliationBundle(ctx
 		LocalAmendment:        localAmendment,
 		CounterpartyAmendment: counterpartyAmendment,
 		Actions:               append([]SecureCellFederationIncidentReportAmendmentReconciliationActionRecord(nil), actions...),
+		Attestations:          append([]SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationRecord(nil), attestations...),
 		Contracts:             secureCellFederationContractSummariesForOrganization(run, reconciliation.OrganizationID),
 		Controls:              secureCellFederationControlsFromLedger(run.result.ControlLedger),
 		OperatorSurfaces:      cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),

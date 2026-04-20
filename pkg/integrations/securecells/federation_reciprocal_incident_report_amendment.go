@@ -143,47 +143,51 @@ type SecureCellFederationIncidentReportAmendmentReconciliationFilter struct {
 // SecureCellFederationIncidentReportAmendmentReconciliationSummary is the
 // operator-facing alignment view across local and imported amendment state.
 type SecureCellFederationIncidentReportAmendmentReconciliationSummary struct {
-	CellID                               string                                                          `json:"cell_id"`
-	CellName                             string                                                          `json:"cell_name,omitempty"`
-	Jurisdiction                         string                                                          `json:"jurisdiction,omitempty"`
-	CellStatus                           SecureCellStatus                                                `json:"cell_status"`
-	OrganizationID                       string                                                          `json:"organization_id"`
-	SponsorOfRecord                      string                                                          `json:"sponsor_of_record,omitempty"`
-	OrganizationName                     string                                                          `json:"organization_name,omitempty"`
-	ComparisonKey                        string                                                          `json:"comparison_key"`
-	IncidentID                           string                                                          `json:"incident_id,omitempty"`
-	Regulator                            string                                                          `json:"regulator,omitempty"`
-	Framework                            string                                                          `json:"framework,omitempty"`
-	ReportType                           string                                                          `json:"report_type,omitempty"`
-	ReportingParty                       SecureCellFederationIncidentResponseParty                       `json:"reporting_party,omitempty"`
-	Status                               SecureCellFederationIncidentReportAmendmentReconciliationStatus `json:"status"`
-	LocalReportID                        string                                                          `json:"local_report_id,omitempty"`
-	LocalResponseID                      string                                                          `json:"local_response_id,omitempty"`
-	LocalAmendmentID                     string                                                          `json:"local_amendment_id,omitempty"`
-	LocalAmendmentStatus                 SecureCellFederationIncidentReportAmendmentStatus               `json:"local_amendment_status,omitempty"`
-	LocalSequence                        int                                                             `json:"local_sequence"`
-	LocalChangedSections                 []string                                                        `json:"local_changed_sections,omitempty"`
-	LocalUpdatedAt                       *time.Time                                                      `json:"local_updated_at,omitempty"`
-	LocalSubmissionReference             string                                                          `json:"local_submission_reference,omitempty"`
-	LocalAcknowledgementReference        string                                                          `json:"local_acknowledgement_reference,omitempty"`
-	CounterpartySnapshotID               string                                                          `json:"counterparty_snapshot_id,omitempty"`
-	CounterpartyBundleID                 string                                                          `json:"counterparty_bundle_id,omitempty"`
-	CounterpartyReportID                 string                                                          `json:"counterparty_report_id,omitempty"`
-	CounterpartyResponseID               string                                                          `json:"counterparty_response_id,omitempty"`
-	CounterpartyAmendmentID              string                                                          `json:"counterparty_amendment_id,omitempty"`
-	CounterpartyBundleStatus             SecureCellFederationCounterpartyIncidentReportAmendmentStatus   `json:"counterparty_bundle_status,omitempty"`
-	CounterpartyAmendmentStatus          SecureCellFederationIncidentReportAmendmentStatus               `json:"counterparty_amendment_status,omitempty"`
-	CounterpartySequence                 int                                                             `json:"counterparty_sequence"`
-	CounterpartyChangedSections          []string                                                        `json:"counterparty_changed_sections,omitempty"`
-	CounterpartyGeneratedAt              *time.Time                                                      `json:"counterparty_generated_at,omitempty"`
-	CounterpartyReceivedAt               *time.Time                                                      `json:"counterparty_received_at,omitempty"`
-	CounterpartySubmissionReference      string                                                          `json:"counterparty_submission_reference,omitempty"`
-	CounterpartyAcknowledgementReference string                                                          `json:"counterparty_acknowledgement_reference,omitempty"`
-	ReviewStatus                         SecureCellFederationIncidentReportReviewStatus                  `json:"review_status,omitempty"`
-	LastReviewedBy                       string                                                          `json:"last_reviewed_by,omitempty"`
-	LastReviewedAt                       *time.Time                                                      `json:"last_reviewed_at,omitempty"`
-	ReviewActionCount                    int                                                             `json:"review_action_count"`
-	Divergences                          []string                                                        `json:"divergences,omitempty"`
+	CellID                               string                                                                                 `json:"cell_id"`
+	CellName                             string                                                                                 `json:"cell_name,omitempty"`
+	Jurisdiction                         string                                                                                 `json:"jurisdiction,omitempty"`
+	CellStatus                           SecureCellStatus                                                                       `json:"cell_status"`
+	OrganizationID                       string                                                                                 `json:"organization_id"`
+	SponsorOfRecord                      string                                                                                 `json:"sponsor_of_record,omitempty"`
+	OrganizationName                     string                                                                                 `json:"organization_name,omitempty"`
+	ComparisonKey                        string                                                                                 `json:"comparison_key"`
+	IncidentID                           string                                                                                 `json:"incident_id,omitempty"`
+	Regulator                            string                                                                                 `json:"regulator,omitempty"`
+	Framework                            string                                                                                 `json:"framework,omitempty"`
+	ReportType                           string                                                                                 `json:"report_type,omitempty"`
+	ReportingParty                       SecureCellFederationIncidentResponseParty                                              `json:"reporting_party,omitempty"`
+	Status                               SecureCellFederationIncidentReportAmendmentReconciliationStatus                        `json:"status"`
+	LocalReportID                        string                                                                                 `json:"local_report_id,omitempty"`
+	LocalResponseID                      string                                                                                 `json:"local_response_id,omitempty"`
+	LocalAmendmentID                     string                                                                                 `json:"local_amendment_id,omitempty"`
+	LocalAmendmentStatus                 SecureCellFederationIncidentReportAmendmentStatus                                      `json:"local_amendment_status,omitempty"`
+	LocalSequence                        int                                                                                    `json:"local_sequence"`
+	LocalChangedSections                 []string                                                                               `json:"local_changed_sections,omitempty"`
+	LocalUpdatedAt                       *time.Time                                                                             `json:"local_updated_at,omitempty"`
+	LocalSubmissionReference             string                                                                                 `json:"local_submission_reference,omitempty"`
+	LocalAcknowledgementReference        string                                                                                 `json:"local_acknowledgement_reference,omitempty"`
+	CounterpartySnapshotID               string                                                                                 `json:"counterparty_snapshot_id,omitempty"`
+	CounterpartyBundleID                 string                                                                                 `json:"counterparty_bundle_id,omitempty"`
+	CounterpartyReportID                 string                                                                                 `json:"counterparty_report_id,omitempty"`
+	CounterpartyResponseID               string                                                                                 `json:"counterparty_response_id,omitempty"`
+	CounterpartyAmendmentID              string                                                                                 `json:"counterparty_amendment_id,omitempty"`
+	CounterpartyBundleStatus             SecureCellFederationCounterpartyIncidentReportAmendmentStatus                          `json:"counterparty_bundle_status,omitempty"`
+	CounterpartyAmendmentStatus          SecureCellFederationIncidentReportAmendmentStatus                                      `json:"counterparty_amendment_status,omitempty"`
+	CounterpartySequence                 int                                                                                    `json:"counterparty_sequence"`
+	CounterpartyChangedSections          []string                                                                               `json:"counterparty_changed_sections,omitempty"`
+	CounterpartyGeneratedAt              *time.Time                                                                             `json:"counterparty_generated_at,omitempty"`
+	CounterpartyReceivedAt               *time.Time                                                                             `json:"counterparty_received_at,omitempty"`
+	CounterpartySubmissionReference      string                                                                                 `json:"counterparty_submission_reference,omitempty"`
+	CounterpartyAcknowledgementReference string                                                                                 `json:"counterparty_acknowledgement_reference,omitempty"`
+	ReviewStatus                         SecureCellFederationIncidentReportReviewStatus                                         `json:"review_status,omitempty"`
+	LastReviewedBy                       string                                                                                 `json:"last_reviewed_by,omitempty"`
+	LastReviewedAt                       *time.Time                                                                             `json:"last_reviewed_at,omitempty"`
+	ReviewActionCount                    int                                                                                    `json:"review_action_count"`
+	CounterpartyAttestationStatus        SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationStatus `json:"counterparty_attestation_status,omitempty"`
+	LastCounterpartyAttestedBy           string                                                                                 `json:"last_counterparty_attested_by,omitempty"`
+	LastCounterpartyAttestedAt           *time.Time                                                                             `json:"last_counterparty_attested_at,omitempty"`
+	CounterpartyAttestationCount         int                                                                                    `json:"counterparty_attestation_count"`
+	Divergences                          []string                                                                               `json:"divergences,omitempty"`
 }
 
 type secureCellFederationIncidentReportAmendmentRef struct {
@@ -576,6 +580,7 @@ func secureCellFederationIncidentReportAmendmentReconciliationSummaryFromRefs(ru
 	}
 	item.Status, item.Divergences = secureCellFederationIncidentReportAmendmentReconciliationStatusAndDivergences(local, counterparty)
 	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentReportAmendmentReconciliationReviewState(run, key)
+	item.CounterpartyAttestationStatus, item.LastCounterpartyAttestedBy, item.LastCounterpartyAttestedAt, item.CounterpartyAttestationCount = secureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationState(run, key)
 	return item
 }
 
@@ -840,16 +845,16 @@ func secureCellFederationIncidentReportAmendmentReconciliationDivergentCount(ite
 }
 
 func secureCellFederationIncidentReportAmendmentReconciliationUpdatedAt(item SecureCellFederationIncidentReportAmendmentReconciliationSummary) time.Time {
-	if item.LastReviewedAt != nil && !item.LastReviewedAt.IsZero() {
-		return item.LastReviewedAt.UTC()
+	var updatedAt time.Time
+	for _, candidate := range []*time.Time{item.LastCounterpartyAttestedAt, item.LastReviewedAt, item.CounterpartyReceivedAt, item.LocalUpdatedAt, item.CounterpartyGeneratedAt} {
+		if candidate == nil || candidate.IsZero() {
+			continue
+		}
+		if updatedAt.IsZero() || candidate.UTC().After(updatedAt) {
+			updatedAt = candidate.UTC()
+		}
 	}
-	if item.CounterpartyReceivedAt != nil {
-		return item.CounterpartyReceivedAt.UTC()
-	}
-	if item.LocalUpdatedAt != nil {
-		return item.LocalUpdatedAt.UTC()
-	}
-	return time.Time{}
+	return updatedAt
 }
 
 func secureCellFederationIncidentReportAmendmentTotal(items []SecureCellFederationIncidentReport) int {

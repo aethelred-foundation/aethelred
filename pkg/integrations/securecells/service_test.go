@@ -5834,6 +5834,98 @@ func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 		t.Fatalf("DisputeFederationIncidentReportAmendmentReconciliation failed: %v", err)
 	}
 
+	reconciliationsAfterDispute, err := service.ListFederationIncidentReportAmendmentReconciliations(ctx, SecureCellFederationIncidentReportAmendmentReconciliationFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendmentReconciliations after dispute failed: %v", err)
+	}
+	if len(reconciliationsAfterDispute) != 1 || reconciliationsAfterDispute[0].LastReviewedAt == nil {
+		t.Fatalf("expected one disputed amendment reconciliation with review timestamp, got %+v", reconciliationsAfterDispute)
+	}
+	ackOverdueAt := reconciliationsAfterDispute[0].LastReviewedAt.UTC().Add(secureCellFederationIncidentReportAmendmentReconciliationCounterpartyAckSLA + time.Hour)
+	overdueAmendmentReconciliations, err := service.ListOverdueFederationIncidentReportAmendmentReconciliations(ctx, SecureCellOverdueFederationIncidentReportAmendmentReconciliationFilter{
+		CellID:            created.CellID,
+		OrganizationID:    organizationID,
+		ComparisonKey:     comparisonKey,
+		ReviewStatus:      SecureCellFederationIncidentReportReviewStatusDisputed,
+		AttestationStatus: SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationStatusUnattested,
+		Before:            &ackOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentReportAmendmentReconciliations failed: %v", err)
+	}
+	if len(overdueAmendmentReconciliations) != 1 || overdueAmendmentReconciliations[0].AutomationAction != "escalate_counterparty" {
+		t.Fatalf("expected one overdue amendment reconciliation queued for escalation, got %+v", overdueAmendmentReconciliations)
+	}
+
+	sweepActor := "did:aethelred:automation-sweeper"
+	amendmentSweep, err := service.SweepFederationIncidentReportAmendmentReconciliations(ctx, ackOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated amendment reconciliation escalation sweep",
+		Metadata: map[string]string{"ticket": "FED-REPORT-AMEND-RECON-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentReportAmendmentReconciliations failed: %v", err)
+	}
+	if amendmentSweep.ReconciliationsEscalated != 1 {
+		t.Fatalf("expected one escalated amendment reconciliation, got %+v", amendmentSweep)
+	}
+
+	automationActions, err := service.ListFederationIncidentReportAmendmentReconciliationAutomationActions(ctx, SecureCellFederationIncidentReportAmendmentReconciliationAutomationActionFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendmentReconciliationAutomationActions failed: %v", err)
+	}
+	if len(automationActions) != 1 || automationActions[0].Action != "secure_cell.federation_incident_report_amendment_reconciliation_escalated" || automationActions[0].AutomatedActor != sweepActor {
+		t.Fatalf("expected one automated escalation action, got %+v", automationActions)
+	}
+
+	acknowledgedCounterpartyReconciliation, err := service.AcknowledgeFederationIncidentReportAmendmentReconciliationDispute(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAcknowledgeRequest{
+		ActorDID:              participantB.AgentID(),
+		CounterpartyReference: "counterparty-amendment-dispute-ack-0001",
+		Reason:                "counterparty acknowledged bilateral amendment dispute",
+		Metadata:              map[string]string{"ticket": "FED-REPORT-AMEND-RECON-ATT-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentReportAmendmentReconciliationDispute failed: %v", err)
+	}
+
+	correctedReconciliation, err := service.AttestFederationIncidentReportAmendmentReconciliationCorrection(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportAmendmentReconciliationCorrectionAttestationRequest{
+		ActorDID:               participantB.AgentID(),
+		CounterpartySnapshotID: amendmentReconciliations[0].CounterpartySnapshotID,
+		CounterpartyReference:  "counterparty-amendment-correction-0001",
+		Reason:                 "counterparty attested corrected amendment package",
+		Metadata:               map[string]string{"ticket": "FED-REPORT-AMEND-RECON-ATT-CORRECT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentReportAmendmentReconciliationCorrection failed: %v", err)
+	}
+
+	resolvedCounterpartyReconciliation, err := service.AttestFederationIncidentReportAmendmentReconciliationResolution(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportAmendmentReconciliationResolutionAttestationRequest{
+		ActorDID:              participantB.AgentID(),
+		CounterpartyReference: "counterparty-amendment-resolution-0001",
+		Reason:                "counterparty attested bilateral amendment dispute resolution",
+		Metadata:              map[string]string{"ticket": "FED-REPORT-AMEND-RECON-ATT-RESOLVE-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentReportAmendmentReconciliationResolution failed: %v", err)
+	}
+
+	attestations, err := service.ListFederationIncidentReportAmendmentReconciliationCounterpartyAttestations(ctx, SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentReportAmendmentReconciliationCounterpartyAttestations failed: %v", err)
+	}
+	if len(attestations) != 3 || attestations[0].AttestationStatus != SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationStatusResolved || attestations[0].Attestation != SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationResolve {
+		t.Fatalf("expected three amendment reconciliation counterparty attestations ending in resolution, got %+v", attestations)
+	}
+
 	resolvedReconciliation, err := service.ResolveFederationIncidentReportAmendmentReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentReportAmendmentReconciliationResolveRequest{
 		ActorDID: owner.AgentID(),
 		Reason:   "bilateral amendment review completed and dispute closed",
@@ -5861,7 +5953,7 @@ func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	if err := VerifyFederationIncidentReportAmendmentReconciliationBundle(reconciliationBundle); err != nil {
 		t.Fatalf("VerifyFederationIncidentReportAmendmentReconciliationBundle failed: %v", err)
 	}
-	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || len(reconciliationBundle.Actions) != 3 {
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 {
 		t.Fatalf("expected resolved amendment reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
 	}
 
@@ -5869,13 +5961,16 @@ func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildFederationOrganizationTrustPack after amendment reconciliation review failed: %v", err)
 	}
-	if len(reviewedTrustPack.IncidentReportAmendmentReconciliations) != 1 || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewActionCount != 3 {
+	if len(reviewedTrustPack.IncidentReportAmendmentReconciliations) != 1 || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewStatus != SecureCellFederationIncidentReportReviewStatusResolved || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].ReviewActionCount != 3 || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].CounterpartyAttestationStatus != SecureCellFederationIncidentReportAmendmentReconciliationCounterpartyAttestationStatusResolved || reviewedTrustPack.IncidentReportAmendmentReconciliations[0].CounterpartyAttestationCount != 3 {
 		t.Fatalf("expected trust pack amendment reconciliation review state to be resolved with three actions, got %+v", reviewedTrustPack.IncidentReportAmendmentReconciliations)
 	}
 	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-10") {
 		t.Fatalf("expected control ledger to include bilateral amendment reconciliation control, got %+v", resolvedReconciliation.ControlLedger.Controls)
 	}
-	if len(acknowledgedReconciliation.Transitions) == 0 || len(disputedReconciliation.Transitions) == 0 || len(resolvedReconciliation.Transitions) == 0 {
+	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-11") {
+		t.Fatalf("expected control ledger to include bilateral amendment dispute coordination control, got %+v", resolvedReconciliation.ControlLedger.Controls)
+	}
+	if len(acknowledgedReconciliation.Transitions) == 0 || len(disputedReconciliation.Transitions) == 0 || len(acknowledgedCounterpartyReconciliation.Transitions) == 0 || len(correctedReconciliation.Transitions) == 0 || len(resolvedCounterpartyReconciliation.Transitions) == 0 || len(resolvedReconciliation.Transitions) == 0 {
 		t.Fatalf("expected amendment reconciliation lifecycle mutations to append transitions")
 	}
 }
