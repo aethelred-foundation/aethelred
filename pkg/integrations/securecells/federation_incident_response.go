@@ -845,6 +845,10 @@ type SecureCellFederationIncidentDirectiveExtensionSummary struct {
 	ReviewApprovalThreshold    int                                                         `json:"review_approval_threshold"`
 	EligibleReviewerCount      int                                                         `json:"eligible_reviewer_count"`
 	ReviewDelegationCount      int                                                         `json:"review_delegation_count"`
+	ReviewCommitteeMemberCount int                                                         `json:"review_committee_member_count"`
+	ReviewRecordedVoteCount    int                                                         `json:"review_recorded_vote_count"`
+	ReviewOutstandingVotes     int                                                         `json:"review_outstanding_votes"`
+	ReviewMissingQuorumCount   int                                                         `json:"review_missing_quorum_count"`
 	ApproveVoteCount           int                                                         `json:"approve_vote_count"`
 	RejectVoteCount            int                                                         `json:"reject_vote_count"`
 	ReviewThresholdSatisfied   bool                                                        `json:"review_threshold_satisfied"`

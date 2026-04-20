@@ -2013,7 +2013,7 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 		rows := [][]string{{
 			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
 			"organization_id", "sponsor_of_record", "organization_name", "response_id", "response_status", "incident_id", "source_type",
-			"directive_bundle_ids", "directive_bundle_count",
+			"directive_bundle_ids", "directive_bundle_count", "directive_extension_summary_count",
 			"report_bundle_ids", "report_bundle_count", "amendment_bundle_ids", "amendment_bundle_count",
 			"report_reconciliation_bundle_ids", "report_reconciliation_bundle_count",
 			"amendment_reconciliation_bundle_ids", "amendment_reconciliation_bundle_count",
@@ -2053,6 +2053,7 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 			string(pack.ResponseSummary.SourceType),
 			joinSecureCellFederationIncidentDirectiveBundleIDs(pack.DirectiveBundles),
 			strconv.Itoa(len(pack.DirectiveBundles)),
+			strconv.Itoa(len(pack.DirectiveExtensionSummaries)),
 			joinSecureCellFederationIncidentReportBundleIDs(pack.ReportBundles),
 			strconv.Itoa(len(pack.ReportBundles)),
 			joinSecureCellFederationIncidentReportAmendmentBundleIDs(pack.AmendmentBundles),

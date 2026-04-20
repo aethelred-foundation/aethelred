@@ -664,6 +664,7 @@ func secureCellFederationIncidentDirectiveExtensionPendingDisputeCountAll(respon
 func secureCellFederationIncidentDirectiveExtensionSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, directive SecureCellFederationIncidentDirective, extension SecureCellFederationIncidentDirectiveExtension) SecureCellFederationIncidentDirectiveExtensionSummary {
 	latestDispute := secureCellLatestFederationIncidentDirectiveExtensionDispute(extension)
 	approveVotes, rejectVotes := secureCellFederationIncidentDirectiveExtensionReviewVoteCounts(extension)
+	committeeState := secureCellFederationIncidentDirectiveExtensionReviewCommitteeState(extension)
 	return SecureCellFederationIncidentDirectiveExtensionSummary{
 		CellID:                     strings.TrimSpace(run.result.CellID),
 		CellName:                   strings.TrimSpace(run.result.Name),
@@ -688,6 +689,10 @@ func secureCellFederationIncidentDirectiveExtensionSummaryFromRun(run *secureCel
 		ReviewApprovalThreshold:    secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension),
 		EligibleReviewerCount:      len(uniqueTrimmedStrings(extension.EligibleReviewerDIDs)),
 		ReviewDelegationCount:      len(extension.ReviewDelegations),
+		ReviewCommitteeMemberCount: committeeState.memberCount,
+		ReviewRecordedVoteCount:    committeeState.recordedVoteCount,
+		ReviewOutstandingVotes:     committeeState.outstandingMemberCount,
+		ReviewMissingQuorumCount:   committeeState.missingQuorumCount,
 		ApproveVoteCount:           approveVotes,
 		RejectVoteCount:            rejectVotes,
 		ReviewThresholdSatisfied:   approveVotes >= secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension) || rejectVotes >= secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension),

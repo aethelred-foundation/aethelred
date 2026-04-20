@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -31,6 +32,7 @@ type secureCellFederationIncidentDirectiveExtensionAutomationPlan struct {
 	dueAt            time.Time
 	tierID           string
 	targetDID        string
+	targetSource     string
 	pendingDisputeID string
 }
 
@@ -81,33 +83,57 @@ func (s *Service) ListOverdueFederationIncidentDirectiveExtensions(_ context.Con
 					if !ok {
 						continue
 					}
+					plan, _ := secureCellFederationIncidentDirectiveExtensionAutomationPlanFromRun(run, response, directive, extension, at)
+					committeeState := secureCellFederationIncidentDirectiveExtensionReviewCommitteeState(extension)
+					if extension.Status == SecureCellFederationIncidentDirectiveExtensionStatusDisputed {
+						if dispute := secureCellPendingFederationIncidentDirectiveExtensionDispute(extension); dispute != nil {
+							committeeState = secureCellFederationIncidentDirectiveExtensionDisputeCommitteeState(*dispute)
+						}
+					}
+					automationAction := overdue.automationAction
+					tierID := ""
+					targetDID := ""
+					if plan.action != "" {
+						automationAction = plan.action
+						tierID = plan.tierID
+						targetDID = plan.targetDID
+					}
 					items = append(items, SecureCellOverdueFederationIncidentDirectiveExtension{
-						CellID:           strings.TrimSpace(run.result.CellID),
-						CellName:         strings.TrimSpace(run.result.Name),
-						Jurisdiction:     strings.TrimSpace(run.request.Jurisdiction),
-						CellStatus:       run.result.Status,
-						ResponseID:       strings.TrimSpace(response.ID),
-						OrganizationID:   strings.TrimSpace(response.OrganizationID),
-						SponsorOfRecord:  strings.TrimSpace(response.SponsorOfRecord),
-						IncidentID:       strings.TrimSpace(response.IncidentID),
-						DirectiveID:      strings.TrimSpace(directive.ID),
-						DirectiveTitle:   strings.TrimSpace(directive.Title),
-						DirectiveStatus:  directive.Status,
-						ExtensionID:      strings.TrimSpace(extension.ID),
-						ExtensionStatus:  extension.Status,
-						RequestingParty:  extension.RequestingParty,
-						ReviewingParty:   extension.ReviewingParty,
-						PendingDisputeID: overdue.pendingDisputeID,
-						AutomationAction: overdue.automationAction,
-						OverdueReason:    overdue.overdueReason,
-						PendingAction:    overdue.pendingAction,
-						DueAt:            overdue.dueAt,
-						OverdueSeconds:   int64(at.Sub(overdue.dueAt).Seconds()),
-						CurrentDueAt:     cloneTimePtr(extension.CurrentDueAt),
-						ProposedDueAt:    cloneTimePtr(extension.ProposedDueAt),
-						ReviewDueAt:      cloneTimePtr(overdue.reviewDueAt),
-						ResolutionDueAt:  cloneTimePtr(overdue.resolutionDueAt),
-						UpdatedAt:        extension.UpdatedAt.UTC(),
+						CellID:                      strings.TrimSpace(run.result.CellID),
+						CellName:                    strings.TrimSpace(run.result.Name),
+						Jurisdiction:                strings.TrimSpace(run.request.Jurisdiction),
+						CellStatus:                  run.result.Status,
+						ResponseID:                  strings.TrimSpace(response.ID),
+						OrganizationID:              strings.TrimSpace(response.OrganizationID),
+						SponsorOfRecord:             strings.TrimSpace(response.SponsorOfRecord),
+						IncidentID:                  strings.TrimSpace(response.IncidentID),
+						DirectiveID:                 strings.TrimSpace(directive.ID),
+						DirectiveTitle:              strings.TrimSpace(directive.Title),
+						DirectiveStatus:             directive.Status,
+						ExtensionID:                 strings.TrimSpace(extension.ID),
+						ExtensionStatus:             extension.Status,
+						RequestingParty:             extension.RequestingParty,
+						ReviewingParty:              extension.ReviewingParty,
+						PendingDisputeID:            overdue.pendingDisputeID,
+						AutomationAction:            automationAction,
+						OverdueReason:               overdue.overdueReason,
+						PendingAction:               overdue.pendingAction,
+						CommitteeThreshold:          committeeState.threshold,
+						CommitteeMemberCount:        committeeState.memberCount,
+						CommitteeDelegationCount:    committeeState.delegationCount,
+						CommitteeRecordedVoteCount:  committeeState.recordedVoteCount,
+						CommitteeOutstandingVotes:   committeeState.outstandingMemberCount,
+						CommitteeMissingQuorumCount: committeeState.missingQuorumCount,
+						CommitteeQuorumSatisfied:    committeeState.quorumSatisfied,
+						TierID:                      tierID,
+						TargetDID:                   targetDID,
+						DueAt:                       overdue.dueAt,
+						OverdueSeconds:              int64(at.Sub(overdue.dueAt).Seconds()),
+						CurrentDueAt:                cloneTimePtr(extension.CurrentDueAt),
+						ProposedDueAt:               cloneTimePtr(extension.ProposedDueAt),
+						ReviewDueAt:                 cloneTimePtr(overdue.reviewDueAt),
+						ResolutionDueAt:             cloneTimePtr(overdue.resolutionDueAt),
+						UpdatedAt:                   extension.UpdatedAt.UTC(),
 					})
 				}
 			}
@@ -195,35 +221,42 @@ func (s *Service) ListFederationIncidentDirectiveExtensionAutomationActions(_ co
 				continue
 			}
 			items = append(items, SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord{
-				CellID:               strings.TrimSpace(run.result.CellID),
-				CellName:             strings.TrimSpace(run.result.Name),
-				Jurisdiction:         strings.TrimSpace(run.request.Jurisdiction),
-				CellStatus:           run.result.Status,
-				OrganizationID:       strings.TrimSpace(transition.Metadata["federation_organization_id"]),
-				SponsorOfRecord:      strings.TrimSpace(transition.Metadata["federation_sponsor_of_record"]),
-				IncidentID:           strings.TrimSpace(transition.Metadata["federation_incident_id"]),
-				ResponseID:           strings.TrimSpace(transition.Metadata["federation_incident_response_id"]),
-				DirectiveID:          strings.TrimSpace(transition.Metadata["federation_incident_directive_id"]),
-				DirectiveTitle:       strings.TrimSpace(transition.Metadata["federation_incident_directive_title"]),
-				DirectiveStatus:      SecureCellFederationIncidentDirectiveStatus(strings.TrimSpace(transition.Metadata["federation_incident_directive_status"])),
-				ExtensionID:          strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_id"]),
-				ExtensionStatus:      SecureCellFederationIncidentDirectiveExtensionStatus(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_status"])),
-				PendingDisputeID:     strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_dispute_id"]),
-				PendingAction:        strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_pending_action"]),
-				ContractID:           strings.TrimSpace(transition.Metadata["federation_contract_id"]),
-				ContractStatusBefore: SecureCellFederationContractStatus(strings.TrimSpace(transition.Metadata["federation_contract_status_before"])),
-				ContractStatusAfter:  SecureCellFederationContractStatus(strings.TrimSpace(transition.Metadata["federation_contract_status_after"])),
-				Action:               transition.Action,
-				Trigger:              strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_trigger"]),
-				TierID:               strings.TrimSpace(transition.Metadata["federation_incident_response_tier_id"]),
-				TargetDID:            firstNonEmpty(strings.TrimSpace(transition.Metadata["federation_incident_response_target_did"]), strings.TrimSpace(transition.Metadata["decision_route_target"])),
-				DueAt:                parseSecureCellTransitionDueAtWithKey(transition.Metadata, "federation_incident_directive_extension_due_at"),
-				Actor:                transition.Actor,
-				AutomatedActor:       strings.TrimSpace(transition.Metadata["automated_actor"]),
-				Reason:               strings.TrimSpace(transition.Reason),
-				TransitionID:         strings.TrimSpace(transition.ID),
-				OccurredAt:           occurredAt,
-				Metadata:             cloneStringMap(transition.Metadata),
+				CellID:                      strings.TrimSpace(run.result.CellID),
+				CellName:                    strings.TrimSpace(run.result.Name),
+				Jurisdiction:                strings.TrimSpace(run.request.Jurisdiction),
+				CellStatus:                  run.result.Status,
+				OrganizationID:              strings.TrimSpace(transition.Metadata["federation_organization_id"]),
+				SponsorOfRecord:             strings.TrimSpace(transition.Metadata["federation_sponsor_of_record"]),
+				IncidentID:                  strings.TrimSpace(transition.Metadata["federation_incident_id"]),
+				ResponseID:                  strings.TrimSpace(transition.Metadata["federation_incident_response_id"]),
+				DirectiveID:                 strings.TrimSpace(transition.Metadata["federation_incident_directive_id"]),
+				DirectiveTitle:              strings.TrimSpace(transition.Metadata["federation_incident_directive_title"]),
+				DirectiveStatus:             SecureCellFederationIncidentDirectiveStatus(strings.TrimSpace(transition.Metadata["federation_incident_directive_status"])),
+				ExtensionID:                 strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_id"]),
+				ExtensionStatus:             SecureCellFederationIncidentDirectiveExtensionStatus(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_status"])),
+				PendingDisputeID:            strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_dispute_id"]),
+				PendingAction:               strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_pending_action"]),
+				CommitteeThreshold:          secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_review_threshold", "federation_incident_directive_extension_resolution_threshold"),
+				CommitteeMemberCount:        secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_committee_members"),
+				CommitteeDelegationCount:    secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_delegation_count"),
+				CommitteeRecordedVoteCount:  secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_vote_count"),
+				CommitteeOutstandingVotes:   secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_outstanding_votes"),
+				CommitteeMissingQuorumCount: secureCellMetadataInt(transition.Metadata, "federation_incident_directive_extension_missing_quorum"),
+				CommitteeQuorumSatisfied:    secureCellMetadataBool(transition.Metadata, "federation_incident_directive_extension_quorum_satisfied"),
+				ContractID:                  strings.TrimSpace(transition.Metadata["federation_contract_id"]),
+				ContractStatusBefore:        SecureCellFederationContractStatus(strings.TrimSpace(transition.Metadata["federation_contract_status_before"])),
+				ContractStatusAfter:         SecureCellFederationContractStatus(strings.TrimSpace(transition.Metadata["federation_contract_status_after"])),
+				Action:                      transition.Action,
+				Trigger:                     strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_trigger"]),
+				TierID:                      strings.TrimSpace(transition.Metadata["federation_incident_response_tier_id"]),
+				TargetDID:                   firstNonEmpty(strings.TrimSpace(transition.Metadata["federation_incident_response_target_did"]), strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_delegated_to"]), strings.TrimSpace(transition.Metadata["decision_route_target"])),
+				DueAt:                       parseSecureCellTransitionDueAtWithKey(transition.Metadata, "federation_incident_directive_extension_due_at"),
+				Actor:                       transition.Actor,
+				AutomatedActor:              strings.TrimSpace(transition.Metadata["automated_actor"]),
+				Reason:                      strings.TrimSpace(transition.Reason),
+				TransitionID:                strings.TrimSpace(transition.ID),
+				OccurredAt:                  occurredAt,
+				Metadata:                    cloneStringMap(transition.Metadata),
 			})
 		}
 	}
@@ -283,7 +316,7 @@ func (s *Service) SweepFederationIncidentDirectiveExtensions(ctx context.Context
 					if !ok {
 						continue
 					}
-					if secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run, extension.ID, extension.Status, plan.pendingAction, plan.action) {
+					if secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run, extension.ID, extension.Status, plan.pendingAction, plan.action, plan.targetDID) {
 						continue
 					}
 
@@ -303,14 +336,60 @@ func (s *Service) SweepFederationIncidentDirectiveExtensions(ctx context.Context
 						"federation_sponsor_of_record":                           response.SponsorOfRecord,
 						"federation_incident_id":                                 response.IncidentID,
 					})
+					committeeState := secureCellFederationIncidentDirectiveExtensionReviewCommitteeState(extension)
+					if extension.Status == SecureCellFederationIncidentDirectiveExtensionStatusDisputed {
+						if dispute := secureCellPendingFederationIncidentDirectiveExtensionDispute(extension); dispute != nil {
+							committeeState = secureCellFederationIncidentDirectiveExtensionDisputeCommitteeState(*dispute)
+						}
+					}
+					baseMetadata["federation_incident_directive_extension_delegation_count"] = strconv.Itoa(committeeState.delegationCount)
+					baseMetadata["federation_incident_directive_extension_committee_members"] = strconv.Itoa(committeeState.memberCount)
+					baseMetadata["federation_incident_directive_extension_vote_count"] = strconv.Itoa(committeeState.recordedVoteCount)
+					baseMetadata["federation_incident_directive_extension_outstanding_votes"] = strconv.Itoa(committeeState.outstandingMemberCount)
+					baseMetadata["federation_incident_directive_extension_missing_quorum"] = strconv.Itoa(committeeState.missingQuorumCount)
+					baseMetadata["federation_incident_directive_extension_quorum_satisfied"] = strconv.FormatBool(committeeState.quorumSatisfied)
 					if plan.pendingDisputeID != "" {
 						baseMetadata["federation_incident_directive_extension_dispute_id"] = plan.pendingDisputeID
+					}
+					if plan.targetSource != "" {
+						baseMetadata["federation_incident_directive_extension_target_source"] = plan.targetSource
 					}
 					if automatedActor := strings.TrimSpace(lifecycle.ActorDID); automatedActor != "" && automatedActor != run.request.OwnerIdentity.AgentID() {
 						baseMetadata["automated_actor"] = automatedActor
 					}
 
 					switch plan.action {
+					case "delegate_review_committee":
+						if _, err := s.DelegateFederationIncidentDirectiveExtensionReview(ctx, cellID, extension.ID, SecureCellFederationIncidentDirectiveExtensionDelegationRequest{
+							ActorDID:  run.request.OwnerIdentity.AgentID(),
+							TargetDID: plan.targetDID,
+							Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), plan.reason),
+							Metadata: mergeStringMaps(baseMetadata, map[string]string{
+								"federation_incident_response_tier_id":    plan.tierID,
+								"federation_incident_response_target_did": plan.targetDID,
+							}),
+						}); err != nil {
+							return nil, err
+						}
+						report.CommitteesExpanded++
+						mutatedCells[cellID] = struct{}{}
+					case "delegate_resolution_committee":
+						if plan.pendingDisputeID == "" {
+							continue
+						}
+						if _, err := s.DelegateFederationIncidentDirectiveExtensionDisputeResolution(ctx, cellID, plan.pendingDisputeID, SecureCellFederationIncidentDirectiveExtensionDelegationRequest{
+							ActorDID:  run.request.OwnerIdentity.AgentID(),
+							TargetDID: plan.targetDID,
+							Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), plan.reason),
+							Metadata: mergeStringMaps(baseMetadata, map[string]string{
+								"federation_incident_response_tier_id":    plan.tierID,
+								"federation_incident_response_target_did": plan.targetDID,
+							}),
+						}); err != nil {
+							return nil, err
+						}
+						report.CommitteesExpanded++
+						mutatedCells[cellID] = struct{}{}
 					case "escalate_response":
 						responseKey := strings.TrimSpace(cellID) + "|" + strings.TrimSpace(response.ID)
 						if _, seen := escalatedResponses[responseKey]; seen {
@@ -419,6 +498,41 @@ func secureCellFederationIncidentDirectiveExtensionAutomationPlanFromRun(run *se
 	if !ok {
 		return secureCellFederationIncidentDirectiveExtensionAutomationPlan{}, false
 	}
+	if extension.Status == SecureCellFederationIncidentDirectiveExtensionStatusPendingReview && secureCellFederationIncidentDirectiveExtensionUsesCommitteeGovernance(extension) {
+		excluded := append([]string(nil), secureCellFederationIncidentDirectiveExtensionReviewCommitteeMemberDIDs(extension)...)
+		excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionRecordedReviewVoterDIDs(extension)...)
+		if targetDID, tierID, targetSource := secureCellFederationIncidentDirectiveExtensionCommitteeTarget(run, response, extension.ReviewingParty, excluded); targetDID != "" {
+			return secureCellFederationIncidentDirectiveExtensionAutomationPlan{
+				action:        "delegate_review_committee",
+				trigger:       overdue.pendingAction + "_due",
+				reason:        "directive extension review quorum deadline reached",
+				pendingAction: overdue.pendingAction,
+				dueAt:         overdue.dueAt,
+				tierID:        tierID,
+				targetDID:     targetDID,
+				targetSource:  targetSource,
+			}, true
+		}
+	}
+	if extension.Status == SecureCellFederationIncidentDirectiveExtensionStatusDisputed {
+		if dispute := secureCellPendingFederationIncidentDirectiveExtensionDispute(extension); dispute != nil && secureCellFederationIncidentDirectiveExtensionDisputeUsesCommitteeGovernance(*dispute) {
+			excluded := append([]string(nil), secureCellFederationIncidentDirectiveExtensionDisputeCommitteeMemberDIDs(*dispute)...)
+			excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionRecordedResolutionVoterDIDs(*dispute)...)
+			if targetDID, tierID, targetSource := secureCellFederationIncidentDirectiveExtensionCommitteeTarget(run, response, dispute.RespondingParty, excluded); targetDID != "" {
+				return secureCellFederationIncidentDirectiveExtensionAutomationPlan{
+					action:           "delegate_resolution_committee",
+					trigger:          overdue.pendingAction + "_due",
+					reason:           "directive extension dispute quorum deadline reached",
+					pendingAction:    overdue.pendingAction,
+					dueAt:            overdue.dueAt,
+					tierID:           tierID,
+					targetDID:        targetDID,
+					targetSource:     targetSource,
+					pendingDisputeID: strings.TrimSpace(dispute.ID),
+				}, true
+			}
+		}
+	}
 	if tier, ok := secureCellNextFederationIncidentResponseEscalationTier(response); ok {
 		return secureCellFederationIncidentDirectiveExtensionAutomationPlan{
 			action:           "escalate_response",
@@ -444,13 +558,14 @@ func secureCellFederationIncidentDirectiveExtensionAutomationPlanFromRun(run *se
 	return secureCellFederationIncidentDirectiveExtensionAutomationPlan{}, false
 }
 
-func secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run *secureCellRun, extensionID string, extensionStatus SecureCellFederationIncidentDirectiveExtensionStatus, pendingAction string, action string) bool {
+func secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run *secureCellRun, extensionID string, extensionStatus SecureCellFederationIncidentDirectiveExtensionStatus, pendingAction string, action string, targetDID string) bool {
 	if run == nil || run.result == nil {
 		return false
 	}
 	extensionID = strings.TrimSpace(extensionID)
 	pendingAction = strings.TrimSpace(pendingAction)
 	action = strings.TrimSpace(action)
+	targetDID = strings.TrimSpace(targetDID)
 	for _, transition := range run.result.Transitions {
 		if !secureCellTransitionAutomatedFederationIncidentDirectiveExtensionAction(transition) {
 			continue
@@ -464,6 +579,9 @@ func secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run 
 		if !strings.EqualFold(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_action"]), action) {
 			continue
 		}
+		if targetDID != "" && (action == "delegate_review_committee" || action == "delegate_resolution_committee") && !strings.EqualFold(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_delegated_to"]), targetDID) {
+			continue
+		}
 		if SecureCellFederationIncidentDirectiveExtensionStatus(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_status"])) != extensionStatus {
 			continue
 		}
@@ -474,4 +592,23 @@ func secureCellFederationIncidentDirectiveExtensionAutomationAlreadyApplied(run 
 
 func secureCellTransitionAutomatedFederationIncidentDirectiveExtensionAction(transition SecureCellTransition) bool {
 	return strings.EqualFold(strings.TrimSpace(transition.Metadata["federation_incident_directive_extension_sweep_mode"]), "automated")
+}
+
+func secureCellMetadataInt(metadata map[string]string, keys ...string) int {
+	for _, key := range keys {
+		value := strings.TrimSpace(metadata[key])
+		if value == "" {
+			continue
+		}
+		parsed, err := strconv.Atoi(value)
+		if err == nil {
+			return parsed
+		}
+	}
+	return 0
+}
+
+func secureCellMetadataBool(metadata map[string]string, key string) bool {
+	value := strings.TrimSpace(metadata[key])
+	return strings.EqualFold(value, "true")
 }
