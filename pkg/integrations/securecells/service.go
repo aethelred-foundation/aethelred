@@ -101,6 +101,8 @@ const (
 	secureCellFederationIncidentDirectiveExtensionRequestAction                = "secure_cells.federation.incident.directive.extension.request"
 	secureCellFederationIncidentDirectiveExtensionApproveAction                = "secure_cells.federation.incident.directive.extension.approve"
 	secureCellFederationIncidentDirectiveExtensionRejectAction                 = "secure_cells.federation.incident.directive.extension.reject"
+	secureCellFederationIncidentDirectiveExtensionDisputeAction                = "secure_cells.federation.incident.directive.extension.dispute"
+	secureCellFederationIncidentDirectiveExtensionResolveAction                = "secure_cells.federation.incident.directive.extension.resolve"
 	secureCellFederationIncidentReportPlanAction                               = "secure_cells.federation.incident.response.report.plan"
 	secureCellFederationIncidentReportIntakeAction                             = "secure_cells.federation.incident.report.intake"
 	secureCellFederationIncidentReportAmendAction                              = "secure_cells.federation.incident.report.amend"
@@ -4662,6 +4664,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentResponseActionRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionDisputeRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentRemediationRecordIDs := make([]string, 0, secureCellFederationIncidentResponseRemediationTotal(run.result.FederationIncidentResponses))
 	federationIncidentVerificationRecordIDs := make([]string, 0, secureCellFederationIncidentResponseVerificationTotal(run.result.FederationIncidentResponses))
 	federationIncidentReportRecordIDs := make([]string, 0, secureCellFederationIncidentResponseReportTotal(run.result.FederationIncidentResponses))
@@ -4804,7 +4808,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" || transition.Action == "secure_cell.federation_assurance_ingested" || transition.Action == "secure_cell.federation_incident_published" || transition.Action == "secure_cell.federation_incident_resolved" || transition.Action == "secure_cell.federation_incident_bulletin_ingested" || transition.Action == "secure_cell.federation_incident_report_bundle_ingested" || transition.Action == "secure_cell.federation_incident_report_amendment_bundle_ingested" || transition.Action == "secure_cell.federation_incident_response_acknowledged" || transition.Action == "secure_cell.federation_incident_response_escalated" || transition.Action == "secure_cell.federation_incident_response_remediation_attested" || transition.Action == "secure_cell.federation_incident_remediation_verified" || transition.Action == "secure_cell.federation_incident_closure_attested" || transition.Action == "secure_cell.federation_incident_response_disputed" || transition.Action == "secure_cell.federation_incident_directive_issued" || transition.Action == "secure_cell.federation_incident_directive_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_completed" || transition.Action == "secure_cell.federation_incident_directive_verified" || transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" || transition.Action == "secure_cell.federation_incident_report_planned" || transition.Action == "secure_cell.federation_incident_report_amendment_created" || transition.Action == "secure_cell.federation_incident_report_submitted" || transition.Action == "secure_cell.federation_incident_report_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_submitted" || transition.Action == "secure_cell.federation_incident_report_amendment_acknowledged" || transition.Action == "secure_cell.federation_incident_report_reconciliation_acknowledged" || transition.Action == "secure_cell.federation_incident_report_reconciliation_disputed" || transition.Action == "secure_cell.federation_incident_report_reconciliation_resolved" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_disputed" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_resolved" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_dispute_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_correction_attested" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_resolution_attested" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_escalated" {
+		if transition.Action == "secure_cell.federation_invited" || transition.Action == "secure_cell.federation_invitation_revoked" || transition.Action == "secure_cell.federation_counterproposed" || transition.Action == "secure_cell.federation_counterproposal_vote_recorded" || transition.Action == "secure_cell.federation_counterproposal_escalated" || transition.Action == "secure_cell.federation_counterproposal_approved" || transition.Action == "secure_cell.federation_counterproposal_rejected" || transition.Action == "secure_cell.federation_contract_revoked" || transition.Action == "secure_cell.federation_contract_renewed" || transition.Action == "secure_cell.federation_contract_suspended" || transition.Action == "secure_cell.federation_contract_resumed" || transition.Action == "secure_cell.federation_assurance_ingested" || transition.Action == "secure_cell.federation_incident_published" || transition.Action == "secure_cell.federation_incident_resolved" || transition.Action == "secure_cell.federation_incident_bulletin_ingested" || transition.Action == "secure_cell.federation_incident_report_bundle_ingested" || transition.Action == "secure_cell.federation_incident_report_amendment_bundle_ingested" || transition.Action == "secure_cell.federation_incident_response_acknowledged" || transition.Action == "secure_cell.federation_incident_response_escalated" || transition.Action == "secure_cell.federation_incident_response_remediation_attested" || transition.Action == "secure_cell.federation_incident_remediation_verified" || transition.Action == "secure_cell.federation_incident_closure_attested" || transition.Action == "secure_cell.federation_incident_response_disputed" || transition.Action == "secure_cell.federation_incident_directive_issued" || transition.Action == "secure_cell.federation_incident_directive_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_completed" || transition.Action == "secure_cell.federation_incident_directive_verified" || transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" || transition.Action == "secure_cell.federation_incident_directive_extension_disputed" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolved" || transition.Action == "secure_cell.federation_incident_report_planned" || transition.Action == "secure_cell.federation_incident_report_amendment_created" || transition.Action == "secure_cell.federation_incident_report_submitted" || transition.Action == "secure_cell.federation_incident_report_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_submitted" || transition.Action == "secure_cell.federation_incident_report_amendment_acknowledged" || transition.Action == "secure_cell.federation_incident_report_reconciliation_acknowledged" || transition.Action == "secure_cell.federation_incident_report_reconciliation_disputed" || transition.Action == "secure_cell.federation_incident_report_reconciliation_resolved" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_disputed" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_resolved" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_dispute_acknowledged" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_correction_attested" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_resolution_attested" || transition.Action == "secure_cell.federation_incident_report_amendment_reconciliation_escalated" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_assurance_ingested" {
@@ -4822,11 +4826,17 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.federation_incident_report_amendment_bundle_ingested" {
 			federationCounterpartyIncidentReportAmendmentRecordIDs = append(federationCounterpartyIncidentReportAmendmentRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_incident_directive_issued" || transition.Action == "secure_cell.federation_incident_directive_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_completed" || transition.Action == "secure_cell.federation_incident_directive_verified" || transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" {
+		if transition.Action == "secure_cell.federation_incident_directive_issued" || transition.Action == "secure_cell.federation_incident_directive_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_completed" || transition.Action == "secure_cell.federation_incident_directive_verified" || transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" || transition.Action == "secure_cell.federation_incident_directive_extension_disputed" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolved" {
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" {
+		if transition.Action == "secure_cell.federation_incident_directive_extension_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_approved" || transition.Action == "secure_cell.federation_incident_directive_extension_rejected" || transition.Action == "secure_cell.federation_incident_directive_extension_disputed" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolved" {
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_incident_directive_extension_disputed" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolved" {
+			federationIncidentDirectiveExtensionDisputeRecordIDs = append(federationIncidentDirectiveExtensionDisputeRecordIDs, recordID)
+		}
+		if strings.TrimSpace(data["federation_incident_directive_extension_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_sweep_mode"]), "automated") {
+			federationIncidentDirectiveExtensionAutomationRecordIDs = append(federationIncidentDirectiveExtensionAutomationRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_incident_report_amendment_created" || transition.Action == "secure_cell.federation_incident_report_amendment_submitted" || transition.Action == "secure_cell.federation_incident_report_amendment_acknowledged" {
 			federationIncidentReportAmendmentRecordIDs = append(federationIncidentReportAmendmentRecordIDs, recordID)
@@ -5980,7 +5990,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-FED-13",
 			ControlName: "Bilateral Directive Exception Governance",
-			Description: "Bilateral incident directive deadline extensions are requested, approved, rejected, and replayed as evidence-bearing exception governance instead of out-of-band deadline changes.",
+			Description: "Bilateral incident directive deadline extensions are requested, approved, rejected, disputed, and resolved as evidence-bearing exception governance instead of out-of-band deadline changes.",
 			Status:      evidence.ControlSatisfied,
 			EvidenceRefs: evidence.ControlEvidenceRefs{
 				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionRecordIDs...),
@@ -5990,6 +6000,26 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_incident_directive_extensions_pending_review": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionStatusPendingReview)),
 				"federation_incident_directive_extensions_approved":       fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionStatusApproved)),
 				"federation_incident_directive_extensions_rejected":       fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionStatusRejected)),
+				"federation_incident_directive_extensions_disputed":       fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionStatusDisputed)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentDirectiveExtensionDisputeRecordIDs) > 0 || len(federationIncidentDirectiveExtensionAutomationRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-14",
+			ControlName: "Directive Exception Dispute And Timed Review Automation",
+			Description: "Bilateral directive exception decisions can be challenged, resolved, and automatically escalated or fail-closed when review or dispute deadlines lapse.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append(append([]string(nil), federationIncidentDirectiveExtensionDisputeRecordIDs...), federationIncidentDirectiveExtensionAutomationRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_disputes_total":           fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionDisputeCount(run.result.FederationIncidentResponses)),
+				"federation_incident_directive_extension_pending_disputes_total":   fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionPendingDisputeCountAll(run.result.FederationIncidentResponses)),
+				"federation_incident_directive_extension_dispute_records_total":    fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionDisputeRecordIDs)),
+				"federation_incident_directive_extension_automation_records_total": fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAutomationRecordIDs)),
 			},
 		}); err != nil {
 			return nil, err
@@ -7007,6 +7037,10 @@ func transitionStageForAction(action string) string {
 		return "approve_federation_incident_directive_extension"
 	case "secure_cell.federation_incident_directive_extension_rejected":
 		return "reject_federation_incident_directive_extension"
+	case "secure_cell.federation_incident_directive_extension_disputed":
+		return "dispute_federation_incident_directive_extension"
+	case "secure_cell.federation_incident_directive_extension_dispute_resolved":
+		return "resolve_federation_incident_directive_extension_dispute"
 	case "secure_cell.federation_incident_report_planned":
 		return "plan_federation_incident_report"
 	case "secure_cell.federation_incident_report_amendment_created":
@@ -8715,6 +8749,8 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationIncidentDirectiveExtensionRequestAction,
 				secureCellFederationIncidentDirectiveExtensionApproveAction,
 				secureCellFederationIncidentDirectiveExtensionRejectAction,
+				secureCellFederationIncidentDirectiveExtensionDisputeAction,
+				secureCellFederationIncidentDirectiveExtensionResolveAction,
 				secureCellFederationIncidentReportPlanAction,
 				secureCellFederationIncidentReportIntakeAction,
 				secureCellFederationIncidentReportAmendAction,
@@ -9074,6 +9110,24 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_reject_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "reject_federation_incident_directive_extension"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_dispute_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "dispute_federation_incident_directive_extension"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_resolve_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "resolve_federation_incident_directive_extension_dispute"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -9581,6 +9635,10 @@ func actionForStage(stage string) string {
 		return secureCellFederationIncidentDirectiveExtensionApproveAction
 	case "reject_federation_incident_directive_extension":
 		return secureCellFederationIncidentDirectiveExtensionRejectAction
+	case "dispute_federation_incident_directive_extension":
+		return secureCellFederationIncidentDirectiveExtensionDisputeAction
+	case "resolve_federation_incident_directive_extension_dispute":
+		return secureCellFederationIncidentDirectiveExtensionResolveAction
 	case "plan_federation_incident_report":
 		return secureCellFederationIncidentReportPlanAction
 	case "intake_federation_incident_report_bundle":

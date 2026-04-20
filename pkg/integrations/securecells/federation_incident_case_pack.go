@@ -48,6 +48,8 @@ type SecureCellFederationIncidentCasePack struct {
 	AmendmentReconciliationBundles           []*SecureCellFederationIncidentReportAmendmentReconciliationBundle                       `json:"amendment_reconciliation_bundles,omitempty"`
 	ResponseActions                          []SecureCellFederationIncidentResponseActionRecord                                       `json:"response_actions,omitempty"`
 	DirectiveAutomationActions               []SecureCellFederationIncidentDirectiveAutomationActionRecord                            `json:"directive_automation_actions,omitempty"`
+	DirectiveExtensionDisputes               []SecureCellFederationIncidentDirectiveExtensionDisputeSummary                           `json:"directive_extension_disputes,omitempty"`
+	DirectiveExtensionAutomationActions      []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord                   `json:"directive_extension_automation_actions,omitempty"`
 	Remediations                             []SecureCellFederationIncidentRemediationSummary                                         `json:"remediations,omitempty"`
 	Verifications                            []SecureCellFederationIncidentVerificationSummary                                        `json:"verifications,omitempty"`
 	Closures                                 []SecureCellFederationIncidentClosureAttestationSummary                                  `json:"closures,omitempty"`
@@ -192,6 +194,20 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	if err != nil {
 		return nil, err
 	}
+	directiveExtensionDisputes, err := s.ListFederationIncidentDirectiveExtensionDisputes(ctx, SecureCellFederationIncidentDirectiveExtensionDisputeFilter{
+		CellID:     cellID,
+		ResponseID: responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	directiveExtensionAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAutomationActionFilter{
+		CellID:     cellID,
+		ResponseID: responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	remediations, err := s.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
 		CellID:     cellID,
 		ResponseID: responseID,
@@ -269,6 +285,8 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		AmendmentReconciliationBundles:           amendmentReconciliationBundles,
 		ResponseActions:                          responseActions,
 		DirectiveAutomationActions:               directiveAutomationActions,
+		DirectiveExtensionDisputes:               directiveExtensionDisputes,
+		DirectiveExtensionAutomationActions:      directiveExtensionAutomationActions,
 		Remediations:                             remediations,
 		Verifications:                            verifications,
 		Closures:                                 closures,

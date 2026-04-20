@@ -27,32 +27,34 @@ type SecureCellFederationIncidentDirectiveBundleSignature struct {
 // SecureCellFederationIncidentDirectiveBundle is the signed portable auditor
 // package for one bilateral incident directive or work order.
 type SecureCellFederationIncidentDirectiveBundle struct {
-	ID                      string                                                `json:"id"`
-	Version                 string                                                `json:"version"`
-	Name                    string                                                `json:"name"`
-	GeneratedAt             time.Time                                             `json:"generated_at"`
-	ExpiresAt               *time.Time                                            `json:"expires_at,omitempty"`
-	CellID                  string                                                `json:"cell_id"`
-	CellName                string                                                `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                                      `json:"cell_status"`
-	Jurisdiction            string                                                `json:"jurisdiction,omitempty"`
-	Framework               string                                                `json:"framework,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary               `json:"organization"`
-	ResponseSummary         SecureCellFederationIncidentResponseSummary           `json:"response_summary"`
-	DirectiveSummary        SecureCellFederationIncidentDirectiveSummary          `json:"directive_summary"`
-	Directive               SecureCellFederationIncidentDirective                 `json:"directive"`
-	ResponseBundleHash      string                                                `json:"response_bundle_hash,omitempty"`
-	Contracts               []SecureCellFederationContractSummary                 `json:"contracts,omitempty"`
-	Controls                []SecureCellFederationTrustPackControl                `json:"controls,omitempty"`
-	OperatorSurfaces        []SecureCellFederationOperatorSurface                 `json:"operator_surfaces,omitempty"`
-	ControlLedgerID         string                                                `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                                `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                                `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                  `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                  `json:"portable_package_anchored"`
-	ContentHash             string                                                `json:"content_hash,omitempty"`
-	Signature               *SecureCellFederationIncidentDirectiveBundleSignature `json:"signature,omitempty"`
-	Metadata                map[string]string                                     `json:"metadata,omitempty"`
+	ID                         string                                                                 `json:"id"`
+	Version                    string                                                                 `json:"version"`
+	Name                       string                                                                 `json:"name"`
+	GeneratedAt                time.Time                                                              `json:"generated_at"`
+	ExpiresAt                  *time.Time                                                             `json:"expires_at,omitempty"`
+	CellID                     string                                                                 `json:"cell_id"`
+	CellName                   string                                                                 `json:"cell_name,omitempty"`
+	CellStatus                 SecureCellStatus                                                       `json:"cell_status"`
+	Jurisdiction               string                                                                 `json:"jurisdiction,omitempty"`
+	Framework                  string                                                                 `json:"framework,omitempty"`
+	Organization               SecureCellFederationOrganizationSummary                                `json:"organization"`
+	ResponseSummary            SecureCellFederationIncidentResponseSummary                            `json:"response_summary"`
+	DirectiveSummary           SecureCellFederationIncidentDirectiveSummary                           `json:"directive_summary"`
+	Directive                  SecureCellFederationIncidentDirective                                  `json:"directive"`
+	ExtensionDisputes          []SecureCellFederationIncidentDirectiveExtensionDisputeSummary         `json:"extension_disputes,omitempty"`
+	ExtensionAutomationActions []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord `json:"extension_automation_actions,omitempty"`
+	ResponseBundleHash         string                                                                 `json:"response_bundle_hash,omitempty"`
+	Contracts                  []SecureCellFederationContractSummary                                  `json:"contracts,omitempty"`
+	Controls                   []SecureCellFederationTrustPackControl                                 `json:"controls,omitempty"`
+	OperatorSurfaces           []SecureCellFederationOperatorSurface                                  `json:"operator_surfaces,omitempty"`
+	ControlLedgerID            string                                                                 `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash          string                                                                 `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash        string                                                                 `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned      bool                                                                   `json:"portable_package_signed"`
+	PortablePackageAnchored    bool                                                                   `json:"portable_package_anchored"`
+	ContentHash                string                                                                 `json:"content_hash,omitempty"`
+	Signature                  *SecureCellFederationIncidentDirectiveBundleSignature                  `json:"signature,omitempty"`
+	Metadata                   map[string]string                                                      `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveBundleOptions lets callers tune bundle
@@ -99,31 +101,47 @@ func (s *Service) BuildFederationIncidentDirectiveBundle(ctx context.Context, ce
 	if err != nil {
 		return nil, err
 	}
+	extensionDisputes, err := s.ListFederationIncidentDirectiveExtensionDisputes(ctx, SecureCellFederationIncidentDirectiveExtensionDisputeFilter{
+		CellID:      cellID,
+		DirectiveID: directive.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	extensionAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAutomationActionFilter{
+		CellID:      cellID,
+		DirectiveID: directive.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 	expiresAt := now.Add(72 * time.Hour)
 	if options.ExpiresAfter != 0 {
 		expiresAt = now.Add(options.ExpiresAfter)
 	}
 	bundle := &SecureCellFederationIncidentDirectiveBundle{
-		ID:                 firstNonEmpty(strings.TrimSpace(options.ID), fmt.Sprintf("%s-%s-incident-directive-bundle", run.result.CellID, directive.ID)),
-		Version:            firstNonEmpty(strings.TrimSpace(options.Version), "v1"),
-		Name:               firstNonEmpty(strings.TrimSpace(options.Name), fmt.Sprintf("Federation Incident Directive Bundle %s", directive.ID)),
-		GeneratedAt:        now,
-		ExpiresAt:          cloneTimePtr(&expiresAt),
-		CellID:             run.result.CellID,
-		CellName:           run.result.Name,
-		CellStatus:         run.result.Status,
-		Jurisdiction:       run.request.Jurisdiction,
-		Framework:          firstNonEmpty(strings.TrimSpace(s.config.Framework), "Secure Cells v1"),
-		Organization:       orgSummary,
-		ResponseSummary:    secureCellFederationIncidentResponseSummaryFromRun(run, *response),
-		DirectiveSummary:   directiveSummary,
-		Directive:          *clonedDirective,
-		ResponseBundleHash: strings.TrimSpace(responseBundle.ContentHash),
-		Contracts:          secureCellFederationContractSummariesForResponse(run, *response),
-		Controls:           secureCellFederationControlsFromLedger(run.result.ControlLedger),
-		OperatorSurfaces:   cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
-		Metadata:           cloneStringMap(options.Metadata),
+		ID:                         firstNonEmpty(strings.TrimSpace(options.ID), fmt.Sprintf("%s-%s-incident-directive-bundle", run.result.CellID, directive.ID)),
+		Version:                    firstNonEmpty(strings.TrimSpace(options.Version), "v1"),
+		Name:                       firstNonEmpty(strings.TrimSpace(options.Name), fmt.Sprintf("Federation Incident Directive Bundle %s", directive.ID)),
+		GeneratedAt:                now,
+		ExpiresAt:                  cloneTimePtr(&expiresAt),
+		CellID:                     run.result.CellID,
+		CellName:                   run.result.Name,
+		CellStatus:                 run.result.Status,
+		Jurisdiction:               run.request.Jurisdiction,
+		Framework:                  firstNonEmpty(strings.TrimSpace(s.config.Framework), "Secure Cells v1"),
+		Organization:               orgSummary,
+		ResponseSummary:            secureCellFederationIncidentResponseSummaryFromRun(run, *response),
+		DirectiveSummary:           directiveSummary,
+		Directive:                  *clonedDirective,
+		ExtensionDisputes:          append([]SecureCellFederationIncidentDirectiveExtensionDisputeSummary(nil), extensionDisputes...),
+		ExtensionAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord(nil), extensionAutomationActions...),
+		ResponseBundleHash:         strings.TrimSpace(responseBundle.ContentHash),
+		Contracts:                  secureCellFederationContractSummariesForResponse(run, *response),
+		Controls:                   secureCellFederationControlsFromLedger(run.result.ControlLedger),
+		OperatorSurfaces:           cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
+		Metadata:                   cloneStringMap(options.Metadata),
 	}
 	if run.result.ControlLedger != nil && run.result.ControlLedger.Bundle != nil {
 		bundle.ControlLedgerID = strings.TrimSpace(run.result.ControlLedger.Bundle.ID)

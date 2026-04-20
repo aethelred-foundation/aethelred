@@ -33,8 +33,8 @@ func (s *Service) RequestFederationIncidentDirectiveExtension(ctx context.Contex
 	if directive.DueAt == nil || directive.DueAt.IsZero() {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: directive %q does not have a due_at", directiveID)
 	}
-	if pending := secureCellPendingFederationIncidentDirectiveExtension(*directive); pending != nil {
-		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: directive %q already has pending extension %q", ErrFederationIncidentDirectiveImmutable, directiveID, pending.ID)
+	if active := secureCellActiveFederationIncidentDirectiveExtension(*directive); active != nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: directive %q already has active extension governance %q", ErrFederationIncidentDirectiveImmutable, directiveID, active.ID)
 	}
 	if req.ProposedDueAt == nil || req.ProposedDueAt.IsZero() {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: proposed_due_at is required")
@@ -497,9 +497,21 @@ func secureCellNormalizedFederationIncidentDirectiveExtensionStatus(value Secure
 		return SecureCellFederationIncidentDirectiveExtensionStatusApproved
 	case SecureCellFederationIncidentDirectiveExtensionStatusRejected:
 		return SecureCellFederationIncidentDirectiveExtensionStatusRejected
+	case SecureCellFederationIncidentDirectiveExtensionStatusDisputed:
+		return SecureCellFederationIncidentDirectiveExtensionStatusDisputed
 	default:
 		return ""
 	}
+}
+
+func secureCellActiveFederationIncidentDirectiveExtension(directive SecureCellFederationIncidentDirective) *SecureCellFederationIncidentDirectiveExtension {
+	for idx := range directive.Extensions {
+		switch directive.Extensions[idx].Status {
+		case SecureCellFederationIncidentDirectiveExtensionStatusPendingReview, SecureCellFederationIncidentDirectiveExtensionStatusDisputed:
+			return &directive.Extensions[idx]
+		}
+	}
+	return nil
 }
 
 func secureCellFederationIncidentDirectiveExtensionPendingCount(extensions []SecureCellFederationIncidentDirectiveExtension) int {
@@ -549,34 +561,69 @@ func secureCellFederationIncidentDirectiveExtensionTotal(responses []SecureCellF
 	return total
 }
 
+func secureCellFederationIncidentDirectiveExtensionDisputeCountForExtensions(extensions []SecureCellFederationIncidentDirectiveExtension) int {
+	total := 0
+	for _, extension := range extensions {
+		total += len(extension.Disputes)
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionPendingDisputeCountForExtensions(extensions []SecureCellFederationIncidentDirectiveExtension) int {
+	total := 0
+	for _, extension := range extensions {
+		for _, dispute := range extension.Disputes {
+			if dispute.Status == SecureCellFederationIncidentDirectiveExtensionDisputeStatusPendingResolution {
+				total++
+			}
+		}
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionPendingDisputeCountAll(responses []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, response := range responses {
+		for _, directive := range response.IncidentDirectives {
+			total += secureCellFederationIncidentDirectiveExtensionPendingDisputeCountForExtensions(directive.Extensions)
+		}
+	}
+	return total
+}
+
 func secureCellFederationIncidentDirectiveExtensionSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, directive SecureCellFederationIncidentDirective, extension SecureCellFederationIncidentDirectiveExtension) SecureCellFederationIncidentDirectiveExtensionSummary {
+	latestDispute := secureCellLatestFederationIncidentDirectiveExtensionDispute(extension)
 	return SecureCellFederationIncidentDirectiveExtensionSummary{
-		CellID:          strings.TrimSpace(run.result.CellID),
-		CellName:        strings.TrimSpace(run.result.Name),
-		Jurisdiction:    strings.TrimSpace(run.request.Jurisdiction),
-		CellStatus:      run.result.Status,
-		ResponseID:      strings.TrimSpace(response.ID),
-		OrganizationID:  strings.TrimSpace(response.OrganizationID),
-		SponsorOfRecord: strings.TrimSpace(response.SponsorOfRecord),
-		IncidentID:      strings.TrimSpace(response.IncidentID),
-		DirectiveID:     strings.TrimSpace(directive.ID),
-		DirectiveTitle:  strings.TrimSpace(directive.Title),
-		DirectiveStatus: directive.Status,
-		ExtensionID:     strings.TrimSpace(extension.ID),
-		RequestingParty: extension.RequestingParty,
-		ReviewingParty:  extension.ReviewingParty,
-		RequestedBy:     strings.TrimSpace(extension.RequestedBy),
-		Summary:         strings.TrimSpace(extension.Summary),
-		Description:     strings.TrimSpace(extension.Description),
-		CurrentDueAt:    cloneTimePtr(extension.CurrentDueAt),
-		ProposedDueAt:   cloneTimePtr(extension.ProposedDueAt),
-		Status:          extension.Status,
-		DecisionSummary: strings.TrimSpace(extension.DecisionSummary),
-		ReviewedBy:      strings.TrimSpace(extension.ReviewedBy),
-		ReviewedAt:      cloneTimePtr(extension.ReviewedAt),
-		CreatedAt:       extension.CreatedAt.UTC(),
-		UpdatedAt:       extension.UpdatedAt.UTC(),
-		Metadata:        cloneStringMap(extension.Metadata),
+		CellID:              strings.TrimSpace(run.result.CellID),
+		CellName:            strings.TrimSpace(run.result.Name),
+		Jurisdiction:        strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:          run.result.Status,
+		ResponseID:          strings.TrimSpace(response.ID),
+		OrganizationID:      strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:     strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:          strings.TrimSpace(response.IncidentID),
+		DirectiveID:         strings.TrimSpace(directive.ID),
+		DirectiveTitle:      strings.TrimSpace(directive.Title),
+		DirectiveStatus:     directive.Status,
+		ExtensionID:         strings.TrimSpace(extension.ID),
+		RequestingParty:     extension.RequestingParty,
+		ReviewingParty:      extension.ReviewingParty,
+		RequestedBy:         strings.TrimSpace(extension.RequestedBy),
+		Summary:             strings.TrimSpace(extension.Summary),
+		Description:         strings.TrimSpace(extension.Description),
+		CurrentDueAt:        cloneTimePtr(extension.CurrentDueAt),
+		ProposedDueAt:       cloneTimePtr(extension.ProposedDueAt),
+		Status:              extension.Status,
+		DisputeCount:        len(extension.Disputes),
+		PendingDisputeCount: secureCellFederationIncidentDirectiveExtensionPendingDisputeCountForExtensions([]SecureCellFederationIncidentDirectiveExtension{extension}),
+		LastDisputeID:       secureCellFederationIncidentDirectiveLatestDisputeID(extension.Disputes),
+		LastDisputeStatus:   secureCellFederationIncidentDirectiveLatestDisputeStatus(latestDispute),
+		DecisionSummary:     strings.TrimSpace(extension.DecisionSummary),
+		ReviewedBy:          strings.TrimSpace(extension.ReviewedBy),
+		ReviewedAt:          cloneTimePtr(extension.ReviewedAt),
+		CreatedAt:           extension.CreatedAt.UTC(),
+		UpdatedAt:           extension.UpdatedAt.UTC(),
+		Metadata:            cloneStringMap(extension.Metadata),
 	}
 }
 
@@ -594,4 +641,28 @@ func matchesSecureCellFederationIncidentDirectiveExtensionFilter(item SecureCell
 		return false
 	}
 	return true
+}
+
+func secureCellFederationIncidentDirectiveLatestDisputeID(disputes []SecureCellFederationIncidentDirectiveExtensionDispute) string {
+	if len(disputes) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(disputes[len(disputes)-1].ID)
+}
+
+func secureCellFederationIncidentDirectiveExtensionDisputeCount(responses []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, response := range responses {
+		for _, directive := range response.IncidentDirectives {
+			total += secureCellFederationIncidentDirectiveExtensionDisputeCountForExtensions(directive.Extensions)
+		}
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveLatestDisputeStatus(dispute *SecureCellFederationIncidentDirectiveExtensionDispute) SecureCellFederationIncidentDirectiveExtensionDisputeStatus {
+	if dispute == nil {
+		return ""
+	}
+	return dispute.Status
 }

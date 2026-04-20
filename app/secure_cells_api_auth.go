@@ -93,6 +93,8 @@ const (
 	secureCellsAuthFederationIncidentDirectiveExtensionRequestAction                            = "secure_cells.federation.incident.directive.extension.request"
 	secureCellsAuthFederationIncidentDirectiveExtensionApproveAction                            = "secure_cells.federation.incident.directive.extension.approve"
 	secureCellsAuthFederationIncidentDirectiveExtensionRejectAction                             = "secure_cells.federation.incident.directive.extension.reject"
+	secureCellsAuthFederationIncidentDirectiveExtensionDisputeAction                            = "secure_cells.federation.incident.directive.extension.dispute"
+	secureCellsAuthFederationIncidentDirectiveExtensionResolveAction                            = "secure_cells.federation.incident.directive.extension.resolve"
 	secureCellsAuthReleaseAction                                                                = "secure_cells.member.release"
 	secureCellsAuthQuarantineAction                                                             = "secure_cells.member.quarantine"
 	secureCellsAuthRevokeAction                                                                 = "secure_cells.member.revoke"
@@ -196,6 +198,8 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationIncidentDirectiveExtensionRequest(r *http.Request, cellID string, directiveID string, req *secureCellFederationIncidentDirectiveExtensionRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionApprove(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionApproveRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionReject(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionRejectRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionDispute(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionDisputeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionResolve(r *http.Request, cellID string, disputeID string, req *secureCellFederationIncidentDirectiveExtensionDisputeResolveRequest) (*secureCellAuthContext, error)
 	AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeQuarantine(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeRevoke(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
