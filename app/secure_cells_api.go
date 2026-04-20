@@ -1747,6 +1747,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-automation-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveAutomationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-automation-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-remediations" {
 			filter, err := parseSecureCellFederationIncidentRemediationFilter(r)
 			if err != nil {
@@ -6248,6 +6280,13 @@ func secureCellFederationIncidentCasePackOptions(cellID string, responseID strin
 				Formats:     []string{"json"},
 			},
 			{
+				ID:          "incident-directive-automation-actions-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-automation-actions?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List automated directive escalation or contract-suspension actions recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
 				ID:          "incident-disputes-list",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-disputes?cell_id=" + cellID + "&response_id=" + responseID,
@@ -6289,6 +6328,20 @@ func secureCellFederationIncidentDirectiveBundleOptions(cellID string, directive
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
 				Description: "Export directive lifecycle actions for this bilateral work order.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-automation-actions?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List automated escalation or fail-closed actions for this bilateral work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-automation-actions/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
+				Description: "Export automated escalation or fail-closed actions for this bilateral work order.",
 				Formats:     []string{"json", "csv"},
 			},
 			{

@@ -5801,6 +5801,197 @@ func TestService_FederationIncidentDirectiveFlow(t *testing.T) {
 	}
 }
 
+func TestService_FederationIncidentDirectiveAutomationAndCasePack(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Directive Automation Cell",
+		Purpose:       "govern overdue bilateral directives",
+		Resource:      "cell:federation-directive-automation",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "local_reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Directive Automation Room",
+		Purpose:         "coordinate automated cross-org incident directives",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"confidential", "decisioning"},
+		Reason:          "open directive automation room",
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  participantB.Liability.SponsorOfRecord,
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_responder",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty responder",
+		Metadata:         map[string]string{"ticket": "FED-DIRECTIVE-AUTO-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_responder",
+		},
+		Reason:   "counterparty joins automation room",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-AUTO-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, organizationID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityCritical,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Counterparty evidence package overdue",
+		Description:              "The counterparty has not yet acknowledged the evidence request directive.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive automation incident",
+		Metadata:                 map[string]string{"ticket": "FED-DIRECTIVE-AUTO-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(-2 * time.Hour)
+	if _, err := service.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must acknowledge and deliver the evidence package.",
+		Description:   "Provide the scoped evidence package and remediation artifacts for the bilateral incident response.",
+		Priority:      SecureCellFederationIncidentDirectivePriorityCritical,
+		AssigneeParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue overdue bilateral work order",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-AUTO-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := service.ListFederationIncidentDirectives(ctx, SecureCellFederationIncidentDirectiveFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	if len(directives) != 1 {
+		t.Fatalf("expected one directive, got %+v", directives)
+	}
+	directiveID := directives[0].DirectiveID
+
+	sweep, err := service.SweepFederationIncidentDirectives(ctx, time.Now().UTC(), SecureCellLifecycleRequest{
+		ActorDID: "secure-cell-runtime",
+		Reason:   "automated directive supervision",
+		Metadata: map[string]string{"automation_mode": "federation_incident_directive"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentDirectives failed: %v", err)
+	}
+	if sweep == nil || sweep.CellsMutated != 1 {
+		t.Fatalf("expected one mutated cell from directive sweep, got %+v", sweep)
+	}
+
+	actions, err := service.ListFederationIncidentDirectiveAutomationActions(ctx, SecureCellFederationIncidentDirectiveAutomationActionFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+		DirectiveID:    directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveAutomationActions failed: %v", err)
+	}
+	if len(actions) != 1 {
+		t.Fatalf("expected one directive automation action, got %+v", actions)
+	}
+	action := actions[0]
+	if action.DirectiveID != directiveID || action.PendingAction != "acknowledge" || action.DirectiveStatus != SecureCellFederationIncidentDirectiveStatusIssued {
+		t.Fatalf("expected issued directive automation record awaiting acknowledgement, got %+v", action)
+	}
+	if action.Action != "secure_cell.federation_incident_response_escalated" && action.Action != "secure_cell.federation_contract_suspended" {
+		t.Fatalf("expected directive automation to escalate response or suspend contracts, got %+v", action)
+	}
+
+	casePack, err := service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack failed: %v", err)
+	}
+	if err := VerifyFederationIncidentCasePack(casePack); err != nil {
+		t.Fatalf("VerifyFederationIncidentCasePack failed: %v", err)
+	}
+	if len(casePack.DirectiveBundles) != 1 || casePack.DirectiveBundles[0] == nil || casePack.DirectiveBundles[0].DirectiveSummary.DirectiveID != directiveID {
+		t.Fatalf("expected one directive bundle in case pack, got %+v", casePack.DirectiveBundles)
+	}
+	if len(casePack.DirectiveAutomationActions) != 1 || casePack.DirectiveAutomationActions[0].DirectiveID != directiveID {
+		t.Fatalf("expected directive automation actions in case pack, got %+v", casePack.DirectiveAutomationActions)
+	}
+}
+
 func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	t.Parallel()
 

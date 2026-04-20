@@ -296,6 +296,7 @@ func (s *secureCellExpirySweeper) runSweep() {
 	s.runFederationAssuranceSweep(now)
 	s.runFederationIncidentSweep(now)
 	s.runFederationIncidentResponseSweep(now)
+	s.runFederationIncidentDirectiveSweep(now)
 	s.runFederationIncidentReportReconciliationSweep(now)
 	s.runFederationIncidentReportAmendmentReconciliationSweep(now)
 }
@@ -436,6 +437,34 @@ func (s *secureCellExpirySweeper) runFederationIncidentResponseSweep(at time.Tim
 	}
 	if s.app != nil {
 		s.app.Logger().Info("Secure Cells automated federation-incident-response sweep completed", "result", result)
+	}
+}
+
+func (s *secureCellExpirySweeper) runFederationIncidentDirectiveSweep(at time.Time) {
+	if s == nil {
+		return
+	}
+	result, ok, err := invokeSecureCellFederationIncidentDirectiveSweep(s.service, at, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: secureCellAutomatedSweepActor,
+		Reason:   "automated federation incident directive sweep",
+		Metadata: map[string]string{
+			"sweep_mode":      "automated",
+			"workflow":        "secure_cell",
+			"automation_mode": "federation_incident_directive",
+			"federation_incident_directive_sweep_mode": "automated",
+		},
+	})
+	if err != nil {
+		if s.app != nil {
+			s.app.Logger().Error("Secure Cells automated federation-incident-directive sweep failed", "error", err)
+		}
+		return
+	}
+	if !ok {
+		return
+	}
+	if s.app != nil {
+		s.app.Logger().Info("Secure Cells automated federation-incident-directive sweep completed", "result", result)
 	}
 }
 
@@ -689,6 +718,52 @@ func invokeSecureCellFederationIncidentResponseSweep(service any, at time.Time, 
 	}
 	var method reflect.Value
 	for _, name := range []string{"SweepFederationIncidentResponses", "SweepAutomatedFederationIncidentResponses", "SweepFederationIncidentResponseAutomation"} {
+		method = value.MethodByName(name)
+		if method.IsValid() {
+			break
+		}
+	}
+	if !method.IsValid() {
+		return nil, false, nil
+	}
+	in := []reflect.Value{
+		reflect.ValueOf(context.Background()),
+		reflect.ValueOf(at.UTC()),
+		reflect.ValueOf(lifecycle),
+	}
+	out := method.Call(in)
+	switch len(out) {
+	case 0:
+		return nil, true, nil
+	case 1:
+		if err, ok := out[0].Interface().(error); ok && err != nil {
+			return nil, true, err
+		}
+		return out[0].Interface(), true, nil
+	default:
+		var result any
+		if out[0].IsValid() {
+			result = out[0].Interface()
+		}
+		if len(out) > 1 {
+			if err, ok := out[1].Interface().(error); ok && err != nil {
+				return result, true, err
+			}
+		}
+		return result, true, nil
+	}
+}
+
+func invokeSecureCellFederationIncidentDirectiveSweep(service any, at time.Time, lifecycle securecellsintegration.SecureCellLifecycleRequest) (any, bool, error) {
+	if service == nil {
+		return nil, false, nil
+	}
+	value := reflect.ValueOf(service)
+	if !value.IsValid() {
+		return nil, false, nil
+	}
+	var method reflect.Value
+	for _, name := range []string{"SweepFederationIncidentDirectives", "SweepAutomatedFederationIncidentDirectives", "SweepFederationIncidentDirectiveAutomation"} {
 		method = value.MethodByName(name)
 		if method.IsValid() {
 			break

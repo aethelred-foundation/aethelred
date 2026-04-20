@@ -7185,6 +7185,208 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveSurfaces(t *testing.T) {
 	}
 }
 
+func TestSecureCellsHandlers_FederationIncidentDirectiveAutomationAndCasePack(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{37}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	ctx := context.Background()
+	owner := mustSecureCellAppIdentity(t, "owner-auto", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-auto-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-auto-b", []string{"UK"})
+
+	created, err := app.secureCellService.CreateCell(ctx, securecellsintegration.SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Incident Directive Automation API Cell",
+		Purpose:       "exercise incident directive automation API surfaces",
+		Resource:      "cell:incident-directive-automation-api",
+		Jurisdiction:  "UAE",
+		Participants: []securecellsintegration.SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := app.secureCellService.StartSession(ctx, created.CellID, securecellsintegration.SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Directive Automation Coordination Room",
+		Purpose:         "coordinate automated bilateral incident directives",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open directive automation session",
+		Metadata:        map[string]string{"ticket": "APP-FED-DIRECTIVE-AUTO-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := app.secureCellService.CreateFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  participantB.Liability.SponsorOfRecord,
+		OrganizationName: participantB.SponsorChain[0].SponsorName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty automation reviewer",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-AUTO-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := app.secureCellService.AcceptFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: securecellsintegration.SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins directive automation room",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-AUTO-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := app.secureCellService.PublishFederationIncident(ctx, created.CellID, organizationID, securecellsintegration.SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 securecellsintegration.SecureCellFederationIncidentSeverityCritical,
+		Category:                 securecellsintegration.SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Directive automation incident",
+		Description:              "The local organization needs runtime supervision over the bilateral directive.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive automation incident",
+		Metadata:                 map[string]string{"ticket": "APP-FED-DIRECTIVE-AUTO-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := app.secureCellService.ListFederationIncidentResponses(ctx, securecellsintegration.SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == securecellsintegration.SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(-2 * time.Hour)
+	createDirectiveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+localResponseID+"/directives", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveCreateRequest(t, owner, nil, dueAt, incidentID, participantB.AgentID(), owner.AgentID())))
+	createDirectiveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createDirectiveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(createDirectiveRec, createDirectiveReq)
+	if createDirectiveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, createDirectiveRec.Code, createDirectiveRec.Body.String())
+	}
+
+	directiveListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directives?cell_id="+url.QueryEscape(created.CellID)+"&response_id="+url.QueryEscape(localResponseID), nil)
+	directiveListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveListRec, directiveListReq)
+	if directiveListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveListRec.Code, directiveListRec.Body.String())
+	}
+	var directiveListResp secureCellFederationIncidentDirectiveListResponse
+	if err := json.Unmarshal(directiveListRec.Body.Bytes(), &directiveListResp); err != nil {
+		t.Fatalf("unmarshal directive list response: %v", err)
+	}
+	if len(directiveListResp.Items) != 1 {
+		t.Fatalf("expected one directive, got %+v", directiveListResp.Items)
+	}
+	directiveID := directiveListResp.Items[0].DirectiveID
+
+	if _, err := app.secureCellService.SweepFederationIncidentDirectives(ctx, time.Now().UTC(), securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: "secure-cell-runtime",
+		Reason:   "automated directive supervision",
+		Metadata: map[string]string{"automation_mode": "federation_incident_directive"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectives failed: %v", err)
+	}
+
+	automationReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&response_id="+url.QueryEscape(localResponseID)+"&directive_id="+url.QueryEscape(directiveID), nil)
+	automationRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automationRec, automationReq)
+	if automationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automationRec.Code, automationRec.Body.String())
+	}
+	var automationResp secureCellFederationIncidentDirectiveAutomationActionListResponse
+	if err := json.Unmarshal(automationRec.Body.Bytes(), &automationResp); err != nil {
+		t.Fatalf("unmarshal directive automation response: %v", err)
+	}
+	if len(automationResp.Items) != 1 || automationResp.Items[0].DirectiveID != directiveID || automationResp.Items[0].PendingAction != "acknowledge" {
+		t.Fatalf("expected one directive automation action awaiting acknowledgement, got %+v", automationResp.Items)
+	}
+
+	automationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-automation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&directive_id="+url.QueryEscape(directiveID)+"&format=csv", nil)
+	automationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automationExportRec, automationExportReq)
+	if automationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automationExportRec.Code, automationExportRec.Body.String())
+	}
+	if body := automationExportRec.Body.String(); !strings.Contains(body, directiveID) || !strings.Contains(body, "pending_action") {
+		t.Fatalf("expected directive automation export to include directive id and pending action, got %s", body)
+	}
+
+	casePackReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	var casePackResp secureCellFederationIncidentCasePackResponse
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal federation incident case pack response: %v", err)
+	}
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveBundles) != 1 || len(casePackResp.Result.DirectiveAutomationActions) != 1 {
+		t.Fatalf("expected incident case pack with directive bundles and automation actions, got %+v", casePackResp.Result)
+	}
+	if casePackResp.Result.DirectiveBundles[0] == nil || casePackResp.Result.DirectiveBundles[0].DirectiveSummary.DirectiveID != directiveID {
+		t.Fatalf("expected case pack directive bundle for %q, got %+v", directiveID, casePackResp.Result.DirectiveBundles)
+	}
+
+	casePackExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack/export?format=csv", nil)
+	casePackExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackExportRec, casePackExportReq)
+	if casePackExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackExportRec.Code, casePackExportRec.Body.String())
+	}
+	if body := casePackExportRec.Body.String(); !strings.Contains(body, "directive_bundle_count") || !strings.Contains(body, "directive_automation_action_count") {
+		t.Fatalf("expected incident case pack export to include directive bundle and automation counts, got %s", body)
+	}
+}
+
 func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellFederationIncidentReportReconciliationAcknowledgeRequest{

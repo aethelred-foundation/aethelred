@@ -741,6 +741,66 @@ type SecureCellFederationIncidentDirectiveActionRecord struct {
 	Metadata        map[string]string                           `json:"metadata,omitempty"`
 }
 
+// SecureCellFederationIncidentDirectiveAutomationActionFilter narrows
+// operator queries across automated directive supervision actions.
+type SecureCellFederationIncidentDirectiveAutomationActionFilter struct {
+	CellID         string     `json:"cell_id,omitempty"`
+	OrganizationID string     `json:"organization_id,omitempty"`
+	IncidentID     string     `json:"incident_id,omitempty"`
+	ResponseID     string     `json:"response_id,omitempty"`
+	DirectiveID    string     `json:"directive_id,omitempty"`
+	ContractID     string     `json:"contract_id,omitempty"`
+	Action         string     `json:"action,omitempty"`
+	Since          *time.Time `json:"since,omitempty"`
+	Until          *time.Time `json:"until,omitempty"`
+	Limit          int        `json:"limit,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveAutomationActionRecord projects one
+// automated escalation or containment action applied because a directive
+// missed its governed deadline.
+type SecureCellFederationIncidentDirectiveAutomationActionRecord struct {
+	CellID               string                                        `json:"cell_id"`
+	CellName             string                                        `json:"cell_name,omitempty"`
+	Jurisdiction         string                                        `json:"jurisdiction,omitempty"`
+	CellStatus           SecureCellStatus                              `json:"cell_status"`
+	OrganizationID       string                                        `json:"organization_id,omitempty"`
+	SponsorOfRecord      string                                        `json:"sponsor_of_record,omitempty"`
+	IncidentID           string                                        `json:"incident_id,omitempty"`
+	ResponseID           string                                        `json:"response_id,omitempty"`
+	DirectiveID          string                                        `json:"directive_id,omitempty"`
+	DirectiveTitle       string                                        `json:"directive_title,omitempty"`
+	DirectivePriority    SecureCellFederationIncidentDirectivePriority `json:"directive_priority,omitempty"`
+	DirectiveStatus      SecureCellFederationIncidentDirectiveStatus   `json:"directive_status,omitempty"`
+	PendingAction        string                                        `json:"pending_action,omitempty"`
+	ContractID           string                                        `json:"contract_id,omitempty"`
+	ContractStatusBefore SecureCellFederationContractStatus            `json:"contract_status_before,omitempty"`
+	ContractStatusAfter  SecureCellFederationContractStatus            `json:"contract_status_after,omitempty"`
+	Action               string                                        `json:"action"`
+	Trigger              string                                        `json:"trigger,omitempty"`
+	TierID               string                                        `json:"tier_id,omitempty"`
+	TargetDID            string                                        `json:"target_did,omitempty"`
+	DueAt                *time.Time                                    `json:"due_at,omitempty"`
+	Actor                string                                        `json:"actor"`
+	AutomatedActor       string                                        `json:"automated_actor,omitempty"`
+	Reason               string                                        `json:"reason,omitempty"`
+	TransitionID         string                                        `json:"transition_id"`
+	OccurredAt           time.Time                                     `json:"occurred_at"`
+	Metadata             map[string]string                             `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveSweepResult summarizes one automated
+// directive-supervision pass across the secure-cell fleet.
+type SecureCellFederationIncidentDirectiveSweepResult struct {
+	At                 time.Time `json:"at"`
+	CellsScanned       int       `json:"cells_scanned"`
+	DirectivesScanned  int       `json:"directives_scanned"`
+	CellsMutated       int       `json:"cells_mutated"`
+	ResponsesEscalated int       `json:"responses_escalated"`
+	ContractsSuspended int       `json:"contracts_suspended"`
+	CellIDs            []string  `json:"cell_ids,omitempty"`
+}
+
 // SecureCellFederationIncidentRemediationFilter narrows operator queries
 // across submitted remediation attestations.
 type SecureCellFederationIncidentRemediationFilter struct {

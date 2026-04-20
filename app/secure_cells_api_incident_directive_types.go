@@ -74,6 +74,10 @@ type secureCellFederationIncidentDirectiveActionListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveActionRecord `json:"items"`
 }
 
+type secureCellFederationIncidentDirectiveAutomationActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveAutomationActionRecord `json:"items"`
+}
+
 type secureCellFederationIncidentDirectiveQueryResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentDirective `json:"result,omitempty"`
 }
@@ -146,6 +150,40 @@ func parseSecureCellFederationIncidentDirectiveActionFilter(r *http.Request) (se
 		IncidentID:     strings.TrimSpace(r.URL.Query().Get("incident_id")),
 		ResponseID:     strings.TrimSpace(r.URL.Query().Get("response_id")),
 		DirectiveID:    strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		Action:         strings.TrimSpace(r.URL.Query().Get("action")),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("since")); raw != "" {
+		since, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Since = &since
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("until")); raw != "" {
+		until, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Until = &until
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveAutomationActionFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveAutomationActionFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveAutomationActionFilter{
+		CellID:         strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID: strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:     strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:     strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:    strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ContractID:     strings.TrimSpace(r.URL.Query().Get("contract_id")),
 		Action:         strings.TrimSpace(r.URL.Query().Get("action")),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {

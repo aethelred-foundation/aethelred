@@ -2013,10 +2013,11 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 		rows := [][]string{{
 			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
 			"organization_id", "sponsor_of_record", "organization_name", "response_id", "response_status", "incident_id", "source_type",
+			"directive_bundle_ids", "directive_bundle_count",
 			"report_bundle_ids", "report_bundle_count", "amendment_bundle_ids", "amendment_bundle_count",
 			"report_reconciliation_bundle_ids", "report_reconciliation_bundle_count",
 			"amendment_reconciliation_bundle_ids", "amendment_reconciliation_bundle_count",
-			"response_action_count", "remediation_count", "verification_count", "closure_count", "dispute_count",
+			"response_action_count", "directive_automation_action_count", "remediation_count", "verification_count", "closure_count", "dispute_count",
 			"report_reconciliation_automation_action_count", "amendment_reconciliation_attestation_count", "amendment_reconciliation_automation_action_count",
 			"control_ids", "operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash", "portable_package_hash",
 			"portable_package_signed", "portable_package_anchored", "content_hash", "signature_algorithm", "signature_signer",
@@ -2050,6 +2051,8 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 			string(pack.ResponseSummary.Status),
 			pack.ResponseSummary.IncidentID,
 			string(pack.ResponseSummary.SourceType),
+			joinSecureCellFederationIncidentDirectiveBundleIDs(pack.DirectiveBundles),
+			strconv.Itoa(len(pack.DirectiveBundles)),
 			joinSecureCellFederationIncidentReportBundleIDs(pack.ReportBundles),
 			strconv.Itoa(len(pack.ReportBundles)),
 			joinSecureCellFederationIncidentReportAmendmentBundleIDs(pack.AmendmentBundles),
@@ -2059,6 +2062,7 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 			joinSecureCellFederationIncidentReportAmendmentReconciliationBundleIDs(pack.AmendmentReconciliationBundles),
 			strconv.Itoa(len(pack.AmendmentReconciliationBundles)),
 			strconv.Itoa(len(pack.ResponseActions)),
+			strconv.Itoa(len(pack.DirectiveAutomationActions)),
 			strconv.Itoa(len(pack.Remediations)),
 			strconv.Itoa(len(pack.Verifications)),
 			strconv.Itoa(len(pack.Closures)),
@@ -2091,6 +2095,17 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 	default:
 		return fmt.Errorf("unsupported export format %q", format)
 	}
+}
+
+func joinSecureCellFederationIncidentDirectiveBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentDirectiveBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
 }
 
 func joinSecureCellFederationIncidentReportBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentReportBundle) string {
