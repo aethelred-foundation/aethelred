@@ -2,6 +2,71 @@ package securecells
 
 import "time"
 
+type SecureCellFederationIncidentDirectiveExtensionReviewVoteChoice string
+
+const (
+	SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceApprove SecureCellFederationIncidentDirectiveExtensionReviewVoteChoice = "approve"
+	SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceReject  SecureCellFederationIncidentDirectiveExtensionReviewVoteChoice = "reject"
+)
+
+// SecureCellFederationIncidentDirectiveExtensionReviewVote captures one
+// evidence-bearing committee vote over a pending directive deadline exception.
+type SecureCellFederationIncidentDirectiveExtensionReviewVote struct {
+	ID                string                                                         `json:"id"`
+	ExtensionID       string                                                         `json:"extension_id"`
+	ActorDID          string                                                         `json:"actor_did"`
+	Choice            SecureCellFederationIncidentDirectiveExtensionReviewVoteChoice `json:"choice"`
+	Reason            string                                                         `json:"reason,omitempty"`
+	PolicyReceiptID   string                                                         `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                                         `json:"policy_receipt_hash,omitempty"`
+	CreatedAt         time.Time                                                      `json:"created_at"`
+	Metadata          map[string]string                                              `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveExtensionDelegation broadens the
+// reviewer or resolver set for committee-based directive exception governance.
+type SecureCellFederationIncidentDirectiveExtensionDelegation struct {
+	ID                string            `json:"id"`
+	FromActorDID      string            `json:"from_actor_did"`
+	ToActorDID        string            `json:"to_actor_did"`
+	Scope             string            `json:"scope"`
+	Reason            string            `json:"reason,omitempty"`
+	PolicyReceiptID   string            `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string            `json:"policy_receipt_hash,omitempty"`
+	CreatedAt         time.Time         `json:"created_at"`
+	Metadata          map[string]string `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveExtensionDelegationRequest delegates
+// one committee review or dispute-resolution slot to another actor.
+type SecureCellFederationIncidentDirectiveExtensionDelegationRequest struct {
+	ActorDID  string            `json:"actor_did,omitempty"`
+	TargetDID string            `json:"target_did,omitempty"`
+	Reason    string            `json:"reason,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+}
+
+type SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoice string
+
+const (
+	SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoiceUphold  SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoice = "uphold"
+	SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoiceReverse SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoice = "reverse"
+)
+
+// SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVote captures
+// one evidence-bearing committee vote over a pending dispute resolution.
+type SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVote struct {
+	ID                string                                                                    `json:"id"`
+	DisputeID         string                                                                    `json:"dispute_id"`
+	ActorDID          string                                                                    `json:"actor_did"`
+	Choice            SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVoteChoice `json:"choice"`
+	Reason            string                                                                    `json:"reason,omitempty"`
+	PolicyReceiptID   string                                                                    `json:"policy_receipt_id,omitempty"`
+	PolicyReceiptHash string                                                                    `json:"policy_receipt_hash,omitempty"`
+	CreatedAt         time.Time                                                                 `json:"created_at"`
+	Metadata          map[string]string                                                         `json:"metadata,omitempty"`
+}
+
 // SecureCellFederationIncidentDirectiveExtensionDisputeStatus captures the
 // lifecycle of one challenge against a governed directive deadline exception.
 type SecureCellFederationIncidentDirectiveExtensionDisputeStatus string
@@ -25,34 +90,38 @@ const (
 // evidence-bearing challenge and resolution over a directive deadline
 // exception.
 type SecureCellFederationIncidentDirectiveExtensionDispute struct {
-	ID                    string                                                          `json:"id"`
-	ResponseID            string                                                          `json:"response_id"`
-	DirectiveID           string                                                          `json:"directive_id"`
-	ExtensionID           string                                                          `json:"extension_id"`
-	OrganizationID        string                                                          `json:"organization_id"`
-	SponsorOfRecord       string                                                          `json:"sponsor_of_record,omitempty"`
-	IncidentID            string                                                          `json:"incident_id"`
-	ChallengingParty      SecureCellFederationIncidentResponseParty                       `json:"challenging_party"`
-	RespondingParty       SecureCellFederationIncidentResponseParty                       `json:"responding_party"`
-	ChallengedStatus      SecureCellFederationIncidentDirectiveExtensionStatus            `json:"challenged_status"`
-	DisputedBy            string                                                          `json:"disputed_by,omitempty"`
-	Summary               string                                                          `json:"summary"`
-	Description           string                                                          `json:"description,omitempty"`
-	EvidenceIDs           []string                                                        `json:"evidence_ids,omitempty"`
-	Status                SecureCellFederationIncidentDirectiveExtensionDisputeStatus     `json:"status"`
-	RequestReceiptID      string                                                          `json:"request_receipt_id,omitempty"`
-	RequestReceiptHash    string                                                          `json:"request_receipt_hash,omitempty"`
-	Resolution            SecureCellFederationIncidentDirectiveExtensionDisputeResolution `json:"resolution,omitempty"`
-	ResolutionReceiptID   string                                                          `json:"resolution_receipt_id,omitempty"`
-	ResolutionReceiptHash string                                                          `json:"resolution_receipt_hash,omitempty"`
-	ResolutionSummary     string                                                          `json:"resolution_summary,omitempty"`
-	ResolutionDescription string                                                          `json:"resolution_description,omitempty"`
-	ResolutionEvidenceIDs []string                                                        `json:"resolution_evidence_ids,omitempty"`
-	ResolvedBy            string                                                          `json:"resolved_by,omitempty"`
-	ResolvedAt            *time.Time                                                      `json:"resolved_at,omitempty"`
-	CreatedAt             time.Time                                                       `json:"created_at"`
-	UpdatedAt             time.Time                                                       `json:"updated_at"`
-	Metadata              map[string]string                                               `json:"metadata,omitempty"`
+	ID                    string                                                                `json:"id"`
+	ResponseID            string                                                                `json:"response_id"`
+	DirectiveID           string                                                                `json:"directive_id"`
+	ExtensionID           string                                                                `json:"extension_id"`
+	OrganizationID        string                                                                `json:"organization_id"`
+	SponsorOfRecord       string                                                                `json:"sponsor_of_record,omitempty"`
+	IncidentID            string                                                                `json:"incident_id"`
+	ChallengingParty      SecureCellFederationIncidentResponseParty                             `json:"challenging_party"`
+	RespondingParty       SecureCellFederationIncidentResponseParty                             `json:"responding_party"`
+	ChallengedStatus      SecureCellFederationIncidentDirectiveExtensionStatus                  `json:"challenged_status"`
+	DisputedBy            string                                                                `json:"disputed_by,omitempty"`
+	Summary               string                                                                `json:"summary"`
+	Description           string                                                                `json:"description,omitempty"`
+	EvidenceIDs           []string                                                              `json:"evidence_ids,omitempty"`
+	ResolutionThreshold   int                                                                   `json:"resolution_threshold,omitempty"`
+	EligibleResolverDIDs  []string                                                              `json:"eligible_resolver_dids,omitempty"`
+	ResolutionVotes       []SecureCellFederationIncidentDirectiveExtensionDisputeResolutionVote `json:"resolution_votes,omitempty"`
+	ResolutionDelegations []SecureCellFederationIncidentDirectiveExtensionDelegation            `json:"resolution_delegations,omitempty"`
+	Status                SecureCellFederationIncidentDirectiveExtensionDisputeStatus           `json:"status"`
+	RequestReceiptID      string                                                                `json:"request_receipt_id,omitempty"`
+	RequestReceiptHash    string                                                                `json:"request_receipt_hash,omitempty"`
+	Resolution            SecureCellFederationIncidentDirectiveExtensionDisputeResolution       `json:"resolution,omitempty"`
+	ResolutionReceiptID   string                                                                `json:"resolution_receipt_id,omitempty"`
+	ResolutionReceiptHash string                                                                `json:"resolution_receipt_hash,omitempty"`
+	ResolutionSummary     string                                                                `json:"resolution_summary,omitempty"`
+	ResolutionDescription string                                                                `json:"resolution_description,omitempty"`
+	ResolutionEvidenceIDs []string                                                              `json:"resolution_evidence_ids,omitempty"`
+	ResolvedBy            string                                                                `json:"resolved_by,omitempty"`
+	ResolvedAt            *time.Time                                                            `json:"resolved_at,omitempty"`
+	CreatedAt             time.Time                                                             `json:"created_at"`
+	UpdatedAt             time.Time                                                             `json:"updated_at"`
+	Metadata              map[string]string                                                     `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionDisputeRequest records one
@@ -99,34 +168,40 @@ type SecureCellFederationIncidentDirectiveExtensionDisputeFilter struct {
 // SecureCellFederationIncidentDirectiveExtensionDisputeSummary projects one
 // governed challenge over a directive deadline exception.
 type SecureCellFederationIncidentDirectiveExtensionDisputeSummary struct {
-	CellID            string                                                          `json:"cell_id"`
-	CellName          string                                                          `json:"cell_name,omitempty"`
-	Jurisdiction      string                                                          `json:"jurisdiction,omitempty"`
-	CellStatus        SecureCellStatus                                                `json:"cell_status"`
-	ResponseID        string                                                          `json:"response_id"`
-	OrganizationID    string                                                          `json:"organization_id"`
-	SponsorOfRecord   string                                                          `json:"sponsor_of_record,omitempty"`
-	IncidentID        string                                                          `json:"incident_id"`
-	DirectiveID       string                                                          `json:"directive_id"`
-	DirectiveTitle    string                                                          `json:"directive_title"`
-	DirectiveStatus   SecureCellFederationIncidentDirectiveStatus                     `json:"directive_status"`
-	ExtensionID       string                                                          `json:"extension_id"`
-	ExtensionStatus   SecureCellFederationIncidentDirectiveExtensionStatus            `json:"extension_status"`
-	DisputeID         string                                                          `json:"dispute_id"`
-	ChallengingParty  SecureCellFederationIncidentResponseParty                       `json:"challenging_party"`
-	RespondingParty   SecureCellFederationIncidentResponseParty                       `json:"responding_party"`
-	ChallengedStatus  SecureCellFederationIncidentDirectiveExtensionStatus            `json:"challenged_status"`
-	DisputedBy        string                                                          `json:"disputed_by,omitempty"`
-	Summary           string                                                          `json:"summary"`
-	Description       string                                                          `json:"description,omitempty"`
-	Status            SecureCellFederationIncidentDirectiveExtensionDisputeStatus     `json:"status"`
-	Resolution        SecureCellFederationIncidentDirectiveExtensionDisputeResolution `json:"resolution,omitempty"`
-	ResolutionSummary string                                                          `json:"resolution_summary,omitempty"`
-	ResolvedBy        string                                                          `json:"resolved_by,omitempty"`
-	ResolvedAt        *time.Time                                                      `json:"resolved_at,omitempty"`
-	CreatedAt         time.Time                                                       `json:"created_at"`
-	UpdatedAt         time.Time                                                       `json:"updated_at"`
-	Metadata          map[string]string                                               `json:"metadata,omitempty"`
+	CellID                       string                                                          `json:"cell_id"`
+	CellName                     string                                                          `json:"cell_name,omitempty"`
+	Jurisdiction                 string                                                          `json:"jurisdiction,omitempty"`
+	CellStatus                   SecureCellStatus                                                `json:"cell_status"`
+	ResponseID                   string                                                          `json:"response_id"`
+	OrganizationID               string                                                          `json:"organization_id"`
+	SponsorOfRecord              string                                                          `json:"sponsor_of_record,omitempty"`
+	IncidentID                   string                                                          `json:"incident_id"`
+	DirectiveID                  string                                                          `json:"directive_id"`
+	DirectiveTitle               string                                                          `json:"directive_title"`
+	DirectiveStatus              SecureCellFederationIncidentDirectiveStatus                     `json:"directive_status"`
+	ExtensionID                  string                                                          `json:"extension_id"`
+	ExtensionStatus              SecureCellFederationIncidentDirectiveExtensionStatus            `json:"extension_status"`
+	DisputeID                    string                                                          `json:"dispute_id"`
+	ChallengingParty             SecureCellFederationIncidentResponseParty                       `json:"challenging_party"`
+	RespondingParty              SecureCellFederationIncidentResponseParty                       `json:"responding_party"`
+	ChallengedStatus             SecureCellFederationIncidentDirectiveExtensionStatus            `json:"challenged_status"`
+	DisputedBy                   string                                                          `json:"disputed_by,omitempty"`
+	Summary                      string                                                          `json:"summary"`
+	Description                  string                                                          `json:"description,omitempty"`
+	Status                       SecureCellFederationIncidentDirectiveExtensionDisputeStatus     `json:"status"`
+	ResolutionThreshold          int                                                             `json:"resolution_threshold"`
+	EligibleResolverCount        int                                                             `json:"eligible_resolver_count"`
+	ResolutionDelegationCount    int                                                             `json:"resolution_delegation_count"`
+	UpholdVoteCount              int                                                             `json:"uphold_vote_count"`
+	ReverseVoteCount             int                                                             `json:"reverse_vote_count"`
+	ResolutionThresholdSatisfied bool                                                            `json:"resolution_threshold_satisfied"`
+	Resolution                   SecureCellFederationIncidentDirectiveExtensionDisputeResolution `json:"resolution,omitempty"`
+	ResolutionSummary            string                                                          `json:"resolution_summary,omitempty"`
+	ResolvedBy                   string                                                          `json:"resolved_by,omitempty"`
+	ResolvedAt                   *time.Time                                                      `json:"resolved_at,omitempty"`
+	CreatedAt                    time.Time                                                       `json:"created_at"`
+	UpdatedAt                    time.Time                                                       `json:"updated_at"`
+	Metadata                     map[string]string                                               `json:"metadata,omitempty"`
 }
 
 // SecureCellOverdueFederationIncidentDirectiveExtensionFilter narrows

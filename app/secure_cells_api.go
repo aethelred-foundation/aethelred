@@ -3524,14 +3524,18 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.RequestFederationIncidentDirectiveExtension(r.Context(), cellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionRequest{
-				ActorDID:        safeSecureCellActorDID(authCtx),
-				RequestingParty: req.RequestingParty,
-				Summary:         req.Summary,
-				Description:     req.Description,
-				EvidenceIDs:     append([]string(nil), req.EvidenceIDs...),
-				ProposedDueAt:   req.ProposedDueAt,
-				Reason:          req.Reason,
-				Metadata:        req.Metadata,
+				ActorDID:                   safeSecureCellActorDID(authCtx),
+				RequestingParty:            req.RequestingParty,
+				Summary:                    req.Summary,
+				Description:                req.Description,
+				EvidenceIDs:                append([]string(nil), req.EvidenceIDs...),
+				ProposedDueAt:              req.ProposedDueAt,
+				ReviewApprovalThreshold:    req.ReviewApprovalThreshold,
+				EligibleReviewerDIDs:       append([]string(nil), req.EligibleReviewerDIDs...),
+				DisputeResolutionThreshold: req.DisputeResolutionThreshold,
+				EligibleResolverDIDs:       append([]string(nil), req.EligibleResolverDIDs...),
+				Reason:                     req.Reason,
+				Metadata:                   req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -3754,6 +3758,35 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/delegate-review") && strings.Contains(r.URL.Path, "/federation/incident-directive-extensions/"):
+			cellID, extensionID, err := parseSecureCellFederationIncidentDirectiveExtensionActionPath(r.URL.Path, "/delegate-review")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionDelegationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension review delegation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionDelegateReview(r, cellID, extensionID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.DelegateFederationIncidentDirectiveExtensionReview(r.Context(), cellID, extensionID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDelegationRequest{
+				ActorDID:  safeSecureCellActorDID(authCtx),
+				TargetDID: req.TargetDID,
+				Reason:    req.Reason,
+				Metadata:  req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/reject") && strings.Contains(r.URL.Path, "/federation/incident-directive-extensions/"):
 			cellID, extensionID, err := parseSecureCellFederationIncidentDirectiveExtensionActionPath(r.URL.Path, "/reject")
 			if err != nil {
@@ -3844,6 +3877,35 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				EvidenceIDs:           append([]string(nil), req.EvidenceIDs...),
 				Reason:                req.Reason,
 				Metadata:              req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/delegate-resolution") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-disputes/"):
+			cellID, disputeID, err := parseSecureCellFederationIncidentDirectiveExtensionDisputeActionPath(r.URL.Path, "/delegate-resolution")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionDelegationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension dispute delegation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionDelegateResolution(r, cellID, disputeID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.DelegateFederationIncidentDirectiveExtensionDisputeResolution(r.Context(), cellID, disputeID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDelegationRequest{
+				ActorDID:  safeSecureCellActorDID(authCtx),
+				TargetDID: req.TargetDID,
+				Reason:    req.Reason,
+				Metadata:  req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())

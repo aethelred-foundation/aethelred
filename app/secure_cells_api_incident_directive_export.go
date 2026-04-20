@@ -201,7 +201,7 @@ func writeSecureCellFederationIncidentDirectiveExtensionExport(w http.ResponseWr
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extensions.csv"`)
 		cw := csv.NewWriter(w)
-		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_title", "directive_status", "extension_id", "requesting_party", "reviewing_party", "requested_by", "summary", "status", "dispute_count", "pending_dispute_count", "last_dispute_id", "last_dispute_status", "current_due_at", "proposed_due_at", "decision_summary", "reviewed_by", "reviewed_at", "created_at", "updated_at"}); err != nil {
+		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_title", "directive_status", "extension_id", "requesting_party", "reviewing_party", "requested_by", "summary", "status", "review_approval_threshold", "eligible_reviewer_count", "review_delegation_count", "approve_vote_count", "reject_vote_count", "review_threshold_satisfied", "dispute_resolution_threshold", "eligible_resolver_count", "dispute_count", "pending_dispute_count", "last_dispute_id", "last_dispute_status", "current_due_at", "proposed_due_at", "decision_summary", "reviewed_by", "reviewed_at", "created_at", "updated_at"}); err != nil {
 			return err
 		}
 		for _, item := range items {
@@ -219,6 +219,14 @@ func writeSecureCellFederationIncidentDirectiveExtensionExport(w http.ResponseWr
 				item.RequestedBy,
 				item.Summary,
 				string(item.Status),
+				strconv.Itoa(item.ReviewApprovalThreshold),
+				strconv.Itoa(item.EligibleReviewerCount),
+				strconv.Itoa(item.ReviewDelegationCount),
+				strconv.Itoa(item.ApproveVoteCount),
+				strconv.Itoa(item.RejectVoteCount),
+				strconv.FormatBool(item.ReviewThresholdSatisfied),
+				strconv.Itoa(item.DisputeResolutionThreshold),
+				strconv.Itoa(item.EligibleResolverCount),
 				strconv.Itoa(item.DisputeCount),
 				strconv.Itoa(item.PendingDisputeCount),
 				item.LastDisputeID,
@@ -299,7 +307,7 @@ func writeSecureCellFederationIncidentDirectiveExtensionDisputeExport(w http.Res
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-disputes.csv"`)
 		cw := csv.NewWriter(w)
-		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_title", "directive_status", "extension_id", "extension_status", "dispute_id", "challenging_party", "responding_party", "challenged_status", "disputed_by", "summary", "status", "resolution", "resolution_summary", "resolved_by", "resolved_at", "created_at", "updated_at"}); err != nil {
+		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_title", "directive_status", "extension_id", "extension_status", "dispute_id", "challenging_party", "responding_party", "challenged_status", "disputed_by", "summary", "status", "resolution_threshold", "eligible_resolver_count", "resolution_delegation_count", "uphold_vote_count", "reverse_vote_count", "resolution_threshold_satisfied", "resolution", "resolution_summary", "resolved_by", "resolved_at", "created_at", "updated_at"}); err != nil {
 			return err
 		}
 		for _, item := range items {
@@ -320,6 +328,12 @@ func writeSecureCellFederationIncidentDirectiveExtensionDisputeExport(w http.Res
 				item.DisputedBy,
 				item.Summary,
 				string(item.Status),
+				strconv.Itoa(item.ResolutionThreshold),
+				strconv.Itoa(item.EligibleResolverCount),
+				strconv.Itoa(item.ResolutionDelegationCount),
+				strconv.Itoa(item.UpholdVoteCount),
+				strconv.Itoa(item.ReverseVoteCount),
+				strconv.FormatBool(item.ResolutionThresholdSatisfied),
 				string(item.Resolution),
 				item.ResolutionSummary,
 				item.ResolvedBy,

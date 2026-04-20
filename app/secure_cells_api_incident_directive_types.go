@@ -63,15 +63,19 @@ type secureCellFederationIncidentDirectiveVerifyRequest struct {
 }
 
 type secureCellFederationIncidentDirectiveExtensionRequest struct {
-	ActorIdentity   json.RawMessage                                                  `json:"actor_identity,omitempty"`
-	PolicyReceipt   *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
-	RequestingParty securecellsintegration.SecureCellFederationIncidentResponseParty `json:"requesting_party,omitempty"`
-	Summary         string                                                           `json:"summary,omitempty"`
-	Description     string                                                           `json:"description,omitempty"`
-	EvidenceIDs     []string                                                         `json:"evidence_ids,omitempty"`
-	ProposedDueAt   *time.Time                                                       `json:"proposed_due_at,omitempty"`
-	Reason          string                                                           `json:"reason,omitempty"`
-	Metadata        map[string]string                                                `json:"metadata,omitempty"`
+	ActorIdentity              json.RawMessage                                                  `json:"actor_identity,omitempty"`
+	PolicyReceipt              *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
+	RequestingParty            securecellsintegration.SecureCellFederationIncidentResponseParty `json:"requesting_party,omitempty"`
+	Summary                    string                                                           `json:"summary,omitempty"`
+	Description                string                                                           `json:"description,omitempty"`
+	EvidenceIDs                []string                                                         `json:"evidence_ids,omitempty"`
+	ProposedDueAt              *time.Time                                                       `json:"proposed_due_at,omitempty"`
+	ReviewApprovalThreshold    int                                                              `json:"review_approval_threshold,omitempty"`
+	EligibleReviewerDIDs       []string                                                         `json:"eligible_reviewer_dids,omitempty"`
+	DisputeResolutionThreshold int                                                              `json:"dispute_resolution_threshold,omitempty"`
+	EligibleResolverDIDs       []string                                                         `json:"eligible_resolver_dids,omitempty"`
+	Reason                     string                                                           `json:"reason,omitempty"`
+	Metadata                   map[string]string                                                `json:"metadata,omitempty"`
 }
 
 type secureCellFederationIncidentDirectiveExtensionApproveRequest struct {
@@ -117,6 +121,14 @@ type secureCellFederationIncidentDirectiveExtensionDisputeResolveRequest struct 
 	EvidenceIDs           []string                                                                               `json:"evidence_ids,omitempty"`
 	Reason                string                                                                                 `json:"reason,omitempty"`
 	Metadata              map[string]string                                                                      `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionDelegationRequest struct {
+	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	TargetDID     string                      `json:"target_did,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	Metadata      map[string]string           `json:"metadata,omitempty"`
 }
 
 type secureCellFederationIncidentDirectiveListResponse struct {

@@ -103,6 +103,8 @@ const (
 	secureCellFederationIncidentDirectiveExtensionRejectAction                 = "secure_cells.federation.incident.directive.extension.reject"
 	secureCellFederationIncidentDirectiveExtensionDisputeAction                = "secure_cells.federation.incident.directive.extension.dispute"
 	secureCellFederationIncidentDirectiveExtensionResolveAction                = "secure_cells.federation.incident.directive.extension.resolve"
+	secureCellFederationIncidentDirectiveExtensionDelegateReviewAction         = "secure_cells.federation.incident.directive.extension.delegate_review"
+	secureCellFederationIncidentDirectiveExtensionDelegateResolutionAction     = "secure_cells.federation.incident.directive.extension.delegate_resolution"
 	secureCellFederationIncidentReportPlanAction                               = "secure_cells.federation.incident.response.report.plan"
 	secureCellFederationIncidentReportIntakeAction                             = "secure_cells.federation.incident.report.intake"
 	secureCellFederationIncidentReportAmendAction                              = "secure_cells.federation.incident.report.amend"
@@ -4835,6 +4837,14 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if transition.Action == "secure_cell.federation_incident_directive_extension_disputed" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolved" {
 			federationIncidentDirectiveExtensionDisputeRecordIDs = append(federationIncidentDirectiveExtensionDisputeRecordIDs, recordID)
 		}
+		if transition.Action == "secure_cell.federation_incident_directive_extension_review_vote_recorded" || transition.Action == "secure_cell.federation_incident_directive_extension_review_delegated" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolution_vote_recorded" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolution_delegated" {
+			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
+			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
+			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolution_vote_recorded" || transition.Action == "secure_cell.federation_incident_directive_extension_dispute_resolution_delegated" {
+			federationIncidentDirectiveExtensionDisputeRecordIDs = append(federationIncidentDirectiveExtensionDisputeRecordIDs, recordID)
+		}
 		if strings.TrimSpace(data["federation_incident_directive_extension_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_sweep_mode"]), "automated") {
 			federationIncidentDirectiveExtensionAutomationRecordIDs = append(federationIncidentDirectiveExtensionAutomationRecordIDs, recordID)
 		}
@@ -7041,6 +7051,10 @@ func transitionStageForAction(action string) string {
 		return "dispute_federation_incident_directive_extension"
 	case "secure_cell.federation_incident_directive_extension_dispute_resolved":
 		return "resolve_federation_incident_directive_extension_dispute"
+	case "secure_cell.federation_incident_directive_extension_review_delegated":
+		return "delegate_federation_incident_directive_extension_review"
+	case "secure_cell.federation_incident_directive_extension_dispute_resolution_delegated":
+		return "delegate_federation_incident_directive_extension_dispute_resolution"
 	case "secure_cell.federation_incident_report_planned":
 		return "plan_federation_incident_report"
 	case "secure_cell.federation_incident_report_amendment_created":
@@ -8751,6 +8765,8 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationIncidentDirectiveExtensionRejectAction,
 				secureCellFederationIncidentDirectiveExtensionDisputeAction,
 				secureCellFederationIncidentDirectiveExtensionResolveAction,
+				secureCellFederationIncidentDirectiveExtensionDelegateReviewAction,
+				secureCellFederationIncidentDirectiveExtensionDelegateResolutionAction,
 				secureCellFederationIncidentReportPlanAction,
 				secureCellFederationIncidentReportIntakeAction,
 				secureCellFederationIncidentReportAmendAction,
@@ -9128,6 +9144,24 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_resolve_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "resolve_federation_incident_directive_extension_dispute"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_delegate_review_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "delegate_federation_incident_directive_extension_review"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_delegate_resolution_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "delegate_federation_incident_directive_extension_dispute_resolution"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -9639,6 +9673,10 @@ func actionForStage(stage string) string {
 		return secureCellFederationIncidentDirectiveExtensionDisputeAction
 	case "resolve_federation_incident_directive_extension_dispute":
 		return secureCellFederationIncidentDirectiveExtensionResolveAction
+	case "delegate_federation_incident_directive_extension_review":
+		return secureCellFederationIncidentDirectiveExtensionDelegateReviewAction
+	case "delegate_federation_incident_directive_extension_dispute_resolution":
+		return secureCellFederationIncidentDirectiveExtensionDelegateResolutionAction
 	case "plan_federation_incident_report":
 		return secureCellFederationIncidentReportPlanAction
 	case "intake_federation_incident_report_bundle":

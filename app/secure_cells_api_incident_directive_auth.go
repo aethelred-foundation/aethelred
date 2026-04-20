@@ -71,6 +71,20 @@ func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentDirectiv
 	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
 }
 
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateReview(r *http.Request, _ string, _ string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
+func (a *secureCellGenericRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateResolution(r *http.Request, _ string, _ string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if req == nil {
+		return a.AuthorizeCreate(r, nil)
+	}
+	return a.authorizeWithOptionalActor(r, req.ActorIdentity)
+}
+
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveIssue(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentDirectiveCreateRequest) (*secureCellAuthContext, error) {
 	for _, strategy := range a.strategies {
 		return strategy.AuthorizeFederationIncidentDirectiveIssue(r, cellID, responseID, req)
@@ -130,6 +144,20 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveE
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionResolve(r *http.Request, cellID string, disputeID string, req *secureCellFederationIncidentDirectiveExtensionDisputeResolveRequest) (*secureCellAuthContext, error) {
 	for _, strategy := range a.strategies {
 		return strategy.AuthorizeFederationIncidentDirectiveExtensionResolve(r, cellID, disputeID, req)
+	}
+	return nil, fmt.Errorf("securecells/auth: %w: no request authorizer is configured", audit.ErrWriteDisabled)
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateReview(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	for _, strategy := range a.strategies {
+		return strategy.AuthorizeFederationIncidentDirectiveExtensionDelegateReview(r, cellID, extensionID, req)
+	}
+	return nil, fmt.Errorf("securecells/auth: %w: no request authorizer is configured", audit.ErrWriteDisabled)
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateResolution(r *http.Request, cellID string, disputeID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	for _, strategy := range a.strategies {
+		return strategy.AuthorizeFederationIncidentDirectiveExtensionDelegateResolution(r, cellID, disputeID, req)
 	}
 	return nil, fmt.Errorf("securecells/auth: %w: no request authorizer is configured", audit.ErrWriteDisabled)
 }
@@ -377,6 +405,60 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirec
 	)
 }
 
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateReview(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(extensionID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and extension ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension review delegation request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionDelegateReviewAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAction(cellID, extensionID, "delegate-review"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionDelegateResolution(r *http.Request, cellID string, disputeID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(disputeID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and dispute ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension dispute delegation request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionDelegateResolutionAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionDisputeAction(cellID, disputeID, "delegate-resolution"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
 func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveIssue(r *http.Request, cellID string, responseID string, req *secureCellFederationIncidentDirectiveCreateRequest) (*secureCellAuthContext, error) {
 	if app == nil || app.secureCellAuth == nil {
 		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
@@ -438,6 +520,20 @@ func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtension
 		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
 	}
 	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionResolve(r, cellID, disputeID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionDelegateReview(r *http.Request, cellID string, extensionID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionDelegateReview(r, cellID, extensionID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionDelegateResolution(r *http.Request, cellID string, disputeID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionDelegateResolution(r, cellID, disputeID, req)
 }
 
 func resourceCandidatesForSecureCellFederationIncidentDirectiveAction(cellID, directiveID, action string) []string {

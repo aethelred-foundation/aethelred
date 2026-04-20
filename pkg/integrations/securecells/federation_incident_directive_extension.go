@@ -87,26 +87,30 @@ func (s *Service) RequestFederationIncidentDirectiveExtension(ctx context.Contex
 
 	now := time.Now().UTC()
 	extension := SecureCellFederationIncidentDirectiveExtension{
-		ID:                 secureCellFederationIncidentDirectiveExtensionID(*directive, actorDID, now, len(directive.Extensions)),
-		ResponseID:         response.ID,
-		DirectiveID:        directive.ID,
-		OrganizationID:     response.OrganizationID,
-		SponsorOfRecord:    response.SponsorOfRecord,
-		IncidentID:         response.IncidentID,
-		RequestingParty:    requestingParty,
-		ReviewingParty:     reviewingParty,
-		RequestedBy:        actorDID,
-		Summary:            summary,
-		Description:        strings.TrimSpace(req.Description),
-		EvidenceIDs:        append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
-		CurrentDueAt:       cloneTimePtr(&currentDueAt),
-		ProposedDueAt:      cloneTimePtr(&proposedDueAt),
-		Status:             SecureCellFederationIncidentDirectiveExtensionStatusPendingReview,
-		RequestReceiptID:   receipt.ID,
-		RequestReceiptHash: receipt.ContentHash,
-		CreatedAt:          now,
-		UpdatedAt:          now,
-		Metadata:           cloneStringMap(req.Metadata),
+		ID:                         secureCellFederationIncidentDirectiveExtensionID(*directive, actorDID, now, len(directive.Extensions)),
+		ResponseID:                 response.ID,
+		DirectiveID:                directive.ID,
+		OrganizationID:             response.OrganizationID,
+		SponsorOfRecord:            response.SponsorOfRecord,
+		IncidentID:                 response.IncidentID,
+		RequestingParty:            requestingParty,
+		ReviewingParty:             reviewingParty,
+		RequestedBy:                actorDID,
+		Summary:                    summary,
+		Description:                strings.TrimSpace(req.Description),
+		EvidenceIDs:                append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		CurrentDueAt:               cloneTimePtr(&currentDueAt),
+		ProposedDueAt:              cloneTimePtr(&proposedDueAt),
+		ReviewApprovalThreshold:    normalizeSecureCellThreshold(req.ReviewApprovalThreshold),
+		EligibleReviewerDIDs:       uniqueTrimmedStrings(req.EligibleReviewerDIDs),
+		DisputeResolutionThreshold: normalizeSecureCellThreshold(req.DisputeResolutionThreshold),
+		EligibleResolverDIDs:       uniqueTrimmedStrings(req.EligibleResolverDIDs),
+		Status:                     SecureCellFederationIncidentDirectiveExtensionStatusPendingReview,
+		RequestReceiptID:           receipt.ID,
+		RequestReceiptHash:         receipt.ContentHash,
+		CreatedAt:                  now,
+		UpdatedAt:                  now,
+		Metadata:                   cloneStringMap(req.Metadata),
 	}
 	updated := run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx]
 	updated.Extensions = append(updated.Extensions, extension)
@@ -128,25 +132,29 @@ func (s *Service) RequestFederationIncidentDirectiveExtension(ctx context.Contex
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_response_id":                         response.ID,
-			"federation_organization_id":                              response.OrganizationID,
-			"federation_sponsor_of_record":                            response.SponsorOfRecord,
-			"federation_incident_id":                                  response.IncidentID,
-			"federation_incident_directive_id":                        directive.ID,
-			"federation_incident_directive_title":                     directive.Title,
-			"federation_incident_directive_priority":                  string(directive.Priority),
-			"federation_incident_directive_status_before":             string(directive.Status),
-			"federation_incident_directive_status_after":              string(directive.Status),
-			"federation_incident_directive_due_at_before":             currentDueAt.Format(time.RFC3339Nano),
-			"federation_incident_directive_due_at_after":              currentDueAt.Format(time.RFC3339Nano),
-			"federation_incident_directive_extension_id":              extension.ID,
-			"federation_incident_directive_extension_status_before":   "",
-			"federation_incident_directive_extension_status_after":    string(extension.Status),
-			"federation_incident_directive_extension_request_party":   string(extension.RequestingParty),
-			"federation_incident_directive_extension_review_party":    string(extension.ReviewingParty),
-			"federation_incident_directive_extension_requested_by":    extension.RequestedBy,
-			"federation_incident_directive_extension_current_due_at":  currentDueAt.Format(time.RFC3339Nano),
-			"federation_incident_directive_extension_proposed_due_at": proposedDueAt.Format(time.RFC3339Nano),
+			"federation_incident_response_id":                                      response.ID,
+			"federation_organization_id":                                           response.OrganizationID,
+			"federation_sponsor_of_record":                                         response.SponsorOfRecord,
+			"federation_incident_id":                                               response.IncidentID,
+			"federation_incident_directive_id":                                     directive.ID,
+			"federation_incident_directive_title":                                  directive.Title,
+			"federation_incident_directive_priority":                               string(directive.Priority),
+			"federation_incident_directive_status_before":                          string(directive.Status),
+			"federation_incident_directive_status_after":                           string(directive.Status),
+			"federation_incident_directive_due_at_before":                          currentDueAt.Format(time.RFC3339Nano),
+			"federation_incident_directive_due_at_after":                           currentDueAt.Format(time.RFC3339Nano),
+			"federation_incident_directive_extension_id":                           extension.ID,
+			"federation_incident_directive_extension_status_before":                "",
+			"federation_incident_directive_extension_status_after":                 string(extension.Status),
+			"federation_incident_directive_extension_request_party":                string(extension.RequestingParty),
+			"federation_incident_directive_extension_review_party":                 string(extension.ReviewingParty),
+			"federation_incident_directive_extension_requested_by":                 extension.RequestedBy,
+			"federation_incident_directive_extension_review_threshold":             fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension)),
+			"federation_incident_directive_extension_dispute_resolution_threshold": fmt.Sprintf("%d", normalizeSecureCellThreshold(extension.DisputeResolutionThreshold)),
+			"federation_incident_directive_extension_eligible_reviewers":           strings.Join(extension.EligibleReviewerDIDs, ","),
+			"federation_incident_directive_extension_eligible_resolvers":           strings.Join(extension.EligibleResolverDIDs, ","),
+			"federation_incident_directive_extension_current_due_at":               currentDueAt.Format(time.RFC3339Nano),
+			"federation_incident_directive_extension_proposed_due_at":              proposedDueAt.Format(time.RFC3339Nano),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -191,6 +199,12 @@ func (s *Service) ApproveFederationIncidentDirectiveExtension(ctx context.Contex
 	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, reviewingParty) {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q is not permitted to approve extension %q", ErrPolicyDenied, actorDID, extensionID)
 	}
+	if !secureCellFederationIncidentDirectiveExtensionReviewerAllowed(*extension, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q is not an eligible reviewer for extension %q", ErrPolicyDenied, actorDID, extensionID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionHasReviewVote(*extension, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q has already voted on extension %q", ErrFederationIncidentDirectiveImmutable, actorDID, extensionID)
+	}
 	if extension.ProposedDueAt == nil || extension.ProposedDueAt.IsZero() {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: extension %q does not carry a proposed due_at", extensionID)
 	}
@@ -225,18 +239,37 @@ func (s *Service) ApproveFederationIncidentDirectiveExtension(ctx context.Contex
 	updatedExtension := updatedDirective.Extensions[extensionIdx]
 	beforeStatus := updatedExtension.Status
 	beforeDueAt := cloneTimePtr(updatedDirective.DueAt)
-	updatedExtension.Status = SecureCellFederationIncidentDirectiveExtensionStatusApproved
-	updatedExtension.DecisionReceiptID = receipt.ID
-	updatedExtension.DecisionReceiptHash = receipt.ContentHash
-	updatedExtension.DecisionSummary = summary
-	updatedExtension.DecisionDescription = strings.TrimSpace(req.DecisionDescription)
-	updatedExtension.DecisionEvidenceIDs = append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...)
-	updatedExtension.ReviewedBy = actorDID
-	updatedExtension.ReviewedAt = cloneTimePtr(&now)
+	vote := SecureCellFederationIncidentDirectiveExtensionReviewVote{
+		ID:                secureCellFederationIncidentDirectiveExtensionReviewVoteID(updatedExtension.ID, actorDID, SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceApprove, len(updatedExtension.ReviewVotes)),
+		ExtensionID:       updatedExtension.ID,
+		ActorDID:          actorDID,
+		Choice:            SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceApprove,
+		Reason:            firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         now,
+		Metadata:          cloneStringMap(req.Metadata),
+	}
+	updatedExtension.ReviewVotes = append(updatedExtension.ReviewVotes, vote)
+	approveVotes, rejectVotes := secureCellFederationIncidentDirectiveExtensionReviewVoteCounts(updatedExtension)
+	thresholdSatisfied := secureCellFederationIncidentDirectiveExtensionReviewThresholdSatisfied(updatedExtension, vote.Choice)
+	transitionAction := "secure_cell.federation_incident_directive_extension_review_vote_recorded"
+	transitionReason := firstNonEmpty(strings.TrimSpace(req.Reason), summary)
+	if thresholdSatisfied {
+		updatedExtension.Status = SecureCellFederationIncidentDirectiveExtensionStatusApproved
+		updatedExtension.DecisionReceiptID = receipt.ID
+		updatedExtension.DecisionReceiptHash = receipt.ContentHash
+		updatedExtension.DecisionSummary = summary
+		updatedExtension.DecisionDescription = strings.TrimSpace(req.DecisionDescription)
+		updatedExtension.DecisionEvidenceIDs = append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...)
+		updatedExtension.ReviewedBy = actorDID
+		updatedExtension.ReviewedAt = cloneTimePtr(&now)
+		updatedDirective.DueAt = cloneTimePtr(updatedExtension.ProposedDueAt)
+		transitionAction = "secure_cell.federation_incident_directive_extension_approved"
+	}
 	updatedExtension.UpdatedAt = now
 	updatedExtension.Metadata = mergeStringMaps(updatedExtension.Metadata, req.Metadata)
 	updatedDirective.Extensions[extensionIdx] = updatedExtension
-	updatedDirective.DueAt = cloneTimePtr(updatedExtension.ProposedDueAt)
 	updatedDirective.UpdatedAt = now
 	updatedDirective.Metadata = mergeStringMaps(updatedDirective.Metadata, req.Metadata)
 	run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx] = updatedDirective
@@ -245,36 +278,42 @@ func (s *Service) ApproveFederationIncidentDirectiveExtension(ctx context.Contex
 	run.result.UpdatedAt = now
 
 	transition := SecureCellTransition{
-		ID:               transitionID(run.request, "federation_incident_directive_extension_approved", updatedExtension.ID),
-		Action:           "secure_cell.federation_incident_directive_extension_approved",
+		ID:               transitionID(run.request, strings.TrimPrefix(transitionAction, "secure_cell."), updatedExtension.ID),
+		Action:           transitionAction,
 		Actor:            actorDID,
 		TargetType:       "federation_incident_directive_extension",
 		TargetDID:        updatedExtension.ID,
 		CellStatusBefore: run.result.Status,
 		CellStatusAfter:  run.result.Status,
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
-		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Reason:           transitionReason,
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_response_id":                         response.ID,
-			"federation_organization_id":                              response.OrganizationID,
-			"federation_sponsor_of_record":                            response.SponsorOfRecord,
-			"federation_incident_id":                                  response.IncidentID,
-			"federation_incident_directive_id":                        updatedDirective.ID,
-			"federation_incident_directive_title":                     updatedDirective.Title,
-			"federation_incident_directive_priority":                  string(updatedDirective.Priority),
-			"federation_incident_directive_status_before":             string(updatedDirective.Status),
-			"federation_incident_directive_status_after":              string(updatedDirective.Status),
-			"federation_incident_directive_due_at_before":             secureCellFormatTime(beforeDueAt),
-			"federation_incident_directive_due_at_after":              secureCellFormatTime(updatedDirective.DueAt),
-			"federation_incident_directive_extension_id":              updatedExtension.ID,
-			"federation_incident_directive_extension_status_before":   string(beforeStatus),
-			"federation_incident_directive_extension_status_after":    string(updatedExtension.Status),
-			"federation_incident_directive_extension_request_party":   string(updatedExtension.RequestingParty),
-			"federation_incident_directive_extension_review_party":    string(updatedExtension.ReviewingParty),
-			"federation_incident_directive_extension_requested_by":    updatedExtension.RequestedBy,
-			"federation_incident_directive_extension_reviewed_by":     updatedExtension.ReviewedBy,
-			"federation_incident_directive_extension_current_due_at":  secureCellFormatTime(updatedExtension.CurrentDueAt),
-			"federation_incident_directive_extension_proposed_due_at": secureCellFormatTime(updatedExtension.ProposedDueAt),
+			"federation_incident_response_id":                             response.ID,
+			"federation_organization_id":                                  response.OrganizationID,
+			"federation_sponsor_of_record":                                response.SponsorOfRecord,
+			"federation_incident_id":                                      response.IncidentID,
+			"federation_incident_directive_id":                            updatedDirective.ID,
+			"federation_incident_directive_title":                         updatedDirective.Title,
+			"federation_incident_directive_priority":                      string(updatedDirective.Priority),
+			"federation_incident_directive_status_before":                 string(updatedDirective.Status),
+			"federation_incident_directive_status_after":                  string(updatedDirective.Status),
+			"federation_incident_directive_due_at_before":                 secureCellFormatTime(beforeDueAt),
+			"federation_incident_directive_due_at_after":                  secureCellFormatTime(updatedDirective.DueAt),
+			"federation_incident_directive_extension_id":                  updatedExtension.ID,
+			"federation_incident_directive_extension_status_before":       string(beforeStatus),
+			"federation_incident_directive_extension_status_after":        string(updatedExtension.Status),
+			"federation_incident_directive_extension_request_party":       string(updatedExtension.RequestingParty),
+			"federation_incident_directive_extension_review_party":        string(updatedExtension.ReviewingParty),
+			"federation_incident_directive_extension_review_vote_id":      vote.ID,
+			"federation_incident_directive_extension_review_vote_choice":  string(vote.Choice),
+			"federation_incident_directive_extension_review_threshold":    fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionReviewThreshold(updatedExtension)),
+			"federation_incident_directive_extension_approve_votes":       fmt.Sprintf("%d", approveVotes),
+			"federation_incident_directive_extension_reject_votes":        fmt.Sprintf("%d", rejectVotes),
+			"federation_incident_directive_extension_threshold_satisfied": fmt.Sprintf("%t", thresholdSatisfied),
+			"federation_incident_directive_extension_requested_by":        updatedExtension.RequestedBy,
+			"federation_incident_directive_extension_reviewed_by":         updatedExtension.ReviewedBy,
+			"federation_incident_directive_extension_current_due_at":      secureCellFormatTime(updatedExtension.CurrentDueAt),
+			"federation_incident_directive_extension_proposed_due_at":     secureCellFormatTime(updatedExtension.ProposedDueAt),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -316,6 +355,12 @@ func (s *Service) RejectFederationIncidentDirectiveExtension(ctx context.Context
 	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, reviewingParty) {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q is not permitted to reject extension %q", ErrPolicyDenied, actorDID, extensionID)
 	}
+	if !secureCellFederationIncidentDirectiveExtensionReviewerAllowed(*extension, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q is not an eligible reviewer for extension %q", ErrPolicyDenied, actorDID, extensionID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionHasReviewVote(*extension, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension: %w: actor %q has already voted on extension %q", ErrFederationIncidentDirectiveImmutable, actorDID, extensionID)
+	}
 
 	summary := strings.TrimSpace(req.DecisionSummary)
 	if summary == "" {
@@ -344,14 +389,33 @@ func (s *Service) RejectFederationIncidentDirectiveExtension(ctx context.Context
 	updatedDirective := run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx]
 	updatedExtension := updatedDirective.Extensions[extensionIdx]
 	beforeStatus := updatedExtension.Status
-	updatedExtension.Status = SecureCellFederationIncidentDirectiveExtensionStatusRejected
-	updatedExtension.DecisionReceiptID = receipt.ID
-	updatedExtension.DecisionReceiptHash = receipt.ContentHash
-	updatedExtension.DecisionSummary = summary
-	updatedExtension.DecisionDescription = strings.TrimSpace(req.DecisionDescription)
-	updatedExtension.DecisionEvidenceIDs = append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...)
-	updatedExtension.ReviewedBy = actorDID
-	updatedExtension.ReviewedAt = cloneTimePtr(&now)
+	vote := SecureCellFederationIncidentDirectiveExtensionReviewVote{
+		ID:                secureCellFederationIncidentDirectiveExtensionReviewVoteID(updatedExtension.ID, actorDID, SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceReject, len(updatedExtension.ReviewVotes)),
+		ExtensionID:       updatedExtension.ID,
+		ActorDID:          actorDID,
+		Choice:            SecureCellFederationIncidentDirectiveExtensionReviewVoteChoiceReject,
+		Reason:            firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         now,
+		Metadata:          cloneStringMap(req.Metadata),
+	}
+	updatedExtension.ReviewVotes = append(updatedExtension.ReviewVotes, vote)
+	approveVotes, rejectVotes := secureCellFederationIncidentDirectiveExtensionReviewVoteCounts(updatedExtension)
+	thresholdSatisfied := secureCellFederationIncidentDirectiveExtensionReviewThresholdSatisfied(updatedExtension, vote.Choice)
+	transitionAction := "secure_cell.federation_incident_directive_extension_review_vote_recorded"
+	transitionReason := firstNonEmpty(strings.TrimSpace(req.Reason), summary)
+	if thresholdSatisfied {
+		updatedExtension.Status = SecureCellFederationIncidentDirectiveExtensionStatusRejected
+		updatedExtension.DecisionReceiptID = receipt.ID
+		updatedExtension.DecisionReceiptHash = receipt.ContentHash
+		updatedExtension.DecisionSummary = summary
+		updatedExtension.DecisionDescription = strings.TrimSpace(req.DecisionDescription)
+		updatedExtension.DecisionEvidenceIDs = append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...)
+		updatedExtension.ReviewedBy = actorDID
+		updatedExtension.ReviewedAt = cloneTimePtr(&now)
+		transitionAction = "secure_cell.federation_incident_directive_extension_rejected"
+	}
 	updatedExtension.UpdatedAt = now
 	updatedExtension.Metadata = mergeStringMaps(updatedExtension.Metadata, req.Metadata)
 	updatedDirective.Extensions[extensionIdx] = updatedExtension
@@ -363,36 +427,42 @@ func (s *Service) RejectFederationIncidentDirectiveExtension(ctx context.Context
 	run.result.UpdatedAt = now
 
 	transition := SecureCellTransition{
-		ID:               transitionID(run.request, "federation_incident_directive_extension_rejected", updatedExtension.ID),
-		Action:           "secure_cell.federation_incident_directive_extension_rejected",
+		ID:               transitionID(run.request, strings.TrimPrefix(transitionAction, "secure_cell."), updatedExtension.ID),
+		Action:           transitionAction,
 		Actor:            actorDID,
 		TargetType:       "federation_incident_directive_extension",
 		TargetDID:        updatedExtension.ID,
 		CellStatusBefore: run.result.Status,
 		CellStatusAfter:  run.result.Status,
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
-		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Reason:           transitionReason,
 		Metadata: mergeStringMaps(req.Metadata, map[string]string{
-			"federation_incident_response_id":                         response.ID,
-			"federation_organization_id":                              response.OrganizationID,
-			"federation_sponsor_of_record":                            response.SponsorOfRecord,
-			"federation_incident_id":                                  response.IncidentID,
-			"federation_incident_directive_id":                        updatedDirective.ID,
-			"federation_incident_directive_title":                     updatedDirective.Title,
-			"federation_incident_directive_priority":                  string(updatedDirective.Priority),
-			"federation_incident_directive_status_before":             string(updatedDirective.Status),
-			"federation_incident_directive_status_after":              string(updatedDirective.Status),
-			"federation_incident_directive_due_at_before":             secureCellFormatTime(updatedDirective.DueAt),
-			"federation_incident_directive_due_at_after":              secureCellFormatTime(updatedDirective.DueAt),
-			"federation_incident_directive_extension_id":              updatedExtension.ID,
-			"federation_incident_directive_extension_status_before":   string(beforeStatus),
-			"federation_incident_directive_extension_status_after":    string(updatedExtension.Status),
-			"federation_incident_directive_extension_request_party":   string(updatedExtension.RequestingParty),
-			"federation_incident_directive_extension_review_party":    string(updatedExtension.ReviewingParty),
-			"federation_incident_directive_extension_requested_by":    updatedExtension.RequestedBy,
-			"federation_incident_directive_extension_reviewed_by":     updatedExtension.ReviewedBy,
-			"federation_incident_directive_extension_current_due_at":  secureCellFormatTime(updatedExtension.CurrentDueAt),
-			"federation_incident_directive_extension_proposed_due_at": secureCellFormatTime(updatedExtension.ProposedDueAt),
+			"federation_incident_response_id":                             response.ID,
+			"federation_organization_id":                                  response.OrganizationID,
+			"federation_sponsor_of_record":                                response.SponsorOfRecord,
+			"federation_incident_id":                                      response.IncidentID,
+			"federation_incident_directive_id":                            updatedDirective.ID,
+			"federation_incident_directive_title":                         updatedDirective.Title,
+			"federation_incident_directive_priority":                      string(updatedDirective.Priority),
+			"federation_incident_directive_status_before":                 string(updatedDirective.Status),
+			"federation_incident_directive_status_after":                  string(updatedDirective.Status),
+			"federation_incident_directive_due_at_before":                 secureCellFormatTime(updatedDirective.DueAt),
+			"federation_incident_directive_due_at_after":                  secureCellFormatTime(updatedDirective.DueAt),
+			"federation_incident_directive_extension_id":                  updatedExtension.ID,
+			"federation_incident_directive_extension_status_before":       string(beforeStatus),
+			"federation_incident_directive_extension_status_after":        string(updatedExtension.Status),
+			"federation_incident_directive_extension_request_party":       string(updatedExtension.RequestingParty),
+			"federation_incident_directive_extension_review_party":        string(updatedExtension.ReviewingParty),
+			"federation_incident_directive_extension_review_vote_id":      vote.ID,
+			"federation_incident_directive_extension_review_vote_choice":  string(vote.Choice),
+			"federation_incident_directive_extension_review_threshold":    fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionReviewThreshold(updatedExtension)),
+			"federation_incident_directive_extension_approve_votes":       fmt.Sprintf("%d", approveVotes),
+			"federation_incident_directive_extension_reject_votes":        fmt.Sprintf("%d", rejectVotes),
+			"federation_incident_directive_extension_threshold_satisfied": fmt.Sprintf("%t", thresholdSatisfied),
+			"federation_incident_directive_extension_requested_by":        updatedExtension.RequestedBy,
+			"federation_incident_directive_extension_reviewed_by":         updatedExtension.ReviewedBy,
+			"federation_incident_directive_extension_current_due_at":      secureCellFormatTime(updatedExtension.CurrentDueAt),
+			"federation_incident_directive_extension_proposed_due_at":     secureCellFormatTime(updatedExtension.ProposedDueAt),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -593,37 +663,46 @@ func secureCellFederationIncidentDirectiveExtensionPendingDisputeCountAll(respon
 
 func secureCellFederationIncidentDirectiveExtensionSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, directive SecureCellFederationIncidentDirective, extension SecureCellFederationIncidentDirectiveExtension) SecureCellFederationIncidentDirectiveExtensionSummary {
 	latestDispute := secureCellLatestFederationIncidentDirectiveExtensionDispute(extension)
+	approveVotes, rejectVotes := secureCellFederationIncidentDirectiveExtensionReviewVoteCounts(extension)
 	return SecureCellFederationIncidentDirectiveExtensionSummary{
-		CellID:              strings.TrimSpace(run.result.CellID),
-		CellName:            strings.TrimSpace(run.result.Name),
-		Jurisdiction:        strings.TrimSpace(run.request.Jurisdiction),
-		CellStatus:          run.result.Status,
-		ResponseID:          strings.TrimSpace(response.ID),
-		OrganizationID:      strings.TrimSpace(response.OrganizationID),
-		SponsorOfRecord:     strings.TrimSpace(response.SponsorOfRecord),
-		IncidentID:          strings.TrimSpace(response.IncidentID),
-		DirectiveID:         strings.TrimSpace(directive.ID),
-		DirectiveTitle:      strings.TrimSpace(directive.Title),
-		DirectiveStatus:     directive.Status,
-		ExtensionID:         strings.TrimSpace(extension.ID),
-		RequestingParty:     extension.RequestingParty,
-		ReviewingParty:      extension.ReviewingParty,
-		RequestedBy:         strings.TrimSpace(extension.RequestedBy),
-		Summary:             strings.TrimSpace(extension.Summary),
-		Description:         strings.TrimSpace(extension.Description),
-		CurrentDueAt:        cloneTimePtr(extension.CurrentDueAt),
-		ProposedDueAt:       cloneTimePtr(extension.ProposedDueAt),
-		Status:              extension.Status,
-		DisputeCount:        len(extension.Disputes),
-		PendingDisputeCount: secureCellFederationIncidentDirectiveExtensionPendingDisputeCountForExtensions([]SecureCellFederationIncidentDirectiveExtension{extension}),
-		LastDisputeID:       secureCellFederationIncidentDirectiveLatestDisputeID(extension.Disputes),
-		LastDisputeStatus:   secureCellFederationIncidentDirectiveLatestDisputeStatus(latestDispute),
-		DecisionSummary:     strings.TrimSpace(extension.DecisionSummary),
-		ReviewedBy:          strings.TrimSpace(extension.ReviewedBy),
-		ReviewedAt:          cloneTimePtr(extension.ReviewedAt),
-		CreatedAt:           extension.CreatedAt.UTC(),
-		UpdatedAt:           extension.UpdatedAt.UTC(),
-		Metadata:            cloneStringMap(extension.Metadata),
+		CellID:                     strings.TrimSpace(run.result.CellID),
+		CellName:                   strings.TrimSpace(run.result.Name),
+		Jurisdiction:               strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:                 run.result.Status,
+		ResponseID:                 strings.TrimSpace(response.ID),
+		OrganizationID:             strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:            strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:                 strings.TrimSpace(response.IncidentID),
+		DirectiveID:                strings.TrimSpace(directive.ID),
+		DirectiveTitle:             strings.TrimSpace(directive.Title),
+		DirectiveStatus:            directive.Status,
+		ExtensionID:                strings.TrimSpace(extension.ID),
+		RequestingParty:            extension.RequestingParty,
+		ReviewingParty:             extension.ReviewingParty,
+		RequestedBy:                strings.TrimSpace(extension.RequestedBy),
+		Summary:                    strings.TrimSpace(extension.Summary),
+		Description:                strings.TrimSpace(extension.Description),
+		CurrentDueAt:               cloneTimePtr(extension.CurrentDueAt),
+		ProposedDueAt:              cloneTimePtr(extension.ProposedDueAt),
+		Status:                     extension.Status,
+		ReviewApprovalThreshold:    secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension),
+		EligibleReviewerCount:      len(uniqueTrimmedStrings(extension.EligibleReviewerDIDs)),
+		ReviewDelegationCount:      len(extension.ReviewDelegations),
+		ApproveVoteCount:           approveVotes,
+		RejectVoteCount:            rejectVotes,
+		ReviewThresholdSatisfied:   approveVotes >= secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension) || rejectVotes >= secureCellFederationIncidentDirectiveExtensionReviewThreshold(extension),
+		DisputeResolutionThreshold: normalizeSecureCellThreshold(extension.DisputeResolutionThreshold),
+		EligibleResolverCount:      len(uniqueTrimmedStrings(extension.EligibleResolverDIDs)),
+		DisputeCount:               len(extension.Disputes),
+		PendingDisputeCount:        secureCellFederationIncidentDirectiveExtensionPendingDisputeCountForExtensions([]SecureCellFederationIncidentDirectiveExtension{extension}),
+		LastDisputeID:              secureCellFederationIncidentDirectiveLatestDisputeID(extension.Disputes),
+		LastDisputeStatus:          secureCellFederationIncidentDirectiveLatestDisputeStatus(latestDispute),
+		DecisionSummary:            strings.TrimSpace(extension.DecisionSummary),
+		ReviewedBy:                 strings.TrimSpace(extension.ReviewedBy),
+		ReviewedAt:                 cloneTimePtr(extension.ReviewedAt),
+		CreatedAt:                  extension.CreatedAt.UTC(),
+		UpdatedAt:                  extension.UpdatedAt.UTC(),
+		Metadata:                   cloneStringMap(extension.Metadata),
 	}
 }
 
