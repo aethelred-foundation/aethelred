@@ -7108,6 +7108,30 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveSurfaces(t *testing.T) {
 		t.Fatalf("expected verified directive detail, got %+v", verifiedDirectiveResp.Result)
 	}
 
+	directiveBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directives/"+directiveID+"/bundle", nil)
+	directiveBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveBundleRec, directiveBundleReq)
+	if directiveBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveBundleRec.Code, directiveBundleRec.Body.String())
+	}
+	var directiveBundleResp secureCellFederationIncidentDirectiveBundleResponse
+	if err := json.Unmarshal(directiveBundleRec.Body.Bytes(), &directiveBundleResp); err != nil {
+		t.Fatalf("unmarshal directive bundle response: %v", err)
+	}
+	if directiveBundleResp.Result == nil || directiveBundleResp.Result.DirectiveSummary.DirectiveID != directiveID || directiveBundleResp.Result.ResponseBundleHash == "" {
+		t.Fatalf("expected directive bundle linked to response bundle, got %+v", directiveBundleResp.Result)
+	}
+
+	directiveBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directives/"+directiveID+"/bundle/export?format=csv", nil)
+	directiveBundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveBundleExportRec, directiveBundleExportReq)
+	if directiveBundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveBundleExportRec.Code, directiveBundleExportRec.Body.String())
+	}
+	if body := directiveBundleExportRec.Body.String(); !strings.Contains(body, directiveID) || !strings.Contains(body, "response_bundle_hash") {
+		t.Fatalf("expected directive bundle export to include directive id and response bundle linkage, got %s", body)
+	}
+
 	directiveActionReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-actions?cell_id="+url.QueryEscape(created.CellID)+"&response_id="+url.QueryEscape(localResponseID)+"&directive_id="+url.QueryEscape(directiveID), nil)
 	directiveActionRec := httptest.NewRecorder()
 	app.SecureCellsGetHandler().ServeHTTP(directiveActionRec, directiveActionReq)

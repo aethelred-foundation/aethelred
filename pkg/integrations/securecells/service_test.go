@@ -5737,6 +5737,17 @@ func TestService_FederationIncidentDirectiveFlow(t *testing.T) {
 		t.Fatalf("expected verified directive after accepted review, got %+v", finalDirective)
 	}
 
+	directiveBundle, err := service.BuildFederationIncidentDirectiveBundle(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveBundle(directiveBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveBundle failed: %v", err)
+	}
+	if directiveBundle.DirectiveSummary.DirectiveID != directiveID || directiveBundle.DirectiveSummary.Status != SecureCellFederationIncidentDirectiveStatusVerified || directiveBundle.ResponseBundleHash == "" || directiveBundle.Signature == nil {
+		t.Fatalf("expected signed directive bundle linked to response bundle, got %+v", directiveBundle)
+	}
+
 	directiveActions, err := service.ListFederationIncidentDirectiveActions(ctx, SecureCellFederationIncidentDirectiveActionFilter{
 		CellID:         created.CellID,
 		OrganizationID: organizationID,

@@ -136,6 +136,96 @@ func writeSecureCellFederationIncidentDirectiveActionExport(w http.ResponseWrite
 	}
 }
 
+func writeSecureCellFederationIncidentDirectiveBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveBundle) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveBundleResponse{Result: bundle})
+		return nil
+	case "csv":
+		if bundle == nil {
+			return fmt.Errorf("federation incident directive bundle is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-bundle.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
+			"organization_id", "sponsor_of_record", "organization_name", "organization_status", "response_id", "response_status", "response_source_type",
+			"incident_id", "incident_status", "incident_severity", "incident_category", "directive_id", "directive_type", "directive_title", "directive_priority",
+			"directive_status", "issuing_party", "assignee_party", "reviewer_party", "directive_due_at", "response_bundle_hash", "contract_ids", "control_ids",
+			"operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash", "portable_package_hash", "portable_package_signed",
+			"portable_package_anchored", "content_hash", "signature_algorithm", "signature_signer", "signature_key_id", "signature_signed_at", "metadata",
+		}); err != nil {
+			return err
+		}
+		signatureAlgorithm := ""
+		signatureSigner := ""
+		signatureKeyID := ""
+		signatureSignedAt := ""
+		if bundle.Signature != nil {
+			signatureAlgorithm = bundle.Signature.Algorithm
+			signatureSigner = bundle.Signature.Signer
+			signatureKeyID = bundle.Signature.KeyID
+			signatureSignedAt = bundle.Signature.SignedAt.UTC().Format(timeCSVFormat)
+		}
+		if err := cw.Write([]string{
+			bundle.ID,
+			bundle.Version,
+			bundle.Name,
+			bundle.GeneratedAt.UTC().Format(timeCSVFormat),
+			secureCellCSVTime(bundle.ExpiresAt),
+			bundle.CellID,
+			bundle.CellName,
+			string(bundle.CellStatus),
+			bundle.Jurisdiction,
+			bundle.Framework,
+			bundle.Organization.OrganizationID,
+			bundle.Organization.SponsorOfRecord,
+			bundle.Organization.OrganizationName,
+			string(bundle.Organization.Status),
+			bundle.ResponseSummary.ResponseID,
+			string(bundle.ResponseSummary.Status),
+			string(bundle.ResponseSummary.SourceType),
+			bundle.ResponseSummary.IncidentID,
+			string(bundle.ResponseSummary.IncidentStatus),
+			string(bundle.ResponseSummary.IncidentSeverity),
+			string(bundle.ResponseSummary.IncidentCategory),
+			bundle.DirectiveSummary.DirectiveID,
+			bundle.DirectiveSummary.DirectiveType,
+			bundle.DirectiveSummary.Title,
+			string(bundle.DirectiveSummary.Priority),
+			string(bundle.DirectiveSummary.Status),
+			string(bundle.DirectiveSummary.IssuingParty),
+			string(bundle.DirectiveSummary.AssigneeParty),
+			string(bundle.DirectiveSummary.ReviewerParty),
+			secureCellCSVTime(bundle.DirectiveSummary.DueAt),
+			bundle.ResponseBundleHash,
+			joinSecureCellFederationContractIDs(bundle.Contracts),
+			joinSecureCellFederationControlIDs(bundle.Controls),
+			joinSecureCellFederationOperatorSurfaceIDs(bundle.OperatorSurfaces),
+			joinSecureCellFederationOperatorSurfacePaths(bundle.OperatorSurfaces),
+			bundle.ControlLedgerID,
+			bundle.ControlLedgerHash,
+			bundle.PortablePackageHash,
+			strconv.FormatBool(bundle.PortablePackageSigned),
+			strconv.FormatBool(bundle.PortablePackageAnchored),
+			bundle.ContentHash,
+			signatureAlgorithm,
+			signatureSigner,
+			signatureKeyID,
+			signatureSignedAt,
+			formatSecureCellStringMap(bundle.Metadata),
+		}); err != nil {
+			return err
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func secureCellCSVTime(value *time.Time) string {
 	if value == nil || value.IsZero() {
 		return ""

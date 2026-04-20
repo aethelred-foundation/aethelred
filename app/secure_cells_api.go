@@ -722,6 +722,10 @@ type secureCellFederationIncidentResponseBundleResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentResponseBundle `json:"result,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveBundleResponse struct {
+	Result *securecellsintegration.SecureCellFederationIncidentDirectiveBundle `json:"result,omitempty"`
+}
+
 type secureCellFederationIncidentCasePackResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentCasePack `json:"result,omitempty"`
 }
@@ -933,6 +937,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 				return nil
 			}
 			return securecellsintegration.SignFederationIncidentResponseBundleEd25519(bundle, privateKey, signer, true)
+		},
+		FederationIncidentDirectiveBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveBundle) error {
+			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
+			if !ok {
+				return nil
+			}
+			return securecellsintegration.SignFederationIncidentDirectiveBundleEd25519(bundle, privateKey, signer, true)
 		},
 		FederationIncidentReportBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentReportBundle) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
@@ -2530,7 +2541,31 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 
 		if strings.Contains(r.URL.Path, "/federation/incident-directives/") {
-			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "")
+			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "/bundle/export")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentDirectiveBundle(r.Context(), cellID, directiveID, secureCellFederationIncidentDirectiveBundleOptions(cellID, directiveID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				if err := writeSecureCellFederationIncidentDirectiveBundleExport(w, r, bundle); err != nil {
+					writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				}
+				return
+			}
+
+			cellID, directiveID, err = parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "/bundle")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentDirectiveBundle(r.Context(), cellID, directiveID, secureCellFederationIncidentDirectiveBundleOptions(cellID, directiveID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveBundleResponse{Result: bundle})
+				return
+			}
+
+			cellID, directiveID, err = parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "")
 			if err == nil {
 				result, err := app.secureCellService.GetFederationIncidentDirective(r.Context(), cellID, directiveID)
 				if err != nil {
@@ -5605,6 +5640,20 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Formats:     []string{"json"},
 			},
 			{
+				ID:          "incident-directive-bundle",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/bundle",
+				Description: "Fetch the signed portable bilateral incident directive bundle.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-bundle-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/bundle/export?format=csv",
+				Description: "Export the signed portable bilateral incident directive bundle.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "incident-directive-acknowledge",
 				Method:      http.MethodPost,
 				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/acknowledge",
@@ -6203,6 +6252,57 @@ func secureCellFederationIncidentCasePackOptions(cellID string, responseID strin
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-disputes?cell_id=" + cellID + "&response_id=" + responseID,
 				Description: "List disputes or reopen events recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+		},
+	}
+}
+
+func secureCellFederationIncidentDirectiveBundleOptions(cellID string, directiveID string) securecellsintegration.SecureCellFederationIncidentDirectiveBundleOptions {
+	cellID = strings.TrimSpace(cellID)
+	directiveID = strings.TrimSpace(directiveID)
+	return securecellsintegration.SecureCellFederationIncidentDirectiveBundleOptions{
+		OperatorSurfaces: []securecellsintegration.SecureCellFederationOperatorSurface{
+			{
+				ID:          "incident-directive-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List this bilateral incident directive or work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-list-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
+				Description: "Export this bilateral incident directive or work order.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List directive lifecycle actions for this bilateral work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
+				Description: "Export directive lifecycle actions for this bilateral work order.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/overdue?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List overdue posture for this bilateral incident directive or work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-detail",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/" + directiveID,
+				Description: "Fetch the bilateral incident directive detail for this bundle.",
 				Formats:     []string{"json"},
 			},
 		},

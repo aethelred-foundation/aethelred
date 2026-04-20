@@ -206,6 +206,10 @@ type SecureCellFederationIncidentBulletinSigner func(ctx context.Context, bullet
 // federation incident response bundle for auditor exchange.
 type SecureCellFederationIncidentResponseBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentResponseBundle) error
 
+// SecureCellFederationIncidentDirectiveBundleSigner signs a portable
+// federation incident directive bundle for auditor and operator exchange.
+type SecureCellFederationIncidentDirectiveBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveBundle) error
+
 // SecureCellFederationIncidentReportBundleSigner signs a portable
 // federation incident report bundle for auditor and regulator exchange.
 type SecureCellFederationIncidentReportBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentReportBundle) error
@@ -1057,6 +1061,7 @@ type ServiceConfig struct {
 	FederationAssuranceBundleSigner                             SecureCellFederationAssuranceBundleSigner
 	FederationIncidentBulletinSigner                            SecureCellFederationIncidentBulletinSigner
 	FederationIncidentResponseBundleSigner                      SecureCellFederationIncidentResponseBundleSigner
+	FederationIncidentDirectiveBundleSigner                     SecureCellFederationIncidentDirectiveBundleSigner
 	FederationIncidentReportBundleSigner                        SecureCellFederationIncidentReportBundleSigner
 	FederationIncidentReportAmendmentBundleSigner               SecureCellFederationIncidentReportAmendmentBundleSigner
 	FederationIncidentReportReconciliationBundleSigner          SecureCellFederationIncidentReportReconciliationBundleSigner
