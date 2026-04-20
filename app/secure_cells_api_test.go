@@ -5375,6 +5375,58 @@ func mustMarshalSecureCellFederationIncidentDirectiveVerifyRequest(t *testing.T,
 	return body
 }
 
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, proposedDueAt time.Time, evidenceID string, summary string, description string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Summary:       summary,
+		Description:   description,
+		EvidenceIDs:   []string{evidenceID},
+		ProposedDueAt: &proposedDueAt,
+		Reason:        "request directive extension",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-EXT-REQUEST-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionApproveRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string, summary string, description string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionApproveRequest{
+		ActorIdentity:       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:       receipt,
+		DecisionSummary:     summary,
+		DecisionDescription: description,
+		EvidenceIDs:         []string{evidenceID},
+		Reason:              "approve directive extension",
+		Metadata:            map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPROVE-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension approve request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionRejectRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string, summary string, description string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionRejectRequest{
+		ActorIdentity:       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:       receipt,
+		DecisionSummary:     summary,
+		DecisionDescription: description,
+		EvidenceIDs:         []string{evidenceID},
+		Reason:              "reject directive extension",
+		Metadata:            map[string]string{"ticket": "FED-DIRECTIVE-EXT-REJECT-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension reject request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellFederationIncidentRemediationAttestationRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, incidentID string) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellFederationIncidentRemediationAttestationRequest{
@@ -7182,6 +7234,250 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveSurfaces(t *testing.T) {
 	}
 	if responseDetailResp.Result == nil || len(responseDetailResp.Result.IncidentDirectives) != 1 || responseDetailResp.Result.IncidentDirectives[0].ID != directiveID || responseDetailResp.Result.IncidentDirectives[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveStatusVerified {
 		t.Fatalf("expected verified directive on response detail, got %+v", responseDetailResp.Result)
+	}
+}
+
+func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionGovernance(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{39}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	ctx := context.Background()
+	owner := mustSecureCellAppIdentity(t, "owner-ext", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-ext-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-ext-b", []string{"UK"})
+
+	created, err := app.secureCellService.CreateCell(ctx, securecellsintegration.SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Incident Directive Extension API Cell",
+		Purpose:       "exercise directive extension API surfaces",
+		Resource:      "cell:incident-directive-extension-api",
+		Jurisdiction:  "UAE",
+		Participants: []securecellsintegration.SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := app.secureCellService.StartSession(ctx, created.CellID, securecellsintegration.SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Directive Extension Coordination Room",
+		Purpose:         "coordinate bilateral directive exceptions",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open directive extension coordination session",
+		Metadata:        map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := app.secureCellService.CreateFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  participantB.Liability.SponsorOfRecord,
+		OrganizationName: participantB.SponsorChain[0].SponsorName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty directive participant",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := app.secureCellService.AcceptFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: securecellsintegration.SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins directive extension room",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := app.secureCellService.PublishFederationIncident(ctx, created.CellID, organizationID, securecellsintegration.SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 securecellsintegration.SecureCellFederationIncidentSeverityHigh,
+		Category:                 securecellsintegration.SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Directive deadline exception incident",
+		Description:              "The local organization wants governed exception handling for a bilateral incident directive.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive extension incident",
+		Metadata:                 map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := app.secureCellService.ListFederationIncidentResponses(ctx, securecellsintegration.SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == securecellsintegration.SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	createDirectiveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+localResponseID+"/directives", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveCreateRequest(t, owner, nil, dueAt, incidentID, participantB.AgentID(), owner.AgentID())))
+	createDirectiveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	createDirectiveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(createDirectiveRec, createDirectiveReq)
+	if createDirectiveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, createDirectiveRec.Code, createDirectiveRec.Body.String())
+	}
+
+	directiveListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directives?cell_id="+url.QueryEscape(created.CellID)+"&response_id="+url.QueryEscape(localResponseID), nil)
+	directiveListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveListRec, directiveListReq)
+	if directiveListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveListRec.Code, directiveListRec.Body.String())
+	}
+	var directiveListResp secureCellFederationIncidentDirectiveListResponse
+	if err := json.Unmarshal(directiveListRec.Body.Bytes(), &directiveListResp); err != nil {
+		t.Fatalf("unmarshal directive list response: %v", err)
+	}
+	if len(directiveListResp.Items) != 1 {
+		t.Fatalf("expected one directive, got %+v", directiveListResp.Items)
+	}
+	directiveID := directiveListResp.Items[0].DirectiveID
+
+	firstProposedDueAt := dueAt.Add(4 * time.Hour)
+	requestExtensionReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directives/"+directiveID+"/extensions", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionRequest(t, participantB, nil, firstProposedDueAt, incidentID, "Counterparty needs longer evidence collection window", "The counterparty needs additional time to collect the full bilateral evidence package.")))
+	requestExtensionReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	requestExtensionRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(requestExtensionRec, requestExtensionReq)
+	if requestExtensionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, requestExtensionRec.Code, requestExtensionRec.Body.String())
+	}
+
+	extensionListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extensions?cell_id="+url.QueryEscape(created.CellID)+"&directive_id="+url.QueryEscape(directiveID), nil)
+	extensionListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(extensionListRec, extensionListReq)
+	if extensionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, extensionListRec.Code, extensionListRec.Body.String())
+	}
+	var extensionListResp secureCellFederationIncidentDirectiveExtensionListResponse
+	if err := json.Unmarshal(extensionListRec.Body.Bytes(), &extensionListResp); err != nil {
+		t.Fatalf("unmarshal extension list response: %v", err)
+	}
+	if len(extensionListResp.Items) != 1 || extensionListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionStatusPendingReview {
+		t.Fatalf("expected one pending extension, got %+v", extensionListResp.Items)
+	}
+	firstExtensionID := extensionListResp.Items[0].ExtensionID
+
+	extensionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extensions/export?cell_id="+url.QueryEscape(created.CellID)+"&directive_id="+url.QueryEscape(directiveID)+"&format=csv", nil)
+	extensionExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(extensionExportRec, extensionExportReq)
+	if extensionExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, extensionExportRec.Code, extensionExportRec.Body.String())
+	}
+	if body := extensionExportRec.Body.String(); !strings.Contains(body, firstExtensionID) || !strings.Contains(body, "pending_review") {
+		t.Fatalf("expected extension export to include extension id and pending status, got %s", body)
+	}
+
+	approveReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extensions/"+firstExtensionID+"/approve", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionApproveRequest(t, owner, nil, directiveID, "Local reviewer approved extension", "The local organization approved the exception because the evidence scope is still being collected.")))
+	approveReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	approveRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(approveRec, approveReq)
+	if approveRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, approveRec.Code, approveRec.Body.String())
+	}
+
+	secondProposedDueAt := firstProposedDueAt.Add(3 * time.Hour)
+	secondRequestReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directives/"+directiveID+"/extensions", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionRequest(t, participantB, nil, secondProposedDueAt, directiveID, "Counterparty requests second extension", "The counterparty asked for a second exception window after the first deadline reset.")))
+	secondRequestReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	secondRequestRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(secondRequestRec, secondRequestReq)
+	if secondRequestRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, secondRequestRec.Code, secondRequestRec.Body.String())
+	}
+
+	extensionListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(extensionListRec, extensionListReq)
+	if extensionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, extensionListRec.Code, extensionListRec.Body.String())
+	}
+	if err := json.Unmarshal(extensionListRec.Body.Bytes(), &extensionListResp); err != nil {
+		t.Fatalf("unmarshal extension list response second pass: %v", err)
+	}
+	if len(extensionListResp.Items) != 2 {
+		t.Fatalf("expected two extension records, got %+v", extensionListResp.Items)
+	}
+	secondExtensionID := extensionListResp.Items[0].ExtensionID
+	if secondExtensionID == firstExtensionID {
+		secondExtensionID = extensionListResp.Items[1].ExtensionID
+	}
+
+	rejectReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extensions/"+secondExtensionID+"/reject", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionRejectRequest(t, owner, nil, directiveID, "Second extension denied", "The local organization denied the second exception because the approved window was sufficient.")))
+	rejectReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	rejectRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(rejectRec, rejectReq)
+	if rejectRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rejectRec.Code, rejectRec.Body.String())
+	}
+
+	directiveDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directives/"+directiveID, nil)
+	directiveDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveDetailRec, directiveDetailReq)
+	if directiveDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveDetailRec.Code, directiveDetailRec.Body.String())
+	}
+	var directiveDetailResp secureCellFederationIncidentDirectiveQueryResponse
+	if err := json.Unmarshal(directiveDetailRec.Body.Bytes(), &directiveDetailResp); err != nil {
+		t.Fatalf("unmarshal directive detail response: %v", err)
+	}
+	if directiveDetailResp.Result == nil || directiveDetailResp.Result.DueAt == nil || !directiveDetailResp.Result.DueAt.UTC().Equal(firstProposedDueAt.UTC()) || len(directiveDetailResp.Result.Extensions) != 2 {
+		t.Fatalf("expected directive detail with approved due_at reset and two extensions, got %+v", directiveDetailResp.Result)
+	}
+
+	directiveListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(directiveListRec, directiveListReq)
+	if directiveListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, directiveListRec.Code, directiveListRec.Body.String())
+	}
+	if err := json.Unmarshal(directiveListRec.Body.Bytes(), &directiveListResp); err != nil {
+		t.Fatalf("unmarshal directive list response final: %v", err)
+	}
+	if len(directiveListResp.Items) != 1 || directiveListResp.Items[0].ExtensionCount != 2 || directiveListResp.Items[0].PendingExtensionCount != 0 || directiveListResp.Items[0].LastExtensionStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionStatusRejected {
+		t.Fatalf("expected directive summary with extension posture, got %+v", directiveListResp.Items)
 	}
 }
 

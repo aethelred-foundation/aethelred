@@ -471,12 +471,21 @@ func (s *Service) GetFederationIncidentDirective(_ context.Context, cellID strin
 	cloned.RelatedAmendmentIDs = append([]string(nil), directive.RelatedAmendmentIDs...)
 	cloned.EvidenceIDs = append([]string(nil), directive.EvidenceIDs...)
 	cloned.CompletionEvidenceIDs = append([]string(nil), directive.CompletionEvidenceIDs...)
+	cloned.Extensions = append([]SecureCellFederationIncidentDirectiveExtension(nil), directive.Extensions...)
 	cloned.VerificationEvidenceIDs = append([]string(nil), directive.VerificationEvidenceIDs...)
 	cloned.Metadata = cloneStringMap(directive.Metadata)
 	cloned.DueAt = cloneTimePtr(directive.DueAt)
 	cloned.AcknowledgedAt = cloneTimePtr(directive.AcknowledgedAt)
 	cloned.CompletedAt = cloneTimePtr(directive.CompletedAt)
 	cloned.VerifiedAt = cloneTimePtr(directive.VerifiedAt)
+	for idx := range cloned.Extensions {
+		cloned.Extensions[idx].EvidenceIDs = append([]string(nil), cloned.Extensions[idx].EvidenceIDs...)
+		cloned.Extensions[idx].DecisionEvidenceIDs = append([]string(nil), cloned.Extensions[idx].DecisionEvidenceIDs...)
+		cloned.Extensions[idx].CurrentDueAt = cloneTimePtr(cloned.Extensions[idx].CurrentDueAt)
+		cloned.Extensions[idx].ProposedDueAt = cloneTimePtr(cloned.Extensions[idx].ProposedDueAt)
+		cloned.Extensions[idx].ReviewedAt = cloneTimePtr(cloned.Extensions[idx].ReviewedAt)
+		cloned.Extensions[idx].Metadata = cloneStringMap(cloned.Extensions[idx].Metadata)
+	}
 	return &cloned, nil
 }
 
@@ -790,32 +799,43 @@ func secureCellFederationIncidentDirectivePendingAction(directive SecureCellFede
 }
 
 func secureCellFederationIncidentDirectiveSummaryFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, directive SecureCellFederationIncidentDirective) SecureCellFederationIncidentDirectiveSummary {
+	latestExtension := secureCellFederationIncidentDirectiveLatestExtension(directive.Extensions)
 	return SecureCellFederationIncidentDirectiveSummary{
-		CellID:               strings.TrimSpace(run.result.CellID),
-		CellName:             strings.TrimSpace(run.result.Name),
-		Jurisdiction:         strings.TrimSpace(run.request.Jurisdiction),
-		CellStatus:           run.result.Status,
-		ResponseID:           strings.TrimSpace(response.ID),
-		OrganizationID:       strings.TrimSpace(response.OrganizationID),
-		SponsorOfRecord:      strings.TrimSpace(response.SponsorOfRecord),
-		IncidentID:           strings.TrimSpace(response.IncidentID),
-		DirectiveID:          strings.TrimSpace(directive.ID),
-		DirectiveType:        strings.TrimSpace(directive.DirectiveType),
-		Title:                strings.TrimSpace(directive.Title),
-		Summary:              strings.TrimSpace(directive.Summary),
-		Description:          strings.TrimSpace(directive.Description),
-		Priority:             directive.Priority,
-		Status:               directive.Status,
-		IssuingParty:         directive.IssuingParty,
-		AssigneeParty:        directive.AssigneeParty,
-		ReviewerParty:        directive.ReviewerParty,
-		AssigneeDID:          strings.TrimSpace(directive.AssigneeDID),
-		ReviewerDID:          strings.TrimSpace(directive.ReviewerDID),
-		RelatedReportIDs:     append([]string(nil), directive.RelatedReportIDs...),
-		RelatedAmendmentIDs:  append([]string(nil), directive.RelatedAmendmentIDs...),
-		EvidenceIDs:          append([]string(nil), directive.EvidenceIDs...),
-		DueAt:                cloneTimePtr(directive.DueAt),
-		Overdue:              secureCellFederationIncidentDirectiveIsOverdue(directive, time.Now().UTC()),
+		CellID:                strings.TrimSpace(run.result.CellID),
+		CellName:              strings.TrimSpace(run.result.Name),
+		Jurisdiction:          strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:            run.result.Status,
+		ResponseID:            strings.TrimSpace(response.ID),
+		OrganizationID:        strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:       strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:            strings.TrimSpace(response.IncidentID),
+		DirectiveID:           strings.TrimSpace(directive.ID),
+		DirectiveType:         strings.TrimSpace(directive.DirectiveType),
+		Title:                 strings.TrimSpace(directive.Title),
+		Summary:               strings.TrimSpace(directive.Summary),
+		Description:           strings.TrimSpace(directive.Description),
+		Priority:              directive.Priority,
+		Status:                directive.Status,
+		IssuingParty:          directive.IssuingParty,
+		AssigneeParty:         directive.AssigneeParty,
+		ReviewerParty:         directive.ReviewerParty,
+		AssigneeDID:           strings.TrimSpace(directive.AssigneeDID),
+		ReviewerDID:           strings.TrimSpace(directive.ReviewerDID),
+		RelatedReportIDs:      append([]string(nil), directive.RelatedReportIDs...),
+		RelatedAmendmentIDs:   append([]string(nil), directive.RelatedAmendmentIDs...),
+		EvidenceIDs:           append([]string(nil), directive.EvidenceIDs...),
+		DueAt:                 cloneTimePtr(directive.DueAt),
+		Overdue:               secureCellFederationIncidentDirectiveIsOverdue(directive, time.Now().UTC()),
+		ExtensionCount:        len(directive.Extensions),
+		PendingExtensionCount: secureCellFederationIncidentDirectiveExtensionPendingCount(directive.Extensions),
+		LastExtensionID:       safeString(latestExtension, func(in *SecureCellFederationIncidentDirectiveExtension) string { return strings.TrimSpace(in.ID) }),
+		LastExtensionStatus:   SecureCellFederationIncidentDirectiveExtensionStatus(safeString(latestExtension, func(in *SecureCellFederationIncidentDirectiveExtension) string { return string(in.Status) })),
+		LastExtensionProposedDueAt: func() *time.Time {
+			if latestExtension == nil {
+				return nil
+			}
+			return cloneTimePtr(latestExtension.ProposedDueAt)
+		}(),
 		AcknowledgedBy:       strings.TrimSpace(directive.AcknowledgedBy),
 		AcknowledgedAt:       cloneTimePtr(directive.AcknowledgedAt),
 		CompletedBy:          strings.TrimSpace(directive.CompletedBy),
@@ -835,25 +855,33 @@ func secureCellOverdueFederationIncidentDirectiveFromRun(run *secureCellRun, res
 		return SecureCellOverdueFederationIncidentDirective{}, false
 	}
 	dueAt := directive.DueAt.UTC()
+	pendingExtension := secureCellPendingFederationIncidentDirectiveExtension(directive)
 	return SecureCellOverdueFederationIncidentDirective{
-		CellID:          strings.TrimSpace(run.result.CellID),
-		CellName:        strings.TrimSpace(run.result.Name),
-		Jurisdiction:    strings.TrimSpace(run.request.Jurisdiction),
-		CellStatus:      run.result.Status,
-		ResponseID:      strings.TrimSpace(response.ID),
-		OrganizationID:  strings.TrimSpace(response.OrganizationID),
-		SponsorOfRecord: strings.TrimSpace(response.SponsorOfRecord),
-		IncidentID:      strings.TrimSpace(response.IncidentID),
-		DirectiveID:     strings.TrimSpace(directive.ID),
-		Title:           strings.TrimSpace(directive.Title),
-		Priority:        directive.Priority,
-		Status:          directive.Status,
-		AssigneeParty:   directive.AssigneeParty,
-		ReviewerParty:   directive.ReviewerParty,
-		PendingAction:   secureCellFederationIncidentDirectivePendingAction(directive),
-		DueAt:           dueAt,
-		OverdueSeconds:  int64(at.UTC().Sub(dueAt).Seconds()),
-		UpdatedAt:       directive.UpdatedAt.UTC(),
+		CellID:             strings.TrimSpace(run.result.CellID),
+		CellName:           strings.TrimSpace(run.result.Name),
+		Jurisdiction:       strings.TrimSpace(run.request.Jurisdiction),
+		CellStatus:         run.result.Status,
+		ResponseID:         strings.TrimSpace(response.ID),
+		OrganizationID:     strings.TrimSpace(response.OrganizationID),
+		SponsorOfRecord:    strings.TrimSpace(response.SponsorOfRecord),
+		IncidentID:         strings.TrimSpace(response.IncidentID),
+		DirectiveID:        strings.TrimSpace(directive.ID),
+		Title:              strings.TrimSpace(directive.Title),
+		Priority:           directive.Priority,
+		Status:             directive.Status,
+		AssigneeParty:      directive.AssigneeParty,
+		ReviewerParty:      directive.ReviewerParty,
+		PendingAction:      secureCellFederationIncidentDirectivePendingAction(directive),
+		PendingExtensionID: safeString(pendingExtension, func(in *SecureCellFederationIncidentDirectiveExtension) string { return strings.TrimSpace(in.ID) }),
+		PendingExtensionProposedDueAt: func() *time.Time {
+			if pendingExtension == nil {
+				return nil
+			}
+			return cloneTimePtr(pendingExtension.ProposedDueAt)
+		}(),
+		DueAt:          dueAt,
+		OverdueSeconds: int64(at.UTC().Sub(dueAt).Seconds()),
+		UpdatedAt:      directive.UpdatedAt.UTC(),
 	}, true
 }
 

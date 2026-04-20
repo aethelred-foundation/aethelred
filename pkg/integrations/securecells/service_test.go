@@ -5992,6 +5992,311 @@ func TestService_FederationIncidentDirectiveAutomationAndCasePack(t *testing.T) 
 	}
 }
 
+func TestService_FederationIncidentDirectiveExtensionGovernance(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Directive Extension Cell",
+		Purpose:       "govern bilateral directive deadline exceptions",
+		Resource:      "cell:federation-directive-extension",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Directive Exception Room",
+		Purpose:         "coordinate bilateral directive exceptions",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open directive exception session",
+		Metadata:        map[string]string{"ticket": "FED-DIRECTIVE-EXT-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty directive participant",
+		Metadata:         map[string]string{"ticket": "FED-DIRECTIVE-EXT-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins directive exception room",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, organizationID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityHigh,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Counterparty work order requires deadline exception handling",
+		Description:              "The local organization opened a bilateral incident directive and wants governed deadline exception handling.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive extension incident",
+		Metadata:                 map[string]string{"ticket": "FED-DIRECTIVE-EXT-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := service.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must provide an evidence package for bilateral incident review.",
+		Description:   "Provide the scoped evidence package, timeline, and remediation artifacts for the bilateral incident response.",
+		Priority:      SecureCellFederationIncidentDirectivePriorityHigh,
+		AssigneeParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue bilateral evidence work order",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-EXT-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := service.ListFederationIncidentDirectives(ctx, SecureCellFederationIncidentDirectiveFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	if len(directives) != 1 {
+		t.Fatalf("expected one directive, got %+v", directives)
+	}
+	directiveID := directives[0].DirectiveID
+
+	proposedDueAt := dueAt.Add(4 * time.Hour)
+	if _, err := service.RequestFederationIncidentDirectiveExtension(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveExtensionRequest{
+		ActorDID:        participantB.AgentID(),
+		RequestingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:         "Counterparty needs longer evidence collection window",
+		Description:     "The counterparty needs additional time to gather the full evidence package for the bilateral review.",
+		EvidenceIDs:     []string{incidentID},
+		ProposedDueAt:   &proposedDueAt,
+		Reason:          "request governed deadline extension",
+		Metadata:        map[string]string{"ticket": "FED-DIRECTIVE-EXT-REQUEST-01"},
+	}); err != nil {
+		t.Fatalf("RequestFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	extensions, err := service.ListFederationIncidentDirectiveExtensions(ctx, SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		ResponseID:  localResponseID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions failed: %v", err)
+	}
+	if len(extensions) != 1 || extensions[0].Status != SecureCellFederationIncidentDirectiveExtensionStatusPendingReview {
+		t.Fatalf("expected one pending extension, got %+v", extensions)
+	}
+	firstExtensionID := extensions[0].ExtensionID
+
+	if _, err := service.ApproveFederationIncidentDirectiveExtension(ctx, created.CellID, firstExtensionID, SecureCellFederationIncidentDirectiveExtensionApproveRequest{
+		ActorDID:            owner.AgentID(),
+		ReviewingParty:      SecureCellFederationIncidentResponsePartyLocalOrg,
+		DecisionSummary:     "Local reviewer approved deadline extension",
+		DecisionDescription: "The local organization approved the requested extension because the evidence scope is still being collected.",
+		EvidenceIDs:         []string{incidentID, directiveID},
+		Reason:              "approve governed deadline extension",
+		Metadata:            map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPROVE-01"},
+	}); err != nil {
+		t.Fatalf("ApproveFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	rejectedProposedDueAt := proposedDueAt.Add(3 * time.Hour)
+	if _, err := service.RequestFederationIncidentDirectiveExtension(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveExtensionRequest{
+		ActorDID:        participantB.AgentID(),
+		RequestingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:         "Counterparty asks for a second extension",
+		Description:     "The counterparty asked for another exception window after the first deadline reset.",
+		EvidenceIDs:     []string{incidentID, directiveID},
+		ProposedDueAt:   &rejectedProposedDueAt,
+		Reason:          "request second governed deadline extension",
+		Metadata:        map[string]string{"ticket": "FED-DIRECTIVE-EXT-REQUEST-02"},
+	}); err != nil {
+		t.Fatalf("RequestFederationIncidentDirectiveExtension second failed: %v", err)
+	}
+
+	extensions, err = service.ListFederationIncidentDirectiveExtensions(ctx, SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		ResponseID:  localResponseID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions second failed: %v", err)
+	}
+	if len(extensions) != 2 {
+		t.Fatalf("expected two extension records, got %+v", extensions)
+	}
+	secondExtensionID := extensions[0].ExtensionID
+	if secondExtensionID == firstExtensionID {
+		secondExtensionID = extensions[1].ExtensionID
+	}
+
+	if _, err := service.RejectFederationIncidentDirectiveExtension(ctx, created.CellID, secondExtensionID, SecureCellFederationIncidentDirectiveExtensionRejectRequest{
+		ActorDID:            owner.AgentID(),
+		ReviewingParty:      SecureCellFederationIncidentResponsePartyLocalOrg,
+		DecisionSummary:     "Second extension denied",
+		DecisionDescription: "The local organization denied the second request because the approved exception window was sufficient.",
+		EvidenceIDs:         []string{directiveID},
+		Reason:              "reject second governed deadline extension",
+		Metadata:            map[string]string{"ticket": "FED-DIRECTIVE-EXT-REJECT-01"},
+	}); err != nil {
+		t.Fatalf("RejectFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	directive, err := service.GetFederationIncidentDirective(ctx, created.CellID, directiveID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentDirective failed: %v", err)
+	}
+	if directive.DueAt == nil || !directive.DueAt.UTC().Equal(proposedDueAt.UTC()) {
+		t.Fatalf("expected directive due_at to be reset to approved extension, got %+v", directive.DueAt)
+	}
+	if len(directive.Extensions) != 2 {
+		t.Fatalf("expected two extension records on directive detail, got %+v", directive.Extensions)
+	}
+
+	directives, err = service.ListFederationIncidentDirectives(ctx, SecureCellFederationIncidentDirectiveFilter{
+		CellID:      created.CellID,
+		ResponseID:  localResponseID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives final failed: %v", err)
+	}
+	if len(directives) != 1 || directives[0].ExtensionCount != 2 || directives[0].PendingExtensionCount != 0 || directives[0].LastExtensionStatus != SecureCellFederationIncidentDirectiveExtensionStatusRejected {
+		t.Fatalf("expected directive summary to reflect extension posture, got %+v", directives)
+	}
+
+	extensions, err = service.ListFederationIncidentDirectiveExtensions(ctx, SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		ResponseID:  localResponseID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions final failed: %v", err)
+	}
+	if len(extensions) != 2 {
+		t.Fatalf("expected two final extension summaries, got %+v", extensions)
+	}
+	statuses := map[SecureCellFederationIncidentDirectiveExtensionStatus]int{}
+	for _, item := range extensions {
+		statuses[item.Status]++
+	}
+	if statuses[SecureCellFederationIncidentDirectiveExtensionStatusApproved] != 1 || statuses[SecureCellFederationIncidentDirectiveExtensionStatusRejected] != 1 {
+		t.Fatalf("expected one approved and one rejected extension, got %+v", extensions)
+	}
+
+	actions, err := service.ListFederationIncidentDirectiveActions(ctx, SecureCellFederationIncidentDirectiveActionFilter{
+		CellID:      created.CellID,
+		ResponseID:  localResponseID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveActions failed: %v", err)
+	}
+	actionSet := map[string]bool{}
+	for _, item := range actions {
+		actionSet[item.Action] = true
+	}
+	for _, want := range []string{
+		"secure_cell.federation_incident_directive_issued",
+		"secure_cell.federation_incident_directive_extension_requested",
+		"secure_cell.federation_incident_directive_extension_approved",
+		"secure_cell.federation_incident_directive_extension_rejected",
+	} {
+		if !actionSet[want] {
+			t.Fatalf("expected directive action %q in %+v", want, actions)
+		}
+	}
+
+	bundle, err := service.BuildFederationIncidentDirectiveBundle(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveBundle(bundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveBundle failed: %v", err)
+	}
+	if bundle.DirectiveSummary.ExtensionCount != 2 || bundle.DirectiveSummary.LastExtensionStatus != SecureCellFederationIncidentDirectiveExtensionStatusRejected || len(bundle.Directive.Extensions) != 2 {
+		t.Fatalf("expected directive bundle to carry extension posture, got %+v", bundle)
+	}
+
+	finalResult := mustSecureCellResult(t, service, created.CellID)
+	if finalResult.ControlLedger == nil || !controlLedgerHasControl(finalResult.ControlLedger, "CELL-FED-13") {
+		t.Fatalf("expected directive extension governance control in control ledger, got %+v", finalResult.ControlLedger)
+	}
+}
+
 func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	t.Parallel()
 

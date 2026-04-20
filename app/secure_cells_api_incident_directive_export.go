@@ -20,7 +20,7 @@ func writeSecureCellFederationIncidentDirectiveExport(w http.ResponseWriter, r *
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directives.csv"`)
 		cw := csv.NewWriter(w)
-		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_type", "title", "priority", "status", "issuing_party", "assignee_party", "reviewer_party", "assignee_did", "reviewer_did", "due_at", "overdue", "acknowledged_by", "completed_by", "verification_decision", "verified_by", "created_at", "updated_at"}); err != nil {
+		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_type", "title", "priority", "status", "issuing_party", "assignee_party", "reviewer_party", "assignee_did", "reviewer_did", "due_at", "overdue", "extension_count", "pending_extension_count", "last_extension_id", "last_extension_status", "last_extension_proposed_due_at", "acknowledged_by", "completed_by", "verification_decision", "verified_by", "created_at", "updated_at"}); err != nil {
 			return err
 		}
 		for _, item := range items {
@@ -41,6 +41,11 @@ func writeSecureCellFederationIncidentDirectiveExport(w http.ResponseWriter, r *
 				item.ReviewerDID,
 				secureCellCSVTime(item.DueAt),
 				strconv.FormatBool(item.Overdue),
+				strconv.Itoa(item.ExtensionCount),
+				strconv.Itoa(item.PendingExtensionCount),
+				item.LastExtensionID,
+				string(item.LastExtensionStatus),
+				secureCellCSVTime(item.LastExtensionProposedDueAt),
 				item.AcknowledgedBy,
 				item.CompletedBy,
 				string(item.VerificationDecision),
@@ -68,7 +73,7 @@ func writeSecureCellOverdueFederationIncidentDirectiveExport(w http.ResponseWrit
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-overdue-federation-incident-directives.csv"`)
 		cw := csv.NewWriter(w)
-		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "title", "priority", "status", "assignee_party", "reviewer_party", "pending_action", "due_at", "overdue_seconds", "updated_at"}); err != nil {
+		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "title", "priority", "status", "assignee_party", "reviewer_party", "pending_action", "pending_extension_id", "pending_extension_proposed_due_at", "due_at", "overdue_seconds", "updated_at"}); err != nil {
 			return err
 		}
 		for _, item := range items {
@@ -84,6 +89,8 @@ func writeSecureCellOverdueFederationIncidentDirectiveExport(w http.ResponseWrit
 				string(item.AssigneeParty),
 				string(item.ReviewerParty),
 				item.PendingAction,
+				item.PendingExtensionID,
+				secureCellCSVTime(item.PendingExtensionProposedDueAt),
 				item.DueAt.UTC().Format(timeCSVFormat),
 				strconv.FormatInt(item.OverdueSeconds, 10),
 				item.UpdatedAt.UTC().Format(timeCSVFormat),
@@ -184,6 +191,52 @@ func writeSecureCellFederationIncidentDirectiveAutomationActionExport(w http.Res
 	}
 }
 
+func writeSecureCellFederationIncidentDirectiveExtensionExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extensions.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{"cell_id", "response_id", "organization_id", "incident_id", "directive_id", "directive_title", "directive_status", "extension_id", "requesting_party", "reviewing_party", "requested_by", "summary", "status", "current_due_at", "proposed_due_at", "decision_summary", "reviewed_by", "reviewed_at", "created_at", "updated_at"}); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := cw.Write([]string{
+				item.CellID,
+				item.ResponseID,
+				item.OrganizationID,
+				item.IncidentID,
+				item.DirectiveID,
+				item.DirectiveTitle,
+				string(item.DirectiveStatus),
+				item.ExtensionID,
+				string(item.RequestingParty),
+				string(item.ReviewingParty),
+				item.RequestedBy,
+				item.Summary,
+				string(item.Status),
+				secureCellCSVTime(item.CurrentDueAt),
+				secureCellCSVTime(item.ProposedDueAt),
+				item.DecisionSummary,
+				item.ReviewedBy,
+				secureCellCSVTime(item.ReviewedAt),
+				item.CreatedAt.UTC().Format(timeCSVFormat),
+				item.UpdatedAt.UTC().Format(timeCSVFormat),
+			}); err != nil {
+				return err
+			}
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellFederationIncidentDirectiveBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveBundle) error {
 	format := secureCellExportFormat(r)
 	switch format {
@@ -201,7 +254,7 @@ func writeSecureCellFederationIncidentDirectiveBundleExport(w http.ResponseWrite
 			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
 			"organization_id", "sponsor_of_record", "organization_name", "organization_status", "response_id", "response_status", "response_source_type",
 			"incident_id", "incident_status", "incident_severity", "incident_category", "directive_id", "directive_type", "directive_title", "directive_priority",
-			"directive_status", "issuing_party", "assignee_party", "reviewer_party", "directive_due_at", "response_bundle_hash", "contract_ids", "control_ids",
+			"directive_status", "issuing_party", "assignee_party", "reviewer_party", "directive_due_at", "directive_extension_count", "directive_pending_extension_count", "directive_last_extension_id", "directive_last_extension_status", "directive_last_extension_proposed_due_at", "response_bundle_hash", "contract_ids", "control_ids",
 			"operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash", "portable_package_hash", "portable_package_signed",
 			"portable_package_anchored", "content_hash", "signature_algorithm", "signature_signer", "signature_key_id", "signature_signed_at", "metadata",
 		}); err != nil {
@@ -248,6 +301,11 @@ func writeSecureCellFederationIncidentDirectiveBundleExport(w http.ResponseWrite
 			string(bundle.DirectiveSummary.AssigneeParty),
 			string(bundle.DirectiveSummary.ReviewerParty),
 			secureCellCSVTime(bundle.DirectiveSummary.DueAt),
+			strconv.Itoa(bundle.DirectiveSummary.ExtensionCount),
+			strconv.Itoa(bundle.DirectiveSummary.PendingExtensionCount),
+			bundle.DirectiveSummary.LastExtensionID,
+			string(bundle.DirectiveSummary.LastExtensionStatus),
+			secureCellCSVTime(bundle.DirectiveSummary.LastExtensionProposedDueAt),
 			bundle.ResponseBundleHash,
 			joinSecureCellFederationContractIDs(bundle.Contracts),
 			joinSecureCellFederationControlIDs(bundle.Controls),
