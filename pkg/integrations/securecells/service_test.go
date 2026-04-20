@@ -5503,6 +5503,293 @@ func mustSecureCellFederationCounterproposal(t *testing.T, result *SecureCellRes
 	return SecureCellFederationCounterproposal{}, false
 }
 
+func TestService_FederationIncidentDirectiveFlow(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Directive Cell",
+		Purpose:       "govern bilateral incident work orders",
+		Resource:      "cell:federation-directive",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Directive Coordination Room",
+		Purpose:         "coordinate bilateral incident directives",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open directive coordination session",
+		Metadata:        map[string]string{"ticket": "FED-DIRECTIVE-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty directive reviewer",
+		Metadata:         map[string]string{"ticket": "FED-DIRECTIVE-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins directive room",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	if len(accepted.FederationContracts) != 1 {
+		t.Fatalf("expected one federation contract, got %+v", accepted.FederationContracts)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, organizationID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityCritical,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Counterparty evidence request required",
+		Description:              "The local organization requires a governed counterparty evidence package for the incident response.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive-driving incident",
+		Metadata:                 map[string]string{"ticket": "FED-DIRECTIVE-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := service.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must provide an evidence package for bilateral incident review.",
+		Description:   "Provide the scoped evidence package, timeline, and remediation artifacts for the bilateral incident response.",
+		Priority:      SecureCellFederationIncidentDirectivePriorityHigh,
+		AssigneeParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue bilateral evidence work order",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := service.ListFederationIncidentDirectives(ctx, SecureCellFederationIncidentDirectiveFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	if len(directives) != 1 || directives[0].Status != SecureCellFederationIncidentDirectiveStatusIssued {
+		t.Fatalf("expected one issued directive, got %+v", directives)
+	}
+	directiveID := directives[0].DirectiveID
+
+	overdueAt := dueAt.Add(time.Hour)
+	overdue, err := service.ListOverdueFederationIncidentDirectives(ctx, SecureCellOverdueFederationIncidentDirectiveFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+		Before:         &overdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectives failed: %v", err)
+	}
+	if len(overdue) != 1 || overdue[0].DirectiveID != directiveID || overdue[0].PendingAction != "acknowledge" {
+		t.Fatalf("expected one overdue issued directive awaiting acknowledgement, got %+v", overdue)
+	}
+
+	if _, err := service.AcknowledgeFederationIncidentDirective(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveAcknowledgeRequest{
+		ActorDID:           participantB.AgentID(),
+		AcknowledgingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Reason:             "counterparty accepted bilateral work order",
+		Metadata:           map[string]string{"ticket": "FED-DIRECTIVE-ACK-01"},
+	}); err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirective failed: %v", err)
+	}
+
+	if _, err := service.CompleteFederationIncidentDirective(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveCompleteRequest{
+		ActorDID:              participantB.AgentID(),
+		CompletingParty:       SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		CompletionSummary:     "Counterparty uploaded evidence package",
+		CompletionDescription: "The counterparty uploaded the requested evidence package and remediation timeline.",
+		EvidenceIDs:           []string{incidentID},
+		Reason:                "complete bilateral work order",
+		Metadata:              map[string]string{"ticket": "FED-DIRECTIVE-COMPLETE-01"},
+	}); err != nil {
+		t.Fatalf("CompleteFederationIncidentDirective failed: %v", err)
+	}
+
+	if _, err := service.VerifyFederationIncidentDirective(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveVerifyRequest{
+		ActorDID:                owner.AgentID(),
+		ReviewingParty:          SecureCellFederationIncidentResponsePartyLocalOrg,
+		Decision:                SecureCellFederationIncidentDirectiveVerificationDecisionRejected,
+		VerificationSummary:     "Evidence package needs correction",
+		VerificationDescription: "The local organization rejected the first package because one scoped timeline artifact was missing.",
+		EvidenceIDs:             []string{incidentID},
+		Reason:                  "reject incomplete work order delivery",
+		Metadata:                map[string]string{"ticket": "FED-DIRECTIVE-VERIFY-01"},
+	}); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirective reject failed: %v", err)
+	}
+
+	rejectedDirective, err := service.GetFederationIncidentDirective(ctx, created.CellID, directiveID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentDirective after rejection failed: %v", err)
+	}
+	if rejectedDirective.Status != SecureCellFederationIncidentDirectiveStatusAcknowledged || rejectedDirective.VerificationDecision != SecureCellFederationIncidentDirectiveVerificationDecisionRejected {
+		t.Fatalf("expected directive to reopen in acknowledged state after rejected verification, got %+v", rejectedDirective)
+	}
+
+	if _, err := service.CompleteFederationIncidentDirective(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveCompleteRequest{
+		ActorDID:              participantB.AgentID(),
+		CompletingParty:       SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		CompletionSummary:     "Counterparty uploaded corrected evidence package",
+		CompletionDescription: "The counterparty uploaded the corrected evidence package with the missing timeline artifact.",
+		EvidenceIDs:           []string{incidentID, directiveID},
+		Reason:                "complete corrected bilateral work order",
+		Metadata:              map[string]string{"ticket": "FED-DIRECTIVE-COMPLETE-02"},
+	}); err != nil {
+		t.Fatalf("CompleteFederationIncidentDirective second completion failed: %v", err)
+	}
+
+	if _, err := service.VerifyFederationIncidentDirective(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveVerifyRequest{
+		ActorDID:                owner.AgentID(),
+		ReviewingParty:          SecureCellFederationIncidentResponsePartyLocalOrg,
+		Decision:                SecureCellFederationIncidentDirectiveVerificationDecisionAccepted,
+		VerificationSummary:     "Corrected evidence package accepted",
+		VerificationDescription: "The local organization accepted the corrected evidence package and closed the work order.",
+		EvidenceIDs:             []string{incidentID, directiveID},
+		Reason:                  "accept corrected work order delivery",
+		Metadata:                map[string]string{"ticket": "FED-DIRECTIVE-VERIFY-02"},
+	}); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirective accept failed: %v", err)
+	}
+
+	finalDirective, err := service.GetFederationIncidentDirective(ctx, created.CellID, directiveID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentDirective final failed: %v", err)
+	}
+	if finalDirective.Status != SecureCellFederationIncidentDirectiveStatusVerified || finalDirective.VerificationDecision != SecureCellFederationIncidentDirectiveVerificationDecisionAccepted {
+		t.Fatalf("expected verified directive after accepted review, got %+v", finalDirective)
+	}
+
+	directiveActions, err := service.ListFederationIncidentDirectiveActions(ctx, SecureCellFederationIncidentDirectiveActionFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+		DirectiveID:    directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveActions failed: %v", err)
+	}
+	if len(directiveActions) != 6 {
+		t.Fatalf("expected six directive actions, got %+v", directiveActions)
+	}
+	actionSet := map[string]bool{}
+	for _, item := range directiveActions {
+		actionSet[item.Action] = true
+	}
+	for _, want := range []string{
+		"secure_cell.federation_incident_directive_issued",
+		"secure_cell.federation_incident_directive_acknowledged",
+		"secure_cell.federation_incident_directive_completed",
+		"secure_cell.federation_incident_directive_verified",
+	} {
+		if !actionSet[want] {
+			t.Fatalf("expected directive action %q in %+v", want, directiveActions)
+		}
+	}
+
+	responseDetail, err := service.GetFederationIncidentResponse(ctx, created.CellID, localResponseID)
+	if err != nil {
+		t.Fatalf("GetFederationIncidentResponse failed: %v", err)
+	}
+	if len(responseDetail.IncidentDirectives) != 1 || responseDetail.IncidentDirectives[0].ID != directiveID || responseDetail.IncidentDirectives[0].Status != SecureCellFederationIncidentDirectiveStatusVerified {
+		t.Fatalf("expected one verified directive on response detail, got %+v", responseDetail.IncidentDirectives)
+	}
+
+	responseSummaries, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		ResponseID:     localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses final failed: %v", err)
+	}
+	if len(responseSummaries) != 1 || responseSummaries[0].DirectiveCount != 1 || responseSummaries[0].PendingDirectiveCount != 0 || responseSummaries[0].OverdueDirectiveCount != 0 || responseSummaries[0].NextDirectiveDueAt != nil {
+		t.Fatalf("expected response summary to show one completed directive with no pending or overdue work, got %+v", responseSummaries)
+	}
+
+	finalResult := mustSecureCellResult(t, service, created.CellID)
+	if finalResult.ControlLedger == nil || !controlLedgerHasControl(finalResult.ControlLedger, "CELL-FED-12") {
+		t.Fatalf("expected directive governance control in control ledger, got %+v", finalResult.ControlLedger)
+	}
+}
+
 func TestService_FederationIncidentReportAmendmentFlow(t *testing.T) {
 	t.Parallel()
 

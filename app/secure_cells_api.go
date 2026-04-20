@@ -1640,6 +1640,102 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directives" {
+			filter, err := parseSecureCellFederationIncidentDirectiveFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectives(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directives/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectives(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directives/overdue" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectives(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellOverdueFederationIncidentDirectiveListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directives/overdue/export" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectives(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellOverdueFederationIncidentDirectiveExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-remediations" {
 			filter, err := parseSecureCellFederationIncidentRemediationFilter(r)
 			if err != nil {
@@ -2433,6 +2529,19 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			}
 		}
 
+		if strings.Contains(r.URL.Path, "/federation/incident-directives/") {
+			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "")
+			if err == nil {
+				result, err := app.secureCellService.GetFederationIncidentDirective(r.Context(), cellID, directiveID)
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveQueryResponse{Result: result})
+				return
+			}
+		}
+
 		if strings.Contains(r.URL.Path, "/federation/incident-reports/") {
 			cellID, reportID, err := parseSecureCellFederationIncidentReportActionPath(r.URL.Path, "/bundle/export")
 			if err == nil {
@@ -3161,6 +3270,47 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/directives") && strings.Contains(r.URL.Path, "/federation/incident-responses/"):
+			cellID, responseID, err := parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/directives")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveCreateRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive create request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveIssue(r, cellID, responseID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.CreateFederationIncidentDirective(r.Context(), cellID, responseID, securecellsintegration.SecureCellFederationIncidentDirectiveCreateRequest{
+				ActorDID:            safeSecureCellActorDID(authCtx),
+				DirectiveType:       req.DirectiveType,
+				Title:               req.Title,
+				Summary:             req.Summary,
+				Description:         req.Description,
+				Priority:            req.Priority,
+				AssigneeParty:       req.AssigneeParty,
+				ReviewerParty:       req.ReviewerParty,
+				AssigneeDID:         req.AssigneeDID,
+				ReviewerDID:         req.ReviewerDID,
+				RelatedReportIDs:    append([]string(nil), req.RelatedReportIDs...),
+				RelatedAmendmentIDs: append([]string(nil), req.RelatedAmendmentIDs...),
+				EvidenceIDs:         append([]string(nil), req.EvidenceIDs...),
+				DueAt:               req.DueAt,
+				Reason:              req.Reason,
+				Metadata:            req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/acknowledge") && strings.Contains(r.URL.Path, "/federation/incident-responses/"):
 			cellID, responseID, err := parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/acknowledge")
 			if err != nil {
@@ -3182,6 +3332,35 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/acknowledge") && strings.Contains(r.URL.Path, "/federation/incident-directives/"):
+			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "/acknowledge")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveAcknowledgeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive acknowledge request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveAcknowledge(r, cellID, directiveID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcknowledgeFederationIncidentDirective(r.Context(), cellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveAcknowledgeRequest{
+				ActorDID:           safeSecureCellActorDID(authCtx),
+				AcknowledgingParty: req.AcknowledgingParty,
+				Reason:             req.Reason,
+				Metadata:           req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -3218,6 +3397,38 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/complete") && strings.Contains(r.URL.Path, "/federation/incident-directives/"):
+			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "/complete")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveCompleteRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive complete request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveComplete(r, cellID, directiveID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.CompleteFederationIncidentDirective(r.Context(), cellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveCompleteRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CompletingParty:       req.CompletingParty,
+				CompletionSummary:     req.CompletionSummary,
+				CompletionDescription: req.CompletionDescription,
+				EvidenceIDs:           append([]string(nil), req.EvidenceIDs...),
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/remediations") && strings.Contains(r.URL.Path, "/federation/incident-responses/"):
 			cellID, responseID, err := parseSecureCellFederationIncidentResponseActionPath(r.URL.Path, "/remediations")
 			if err != nil {
@@ -3243,6 +3454,39 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				EvidenceIDs:    append([]string(nil), req.EvidenceIDs...),
 				Reason:         req.Reason,
 				Metadata:       req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/verify") && strings.Contains(r.URL.Path, "/federation/incident-directives/"):
+			cellID, directiveID, err := parseSecureCellFederationIncidentDirectiveActionPath(r.URL.Path, "/verify")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveVerifyRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive verify request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveVerify(r, cellID, directiveID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.VerifyFederationIncidentDirective(r.Context(), cellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveVerifyRequest{
+				ActorDID:                safeSecureCellActorDID(authCtx),
+				ReviewingParty:          req.ReviewingParty,
+				Decision:                req.Decision,
+				VerificationSummary:     req.VerificationSummary,
+				VerificationDescription: req.VerificationDescription,
+				EvidenceIDs:             append([]string(nil), req.EvidenceIDs...),
+				Reason:                  req.Reason,
+				Metadata:                req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -5039,6 +5283,48 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "federation-incident-directives",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List bilateral incident directives and work orders for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-incident-directives-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export bilateral incident directives and work orders for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-incident-directives-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/overdue?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List overdue bilateral incident directives and work orders for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-incident-directives-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/overdue/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export overdue bilateral incident directives and work orders for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "federation-incident-directive-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions?cell_id=" + cellID + "&organization_id=" + organizationID,
+				Description: "List directive acknowledgements, completions, and verifications for this organization.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "federation-incident-directive-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions/export?cell_id=" + cellID + "&organization_id=" + organizationID + "&format=csv",
+				Description: "Export directive acknowledgements, completions, and verifications for this organization.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "federation-incident-remediations",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-remediations?cell_id=" + cellID + "&organization_id=" + organizationID,
@@ -5302,6 +5588,41 @@ func secureCellFederationTrustPackOptions(cellID string, organizationID string) 
 				Method:      http.MethodPost,
 				Path:        secureCellsItemPrefix + cellID + "/federation/incident-responses/{response_id}/dispute",
 				Description: "Dispute one bilateral incident response outcome and reopen the coordinated workflow.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-plan",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-responses/{response_id}/directives",
+				Description: "Issue one bilateral incident directive or work order for a coordinated incident response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-detail",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}",
+				Description: "Fetch one bilateral incident directive or work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-acknowledge",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/acknowledge",
+				Description: "Acknowledge one bilateral incident directive or work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-complete",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/complete",
+				Description: "Complete one bilateral incident directive or work order with evidence-bearing closure details.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-verify",
+				Method:      http.MethodPost,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directives/{directive_id}/verify",
+				Description: "Accept or reject completion of one bilateral incident directive or work order.",
 				Formats:     []string{"json"},
 			},
 			{
@@ -5729,6 +6050,41 @@ func secureCellFederationIncidentResponseBundleOptions(cellID string, responseID
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "incident-directives",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List directives and work orders linked to this bilateral incident response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directives-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/export?cell_id=" + cellID + "&response_id=" + responseID + "&format=csv",
+				Description: "Export directives and work orders linked to this bilateral incident response.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directives-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives/overdue?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List overdue directives and work orders linked to this bilateral incident response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List directive lifecycle actions linked to this bilateral incident response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions/export?cell_id=" + cellID + "&response_id=" + responseID + "&format=csv",
+				Description: "Export directive lifecycle actions linked to this bilateral incident response.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "incident-response-remediations",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-remediations?cell_id=" + cellID + "&response_id=" + responseID,
@@ -5826,6 +6182,20 @@ func secureCellFederationIncidentCasePackOptions(cellID string, responseID strin
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-remediations?cell_id=" + cellID + "&response_id=" + responseID,
 				Description: "List remediation attestations recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directives-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directives?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List directives and work orders recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-actions-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-actions?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List directive lifecycle actions recorded for this bilateral response.",
 				Formats:     []string{"json"},
 			},
 			{

@@ -112,6 +112,14 @@ var (
 	// posture.
 	ErrFederationIncidentResponseImmutable = errors.New("secure cell federation incident response is immutable")
 
+	// ErrFederationIncidentDirectiveNotFound indicates that an incident
+	// directive does not exist in the secure cell state.
+	ErrFederationIncidentDirectiveNotFound = errors.New("secure cell federation incident directive not found")
+
+	// ErrFederationIncidentDirectiveImmutable indicates that an incident
+	// directive cannot be mutated from its current lifecycle posture.
+	ErrFederationIncidentDirectiveImmutable = errors.New("secure cell federation incident directive is immutable")
+
 	// ErrFederationNegotiationConflict indicates that the owner-authored
 	// invitation/renewal terms and the counterparty-offered terms do not yield a
 	// mutually valid federation contract.
