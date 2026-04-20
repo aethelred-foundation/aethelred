@@ -43,6 +43,7 @@ type SecureCellFederationIncidentCasePack struct {
 	ResponseBundle                           *SecureCellFederationIncidentResponseBundle                                              `json:"response_bundle,omitempty"`
 	DirectiveBundles                         []*SecureCellFederationIncidentDirectiveBundle                                           `json:"directive_bundles,omitempty"`
 	DirectiveExtensionSummaries              []SecureCellFederationIncidentDirectiveExtensionSummary                                  `json:"directive_extension_summaries,omitempty"`
+	DirectiveExtensionAppealBundles          []*SecureCellFederationIncidentDirectiveExtensionAppealBundle                            `json:"directive_extension_appeal_bundles,omitempty"`
 	ReportBundles                            []*SecureCellFederationIncidentReportBundle                                              `json:"report_bundles,omitempty"`
 	AmendmentBundles                         []*SecureCellFederationIncidentReportAmendmentBundle                                     `json:"amendment_bundles,omitempty"`
 	ReportReconciliationBundles              []*SecureCellFederationIncidentReportReconciliationBundle                                `json:"report_reconciliation_bundles,omitempty"`
@@ -107,6 +108,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 
 	directiveBundles := make([]*SecureCellFederationIncidentDirectiveBundle, 0, len(response.IncidentDirectives))
 	directiveExtensionSummaries := make([]SecureCellFederationIncidentDirectiveExtensionSummary, 0)
+	directiveExtensionAppealBundles := make([]*SecureCellFederationIncidentDirectiveExtensionAppealBundle, 0)
 	for _, directive := range response.IncidentDirectives {
 		directiveBundle, err := s.BuildFederationIncidentDirectiveBundle(ctx, cellID, directive.ID, SecureCellFederationIncidentDirectiveBundleOptions{})
 		if err != nil {
@@ -115,6 +117,13 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		directiveBundles = append(directiveBundles, directiveBundle)
 		if directiveBundle != nil {
 			directiveExtensionSummaries = append(directiveExtensionSummaries, directiveBundle.ExtensionSummaries...)
+			for _, appeal := range directiveBundle.ExtensionAppeals {
+				appealBundle, err := s.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, cellID, appeal.AppealID, SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
+				if err != nil {
+					return nil, err
+				}
+				directiveExtensionAppealBundles = append(directiveExtensionAppealBundles, appealBundle)
+			}
 		}
 	}
 
@@ -285,6 +294,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		ResponseBundle:                           responseBundle,
 		DirectiveBundles:                         directiveBundles,
 		DirectiveExtensionSummaries:              directiveExtensionSummaries,
+		DirectiveExtensionAppealBundles:          directiveExtensionAppealBundles,
 		ReportBundles:                            reportBundles,
 		AmendmentBundles:                         amendmentBundles,
 		ReportReconciliationBundles:              reportReconciliationBundles,

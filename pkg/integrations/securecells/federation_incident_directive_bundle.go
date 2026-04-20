@@ -43,6 +43,7 @@ type SecureCellFederationIncidentDirectiveBundle struct {
 	Directive                  SecureCellFederationIncidentDirective                                  `json:"directive"`
 	ExtensionSummaries         []SecureCellFederationIncidentDirectiveExtensionSummary                `json:"extension_summaries,omitempty"`
 	ExtensionDisputes          []SecureCellFederationIncidentDirectiveExtensionDisputeSummary         `json:"extension_disputes,omitempty"`
+	ExtensionAppeals           []SecureCellFederationIncidentDirectiveExtensionAppealSummary          `json:"extension_appeals,omitempty"`
 	ExtensionAutomationActions []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord `json:"extension_automation_actions,omitempty"`
 	ResponseBundleHash         string                                                                 `json:"response_bundle_hash,omitempty"`
 	Contracts                  []SecureCellFederationContractSummary                                  `json:"contracts,omitempty"`
@@ -109,6 +110,13 @@ func (s *Service) BuildFederationIncidentDirectiveBundle(ctx context.Context, ce
 	if err != nil {
 		return nil, err
 	}
+	extensionAppeals, err := s.ListFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:      cellID,
+		DirectiveID: directive.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	extensionSummaries, err := s.ListFederationIncidentDirectiveExtensions(ctx, SecureCellFederationIncidentDirectiveExtensionFilter{
 		CellID:      cellID,
 		DirectiveID: directive.ID,
@@ -145,6 +153,7 @@ func (s *Service) BuildFederationIncidentDirectiveBundle(ctx context.Context, ce
 		Directive:                  *clonedDirective,
 		ExtensionSummaries:         append([]SecureCellFederationIncidentDirectiveExtensionSummary(nil), extensionSummaries...),
 		ExtensionDisputes:          append([]SecureCellFederationIncidentDirectiveExtensionDisputeSummary(nil), extensionDisputes...),
+		ExtensionAppeals:           append([]SecureCellFederationIncidentDirectiveExtensionAppealSummary(nil), extensionAppeals...),
 		ExtensionAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord(nil), extensionAutomationActions...),
 		ResponseBundleHash:         strings.TrimSpace(responseBundle.ContentHash),
 		Contracts:                  secureCellFederationContractSummariesForResponse(run, *response),

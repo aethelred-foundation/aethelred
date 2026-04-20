@@ -119,6 +119,7 @@ type SecureCellFederationIncidentDirectiveExtensionDispute struct {
 	ResolutionEvidenceIDs []string                                                              `json:"resolution_evidence_ids,omitempty"`
 	ResolvedBy            string                                                                `json:"resolved_by,omitempty"`
 	ResolvedAt            *time.Time                                                            `json:"resolved_at,omitempty"`
+	Appeals               []SecureCellFederationIncidentDirectiveExtensionAppeal                `json:"appeals,omitempty"`
 	CreatedAt             time.Time                                                             `json:"created_at"`
 	UpdatedAt             time.Time                                                             `json:"updated_at"`
 	Metadata              map[string]string                                                     `json:"metadata,omitempty"`
