@@ -8253,6 +8253,415 @@ func TestService_FederationIncidentDirectiveExtensionAppealGovernance(t *testing
 	}
 }
 
+func TestService_FederationIncidentDirectiveExtensionAppealAutomation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	service, _, owner, participantA, participantB := newTestSecureCellService(t)
+
+	created, err := service.CreateCell(ctx, SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Federation Directive Extension Appeal Automation Cell",
+		Purpose:       "govern bilateral directive extension appeal automation",
+		Resource:      "cell:federation-directive-extension-appeal-automation",
+		Jurisdiction:  "UAE",
+		Participants: []SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := service.StartSession(ctx, created.CellID, SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Appeal Automation Room",
+		Purpose:         "coordinate automated bilateral directive exception appeals",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open appeal automation session",
+		Metadata:        map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := service.CreateFederationInvitation(ctx, created.CellID, SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  secureCellFederationSponsor(participantB),
+		OrganizationName: secureCellFederationOrganizationName(participantB),
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty appeal participant",
+		Metadata:         map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := service.AcceptFederationInvitation(ctx, created.CellID, SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins appeal automation room",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := service.PublishFederationIncident(ctx, created.CellID, organizationID, SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 SecureCellFederationIncidentSeverityHigh,
+		Category:                 SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Appeal automation incident",
+		Description:              "The local organization wants timed appeal-board supervision for directive deadline exceptions.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish appeal automation incident",
+		Metadata:                 map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := service.ListFederationIncidentResponses(ctx, SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := service.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must provide an evidence package for bilateral incident review.",
+		Description:   "Provide the scoped evidence package, timeline, and remediation artifacts for the bilateral incident response.",
+		Priority:      SecureCellFederationIncidentDirectivePriorityHigh,
+		AssigneeParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue bilateral evidence work order",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := service.ListFederationIncidentDirectives(ctx, SecureCellFederationIncidentDirectiveFilter{
+		CellID:     created.CellID,
+		ResponseID: localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	if len(directives) != 1 {
+		t.Fatalf("expected one directive, got %+v", directives)
+	}
+	directiveID := directives[0].DirectiveID
+
+	proposedDueAt := dueAt.Add(4 * time.Hour)
+	if _, err := service.RequestFederationIncidentDirectiveExtension(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveExtensionRequest{
+		ActorDID:                   participantB.AgentID(),
+		RequestingParty:            SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                    "Counterparty needs longer evidence collection window",
+		Description:                "The counterparty needs additional time to gather the full evidence package for bilateral review.",
+		EvidenceIDs:                []string{incidentID},
+		ProposedDueAt:              &proposedDueAt,
+		ReviewApprovalThreshold:    1,
+		EligibleReviewerDIDs:       []string{owner.AgentID()},
+		DisputeResolutionThreshold: 1,
+		EligibleResolverDIDs:       []string{owner.AgentID()},
+		Reason:                     "request directive extension before appeal automation",
+		Metadata:                   map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-REQUEST-01"},
+	}); err != nil {
+		t.Fatalf("RequestFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	extensions, err := service.ListFederationIncidentDirectiveExtensions(ctx, SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions failed: %v", err)
+	}
+	if len(extensions) != 1 {
+		t.Fatalf("expected one extension, got %+v", extensions)
+	}
+	extensionID := extensions[0].ExtensionID
+
+	if _, err := service.RejectFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, SecureCellFederationIncidentDirectiveExtensionRejectRequest{
+		ActorDID:            owner.AgentID(),
+		ReviewingParty:      SecureCellFederationIncidentResponsePartyLocalOrg,
+		DecisionSummary:     "Local org rejected the extension",
+		DecisionDescription: "The local organization rejected the exception request.",
+		EvidenceIDs:         []string{directiveID},
+		Reason:              "reject directive extension before dispute",
+		Metadata:            map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-REJECT-01"},
+	}); err != nil {
+		t.Fatalf("RejectFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	if _, err := service.DisputeFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, SecureCellFederationIncidentDirectiveExtensionDisputeRequest{
+		ActorDID:         participantB.AgentID(),
+		ChallengingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:          "Counterparty disputes rejected extension",
+		Description:      "The counterparty reopened the rejected extension for bilateral review.",
+		EvidenceIDs:      []string{directiveID},
+		Reason:           "open directive extension dispute before appeal automation",
+		Metadata:         map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-DISPUTE-01"},
+	}); err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	disputes, err := service.ListFederationIncidentDirectiveExtensionDisputes(ctx, SecureCellFederationIncidentDirectiveExtensionDisputeFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		ExtensionID: extensionID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionDisputes failed: %v", err)
+	}
+	if len(disputes) != 1 {
+		t.Fatalf("expected one dispute, got %+v", disputes)
+	}
+	disputeID := disputes[0].DisputeID
+
+	if _, err := service.ResolveFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, SecureCellFederationIncidentDirectiveExtensionDisputeResolveRequest{
+		ActorDID:              owner.AgentID(),
+		RespondingParty:       SecureCellFederationIncidentResponsePartyLocalOrg,
+		Resolution:            SecureCellFederationIncidentDirectiveExtensionDisputeResolutionUphold,
+		ResolutionSummary:     "Local org upheld the rejection",
+		ResolutionDescription: "The local organization upheld the rejection during dispute resolution.",
+		EvidenceIDs:           []string{directiveID},
+		Reason:                "resolve dispute before appeal automation",
+		Metadata:              map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-RESOLVE-01"},
+	}); err != nil {
+		t.Fatalf("ResolveFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	if _, err := service.AppealFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, SecureCellFederationIncidentDirectiveExtensionAppealRequest{
+		ActorDID:                  participantB.AgentID(),
+		AppealingParty:            SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                   "Counterparty appeals upheld rejection",
+		Description:               "The counterparty escalated the upheld rejection to the bilateral appeal board.",
+		EvidenceIDs:               []string{directiveID},
+		BoardReviewThreshold:      2,
+		EligibleBoardReviewerDIDs: []string{owner.AgentID()},
+		Reason:                    "open directive extension appeal board review",
+		Metadata:                  map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-OPEN-01"},
+	}); err != nil {
+		t.Fatalf("AppealFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	appeals, err := service.ListFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		ExtensionID: extensionID,
+		DisputeID:   disputeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppeals failed: %v", err)
+	}
+	if len(appeals) != 1 || appeals[0].Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview || appeals[0].BoardReviewThreshold != 2 {
+		t.Fatalf("expected one pending appeal, got %+v", appeals)
+	}
+	appealID := appeals[0].AppealID
+
+	if _, err := service.RuleFederationIncidentDirectiveExtensionAppeal(ctx, created.CellID, appealID, SecureCellFederationIncidentDirectiveExtensionAppealRulingRequest{
+		ActorDID:          owner.AgentID(),
+		BoardParty:        SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board vote one ratified rejection",
+		RulingDescription: "The first local board reviewer ratified the rejection but the threshold is not met yet.",
+		EvidenceIDs:       []string{directiveID},
+		Reason:            "record first appeal board vote",
+		Metadata:          map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-RULE-01"},
+	}); err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppeal first vote failed: %v", err)
+	}
+
+	appeals, err = service.ListFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:   created.CellID,
+		AppealID: appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppeals review posture failed: %v", err)
+	}
+	if len(appeals) != 1 || appeals[0].RatifyVoteCount != 1 || appeals[0].BoardRecordedVoteCount != 1 || appeals[0].BoardMissingQuorumCount != 1 {
+		t.Fatalf("expected one recorded vote with one missing quorum seat, got %+v", appeals)
+	}
+
+	reviewOverdueAt := appeals[0].CreatedAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealBoardReviewSLA + time.Hour)
+	overdueAppeals, err := service.ListOverdueFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		AppealID:    appealID,
+		Before:      &reviewOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectiveExtensionAppeals review failed: %v", err)
+	}
+	if len(overdueAppeals) != 1 || overdueAppeals[0].AutomationAction != "delegate_review_committee" || overdueAppeals[0].BoardReviewThreshold != 2 || overdueAppeals[0].BoardCommitteeMemberCount != 1 || overdueAppeals[0].BoardMissingQuorumCount != 1 {
+		t.Fatalf("expected committee-aware overdue appeal posture, got %+v", overdueAppeals)
+	}
+
+	sweepActor := "did:aethelred:directive-extension-appeal-sweeper"
+	if _, err := service.SweepFederationIncidentDirectiveExtensionAppeals(ctx, reviewOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated directive extension appeal review sweep",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-SWEEP-REVIEW-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppeals review failed: %v", err)
+	}
+
+	automationActions, err := service.ListFederationIncidentDirectiveExtensionAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		AppealID:    appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealAutomationActions review failed: %v", err)
+	}
+	if len(automationActions) == 0 || automationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_review_delegated" || automationActions[0].TargetDID == "" || automationActions[0].BoardReviewThreshold != 2 || automationActions[0].BoardMissingQuorumCount != 1 {
+		t.Fatalf("expected automated appeal-board delegation, got %+v", automationActions)
+	}
+	delegatedReviewDID := automationActions[0].TargetDID
+
+	directiveBundle, err := service.BuildFederationIncidentDirectiveBundle(ctx, created.CellID, directiveID, SecureCellFederationIncidentDirectiveBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveBundle after review sweep failed: %v", err)
+	}
+	if len(directiveBundle.ExtensionAppealAutomationActions) != 1 || directiveBundle.ExtensionAppealAutomationActions[0].AppealID != appealID {
+		t.Fatalf("expected directive bundle appeal automation projection, got %+v", directiveBundle.ExtensionAppealAutomationActions)
+	}
+	appealBundle, err := service.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, appealID, SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealBundle after review sweep failed: %v", err)
+	}
+	if len(appealBundle.AutomationActions) != 1 || appealBundle.AutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_review_delegated" {
+		t.Fatalf("expected appeal bundle automation projection, got %+v", appealBundle.AutomationActions)
+	}
+
+	if _, err := service.RuleFederationIncidentDirectiveExtensionAppeal(ctx, created.CellID, appealID, SecureCellFederationIncidentDirectiveExtensionAppealRulingRequest{
+		ActorDID:          delegatedReviewDID,
+		BoardParty:        SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board ratified rejection",
+		RulingDescription: "The delegated reviewer completed the appeal-board threshold and ratified the rejection.",
+		EvidenceIDs:       []string{directiveID},
+		Reason:            "record second appeal board vote",
+		Metadata:          map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-RULE-02"},
+	}); err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppeal second vote failed: %v", err)
+	}
+
+	appeals, err = service.ListFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:   created.CellID,
+		AppealID: appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppeals final review failed: %v", err)
+	}
+	if len(appeals) != 1 || appeals[0].Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusRatified || appeals[0].BoardDelegationCount != 1 {
+		t.Fatalf("expected ratified appeal awaiting acknowledgement, got %+v", appeals)
+	}
+
+	ackOverdueAt := appeals[0].RuledAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealAcknowledgementSLA + time.Hour)
+	overdueAppeals, err = service.ListOverdueFederationIncidentDirectiveExtensionAppeals(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:   created.CellID,
+		AppealID: appealID,
+		Before:   &ackOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectiveExtensionAppeals acknowledgement failed: %v", err)
+	}
+	if len(overdueAppeals) != 1 || overdueAppeals[0].PendingAction != "acknowledge_enforcement" {
+		t.Fatalf("expected overdue enforcement acknowledgement posture, got %+v", overdueAppeals)
+	}
+
+	if _, err := service.SweepFederationIncidentDirectiveExtensionAppeals(ctx, ackOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated directive extension appeal enforcement sweep",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-AUTO-SWEEP-ACK-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppeals acknowledgement failed: %v", err)
+	}
+
+	automationActions, err = service.ListFederationIncidentDirectiveExtensionAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		AppealID:    appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealAutomationActions acknowledgement failed: %v", err)
+	}
+	if len(automationActions) < 2 {
+		t.Fatalf("expected review and acknowledgement automation actions, got %+v", automationActions)
+	}
+	var sawAckAutomation bool
+	for _, item := range automationActions {
+		if item.PendingAction == "acknowledge_enforcement" && item.AppealID == appealID {
+			sawAckAutomation = true
+			if item.Action != "secure_cell.federation_incident_response_escalated" && item.Action != "secure_cell.federation_contract_suspended" {
+				t.Fatalf("expected acknowledgement automation to escalate response or suspend contracts, got %+v", item)
+			}
+		}
+	}
+	if !sawAckAutomation {
+		t.Fatalf("expected one acknowledgement automation action, got %+v", automationActions)
+	}
+
+	appealBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, appealID, SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealBundle final failed: %v", err)
+	}
+	if len(appealBundle.AutomationActions) < 2 {
+		t.Fatalf("expected appeal bundle to retain automation trail, got %+v", appealBundle.AutomationActions)
+	}
+	casePack, err := service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack final failed: %v", err)
+	}
+	if len(casePack.DirectiveExtensionAppealAutomationActions) < 2 {
+		t.Fatalf("expected case pack to include appeal automation trail, got %+v", casePack.DirectiveExtensionAppealAutomationActions)
+	}
+}
+
 func containsStringFold(items []string, want string) bool {
 	want = strings.TrimSpace(want)
 	for _, item := range items {

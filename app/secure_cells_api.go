@@ -1886,6 +1886,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeals/overdue" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectiveExtensionAppeals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellOverdueFederationIncidentDirectiveExtensionAppealListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeals/overdue/export" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectiveExtensionAppeals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-automation-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealAutomationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-automation-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-automation-actions" {
 			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAutomationActionFilter(r)
 			if err != nil {
@@ -6913,6 +6977,20 @@ func secureCellFederationIncidentCasePackOptions(cellID string, responseID strin
 				Formats:     []string{"json"},
 			},
 			{
+				ID:          "incident-directive-extension-appeals-overdue-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/overdue?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List overdue appeal-board reviews or enforcement acknowledgements for directive exception disputes on this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-automation-actions-list",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-automation-actions?cell_id=" + cellID + "&response_id=" + responseID,
+				Description: "List automated appeal-board delegation, escalation, or containment actions recorded for this bilateral response.",
+				Formats:     []string{"json"},
+			},
+			{
 				ID:          "incident-directive-extension-automation-actions-list",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-automation-actions?cell_id=" + cellID + "&response_id=" + responseID,
@@ -7034,6 +7112,34 @@ func secureCellFederationIncidentDirectiveBundleOptions(cellID string, directive
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "incident-directive-extension-appeals-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/overdue?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List overdue appeal-board reviews or enforcement acknowledgements for this bilateral work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeals-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/overdue/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
+				Description: "Export overdue appeal-board reviews or enforcement acknowledgements for this bilateral work order.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-automation-actions?cell_id=" + cellID + "&directive_id=" + directiveID,
+				Description: "List automated appeal-board delegation, escalation, or containment actions for this bilateral work order.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-automation-actions/export?cell_id=" + cellID + "&directive_id=" + directiveID + "&format=csv",
+				Description: "Export automated appeal-board delegation, escalation, or containment actions for this bilateral work order.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "incident-directive-extension-automation-actions",
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-automation-actions?cell_id=" + cellID + "&directive_id=" + directiveID,
@@ -7082,6 +7188,34 @@ func secureCellFederationIncidentDirectiveExtensionAppealBundleOptions(cellID st
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/export?cell_id=" + cellID + "&appeal_id=" + appealID + "&format=csv",
 				Description: "Export the bilateral appeal-board review for this directive exception dispute outcome.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeals-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/overdue?cell_id=" + cellID + "&appeal_id=" + appealID,
+				Description: "List overdue board-review or enforcement acknowledgement posture for this directive exception appeal.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeals-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeals/overdue/export?cell_id=" + cellID + "&appeal_id=" + appealID + "&format=csv",
+				Description: "Export overdue board-review or enforcement acknowledgement posture for this directive exception appeal.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-automation-actions?cell_id=" + cellID + "&appeal_id=" + appealID,
+				Description: "List automated board-review delegation, escalation, or containment actions for this directive exception appeal.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-automation-actions/export?cell_id=" + cellID + "&appeal_id=" + appealID + "&format=csv",
+				Description: "Export automated board-review delegation, escalation, or containment actions for this directive exception appeal.",
 				Formats:     []string{"json", "csv"},
 			},
 			{

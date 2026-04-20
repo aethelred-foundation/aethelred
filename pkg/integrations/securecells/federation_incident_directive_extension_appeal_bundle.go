@@ -27,34 +27,35 @@ type SecureCellFederationIncidentDirectiveExtensionAppealBundleSignature struct 
 // SecureCellFederationIncidentDirectiveExtensionAppealBundle is the signed
 // portable auditor package for one bilateral directive-exception appeal.
 type SecureCellFederationIncidentDirectiveExtensionAppealBundle struct {
-	ID                      string                                                               `json:"id"`
-	Version                 string                                                               `json:"version"`
-	Name                    string                                                               `json:"name"`
-	GeneratedAt             time.Time                                                            `json:"generated_at"`
-	ExpiresAt               *time.Time                                                           `json:"expires_at,omitempty"`
-	CellID                  string                                                               `json:"cell_id"`
-	CellName                string                                                               `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                                                     `json:"cell_status"`
-	Jurisdiction            string                                                               `json:"jurisdiction,omitempty"`
-	Framework               string                                                               `json:"framework,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary                              `json:"organization"`
-	ResponseSummary         SecureCellFederationIncidentResponseSummary                          `json:"response_summary"`
-	DirectiveSummary        SecureCellFederationIncidentDirectiveSummary                         `json:"directive_summary"`
-	ExtensionSummary        SecureCellFederationIncidentDirectiveExtensionSummary                `json:"extension_summary"`
-	DisputeSummary          SecureCellFederationIncidentDirectiveExtensionDisputeSummary         `json:"dispute_summary"`
-	AppealSummary           SecureCellFederationIncidentDirectiveExtensionAppealSummary          `json:"appeal_summary"`
-	Appeal                  SecureCellFederationIncidentDirectiveExtensionAppeal                 `json:"appeal"`
-	DirectiveBundleHash     string                                                               `json:"directive_bundle_hash,omitempty"`
-	Controls                []SecureCellFederationTrustPackControl                               `json:"controls,omitempty"`
-	OperatorSurfaces        []SecureCellFederationOperatorSurface                                `json:"operator_surfaces,omitempty"`
-	ControlLedgerID         string                                                               `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                                               `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                                               `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                                 `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                                 `json:"portable_package_anchored"`
-	ContentHash             string                                                               `json:"content_hash,omitempty"`
-	Signature               *SecureCellFederationIncidentDirectiveExtensionAppealBundleSignature `json:"signature,omitempty"`
-	Metadata                map[string]string                                                    `json:"metadata,omitempty"`
+	ID                      string                                                                       `json:"id"`
+	Version                 string                                                                       `json:"version"`
+	Name                    string                                                                       `json:"name"`
+	GeneratedAt             time.Time                                                                    `json:"generated_at"`
+	ExpiresAt               *time.Time                                                                   `json:"expires_at,omitempty"`
+	CellID                  string                                                                       `json:"cell_id"`
+	CellName                string                                                                       `json:"cell_name,omitempty"`
+	CellStatus              SecureCellStatus                                                             `json:"cell_status"`
+	Jurisdiction            string                                                                       `json:"jurisdiction,omitempty"`
+	Framework               string                                                                       `json:"framework,omitempty"`
+	Organization            SecureCellFederationOrganizationSummary                                      `json:"organization"`
+	ResponseSummary         SecureCellFederationIncidentResponseSummary                                  `json:"response_summary"`
+	DirectiveSummary        SecureCellFederationIncidentDirectiveSummary                                 `json:"directive_summary"`
+	ExtensionSummary        SecureCellFederationIncidentDirectiveExtensionSummary                        `json:"extension_summary"`
+	DisputeSummary          SecureCellFederationIncidentDirectiveExtensionDisputeSummary                 `json:"dispute_summary"`
+	AppealSummary           SecureCellFederationIncidentDirectiveExtensionAppealSummary                  `json:"appeal_summary"`
+	Appeal                  SecureCellFederationIncidentDirectiveExtensionAppeal                         `json:"appeal"`
+	AutomationActions       []SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionRecord `json:"automation_actions,omitempty"`
+	DirectiveBundleHash     string                                                                       `json:"directive_bundle_hash,omitempty"`
+	Controls                []SecureCellFederationTrustPackControl                                       `json:"controls,omitempty"`
+	OperatorSurfaces        []SecureCellFederationOperatorSurface                                        `json:"operator_surfaces,omitempty"`
+	ControlLedgerID         string                                                                       `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash       string                                                                       `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash     string                                                                       `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned   bool                                                                         `json:"portable_package_signed"`
+	PortablePackageAnchored bool                                                                         `json:"portable_package_anchored"`
+	ContentHash             string                                                                       `json:"content_hash,omitempty"`
+	Signature               *SecureCellFederationIncidentDirectiveExtensionAppealBundleSignature         `json:"signature,omitempty"`
+	Metadata                map[string]string                                                            `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions lets
@@ -87,6 +88,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealBundle(ctx cont
 		return nil, err
 	}
 	directiveBundle, err := s.BuildFederationIncidentDirectiveBundle(ctx, cellID, directive.ID, SecureCellFederationIncidentDirectiveBundleOptions{})
+	if err != nil {
+		return nil, err
+	}
+	automationActions, err := s.ListFederationIncidentDirectiveExtensionAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionFilter{
+		CellID:   cellID,
+		AppealID: appealID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +137,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealBundle(ctx cont
 		DisputeSummary:      disputeSummary,
 		AppealSummary:       appealSummary,
 		Appeal:              *clonedAppeal,
+		AutomationActions:   append([]SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionRecord(nil), automationActions...),
 		DirectiveBundleHash: strings.TrimSpace(directiveBundle.ContentHash),
 		Controls:            secureCellFederationControlsFromLedger(run.result.ControlLedger),
 		OperatorSurfaces:    cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),

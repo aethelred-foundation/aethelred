@@ -4681,6 +4681,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentDirectiveExtensionRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionDisputeRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentRemediationRecordIDs := make([]string, 0, secureCellFederationIncidentResponseRemediationTotal(run.result.FederationIncidentResponses))
 	federationIncidentVerificationRecordIDs := make([]string, 0, secureCellFederationIncidentResponseVerificationTotal(run.result.FederationIncidentResponses))
@@ -4869,6 +4870,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		}
 		if strings.TrimSpace(data["federation_incident_directive_extension_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_sweep_mode"]), "automated") {
 			federationIncidentDirectiveExtensionAutomationRecordIDs = append(federationIncidentDirectiveExtensionAutomationRecordIDs, recordID)
+		}
+		if strings.TrimSpace(data["federation_incident_directive_extension_appeal_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_sweep_mode"]), "automated") {
+			federationIncidentDirectiveExtensionAppealAutomationRecordIDs = append(federationIncidentDirectiveExtensionAppealAutomationRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_incident_report_amendment_created" || transition.Action == "secure_cell.federation_incident_report_amendment_submitted" || transition.Action == "secure_cell.federation_incident_report_amendment_acknowledged" {
 			federationIncidentReportAmendmentRecordIDs = append(federationIncidentReportAmendmentRecordIDs, recordID)
@@ -6071,6 +6075,26 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_incident_directive_extension_pending_appeals_total":                 fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionPendingAppealCount(run.result.FederationIncidentResponses)),
 				"federation_incident_directive_extension_appeal_records_total":                  fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealRecordIDs)),
 				"federation_incident_directive_extension_appeal_acknowledged_enforcement_total": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionAppealStatusEnforcementAcknowledged)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentDirectiveExtensionAppealAutomationRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-16",
+			ControlName: "Timed Appeal Board Supervision And Enforcement",
+			Description: "Bilateral directive-exception appeals are not passive board records; overdue board reviews and overdue enforcement acknowledgements are automatically delegated, escalated, or fail-closed as evidence-bearing governance actions.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealAutomationRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_appeals_total":                         fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealCount(run.result.FederationIncidentResponses)),
+				"federation_incident_directive_extension_pending_appeals_total":                 fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionPendingAppealCount(run.result.FederationIncidentResponses)),
+				"federation_incident_directive_extension_appeal_automation_records_total":       fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealAutomationRecordIDs)),
+				"federation_incident_directive_extension_appeals_pending_board_review_total":    fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview)),
+				"federation_incident_directive_extension_appeals_pending_enforcement_ack_total": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionAppealStatusRatified)+secureCellFederationIncidentDirectiveExtensionAppealStatusCount(run.result.FederationIncidentResponses, SecureCellFederationIncidentDirectiveExtensionAppealStatusOverturned)),
 			},
 		}); err != nil {
 			return nil, err

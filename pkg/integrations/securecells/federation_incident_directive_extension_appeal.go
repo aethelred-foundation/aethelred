@@ -767,10 +767,12 @@ func (s *Service) DelegateFederationIncidentDirectiveExtensionAppealReview(ctx c
 			"federation_incident_directive_extension_appeal_board_threshold":   fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_ratify_votes":      fmt.Sprintf("%d", ratifyVotes),
 			"federation_incident_directive_extension_appeal_overturn_votes":    fmt.Sprintf("%d", overturnVotes),
+			"federation_incident_directive_extension_appeal_delegation_count":  fmt.Sprintf("%d", committeeState.delegationCount),
 			"federation_incident_directive_extension_appeal_committee_members": fmt.Sprintf("%d", committeeState.memberCount),
 			"federation_incident_directive_extension_appeal_vote_count":        fmt.Sprintf("%d", committeeState.recordedVoteCount),
 			"federation_incident_directive_extension_appeal_missing_quorum":    fmt.Sprintf("%d", committeeState.missingQuorumCount),
 			"federation_incident_directive_extension_appeal_outstanding_votes": fmt.Sprintf("%d", committeeState.outstandingMemberCount),
+			"federation_incident_directive_extension_appeal_quorum_satisfied":  fmt.Sprintf("%t", committeeState.quorumSatisfied),
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
