@@ -2013,7 +2013,7 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 		rows := [][]string{{
 			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
 			"organization_id", "sponsor_of_record", "organization_name", "response_id", "response_status", "incident_id", "source_type",
-			"directive_bundle_ids", "directive_bundle_count", "directive_extension_summary_count", "directive_extension_appeal_bundle_count", "directive_extension_appeal_reconciliation_bundle_ids", "directive_extension_appeal_reconciliation_bundle_count", "directive_extension_appeal_reconciliation_challenge_count", "directive_extension_appeal_reconciliation_challenge_action_count", "directive_extension_appeal_reconciliation_challenge_automation_action_count", "directive_extension_appeal_automation_action_count", "directive_extension_appeal_reconciliation_automation_action_count",
+			"directive_bundle_ids", "directive_bundle_count", "directive_extension_summary_count", "directive_extension_appeal_bundle_count", "directive_extension_appeal_reconciliation_bundle_ids", "directive_extension_appeal_reconciliation_bundle_count", "directive_extension_appeal_reconciliation_challenge_count", "directive_extension_appeal_reconciliation_challenge_action_count", "directive_extension_appeal_reconciliation_challenge_appeal_count", "directive_extension_appeal_reconciliation_challenge_appeal_action_count", "directive_extension_appeal_reconciliation_challenge_automation_action_count", "directive_extension_appeal_automation_action_count", "directive_extension_appeal_reconciliation_automation_action_count",
 			"report_bundle_ids", "report_bundle_count", "amendment_bundle_ids", "amendment_bundle_count",
 			"report_reconciliation_bundle_ids", "report_reconciliation_bundle_count",
 			"amendment_reconciliation_bundle_ids", "amendment_reconciliation_bundle_count",
@@ -2059,6 +2059,8 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationBundles)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationChallenges)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationChallengeActions)),
+			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationChallengeAppeals)),
+			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationChallengeAppealActions)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationChallengeAutomationActions)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealAutomationActions)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationAutomationActions)),

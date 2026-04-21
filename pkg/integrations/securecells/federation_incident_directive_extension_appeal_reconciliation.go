@@ -152,6 +152,8 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle st
 	Attestations               []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord   `json:"attestations,omitempty"`
 	Challenges                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary                `json:"challenges,omitempty"`
 	ChallengeActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord           `json:"challenge_actions,omitempty"`
+	ChallengeAppeals           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary          `json:"challenge_appeals,omitempty"`
+	ChallengeAppealActions     []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord     `json:"challenge_appeal_actions,omitempty"`
 	AutomationActions          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord          `json:"automation_actions,omitempty"`
 	ChallengeAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionRecord `json:"challenge_automation_actions,omitempty"`
 	Contracts                  []SecureCellFederationContractSummary                                                               `json:"contracts,omitempty"`
@@ -262,6 +264,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		}
 	}
 	challengeActions := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionsForComparisonKey(run, comparisonKey)
+	challengeAppeals := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, 0)
+	for _, challengeAppeal := range secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealsFromRun(run) {
+		if strings.EqualFold(strings.TrimSpace(challengeAppeal.ComparisonKey), strings.TrimSpace(comparisonKey)) {
+			challengeAppeals = append(challengeAppeals, challengeAppeal)
+		}
+	}
+	challengeAppealActions := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionsForComparisonKey(run, comparisonKey)
 	automationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionFilter{
 		CellID:        cellID,
 		ComparisonKey: comparisonKey,
@@ -301,6 +310,8 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		Attestations:               append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord(nil), attestations...),
 		Challenges:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary(nil), challenges...),
 		ChallengeActions:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord(nil), challengeActions...),
+		ChallengeAppeals:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary(nil), challengeAppeals...),
+		ChallengeAppealActions:     append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord(nil), challengeAppealActions...),
 		AutomationActions:          append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord(nil), automationActions...),
 		ChallengeAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionRecord(nil), challengeAutomationActions...),
 		Contracts:                  secureCellFederationContractSummariesForOrganization(run, reconciliation.OrganizationID),

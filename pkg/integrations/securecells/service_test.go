@@ -9761,6 +9761,126 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	if !controlLedgerHasControl(ruledChallengeReconciliation.ControlLedger, "CELL-FED-23") {
 		t.Fatalf("expected reconciled challenge control ledger to include CELL-FED-23, got %+v", ruledChallengeReconciliation.ControlLedger.Controls)
 	}
+
+	if _, err := service.AppealFederationIncidentDirectiveExtensionAppealReconciliationChallenge(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRequest{
+		ActorDID:                  participantB.AgentID(),
+		AppealingParty:            SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                   "Counterparty appealed the reconciliation challenge ruling",
+		Description:               "The counterparty requested one more governed review over the ratified reconciliation challenge ruling.",
+		EvidenceIDs:               []string{directiveID, comparisonKey, challengeID},
+		BoardReviewThreshold:      1,
+		EligibleBoardReviewerDIDs: []string{owner.AgentID()},
+		Reason:                    "open reconciliation challenge appeal board",
+		Metadata:                  map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-OPEN-01"},
+	}); err != nil {
+		t.Fatalf("AppealFederationIncidentDirectiveExtensionAppealReconciliationChallenge failed: %v", err)
+	}
+
+	challengeAppeals, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:        created.CellID,
+		AppealID:      appealID,
+		ComparisonKey: comparisonKey,
+		ChallengeID:   challengeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals failed: %v", err)
+	}
+	if len(challengeAppeals) != 1 || challengeAppeals[0].AppealID != appealID || challengeAppeals[0].ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview {
+		t.Fatalf("expected one pending reconciliation challenge appeal filtered by parent appeal, got %+v", challengeAppeals)
+	}
+	challengeAppealID := challengeAppeals[0].ChallengeAppealID
+
+	ruledChallengeAppeal, err := service.RuleFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRulingRequest{
+		ActorDID:          owner.AgentID(),
+		BoardParty:        SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board ratified the challenge appeal ruling",
+		RulingDescription: "The local board ratified the reconciliation challenge appeal and kept the bilateral ruling in force.",
+		EvidenceIDs:       []string{directiveID, comparisonKey, challengeAppealID},
+		Reason:            "rule reconciliation challenge appeal board",
+		Metadata:          map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-RULE-01"},
+	})
+	if err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal failed: %v", err)
+	}
+
+	challengeAppeals, err = service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:        created.CellID,
+		AppealID:      appealID,
+		ComparisonKey: comparisonKey,
+		ChallengeID:   challengeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals after rule failed: %v", err)
+	}
+	if len(challengeAppeals) != 1 || challengeAppeals[0].ChallengeAppealID != challengeAppealID || challengeAppeals[0].ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusRatified {
+		t.Fatalf("expected one ratified reconciliation challenge appeal after ruling, got %+v", challengeAppeals)
+	}
+
+	acknowledgedChallengeAppeal, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealEnforcement(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAcknowledgeRequest{
+		ActorDID:           participantB.AgentID(),
+		AcknowledgingParty: SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:            "Counterparty acknowledged challenge appeal enforcement",
+		Description:        "The counterparty accepted enforcement of the ratified reconciliation challenge appeal ruling.",
+		EvidenceIDs:        []string{directiveID, comparisonKey, challengeAppealID},
+		Reason:             "acknowledge reconciliation challenge appeal enforcement",
+		Metadata:           map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealEnforcement failed: %v", err)
+	}
+
+	challengeAppeals, err = service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:        created.CellID,
+		AppealID:      appealID,
+		ComparisonKey: comparisonKey,
+		ChallengeID:   challengeID,
+		Status:        SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusEnforcementAcknowledged,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals final failed: %v", err)
+	}
+	if len(challengeAppeals) != 1 || challengeAppeals[0].ChallengeAppealID != challengeAppealID || challengeAppeals[0].EnforcementAcknowledgedBy != participantB.AgentID() || challengeAppeals[0].RatifyVoteCount != 1 {
+		t.Fatalf("expected one acknowledged reconciliation challenge appeal, got %+v", challengeAppeals)
+	}
+
+	challengeAppealActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFilter{
+		CellID:        created.CellID,
+		AppealID:      appealID,
+		ComparisonKey: comparisonKey,
+		ChallengeID:   challengeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActions failed: %v", err)
+	}
+	if len(challengeAppealActions) != 3 || challengeAppealActions[0].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionEnforcementAcknowledged || challengeAppealActions[2].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed {
+		t.Fatalf("expected challenge appeal action trail with three records, got %+v", challengeAppealActions)
+	}
+
+	reconciliationBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle after challenge appeal failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle after challenge appeal failed: %v", err)
+	}
+	if len(reconciliationBundle.ChallengeAppeals) != 1 || len(reconciliationBundle.ChallengeAppealActions) != 3 || reconciliationBundle.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+		t.Fatalf("expected reconciliation bundle to include challenge appeal artifacts, got %+v", reconciliationBundle)
+	}
+
+	casePack, err = service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack after challenge appeal failed: %v", err)
+	}
+	if len(casePack.DirectiveExtensionAppealReconciliationChallengeAppeals) != 1 || len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealActions) != 3 || casePack.DirectiveExtensionAppealReconciliationChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+		t.Fatalf("expected case pack to include challenge appeal artifacts, got %+v", casePack)
+	}
+	if !controlLedgerHasControl(ruledChallengeAppeal.ControlLedger, "CELL-FED-24") {
+		t.Fatalf("expected ruled challenge appeal control ledger to include CELL-FED-24, got %+v", ruledChallengeAppeal.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(acknowledgedChallengeAppeal.ControlLedger, "CELL-FED-24") {
+		t.Fatalf("expected acknowledged challenge appeal control ledger to include CELL-FED-24, got %+v", acknowledgedChallengeAppeal.ControlLedger.Controls)
+	}
 }
 
 func containsStringFold(items []string, want string) bool {
