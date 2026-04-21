@@ -8781,8 +8781,29 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
 		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle failed: %v", err)
 	}
-	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 {
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 || len(reconciliationBundle.AutomationActions) != 1 {
 		t.Fatalf("expected resolved appeal reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
+	}
+	if reconciliationBundle.AutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_escalated" {
+		t.Fatalf("expected reconciliation bundle automation trail to include escalation, got %+v", reconciliationBundle.AutomationActions)
+	}
+
+	casePack, err := service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack failed: %v", err)
+	}
+	if len(casePack.DirectiveExtensionAppealReconciliationAutomationActions) == 0 {
+		t.Fatalf("expected case pack to include appeal reconciliation automation actions, got %+v", casePack.DirectiveExtensionAppealReconciliationAutomationActions)
+	}
+	foundReconciliationBundle := false
+	for _, bundle := range casePack.DirectiveExtensionAppealReconciliationBundles {
+		if bundle != nil && bundle.Reconciliation.ComparisonKey == comparisonKey {
+			foundReconciliationBundle = true
+			break
+		}
+	}
+	if !foundReconciliationBundle {
+		t.Fatalf("expected case pack to include reconciliation bundle for %s, got %+v", comparisonKey, casePack.DirectiveExtensionAppealReconciliationBundles)
 	}
 
 	if !controlLedgerHasControl(disputedReconciliation.ControlLedger, "CELL-FED-19") || !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-19") {

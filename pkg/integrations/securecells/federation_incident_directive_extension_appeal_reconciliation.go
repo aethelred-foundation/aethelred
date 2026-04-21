@@ -150,6 +150,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle st
 	CounterpartyAppeal      *SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary                          `json:"counterparty_appeal,omitempty"`
 	Actions                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord                  `json:"actions,omitempty"`
 	Attestations            []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord `json:"attestations,omitempty"`
+	AutomationActions       []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord        `json:"automation_actions,omitempty"`
 	Contracts               []SecureCellFederationContractSummary                                                             `json:"contracts,omitempty"`
 	Controls                []SecureCellFederationTrustPackControl                                                            `json:"controls,omitempty"`
 	OperatorSurfaces        []SecureCellFederationOperatorSurface                                                             `json:"operator_surfaces,omitempty"`
@@ -251,6 +252,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 	if err != nil {
 		return nil, err
 	}
+	automationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionFilter{
+		CellID:        cellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	now := time.Now().UTC()
 	expiresAt := now.Add(72 * time.Hour)
@@ -274,6 +282,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		CounterpartyAppeal: counterpartyAppeal,
 		Actions:            append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord(nil), actions...),
 		Attestations:       append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord(nil), attestations...),
+		AutomationActions:  append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord(nil), automationActions...),
 		Contracts:          secureCellFederationContractSummariesForOrganization(run, reconciliation.OrganizationID),
 		Controls:           secureCellFederationControlsFromLedger(run.result.ControlLedger),
 		OperatorSurfaces:   cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),

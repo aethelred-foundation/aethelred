@@ -2013,7 +2013,7 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 		rows := [][]string{{
 			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
 			"organization_id", "sponsor_of_record", "organization_name", "response_id", "response_status", "incident_id", "source_type",
-			"directive_bundle_ids", "directive_bundle_count", "directive_extension_summary_count", "directive_extension_appeal_bundle_count", "directive_extension_appeal_automation_action_count",
+			"directive_bundle_ids", "directive_bundle_count", "directive_extension_summary_count", "directive_extension_appeal_bundle_count", "directive_extension_appeal_reconciliation_bundle_ids", "directive_extension_appeal_reconciliation_bundle_count", "directive_extension_appeal_automation_action_count", "directive_extension_appeal_reconciliation_automation_action_count",
 			"report_bundle_ids", "report_bundle_count", "amendment_bundle_ids", "amendment_bundle_count",
 			"report_reconciliation_bundle_ids", "report_reconciliation_bundle_count",
 			"amendment_reconciliation_bundle_ids", "amendment_reconciliation_bundle_count",
@@ -2055,7 +2055,10 @@ func writeSecureCellFederationIncidentCasePackExport(w http.ResponseWriter, r *h
 			strconv.Itoa(len(pack.DirectiveBundles)),
 			strconv.Itoa(len(pack.DirectiveExtensionSummaries)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealBundles)),
+			joinSecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleIDs(pack.DirectiveExtensionAppealReconciliationBundles),
+			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationBundles)),
 			strconv.Itoa(len(pack.DirectiveExtensionAppealAutomationActions)),
+			strconv.Itoa(len(pack.DirectiveExtensionAppealReconciliationAutomationActions)),
 			joinSecureCellFederationIncidentReportBundleIDs(pack.ReportBundles),
 			strconv.Itoa(len(pack.ReportBundles)),
 			joinSecureCellFederationIncidentReportAmendmentBundleIDs(pack.AmendmentBundles),
@@ -2140,6 +2143,19 @@ func joinSecureCellFederationIncidentReportReconciliationBundleIDs(items []*secu
 			continue
 		}
 		ids = append(ids, strings.TrimSpace(item.ID))
+	}
+	return strings.Join(ids, "|")
+}
+
+func joinSecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleIDs(items []*securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle) string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		if id := strings.TrimSpace(item.ID); id != "" {
+			ids = append(ids, id)
+		}
 	}
 	return strings.Join(ids, "|")
 }

@@ -9851,8 +9851,11 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealRecusalAn
 	if err := json.Unmarshal(appealReconciliationBundleRec.Body.Bytes(), &appealReconciliationBundleResp); err != nil {
 		t.Fatalf("unmarshal appeal reconciliation bundle response: %v", err)
 	}
-	if appealReconciliationBundleResp.Result == nil || appealReconciliationBundleResp.Result.Reconciliation.ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(appealReconciliationBundleResp.Result.Actions) != 3 || len(appealReconciliationBundleResp.Result.Attestations) != 3 {
+	if appealReconciliationBundleResp.Result == nil || appealReconciliationBundleResp.Result.Reconciliation.ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(appealReconciliationBundleResp.Result.Actions) != 3 || len(appealReconciliationBundleResp.Result.Attestations) != 3 || len(appealReconciliationBundleResp.Result.AutomationActions) != 1 {
 		t.Fatalf("expected resolved appeal reconciliation bundle with three actions, got %+v", appealReconciliationBundleResp.Result)
+	}
+	if appealReconciliationBundleResp.Result.AutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_escalated" {
+		t.Fatalf("expected appeal reconciliation bundle automation trail to include escalation, got %+v", appealReconciliationBundleResp.Result.AutomationActions)
 	}
 
 	appealReconciliationBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliations/"+url.PathEscape(comparisonKey)+"/bundle/export?format=csv", nil)
@@ -9863,6 +9866,30 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealRecusalAn
 	}
 	if body := appealReconciliationBundleExportRec.Body.String(); !strings.Contains(body, "resolved") || !strings.Contains(body, comparisonKey) {
 		t.Fatalf("expected appeal reconciliation bundle export to include resolved review state and comparison key, got %s", body)
+	}
+
+	casePackReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	var casePackResp secureCellFederationIncidentCasePackResponse
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal appeal reconciliation case pack response: %v", err)
+	}
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationAutomationActions) == 0 {
+		t.Fatalf("expected case pack to include one appeal reconciliation bundle and one automation action, got %+v", casePackResp.Result)
+	}
+	foundReconciliationBundle := false
+	for _, bundle := range casePackResp.Result.DirectiveExtensionAppealReconciliationBundles {
+		if bundle != nil && bundle.Reconciliation.ComparisonKey == comparisonKey {
+			foundReconciliationBundle = true
+			break
+		}
+	}
+	if !foundReconciliationBundle {
+		t.Fatalf("expected case pack reconciliation bundle for %s, got %+v", comparisonKey, casePackResp.Result.DirectiveExtensionAppealReconciliationBundles)
 	}
 
 	rehearReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/rehear", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRehearingRequest(t, participantB, nil, directiveID, "Counterparty requested rehearing of ratified rejection", "The counterparty challenged the ratified ruling and requested a fresh board rehearing.", 1, []string{owner.AgentID()})))
