@@ -367,6 +367,14 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord `json:"items"`
 }
 
+type secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealListResponse struct {
+	Items []securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal `json:"items"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord `json:"items"`
+}
+
 type secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeListResponse struct {
 	Items []securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallenge `json:"items"`
 }
@@ -878,6 +886,78 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		ChallengeID:    strings.TrimSpace(r.URL.Query().Get("challenge_id")),
 		Status:         securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
 		Action:         securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType(strings.TrimSpace(r.URL.Query().Get("action"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("since")); raw != "" {
+		since, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Since = &since
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("until")); raw != "" {
+		until, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Until = &until
+	}
+	return filter, nil
+}
+
+func parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter(r *http.Request) (securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter, error) {
+	filter := securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:            strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:        strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:        strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:       strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:       strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:         strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:          strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ComparisonKey:     strings.TrimSpace(r.URL.Query().Get("comparison_key")),
+		ChallengeID:       strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID: strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		Status:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("before")); raw != "" {
+		before, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Before = &before
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionFilter{
+		CellID:            strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:        strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:        strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:       strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:       strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:         strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:          strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ComparisonKey:     strings.TrimSpace(r.URL.Query().Get("comparison_key")),
+		ChallengeID:       strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID: strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		ContractID:        strings.TrimSpace(r.URL.Query().Get("contract_id")),
+		Action:            strings.TrimSpace(r.URL.Query().Get("action")),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)

@@ -9789,6 +9789,78 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 		t.Fatalf("expected one pending reconciliation challenge appeal filtered by parent appeal, got %+v", challengeAppeals)
 	}
 	challengeAppealID := challengeAppeals[0].ChallengeAppealID
+	challengeAppealReviewOverdueAt := challengeAppeals[0].CreatedAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBoardReviewSLA + time.Hour)
+
+	overdueChallengeAppeals, err := service.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:            created.CellID,
+		AppealID:          appealID,
+		ComparisonKey:     comparisonKey,
+		ChallengeID:       challengeID,
+		ChallengeAppealID: challengeAppealID,
+		Before:            &challengeAppealReviewOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals review failed: %v", err)
+	}
+	if len(overdueChallengeAppeals) != 1 || overdueChallengeAppeals[0].PendingAction != "board_review" || (overdueChallengeAppeals[0].AutomationAction != "escalate_response" && overdueChallengeAppeals[0].AutomationAction != "suspend_contracts") {
+		t.Fatalf("expected overdue reconciliation challenge appeal board-review posture, got %+v", overdueChallengeAppeals)
+	}
+
+	challengeAppealSweepActor := "did:aethelred:appeal-reconciliation-challenge-appeal-sweeper"
+	challengeAppealSweep, err := service.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, challengeAppealReviewOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated reconciliation challenge appeal board-review sweep",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals review failed: %v", err)
+	}
+	if challengeAppealSweep.CellsMutated == 0 || challengeAppealSweep.AppealsScanned == 0 {
+		t.Fatalf("expected reconciliation challenge appeal review sweep to mutate state, got %+v", challengeAppealSweep)
+	}
+
+	challengeAppealAutomationActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionFilter{
+		CellID:            created.CellID,
+		AppealID:          appealID,
+		ComparisonKey:     comparisonKey,
+		ChallengeID:       challengeID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActions review failed: %v", err)
+	}
+	if len(challengeAppealAutomationActions) != 1 || challengeAppealAutomationActions[0].PendingAction != "board_review" || challengeAppealAutomationActions[0].AutomatedActor != challengeAppealSweepActor {
+		t.Fatalf("expected one automated reconciliation challenge appeal review action, got %+v", challengeAppealAutomationActions)
+	}
+	if action := challengeAppealAutomationActions[0].Action; action != "secure_cell.federation_incident_response_escalated" && action != "secure_cell.federation_contract_suspended" {
+		t.Fatalf("expected review automation action to escalate or suspend, got %+v", challengeAppealAutomationActions)
+	}
+
+	reconciliationBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle after challenge appeal review sweep failed: %v", err)
+	}
+	if len(reconciliationBundle.ChallengeAppealAutomationActions) != 1 || reconciliationBundle.ChallengeAppealAutomationActions[0].PendingAction != "board_review" {
+		t.Fatalf("expected reconciliation bundle to include challenge appeal automation trail, got %+v", reconciliationBundle.ChallengeAppealAutomationActions)
+	}
+	foundChallengeAppealAutomationControl := false
+	for _, control := range reconciliationBundle.Controls {
+		if control.ControlID == "CELL-FED-25" {
+			foundChallengeAppealAutomationControl = true
+			break
+		}
+	}
+	if !foundChallengeAppealAutomationControl {
+		t.Fatalf("expected reconciliation bundle controls to include CELL-FED-25, got %+v", reconciliationBundle.Controls)
+	}
+
+	casePack, err = service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack after challenge appeal review sweep failed: %v", err)
+	}
+	if len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions) != 1 || casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions[0].PendingAction != "board_review" {
+		t.Fatalf("expected case pack to include challenge appeal automation trail, got %+v", casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions)
+	}
 
 	ruledChallengeAppeal, err := service.RuleFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRulingRequest{
 		ActorDID:          owner.AgentID(),
@@ -9815,6 +9887,86 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	}
 	if len(challengeAppeals) != 1 || challengeAppeals[0].ChallengeAppealID != challengeAppealID || challengeAppeals[0].ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusRatified {
 		t.Fatalf("expected one ratified reconciliation challenge appeal after ruling, got %+v", challengeAppeals)
+	}
+	if challengeAppeals[0].RuledAt == nil || challengeAppeals[0].RuledAt.IsZero() {
+		t.Fatalf("expected ruled reconciliation challenge appeal timestamp, got %+v", challengeAppeals)
+	}
+
+	challengeAppealAckOverdueAt := challengeAppeals[0].RuledAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAcknowledgementSLA + time.Hour)
+	overdueChallengeAppeals, err = service.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:            created.CellID,
+		AppealID:          appealID,
+		ComparisonKey:     comparisonKey,
+		ChallengeID:       challengeID,
+		ChallengeAppealID: challengeAppealID,
+		Before:            &challengeAppealAckOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals acknowledgement failed: %v", err)
+	}
+	if len(overdueChallengeAppeals) != 1 || overdueChallengeAppeals[0].PendingAction != "acknowledge_enforcement" || (overdueChallengeAppeals[0].AutomationAction != "escalate_response" && overdueChallengeAppeals[0].AutomationAction != "suspend_contracts") {
+		t.Fatalf("expected overdue reconciliation challenge appeal acknowledgement posture, got %+v", overdueChallengeAppeals)
+	}
+
+	challengeAppealSweep, err = service.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, challengeAppealAckOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated reconciliation challenge appeal acknowledgement sweep",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-SWEEP-02"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals acknowledgement failed: %v", err)
+	}
+	if challengeAppealSweep.CellsMutated == 0 || challengeAppealSweep.AppealsScanned == 0 {
+		t.Fatalf("expected reconciliation challenge appeal acknowledgement sweep to mutate state, got %+v", challengeAppealSweep)
+	}
+
+	challengeAppealAutomationActions, err = service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionFilter{
+		CellID:            created.CellID,
+		AppealID:          appealID,
+		ComparisonKey:     comparisonKey,
+		ChallengeID:       challengeID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActions acknowledgement failed: %v", err)
+	}
+	if len(challengeAppealAutomationActions) != 2 {
+		t.Fatalf("expected two automated reconciliation challenge appeal actions, got %+v", challengeAppealAutomationActions)
+	}
+	foundReviewAutomation := false
+	foundAckAutomation := false
+	for _, item := range challengeAppealAutomationActions {
+		if item.AutomatedActor != challengeAppealSweepActor {
+			t.Fatalf("expected automated actor %s, got %+v", challengeAppealSweepActor, challengeAppealAutomationActions)
+		}
+		if item.Action != "secure_cell.federation_incident_response_escalated" && item.Action != "secure_cell.federation_contract_suspended" {
+			t.Fatalf("expected acknowledgement automation action to escalate or suspend, got %+v", challengeAppealAutomationActions)
+		}
+		switch item.PendingAction {
+		case "board_review":
+			foundReviewAutomation = true
+		case "acknowledge_enforcement":
+			foundAckAutomation = true
+		}
+	}
+	if !foundReviewAutomation || !foundAckAutomation {
+		t.Fatalf("expected challenge appeal automation to cover review and acknowledgement, got %+v", challengeAppealAutomationActions)
+	}
+
+	reconciliationBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle after challenge appeal acknowledgement sweep failed: %v", err)
+	}
+	if len(reconciliationBundle.ChallengeAppealAutomationActions) != 2 {
+		t.Fatalf("expected reconciliation bundle to include both challenge appeal automation actions, got %+v", reconciliationBundle.ChallengeAppealAutomationActions)
+	}
+
+	casePack, err = service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentCasePack after challenge appeal acknowledgement sweep failed: %v", err)
+	}
+	if len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions) != 2 {
+		t.Fatalf("expected case pack to include both challenge appeal automation actions, got %+v", casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions)
 	}
 
 	acknowledgedChallengeAppeal, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealEnforcement(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAcknowledgeRequest{
@@ -9864,7 +10016,7 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
 		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle after challenge appeal failed: %v", err)
 	}
-	if len(reconciliationBundle.ChallengeAppeals) != 1 || len(reconciliationBundle.ChallengeAppealActions) != 3 || reconciliationBundle.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+	if len(reconciliationBundle.ChallengeAppeals) != 1 || len(reconciliationBundle.ChallengeAppealActions) != 3 || len(reconciliationBundle.ChallengeAppealAutomationActions) != 2 || reconciliationBundle.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
 		t.Fatalf("expected reconciliation bundle to include challenge appeal artifacts, got %+v", reconciliationBundle)
 	}
 
@@ -9872,7 +10024,7 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	if err != nil {
 		t.Fatalf("BuildFederationIncidentCasePack after challenge appeal failed: %v", err)
 	}
-	if len(casePack.DirectiveExtensionAppealReconciliationChallengeAppeals) != 1 || len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealActions) != 3 || casePack.DirectiveExtensionAppealReconciliationChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+	if len(casePack.DirectiveExtensionAppealReconciliationChallengeAppeals) != 1 || len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealActions) != 3 || len(casePack.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions) != 2 || casePack.DirectiveExtensionAppealReconciliationChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
 		t.Fatalf("expected case pack to include challenge appeal artifacts, got %+v", casePack)
 	}
 	if !controlLedgerHasControl(ruledChallengeAppeal.ControlLedger, "CELL-FED-24") {

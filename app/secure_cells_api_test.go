@@ -10983,6 +10983,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 		t.Fatalf("expected one pending reconciliation challenge appeal filtered by parent appeal, got %+v", challengeAppealListResp.Items)
 	}
 	challengeAppealID := challengeAppealListResp.Items[0].ChallengeAppealID
+	challengeAppealReviewOverdueAt := challengeAppealListResp.Items[0].CreatedAt.UTC().Add(25 * time.Hour)
 
 	challengeAppealExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/export?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&format=csv", nil)
 	challengeAppealExportRec := httptest.NewRecorder()
@@ -10994,12 +10995,162 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 		t.Fatalf("expected reconciliation challenge appeal export to include challenge appeal and parent appeal ids, got %s", body)
 	}
 
+	challengeAppealOverdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/overdue?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&before="+url.QueryEscape(challengeAppealReviewOverdueAt.Format(time.RFC3339Nano)), nil)
+	challengeAppealOverdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealOverdueRec, challengeAppealOverdueReq)
+	if challengeAppealOverdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealOverdueRec.Code, challengeAppealOverdueRec.Body.String())
+	}
+	var challengeAppealOverdueResp secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealListResponse
+	if err := json.Unmarshal(challengeAppealOverdueRec.Body.Bytes(), &challengeAppealOverdueResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal overdue response: %v", err)
+	}
+	if len(challengeAppealOverdueResp.Items) != 1 || challengeAppealOverdueResp.Items[0].PendingAction != "board_review" || (challengeAppealOverdueResp.Items[0].AutomationAction != "escalate_response" && challengeAppealOverdueResp.Items[0].AutomationAction != "suspend_contracts") {
+		t.Fatalf("expected overdue reconciliation challenge appeal review posture, got %+v", challengeAppealOverdueResp.Items)
+	}
+
+	challengeAppealOverdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/overdue/export?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&before="+url.QueryEscape(challengeAppealReviewOverdueAt.Format(time.RFC3339Nano))+"&format=csv", nil)
+	challengeAppealOverdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealOverdueExportRec, challengeAppealOverdueExportReq)
+	if challengeAppealOverdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealOverdueExportRec.Code, challengeAppealOverdueExportRec.Body.String())
+	}
+	if body := challengeAppealOverdueExportRec.Body.String(); !strings.Contains(body, challengeAppealID) || (!strings.Contains(body, "escalate_response") && !strings.Contains(body, "suspend_contracts")) {
+		t.Fatalf("expected overdue reconciliation challenge appeal export to include challenge appeal and automation posture, got %s", body)
+	}
+
+	challengeAppealSweepActor := "did:aethelred:appeal-reconciliation-challenge-appeal-sweeper"
+	if _, err := app.secureCellService.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, challengeAppealReviewOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated reconciliation challenge appeal board-review sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-SWEEP-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals review failed: %v", err)
+	}
+
+	challengeAppealAutomationReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID), nil)
+	challengeAppealAutomationRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealAutomationRec, challengeAppealAutomationReq)
+	if challengeAppealAutomationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAutomationRec.Code, challengeAppealAutomationRec.Body.String())
+	}
+	var challengeAppealAutomationResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionListResponse
+	if err := json.Unmarshal(challengeAppealAutomationRec.Body.Bytes(), &challengeAppealAutomationResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal automation response: %v", err)
+	}
+	if len(challengeAppealAutomationResp.Items) != 1 || challengeAppealAutomationResp.Items[0].PendingAction != "board_review" || challengeAppealAutomationResp.Items[0].AutomatedActor != challengeAppealSweepActor {
+		t.Fatalf("expected automated reconciliation challenge appeal review action, got %+v", challengeAppealAutomationResp.Items)
+	}
+	if action := challengeAppealAutomationResp.Items[0].Action; action != "secure_cell.federation_incident_response_escalated" && action != "secure_cell.federation_contract_suspended" {
+		t.Fatalf("expected reconciliation challenge appeal automation action to escalate or suspend, got %+v", challengeAppealAutomationResp.Items)
+	}
+
+	challengeAppealAutomationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-automation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&format=csv", nil)
+	challengeAppealAutomationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealAutomationExportRec, challengeAppealAutomationExportReq)
+	if challengeAppealAutomationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAutomationExportRec.Code, challengeAppealAutomationExportRec.Body.String())
+	}
+	if body := challengeAppealAutomationExportRec.Body.String(); !strings.Contains(body, challengeAppealID) || (!strings.Contains(body, "secure_cell.federation_incident_response_escalated") && !strings.Contains(body, "secure_cell.federation_contract_suspended")) {
+		t.Fatalf("expected reconciliation challenge appeal automation export to include automated action, got %s", body)
+	}
+
+	bundleReq = httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliations/"+url.PathEscape(comparisonKey)+"/bundle", nil)
+	bundleRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(bundleRec, bundleReq)
+	if bundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, bundleRec.Code, bundleRec.Body.String())
+	}
+	if err := json.Unmarshal(bundleRec.Body.Bytes(), &bundleResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal bundle response after review sweep: %v", err)
+	}
+	if bundleResp.Result == nil || len(bundleResp.Result.ChallengeAppealAutomationActions) != 1 || bundleResp.Result.ChallengeAppealAutomationActions[0].PendingAction != "board_review" {
+		t.Fatalf("expected reconciliation bundle to include challenge appeal automation trail, got %+v", bundleResp.Result)
+	}
+
+	casePackReq = httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal case pack response after review sweep: %v", err)
+	}
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions) != 1 || casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions[0].PendingAction != "board_review" {
+		t.Fatalf("expected case pack to include challenge appeal automation trail, got %+v", casePackResp.Result)
+	}
+
 	challengeAppealRuleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/rule", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRulingRequest(t, owner, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify, "Local board ratified the challenge appeal ruling", "The local board ratified the reconciliation challenge appeal and kept the bilateral ruling in force.")))
 	challengeAppealRuleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
 	challengeAppealRuleRec := httptest.NewRecorder()
 	app.SecureCellsMutateHandler().ServeHTTP(challengeAppealRuleRec, challengeAppealRuleReq)
 	if challengeAppealRuleRec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealRuleRec.Code, challengeAppealRuleRec.Body.String())
+	}
+
+	challengeAppealListReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID), nil)
+	challengeAppealListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealListRec, challengeAppealListReq)
+	if challengeAppealListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealListRec.Code, challengeAppealListRec.Body.String())
+	}
+	if err := json.Unmarshal(challengeAppealListRec.Body.Bytes(), &challengeAppealListResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal ruled list response: %v", err)
+	}
+	if len(challengeAppealListResp.Items) != 1 || challengeAppealListResp.Items[0].RuledAt == nil || challengeAppealListResp.Items[0].RuledAt.IsZero() {
+		t.Fatalf("expected ruled reconciliation challenge appeal timestamp, got %+v", challengeAppealListResp.Items)
+	}
+	challengeAppealAckOverdueAt := challengeAppealListResp.Items[0].RuledAt.UTC().Add(13 * time.Hour)
+
+	challengeAppealOverdueReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/overdue?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&before="+url.QueryEscape(challengeAppealAckOverdueAt.Format(time.RFC3339Nano)), nil)
+	challengeAppealOverdueRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealOverdueRec, challengeAppealOverdueReq)
+	if challengeAppealOverdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealOverdueRec.Code, challengeAppealOverdueRec.Body.String())
+	}
+	if err := json.Unmarshal(challengeAppealOverdueRec.Body.Bytes(), &challengeAppealOverdueResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal acknowledgement overdue response: %v", err)
+	}
+	if len(challengeAppealOverdueResp.Items) != 1 || challengeAppealOverdueResp.Items[0].PendingAction != "acknowledge_enforcement" || (challengeAppealOverdueResp.Items[0].AutomationAction != "escalate_response" && challengeAppealOverdueResp.Items[0].AutomationAction != "suspend_contracts") {
+		t.Fatalf("expected overdue reconciliation challenge appeal acknowledgement posture, got %+v", challengeAppealOverdueResp.Items)
+	}
+
+	if _, err := app.secureCellService.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, challengeAppealAckOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated reconciliation challenge appeal acknowledgement sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-SWEEP-02"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals acknowledgement failed: %v", err)
+	}
+
+	challengeAppealAutomationReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID), nil)
+	challengeAppealAutomationRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealAutomationRec, challengeAppealAutomationReq)
+	if challengeAppealAutomationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAutomationRec.Code, challengeAppealAutomationRec.Body.String())
+	}
+	if err := json.Unmarshal(challengeAppealAutomationRec.Body.Bytes(), &challengeAppealAutomationResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal automation response after acknowledgement sweep: %v", err)
+	}
+	if len(challengeAppealAutomationResp.Items) != 2 {
+		t.Fatalf("expected two reconciliation challenge appeal automation actions, got %+v", challengeAppealAutomationResp.Items)
+	}
+	foundChallengeAppealReviewAutomation := false
+	foundChallengeAppealAckAutomation := false
+	for _, item := range challengeAppealAutomationResp.Items {
+		if item.AutomatedActor != challengeAppealSweepActor {
+			t.Fatalf("expected automated actor %s, got %+v", challengeAppealSweepActor, challengeAppealAutomationResp.Items)
+		}
+		switch item.PendingAction {
+		case "board_review":
+			foundChallengeAppealReviewAutomation = true
+		case "acknowledge_enforcement":
+			foundChallengeAppealAckAutomation = true
+		}
+	}
+	if !foundChallengeAppealReviewAutomation || !foundChallengeAppealAckAutomation {
+		t.Fatalf("expected reconciliation challenge appeal automation to cover review and acknowledgement, got %+v", challengeAppealAutomationResp.Items)
 	}
 
 	challengeAppealAckReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/acknowledge-enforcement", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAcknowledgeRequest(t, participantB, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg, "Counterparty acknowledged challenge appeal enforcement", "The counterparty accepted enforcement of the ratified reconciliation challenge appeal ruling.")))
@@ -11043,7 +11194,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 	if err := json.Unmarshal(bundleRec.Body.Bytes(), &bundleResp); err != nil {
 		t.Fatalf("unmarshal reconciliation challenge appeal bundle response: %v", err)
 	}
-	if bundleResp.Result == nil || len(bundleResp.Result.ChallengeAppeals) != 1 || len(bundleResp.Result.ChallengeAppealActions) != 3 || bundleResp.Result.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+	if bundleResp.Result == nil || len(bundleResp.Result.ChallengeAppeals) != 1 || len(bundleResp.Result.ChallengeAppealActions) != 3 || len(bundleResp.Result.ChallengeAppealAutomationActions) != 2 || bundleResp.Result.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
 		t.Fatalf("expected reconciliation bundle to include challenge appeal artifacts, got %+v", bundleResp.Result)
 	}
 
@@ -11056,7 +11207,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
 		t.Fatalf("unmarshal reconciliation challenge appeal case pack response: %v", err)
 	}
-	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppeals) != 1 || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealActions) != 3 || casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppeals) != 1 || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealActions) != 3 || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions) != 2 || casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
 		t.Fatalf("expected case pack to include challenge appeal artifacts, got %+v", casePackResp.Result)
 	}
 }
