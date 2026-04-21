@@ -8650,6 +8650,48 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 		t.Fatalf("DisputeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
 	}
 
+	acknowledgedCounterpartyReconciliation, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationDispute(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest{
+		ActorDID:              participantB.AgentID(),
+		CounterpartyReference: "counterparty-appeal-dispute-ack-0001",
+		Reason:                "counterparty acknowledged bilateral appeal dispute",
+		Metadata:              map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-ATT-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationDispute failed: %v", err)
+	}
+
+	correctedReconciliation, err := service.AttestFederationIncidentDirectiveExtensionAppealReconciliationCorrection(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCorrectionAttestationRequest{
+		ActorDID:               participantB.AgentID(),
+		CounterpartySnapshotID: appealReconciliations[0].CounterpartySnapshotID,
+		CounterpartyReference:  "counterparty-appeal-correction-0001",
+		Reason:                 "counterparty attested corrected appeal posture",
+		Metadata:               map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-ATT-CORRECT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentDirectiveExtensionAppealReconciliationCorrection failed: %v", err)
+	}
+
+	resolvedCounterpartyReconciliation, err := service.AttestFederationIncidentDirectiveExtensionAppealReconciliationResolution(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationResolutionAttestationRequest{
+		ActorDID:              participantB.AgentID(),
+		CounterpartyReference: "counterparty-appeal-resolution-0001",
+		Reason:                "counterparty attested bilateral appeal dispute resolution",
+		Metadata:              map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-ATT-RESOLVE-01"},
+	})
+	if err != nil {
+		t.Fatalf("AttestFederationIncidentDirectiveExtensionAppealReconciliationResolution failed: %v", err)
+	}
+
+	attestations, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestations(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestations failed: %v", err)
+	}
+	if len(attestations) != 3 || attestations[0].AttestationStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatusResolved || attestations[0].Attestation != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationResolve {
+		t.Fatalf("expected three appeal reconciliation counterparty attestations ending in resolution, got %+v", attestations)
+	}
+
 	resolvedReconciliation, err := service.ResolveFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationResolveRequest{
 		ActorDID: owner.AgentID(),
 		Reason:   "bilateral appeal review completed and dispute closed",
@@ -8667,7 +8709,7 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	if err != nil {
 		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliations after review failed: %v", err)
 	}
-	if len(reviewedAppealReconciliations) != 1 || reviewedAppealReconciliations[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || reviewedAppealReconciliations[0].ReviewActionCount != 3 {
+	if len(reviewedAppealReconciliations) != 1 || reviewedAppealReconciliations[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || reviewedAppealReconciliations[0].ReviewActionCount != 3 || reviewedAppealReconciliations[0].AttestationStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatusResolved || reviewedAppealReconciliations[0].CounterpartyAttestationCount != 3 {
 		t.Fatalf("expected one resolved appeal reconciliation with three actions, got %+v", reviewedAppealReconciliations)
 	}
 
@@ -8689,12 +8731,18 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
 		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle failed: %v", err)
 	}
-	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 {
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 {
 		t.Fatalf("expected resolved appeal reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
 	}
 
 	if !controlLedgerHasControl(disputedReconciliation.ControlLedger, "CELL-FED-19") || !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-19") {
 		t.Fatalf("expected disputed and resolved reconciliation control ledgers to include CELL-FED-19, disputed=%+v resolved=%+v", disputedReconciliation.ControlLedger.Controls, resolvedReconciliation.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-20") {
+		t.Fatalf("expected resolved reconciliation control ledger to include CELL-FED-20, got %+v", resolvedReconciliation.ControlLedger.Controls)
+	}
+	if len(acknowledgedCounterpartyReconciliation.Transitions) == 0 || len(correctedReconciliation.Transitions) == 0 || len(resolvedCounterpartyReconciliation.Transitions) == 0 {
+		t.Fatalf("expected appeal reconciliation counterparty attestation lifecycle mutations to append transitions")
 	}
 
 	rehearingID := rehearings[0].AppealID

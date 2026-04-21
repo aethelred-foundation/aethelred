@@ -714,6 +714,98 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationActi
 	}
 }
 
+func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-appeal-reconciliation-attestations.csv"`)
+		writer := csv.NewWriter(w)
+		rows := [][]string{{
+			"cell_id",
+			"cell_name",
+			"jurisdiction",
+			"cell_status",
+			"organization_id",
+			"sponsor_of_record",
+			"organization_name",
+			"comparison_key",
+			"incident_id",
+			"response_id",
+			"directive_id",
+			"extension_id",
+			"dispute_id",
+			"appeal_id",
+			"local_appeal_id",
+			"counterparty_snapshot_id",
+			"counterparty_bundle_id",
+			"counterparty_appeal_id",
+			"reconciliation_status",
+			"review_status",
+			"attestation",
+			"attestation_status",
+			"transition_id",
+			"policy_receipt_id",
+			"policy_receipt_hash",
+			"seal_id",
+			"trace_link_id",
+			"actor_did",
+			"counterparty_reference",
+			"reason",
+			"occurred_at",
+			"metadata",
+		}}
+		for _, item := range items {
+			rows = append(rows, []string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.ComparisonKey,
+				item.IncidentID,
+				item.ResponseID,
+				item.DirectiveID,
+				item.ExtensionID,
+				item.DisputeID,
+				item.AppealID,
+				item.LocalAppealID,
+				item.CounterpartySnapshotID,
+				item.CounterpartyBundleID,
+				item.CounterpartyAppealID,
+				string(item.ReconciliationStatus),
+				string(item.ReviewStatus),
+				string(item.Attestation),
+				string(item.AttestationStatus),
+				item.TransitionID,
+				item.PolicyReceiptID,
+				item.PolicyReceiptHash,
+				item.SealID,
+				item.TraceLinkID,
+				item.ActorDID,
+				item.CounterpartyReference,
+				item.Reason,
+				item.OccurredAt.UTC().Format(time.RFC3339Nano),
+				formatSecureCellStringMap(item.Metadata),
+			})
+		}
+		for _, row := range rows {
+			if err := writer.Write(row); err != nil {
+				return fmt.Errorf("write federation-incident-directive-extension-appeal-reconciliation-attestation csv row: %w", err)
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppeal) error {
 	format := secureCellExportFormat(r)
 	switch format {

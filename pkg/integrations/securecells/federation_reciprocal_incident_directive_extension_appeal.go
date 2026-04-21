@@ -42,79 +42,79 @@ type SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSnapshot st
 // SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealFilter
 // narrows operator queries across imported counterparty appeal bundles.
 type SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealFilter struct {
-	CellID               string                                                                       `json:"cell_id,omitempty"`
-	OrganizationID       string                                                                       `json:"organization_id,omitempty"`
-	ContractID           string                                                                       `json:"contract_id,omitempty"`
-	IncidentID           string                                                                       `json:"incident_id,omitempty"`
-	ResponseID           string                                                                       `json:"response_id,omitempty"`
-	DirectiveID          string                                                                       `json:"directive_id,omitempty"`
-	ExtensionID          string                                                                       `json:"extension_id,omitempty"`
-	DisputeID            string                                                                       `json:"dispute_id,omitempty"`
-	AppealID             string                                                                       `json:"appeal_id,omitempty"`
-	Status               SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus      `json:"status,omitempty"`
-	ReconciliationStatus SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus    `json:"reconciliation_status,omitempty"`
-	Signer               string                                                                       `json:"signer,omitempty"`
-	Limit                int                                                                          `json:"limit,omitempty"`
+	CellID               string                                                                   `json:"cell_id,omitempty"`
+	OrganizationID       string                                                                   `json:"organization_id,omitempty"`
+	ContractID           string                                                                   `json:"contract_id,omitempty"`
+	IncidentID           string                                                                   `json:"incident_id,omitempty"`
+	ResponseID           string                                                                   `json:"response_id,omitempty"`
+	DirectiveID          string                                                                   `json:"directive_id,omitempty"`
+	ExtensionID          string                                                                   `json:"extension_id,omitempty"`
+	DisputeID            string                                                                   `json:"dispute_id,omitempty"`
+	AppealID             string                                                                   `json:"appeal_id,omitempty"`
+	Status               SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus   `json:"status,omitempty"`
+	ReconciliationStatus SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus `json:"reconciliation_status,omitempty"`
+	Signer               string                                                                   `json:"signer,omitempty"`
+	Limit                int                                                                      `json:"limit,omitempty"`
 }
 
 // SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary is
 // the operator-facing summary of one imported appeal bundle.
 type SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary struct {
-	CellID                          string                                                                 `json:"cell_id"`
-	CellName                        string                                                                 `json:"cell_name,omitempty"`
-	CellStatus                      SecureCellStatus                                                       `json:"cell_status"`
-	Jurisdiction                    string                                                                 `json:"jurisdiction,omitempty"`
-	OrganizationID                  string                                                                 `json:"organization_id"`
-	SponsorOfRecord                 string                                                                 `json:"sponsor_of_record,omitempty"`
-	OrganizationName                string                                                                 `json:"organization_name,omitempty"`
-	SnapshotID                      string                                                                 `json:"snapshot_id"`
-	BundleID                        string                                                                 `json:"bundle_id,omitempty"`
-	BundleVersion                   string                                                                 `json:"bundle_version,omitempty"`
-	BundleName                      string                                                                 `json:"bundle_name,omitempty"`
-	Status                          SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus `json:"status"`
-	Verified                        bool                                                                   `json:"verified"`
-	Signer                          string                                                                 `json:"signer,omitempty"`
-	KeyID                           string                                                                 `json:"key_id,omitempty"`
-	ContractIDs                     []string                                                               `json:"contract_ids,omitempty"`
-	IncidentID                      string                                                                 `json:"incident_id,omitempty"`
-	ResponseID                      string                                                                 `json:"response_id,omitempty"`
-	DirectiveID                     string                                                                 `json:"directive_id,omitempty"`
-	ExtensionID                     string                                                                 `json:"extension_id,omitempty"`
-	DisputeID                       string                                                                 `json:"dispute_id,omitempty"`
-	AppealID                        string                                                                 `json:"appeal_id,omitempty"`
-	ParentAppealID                  string                                                                 `json:"parent_appeal_id,omitempty"`
-	AppealGeneration                int                                                                    `json:"appeal_generation,omitempty"`
-	AppealStatus                    SecureCellFederationIncidentDirectiveExtensionAppealStatus            `json:"appeal_status,omitempty"`
-	AppealingParty                  SecureCellFederationIncidentResponseParty                             `json:"appealing_party,omitempty"`
-	BoardParty                      SecureCellFederationIncidentResponseParty                             `json:"board_party,omitempty"`
-	EnforcementAcknowledgementParty SecureCellFederationIncidentResponseParty                             `json:"enforcement_acknowledgement_party,omitempty"`
-	Ruling                          SecureCellFederationIncidentDirectiveExtensionAppealRuling            `json:"ruling,omitempty"`
-	BoardReviewThreshold            int                                                                    `json:"board_review_threshold,omitempty"`
-	BoardRecusalCount               int                                                                    `json:"board_recusal_count"`
-	BoardDelegationCount            int                                                                    `json:"board_delegation_count"`
-	BoardRecordedVoteCount          int                                                                    `json:"board_recorded_vote_count"`
-	GeneratedAt                     time.Time                                                              `json:"generated_at,omitempty"`
-	ExpiresAt                       *time.Time                                                             `json:"expires_at,omitempty"`
-	ReceivedAt                      time.Time                                                              `json:"received_at,omitempty"`
-	ControlLedgerID                 string                                                                 `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash               string                                                                 `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash             string                                                                 `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned           bool                                                                   `json:"portable_package_signed"`
-	PortablePackageAnchored         bool                                                                   `json:"portable_package_anchored"`
-	VerificationMessage             string                                                                 `json:"verification_message,omitempty"`
-	MatchedLocalAppealID            string                                                                 `json:"matched_local_appeal_id,omitempty"`
-	MatchedLocalDisputeID           string                                                                 `json:"matched_local_dispute_id,omitempty"`
+	CellID                          string                                                                   `json:"cell_id"`
+	CellName                        string                                                                   `json:"cell_name,omitempty"`
+	CellStatus                      SecureCellStatus                                                         `json:"cell_status"`
+	Jurisdiction                    string                                                                   `json:"jurisdiction,omitempty"`
+	OrganizationID                  string                                                                   `json:"organization_id"`
+	SponsorOfRecord                 string                                                                   `json:"sponsor_of_record,omitempty"`
+	OrganizationName                string                                                                   `json:"organization_name,omitempty"`
+	SnapshotID                      string                                                                   `json:"snapshot_id"`
+	BundleID                        string                                                                   `json:"bundle_id,omitempty"`
+	BundleVersion                   string                                                                   `json:"bundle_version,omitempty"`
+	BundleName                      string                                                                   `json:"bundle_name,omitempty"`
+	Status                          SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus   `json:"status"`
+	Verified                        bool                                                                     `json:"verified"`
+	Signer                          string                                                                   `json:"signer,omitempty"`
+	KeyID                           string                                                                   `json:"key_id,omitempty"`
+	ContractIDs                     []string                                                                 `json:"contract_ids,omitempty"`
+	IncidentID                      string                                                                   `json:"incident_id,omitempty"`
+	ResponseID                      string                                                                   `json:"response_id,omitempty"`
+	DirectiveID                     string                                                                   `json:"directive_id,omitempty"`
+	ExtensionID                     string                                                                   `json:"extension_id,omitempty"`
+	DisputeID                       string                                                                   `json:"dispute_id,omitempty"`
+	AppealID                        string                                                                   `json:"appeal_id,omitempty"`
+	ParentAppealID                  string                                                                   `json:"parent_appeal_id,omitempty"`
+	AppealGeneration                int                                                                      `json:"appeal_generation,omitempty"`
+	AppealStatus                    SecureCellFederationIncidentDirectiveExtensionAppealStatus               `json:"appeal_status,omitempty"`
+	AppealingParty                  SecureCellFederationIncidentResponseParty                                `json:"appealing_party,omitempty"`
+	BoardParty                      SecureCellFederationIncidentResponseParty                                `json:"board_party,omitempty"`
+	EnforcementAcknowledgementParty SecureCellFederationIncidentResponseParty                                `json:"enforcement_acknowledgement_party,omitempty"`
+	Ruling                          SecureCellFederationIncidentDirectiveExtensionAppealRuling               `json:"ruling,omitempty"`
+	BoardReviewThreshold            int                                                                      `json:"board_review_threshold,omitempty"`
+	BoardRecusalCount               int                                                                      `json:"board_recusal_count"`
+	BoardDelegationCount            int                                                                      `json:"board_delegation_count"`
+	BoardRecordedVoteCount          int                                                                      `json:"board_recorded_vote_count"`
+	GeneratedAt                     time.Time                                                                `json:"generated_at,omitempty"`
+	ExpiresAt                       *time.Time                                                               `json:"expires_at,omitempty"`
+	ReceivedAt                      time.Time                                                                `json:"received_at,omitempty"`
+	ControlLedgerID                 string                                                                   `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash               string                                                                   `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash             string                                                                   `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned           bool                                                                     `json:"portable_package_signed"`
+	PortablePackageAnchored         bool                                                                     `json:"portable_package_anchored"`
+	VerificationMessage             string                                                                   `json:"verification_message,omitempty"`
+	MatchedLocalAppealID            string                                                                   `json:"matched_local_appeal_id,omitempty"`
+	MatchedLocalDisputeID           string                                                                   `json:"matched_local_dispute_id,omitempty"`
 	ReconciliationStatus            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus `json:"reconciliation_status,omitempty"`
-	ReconciliationDivergenceCount   int                                                                    `json:"reconciliation_divergence_count"`
+	ReconciliationDivergenceCount   int                                                                      `json:"reconciliation_divergence_count"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest
 // ingests one signed counterparty appeal bundle into the evidence chain.
 type SecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest struct {
-	ActorDID string                                                         `json:"actor_did,omitempty"`
-	Bundle   *SecureCellFederationIncidentDirectiveExtensionAppealBundle    `json:"bundle,omitempty"`
-	Reason   string                                                         `json:"reason,omitempty"`
-	Metadata map[string]string                                              `json:"metadata,omitempty"`
+	ActorDID string                                                      `json:"actor_did,omitempty"`
+	Bundle   *SecureCellFederationIncidentDirectiveExtensionAppealBundle `json:"bundle,omitempty"`
+	Reason   string                                                      `json:"reason,omitempty"`
+	Metadata map[string]string                                           `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus
@@ -131,62 +131,66 @@ const (
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter
 // narrows operator queries across reciprocal appeal comparisons.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter struct {
-	CellID         string                                                                 `json:"cell_id,omitempty"`
-	OrganizationID string                                                                 `json:"organization_id,omitempty"`
-	IncidentID     string                                                                 `json:"incident_id,omitempty"`
-	ResponseID     string                                                                 `json:"response_id,omitempty"`
-	DirectiveID    string                                                                 `json:"directive_id,omitempty"`
-	ExtensionID    string                                                                 `json:"extension_id,omitempty"`
-	DisputeID      string                                                                 `json:"dispute_id,omitempty"`
-	AppealID       string                                                                 `json:"appeal_id,omitempty"`
-	ComparisonKey  string                                                                 `json:"comparison_key,omitempty"`
-	Status         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus `json:"status,omitempty"`
+	CellID         string                                                                         `json:"cell_id,omitempty"`
+	OrganizationID string                                                                         `json:"organization_id,omitempty"`
+	IncidentID     string                                                                         `json:"incident_id,omitempty"`
+	ResponseID     string                                                                         `json:"response_id,omitempty"`
+	DirectiveID    string                                                                         `json:"directive_id,omitempty"`
+	ExtensionID    string                                                                         `json:"extension_id,omitempty"`
+	DisputeID      string                                                                         `json:"dispute_id,omitempty"`
+	AppealID       string                                                                         `json:"appeal_id,omitempty"`
+	ComparisonKey  string                                                                         `json:"comparison_key,omitempty"`
+	Status         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus       `json:"status,omitempty"`
 	ReviewStatus   SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus `json:"review_status,omitempty"`
-	Limit          int                                                                    `json:"limit,omitempty"`
+	Limit          int                                                                            `json:"limit,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary
 // projects one bilateral appeal comparison for operator review.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary struct {
-	CellID                          string                                                                 `json:"cell_id"`
-	CellName                        string                                                                 `json:"cell_name,omitempty"`
-	CellStatus                      SecureCellStatus                                                       `json:"cell_status"`
-	Jurisdiction                    string                                                                 `json:"jurisdiction,omitempty"`
-	OrganizationID                  string                                                                 `json:"organization_id"`
-	SponsorOfRecord                 string                                                                 `json:"sponsor_of_record,omitempty"`
-	OrganizationName                string                                                                 `json:"organization_name,omitempty"`
-	ComparisonKey                   string                                                                 `json:"comparison_key"`
-	IncidentID                      string                                                                 `json:"incident_id,omitempty"`
-	ResponseID                      string                                                                 `json:"response_id,omitempty"`
-	DirectiveID                     string                                                                 `json:"directive_id,omitempty"`
-	DirectiveTitle                  string                                                                 `json:"directive_title,omitempty"`
-	ExtensionID                     string                                                                 `json:"extension_id,omitempty"`
-	DisputeID                       string                                                                 `json:"dispute_id,omitempty"`
-	AppealID                        string                                                                 `json:"appeal_id,omitempty"`
-	ParentAppealID                  string                                                                 `json:"parent_appeal_id,omitempty"`
-	AppealGeneration                int                                                                    `json:"appeal_generation,omitempty"`
-	AppealingParty                  SecureCellFederationIncidentResponseParty                             `json:"appealing_party,omitempty"`
-	BoardParty                      SecureCellFederationIncidentResponseParty                             `json:"board_party,omitempty"`
-	Status                          SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus `json:"status"`
-	LocalAppealID                   string                                                                 `json:"local_appeal_id,omitempty"`
-	LocalAppealStatus               SecureCellFederationIncidentDirectiveExtensionAppealStatus            `json:"local_appeal_status,omitempty"`
-	LocalRuling                     SecureCellFederationIncidentDirectiveExtensionAppealRuling            `json:"local_ruling,omitempty"`
-	LocalRecusalCount               int                                                                    `json:"local_recusal_count"`
-	LocalUpdatedAt                  *time.Time                                                             `json:"local_updated_at,omitempty"`
-	CounterpartySnapshotID          string                                                                 `json:"counterparty_snapshot_id,omitempty"`
-	CounterpartyBundleID            string                                                                 `json:"counterparty_bundle_id,omitempty"`
-	CounterpartyAppealID            string                                                                 `json:"counterparty_appeal_id,omitempty"`
-	CounterpartyAppealStatus        SecureCellFederationIncidentDirectiveExtensionAppealStatus            `json:"counterparty_appeal_status,omitempty"`
-	CounterpartyRuling              SecureCellFederationIncidentDirectiveExtensionAppealRuling            `json:"counterparty_ruling,omitempty"`
-	CounterpartyBundleStatus        SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus `json:"counterparty_bundle_status,omitempty"`
-	CounterpartyRecusalCount        int                                                                    `json:"counterparty_recusal_count"`
-	CounterpartyGeneratedAt         *time.Time                                                             `json:"counterparty_generated_at,omitempty"`
-	CounterpartyReceivedAt          *time.Time                                                             `json:"counterparty_received_at,omitempty"`
-	ReviewStatus                    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus `json:"review_status,omitempty"`
-	LastReviewedBy                  string                                                                 `json:"last_reviewed_by,omitempty"`
-	LastReviewedAt                  *time.Time                                                             `json:"last_reviewed_at,omitempty"`
-	ReviewActionCount               int                                                                    `json:"review_action_count"`
-	Divergences                     []string                                                               `json:"divergences,omitempty"`
+	CellID                       string                                                                                          `json:"cell_id"`
+	CellName                     string                                                                                          `json:"cell_name,omitempty"`
+	CellStatus                   SecureCellStatus                                                                                `json:"cell_status"`
+	Jurisdiction                 string                                                                                          `json:"jurisdiction,omitempty"`
+	OrganizationID               string                                                                                          `json:"organization_id"`
+	SponsorOfRecord              string                                                                                          `json:"sponsor_of_record,omitempty"`
+	OrganizationName             string                                                                                          `json:"organization_name,omitempty"`
+	ComparisonKey                string                                                                                          `json:"comparison_key"`
+	IncidentID                   string                                                                                          `json:"incident_id,omitempty"`
+	ResponseID                   string                                                                                          `json:"response_id,omitempty"`
+	DirectiveID                  string                                                                                          `json:"directive_id,omitempty"`
+	DirectiveTitle               string                                                                                          `json:"directive_title,omitempty"`
+	ExtensionID                  string                                                                                          `json:"extension_id,omitempty"`
+	DisputeID                    string                                                                                          `json:"dispute_id,omitempty"`
+	AppealID                     string                                                                                          `json:"appeal_id,omitempty"`
+	ParentAppealID               string                                                                                          `json:"parent_appeal_id,omitempty"`
+	AppealGeneration             int                                                                                             `json:"appeal_generation,omitempty"`
+	AppealingParty               SecureCellFederationIncidentResponseParty                                                       `json:"appealing_party,omitempty"`
+	BoardParty                   SecureCellFederationIncidentResponseParty                                                       `json:"board_party,omitempty"`
+	Status                       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus                        `json:"status"`
+	LocalAppealID                string                                                                                          `json:"local_appeal_id,omitempty"`
+	LocalAppealStatus            SecureCellFederationIncidentDirectiveExtensionAppealStatus                                      `json:"local_appeal_status,omitempty"`
+	LocalRuling                  SecureCellFederationIncidentDirectiveExtensionAppealRuling                                      `json:"local_ruling,omitempty"`
+	LocalRecusalCount            int                                                                                             `json:"local_recusal_count"`
+	LocalUpdatedAt               *time.Time                                                                                      `json:"local_updated_at,omitempty"`
+	CounterpartySnapshotID       string                                                                                          `json:"counterparty_snapshot_id,omitempty"`
+	CounterpartyBundleID         string                                                                                          `json:"counterparty_bundle_id,omitempty"`
+	CounterpartyAppealID         string                                                                                          `json:"counterparty_appeal_id,omitempty"`
+	CounterpartyAppealStatus     SecureCellFederationIncidentDirectiveExtensionAppealStatus                                      `json:"counterparty_appeal_status,omitempty"`
+	CounterpartyRuling           SecureCellFederationIncidentDirectiveExtensionAppealRuling                                      `json:"counterparty_ruling,omitempty"`
+	CounterpartyBundleStatus     SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatus                          `json:"counterparty_bundle_status,omitempty"`
+	CounterpartyRecusalCount     int                                                                                             `json:"counterparty_recusal_count"`
+	CounterpartyGeneratedAt      *time.Time                                                                                      `json:"counterparty_generated_at,omitempty"`
+	CounterpartyReceivedAt       *time.Time                                                                                      `json:"counterparty_received_at,omitempty"`
+	ReviewStatus                 SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus                  `json:"review_status,omitempty"`
+	LastReviewedBy               string                                                                                          `json:"last_reviewed_by,omitempty"`
+	LastReviewedAt               *time.Time                                                                                      `json:"last_reviewed_at,omitempty"`
+	ReviewActionCount            int                                                                                             `json:"review_action_count"`
+	AttestationStatus            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatus `json:"attestation_status,omitempty"`
+	LastCounterpartyAttestedBy   string                                                                                          `json:"last_counterparty_attested_by,omitempty"`
+	LastCounterpartyAttestedAt   *time.Time                                                                                      `json:"last_counterparty_attested_at,omitempty"`
+	CounterpartyAttestationCount int                                                                                             `json:"counterparty_attestation_count"`
+	Divergences                  []string                                                                                        `json:"divergences,omitempty"`
 }
 
 type secureCellFederationIncidentDirectiveExtensionAppealRef struct {
@@ -230,18 +234,18 @@ func (s *Service) IngestFederationIncidentDirectiveExtensionAppealBundle(ctx con
 	contractIDs := uniqueTrimmedStrings(bundle.ResponseSummary.ContractIDs)
 
 	receipt, err := s.evaluateStage(ctx, run.request, "intake_federation_incident_directive_extension_appeal_bundle", lastReceiptHash(run.result), map[string]string{
-		"federation_organization_id":                                        strings.TrimSpace(summary.OrganizationID),
-		"federation_sponsor_of_record":                                      strings.TrimSpace(summary.SponsorOfRecord),
-		"federation_counterparty_incident_directive_extension_appeal_id":    strings.TrimSpace(bundle.Appeal.ID),
-		"federation_counterparty_incident_directive_extension_dispute_id":   strings.TrimSpace(bundle.Appeal.DisputeID),
-		"federation_counterparty_incident_directive_extension_id":           strings.TrimSpace(bundle.Appeal.ExtensionID),
-		"federation_counterparty_incident_directive_id":                     strings.TrimSpace(bundle.Appeal.DirectiveID),
-		"federation_counterparty_incident_response_id":                      strings.TrimSpace(bundle.Appeal.ResponseID),
-		"federation_counterparty_incident_id":                               strings.TrimSpace(bundle.Appeal.IncidentID),
+		"federation_organization_id":                                         strings.TrimSpace(summary.OrganizationID),
+		"federation_sponsor_of_record":                                       strings.TrimSpace(summary.SponsorOfRecord),
+		"federation_counterparty_incident_directive_extension_appeal_id":     strings.TrimSpace(bundle.Appeal.ID),
+		"federation_counterparty_incident_directive_extension_dispute_id":    strings.TrimSpace(bundle.Appeal.DisputeID),
+		"federation_counterparty_incident_directive_extension_id":            strings.TrimSpace(bundle.Appeal.ExtensionID),
+		"federation_counterparty_incident_directive_id":                      strings.TrimSpace(bundle.Appeal.DirectiveID),
+		"federation_counterparty_incident_response_id":                       strings.TrimSpace(bundle.Appeal.ResponseID),
+		"federation_counterparty_incident_id":                                strings.TrimSpace(bundle.Appeal.IncidentID),
 		"federation_counterparty_incident_directive_extension_appeal_status": string(status),
 		"federation_counterparty_incident_directive_extension_appeal_signer": secureCellFederationIncidentDirectiveExtensionAppealBundleSignerName(&bundle),
 		"federation_counterparty_incident_directive_extension_contract_ids":  strings.Join(contractIDs, ","),
-		"transition_reason":                                                  strings.TrimSpace(intake.Reason),
+		"transition_reason": strings.TrimSpace(intake.Reason),
 	}, actorDID)
 	if err != nil {
 		return nil, err
@@ -278,27 +282,27 @@ func (s *Service) IngestFederationIncidentDirectiveExtensionAppealBundle(ctx con
 		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
 		Reason:           strings.TrimSpace(intake.Reason),
 		Metadata: mergeStringMaps(intake.Metadata, map[string]string{
-			"federation_organization_id":                                             strings.TrimSpace(summary.OrganizationID),
-			"federation_sponsor_of_record":                                           strings.TrimSpace(summary.SponsorOfRecord),
-			"federation_contract_id":                                                 strings.Join(contractIDs, ","),
-			"federation_counterparty_incident_directive_extension_appeal_snapshot_id": snapshot.SnapshotID,
-			"federation_counterparty_incident_directive_extension_appeal_bundle_id":   strings.TrimSpace(bundle.ID),
-			"federation_counterparty_incident_directive_extension_appeal_id":          strings.TrimSpace(bundle.Appeal.ID),
-			"federation_counterparty_incident_directive_extension_dispute_id":         strings.TrimSpace(bundle.Appeal.DisputeID),
-			"federation_counterparty_incident_directive_extension_id":                 strings.TrimSpace(bundle.Appeal.ExtensionID),
-			"federation_counterparty_incident_directive_id":                           strings.TrimSpace(bundle.Appeal.DirectiveID),
-			"federation_counterparty_incident_response_id":                            strings.TrimSpace(bundle.Appeal.ResponseID),
-			"federation_counterparty_incident_id":                                     strings.TrimSpace(bundle.Appeal.IncidentID),
-			"federation_counterparty_incident_directive_extension_appeal_status":      string(snapshot.Status),
-			"federation_counterparty_incident_directive_extension_appeal_verified":    fmt.Sprintf("%t", snapshot.Verified),
-			"federation_counterparty_incident_directive_extension_appeal_signer":      snapshot.Signer,
-			"federation_counterparty_incident_directive_extension_appeal_generated_at": bundle.GeneratedAt.UTC().Format(time.RFC3339Nano),
-			"federation_counterparty_incident_directive_extension_appeal_expires_at":   safeTimeString(bundle.ExpiresAt),
-			"federation_counterparty_incident_directive_extension_appeal_content_hash": strings.TrimSpace(bundle.ContentHash),
+			"federation_organization_id":   strings.TrimSpace(summary.OrganizationID),
+			"federation_sponsor_of_record": strings.TrimSpace(summary.SponsorOfRecord),
+			"federation_contract_id":       strings.Join(contractIDs, ","),
+			"federation_counterparty_incident_directive_extension_appeal_snapshot_id":          snapshot.SnapshotID,
+			"federation_counterparty_incident_directive_extension_appeal_bundle_id":            strings.TrimSpace(bundle.ID),
+			"federation_counterparty_incident_directive_extension_appeal_id":                   strings.TrimSpace(bundle.Appeal.ID),
+			"federation_counterparty_incident_directive_extension_dispute_id":                  strings.TrimSpace(bundle.Appeal.DisputeID),
+			"federation_counterparty_incident_directive_extension_id":                          strings.TrimSpace(bundle.Appeal.ExtensionID),
+			"federation_counterparty_incident_directive_id":                                    strings.TrimSpace(bundle.Appeal.DirectiveID),
+			"federation_counterparty_incident_response_id":                                     strings.TrimSpace(bundle.Appeal.ResponseID),
+			"federation_counterparty_incident_id":                                              strings.TrimSpace(bundle.Appeal.IncidentID),
+			"federation_counterparty_incident_directive_extension_appeal_status":               string(snapshot.Status),
+			"federation_counterparty_incident_directive_extension_appeal_verified":             fmt.Sprintf("%t", snapshot.Verified),
+			"federation_counterparty_incident_directive_extension_appeal_signer":               snapshot.Signer,
+			"federation_counterparty_incident_directive_extension_appeal_generated_at":         bundle.GeneratedAt.UTC().Format(time.RFC3339Nano),
+			"federation_counterparty_incident_directive_extension_appeal_expires_at":           safeTimeString(bundle.ExpiresAt),
+			"federation_counterparty_incident_directive_extension_appeal_content_hash":         strings.TrimSpace(bundle.ContentHash),
 			"federation_counterparty_incident_directive_extension_appeal_verification_message": snapshot.VerificationMessage,
-			"federation_incident_directive_extension_appeal_reconciliation_status":           string(reconciliation.Status),
-			"federation_incident_directive_extension_appeal_reconciliation_key":              reconciliation.ComparisonKey,
-			"federation_incident_directive_extension_appeal_reconciliation_local_appeal_id":  reconciliation.LocalAppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_status":             string(reconciliation.Status),
+			"federation_incident_directive_extension_appeal_reconciliation_key":                reconciliation.ComparisonKey,
+			"federation_incident_directive_extension_appeal_reconciliation_local_appeal_id":    reconciliation.LocalAppealID,
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
 	}
@@ -627,6 +631,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationSummaryFr
 	}
 	item.Status, item.Divergences = secureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAndDivergences(local, counterparty)
 	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewState(run, key)
+	item.AttestationStatus, item.LastCounterpartyAttestedBy, item.LastCounterpartyAttestedAt, item.CounterpartyAttestationCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationState(run, key)
 	return item
 }
 

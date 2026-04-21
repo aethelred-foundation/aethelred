@@ -2033,6 +2033,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-attestations" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-attestations/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeals/overdue" {
 			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter(r)
 			if err != nil {
@@ -4776,6 +4808,94 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Reason:   req.Reason,
 				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/acknowledge-dispute") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionPath(r.URL.Path, "/acknowledge-dispute")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation counterparty acknowledge request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledge(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationDispute(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CounterpartyReference: req.CounterpartyReference,
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/attest-correction") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionPath(r.URL.Path, "/attest-correction")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationCorrectionAttestationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation correction attestation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCorrectionAttest(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AttestFederationIncidentDirectiveExtensionAppealReconciliationCorrection(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCorrectionAttestationRequest{
+				ActorDID:               safeSecureCellActorDID(authCtx),
+				CounterpartySnapshotID: req.CounterpartySnapshotID,
+				CounterpartyReference:  req.CounterpartyReference,
+				Reason:                 req.Reason,
+				Metadata:               req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/attest-resolution") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliations/"):
+			cellID, comparisonKey, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionPath(r.URL.Path, "/attest-resolution")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationResolutionAttestationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation resolution attestation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationResolutionAttest(r, cellID, comparisonKey, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AttestFederationIncidentDirectiveExtensionAppealReconciliationResolution(r.Context(), cellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationResolutionAttestationRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CounterpartyReference: req.CounterpartyReference,
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
