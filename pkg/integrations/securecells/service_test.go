@@ -10073,6 +10073,63 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	if !controlLedgerHasControl(ingestedChallengeAppealBundle.ControlLedger, "CELL-FED-28") {
 		t.Fatalf("expected ingested challenge appeal bundle control ledger to include CELL-FED-28, got %+v", ingestedChallengeAppealBundle.ControlLedger.Controls)
 	}
+	acknowledgedChallengeAppealAlignment, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAcknowledgeRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "acknowledge aligned reciprocal challenge appeal bundle",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment failed: %v", err)
+	}
+	if !controlLedgerHasControl(acknowledgedChallengeAppealAlignment.ControlLedger, "CELL-FED-29") {
+		t.Fatalf("expected acknowledged challenge appeal alignment control ledger to include CELL-FED-29, got %+v", acknowledgedChallengeAppealAlignment.ControlLedger.Controls)
+	}
+
+	tamperedChallengeAppealBundle := *challengeAppealBundle
+	tamperedChallengeAppealBundle.ChallengeAppealSummary.Ruling = SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn
+	disputedChallengeAppealAlignment, err := service.IngestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(ctx, created.CellID, organizationID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   &tamperedChallengeAppealBundle,
+		Reason:   "ingest divergent reciprocal challenge appeal bundle for governed dispute",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-INGEST-01"},
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle tampered failed: %v", err)
+	}
+	disputedChallengeAppealAlignment, err = service.DisputeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentDisputeRequest{
+		ActorDID:    owner.AgentID(),
+		Reason:      "dispute latest reciprocal challenge appeal bundle alignment",
+		Divergences: []string{"counterparty challenge appeal ruling diverged after bundle tampering"},
+		Metadata:    map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-DISPUTE-01"},
+	})
+	if err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment failed: %v", err)
+	}
+	if !controlLedgerHasControl(disputedChallengeAppealAlignment.ControlLedger, "CELL-FED-29") {
+		t.Fatalf("expected disputed challenge appeal alignment control ledger to include CELL-FED-29, got %+v", disputedChallengeAppealAlignment.ControlLedger.Controls)
+	}
+
+	counterpartyChallengeAppeals, err = service.ListFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:            created.CellID,
+		OrganizationID:    organizationID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals after dispute failed: %v", err)
+	}
+	if len(counterpartyChallengeAppeals) != 2 || counterpartyChallengeAppeals[0].Status != SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusInvalid || counterpartyChallengeAppeals[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatusDisputed || counterpartyChallengeAppeals[1].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatusAcknowledged {
+		t.Fatalf("expected latest invalid disputed reciprocal challenge appeal plus earlier acknowledged snapshot, got %+v", counterpartyChallengeAppeals)
+	}
+	alignmentActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionFilter{
+		CellID:            created.CellID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActions failed: %v", err)
+	}
+	if len(alignmentActions) != 2 || alignmentActions[0].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionDispute || alignmentActions[0].SnapshotID == "" || alignmentActions[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatusDisputed || alignmentActions[1].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionAcknowledge || alignmentActions[1].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatusAcknowledged {
+		t.Fatalf("expected reciprocal challenge appeal alignment action trail, got %+v", alignmentActions)
+	}
 
 	reconciliationBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions{})
 	if err != nil {
@@ -10083,6 +10140,13 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 	}
 	if len(reconciliationBundle.ChallengeAppeals) != 1 || len(reconciliationBundle.ChallengeAppealActions) != 5 || len(reconciliationBundle.ChallengeAppealAutomationActions) != 2 || reconciliationBundle.ChallengeAppeals[0].ChallengeAppealID != challengeAppealID {
 		t.Fatalf("expected reconciliation bundle to include challenge appeal artifacts, got %+v", reconciliationBundle)
+	}
+	challengeAppealBundle, err = service.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(ctx, created.CellID, challengeAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle after alignment governance failed: %v", err)
+	}
+	if len(challengeAppealBundle.CounterpartyAlignmentActions) != 2 {
+		t.Fatalf("expected challenge appeal bundle to include reciprocal alignment actions, got %+v", challengeAppealBundle)
 	}
 
 	casePack, err = service.BuildFederationIncidentCasePack(ctx, created.CellID, localResponseID, SecureCellFederationIncidentCasePackOptions{})

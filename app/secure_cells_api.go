@@ -2180,6 +2180,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-actions" {
 			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFilter(r)
 			if err != nil {
@@ -5534,6 +5566,63 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/acknowledge-alignment") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/acknowledge-alignment")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAcknowledgeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment acknowledge request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAcknowledge(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAcknowledgeRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/dispute-alignment") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/dispute-alignment")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentDisputeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment dispute request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentDispute(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.DisputeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentDisputeRequest{
+				ActorDID:    safeSecureCellActorDID(authCtx),
+				Reason:      req.Reason,
+				Divergences: append([]string(nil), req.Divergences...),
+				Metadata:    req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/acknowledge-dispute") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliations/"):
 			cellID, comparisonKey, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionPath(r.URL.Path, "/acknowledge-dispute")
 			if err != nil {
@@ -8651,6 +8740,20 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeals/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
 				Description: "Export imported reciprocal challenge-appeal bundles aligned to this reconciliation challenge appeal.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List governed acknowledgements or disputes over imported reciprocal challenge-appeal bundles for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export governed acknowledgements or disputes over imported reciprocal challenge-appeal bundles for this appeal-board trail.",
 				Formats:     []string{"json", "csv"},
 			},
 			{
