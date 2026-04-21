@@ -5857,6 +5857,21 @@ func mustMarshalSecureCellFederationIncidentReportAmendmentBundleIntakeRequest(t
 	return body
 }
 
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundle) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Bundle:        bundle,
+		Reason:        "ingest reciprocal directive extension appeal bundle",
+		Metadata:      map[string]string{"ticket": "SC-FED-DIRECTIVE-EXT-APPEAL-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension appeal bundle intake request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellMemberMutationRequest(t *testing.T, actor *agent.AgentIdentity, participantDID string, reason string, receipt *policy.SignedPolicyReceipt) []byte {
 	return mustMarshalSecureCellMemberMutationRequestWithExpiry(t, actor, participantDID, reason, receipt, nil)
 }
@@ -9481,6 +9496,76 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealRecusalAn
 	app.SecureCellsMutateHandler().ServeHTTP(ackRec, ackReq)
 	if ackRec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ackRec.Code, ackRec.Body.String())
+	}
+
+	appealBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/bundle", nil)
+	appealBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(appealBundleRec, appealBundleReq)
+	if appealBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, appealBundleRec.Code, appealBundleRec.Body.String())
+	}
+	var appealBundleResp secureCellFederationIncidentDirectiveExtensionAppealBundleResponse
+	if err := json.Unmarshal(appealBundleRec.Body.Bytes(), &appealBundleResp); err != nil {
+		t.Fatalf("unmarshal appeal bundle response: %v", err)
+	}
+	if appealBundleResp.Result == nil || appealBundleResp.Result.AppealSummary.AppealID != appealID {
+		t.Fatalf("expected appeal bundle response for %s, got %+v", appealID, appealBundleResp.Result)
+	}
+
+	appealBundleIntakeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/organizations/"+organizationID+"/incident-directive-extension-appeal-bundles/intake", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest(t, owner, nil, appealBundleResp.Result)))
+	appealBundleIntakeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	appealBundleIntakeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(appealBundleIntakeRec, appealBundleIntakeReq)
+	if appealBundleIntakeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, appealBundleIntakeRec.Code, appealBundleIntakeRec.Body.String())
+	}
+
+	counterpartyAppealListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterparty-incident-directive-extension-appeals?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&appeal_id="+url.QueryEscape(appealID)+"&status=verified", nil)
+	counterpartyAppealListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyAppealListRec, counterpartyAppealListReq)
+	if counterpartyAppealListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyAppealListRec.Code, counterpartyAppealListRec.Body.String())
+	}
+	var counterpartyAppealListResp secureCellFederationCounterpartyIncidentDirectiveExtensionAppealListResponse
+	if err := json.Unmarshal(counterpartyAppealListRec.Body.Bytes(), &counterpartyAppealListResp); err != nil {
+		t.Fatalf("unmarshal counterparty appeal list response: %v", err)
+	}
+	if len(counterpartyAppealListResp.Items) != 1 || counterpartyAppealListResp.Items[0].ReconciliationStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAligned {
+		t.Fatalf("expected one aligned counterparty appeal snapshot, got %+v", counterpartyAppealListResp.Items)
+	}
+
+	counterpartyAppealExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterparty-incident-directive-extension-appeals/export?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&format=csv", nil)
+	counterpartyAppealExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyAppealExportRec, counterpartyAppealExportReq)
+	if counterpartyAppealExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyAppealExportRec.Code, counterpartyAppealExportRec.Body.String())
+	}
+	if body := counterpartyAppealExportRec.Body.String(); !strings.Contains(body, appealID) || !strings.Contains(body, "reconciliation_status") {
+		t.Fatalf("expected counterparty appeal export to include appeal id and reconciliation status, got %s", body)
+	}
+
+	appealReconciliationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliations?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&appeal_id="+url.QueryEscape(appealID), nil)
+	appealReconciliationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(appealReconciliationListRec, appealReconciliationListReq)
+	if appealReconciliationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, appealReconciliationListRec.Code, appealReconciliationListRec.Body.String())
+	}
+	var appealReconciliationListResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationListResponse
+	if err := json.Unmarshal(appealReconciliationListRec.Body.Bytes(), &appealReconciliationListResp); err != nil {
+		t.Fatalf("unmarshal appeal reconciliation list response: %v", err)
+	}
+	if len(appealReconciliationListResp.Items) != 1 || appealReconciliationListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAligned {
+		t.Fatalf("expected one aligned appeal reconciliation, got %+v", appealReconciliationListResp.Items)
+	}
+
+	appealReconciliationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliations/export?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&format=csv", nil)
+	appealReconciliationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(appealReconciliationExportRec, appealReconciliationExportReq)
+	if appealReconciliationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, appealReconciliationExportRec.Code, appealReconciliationExportRec.Body.String())
+	}
+	if body := appealReconciliationExportRec.Body.String(); !strings.Contains(body, appealID) || !strings.Contains(body, "comparison_key") {
+		t.Fatalf("expected appeal reconciliation export to include appeal id and comparison key, got %s", body)
 	}
 
 	rehearReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/rehear", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRehearingRequest(t, participantB, nil, directiveID, "Counterparty requested rehearing of ratified rejection", "The counterparty challenged the ratified ruling and requested a fresh board rehearing.", 1, []string{owner.AgentID()})))

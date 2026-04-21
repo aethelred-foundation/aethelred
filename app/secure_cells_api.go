@@ -181,6 +181,14 @@ type secureCellFederationIncidentReportAmendmentBundleIntakeRequest struct {
 	Metadata      map[string]string                                                         `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest struct {
+	ActorIdentity json.RawMessage                                                                    `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt                                                        `json:"policy_receipt,omitempty"`
+	Bundle        *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundle `json:"bundle,omitempty"`
+	Reason        string                                                                             `json:"reason,omitempty"`
+	Metadata      map[string]string                                                                  `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentResponseAcknowledgeRequest struct {
 	ActorIdentity json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -1918,6 +1926,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incident-directive-extension-appeals" {
+			filter, err := parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterpartyIncidentDirectiveExtensionAppeals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterpartyIncidentDirectiveExtensionAppealListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/counterparty-incident-directive-extension-appeals/export" {
+			filter, err := parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationCounterpartyIncidentDirectiveExtensionAppeals(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliations" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliations/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliations(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeals/overdue" {
 			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealFilter(r)
 			if err != nil {
@@ -3514,6 +3586,35 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
 			result, err := app.secureCellService.IngestFederationIncidentReportAmendmentBundle(r.Context(), cellID, organizationID, securecellsintegration.SecureCellFederationIncidentReportAmendmentBundleIntakeRequest{
+				ActorDID: safeSecureCellActorDID(authCtx),
+				Bundle:   req.Bundle,
+				Reason:   req.Reason,
+				Metadata: req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/incident-directive-extension-appeal-bundles/intake") && strings.Contains(r.URL.Path, "/federation/organizations/"):
+			cellID, organizationID, err := parseSecureCellFederationOrganizationActionPath(r.URL.Path, "/incident-directive-extension-appeal-bundles/intake")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal bundle intake request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealIntake(r, cellID, organizationID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.IngestFederationIncidentDirectiveExtensionAppealBundle(r.Context(), cellID, organizationID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest{
 				ActorDID: safeSecureCellActorDID(authCtx),
 				Bundle:   req.Bundle,
 				Reason:   req.Reason,

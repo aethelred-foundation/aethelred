@@ -8583,6 +8583,50 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 		t.Fatalf("expected original appeal bundle to preserve recusal, got %+v", originalBundle.Appeal.BoardRecusals)
 	}
 
+	ingested, err := service.IngestFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, organizationID, SecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   originalBundle,
+		Reason:   "ingest reciprocal directive extension appeal bundle",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-BUNDLE-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentDirectiveExtensionAppealBundle failed: %v", err)
+	}
+
+	counterpartyAppeals, err := service.ListFederationCounterpartyIncidentDirectiveExtensionAppeals(ctx, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		AppealID:       appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidentDirectiveExtensionAppeals failed: %v", err)
+	}
+	if len(counterpartyAppeals) != 1 || counterpartyAppeals[0].Status != SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatusVerified || counterpartyAppeals[0].ReconciliationStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAligned {
+		t.Fatalf("expected one verified aligned counterparty appeal snapshot, got %+v", counterpartyAppeals)
+	}
+
+	appealReconciliations, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliations(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		AppealID:       appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliations failed: %v", err)
+	}
+	if len(appealReconciliations) != 1 || appealReconciliations[0].Status != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAligned {
+		t.Fatalf("expected one aligned appeal reconciliation, got %+v", appealReconciliations)
+	}
+	foundReciprocalControl := false
+	for _, control := range ingested.ControlLedger.Controls {
+		if control.ControlID == "CELL-FED-18" {
+			foundReciprocalControl = true
+			break
+		}
+	}
+	if !foundReciprocalControl {
+		t.Fatalf("expected ingested control ledger to include CELL-FED-18, got %+v", ingested.ControlLedger.Controls)
+	}
+
 	rehearingID := rehearings[0].AppealID
 	rehearingBundle, err := service.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, rehearingID, SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	securecellsintegration "github.com/aethelred/aethelred/pkg/integrations/securecells"
@@ -487,6 +488,154 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealRecusalExport(w ht
 				item.Summary,
 				item.Description,
 				item.CreatedAt.UTC().Format(timeCSVFormat),
+			}); err != nil {
+				return err
+			}
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationCounterpartyIncidentDirectiveExtensionAppealListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-counterparty-incident-directive-extension-appeals.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"cell_id", "cell_name", "jurisdiction", "cell_status", "organization_id", "sponsor_of_record", "organization_name", "snapshot_id",
+			"bundle_id", "bundle_version", "bundle_name", "status", "verified", "signer", "key_id", "contract_ids", "incident_id",
+			"response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "parent_appeal_id", "appeal_generation",
+			"appeal_status", "appealing_party", "board_party", "enforcement_acknowledgement_party", "ruling", "board_review_threshold",
+			"board_recusal_count", "board_delegation_count", "board_recorded_vote_count", "generated_at", "expires_at", "received_at",
+			"control_ledger_id", "control_ledger_hash", "portable_package_hash", "portable_package_signed", "portable_package_anchored",
+			"verification_message", "matched_local_appeal_id", "matched_local_dispute_id", "reconciliation_status", "reconciliation_divergence_count",
+		}); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := cw.Write([]string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.SnapshotID,
+				item.BundleID,
+				item.BundleVersion,
+				item.BundleName,
+				string(item.Status),
+				strconv.FormatBool(item.Verified),
+				item.Signer,
+				item.KeyID,
+				strings.Join(item.ContractIDs, "|"),
+				item.IncidentID,
+				item.ResponseID,
+				item.DirectiveID,
+				item.ExtensionID,
+				item.DisputeID,
+				item.AppealID,
+				item.ParentAppealID,
+				strconv.Itoa(item.AppealGeneration),
+				string(item.AppealStatus),
+				string(item.AppealingParty),
+				string(item.BoardParty),
+				string(item.EnforcementAcknowledgementParty),
+				string(item.Ruling),
+				strconv.Itoa(item.BoardReviewThreshold),
+				strconv.Itoa(item.BoardRecusalCount),
+				strconv.Itoa(item.BoardDelegationCount),
+				strconv.Itoa(item.BoardRecordedVoteCount),
+				item.GeneratedAt.UTC().Format(timeCSVFormat),
+				secureCellCSVTime(item.ExpiresAt),
+				item.ReceivedAt.UTC().Format(timeCSVFormat),
+				item.ControlLedgerID,
+				item.ControlLedgerHash,
+				item.PortablePackageHash,
+				strconv.FormatBool(item.PortablePackageSigned),
+				strconv.FormatBool(item.PortablePackageAnchored),
+				item.VerificationMessage,
+				item.MatchedLocalAppealID,
+				item.MatchedLocalDisputeID,
+				string(item.ReconciliationStatus),
+				strconv.Itoa(item.ReconciliationDivergenceCount),
+			}); err != nil {
+				return err
+			}
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-appeal-reconciliations.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"cell_id", "cell_name", "jurisdiction", "cell_status", "organization_id", "sponsor_of_record", "organization_name",
+			"comparison_key", "incident_id", "response_id", "directive_id", "directive_title", "extension_id", "dispute_id", "appeal_id",
+			"parent_appeal_id", "appeal_generation", "appealing_party", "board_party", "status", "local_appeal_id", "local_appeal_status",
+			"local_ruling", "local_recusal_count", "local_updated_at", "counterparty_snapshot_id", "counterparty_bundle_id",
+			"counterparty_appeal_id", "counterparty_appeal_status", "counterparty_ruling", "counterparty_bundle_status",
+			"counterparty_recusal_count", "counterparty_generated_at", "counterparty_received_at", "divergences",
+		}); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := cw.Write([]string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.ComparisonKey,
+				item.IncidentID,
+				item.ResponseID,
+				item.DirectiveID,
+				item.DirectiveTitle,
+				item.ExtensionID,
+				item.DisputeID,
+				item.AppealID,
+				item.ParentAppealID,
+				strconv.Itoa(item.AppealGeneration),
+				string(item.AppealingParty),
+				string(item.BoardParty),
+				string(item.Status),
+				item.LocalAppealID,
+				string(item.LocalAppealStatus),
+				string(item.LocalRuling),
+				strconv.Itoa(item.LocalRecusalCount),
+				secureCellCSVTime(item.LocalUpdatedAt),
+				item.CounterpartySnapshotID,
+				item.CounterpartyBundleID,
+				item.CounterpartyAppealID,
+				string(item.CounterpartyAppealStatus),
+				string(item.CounterpartyRuling),
+				string(item.CounterpartyBundleStatus),
+				strconv.Itoa(item.CounterpartyRecusalCount),
+				secureCellCSVTime(item.CounterpartyGeneratedAt),
+				secureCellCSVTime(item.CounterpartyReceivedAt),
+				strings.Join(item.Divergences, "|"),
 			}); err != nil {
 				return err
 			}
