@@ -8660,6 +8660,62 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	if len(reconciliationsAfterDispute) != 1 || reconciliationsAfterDispute[0].LastReviewedAt == nil {
 		t.Fatalf("expected one disputed appeal reconciliation with review timestamp, got %+v", reconciliationsAfterDispute)
 	}
+
+	challengedReconciliation, err := service.ChallengeFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeRequest{
+		ActorDID:                  owner.AgentID(),
+		ChallengingParty:          SecureCellFederationIncidentResponsePartyLocalOrg,
+		Summary:                   "Local org escalated reconciliation to bilateral challenge board",
+		Description:               "The local organization requested a formal board review over the disputed appeal reconciliation posture.",
+		EvidenceIDs:               []string{directiveID, comparisonKey},
+		BoardReviewThreshold:      1,
+		EligibleBoardReviewerDIDs: []string{participantB.AgentID()},
+		Reason:                    "open bilateral appeal reconciliation challenge board review",
+		Metadata:                  map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ChallengeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	ruledChallengeReconciliation, err := service.RuleFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeRulingRequest{
+		ActorDID:          participantB.AgentID(),
+		BoardParty:        SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Ruling:            SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Counterparty board ratified disputed reconciliation",
+		RulingDescription: "The counterparty board ratified the disputed reconciliation posture after formal bilateral challenge review.",
+		EvidenceIDs:       []string{directiveID, comparisonKey},
+		Reason:            "record bilateral appeal reconciliation challenge board ruling",
+		Metadata:          map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-RULE-01"},
+	})
+	if err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	challenges, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+		Status:        SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeStatusRatified,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges failed: %v", err)
+	}
+	if len(challenges) != 1 || challenges[0].ChallengeStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeStatusRatified || challenges[0].BoardRecordedVoteCount != 1 || challenges[0].RatifyVoteCount != 1 {
+		t.Fatalf("expected one ratified appeal reconciliation challenge, got %+v", challenges)
+	}
+
+	challengeActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeActions failed: %v", err)
+	}
+	if len(challengeActions) != 2 || challengeActions[0].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRuled {
+		t.Fatalf("expected two appeal reconciliation challenge actions ending in rule, got %+v", challengeActions)
+	}
+
+	if !controlLedgerHasControl(challengedReconciliation.ControlLedger, "CELL-FED-22") || !controlLedgerHasControl(ruledChallengeReconciliation.ControlLedger, "CELL-FED-22") {
+		t.Fatalf("expected challenge-board control ledger coverage on challenge lifecycle, challenged=%+v ruled=%+v", challengedReconciliation.ControlLedger.Controls, ruledChallengeReconciliation.ControlLedger.Controls)
+	}
 	ackOverdueAt := reconciliationsAfterDispute[0].LastReviewedAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAckSLA + time.Hour)
 	overdueAppealReconciliations, err := service.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliations(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationFilter{
 		CellID:            created.CellID,
@@ -8781,7 +8837,7 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
 		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle failed: %v", err)
 	}
-	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 || len(reconciliationBundle.AutomationActions) != 1 {
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 || len(reconciliationBundle.Attestations) != 3 || len(reconciliationBundle.Challenges) != 1 || len(reconciliationBundle.ChallengeActions) != 2 || len(reconciliationBundle.AutomationActions) != 1 {
 		t.Fatalf("expected resolved appeal reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
 	}
 	if reconciliationBundle.AutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_escalated" {
@@ -8794,6 +8850,9 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	}
 	if len(casePack.DirectiveExtensionAppealReconciliationAutomationActions) == 0 {
 		t.Fatalf("expected case pack to include appeal reconciliation automation actions, got %+v", casePack.DirectiveExtensionAppealReconciliationAutomationActions)
+	}
+	if len(casePack.DirectiveExtensionAppealReconciliationChallenges) != 1 || len(casePack.DirectiveExtensionAppealReconciliationChallengeActions) != 2 {
+		t.Fatalf("expected case pack to include appeal reconciliation challenge governance, got summaries=%+v actions=%+v", casePack.DirectiveExtensionAppealReconciliationChallenges, casePack.DirectiveExtensionAppealReconciliationChallengeActions)
 	}
 	foundReconciliationBundle := false
 	for _, bundle := range casePack.DirectiveExtensionAppealReconciliationBundles {
@@ -8814,6 +8873,9 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	}
 	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-21") {
 		t.Fatalf("expected resolved reconciliation control ledger to include CELL-FED-21, got %+v", resolvedReconciliation.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-22") {
+		t.Fatalf("expected resolved reconciliation control ledger to include CELL-FED-22, got %+v", resolvedReconciliation.ControlLedger.Controls)
 	}
 	if len(acknowledgedCounterpartyReconciliation.Transitions) == 0 || len(correctedReconciliation.Transitions) == 0 || len(resolvedCounterpartyReconciliation.Transitions) == 0 {
 		t.Fatalf("expected appeal reconciliation counterparty attestation lifecycle mutations to append transitions")

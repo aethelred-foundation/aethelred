@@ -190,6 +190,24 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary s
 	LastCounterpartyAttestedBy   string                                                                                          `json:"last_counterparty_attested_by,omitempty"`
 	LastCounterpartyAttestedAt   *time.Time                                                                                      `json:"last_counterparty_attested_at,omitempty"`
 	CounterpartyAttestationCount int                                                                                             `json:"counterparty_attestation_count"`
+	ChallengeID                  string                                                                                          `json:"challenge_id,omitempty"`
+	ChallengeStatus              SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeStatus               `json:"challenge_status,omitempty"`
+	ChallengingParty             SecureCellFederationIncidentResponseParty                                                       `json:"challenging_party,omitempty"`
+	ChallengeBoardParty          SecureCellFederationIncidentResponseParty                                                       `json:"challenge_board_party,omitempty"`
+	ChallengeBoardThreshold      int                                                                                             `json:"challenge_board_threshold,omitempty"`
+	ChallengeCommitteeMemberCount int                                                                                            `json:"challenge_committee_member_count,omitempty"`
+	ChallengeRecordedVoteCount   int                                                                                             `json:"challenge_recorded_vote_count,omitempty"`
+	ChallengeOutstandingVotes    int                                                                                             `json:"challenge_outstanding_votes,omitempty"`
+	ChallengeMissingQuorumCount  int                                                                                             `json:"challenge_missing_quorum_count,omitempty"`
+	ChallengeQuorumSatisfied     bool                                                                                            `json:"challenge_quorum_satisfied"`
+	ChallengeRatifyVoteCount     int                                                                                             `json:"challenge_ratify_vote_count,omitempty"`
+	ChallengeOverturnVoteCount   int                                                                                             `json:"challenge_overturn_vote_count,omitempty"`
+	ChallengeRuling              SecureCellFederationIncidentDirectiveExtensionAppealRuling                                      `json:"challenge_ruling,omitempty"`
+	LastChallengedBy             string                                                                                          `json:"last_challenged_by,omitempty"`
+	LastChallengedAt             *time.Time                                                                                      `json:"last_challenged_at,omitempty"`
+	LastRuledBy                  string                                                                                          `json:"last_ruled_by,omitempty"`
+	LastRuledAt                  *time.Time                                                                                      `json:"last_ruled_at,omitempty"`
+	ChallengeCount               int                                                                                             `json:"challenge_count"`
 	Divergences                  []string                                                                                        `json:"divergences,omitempty"`
 }
 
@@ -632,6 +650,26 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationSummaryFr
 	item.Status, item.Divergences = secureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAndDivergences(local, counterparty)
 	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewState(run, key)
 	item.AttestationStatus, item.LastCounterpartyAttestedBy, item.LastCounterpartyAttestedAt, item.CounterpartyAttestationCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationState(run, key)
+	if challenge := secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationChallenge(run, key); challenge != nil {
+		item.ChallengeID = challenge.ChallengeID
+		item.ChallengeStatus = challenge.ChallengeStatus
+		item.ChallengingParty = challenge.ChallengingParty
+		item.ChallengeBoardParty = challenge.BoardParty
+		item.ChallengeBoardThreshold = challenge.BoardReviewThreshold
+		item.ChallengeCommitteeMemberCount = challenge.BoardCommitteeMemberCount
+		item.ChallengeRecordedVoteCount = challenge.BoardRecordedVoteCount
+		item.ChallengeOutstandingVotes = challenge.BoardOutstandingVotes
+		item.ChallengeMissingQuorumCount = challenge.BoardMissingQuorumCount
+		item.ChallengeQuorumSatisfied = challenge.BoardQuorumSatisfied
+		item.ChallengeRatifyVoteCount = challenge.RatifyVoteCount
+		item.ChallengeOverturnVoteCount = challenge.OverturnVoteCount
+		item.ChallengeRuling = challenge.Ruling
+		item.LastChallengedBy = challenge.CreatedBy
+		item.LastChallengedAt = cloneTimePtr(&challenge.CreatedAt)
+		item.LastRuledBy = challenge.RuledBy
+		item.LastRuledAt = cloneTimePtr(challenge.RuledAt)
+	}
+	item.ChallengeCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeCount(run, key)
 	return item
 }
 

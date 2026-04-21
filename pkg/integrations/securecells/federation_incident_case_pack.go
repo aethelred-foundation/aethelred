@@ -45,6 +45,7 @@ type SecureCellFederationIncidentCasePack struct {
 	DirectiveExtensionSummaries                             []SecureCellFederationIncidentDirectiveExtensionSummary                                    `json:"directive_extension_summaries,omitempty"`
 	DirectiveExtensionAppealBundles                         []*SecureCellFederationIncidentDirectiveExtensionAppealBundle                              `json:"directive_extension_appeal_bundles,omitempty"`
 	DirectiveExtensionAppealReconciliationBundles           []*SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle                `json:"directive_extension_appeal_reconciliation_bundles,omitempty"`
+	DirectiveExtensionAppealReconciliationChallenges        []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary       `json:"directive_extension_appeal_reconciliation_challenges,omitempty"`
 	ReportBundles                                           []*SecureCellFederationIncidentReportBundle                                                `json:"report_bundles,omitempty"`
 	AmendmentBundles                                        []*SecureCellFederationIncidentReportAmendmentBundle                                       `json:"amendment_bundles,omitempty"`
 	ReportReconciliationBundles                             []*SecureCellFederationIncidentReportReconciliationBundle                                  `json:"report_reconciliation_bundles,omitempty"`
@@ -54,6 +55,7 @@ type SecureCellFederationIncidentCasePack struct {
 	DirectiveExtensionDisputes                              []SecureCellFederationIncidentDirectiveExtensionDisputeSummary                             `json:"directive_extension_disputes,omitempty"`
 	DirectiveExtensionAppealAutomationActions               []SecureCellFederationIncidentDirectiveExtensionAppealAutomationActionRecord               `json:"directive_extension_appeal_automation_actions,omitempty"`
 	DirectiveExtensionAppealReconciliationAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord `json:"directive_extension_appeal_reconciliation_automation_actions,omitempty"`
+	DirectiveExtensionAppealReconciliationChallengeActions  []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord  `json:"directive_extension_appeal_reconciliation_challenge_actions,omitempty"`
 	DirectiveExtensionAutomationActions                     []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord                     `json:"directive_extension_automation_actions,omitempty"`
 	Remediations                                            []SecureCellFederationIncidentRemediationSummary                                           `json:"remediations,omitempty"`
 	Verifications                                           []SecureCellFederationIncidentVerificationSummary                                          `json:"verifications,omitempty"`
@@ -113,6 +115,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	directiveExtensionSummaries := make([]SecureCellFederationIncidentDirectiveExtensionSummary, 0)
 	directiveExtensionAppealBundles := make([]*SecureCellFederationIncidentDirectiveExtensionAppealBundle, 0)
 	directiveExtensionAppealReconciliationBundles := make([]*SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle, 0)
+	directiveExtensionAppealReconciliationChallenges := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary, 0)
 	for _, directive := range response.IncidentDirectives {
 		directiveBundle, err := s.BuildFederationIncidentDirectiveBundle(ctx, cellID, directive.ID, SecureCellFederationIncidentDirectiveBundleOptions{})
 		if err != nil {
@@ -144,6 +147,14 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 			return nil, err
 		}
 		directiveExtensionAppealReconciliationBundles = append(directiveExtensionAppealReconciliationBundles, reconciliationBundle)
+	}
+	directiveExtensionAppealReconciliationChallenges, err = s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeFilter{
+		CellID:         cellID,
+		OrganizationID: response.OrganizationID,
+		ResponseID:     responseID,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	reportSummaries, err := s.ListFederationIncidentReports(ctx, SecureCellFederationIncidentReportFilter{
@@ -255,6 +266,13 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	if err != nil {
 		return nil, err
 	}
+	directiveExtensionAppealReconciliationChallengeActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionFilter{
+		CellID:     cellID,
+		ResponseID: responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	remediations, err := s.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
 		CellID:     cellID,
 		ResponseID: responseID,
@@ -328,7 +346,8 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		DirectiveBundles:                directiveBundles,
 		DirectiveExtensionSummaries:     directiveExtensionSummaries,
 		DirectiveExtensionAppealBundles: directiveExtensionAppealBundles,
-		DirectiveExtensionAppealReconciliationBundles: directiveExtensionAppealReconciliationBundles,
+		DirectiveExtensionAppealReconciliationBundles:    directiveExtensionAppealReconciliationBundles,
+		DirectiveExtensionAppealReconciliationChallenges: directiveExtensionAppealReconciliationChallenges,
 		ReportBundles:                                           reportBundles,
 		AmendmentBundles:                                        amendmentBundles,
 		ReportReconciliationBundles:                             reportReconciliationBundles,
@@ -338,6 +357,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		DirectiveExtensionDisputes:                              directiveExtensionDisputes,
 		DirectiveExtensionAppealAutomationActions:               directiveExtensionAppealAutomationActions,
 		DirectiveExtensionAppealReconciliationAutomationActions: directiveExtensionAppealReconciliationAutomationActions,
+		DirectiveExtensionAppealReconciliationChallengeActions:  directiveExtensionAppealReconciliationChallengeActions,
 		DirectiveExtensionAutomationActions:                     directiveExtensionAutomationActions,
 		Remediations:                                            remediations,
 		Verifications:                                           verifications,
