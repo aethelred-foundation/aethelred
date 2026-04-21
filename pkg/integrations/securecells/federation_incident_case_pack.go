@@ -47,6 +47,7 @@ type SecureCellFederationIncidentCasePack struct {
 	DirectiveExtensionAppealReconciliationBundles                          []*SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle                               `json:"directive_extension_appeal_reconciliation_bundles,omitempty"`
 	DirectiveExtensionAppealReconciliationChallenges                       []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary                      `json:"directive_extension_appeal_reconciliation_challenges,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppeals                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary                `json:"directive_extension_appeal_reconciliation_challenge_appeals,omitempty"`
+	DirectiveExtensionAppealReconciliationChallengeAppealRecusals          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary         `json:"directive_extension_appeal_reconciliation_challenge_appeal_recusals,omitempty"`
 	ReportBundles                                                          []*SecureCellFederationIncidentReportBundle                                                               `json:"report_bundles,omitempty"`
 	AmendmentBundles                                                       []*SecureCellFederationIncidentReportAmendmentBundle                                                      `json:"amendment_bundles,omitempty"`
 	ReportReconciliationBundles                                            []*SecureCellFederationIncidentReportReconciliationBundle                                                 `json:"report_reconciliation_bundles,omitempty"`
@@ -121,6 +122,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	directiveExtensionAppealReconciliationBundles := make([]*SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle, 0)
 	directiveExtensionAppealReconciliationChallenges := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary, 0)
 	directiveExtensionAppealReconciliationChallengeAppeals := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, 0)
+	directiveExtensionAppealReconciliationChallengeAppealRecusals := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary, 0)
 	for _, directive := range response.IncidentDirectives {
 		directiveBundle, err := s.BuildFederationIncidentDirectiveBundle(ctx, cellID, directive.ID, SecureCellFederationIncidentDirectiveBundleOptions{})
 		if err != nil {
@@ -162,6 +164,14 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		return nil, err
 	}
 	directiveExtensionAppealReconciliationChallengeAppeals, err = s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter{
+		CellID:         cellID,
+		OrganizationID: response.OrganizationID,
+		ResponseID:     responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	directiveExtensionAppealReconciliationChallengeAppealRecusals, err = s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter{
 		CellID:         cellID,
 		OrganizationID: response.OrganizationID,
 		ResponseID:     responseID,
@@ -380,9 +390,10 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		DirectiveBundles:                directiveBundles,
 		DirectiveExtensionSummaries:     directiveExtensionSummaries,
 		DirectiveExtensionAppealBundles: directiveExtensionAppealBundles,
-		DirectiveExtensionAppealReconciliationBundles:          directiveExtensionAppealReconciliationBundles,
-		DirectiveExtensionAppealReconciliationChallenges:       directiveExtensionAppealReconciliationChallenges,
-		DirectiveExtensionAppealReconciliationChallengeAppeals: directiveExtensionAppealReconciliationChallengeAppeals,
+		DirectiveExtensionAppealReconciliationBundles:                 directiveExtensionAppealReconciliationBundles,
+		DirectiveExtensionAppealReconciliationChallenges:              directiveExtensionAppealReconciliationChallenges,
+		DirectiveExtensionAppealReconciliationChallengeAppeals:        directiveExtensionAppealReconciliationChallengeAppeals,
+		DirectiveExtensionAppealReconciliationChallengeAppealRecusals: directiveExtensionAppealReconciliationChallengeAppealRecusals,
 		ReportBundles:                                           reportBundles,
 		AmendmentBundles:                                        amendmentBundles,
 		ReportReconciliationBundles:                             reportReconciliationBundles,

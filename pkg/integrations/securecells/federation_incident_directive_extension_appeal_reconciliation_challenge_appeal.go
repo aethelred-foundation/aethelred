@@ -29,6 +29,8 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 
 const (
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed                SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "appeal"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRehearingRequested      SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "rehearing_requested"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused           SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "recuse_review"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionVoteRecorded            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "vote_recorded"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRuled                   SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "ruled"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionEnforcementAcknowledged SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType = "acknowledge_enforcement"
@@ -37,6 +39,21 @@ const (
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRequest
 // opens one governed appeal over a ruled reconciliation challenge board.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRequest struct {
+	ActorDID                  string                                    `json:"actor_did,omitempty"`
+	AppealingParty            SecureCellFederationIncidentResponseParty `json:"appealing_party,omitempty"`
+	Summary                   string                                    `json:"summary,omitempty"`
+	Description               string                                    `json:"description,omitempty"`
+	EvidenceIDs               []string                                  `json:"evidence_ids,omitempty"`
+	BoardReviewThreshold      int                                       `json:"board_review_threshold,omitempty"`
+	EligibleBoardReviewerDIDs []string                                  `json:"eligible_board_reviewer_dids,omitempty"`
+	Reason                    string                                    `json:"reason,omitempty"`
+	Metadata                  map[string]string                         `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRehearingRequest
+// requests one rehearing over a previously ruled reconciliation challenge
+// appeal.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRehearingRequest struct {
 	ActorDID                  string                                    `json:"actor_did,omitempty"`
 	AppealingParty            SecureCellFederationIncidentResponseParty `json:"appealing_party,omitempty"`
 	Summary                   string                                    `json:"summary,omitempty"`
@@ -74,44 +91,59 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Metadata           map[string]string                         `json:"metadata,omitempty"`
 }
 
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecuseRequest
+// records one challenge-appeal board reviewer recusal.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecuseRequest struct {
+	ActorDID    string                                    `json:"actor_did,omitempty"`
+	BoardParty  SecureCellFederationIncidentResponseParty `json:"board_party,omitempty"`
+	Summary     string                                    `json:"summary,omitempty"`
+	Description string                                    `json:"description,omitempty"`
+	EvidenceIDs []string                                  `json:"evidence_ids,omitempty"`
+	Reason      string                                    `json:"reason,omitempty"`
+	Metadata    map[string]string                         `json:"metadata,omitempty"`
+}
+
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter
 // narrows operator views across challenge-board appeals.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter struct {
-	CellID         string                                                                                  `json:"cell_id,omitempty"`
-	OrganizationID string                                                                                  `json:"organization_id,omitempty"`
-	IncidentID     string                                                                                  `json:"incident_id,omitempty"`
-	ResponseID     string                                                                                  `json:"response_id,omitempty"`
-	DirectiveID    string                                                                                  `json:"directive_id,omitempty"`
-	ExtensionID    string                                                                                  `json:"extension_id,omitempty"`
-	DisputeID      string                                                                                  `json:"dispute_id,omitempty"`
-	AppealID       string                                                                                  `json:"appeal_id,omitempty"`
-	ComparisonKey  string                                                                                  `json:"comparison_key,omitempty"`
-	ChallengeID    string                                                                                  `json:"challenge_id,omitempty"`
-	Status         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus `json:"status,omitempty"`
-	Since          *time.Time                                                                              `json:"since,omitempty"`
-	Until          *time.Time                                                                              `json:"until,omitempty"`
-	Limit          int                                                                                     `json:"limit,omitempty"`
+	CellID                  string                                                                                  `json:"cell_id,omitempty"`
+	OrganizationID          string                                                                                  `json:"organization_id,omitempty"`
+	IncidentID              string                                                                                  `json:"incident_id,omitempty"`
+	ResponseID              string                                                                                  `json:"response_id,omitempty"`
+	DirectiveID             string                                                                                  `json:"directive_id,omitempty"`
+	ExtensionID             string                                                                                  `json:"extension_id,omitempty"`
+	DisputeID               string                                                                                  `json:"dispute_id,omitempty"`
+	AppealID                string                                                                                  `json:"appeal_id,omitempty"`
+	ComparisonKey           string                                                                                  `json:"comparison_key,omitempty"`
+	ChallengeID             string                                                                                  `json:"challenge_id,omitempty"`
+	ChallengeAppealID       string                                                                                  `json:"challenge_appeal_id,omitempty"`
+	ParentChallengeAppealID string                                                                                  `json:"parent_challenge_appeal_id,omitempty"`
+	Status                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus `json:"status,omitempty"`
+	Since                   *time.Time                                                                              `json:"since,omitempty"`
+	Until                   *time.Time                                                                              `json:"until,omitempty"`
+	Limit                   int                                                                                     `json:"limit,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFilter
 // narrows operator views across challenge-board appeal evidence records.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFilter struct {
-	CellID         string                                                                                      `json:"cell_id,omitempty"`
-	OrganizationID string                                                                                      `json:"organization_id,omitempty"`
-	IncidentID     string                                                                                      `json:"incident_id,omitempty"`
-	ResponseID     string                                                                                      `json:"response_id,omitempty"`
-	DirectiveID    string                                                                                      `json:"directive_id,omitempty"`
-	ExtensionID    string                                                                                      `json:"extension_id,omitempty"`
-	DisputeID      string                                                                                      `json:"dispute_id,omitempty"`
-	AppealID       string                                                                                      `json:"appeal_id,omitempty"`
-	ComparisonKey  string                                                                                      `json:"comparison_key,omitempty"`
-	ChallengeID    string                                                                                      `json:"challenge_id,omitempty"`
-	Status         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus     `json:"status,omitempty"`
-	Action         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType `json:"action,omitempty"`
-	ActorDID       string                                                                                      `json:"actor_did,omitempty"`
-	Since          *time.Time                                                                                  `json:"since,omitempty"`
-	Until          *time.Time                                                                                  `json:"until,omitempty"`
-	Limit          int                                                                                         `json:"limit,omitempty"`
+	CellID            string                                                                                      `json:"cell_id,omitempty"`
+	OrganizationID    string                                                                                      `json:"organization_id,omitempty"`
+	IncidentID        string                                                                                      `json:"incident_id,omitempty"`
+	ResponseID        string                                                                                      `json:"response_id,omitempty"`
+	DirectiveID       string                                                                                      `json:"directive_id,omitempty"`
+	ExtensionID       string                                                                                      `json:"extension_id,omitempty"`
+	DisputeID         string                                                                                      `json:"dispute_id,omitempty"`
+	AppealID          string                                                                                      `json:"appeal_id,omitempty"`
+	ComparisonKey     string                                                                                      `json:"comparison_key,omitempty"`
+	ChallengeID       string                                                                                      `json:"challenge_id,omitempty"`
+	ChallengeAppealID string                                                                                      `json:"challenge_appeal_id,omitempty"`
+	Status            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus     `json:"status,omitempty"`
+	Action            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionType `json:"action,omitempty"`
+	ActorDID          string                                                                                      `json:"actor_did,omitempty"`
+	Since             *time.Time                                                                                  `json:"since,omitempty"`
+	Until             *time.Time                                                                                  `json:"until,omitempty"`
+	Limit             int                                                                                         `json:"limit,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord
@@ -134,6 +166,8 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	AppealID                        string                                                                                          `json:"appeal_id,omitempty"`
 	ChallengeID                     string                                                                                          `json:"challenge_id"`
 	ChallengeAppealID               string                                                                                          `json:"challenge_appeal_id"`
+	ParentChallengeAppealID         string                                                                                          `json:"parent_challenge_appeal_id,omitempty"`
+	ChallengeAppealGeneration       int                                                                                             `json:"challenge_appeal_generation,omitempty"`
 	ReconciliationStatus            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus                        `json:"reconciliation_status"`
 	ReviewStatus                    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus                  `json:"review_status"`
 	AttestationStatus               SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatus `json:"attestation_status"`
@@ -146,6 +180,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	EnforcementAcknowledgementParty SecureCellFederationIncidentResponseParty                                                       `json:"enforcement_acknowledgement_party,omitempty"`
 	BoardReviewThreshold            int                                                                                             `json:"board_review_threshold,omitempty"`
 	EligibleBoardReviewerDIDs       []string                                                                                        `json:"eligible_board_reviewer_dids,omitempty"`
+	BoardRecusalCount               int                                                                                             `json:"board_recusal_count,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                             `json:"board_committee_member_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                             `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                             `json:"board_outstanding_votes,omitempty"`
@@ -161,6 +196,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	EnforcementSummary              string                                                                                          `json:"enforcement_summary,omitempty"`
 	EnforcementDescription          string                                                                                          `json:"enforcement_description,omitempty"`
 	EvidenceIDs                     []string                                                                                        `json:"evidence_ids,omitempty"`
+	RecusalID                       string                                                                                          `json:"recusal_id,omitempty"`
 	TransitionID                    string                                                                                          `json:"transition_id,omitempty"`
 	PolicyReceiptID                 string                                                                                          `json:"policy_receipt_id,omitempty"`
 	PolicyReceiptHash               string                                                                                          `json:"policy_receipt_hash,omitempty"`
@@ -192,6 +228,8 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	AppealID                        string                                                                                          `json:"appeal_id,omitempty"`
 	ChallengeID                     string                                                                                          `json:"challenge_id"`
 	ChallengeAppealID               string                                                                                          `json:"challenge_appeal_id"`
+	ParentChallengeAppealID         string                                                                                          `json:"parent_challenge_appeal_id,omitempty"`
+	ChallengeAppealGeneration       int                                                                                             `json:"challenge_appeal_generation,omitempty"`
 	ReconciliationStatus            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus                        `json:"reconciliation_status"`
 	ReviewStatus                    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus                  `json:"review_status"`
 	AttestationStatus               SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatus `json:"attestation_status"`
@@ -206,6 +244,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	EvidenceIDs                     []string                                                                                        `json:"evidence_ids,omitempty"`
 	BoardReviewThreshold            int                                                                                             `json:"board_review_threshold,omitempty"`
 	EligibleBoardReviewerDIDs       []string                                                                                        `json:"eligible_board_reviewer_dids,omitempty"`
+	BoardRecusalCount               int                                                                                             `json:"board_recusal_count,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                             `json:"board_committee_member_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                             `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                             `json:"board_outstanding_votes,omitempty"`
@@ -227,6 +266,59 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	UpdatedAt                       time.Time                                                                                       `json:"updated_at"`
 	ActionCount                     int                                                                                             `json:"action_count"`
 	Metadata                        map[string]string                                                                               `json:"metadata,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter
+// narrows operator views across challenge-appeal reviewer recusals.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter struct {
+	CellID                  string     `json:"cell_id,omitempty"`
+	OrganizationID          string     `json:"organization_id,omitempty"`
+	IncidentID              string     `json:"incident_id,omitempty"`
+	ResponseID              string     `json:"response_id,omitempty"`
+	DirectiveID             string     `json:"directive_id,omitempty"`
+	ExtensionID             string     `json:"extension_id,omitempty"`
+	DisputeID               string     `json:"dispute_id,omitempty"`
+	AppealID                string     `json:"appeal_id,omitempty"`
+	ComparisonKey           string     `json:"comparison_key,omitempty"`
+	ChallengeID             string     `json:"challenge_id,omitempty"`
+	ChallengeAppealID       string     `json:"challenge_appeal_id,omitempty"`
+	ParentChallengeAppealID string     `json:"parent_challenge_appeal_id,omitempty"`
+	ActorDID                string     `json:"actor_did,omitempty"`
+	Since                   *time.Time `json:"since,omitempty"`
+	Until                   *time.Time `json:"until,omitempty"`
+	Limit                   int        `json:"limit,omitempty"`
+}
+
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary
+// projects one evidence-bearing reviewer recusal for a challenge-appeal board.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary struct {
+	CellID                    string                                                                                  `json:"cell_id"`
+	CellName                  string                                                                                  `json:"cell_name,omitempty"`
+	Jurisdiction              string                                                                                  `json:"jurisdiction,omitempty"`
+	CellStatus                SecureCellStatus                                                                        `json:"cell_status"`
+	OrganizationID            string                                                                                  `json:"organization_id"`
+	SponsorOfRecord           string                                                                                  `json:"sponsor_of_record,omitempty"`
+	OrganizationName          string                                                                                  `json:"organization_name,omitempty"`
+	ComparisonKey             string                                                                                  `json:"comparison_key"`
+	IncidentID                string                                                                                  `json:"incident_id,omitempty"`
+	ResponseID                string                                                                                  `json:"response_id,omitempty"`
+	DirectiveID               string                                                                                  `json:"directive_id,omitempty"`
+	DirectiveTitle            string                                                                                  `json:"directive_title,omitempty"`
+	ExtensionID               string                                                                                  `json:"extension_id,omitempty"`
+	DisputeID                 string                                                                                  `json:"dispute_id,omitempty"`
+	AppealID                  string                                                                                  `json:"appeal_id,omitempty"`
+	ChallengeID               string                                                                                  `json:"challenge_id"`
+	ChallengeAppealID         string                                                                                  `json:"challenge_appeal_id"`
+	ParentChallengeAppealID   string                                                                                  `json:"parent_challenge_appeal_id,omitempty"`
+	ChallengeAppealGeneration int                                                                                     `json:"challenge_appeal_generation,omitempty"`
+	ChallengeAppealStatus     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus `json:"challenge_appeal_status"`
+	BoardParty                SecureCellFederationIncidentResponseParty                                               `json:"board_party,omitempty"`
+	RecusalID                 string                                                                                  `json:"recusal_id"`
+	ActorDID                  string                                                                                  `json:"actor_did"`
+	Summary                   string                                                                                  `json:"summary,omitempty"`
+	Description               string                                                                                  `json:"description,omitempty"`
+	CreatedAt                 time.Time                                                                               `json:"created_at"`
+	Metadata                  map[string]string                                                                       `json:"metadata,omitempty"`
 }
 
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealState struct {
@@ -356,6 +448,316 @@ func (s *Service) AppealFederationIncidentDirectiveExtensionAppealReconciliation
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ratify_vote_count":         "0",
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_overturn_vote_count":       "0",
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_summary":                   summaryText,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_description":               strings.TrimSpace(req.Description),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids":              strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// RecuseFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealReview
+// records one evidence-bearing reviewer recusal for a pending challenge-appeal
+// board review.
+func (s *Service) RecuseFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealReview(ctx context.Context, cellID string, challengeAppealID string, req SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecuseRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	challengeAppeal, err := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealByID(run, challengeAppealID)
+	if err != nil {
+		return nil, err
+	}
+	if challengeAppeal.ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: challenge appeal %q is not pending board review", challengeAppealID)
+	}
+	responseSummary, response, err := secureCellFederationIncidentResponseSummaryAndRef(run, challengeAppeal.ResponseID)
+	if err != nil {
+		return nil, err
+	}
+	boardParty := secureCellNormalizedFederationIncidentResponseParty(req.BoardParty)
+	if boardParty == "" {
+		boardParty = challengeAppeal.BoardParty
+	}
+	if boardParty != challengeAppeal.BoardParty {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: challenge appeal %q must be recused by %q", ErrPolicyDenied, challengeAppealID, challengeAppeal.BoardParty)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, boardParty) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: actor %q is not permitted to recuse from challenge appeal %q", ErrPolicyDenied, actorDID, challengeAppealID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealHasRecusal(run, challengeAppealID, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: actor %q already recused from challenge appeal %q", ErrFederationIncidentDirectiveImmutable, actorDID, challengeAppealID)
+	}
+	if !secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealReviewerAllowed(run, *challengeAppeal, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: actor %q is not an eligible board reviewer for challenge appeal %q", ErrPolicyDenied, actorDID, challengeAppealID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealHasVote(run, challengeAppealID, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: actor %q already voted on challenge appeal %q", ErrFederationIncidentDirectiveImmutable, actorDID, challengeAppealID)
+	}
+	summary := firstNonEmpty(strings.TrimSpace(req.Summary), secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary(*challengeAppeal))
+	receipt, err := s.evaluateStage(ctx, run.request, "recuse_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review", lastReceiptHash(run.result), map[string]string{
+		"federation_organization_id":                                                            challengeAppeal.OrganizationID,
+		"federation_incident_id":                                                                challengeAppeal.IncidentID,
+		"federation_incident_response_id":                                                       challengeAppeal.ResponseID,
+		"federation_incident_directive_id":                                                      challengeAppeal.DirectiveID,
+		"federation_incident_directive_extension_id":                                            challengeAppeal.ExtensionID,
+		"federation_incident_directive_extension_dispute_id":                                    challengeAppeal.DisputeID,
+		"federation_incident_directive_extension_appeal_id":                                     challengeAppeal.AppealID,
+		"federation_incident_directive_extension_appeal_reconciliation_key":                     challengeAppeal.ComparisonKey,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_id":            challengeAppeal.ChallengeID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_status":        string(challengeAppeal.ChallengeStatus),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_ruling":        string(challengeAppeal.ChallengeRuling),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id":     challengeAppeal.ChallengeAppealID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status": string(challengeAppeal.ChallengeAppealStatus),
+		"transition_reason": firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w", ErrPolicyDenied)
+	}
+
+	recusalID := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalID(challengeAppeal.ChallengeAppealID, actorDID, challengeAppeal.BoardRecusalCount)
+	updatedReviewers := append([]string(nil), challengeAppeal.EligibleBoardReviewerDIDs...)
+	if len(updatedReviewers) > 0 {
+		filtered := make([]string, 0, len(updatedReviewers))
+		for _, reviewer := range updatedReviewers {
+			if !strings.EqualFold(strings.TrimSpace(reviewer), actorDID) {
+				filtered = append(filtered, reviewer)
+			}
+		}
+		updatedReviewers = uniqueTrimmedStrings(filtered)
+	}
+	committeeMemberCount := len(updatedReviewers)
+	if committeeMemberCount == 0 {
+		committeeMemberCount = max(challengeAppeal.BoardCommitteeMemberCount-1, challengeAppeal.BoardRecordedVoteCount)
+	}
+	bestVoteCount := challengeAppeal.RatifyVoteCount
+	if challengeAppeal.OverturnVoteCount > bestVoteCount {
+		bestVoteCount = challengeAppeal.OverturnVoteCount
+	}
+	missingQuorumCount := challengeAppeal.BoardReviewThreshold - bestVoteCount
+	if missingQuorumCount < 0 {
+		missingQuorumCount = 0
+	}
+	outstandingVotes := committeeMemberCount - challengeAppeal.BoardRecordedVoteCount
+	if outstandingVotes < 0 {
+		outstandingVotes = 0
+	}
+	thresholdSatisfied := bestVoteCount >= challengeAppeal.BoardReviewThreshold
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_recused", recusalID),
+		Action:           "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_recused",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal",
+		TargetDID:        challengeAppeal.ChallengeAppealID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_organization_id":                                                                               challengeAppeal.OrganizationID,
+			"federation_sponsor_of_record":                                                                             responseSummary.SponsorOfRecord,
+			"federation_organization_name":                                                                             challengeAppeal.OrganizationName,
+			"federation_incident_id":                                                                                   challengeAppeal.IncidentID,
+			"federation_incident_response_id":                                                                          challengeAppeal.ResponseID,
+			"federation_incident_directive_id":                                                                         challengeAppeal.DirectiveID,
+			"federation_incident_directive_title":                                                                      challengeAppeal.DirectiveTitle,
+			"federation_incident_directive_extension_id":                                                               challengeAppeal.ExtensionID,
+			"federation_incident_directive_extension_dispute_id":                                                       challengeAppeal.DisputeID,
+			"federation_incident_directive_extension_appeal_id":                                                        challengeAppeal.AppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_key":                                        challengeAppeal.ComparisonKey,
+			"federation_incident_directive_extension_appeal_reconciliation_status":                                     string(challengeAppeal.ReconciliationStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_review":                                     string(challengeAppeal.ReviewStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_attestation_status":                         string(challengeAppeal.AttestationStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_id":                               challengeAppeal.ChallengeID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_status":                           string(challengeAppeal.ChallengeStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_ruling":                           string(challengeAppeal.ChallengeRuling),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id":                        challengeAppeal.ChallengeAppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_parent_id":                 challengeAppeal.ParentChallengeAppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_generation":                fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealGeneration(*challengeAppeal)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status":                    string(challengeAppeal.ChallengeAppealStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appealing_party":                  string(challengeAppeal.AppealingParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_party":               string(challengeAppeal.BoardParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ack_party":                 string(challengeAppeal.EnforcementAcknowledgementParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_id":                recusalID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recused_actor":             actorDID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold":           fmt.Sprintf("%d", challengeAppeal.BoardReviewThreshold),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_members":             strings.Join(updatedReviewers, ","),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recusal_count":       fmt.Sprintf("%d", challengeAppeal.BoardRecusalCount+1),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members":   fmt.Sprintf("%d", committeeMemberCount),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes":      fmt.Sprintf("%d", challengeAppeal.BoardRecordedVoteCount),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes":   fmt.Sprintf("%d", outstandingVotes),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_missing_quorum":      fmt.Sprintf("%d", missingQuorumCount),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold_satisfied": fmt.Sprintf("%t", thresholdSatisfied),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ratify_vote_count":         fmt.Sprintf("%d", challengeAppeal.RatifyVoteCount),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_overturn_vote_count":       fmt.Sprintf("%d", challengeAppeal.OverturnVoteCount),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruling":                    string(challengeAppeal.Ruling),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_summary":                   challengeAppeal.Summary,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_description":               challengeAppeal.Description,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids":              strings.Join(challengeAppeal.EvidenceIDs, ","),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_summary":           summary,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_description":       strings.TrimSpace(req.Description),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_evidence_ids":      strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// RehearFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal
+// opens one governed rehearing over a previously ruled reconciliation
+// challenge appeal.
+func (s *Service) RehearFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal(ctx context.Context, cellID string, challengeAppealID string, req SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRehearingRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	challengeAppeal, err := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealByID(run, challengeAppealID)
+	if err != nil {
+		return nil, err
+	}
+	if challengeAppeal.ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusRatified &&
+		challengeAppeal.ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusOverturned &&
+		challengeAppeal.ChallengeAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusEnforcementAcknowledged {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: challenge appeal %q is not eligible for rehearing", ErrFederationIncidentDirectiveImmutable, challengeAppealID)
+	}
+	if latest := secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppeal(run, challengeAppeal.ChallengeID); latest == nil || !strings.EqualFold(strings.TrimSpace(latest.ChallengeAppealID), strings.TrimSpace(challengeAppealID)) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: challenge appeal %q is not the latest appeal for challenge %q", ErrFederationIncidentDirectiveImmutable, challengeAppealID, challengeAppeal.ChallengeID)
+	}
+	responseSummary, response, err := secureCellFederationIncidentResponseSummaryAndRef(run, challengeAppeal.ResponseID)
+	if err != nil {
+		return nil, err
+	}
+	appealingParty := secureCellNormalizedFederationIncidentResponseParty(req.AppealingParty)
+	if appealingParty == "" {
+		if challengeAppeal.EnforcementAcknowledgementParty != "" {
+			appealingParty = challengeAppeal.EnforcementAcknowledgementParty
+		} else {
+			appealingParty = challengeAppeal.AppealingParty
+		}
+	}
+	if appealingParty != SecureCellFederationIncidentResponsePartyLocalOrg && appealingParty != SecureCellFederationIncidentResponsePartyCounterpartyOrg {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: invalid rehearing party %q", ErrPolicyDenied, appealingParty)
+	}
+	boardParty := secureCellFederationIncidentResponseOppositeParty(appealingParty)
+	if boardParty == "" {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: board party is required", ErrPolicyDenied)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, appealingParty) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: actor %q is not permitted to request rehearing for challenge appeal %q", ErrPolicyDenied, actorDID, challengeAppealID)
+	}
+	eligibleReviewers := secureCellFederationIncidentDirectiveExtensionAppealEligibleReviewers(run, *response, boardParty, req.EligibleBoardReviewerDIDs)
+	if len(eligibleReviewers) == 0 {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w: no eligible board reviewers are available for challenge appeal %q", ErrPolicyDenied, challengeAppealID)
+	}
+	summary := firstNonEmpty(strings.TrimSpace(req.Summary), secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealDefaultRehearingSummary(*challengeAppeal))
+	now := time.Now().UTC()
+	rehearingID := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealID(challengeAppeal.ChallengeID, actorDID, now, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealCount(run, challengeAppeal.ChallengeID))
+	rehearingGeneration := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealGeneration(*challengeAppeal) + 1
+	receipt, err := s.evaluateStage(ctx, run.request, "rehear_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal", lastReceiptHash(run.result), map[string]string{
+		"federation_organization_id":                                                                     challengeAppeal.OrganizationID,
+		"federation_incident_id":                                                                         challengeAppeal.IncidentID,
+		"federation_incident_response_id":                                                                challengeAppeal.ResponseID,
+		"federation_incident_directive_id":                                                               challengeAppeal.DirectiveID,
+		"federation_incident_directive_extension_id":                                                     challengeAppeal.ExtensionID,
+		"federation_incident_directive_extension_dispute_id":                                             challengeAppeal.DisputeID,
+		"federation_incident_directive_extension_appeal_id":                                              challengeAppeal.AppealID,
+		"federation_incident_directive_extension_appeal_reconciliation_key":                              challengeAppeal.ComparisonKey,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_id":                     challengeAppeal.ChallengeID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_status":                 string(challengeAppeal.ChallengeStatus),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_ruling":                 string(challengeAppeal.ChallengeRuling),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id":              rehearingID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_parent_id":       challengeAppeal.ChallengeAppealID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_generation":      fmt.Sprintf("%d", rehearingGeneration),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status":          string(SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appealing_party":        string(appealingParty),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_party":     string(boardParty),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ack_party":       string(appealingParty),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold": fmt.Sprintf("%d", normalizeSecureCellThreshold(req.BoardReviewThreshold)),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_members":   strings.Join(eligibleReviewers, ","),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_summary":         summary,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_description":     strings.TrimSpace(req.Description),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids":    strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
+		"transition_reason": firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal: %w", ErrPolicyDenied)
+	}
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_rehearing_requested", rehearingID),
+		Action:           "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_rehearing_requested",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal",
+		TargetDID:        rehearingID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_organization_id":                                                                               challengeAppeal.OrganizationID,
+			"federation_sponsor_of_record":                                                                             responseSummary.SponsorOfRecord,
+			"federation_organization_name":                                                                             challengeAppeal.OrganizationName,
+			"federation_incident_id":                                                                                   challengeAppeal.IncidentID,
+			"federation_incident_response_id":                                                                          challengeAppeal.ResponseID,
+			"federation_incident_directive_id":                                                                         challengeAppeal.DirectiveID,
+			"federation_incident_directive_title":                                                                      challengeAppeal.DirectiveTitle,
+			"federation_incident_directive_extension_id":                                                               challengeAppeal.ExtensionID,
+			"federation_incident_directive_extension_dispute_id":                                                       challengeAppeal.DisputeID,
+			"federation_incident_directive_extension_appeal_id":                                                        challengeAppeal.AppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_key":                                        challengeAppeal.ComparisonKey,
+			"federation_incident_directive_extension_appeal_reconciliation_status":                                     string(challengeAppeal.ReconciliationStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_review":                                     string(challengeAppeal.ReviewStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_attestation_status":                         string(challengeAppeal.AttestationStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_id":                               challengeAppeal.ChallengeID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_status":                           string(challengeAppeal.ChallengeStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_ruling":                           string(challengeAppeal.ChallengeRuling),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id":                        rehearingID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_parent_id":                 challengeAppeal.ChallengeAppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_generation":                fmt.Sprintf("%d", rehearingGeneration),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status":                    string(SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appealing_party":                  string(appealingParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_party":               string(boardParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ack_party":                 string(appealingParty),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold":           fmt.Sprintf("%d", normalizeSecureCellThreshold(req.BoardReviewThreshold)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_members":             strings.Join(eligibleReviewers, ","),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recusal_count":       "0",
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members":   fmt.Sprintf("%d", len(eligibleReviewers)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes":      "0",
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes":   fmt.Sprintf("%d", len(eligibleReviewers)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_missing_quorum":      fmt.Sprintf("%d", normalizeSecureCellThreshold(req.BoardReviewThreshold)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold_satisfied": "false",
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ratify_vote_count":         "0",
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_overturn_vote_count":       "0",
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_summary":                   summary,
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_description":               strings.TrimSpace(req.Description),
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids":              strings.Join(uniqueTrimmedStrings(req.EvidenceIDs), ","),
 		}),
@@ -730,9 +1132,84 @@ func (s *Service) ListFederationIncidentDirectiveExtensionAppealReconciliationCh
 	return items, nil
 }
 
+func (s *Service) ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusals(_ context.Context, filter SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter) ([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary, error) {
+	if s == nil {
+		return nil, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if !secureCellFederationRunMatchesCellFilter(run, strings.TrimSpace(filter.CellID)) {
+			continue
+		}
+		for _, transition := range run.result.Transitions {
+			record, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFromTransition(run, transition)
+			if !ok || record.Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused {
+				continue
+			}
+			recusal := SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary{
+				CellID:                    record.CellID,
+				CellName:                  record.CellName,
+				Jurisdiction:              record.Jurisdiction,
+				CellStatus:                record.CellStatus,
+				OrganizationID:            record.OrganizationID,
+				SponsorOfRecord:           record.SponsorOfRecord,
+				OrganizationName:          record.OrganizationName,
+				ComparisonKey:             record.ComparisonKey,
+				IncidentID:                record.IncidentID,
+				ResponseID:                record.ResponseID,
+				DirectiveID:               record.DirectiveID,
+				DirectiveTitle:            record.DirectiveTitle,
+				ExtensionID:               record.ExtensionID,
+				DisputeID:                 record.DisputeID,
+				AppealID:                  record.AppealID,
+				ChallengeID:               record.ChallengeID,
+				ChallengeAppealID:         record.ChallengeAppealID,
+				ParentChallengeAppealID:   record.ParentChallengeAppealID,
+				ChallengeAppealGeneration: max(record.ChallengeAppealGeneration, 1),
+				ChallengeAppealStatus:     record.ChallengeAppealStatus,
+				BoardParty:                record.BoardParty,
+				RecusalID:                 record.RecusalID,
+				ActorDID:                  record.ActorDID,
+				Summary:                   firstNonEmpty(record.Summary, strings.TrimSpace(record.Metadata["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_summary"])),
+				Description:               firstNonEmpty(record.Description, strings.TrimSpace(record.Metadata["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_description"])),
+				CreatedAt:                 record.OccurredAt,
+				Metadata:                  cloneStringMap(record.Metadata),
+			}
+			if !matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter(recusal, filter) {
+				continue
+			}
+			items = append(items, recusal)
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].CreatedAt.Equal(items[j].CreatedAt) {
+			if items[i].CellID == items[j].CellID {
+				return items[i].RecusalID < items[j].RecusalID
+			}
+			return items[i].CellID < items[j].CellID
+		}
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealID(challengeID string, actorDID string, createdAt time.Time, ordinal int) string {
 	seed := fmt.Sprintf("%s|%s|%s|%d", strings.TrimSpace(challengeID), strings.TrimSpace(actorDID), createdAt.UTC().Format(time.RFC3339Nano), ordinal+1)
 	return fmt.Sprintf("%x-appeal-reconciliation-challenge-appeal-%x", sha256.Sum256([]byte(strings.TrimSpace(challengeID))), sha256.Sum256([]byte(seed)))
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalID(challengeAppealID string, actorDID string, ordinal int) string {
+	seed := fmt.Sprintf("%s|%s|%d", strings.TrimSpace(challengeAppealID), strings.TrimSpace(actorDID), ordinal+1)
+	return fmt.Sprintf("%x-appeal-reconciliation-challenge-appeal-recusal-%x", sha256.Sum256([]byte(strings.TrimSpace(challengeAppealID))), sha256.Sum256([]byte(seed)))
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummaryText(challenge SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary) string {
@@ -746,6 +1223,24 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	}
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary(appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) string {
+	if strings.TrimSpace(appeal.ParentChallengeAppealID) != "" {
+		return "recuse from reconciliation challenge appeal rehearing board review"
+	}
+	return "recuse from reconciliation challenge appeal board review"
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealDefaultRehearingSummary(appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) string {
+	switch secureCellNormalizedFederationIncidentDirectiveExtensionAppealRuling(appeal.Ruling) {
+	case SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn:
+		return "request rehearing of overturned reconciliation challenge appeal ruling"
+	case SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify:
+		return "request rehearing of ratified reconciliation challenge appeal ruling"
+	default:
+		return "request rehearing of reconciliation challenge appeal ruling"
+	}
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealEnforcementSummary(appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) string {
 	switch appeal.ChallengeAppealStatus {
 	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusRatified:
@@ -755,6 +1250,13 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	default:
 		return "acknowledge reconciliation challenge appeal ruling"
 	}
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealGeneration(appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) int {
+	if appeal.ChallengeAppealGeneration > 0 {
+		return appeal.ChallengeAppealGeneration
+	}
+	return 1
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusForRuling(ruling SecureCellFederationIncidentDirectiveExtensionAppealRuling) SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus {
@@ -772,6 +1274,10 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	switch strings.TrimSpace(action) {
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appealed":
 		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed, true
+	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_rehearing_requested":
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRehearingRequested, true
+	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_recused":
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused, true
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_vote_recorded":
 		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionVoteRecorded, true
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruled":
@@ -787,6 +1293,10 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	switch action {
 	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed:
 		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appealed"
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRehearingRequested:
+		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_rehearing_requested"
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused:
+		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_recused"
 	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionVoteRecorded:
 		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_vote_recorded"
 	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRuled:
@@ -822,6 +1332,8 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		AppealID:                        strings.TrimSpace(meta["federation_incident_directive_extension_appeal_id"]),
 		ChallengeID:                     strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_id"]),
 		ChallengeAppealID:               strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id"]),
+		ParentChallengeAppealID:         strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_parent_id"]),
+		ChallengeAppealGeneration:       secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_generation"),
 		ReconciliationStatus:            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_status"])),
 		ReviewStatus:                    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_review"])),
 		AttestationStatus:               SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_attestation_status"])),
@@ -834,6 +1346,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		EnforcementAcknowledgementParty: SecureCellFederationIncidentResponseParty(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ack_party"])),
 		BoardReviewThreshold:            secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold"),
 		EligibleBoardReviewerDIDs:       uniqueTrimmedStrings(strings.Split(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_members"]), ",")),
+		BoardRecusalCount:               secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recusal_count"),
 		BoardCommitteeMemberCount:       secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members"),
 		BoardRecordedVoteCount:          secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes"),
 		BoardOutstandingVotes:           secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes"),
@@ -848,7 +1361,8 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		RulingDescription:               strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruling_description"]),
 		EnforcementSummary:              strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_summary"]),
 		EnforcementDescription:          strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_description"]),
-		EvidenceIDs:                     uniqueTrimmedStrings(strings.Split(firstNonEmpty(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_evidence_ids"]), strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruling_evidence_ids"]), strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids"])), ",")),
+		EvidenceIDs:                     uniqueTrimmedStrings(strings.Split(firstNonEmpty(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_evidence_ids"]), strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_evidence_ids"]), strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruling_evidence_ids"]), strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_evidence_ids"])), ",")),
+		RecusalID:                       strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_recusal_id"]),
 		TransitionID:                    strings.TrimSpace(transition.ID),
 		ActorDID:                        strings.TrimSpace(transition.Actor),
 		Reason:                          firstNonEmpty(strings.TrimSpace(transition.Reason), strings.TrimSpace(meta["transition_reason"])),
@@ -932,6 +1446,8 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 					AppealID:                        record.AppealID,
 					ChallengeID:                     record.ChallengeID,
 					ChallengeAppealID:               challengeAppealID,
+					ParentChallengeAppealID:         record.ParentChallengeAppealID,
+					ChallengeAppealGeneration:       max(record.ChallengeAppealGeneration, 1),
 					ReconciliationStatus:            record.ReconciliationStatus,
 					ReviewStatus:                    record.ReviewStatus,
 					AttestationStatus:               record.AttestationStatus,
@@ -946,6 +1462,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 					EvidenceIDs:                     append([]string(nil), record.EvidenceIDs...),
 					BoardReviewThreshold:            normalizeSecureCellThreshold(record.BoardReviewThreshold),
 					EligibleBoardReviewerDIDs:       append([]string(nil), record.EligibleBoardReviewerDIDs...),
+					BoardRecusalCount:               record.BoardRecusalCount,
 					CreatedBy:                       record.ActorDID,
 					CreatedAt:                       record.OccurredAt,
 					UpdatedAt:                       record.OccurredAt,
@@ -961,6 +1478,12 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		state.summary.AttestationStatus = record.AttestationStatus
 		state.summary.ChallengeStatus = record.ChallengeStatus
 		state.summary.ChallengeRuling = record.ChallengeRuling
+		if strings.TrimSpace(record.ParentChallengeAppealID) != "" {
+			state.summary.ParentChallengeAppealID = record.ParentChallengeAppealID
+		}
+		if record.ChallengeAppealGeneration > 0 {
+			state.summary.ChallengeAppealGeneration = record.ChallengeAppealGeneration
+		}
 		if reviewers := uniqueTrimmedStrings(record.EligibleBoardReviewerDIDs); len(reviewers) > 0 {
 			state.summary.EligibleBoardReviewerDIDs = reviewers
 		}
@@ -978,8 +1501,12 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		}
 		state.summary.Metadata = mergeStringMaps(state.summary.Metadata, record.Metadata)
 		state.summary.ActionCount++
-		if record.Action == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed {
+		if record.Action == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionAppealed ||
+			record.Action == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRehearingRequested {
 			state.summary.ChallengeAppealStatus = SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview
+		}
+		if record.Action == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused {
+			state.summary.BoardRecusalCount = max(state.summary.BoardRecusalCount, record.BoardRecusalCount)
 		}
 		if record.Ruling != "" && strings.TrimSpace(record.ActorDID) != "" && record.Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionEnforcementAcknowledged {
 			state.votes[strings.TrimSpace(record.ActorDID)] = record.Ruling
@@ -1039,6 +1566,9 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		}
 		state.summary.Metadata = mergeStringMaps(state.summary.Metadata, map[string]string{
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status":                    string(state.summary.ChallengeAppealStatus),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_parent_id":                 state.summary.ParentChallengeAppealID,
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_generation":                fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealGeneration(state.summary)),
+			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recusal_count":       fmt.Sprintf("%d", state.summary.BoardRecusalCount),
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members":   fmt.Sprintf("%d", state.summary.BoardCommitteeMemberCount),
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes":      fmt.Sprintf("%d", state.summary.BoardRecordedVoteCount),
 			"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes":   fmt.Sprintf("%d", state.summary.BoardOutstandingVotes),
@@ -1145,6 +1675,36 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	return ratifyVotes + overturnVotes
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusedReviewerDIDs(run *secureCellRun, challengeAppealID string) []string {
+	items := make([]string, 0)
+	for _, transition := range run.result.Transitions {
+		record, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFromTransition(run, transition)
+		if !ok || record.Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionReviewRecused {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(record.ChallengeAppealID), strings.TrimSpace(challengeAppealID)) {
+			continue
+		}
+		if actor := strings.TrimSpace(record.ActorDID); actor != "" {
+			items = append(items, actor)
+		}
+	}
+	return uniqueTrimmedStrings(items)
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealHasRecusal(run *secureCellRun, challengeAppealID string, actorDID string) bool {
+	actorDID = strings.TrimSpace(actorDID)
+	if actorDID == "" {
+		return false
+	}
+	for _, candidate := range secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusedReviewerDIDs(run, challengeAppealID) {
+		if strings.EqualFold(strings.TrimSpace(candidate), actorDID) {
+			return true
+		}
+	}
+	return false
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealHasVote(run *secureCellRun, challengeAppealID string, actorDID string) bool {
 	for _, transition := range run.result.Transitions {
 		record, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFromTransition(run, transition)
@@ -1162,6 +1722,16 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		}
 	}
 	return false
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealReviewerAllowed(run *secureCellRun, challengeAppeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, actorDID string) bool {
+	if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealHasRecusal(run, challengeAppeal.ChallengeAppealID, actorDID) {
+		return false
+	}
+	if len(challengeAppeal.EligibleBoardReviewerDIDs) == 0 {
+		return true
+	}
+	return secureCellStringSliceContains(challengeAppeal.EligibleBoardReviewerDIDs, actorDID)
 }
 
 func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter(item SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, filter SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter) bool {
@@ -1190,6 +1760,12 @@ func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCh
 		return false
 	}
 	if filter.ChallengeID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeID), strings.TrimSpace(filter.ChallengeID)) {
+		return false
+	}
+	if filter.ChallengeAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeAppealID), strings.TrimSpace(filter.ChallengeAppealID)) {
+		return false
+	}
+	if filter.ParentChallengeAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ParentChallengeAppealID), strings.TrimSpace(filter.ParentChallengeAppealID)) {
 		return false
 	}
 	if filter.Status != "" && item.ChallengeAppealStatus != filter.Status {
@@ -1232,6 +1808,9 @@ func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCh
 	if filter.ChallengeID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeID), strings.TrimSpace(filter.ChallengeID)) {
 		return false
 	}
+	if filter.ChallengeAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeAppealID), strings.TrimSpace(filter.ChallengeAppealID)) {
+		return false
+	}
 	if filter.Status != "" && item.ChallengeAppealStatus != filter.Status {
 		return false
 	}
@@ -1244,10 +1823,74 @@ func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCh
 	return true
 }
 
+func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter(item SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary, filter SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter) bool {
+	if filter.OrganizationID != "" && !strings.EqualFold(strings.TrimSpace(item.OrganizationID), strings.TrimSpace(filter.OrganizationID)) {
+		return false
+	}
+	if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(item.IncidentID), strings.TrimSpace(filter.IncidentID)) {
+		return false
+	}
+	if filter.ResponseID != "" && !strings.EqualFold(strings.TrimSpace(item.ResponseID), strings.TrimSpace(filter.ResponseID)) {
+		return false
+	}
+	if filter.DirectiveID != "" && !strings.EqualFold(strings.TrimSpace(item.DirectiveID), strings.TrimSpace(filter.DirectiveID)) {
+		return false
+	}
+	if filter.ExtensionID != "" && !strings.EqualFold(strings.TrimSpace(item.ExtensionID), strings.TrimSpace(filter.ExtensionID)) {
+		return false
+	}
+	if filter.DisputeID != "" && !strings.EqualFold(strings.TrimSpace(item.DisputeID), strings.TrimSpace(filter.DisputeID)) {
+		return false
+	}
+	if filter.AppealID != "" && !strings.EqualFold(strings.TrimSpace(item.AppealID), strings.TrimSpace(filter.AppealID)) {
+		return false
+	}
+	if filter.ComparisonKey != "" && !strings.EqualFold(strings.TrimSpace(item.ComparisonKey), strings.TrimSpace(filter.ComparisonKey)) {
+		return false
+	}
+	if filter.ChallengeID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeID), strings.TrimSpace(filter.ChallengeID)) {
+		return false
+	}
+	if filter.ChallengeAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ChallengeAppealID), strings.TrimSpace(filter.ChallengeAppealID)) {
+		return false
+	}
+	if filter.ParentChallengeAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ParentChallengeAppealID), strings.TrimSpace(filter.ParentChallengeAppealID)) {
+		return false
+	}
+	if filter.ActorDID != "" && !strings.EqualFold(strings.TrimSpace(item.ActorDID), strings.TrimSpace(filter.ActorDID)) {
+		return false
+	}
+	if filter.Since != nil && item.CreatedAt.Before(filter.Since.UTC()) {
+		return false
+	}
+	if filter.Until != nil && item.CreatedAt.After(filter.Until.UTC()) {
+		return false
+	}
+	return true
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusCount(items []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, status SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus) int {
 	total := 0
 	for _, item := range items {
 		if item.ChallengeAppealStatus == status {
+			total++
+		}
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalCount(items []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) int {
+	total := 0
+	for _, item := range items {
+		total += item.BoardRecusalCount
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRehearingCount(items []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) int {
+	total := 0
+	for _, item := range items {
+		if strings.TrimSpace(item.ParentChallengeAppealID) != "" {
 			total++
 		}
 	}

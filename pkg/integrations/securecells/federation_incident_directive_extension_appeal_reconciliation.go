@@ -153,6 +153,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle st
 	Challenges                       []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary                      `json:"challenges,omitempty"`
 	ChallengeActions                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord                 `json:"challenge_actions,omitempty"`
 	ChallengeAppeals                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary                `json:"challenge_appeals,omitempty"`
+	ChallengeAppealRecusals          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary         `json:"challenge_appeal_recusals,omitempty"`
 	ChallengeAppealActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord           `json:"challenge_appeal_actions,omitempty"`
 	ChallengeAppealAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord `json:"challenge_appeal_automation_actions,omitempty"`
 	AutomationActions                []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord                `json:"automation_actions,omitempty"`
@@ -272,6 +273,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		}
 	}
 	challengeAppealActions := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionsForComparisonKey(run, comparisonKey)
+	challengeAppealRecusals, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter{
+		CellID:        cellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		return nil, err
+	}
 	automationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionFilter{
 		CellID:        cellID,
 		ComparisonKey: comparisonKey,
@@ -319,6 +327,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		Challenges:                       append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary(nil), challenges...),
 		ChallengeActions:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord(nil), challengeActions...),
 		ChallengeAppeals:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary(nil), challengeAppeals...),
+		ChallengeAppealRecusals:          append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary(nil), challengeAppealRecusals...),
 		ChallengeAppealActions:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord(nil), challengeAppealActions...),
 		ChallengeAppealAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord(nil), challengeAppealAutomationActions...),
 		AutomationActions:                append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord(nil), automationActions...),
