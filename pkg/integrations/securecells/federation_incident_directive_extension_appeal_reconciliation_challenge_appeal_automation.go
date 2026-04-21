@@ -29,6 +29,7 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	dueAt         time.Time
 	tierID        string
 	targetDID     string
+	targetSource  string
 }
 
 type SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealFilter struct {
@@ -77,6 +78,7 @@ type SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationCh
 	OverdueReason                   string                                                                                  `json:"overdue_reason"`
 	BoardReviewThreshold            int                                                                                     `json:"board_review_threshold,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                     `json:"board_committee_member_count,omitempty"`
+	BoardDelegationCount            int                                                                                     `json:"board_delegation_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                     `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                     `json:"board_outstanding_votes,omitempty"`
 	BoardMissingQuorumCount         int                                                                                     `json:"board_missing_quorum_count,omitempty"`
@@ -139,6 +141,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	PendingAction                   string                                                                                  `json:"pending_action,omitempty"`
 	BoardReviewThreshold            int                                                                                     `json:"board_review_threshold,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                     `json:"board_committee_member_count,omitempty"`
+	BoardDelegationCount            int                                                                                     `json:"board_delegation_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                     `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                     `json:"board_outstanding_votes,omitempty"`
 	BoardMissingQuorumCount         int                                                                                     `json:"board_missing_quorum_count,omitempty"`
@@ -167,6 +170,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	CellsScanned       int       `json:"cells_scanned"`
 	AppealsScanned     int       `json:"appeals_scanned"`
 	CellsMutated       int       `json:"cells_mutated"`
+	CommitteesExpanded int       `json:"committees_expanded"`
 	ResponsesEscalated int       `json:"responses_escalated"`
 	ContractsSuspended int       `json:"contracts_suspended"`
 	CellIDs            []string  `json:"cell_ids,omitempty"`
@@ -241,6 +245,7 @@ func (s *Service) ListOverdueFederationIncidentDirectiveExtensionAppealReconcili
 				OverdueReason:                   overdue.reason,
 				BoardReviewThreshold:            item.BoardReviewThreshold,
 				BoardCommitteeMemberCount:       item.BoardCommitteeMemberCount,
+				BoardDelegationCount:            item.BoardDelegationCount,
 				BoardRecordedVoteCount:          item.BoardRecordedVoteCount,
 				BoardOutstandingVotes:           item.BoardOutstandingVotes,
 				BoardMissingQuorumCount:         item.BoardMissingQuorumCount,
@@ -385,6 +390,7 @@ func (s *Service) ListFederationIncidentDirectiveExtensionAppealReconciliationCh
 				PendingAction:                   strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_pending_action"]),
 				BoardReviewThreshold:            secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold"),
 				BoardCommitteeMemberCount:       secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members"),
+				BoardDelegationCount:            secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_delegation_count"),
 				BoardRecordedVoteCount:          secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes"),
 				BoardOutstandingVotes:           secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes"),
 				BoardMissingQuorumCount:         secureCellMetadataInt(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_missing_quorum"),
@@ -398,7 +404,7 @@ func (s *Service) ListFederationIncidentDirectiveExtensionAppealReconciliationCh
 				Action:                          transition.Action,
 				Trigger:                         strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_trigger"]),
 				TierID:                          strings.TrimSpace(data["federation_incident_response_tier_id"]),
-				TargetDID:                       strings.TrimSpace(data["federation_incident_response_target_did"]),
+				TargetDID:                       firstNonEmpty(strings.TrimSpace(data["federation_incident_response_target_did"]), strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_delegated_to"])),
 				DueAt:                           parseSecureCellTransitionDueAtWithKey(data, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_due_at"),
 				Actor:                           transition.Actor,
 				AutomatedActor:                  strings.TrimSpace(data["automated_actor"]),
@@ -462,7 +468,7 @@ func (s *Service) SweepFederationIncidentDirectiveExtensionAppealReconciliationC
 			if !ok {
 				continue
 			}
-			if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationAlreadyApplied(run, appeal.ChallengeAppealID, appeal.ChallengeAppealStatus, overdue.pendingAction, plan.action) {
+			if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationAlreadyApplied(run, appeal.ChallengeAppealID, appeal.ChallengeAppealStatus, overdue.pendingAction, plan.action, plan.targetDID) {
 				continue
 			}
 
@@ -478,6 +484,7 @@ func (s *Service) SweepFederationIncidentDirectiveExtensionAppealReconciliationC
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ack_party":                 string(appeal.EnforcementAcknowledgementParty),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_threshold":           strconv.Itoa(appeal.BoardReviewThreshold),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_committee_members":   strconv.Itoa(appeal.BoardCommitteeMemberCount),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_delegation_count":    strconv.Itoa(appeal.BoardDelegationCount),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_recorded_votes":      strconv.Itoa(appeal.BoardRecordedVoteCount),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_outstanding_votes":   strconv.Itoa(appeal.BoardOutstandingVotes),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_board_missing_quorum":      strconv.Itoa(appeal.BoardMissingQuorumCount),
@@ -504,8 +511,26 @@ func (s *Service) SweepFederationIncidentDirectiveExtensionAppealReconciliationC
 			if automatedActor := strings.TrimSpace(lifecycle.ActorDID); automatedActor != "" && automatedActor != run.request.OwnerIdentity.AgentID() {
 				baseMetadata["automated_actor"] = automatedActor
 			}
+			if plan.targetSource != "" {
+				baseMetadata["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_target_source"] = plan.targetSource
+			}
 
 			switch plan.action {
+			case "delegate_review_committee":
+				if _, err := s.DelegateFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealReview(ctx, cellID, appeal.ChallengeAppealID, SecureCellFederationIncidentDirectiveExtensionDelegationRequest{
+					ActorDID:  run.request.OwnerIdentity.AgentID(),
+					TargetDID: plan.targetDID,
+					Reason:    firstNonEmpty(strings.TrimSpace(lifecycle.Reason), plan.reason),
+					Metadata: mergeStringMaps(baseMetadata, map[string]string{
+						"federation_incident_response_tier_id":                                                        plan.tierID,
+						"federation_incident_response_target_did":                                                     plan.targetDID,
+						"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_delegated_to": plan.targetDID,
+					}),
+				}); err != nil {
+					return nil, err
+				}
+				report.CommitteesExpanded++
+				mutatedCells[cellID] = struct{}{}
 			case "escalate_response":
 				responseKey := strings.TrimSpace(cellID) + "|" + strings.TrimSpace(appeal.ResponseID) + "|" + plan.pendingAction
 				if _, seen := escalatedResponses[responseKey]; seen {
@@ -600,6 +625,10 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	}
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealUsesCommitteeGovernance(appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary) bool {
+	return normalizeSecureCellThreshold(appeal.BoardReviewThreshold) > 1 || len(uniqueTrimmedStrings(appeal.EligibleBoardReviewerDIDs)) > 0 || appeal.BoardDelegationCount > 0 || appeal.BoardRecusalCount > 0
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlanFromRun(run *secureCellRun, response SecureCellFederationIncidentResponse, appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealSummary, at time.Time) (secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan, bool) {
 	if run == nil || run.result == nil {
 		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan{}, false
@@ -607,6 +636,23 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	overdue, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealOverdueStateForAt(appeal, at)
 	if !ok {
 		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan{}, false
+	}
+	if appeal.ChallengeAppealStatus == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusPendingBoardReview && secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealUsesCommitteeGovernance(appeal) {
+		excluded := append([]string(nil), uniqueTrimmedStrings(appeal.EligibleBoardReviewerDIDs)...)
+		excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordedVoterDIDs(run, appeal.ChallengeAppealID)...)
+		excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusedReviewerDIDs(run, appeal.ChallengeAppealID)...)
+		if targetDID, tierID, targetSource := secureCellFederationIncidentDirectiveExtensionCommitteeTarget(run, response, appeal.BoardParty, excluded); targetDID != "" {
+			return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan{
+				action:        "delegate_review_committee",
+				trigger:       overdue.pendingAction + "_due",
+				reason:        "reconciliation challenge appeal-board quorum deadline reached",
+				pendingAction: overdue.pendingAction,
+				dueAt:         overdue.dueAt,
+				tierID:        tierID,
+				targetDID:     targetDID,
+				targetSource:  targetSource,
+			}, true
+		}
 	}
 	if tier, ok := secureCellNextFederationIncidentResponseEscalationTier(response); ok {
 		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan{
@@ -631,13 +677,14 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationPlan{}, false
 }
 
-func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationAlreadyApplied(run *secureCellRun, challengeAppealID string, challengeAppealStatus SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus, pendingAction string, action string) bool {
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationAlreadyApplied(run *secureCellRun, challengeAppealID string, challengeAppealStatus SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus, pendingAction string, action string, targetDID string) bool {
 	if run == nil || run.result == nil {
 		return false
 	}
 	challengeAppealID = strings.TrimSpace(challengeAppealID)
 	pendingAction = strings.TrimSpace(pendingAction)
 	action = strings.TrimSpace(action)
+	targetDID = strings.TrimSpace(targetDID)
 	for _, transition := range run.result.Transitions {
 		if !secureCellTransitionAutomatedFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAction(transition) {
 			continue
@@ -650,6 +697,9 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 			continue
 		}
 		if !strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_action"]), action) {
+			continue
+		}
+		if targetDID != "" && action == "delegate_review_committee" && !strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_delegated_to"]), targetDID) {
 			continue
 		}
 		if SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_status"])) != challengeAppealStatus {
