@@ -410,6 +410,14 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionRecord `json:"items"`
 }
 
+type secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentListResponse struct {
+	Items []securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignment `json:"items"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionRecord `json:"items"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord `json:"items"`
 }
@@ -981,6 +989,86 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 			return filter, err
 		}
 		filter.Limit = limit
+	}
+	return filter, nil
+}
+
+func parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentFilter(r *http.Request) (securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentFilter, error) {
+	filter := securecellsintegration.SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentFilter{
+		CellID:            strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:        strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:        strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:       strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:       strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:         strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:          strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ComparisonKey:     strings.TrimSpace(r.URL.Query().Get("comparison_key")),
+		ChallengeID:       strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID: strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		SnapshotID:        strings.TrimSpace(r.URL.Query().Get("snapshot_id")),
+		Status:            securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
+		AlignmentStatus:   securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus(strings.TrimSpace(r.URL.Query().Get("alignment_status"))),
+		ReviewStatus:      securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("before")); raw != "" {
+		before, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Before = &before
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionFilter{
+		CellID:            strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:        strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:        strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:       strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:       strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:         strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:          strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ComparisonKey:     strings.TrimSpace(r.URL.Query().Get("comparison_key")),
+		ChallengeID:       strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID: strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		SnapshotID:        strings.TrimSpace(r.URL.Query().Get("snapshot_id")),
+		Status:            securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
+		AlignmentStatus:   securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus(strings.TrimSpace(r.URL.Query().Get("alignment_status"))),
+		ReviewStatus:      securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+		PendingAction:     strings.TrimSpace(r.URL.Query().Get("pending_action")),
+		ContractID:        strings.TrimSpace(r.URL.Query().Get("contract_id")),
+		Action:            strings.TrimSpace(r.URL.Query().Get("action")),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("since")); raw != "" {
+		since, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Since = &since
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("until")); raw != "" {
+		until, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Until = &until
 	}
 	return filter, nil
 }

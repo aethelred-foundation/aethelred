@@ -2212,6 +2212,70 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments/overdue" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignments(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments/overdue/export" {
+			filter, err := parseSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignments(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-actions" {
 			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionFilter(r)
 			if err != nil {
@@ -8684,6 +8748,34 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 				Method:      http.MethodGet,
 				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
 				Description: "Export appeal-board votes, rulings, and enforcement acknowledgements for this reconciliation challenge appeal.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments-overdue",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments/overdue?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List overdue reciprocal challenge-appeal alignment review posture for this reconciliation challenge appeal.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments-overdue-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignments/overdue/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export overdue reciprocal challenge-appeal alignment review posture for this reconciliation challenge appeal.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List automated escalation or contract-suspension actions taken for reciprocal challenge-appeal alignment review.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export automated escalation or contract-suspension actions taken for reciprocal challenge-appeal alignment review.",
 				Formats:     []string{"json", "csv"},
 			},
 			{
