@@ -10434,6 +10434,477 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealAutomatio
 	}
 }
 
+func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomation(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{71}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	ctx := context.Background()
+	owner := mustSecureCellAppIdentity(t, "owner-ext-appeal-recon-challenge-auto", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-ext-appeal-recon-challenge-auto-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-ext-appeal-recon-challenge-auto-b", []string{"UK"})
+
+	created, err := app.secureCellService.CreateCell(ctx, securecellsintegration.SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Incident Directive Extension Appeal Reconciliation Challenge Automation API Cell",
+		Purpose:       "exercise reconciliation challenge automation API surfaces",
+		Resource:      "cell:incident-directive-extension-appeal-reconciliation-challenge-automation-api",
+		Jurisdiction:  "UAE",
+		Participants: []securecellsintegration.SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := app.secureCellService.StartSession(ctx, created.CellID, securecellsintegration.SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Appeal Reconciliation Challenge Automation API Room",
+		Purpose:         "coordinate automated bilateral reconciliation challenge reviews",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open appeal reconciliation challenge automation session",
+		Metadata:        map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := app.secureCellService.CreateFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  participantB.Liability.SponsorOfRecord,
+		OrganizationName: participantB.SponsorChain[0].SponsorName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty reconciliation participant",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := app.secureCellService.AcceptFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: securecellsintegration.SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins reconciliation room",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := app.secureCellService.PublishFederationIncident(ctx, created.CellID, organizationID, securecellsintegration.SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 securecellsintegration.SecureCellFederationIncidentSeverityHigh,
+		Category:                 securecellsintegration.SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Appeal reconciliation challenge automation incident",
+		Description:              "The local organization wants timed supervision for bilateral appeal reconciliation challenge boards.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish appeal reconciliation challenge automation incident",
+		Metadata:                 map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := app.secureCellService.ListFederationIncidentResponses(ctx, securecellsintegration.SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == securecellsintegration.SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := app.secureCellService.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, securecellsintegration.SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must provide an evidence package for bilateral incident review.",
+		Description:   "Provide the scoped evidence package, timeline, and remediation artifacts for bilateral incident review.",
+		Priority:      securecellsintegration.SecureCellFederationIncidentDirectivePriorityHigh,
+		AssigneeParty: securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue bilateral evidence work order",
+		Metadata:      map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := app.secureCellService.ListFederationIncidentDirectives(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveFilter{
+		CellID:     created.CellID,
+		ResponseID: localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	if len(directives) != 1 {
+		t.Fatalf("expected one directive, got %+v", directives)
+	}
+	directiveID := directives[0].DirectiveID
+
+	proposedDueAt := dueAt.Add(4 * time.Hour)
+	if _, err := app.secureCellService.RequestFederationIncidentDirectiveExtension(ctx, created.CellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionRequest{
+		ActorDID:                   participantB.AgentID(),
+		RequestingParty:            securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                    "Counterparty needs longer evidence collection window",
+		Description:                "The counterparty needs additional time to gather the full evidence package for bilateral review.",
+		EvidenceIDs:                []string{incidentID},
+		ProposedDueAt:              &proposedDueAt,
+		ReviewApprovalThreshold:    1,
+		EligibleReviewerDIDs:       []string{owner.AgentID()},
+		DisputeResolutionThreshold: 1,
+		EligibleResolverDIDs:       []string{owner.AgentID()},
+		Reason:                     "request directive extension before reconciliation challenge automation",
+		Metadata:                   map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-REQUEST-01"},
+	}); err != nil {
+		t.Fatalf("RequestFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	extensions, err := app.secureCellService.ListFederationIncidentDirectiveExtensions(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions failed: %v", err)
+	}
+	if len(extensions) != 1 {
+		t.Fatalf("expected one extension, got %+v", extensions)
+	}
+	extensionID := extensions[0].ExtensionID
+
+	if _, err := app.secureCellService.RejectFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionRejectRequest{
+		ActorDID:            owner.AgentID(),
+		ReviewingParty:      securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		DecisionSummary:     "Local org rejected the extension",
+		DecisionDescription: "The local organization rejected the extension request.",
+		EvidenceIDs:         []string{directiveID},
+		Reason:              "reject directive extension before dispute",
+		Metadata:            map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-REJECT-01"},
+	}); err != nil {
+		t.Fatalf("RejectFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.DisputeFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeRequest{
+		ActorDID:         participantB.AgentID(),
+		ChallengingParty: securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:          "Counterparty disputes rejected extension",
+		Description:      "The counterparty reopened the rejected extension for bilateral review.",
+		EvidenceIDs:      []string{directiveID},
+		Reason:           "open directive extension dispute before reconciliation challenge automation",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-DISPUTE-01"},
+	}); err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	disputes, err := app.secureCellService.ListFederationIncidentDirectiveExtensionDisputes(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		ExtensionID: extensionID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionDisputes failed: %v", err)
+	}
+	if len(disputes) != 1 {
+		t.Fatalf("expected one dispute, got %+v", disputes)
+	}
+	disputeID := disputes[0].DisputeID
+
+	if _, err := app.secureCellService.ResolveFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeResolveRequest{
+		ActorDID:              owner.AgentID(),
+		RespondingParty:       securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Resolution:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeResolutionUphold,
+		ResolutionSummary:     "Local org upheld the rejection",
+		ResolutionDescription: "The local organization upheld the rejection during dispute resolution.",
+		EvidenceIDs:           []string{directiveID},
+		Reason:                "resolve dispute before reconciliation challenge automation",
+		Metadata:              map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-RESOLVE-01"},
+	}); err != nil {
+		t.Fatalf("ResolveFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.AppealFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRequest{
+		ActorDID:                  participantB.AgentID(),
+		AppealingParty:            securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                   "Counterparty appeals upheld rejection",
+		Description:               "The counterparty escalated the upheld rejection to the bilateral appeal board.",
+		EvidenceIDs:               []string{directiveID},
+		BoardReviewThreshold:      1,
+		EligibleBoardReviewerDIDs: []string{owner.AgentID()},
+		Reason:                    "open directive extension appeal board review",
+		Metadata:                  map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-OPEN-01"},
+	}); err != nil {
+		t.Fatalf("AppealFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	appeals, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppeals(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:    created.CellID,
+		DisputeID: disputeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppeals failed: %v", err)
+	}
+	if len(appeals) != 1 {
+		t.Fatalf("expected one appeal, got %+v", appeals)
+	}
+	appealID := appeals[0].AppealID
+
+	if _, err := app.secureCellService.RuleFederationIncidentDirectiveExtensionAppeal(ctx, created.CellID, appealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRequest{
+		ActorDID:          owner.AgentID(),
+		BoardParty:        securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board ratified rejection",
+		RulingDescription: "The local board ratified the rejection for reciprocal bundle issuance.",
+		EvidenceIDs:       []string{directiveID},
+		Reason:            "record appeal board ruling before reciprocal intake",
+		Metadata:          map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-RULE-01"},
+	}); err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppeal failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.AcknowledgeFederationIncidentDirectiveExtensionAppealEnforcement(ctx, created.CellID, appealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest{
+		ActorDID:           participantB.AgentID(),
+		AcknowledgingParty: securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:            "Counterparty acknowledged final appeal ruling",
+		Description:        "The counterparty accepted the ratified rejection for reciprocal bundle issuance.",
+		EvidenceIDs:        []string{directiveID},
+		Reason:             "acknowledge final appeal ruling before reciprocal intake",
+		Metadata:           map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-ACK-01"},
+	}); err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirectiveExtensionAppealEnforcement failed: %v", err)
+	}
+
+	originalBundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, appealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealBundle failed: %v", err)
+	}
+	if err := securecellsintegration.VerifyFederationIncidentDirectiveExtensionAppealBundle(originalBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealBundle failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.IngestFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, organizationID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   originalBundle,
+		Reason:   "ingest reciprocal directive extension appeal bundle",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-INTAKE-01"},
+	}); err != nil {
+		t.Fatalf("IngestFederationIncidentDirectiveExtensionAppealBundle failed: %v", err)
+	}
+
+	appealReconciliations, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliations(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+		AppealID:       appealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliations failed: %v", err)
+	}
+	if len(appealReconciliations) != 1 {
+		t.Fatalf("expected one appeal reconciliation, got %+v", appealReconciliations)
+	}
+	comparisonKey := appealReconciliations[0].ComparisonKey
+
+	if _, err := app.secureCellService.DisputeFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationDisputeRequest{
+		ActorDID:    owner.AgentID(),
+		Reason:      "capture bilateral appeal review challenge for timed supervision",
+		Divergences: []string{"counterparty appeal requires formal board review"},
+		Metadata:    map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-DISPUTE-RECON-01"},
+	}); err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.ChallengeFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeRequest{
+		ActorDID:                  participantB.AgentID(),
+		ChallengingParty:          securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                   "Counterparty escalated reconciliation to bilateral challenge board",
+		Description:               "The counterparty requested a formal local board review over the disputed appeal reconciliation posture.",
+		EvidenceIDs:               []string{directiveID, comparisonKey},
+		BoardReviewThreshold:      2,
+		EligibleBoardReviewerDIDs: []string{owner.AgentID()},
+		Reason:                    "open bilateral appeal reconciliation challenge board review",
+		Metadata:                  map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-OPEN-01"},
+	}); err != nil {
+		t.Fatalf("ChallengeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	challenges, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges failed: %v", err)
+	}
+	if len(challenges) != 1 {
+		t.Fatalf("expected one challenge, got %+v", challenges)
+	}
+	challengeID := challenges[0].ChallengeID
+
+	if _, err := app.secureCellService.RuleFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeRulingRequest{
+		ActorDID:          owner.AgentID(),
+		BoardParty:        securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board vote one ratified disputed reconciliation",
+		RulingDescription: "The first local board reviewer ratified the disputed reconciliation posture but the threshold is not met yet.",
+		EvidenceIDs:       []string{directiveID, comparisonKey},
+		Reason:            "record first appeal reconciliation challenge board vote",
+		Metadata:          map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-VOTE-01"},
+	}); err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppealReconciliation first vote failed: %v", err)
+	}
+
+	challenges, err = app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeFilter{
+		CellID:      created.CellID,
+		ChallengeID: challengeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallenges review posture failed: %v", err)
+	}
+	if len(challenges) != 1 {
+		t.Fatalf("expected one challenge review posture, got %+v", challenges)
+	}
+
+	reviewOverdueAt := challenges[0].CreatedAt.UTC().Add(13 * time.Hour)
+	overdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenges/overdue?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&before="+url.QueryEscape(reviewOverdueAt.Format(time.RFC3339Nano)), nil)
+	overdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueRec, overdueReq)
+	if overdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueRec.Code, overdueRec.Body.String())
+	}
+	var overdueResp secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeListResponse
+	if err := json.Unmarshal(overdueRec.Body.Bytes(), &overdueResp); err != nil {
+		t.Fatalf("unmarshal overdue reconciliation challenge response: %v", err)
+	}
+	if len(overdueResp.Items) != 1 || overdueResp.Items[0].AutomationAction != "delegate_review_committee" || overdueResp.Items[0].BoardReviewThreshold != 2 || overdueResp.Items[0].BoardCommitteeMemberCount != 1 || overdueResp.Items[0].BoardMissingQuorumCount != 1 {
+		t.Fatalf("expected committee-aware overdue reconciliation challenge response, got %+v", overdueResp.Items)
+	}
+
+	overdueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenges/overdue/export?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&before="+url.QueryEscape(reviewOverdueAt.Format(time.RFC3339Nano))+"&format=csv", nil)
+	overdueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(overdueExportRec, overdueExportReq)
+	if overdueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, overdueExportRec.Code, overdueExportRec.Body.String())
+	}
+	if body := overdueExportRec.Body.String(); !strings.Contains(body, comparisonKey) || !strings.Contains(body, "delegate_review_committee") {
+		t.Fatalf("expected overdue reconciliation challenge export to include comparison key and delegation posture, got %s", body)
+	}
+
+	sweepActor := "did:aethelred:appeal-reconciliation-challenge-sweeper"
+	if _, err := app.secureCellService.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallenges(ctx, reviewOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated appeal reconciliation challenge review sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-SWEEP-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallenges failed: %v", err)
+	}
+
+	automationReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID), nil)
+	automationRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automationRec, automationReq)
+	if automationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automationRec.Code, automationRec.Body.String())
+	}
+	var automationResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionListResponse
+	if err := json.Unmarshal(automationRec.Body.Bytes(), &automationResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge automation response: %v", err)
+	}
+	if len(automationResp.Items) != 1 || automationResp.Items[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_review_delegated" || automationResp.Items[0].TargetDID == "" || automationResp.Items[0].AutomatedActor != sweepActor {
+		t.Fatalf("expected automated reconciliation challenge review delegation record, got %+v", automationResp.Items)
+	}
+	delegatedReviewDID := automationResp.Items[0].TargetDID
+
+	automationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-automation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&comparison_key="+url.QueryEscape(comparisonKey)+"&challenge_id="+url.QueryEscape(challengeID)+"&format=csv", nil)
+	automationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automationExportRec, automationExportReq)
+	if automationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automationExportRec.Code, automationExportRec.Body.String())
+	}
+	if body := automationExportRec.Body.String(); !strings.Contains(body, comparisonKey) || !strings.Contains(body, "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_review_delegated") {
+		t.Fatalf("expected reconciliation challenge automation export to include delegated action and comparison key, got %s", body)
+	}
+
+	bundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliations/"+url.PathEscape(comparisonKey)+"/bundle", nil)
+	bundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(bundleRec, bundleReq)
+	if bundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, bundleRec.Code, bundleRec.Body.String())
+	}
+	var bundleResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleResponse
+	if err := json.Unmarshal(bundleRec.Body.Bytes(), &bundleResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge bundle response: %v", err)
+	}
+	if bundleResp.Result == nil || len(bundleResp.Result.ChallengeAutomationActions) != 1 || bundleResp.Result.ChallengeAutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_review_delegated" {
+		t.Fatalf("expected reconciliation challenge bundle automation trail, got %+v", bundleResp.Result)
+	}
+
+	casePackReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	var casePackResp secureCellFederationIncidentCasePackResponse
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge case pack response: %v", err)
+	}
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAutomationActions) != 1 || casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAutomationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_review_delegated" {
+		t.Fatalf("expected case pack reconciliation challenge automation trail, got %+v", casePackResp.Result)
+	}
+
+	if _, err := app.secureCellService.RuleFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeRulingRequest{
+		ActorDID:          delegatedReviewDID,
+		BoardParty:        securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Ruling:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify,
+		RulingSummary:     "Local board ratified disputed reconciliation",
+		RulingDescription: "The delegated reviewer completed the challenge-board threshold and ratified the disputed reconciliation posture.",
+		EvidenceIDs:       []string{directiveID, comparisonKey},
+		Reason:            "record second appeal reconciliation challenge board vote",
+		Metadata:          map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-AUTO-VOTE-02"},
+	}); err != nil {
+		t.Fatalf("RuleFederationIncidentDirectiveExtensionAppealReconciliation second vote failed: %v", err)
+	}
+}
+
 func mustMarshalSecureCellFederationIncidentReportReconciliationAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellFederationIncidentReportReconciliationAcknowledgeRequest{

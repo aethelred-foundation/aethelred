@@ -134,36 +134,37 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSig
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle is
 // the signed auditor-facing package for one bilateral appeal reconciliation.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle struct {
-	ID                      string                                                                                            `json:"id"`
-	Version                 string                                                                                            `json:"version"`
-	Name                    string                                                                                            `json:"name"`
-	GeneratedAt             time.Time                                                                                         `json:"generated_at"`
-	ExpiresAt               *time.Time                                                                                        `json:"expires_at,omitempty"`
-	CellID                  string                                                                                            `json:"cell_id"`
-	CellName                string                                                                                            `json:"cell_name,omitempty"`
-	CellStatus              SecureCellStatus                                                                                  `json:"cell_status"`
-	Jurisdiction            string                                                                                            `json:"jurisdiction,omitempty"`
-	Framework               string                                                                                            `json:"framework,omitempty"`
-	Organization            SecureCellFederationOrganizationSummary                                                           `json:"organization"`
-	Reconciliation          SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary                         `json:"reconciliation"`
-	LocalAppeal             *SecureCellFederationIncidentDirectiveExtensionAppealSummary                                      `json:"local_appeal,omitempty"`
-	CounterpartyAppeal      *SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary                          `json:"counterparty_appeal,omitempty"`
-	Actions                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord                  `json:"actions,omitempty"`
-	Attestations            []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord `json:"attestations,omitempty"`
-	Challenges              []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary              `json:"challenges,omitempty"`
-	ChallengeActions        []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord         `json:"challenge_actions,omitempty"`
-	AutomationActions       []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord        `json:"automation_actions,omitempty"`
-	Contracts               []SecureCellFederationContractSummary                                                             `json:"contracts,omitempty"`
-	Controls                []SecureCellFederationTrustPackControl                                                            `json:"controls,omitempty"`
-	OperatorSurfaces        []SecureCellFederationOperatorSurface                                                             `json:"operator_surfaces,omitempty"`
-	ControlLedgerID         string                                                                                            `json:"control_ledger_id,omitempty"`
-	ControlLedgerHash       string                                                                                            `json:"control_ledger_hash,omitempty"`
-	PortablePackageHash     string                                                                                            `json:"portable_package_hash,omitempty"`
-	PortablePackageSigned   bool                                                                                              `json:"portable_package_signed"`
-	PortablePackageAnchored bool                                                                                              `json:"portable_package_anchored"`
-	ContentHash             string                                                                                            `json:"content_hash,omitempty"`
-	Signature               *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSignature                `json:"signature,omitempty"`
-	Metadata                map[string]string                                                                                 `json:"metadata,omitempty"`
+	ID                         string                                                                                              `json:"id"`
+	Version                    string                                                                                              `json:"version"`
+	Name                       string                                                                                              `json:"name"`
+	GeneratedAt                time.Time                                                                                           `json:"generated_at"`
+	ExpiresAt                  *time.Time                                                                                          `json:"expires_at,omitempty"`
+	CellID                     string                                                                                              `json:"cell_id"`
+	CellName                   string                                                                                              `json:"cell_name,omitempty"`
+	CellStatus                 SecureCellStatus                                                                                    `json:"cell_status"`
+	Jurisdiction               string                                                                                              `json:"jurisdiction,omitempty"`
+	Framework                  string                                                                                              `json:"framework,omitempty"`
+	Organization               SecureCellFederationOrganizationSummary                                                             `json:"organization"`
+	Reconciliation             SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary                           `json:"reconciliation"`
+	LocalAppeal                *SecureCellFederationIncidentDirectiveExtensionAppealSummary                                        `json:"local_appeal,omitempty"`
+	CounterpartyAppeal         *SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSummary                            `json:"counterparty_appeal,omitempty"`
+	Actions                    []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord                    `json:"actions,omitempty"`
+	Attestations               []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord   `json:"attestations,omitempty"`
+	Challenges                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary                `json:"challenges,omitempty"`
+	ChallengeActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord           `json:"challenge_actions,omitempty"`
+	AutomationActions          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord          `json:"automation_actions,omitempty"`
+	ChallengeAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionRecord `json:"challenge_automation_actions,omitempty"`
+	Contracts                  []SecureCellFederationContractSummary                                                               `json:"contracts,omitempty"`
+	Controls                   []SecureCellFederationTrustPackControl                                                              `json:"controls,omitempty"`
+	OperatorSurfaces           []SecureCellFederationOperatorSurface                                                               `json:"operator_surfaces,omitempty"`
+	ControlLedgerID            string                                                                                              `json:"control_ledger_id,omitempty"`
+	ControlLedgerHash          string                                                                                              `json:"control_ledger_hash,omitempty"`
+	PortablePackageHash        string                                                                                              `json:"portable_package_hash,omitempty"`
+	PortablePackageSigned      bool                                                                                                `json:"portable_package_signed"`
+	PortablePackageAnchored    bool                                                                                                `json:"portable_package_anchored"`
+	ContentHash                string                                                                                              `json:"content_hash,omitempty"`
+	Signature                  *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSignature                  `json:"signature,omitempty"`
+	Metadata                   map[string]string                                                                                   `json:"metadata,omitempty"`
 }
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions
@@ -268,6 +269,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 	if err != nil {
 		return nil, err
 	}
+	challengeAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionFilter{
+		CellID:        cellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	now := time.Now().UTC()
 	expiresAt := now.Add(72 * time.Hour)
@@ -275,29 +283,30 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationB
 		expiresAt = now.Add(options.ExpiresAfter)
 	}
 	bundle := &SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle{
-		ID:                 firstNonEmpty(strings.TrimSpace(options.ID), fmt.Sprintf("%s-%x-incident-directive-extension-appeal-reconciliation-bundle", run.result.CellID, sha256.Sum256([]byte(reconciliation.ComparisonKey)))),
-		Version:            firstNonEmpty(strings.TrimSpace(options.Version), "v1"),
-		Name:               firstNonEmpty(strings.TrimSpace(options.Name), fmt.Sprintf("Federation Incident Directive Extension Appeal Reconciliation Bundle %s", reconciliation.AppealID)),
-		GeneratedAt:        now,
-		ExpiresAt:          cloneTimePtr(&expiresAt),
-		CellID:             run.result.CellID,
-		CellName:           run.result.Name,
-		CellStatus:         run.result.Status,
-		Jurisdiction:       run.request.Jurisdiction,
-		Framework:          firstNonEmpty(strings.TrimSpace(s.config.Framework), "Secure Cells v1"),
-		Organization:       orgSummary,
-		Reconciliation:     reconciliation,
-		LocalAppeal:        localAppeal,
-		CounterpartyAppeal: counterpartyAppeal,
-		Actions:            append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord(nil), actions...),
-		Attestations:       append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord(nil), attestations...),
-		Challenges:         append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary(nil), challenges...),
-		ChallengeActions:   append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord(nil), challengeActions...),
-		AutomationActions:  append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord(nil), automationActions...),
-		Contracts:          secureCellFederationContractSummariesForOrganization(run, reconciliation.OrganizationID),
-		Controls:           secureCellFederationControlsFromLedger(run.result.ControlLedger),
-		OperatorSurfaces:   cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
-		Metadata:           cloneStringMap(options.Metadata),
+		ID:                         firstNonEmpty(strings.TrimSpace(options.ID), fmt.Sprintf("%s-%x-incident-directive-extension-appeal-reconciliation-bundle", run.result.CellID, sha256.Sum256([]byte(reconciliation.ComparisonKey)))),
+		Version:                    firstNonEmpty(strings.TrimSpace(options.Version), "v1"),
+		Name:                       firstNonEmpty(strings.TrimSpace(options.Name), fmt.Sprintf("Federation Incident Directive Extension Appeal Reconciliation Bundle %s", reconciliation.AppealID)),
+		GeneratedAt:                now,
+		ExpiresAt:                  cloneTimePtr(&expiresAt),
+		CellID:                     run.result.CellID,
+		CellName:                   run.result.Name,
+		CellStatus:                 run.result.Status,
+		Jurisdiction:               run.request.Jurisdiction,
+		Framework:                  firstNonEmpty(strings.TrimSpace(s.config.Framework), "Secure Cells v1"),
+		Organization:               orgSummary,
+		Reconciliation:             reconciliation,
+		LocalAppeal:                localAppeal,
+		CounterpartyAppeal:         counterpartyAppeal,
+		Actions:                    append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionRecord(nil), actions...),
+		Attestations:               append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationRecord(nil), attestations...),
+		Challenges:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeSummary(nil), challenges...),
+		ChallengeActions:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeActionRecord(nil), challengeActions...),
+		AutomationActions:          append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionRecord(nil), automationActions...),
+		ChallengeAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationActionRecord(nil), challengeAutomationActions...),
+		Contracts:                  secureCellFederationContractSummariesForOrganization(run, reconciliation.OrganizationID),
+		Controls:                   secureCellFederationControlsFromLedger(run.result.ControlLedger),
+		OperatorSurfaces:           cloneSecureCellFederationOperatorSurfaces(options.OperatorSurfaces),
+		Metadata:                   cloneStringMap(options.Metadata),
 	}
 	if run.result.ControlLedger != nil && run.result.ControlLedger.Bundle != nil {
 		bundle.ControlLedgerID = strings.TrimSpace(run.result.ControlLedger.Bundle.ID)
