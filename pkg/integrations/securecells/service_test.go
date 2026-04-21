@@ -8650,6 +8650,56 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 		t.Fatalf("DisputeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
 	}
 
+	reconciliationsAfterDispute, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliations(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliations after dispute failed: %v", err)
+	}
+	if len(reconciliationsAfterDispute) != 1 || reconciliationsAfterDispute[0].LastReviewedAt == nil {
+		t.Fatalf("expected one disputed appeal reconciliation with review timestamp, got %+v", reconciliationsAfterDispute)
+	}
+	ackOverdueAt := reconciliationsAfterDispute[0].LastReviewedAt.UTC().Add(secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAckSLA + time.Hour)
+	overdueAppealReconciliations, err := service.ListOverdueFederationIncidentDirectiveExtensionAppealReconciliations(ctx, SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationFilter{
+		CellID:            created.CellID,
+		OrganizationID:    organizationID,
+		ComparisonKey:     comparisonKey,
+		ReviewStatus:      SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusDisputed,
+		AttestationStatus: SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatusUnattested,
+		Before:            &ackOverdueAt,
+	})
+	if err != nil {
+		t.Fatalf("ListOverdueFederationIncidentDirectiveExtensionAppealReconciliations failed: %v", err)
+	}
+	if len(overdueAppealReconciliations) != 1 || overdueAppealReconciliations[0].AutomationAction != "escalate_counterparty" || overdueAppealReconciliations[0].AttestationStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAttestationStatusUnattested {
+		t.Fatalf("expected one overdue appeal reconciliation queued for escalation, got %+v", overdueAppealReconciliations)
+	}
+
+	sweepActor := "did:aethelred:appeal-reconciliation-sweeper"
+	reconciliationSweep, err := service.SweepFederationIncidentDirectiveExtensionAppealReconciliations(ctx, ackOverdueAt, SecureCellLifecycleRequest{
+		ActorDID: sweepActor,
+		Reason:   "automated appeal reconciliation escalation sweep",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-SWEEP-01"},
+	})
+	if err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliations failed: %v", err)
+	}
+	if reconciliationSweep.ReconciliationsEscalated != 1 {
+		t.Fatalf("expected one escalated appeal reconciliation, got %+v", reconciliationSweep)
+	}
+
+	automationActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAutomationActionFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationAutomationActions failed: %v", err)
+	}
+	if len(automationActions) != 1 || automationActions[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_escalated" || automationActions[0].AutomatedActor != sweepActor {
+		t.Fatalf("expected one automated appeal reconciliation escalation action, got %+v", automationActions)
+	}
+
 	acknowledgedCounterpartyReconciliation, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationDispute(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest{
 		ActorDID:              participantB.AgentID(),
 		CounterpartyReference: "counterparty-appeal-dispute-ack-0001",
@@ -8740,6 +8790,9 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 	}
 	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-20") {
 		t.Fatalf("expected resolved reconciliation control ledger to include CELL-FED-20, got %+v", resolvedReconciliation.ControlLedger.Controls)
+	}
+	if !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-21") {
+		t.Fatalf("expected resolved reconciliation control ledger to include CELL-FED-21, got %+v", resolvedReconciliation.ControlLedger.Controls)
 	}
 	if len(acknowledgedCounterpartyReconciliation.Transitions) == 0 || len(correctedReconciliation.Transitions) == 0 || len(resolvedCounterpartyReconciliation.Transitions) == 0 {
 		t.Fatalf("expected appeal reconciliation counterparty attestation lifecycle mutations to append transitions")
