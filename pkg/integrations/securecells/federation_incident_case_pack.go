@@ -62,6 +62,7 @@ type SecureCellFederationIncidentCasePack struct {
 	DirectiveExtensionAppealReconciliationChallengeAppealActions                    []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord                    `json:"directive_extension_appeal_reconciliation_challenge_appeal_actions,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord          `json:"directive_extension_appeal_reconciliation_challenge_appeal_automation_actions,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionRecord `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_automation_actions,omitempty"`
+	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions   []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord   `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_actions,omitempty"`
 	DirectiveExtensionAutomationActions                                             []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord                                             `json:"directive_extension_automation_actions,omitempty"`
 	Remediations                                                                    []SecureCellFederationIncidentRemediationSummary                                                                   `json:"remediations,omitempty"`
 	Verifications                                                                   []SecureCellFederationIncidentVerificationSummary                                                                  `json:"verifications,omitempty"`
@@ -325,6 +326,13 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	if err != nil {
 		return nil, err
 	}
+	directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionFilter{
+		CellID:     cellID,
+		ResponseID: responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	remediations, err := s.ListFederationIncidentRemediations(ctx, SecureCellFederationIncidentRemediationFilter{
 		CellID:     cellID,
 		ResponseID: responseID,
@@ -416,6 +424,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		DirectiveExtensionAppealReconciliationChallengeAppealActions:                    directiveExtensionAppealReconciliationChallengeAppealActions,
 		DirectiveExtensionAppealReconciliationChallengeAppealAutomationActions:          directiveExtensionAppealReconciliationChallengeAppealAutomationActions,
 		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActions: directiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActions,
+		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions:   directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions,
 		DirectiveExtensionAutomationActions:                                             directiveExtensionAutomationActions,
 		Remediations:                                                                    remediations,
 		Verifications:                                                                   verifications,

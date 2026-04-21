@@ -46,6 +46,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Actions                                []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord                    `json:"actions,omitempty"`
 	CounterpartyAlignmentActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionRecord           `json:"counterparty_alignment_actions,omitempty"`
 	CounterpartyAlignmentAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionRecord `json:"counterparty_alignment_automation_actions,omitempty"`
+	CounterpartyAlignmentResponseActions   []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord   `json:"counterparty_alignment_response_actions,omitempty"`
 	Recusals                               []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary                  `json:"recusals,omitempty"`
 	AutomationActions                      []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord          `json:"automation_actions,omitempty"`
 	ReconciliationBundleHash               string                                                                                                             `json:"reconciliation_bundle_hash,omitempty"`
@@ -123,6 +124,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 	if err != nil {
 		return nil, err
 	}
+	alignmentResponseActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionFilter{
+		CellID:            cellID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	recusals, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalFilter{
 		CellID:            cellID,
 		ChallengeAppealID: challengeAppealID,
@@ -161,6 +169,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 		Actions:                                append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord(nil), actions...),
 		CounterpartyAlignmentActions:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentActionRecord(nil), alignmentActions...),
 		CounterpartyAlignmentAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionRecord(nil), alignmentAutomationActions...),
+		CounterpartyAlignmentResponseActions:   append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord(nil), alignmentResponseActions...),
 		Recusals:                               append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary(nil), recusals...),
 		AutomationActions:                      append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord(nil), automationActions...),
 		ReconciliationBundleHash:               strings.TrimSpace(reconciliationBundle.ContentHash),

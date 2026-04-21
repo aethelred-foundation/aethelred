@@ -1280,6 +1280,114 @@ func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirec
 	)
 }
 
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledge(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(challengeAppealID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and challenge appeal ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension appeal reconciliation challenge appeal alignment automation acknowledge request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledgeAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAction(cellID, challengeAppealID, "acknowledge-alignment-automation"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDispute(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDisputeRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(challengeAppealID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and challenge appeal ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension appeal reconciliation challenge appeal alignment automation dispute request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDisputeAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAction(cellID, challengeAppealID, "dispute-alignment-automation"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttest(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestationRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(challengeAppealID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and challenge appeal ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension appeal reconciliation challenge appeal alignment correction attestation request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAction(cellID, challengeAppealID, "attest-alignment-correction"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
+func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttest(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttestationRequest) (*secureCellAuthContext, error) {
+	if a == nil || a.trustSource == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	if strings.TrimSpace(cellID) == "" || strings.TrimSpace(challengeAppealID) == "" {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell ID and challenge appeal ID are required", audit.ErrInvalidInput)
+	}
+	if req == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell federation incident directive extension appeal reconciliation challenge appeal alignment resolution attestation request is required", audit.ErrInvalidInput)
+	}
+	actorIdentity, err := decodeFinanceAgentIdentity(req.ActorIdentity)
+	if err != nil {
+		return nil, fmt.Errorf("securecells/auth: %w: %s", audit.ErrUnauthorized, err.Error())
+	}
+	if req.PolicyReceipt == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: signed policy receipt is required", audit.ErrUnauthorized)
+	}
+	return a.authorizeEnterpriseMutation(
+		requestContextOrBackground(r),
+		actorIdentity,
+		req.PolicyReceipt,
+		secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttestAction,
+		resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAction(cellID, challengeAppealID, "attest-alignment-resolution"),
+		resolveSecureCellAuthJurisdiction("", actorIdentity, req.PolicyReceipt, strings.TrimSpace(a.requiredJurisdiction)),
+	)
+}
+
 func (a *secureCellEnterpriseRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest) (*secureCellAuthContext, error) {
 	if a == nil || a.trustSource == nil {
 		return nil, fmt.Errorf("securecells/auth: %w: enterprise authorizer is not configured", audit.ErrWriteDisabled)
@@ -1569,6 +1677,34 @@ func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtension
 		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
 	}
 	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentDispute(r, cellID, challengeAppealID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledge(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledgeRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledge(r, cellID, challengeAppealID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDispute(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDisputeRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDispute(r, cellID, challengeAppealID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttest(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestationRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttest(r, cellID, challengeAppealID, req)
+}
+
+func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttest(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttestationRequest) (*secureCellAuthContext, error) {
+	if app == nil || app.secureCellAuth == nil {
+		return nil, fmt.Errorf("securecells/auth: %w: secure cell authorizer is not configured", audit.ErrWriteDisabled)
+	}
+	return app.secureCellAuth.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttest(r, cellID, challengeAppealID, req)
 }
 
 func (app *AethelredApp) authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationCounterpartyAcknowledgeRequest) (*secureCellAuthContext, error) {

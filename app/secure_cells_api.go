@@ -754,6 +754,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Result *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle `json:"result,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleResponse struct {
+	Result *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle `json:"result,omitempty"`
+}
+
 type secureCellFederationIncidentCasePackResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentCasePack `json:"result,omitempty"`
 }
@@ -993,6 +997,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 				return nil
 			}
 			return securecellsintegration.SignFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleEd25519(bundle, privateKey, signer, true)
+		},
+		FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle) error {
+			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
+			if !ok {
+				return nil
+			}
+			return securecellsintegration.SignFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleEd25519(bundle, privateKey, signer, true)
 		},
 		FederationIncidentReportBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentReportBundle) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
@@ -2271,6 +2282,38 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 				return
 			}
 			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationActionExport(w, r, items); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+			}
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionListResponse{Items: items})
+			return
+		}
+
+		if r.URL.Path == secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions/export" {
+			filter, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionFilter(r)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			items, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions(r.Context(), filter)
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionExport(w, r, items); err != nil {
 				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
 			}
 			return
@@ -3575,7 +3618,31 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 
 		if strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/") {
-			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/bundle/export")
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/alignment-response/bundle/export")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle(r.Context(), cellID, challengeAppealID, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleOptions(cellID, challengeAppealID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleExport(w, r, bundle); err != nil {
+					writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				}
+				return
+			}
+
+			cellID, challengeAppealID, err = parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/alignment-response/bundle")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle(r.Context(), cellID, challengeAppealID, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleOptions(cellID, challengeAppealID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleResponse{Result: bundle})
+				return
+			}
+
+			cellID, challengeAppealID, err = parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/bundle/export")
 			if err == nil {
 				bundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(r.Context(), cellID, challengeAppealID, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleOptions(cellID, challengeAppealID))
 				if err != nil {
@@ -5680,6 +5747,124 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 				Reason:      req.Reason,
 				Divergences: append([]string(nil), req.Divergences...),
 				Metadata:    req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/acknowledge-alignment-automation") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/acknowledge-alignment-automation")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledgeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment automation acknowledge request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledge(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomation(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationAcknowledgeRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CounterpartyReference: req.CounterpartyReference,
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/dispute-alignment-automation") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/dispute-alignment-automation")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDisputeRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment automation dispute request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDispute(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.DisputeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomation(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAutomationDisputeRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CounterpartyReference: req.CounterpartyReference,
+				Reason:                req.Reason,
+				Divergences:           append([]string(nil), req.Divergences...),
+				Metadata:              req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/attest-alignment-correction") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/attest-alignment-correction")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment correction attestation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttest(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AttestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrection(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestationRequest{
+				ActorDID:               safeSecureCellActorDID(authCtx),
+				CounterpartySnapshotID: req.CounterpartySnapshotID,
+				CounterpartyReference:  req.CounterpartyReference,
+				Reason:                 req.Reason,
+				Metadata:               req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
+		case strings.HasSuffix(r.URL.Path, "/attest-alignment-resolution") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
+			cellID, challengeAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionPath(r.URL.Path, "/attest-alignment-resolution")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttestationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment resolution attestation request: "+err.Error())
+				return
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttest(r, cellID, challengeAppealID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.AttestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolution(r.Context(), cellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResolutionAttestationRequest{
+				ActorDID:              safeSecureCellActorDID(authCtx),
+				CounterpartyReference: req.CounterpartyReference,
+				Reason:                req.Reason,
+				Metadata:              req.Metadata,
 			})
 			if err != nil {
 				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
@@ -8849,6 +9034,34 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 				Formats:     []string{"json", "csv"},
 			},
 			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List governed responses to automated reciprocal challenge-appeal alignment actions for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export governed responses to automated reciprocal challenge-appeal alignment actions for this appeal-board trail.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-bundle",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/alignment-response/bundle",
+				Description: "Retrieve the signed bilateral alignment-response bundle for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-bundle-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/alignment-response/bundle/export?format=csv",
+				Description: "Export the signed bilateral alignment-response bundle for this appeal-board trail.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
 				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-bundle",
 				Method:      http.MethodGet,
 				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/bundle",
@@ -8860,6 +9073,72 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 				Method:      http.MethodGet,
 				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/bundle/export?format=csv",
 				Description: "Export the signed bilateral reconciliation challenge-appeal bundle for this appeal-board ruling path.",
+				Formats:     []string{"json", "csv"},
+			},
+		},
+	}
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleOptions(cellID string, challengeAppealID string) securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleOptions {
+	cellID = strings.TrimSpace(cellID)
+	queryChallengeAppealID := url.QueryEscape(strings.TrimSpace(challengeAppealID))
+	pathChallengeAppealID := url.PathEscape(strings.TrimSpace(challengeAppealID))
+	return securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleOptions{
+		OperatorSurfaces: []securecellsintegration.SecureCellFederationOperatorSurface{
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List governed acknowledgements or disputes over imported reciprocal challenge-appeal bundles for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export governed acknowledgements or disputes over imported reciprocal challenge-appeal bundles for this appeal-board trail.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List automated escalation or contract-suspension actions taken for reciprocal challenge-appeal alignment review.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-automation-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export automated escalation or contract-suspension actions taken for reciprocal challenge-appeal alignment review.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID,
+				Description: "List governed responses to automated reciprocal challenge-appeal alignment actions for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-actions/export?cell_id=" + cellID + "&challenge_appeal_id=" + queryChallengeAppealID + "&format=csv",
+				Description: "Export governed responses to automated reciprocal challenge-appeal alignment actions for this appeal-board trail.",
+				Formats:     []string{"json", "csv"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-bundle",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/alignment-response/bundle",
+				Description: "Retrieve the signed bilateral alignment-response bundle for this appeal-board trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-bundle-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/" + pathChallengeAppealID + "/alignment-response/bundle/export?format=csv",
+				Description: "Export the signed bilateral alignment-response bundle for this appeal-board trail.",
 				Formats:     []string{"json", "csv"},
 			},
 		},
