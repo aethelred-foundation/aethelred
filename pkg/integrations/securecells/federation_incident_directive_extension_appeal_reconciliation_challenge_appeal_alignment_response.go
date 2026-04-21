@@ -574,10 +574,8 @@ func secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationCha
 		if !strings.EqualFold(strings.TrimSpace(record.ChallengeAppealID), challengeAppealID) {
 			continue
 		}
-		if latest == nil || record.OccurredAt.After(latest.OccurredAt) || (record.OccurredAt.Equal(latest.OccurredAt) && record.TransitionID > latest.TransitionID) {
-			recordCopy := record
-			latest = &recordCopy
-		}
+		recordCopy := record
+		latest = &recordCopy
 	}
 	return latest
 }
@@ -599,10 +597,8 @@ func secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationCha
 		if !strings.EqualFold(strings.TrimSpace(record.ChallengeAppealID), challengeAppealID) {
 			continue
 		}
-		if latest == nil || record.OccurredAt.After(latest.OccurredAt) || (record.OccurredAt.Equal(latest.OccurredAt) && record.TransitionID > latest.TransitionID) {
-			recordCopy := record
-			latest = &recordCopy
-		}
+		recordCopy := record
+		latest = &recordCopy
 	}
 	return latest
 }

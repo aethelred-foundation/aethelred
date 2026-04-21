@@ -11995,6 +11995,259 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 		t.Fatalf("expected case pack to include alignment response appeal governance, got %+v", casePackResp.Result)
 	}
 
+	automatedRealignedChallengeAppealBundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(ctx, created.CellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle for automated response appeal failed: %v", err)
+	}
+	automatedRealignedChallengeAppealBundleIntakeReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/organizations/"+organizationID+"/incident-directive-extension-appeal-reconciliation-challenge-appeal-bundles/intake", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleIntakeRequest(t, owner, nil, automatedRealignedChallengeAppealBundle)))
+	automatedRealignedChallengeAppealBundleIntakeReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	automatedRealignedChallengeAppealBundleIntakeRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(automatedRealignedChallengeAppealBundleIntakeRec, automatedRealignedChallengeAppealBundleIntakeReq)
+	if automatedRealignedChallengeAppealBundleIntakeRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedRealignedChallengeAppealBundleIntakeRec.Code, automatedRealignedChallengeAppealBundleIntakeRec.Body.String())
+	}
+
+	challengeAppealAlignmentAckReq = httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/acknowledge-alignment", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentAcknowledgeRequest(t, owner, nil, "acknowledge realigned reciprocal challenge appeal bundle for automated correction-board supervision")))
+	challengeAppealAlignmentAckReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	challengeAppealAlignmentAckRec = httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(challengeAppealAlignmentAckRec, challengeAppealAlignmentAckReq)
+	if challengeAppealAlignmentAckRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAlignmentAckRec.Code, challengeAppealAlignmentAckRec.Body.String())
+	}
+
+	challengeAppealAlignmentCorrectionReq = httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/attest-alignment-correction", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentCorrectionAttestationRequest(t, owner, nil, "attest corrected handling for automated correction-board response appeal supervision", "counterparty-alignment-response-appeal-automation-correct-0001", counterpartyChallengeAppealListResp.Items[0].SnapshotID)))
+	challengeAppealAlignmentCorrectionReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	challengeAppealAlignmentCorrectionRec = httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(challengeAppealAlignmentCorrectionRec, challengeAppealAlignmentCorrectionReq)
+	if challengeAppealAlignmentCorrectionRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAlignmentCorrectionRec.Code, challengeAppealAlignmentCorrectionRec.Body.String())
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealOpenReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/alignment-response-appeals", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRequest(t, owner, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg, "Local org appealed corrected alignment response under automated supervision", "The local organization escalated the corrected reciprocal challenge appeal alignment response into a timed correction-board path.", 2, []string{participantA.AgentID()})))
+	automatedChallengeAppealAlignmentResponseAppealOpenReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	automatedChallengeAppealAlignmentResponseAppealOpenRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealOpenRec, automatedChallengeAppealAlignmentResponseAppealOpenReq)
+	if automatedChallengeAppealAlignmentResponseAppealOpenRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealOpenRec.Code, automatedChallengeAppealAlignmentResponseAppealOpenRec.Body.String())
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&status=pending_correction_board_review", nil)
+	automatedChallengeAppealAlignmentResponseAppealListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealListRec, automatedChallengeAppealAlignmentResponseAppealListReq)
+	if automatedChallengeAppealAlignmentResponseAppealListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealListRec.Code, automatedChallengeAppealAlignmentResponseAppealListRec.Body.String())
+	}
+	var automatedChallengeAppealAlignmentResponseAppealListResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealListResponse
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealListRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealListResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal list response: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealListResp.Items) != 1 || automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].BoardReviewThreshold != 2 || automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].BoardMissingQuorumCount != 2 {
+		t.Fatalf("expected one pending automated alignment response appeal with missing quorum, got %+v", automatedChallengeAppealAlignmentResponseAppealListResp.Items)
+	}
+	automatedResponseAppealID := automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].ResponseAppealID
+	automatedResponseAppealReviewOverdueAt := automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].CreatedAt.UTC().Add(25 * time.Hour)
+
+	automatedChallengeAppealAlignmentResponseAppealOverdueReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals/overdue?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID)+"&before="+url.QueryEscape(automatedResponseAppealReviewOverdueAt.Format(time.RFC3339Nano)), nil)
+	automatedChallengeAppealAlignmentResponseAppealOverdueRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealOverdueRec, automatedChallengeAppealAlignmentResponseAppealOverdueReq)
+	if automatedChallengeAppealAlignmentResponseAppealOverdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealOverdueRec.Code, automatedChallengeAppealAlignmentResponseAppealOverdueRec.Body.String())
+	}
+	var automatedChallengeAppealAlignmentResponseAppealOverdueResp secureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealListResponse
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealOverdueRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealOverdueResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal overdue response: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items) != 1 || automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].PendingAction != "board_review" || automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].AutomationAction != "delegate_review_committee" {
+		t.Fatalf("expected one overdue automated alignment response appeal board-review item, got %+v", automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items)
+	}
+
+	if _, err := app.secureCellService.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals(ctx, automatedResponseAppealReviewOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated alignment response appeal sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-RESP-AUTO-SWEEP-01"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals review failed: %v", err)
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealAutomationReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID), nil)
+	automatedChallengeAppealAlignmentResponseAppealAutomationRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealAutomationRec, automatedChallengeAppealAlignmentResponseAppealAutomationReq)
+	if automatedChallengeAppealAlignmentResponseAppealAutomationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealAutomationRec.Code, automatedChallengeAppealAlignmentResponseAppealAutomationRec.Body.String())
+	}
+	var automatedChallengeAppealAlignmentResponseAppealAutomationResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionListResponse
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealAutomationRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealAutomationResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal automation response: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items) != 1 || automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items[0].PendingAction != "board_review" || automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items[0].Action != "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_review_delegated" || automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items[0].AutomatedActor != challengeAppealSweepActor {
+		t.Fatalf("expected one automated correction-board delegation action, got %+v", automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items)
+	}
+	automatedChallengeAppealAlignmentResponseAppealListReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID)+"&status=pending_correction_board_review", nil)
+	automatedChallengeAppealAlignmentResponseAppealListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealListRec, automatedChallengeAppealAlignmentResponseAppealListReq)
+	if automatedChallengeAppealAlignmentResponseAppealListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealListRec.Code, automatedChallengeAppealAlignmentResponseAppealListRec.Body.String())
+	}
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealListRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealListResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal list response after review sweep: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealListResp.Items) != 1 {
+		t.Fatalf("expected one delegated automated alignment response appeal, got %+v", automatedChallengeAppealAlignmentResponseAppealListResp.Items)
+	}
+	automatedCorrectionBoardReviewer := ""
+	for _, reviewer := range automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].EligibleBoardReviewerDIDs {
+		if !strings.EqualFold(reviewer, participantA.AgentID()) {
+			automatedCorrectionBoardReviewer = reviewer
+			break
+		}
+	}
+	if strings.TrimSpace(automatedCorrectionBoardReviewer) == "" {
+		t.Fatalf("expected delegated automated correction-board reviewer, got %+v", automatedChallengeAppealAlignmentResponseAppealListResp.Items[0])
+	}
+	automatedCorrectionBoardActor := owner
+	switch {
+	case strings.EqualFold(automatedCorrectionBoardReviewer, owner.AgentID()):
+		automatedCorrectionBoardActor = owner
+	case strings.EqualFold(automatedCorrectionBoardReviewer, participantB.AgentID()):
+		automatedCorrectionBoardActor = participantB
+	default:
+		t.Fatalf("expected delegated automated correction-board reviewer to map to a known test actor, got %q", automatedCorrectionBoardReviewer)
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealFirstRuleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/alignment-response-appeals/"+url.PathEscape(automatedResponseAppealID)+"/rule", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRulingRequest(t, participantA, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify, "First correction-board vote ratified the acknowledged alignment response", "The first correction-board reviewer favored ratifying the acknowledged reciprocal alignment response, but the threshold is not satisfied yet.")))
+	automatedChallengeAppealAlignmentResponseAppealFirstRuleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	automatedChallengeAppealAlignmentResponseAppealFirstRuleRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealFirstRuleRec, automatedChallengeAppealAlignmentResponseAppealFirstRuleReq)
+	if automatedChallengeAppealAlignmentResponseAppealFirstRuleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealFirstRuleRec.Code, automatedChallengeAppealAlignmentResponseAppealFirstRuleRec.Body.String())
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealRuleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/alignment-response-appeals/"+url.PathEscape(automatedResponseAppealID)+"/rule", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRulingRequest(t, automatedCorrectionBoardActor, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify, "Correction-board ratified corrected alignment response", "The delegated reviewer completed the correction-board quorum and ratified the corrected reciprocal alignment response.")))
+	automatedChallengeAppealAlignmentResponseAppealRuleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	automatedChallengeAppealAlignmentResponseAppealRuleRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealRuleRec, automatedChallengeAppealAlignmentResponseAppealRuleReq)
+	if automatedChallengeAppealAlignmentResponseAppealRuleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealRuleRec.Code, automatedChallengeAppealAlignmentResponseAppealRuleRec.Body.String())
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealRuledListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID), nil)
+	automatedChallengeAppealAlignmentResponseAppealRuledListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealRuledListRec, automatedChallengeAppealAlignmentResponseAppealRuledListReq)
+	if automatedChallengeAppealAlignmentResponseAppealRuledListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealRuledListRec.Code, automatedChallengeAppealAlignmentResponseAppealRuledListRec.Body.String())
+	}
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealRuledListRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealListResp); err != nil {
+		t.Fatalf("unmarshal automated ruled reconciliation challenge appeal alignment response appeal list response: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealListResp.Items) != 1 || automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusUpheld || automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].RatifyVoteCount != 2 {
+		t.Fatalf("expected one upheld automated alignment response appeal, got %+v", automatedChallengeAppealAlignmentResponseAppealListResp.Items)
+	}
+	automatedResponseAppealAckOverdueAt := automatedChallengeAppealAlignmentResponseAppealListResp.Items[0].RuledAt.UTC().Add(13 * time.Hour)
+
+	automatedChallengeAppealAlignmentResponseAppealOverdueReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals/overdue?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID)+"&before="+url.QueryEscape(automatedResponseAppealAckOverdueAt.Format(time.RFC3339Nano)), nil)
+	automatedChallengeAppealAlignmentResponseAppealOverdueRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealOverdueRec, automatedChallengeAppealAlignmentResponseAppealOverdueReq)
+	if automatedChallengeAppealAlignmentResponseAppealOverdueRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealOverdueRec.Code, automatedChallengeAppealAlignmentResponseAppealOverdueRec.Body.String())
+	}
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealOverdueRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealOverdueResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal acknowledgement overdue response: %v", err)
+	}
+	if len(automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items) != 1 || automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].PendingAction != "acknowledge_enforcement" || (automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].AutomationAction != "" && automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].AutomationAction != "escalate_response" && automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].AutomationAction != "suspend_contracts") {
+		t.Fatalf("expected one overdue automated alignment response appeal acknowledgement item, got %+v", automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items)
+	}
+	expectedAutomatedEnforcementRecovery := strings.TrimSpace(automatedChallengeAppealAlignmentResponseAppealOverdueResp.Items[0].AutomationAction) != ""
+
+	if _, err := app.secureCellService.SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals(ctx, automatedResponseAppealAckOverdueAt, securecellsintegration.SecureCellLifecycleRequest{
+		ActorDID: challengeAppealSweepActor,
+		Reason:   "automated alignment response appeal acknowledgement sweep",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-RESP-AUTO-SWEEP-02"},
+	}); err != nil {
+		t.Fatalf("SweepFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals acknowledgement failed: %v", err)
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealAutomationReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-automation-actions?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID), nil)
+	automatedChallengeAppealAlignmentResponseAppealAutomationRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealAutomationRec, automatedChallengeAppealAlignmentResponseAppealAutomationReq)
+	if automatedChallengeAppealAlignmentResponseAppealAutomationRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealAutomationRec.Code, automatedChallengeAppealAlignmentResponseAppealAutomationRec.Body.String())
+	}
+	if err := json.Unmarshal(automatedChallengeAppealAlignmentResponseAppealAutomationRec.Body.Bytes(), &automatedChallengeAppealAlignmentResponseAppealAutomationResp); err != nil {
+		t.Fatalf("unmarshal automated reconciliation challenge appeal alignment response appeal automation response after acknowledgement sweep: %v", err)
+	}
+	foundAutomatedCommitteeRecovery := false
+	foundAutomatedEnforcementRecovery := false
+	for _, item := range automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items {
+		if item.AutomatedActor != challengeAppealSweepActor {
+			t.Fatalf("expected automated actor %s, got %+v", challengeAppealSweepActor, automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items)
+		}
+		switch item.PendingAction {
+		case "board_review":
+			foundAutomatedCommitteeRecovery = true
+		case "acknowledge_enforcement":
+			if item.Action != "secure_cell.federation_incident_response_escalated" && item.Action != "secure_cell.federation_contract_suspended" {
+				t.Fatalf("expected automated acknowledgement recovery to escalate or suspend, got %+v", automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items)
+			}
+			foundAutomatedEnforcementRecovery = true
+		}
+	}
+	if !foundAutomatedCommitteeRecovery || (expectedAutomatedEnforcementRecovery && !foundAutomatedEnforcementRecovery) {
+		t.Fatalf("expected automated alignment response appeal supervision to cover review and acknowledgement, got %+v", automatedChallengeAppealAlignmentResponseAppealAutomationResp.Items)
+	}
+	expectedAutomationActionCount := 1
+	if expectedAutomatedEnforcementRecovery {
+		expectedAutomationActionCount = 2
+	}
+
+	automatedChallengeAppealAlignmentResponseAppealAutomationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-automation-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(automatedResponseAppealID)+"&format=csv", nil)
+	automatedChallengeAppealAlignmentResponseAppealAutomationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(automatedChallengeAppealAlignmentResponseAppealAutomationExportRec, automatedChallengeAppealAlignmentResponseAppealAutomationExportReq)
+	if automatedChallengeAppealAlignmentResponseAppealAutomationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, automatedChallengeAppealAlignmentResponseAppealAutomationExportRec.Code, automatedChallengeAppealAlignmentResponseAppealAutomationExportRec.Body.String())
+	}
+	if body := automatedChallengeAppealAlignmentResponseAppealAutomationExportRec.Body.String(); !strings.Contains(body, automatedResponseAppealID) || (expectedAutomatedEnforcementRecovery && !strings.Contains(body, "acknowledge_enforcement")) {
+		t.Fatalf("expected automated alignment response appeal automation export to include the expected supervision trail, got %s", body)
+	}
+
+	challengeAppealAlignmentResponseBundleReq = httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/alignment-response/bundle", nil)
+	challengeAppealAlignmentResponseBundleRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealAlignmentResponseBundleRec, challengeAppealAlignmentResponseBundleReq)
+	if challengeAppealAlignmentResponseBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealAlignmentResponseBundleRec.Code, challengeAppealAlignmentResponseBundleRec.Body.String())
+	}
+	if err := json.Unmarshal(challengeAppealAlignmentResponseBundleRec.Body.Bytes(), &challengeAppealAlignmentResponseBundleResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal alignment response bundle response after automated supervision: %v", err)
+	}
+	if challengeAppealAlignmentResponseBundleResp.Result == nil || len(challengeAppealAlignmentResponseBundleResp.Result.ResponseAppealAutomationActions) < expectedAutomationActionCount {
+		t.Fatalf("expected alignment response bundle to include automated correction-board supervision, got %+v", challengeAppealAlignmentResponseBundleResp.Result)
+	}
+
+	challengeAppealBundleReq = httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/bundle", nil)
+	challengeAppealBundleRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(challengeAppealBundleRec, challengeAppealBundleReq)
+	if challengeAppealBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, challengeAppealBundleRec.Code, challengeAppealBundleRec.Body.String())
+	}
+	if err := json.Unmarshal(challengeAppealBundleRec.Body.Bytes(), &challengeAppealBundleResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal bundle response after automated alignment response appeal supervision: %v", err)
+	}
+	if challengeAppealBundleResp.Result == nil || len(challengeAppealBundleResp.Result.CounterpartyAlignmentResponseAppealAutomationActions) < expectedAutomationActionCount {
+		t.Fatalf("expected reconciliation challenge appeal bundle to include automated alignment response appeal supervision, got %+v", challengeAppealBundleResp.Result)
+	}
+
+	casePackReq = httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-responses/"+url.PathEscape(localResponseID)+"/case-pack", nil)
+	casePackRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(casePackRec, casePackReq)
+	if casePackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, casePackRec.Code, casePackRec.Body.String())
+	}
+	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
+		t.Fatalf("unmarshal reconciliation challenge appeal case pack response after automated alignment response appeal supervision: %v", err)
+	}
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions) < expectedAutomationActionCount {
+		t.Fatalf("expected case pack to include automated alignment response appeal supervision, got %+v", casePackResp.Result)
+	}
+
 	challengeAppealRehearReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/rehear", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRehearingRequest(t, participantB, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg, "Counterparty requested reconciliation challenge appeal rehearing", "The counterparty requested a fresh reconciliation challenge appeal board after the acknowledged ruling.", 1, []string{participantA.AgentID()})))
 	challengeAppealRehearReq.Header.Set("Authorization", "Bearer secure-cells-secret")
 	challengeAppealRehearRec := httptest.NewRecorder()
