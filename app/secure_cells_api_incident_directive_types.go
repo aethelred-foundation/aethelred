@@ -156,6 +156,30 @@ type secureCellFederationIncidentDirectiveExtensionAppealRulingRequest struct {
 	Metadata          map[string]string                                                                 `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealRecuseRequest struct {
+	ActorIdentity json.RawMessage                                                  `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
+	BoardParty    securecellsintegration.SecureCellFederationIncidentResponseParty `json:"board_party,omitempty"`
+	Summary       string                                                           `json:"summary,omitempty"`
+	Description   string                                                           `json:"description,omitempty"`
+	EvidenceIDs   []string                                                         `json:"evidence_ids,omitempty"`
+	Reason        string                                                           `json:"reason,omitempty"`
+	Metadata      map[string]string                                                `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealRehearingRequest struct {
+	ActorIdentity             json.RawMessage                                                  `json:"actor_identity,omitempty"`
+	PolicyReceipt             *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
+	AppealingParty            securecellsintegration.SecureCellFederationIncidentResponseParty `json:"appealing_party,omitempty"`
+	Summary                   string                                                           `json:"summary,omitempty"`
+	Description               string                                                           `json:"description,omitempty"`
+	EvidenceIDs               []string                                                         `json:"evidence_ids,omitempty"`
+	BoardReviewThreshold      int                                                              `json:"board_review_threshold,omitempty"`
+	EligibleBoardReviewerDIDs []string                                                         `json:"eligible_board_reviewer_dids,omitempty"`
+	Reason                    string                                                           `json:"reason,omitempty"`
+	Metadata                  map[string]string                                                `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest struct {
 	ActorIdentity      json.RawMessage                                                  `json:"actor_identity,omitempty"`
 	PolicyReceipt      *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
@@ -201,6 +225,10 @@ type secureCellFederationIncidentDirectiveExtensionAutomationActionListResponse 
 
 type secureCellFederationIncidentDirectiveExtensionAppealListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealSummary `json:"items"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealRecusalListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRecusalSummary `json:"items"`
 }
 
 type secureCellOverdueFederationIncidentDirectiveExtensionAppealListResponse struct {
@@ -484,7 +512,44 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealFilter(r *http.Req
 		ExtensionID:    strings.TrimSpace(r.URL.Query().Get("extension_id")),
 		DisputeID:      strings.TrimSpace(r.URL.Query().Get("dispute_id")),
 		AppealID:       strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ParentAppealID: strings.TrimSpace(r.URL.Query().Get("parent_appeal_id")),
 		Status:         securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("since")); raw != "" {
+		since, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Since = &since
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("until")); raw != "" {
+		until, err := time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Until = &until
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealRecusalFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRecusalFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRecusalFilter{
+		CellID:         strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID: strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:     strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:     strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:    strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:    strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:      strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:       strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ActorDID:       strings.TrimSpace(r.URL.Query().Get("actor_did")),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)

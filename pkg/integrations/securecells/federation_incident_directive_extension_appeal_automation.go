@@ -669,6 +669,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealAutomationPlanFromRun(r
 	if appeal.Status == SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview && secureCellFederationIncidentDirectiveExtensionAppealUsesCommitteeGovernance(appeal) {
 		excluded := append([]string(nil), secureCellFederationIncidentDirectiveExtensionAppealCommitteeMemberDIDs(appeal)...)
 		excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionAppealRecordedVoterDIDs(appeal)...)
+		excluded = append(excluded, secureCellFederationIncidentDirectiveExtensionAppealRecusedReviewerDIDs(appeal)...)
 		if targetDID, tierID, targetSource := secureCellFederationIncidentDirectiveExtensionCommitteeTarget(run, response, appeal.BoardParty, excluded); targetDID != "" {
 			return secureCellFederationIncidentDirectiveExtensionAppealAutomationPlan{
 				action:        "delegate_review_committee",

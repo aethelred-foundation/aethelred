@@ -5536,6 +5536,42 @@ func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRulingReques
 	return body
 }
 
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRecuseRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string, summary string, description string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealRecuseRequest{
+		ActorIdentity: mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt: receipt,
+		Summary:       summary,
+		Description:   description,
+		EvidenceIDs:   []string{evidenceID},
+		Reason:        "recuse directive extension appeal board review",
+		Metadata:      map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECUSE-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension appeal recusal request: %v", err)
+	}
+	return body
+}
+
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRehearingRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string, summary string, description string, threshold int, eligibleReviewerDIDs []string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealRehearingRequest{
+		ActorIdentity:             mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:             receipt,
+		Summary:                   summary,
+		Description:               description,
+		EvidenceIDs:               []string{evidenceID},
+		BoardReviewThreshold:      threshold,
+		EligibleBoardReviewerDIDs: append([]string(nil), eligibleReviewerDIDs...),
+		Reason:                    "request directive extension appeal rehearing",
+		Metadata:                  map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-REHEAR-01"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension appeal rehearing request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, evidenceID string, summary string, description string) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest{
@@ -9150,6 +9186,338 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealGovernanc
 	}
 	if body := casePackExportRec.Body.String(); !strings.Contains(body, "directive_extension_appeal_bundle_count") {
 		t.Fatalf("expected case pack export to include appeal bundle count, got %s", body)
+	}
+}
+
+func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t *testing.T) {
+	t.Parallel()
+
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{62}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	ctx := context.Background()
+	owner := mustSecureCellAppIdentity(t, "owner-ext-appeal-recusal", []string{"UAE"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-ext-appeal-recusal-a", []string{"UAE"})
+	participantB := mustSecureCellAppIdentity(t, "reviewer-ext-appeal-recusal-b", []string{"UK"})
+
+	created, err := app.secureCellService.CreateCell(ctx, securecellsintegration.SecureCellRequest{
+		OwnerIdentity: owner,
+		Name:          "Incident Directive Extension Appeal Recusal API Cell",
+		Purpose:       "exercise directive extension appeal recusal and rehearing API surfaces",
+		Resource:      "cell:incident-directive-extension-appeal-recusal-api",
+		Jurisdiction:  "UAE",
+		Participants: []securecellsintegration.SecureCellParticipant{
+			{Identity: participantA, Role: "reviewer"},
+		},
+		Policy: securecellsintegration.SecureCellPolicy{
+			DataClasses:                []string{"confidential", "decisioning"},
+			ComputeZones:               []string{"uae-enclave"},
+			RequireConfidentialCompute: boolPtr(true),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateCell failed: %v", err)
+	}
+
+	started, err := app.secureCellService.StartSession(ctx, created.CellID, securecellsintegration.SecureCellSessionStartRequest{
+		ActorDID:        owner.AgentID(),
+		Name:            "Appeal Recusal API Room",
+		Purpose:         "coordinate bilateral directive exception recusal and rehearing API flows",
+		ParticipantDIDs: []string{participantA.AgentID()},
+		DataClasses:     []string{"decisioning"},
+		Reason:          "open appeal recusal api session",
+		Metadata:        map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-SESSION-01"},
+	})
+	if err != nil {
+		t.Fatalf("StartSession failed: %v", err)
+	}
+	session := started.Sessions[len(started.Sessions)-1]
+
+	invited, err := app.secureCellService.CreateFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationInviteRequest{
+		ActorDID:         owner.AgentID(),
+		SponsorOfRecord:  participantB.Liability.SponsorOfRecord,
+		OrganizationName: participantB.SponsorChain[0].SponsorName,
+		Jurisdiction:     "UK",
+		ExpectedDID:      participantB.AgentID(),
+		Role:             "bank_b_reviewer",
+		SessionScopeIDs:  []string{session.ID},
+		DataClasses:      []string{"confidential", "decisioning"},
+		ComputeZones:     []string{"uae-enclave"},
+		AllowedActions:   []string{"share_output", "session_exchange"},
+		Reason:           "invite counterparty recusal participant",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-INVITE-01"},
+	})
+	if err != nil {
+		t.Fatalf("CreateFederationInvitation failed: %v", err)
+	}
+	invitation := invited.FederationInvitations[len(invited.FederationInvitations)-1]
+
+	accepted, err := app.secureCellService.AcceptFederationInvitation(ctx, created.CellID, securecellsintegration.SecureCellFederationAcceptRequest{
+		InvitationID: invitation.ID,
+		ActorDID:     participantB.AgentID(),
+		Participant: securecellsintegration.SecureCellParticipant{
+			Identity: participantB,
+			Role:     "bank_b_reviewer",
+		},
+		Reason:   "counterparty joins appeal recusal room",
+		Metadata: map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-ACCEPT-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcceptFederationInvitation failed: %v", err)
+	}
+	organizationID := accepted.FederationContracts[0].OrganizationID
+	contractID := accepted.FederationContracts[0].ID
+
+	published, err := app.secureCellService.PublishFederationIncident(ctx, created.CellID, organizationID, securecellsintegration.SecureCellFederationIncidentPublishRequest{
+		ActorDID:                 owner.AgentID(),
+		Severity:                 securecellsintegration.SecureCellFederationIncidentSeverityHigh,
+		Category:                 securecellsintegration.SecureCellFederationIncidentCategoryUnauthorizedExchange,
+		Summary:                  "Directive extension appeal recusal incident",
+		Description:              "The local organization wants appeal-board recusal and rehearing governance over a directive exception.",
+		ContractIDs:              []string{contractID},
+		SessionIDs:               []string{session.ID},
+		AutoContainmentRequested: false,
+		Reason:                   "publish directive extension appeal recusal incident",
+		Metadata:                 map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-INC-01"},
+	})
+	if err != nil {
+		t.Fatalf("PublishFederationIncident failed: %v", err)
+	}
+	incidentID := published.FederationIncidents[0].ID
+
+	responses, err := app.secureCellService.ListFederationIncidentResponses(ctx, securecellsintegration.SecureCellFederationIncidentResponseFilter{
+		CellID:         created.CellID,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentResponses failed: %v", err)
+	}
+	var localResponseID string
+	for _, item := range responses {
+		if item.SourceType == securecellsintegration.SecureCellFederationIncidentResponseSourceLocalIncident {
+			localResponseID = item.ResponseID
+			break
+		}
+	}
+	if localResponseID == "" {
+		t.Fatalf("expected local response, got %+v", responses)
+	}
+
+	dueAt := time.Now().UTC().Add(2 * time.Hour)
+	if _, err := app.secureCellService.CreateFederationIncidentDirective(ctx, created.CellID, localResponseID, securecellsintegration.SecureCellFederationIncidentDirectiveCreateRequest{
+		ActorDID:      owner.AgentID(),
+		DirectiveType: "counterparty_evidence_request",
+		Title:         "Provide counterparty evidence package",
+		Summary:       "Counterparty must provide an evidence package for bilateral incident review.",
+		Description:   "Provide the scoped evidence package, timeline, and remediation artifacts for the bilateral incident response.",
+		Priority:      securecellsintegration.SecureCellFederationIncidentDirectivePriorityHigh,
+		AssigneeParty: securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		ReviewerParty: securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		AssigneeDID:   participantB.AgentID(),
+		ReviewerDID:   owner.AgentID(),
+		EvidenceIDs:   []string{incidentID},
+		DueAt:         &dueAt,
+		Reason:        "issue bilateral evidence work order",
+		Metadata:      map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-ISSUE-01"},
+	}); err != nil {
+		t.Fatalf("CreateFederationIncidentDirective failed: %v", err)
+	}
+
+	directives, err := app.secureCellService.ListFederationIncidentDirectives(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveFilter{
+		CellID:     created.CellID,
+		ResponseID: localResponseID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectives failed: %v", err)
+	}
+	directiveID := directives[0].DirectiveID
+
+	proposedDueAt := dueAt.Add(4 * time.Hour)
+	if _, err := app.secureCellService.RequestFederationIncidentDirectiveExtension(ctx, created.CellID, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionRequest{
+		ActorDID:                   participantB.AgentID(),
+		RequestingParty:            securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                    "Counterparty needs longer evidence collection window",
+		Description:                "The counterparty needs additional time to gather the full bilateral evidence package.",
+		EvidenceIDs:                []string{incidentID},
+		ProposedDueAt:              &proposedDueAt,
+		ReviewApprovalThreshold:    1,
+		EligibleReviewerDIDs:       []string{owner.AgentID()},
+		DisputeResolutionThreshold: 1,
+		EligibleResolverDIDs:       []string{owner.AgentID()},
+		Reason:                     "request directive extension before appeal recusal",
+		Metadata:                   map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-REQUEST-01"},
+	}); err != nil {
+		t.Fatalf("RequestFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	extensions, err := app.secureCellService.ListFederationIncidentDirectiveExtensions(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensions failed: %v", err)
+	}
+	extensionID := extensions[0].ExtensionID
+
+	if _, err := app.secureCellService.RejectFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionRejectRequest{
+		ActorDID:            owner.AgentID(),
+		ReviewingParty:      securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		DecisionSummary:     "Local org rejected the extension",
+		DecisionDescription: "The local organization rejected the exception request.",
+		EvidenceIDs:         []string{directiveID},
+		Reason:              "reject directive extension before appeal recusal",
+		Metadata:            map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-REJECT-01"},
+	}); err != nil {
+		t.Fatalf("RejectFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.DisputeFederationIncidentDirectiveExtension(ctx, created.CellID, extensionID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeRequest{
+		ActorDID:         participantB.AgentID(),
+		ChallengingParty: securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:          "Counterparty disputes rejected extension",
+		Description:      "The counterparty reopened the rejected extension for bilateral review.",
+		EvidenceIDs:      []string{directiveID},
+		Reason:           "open directive extension dispute before appeal recusal",
+		Metadata:         map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-DISPUTE-01"},
+	}); err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtension failed: %v", err)
+	}
+
+	disputes, err := app.secureCellService.ListFederationIncidentDirectiveExtensionDisputes(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeFilter{
+		CellID:      created.CellID,
+		DirectiveID: directiveID,
+		ExtensionID: extensionID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionDisputes failed: %v", err)
+	}
+	disputeID := disputes[0].DisputeID
+
+	if _, err := app.secureCellService.ResolveFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeResolveRequest{
+		ActorDID:              owner.AgentID(),
+		RespondingParty:       securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		Resolution:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionDisputeResolutionUphold,
+		ResolutionSummary:     "Local org upheld the rejection",
+		ResolutionDescription: "The local organization upheld the rejection during dispute resolution.",
+		EvidenceIDs:           []string{directiveID},
+		Reason:                "resolve dispute before appeal recusal",
+		Metadata:              map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-RESOLVE-01"},
+	}); err != nil {
+		t.Fatalf("ResolveFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	if _, err := app.secureCellService.AppealFederationIncidentDirectiveExtensionDispute(ctx, created.CellID, disputeID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRequest{
+		ActorDID:                  participantB.AgentID(),
+		AppealingParty:            securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                   "Counterparty appeals upheld rejection",
+		Description:               "The counterparty escalated the upheld rejection to the bilateral appeal board.",
+		EvidenceIDs:               []string{directiveID},
+		BoardReviewThreshold:      1,
+		EligibleBoardReviewerDIDs: []string{owner.AgentID(), participantA.AgentID()},
+		Reason:                    "open directive extension appeal board review",
+		Metadata:                  map[string]string{"ticket": "APP-FED-DIRECTIVE-EXT-APPEAL-RECUSE-OPEN-01"},
+	}); err != nil {
+		t.Fatalf("AppealFederationIncidentDirectiveExtensionDispute failed: %v", err)
+	}
+
+	appeals, err := app.secureCellService.ListFederationIncidentDirectiveExtensionAppeals(ctx, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealFilter{
+		CellID:    created.CellID,
+		DisputeID: disputeID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppeals failed: %v", err)
+	}
+	appealID := appeals[0].AppealID
+
+	recuseReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/recuse", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRecuseRequest(t, owner, nil, directiveID, "Owner recused from appeal board review", "The owner declared a reviewer conflict and stepped off the bilateral appeal board.")))
+	recuseReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	recuseRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(recuseRec, recuseReq)
+	if recuseRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, recuseRec.Code, recuseRec.Body.String())
+	}
+
+	recusalListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-recusals?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID), nil)
+	recusalListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(recusalListRec, recusalListReq)
+	if recusalListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, recusalListRec.Code, recusalListRec.Body.String())
+	}
+	var recusalListResp secureCellFederationIncidentDirectiveExtensionAppealRecusalListResponse
+	if err := json.Unmarshal(recusalListRec.Body.Bytes(), &recusalListResp); err != nil {
+		t.Fatalf("unmarshal appeal recusal list response: %v", err)
+	}
+	if len(recusalListResp.Items) != 1 || recusalListResp.Items[0].ActorDID != owner.AgentID() {
+		t.Fatalf("expected one owner recusal, got %+v", recusalListResp.Items)
+	}
+
+	recusalExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-recusals/export?cell_id="+url.QueryEscape(created.CellID)+"&appeal_id="+url.QueryEscape(appealID)+"&format=csv", nil)
+	recusalExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(recusalExportRec, recusalExportReq)
+	if recusalExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, recusalExportRec.Code, recusalExportRec.Body.String())
+	}
+	if body := recusalExportRec.Body.String(); !strings.Contains(body, appealID) || !strings.Contains(body, owner.AgentID()) {
+		t.Fatalf("expected recusal export to include appeal id and actor did, got %s", body)
+	}
+
+	ruleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/rule", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRulingRequest(t, participantA, nil, directiveID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify, "Local board ratified rejection after recusal", "The alternate reviewer ratified the rejection after the conflicted reviewer recused.")))
+	ruleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	ruleRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(ruleRec, ruleReq)
+	if ruleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ruleRec.Code, ruleRec.Body.String())
+	}
+
+	ackReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/acknowledge-enforcement", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest(t, participantB, nil, directiveID, "Counterparty acknowledged final appeal ruling", "The counterparty accepted the ratified rejection for enforcement.")))
+	ackReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	ackRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(ackRec, ackReq)
+	if ackRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, ackRec.Code, ackRec.Body.String())
+	}
+
+	rehearReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+appealID+"/rehear", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealRehearingRequest(t, participantB, nil, directiveID, "Counterparty requested rehearing of ratified rejection", "The counterparty challenged the ratified ruling and requested a fresh board rehearing.", 1, []string{owner.AgentID()})))
+	rehearReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	rehearRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(rehearRec, rehearReq)
+	if rehearRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearRec.Code, rehearRec.Body.String())
+	}
+
+	rehearingListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeals?cell_id="+url.QueryEscape(created.CellID)+"&parent_appeal_id="+url.QueryEscape(appealID), nil)
+	rehearingListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(rehearingListRec, rehearingListReq)
+	if rehearingListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearingListRec.Code, rehearingListRec.Body.String())
+	}
+	var rehearingListResp secureCellFederationIncidentDirectiveExtensionAppealListResponse
+	if err := json.Unmarshal(rehearingListRec.Body.Bytes(), &rehearingListResp); err != nil {
+		t.Fatalf("unmarshal rehearing list response: %v", err)
+	}
+	if len(rehearingListResp.Items) != 1 || rehearingListResp.Items[0].ParentAppealID != appealID || rehearingListResp.Items[0].AppealGeneration != 2 || rehearingListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview {
+		t.Fatalf("expected one pending rehearing, got %+v", rehearingListResp.Items)
+	}
+	rehearingID := rehearingListResp.Items[0].AppealID
+
+	rehearingBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeals/"+rehearingID+"/bundle", nil)
+	rehearingBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(rehearingBundleRec, rehearingBundleReq)
+	if rehearingBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearingBundleRec.Code, rehearingBundleRec.Body.String())
+	}
+	var rehearingBundleResp secureCellFederationIncidentDirectiveExtensionAppealBundleResponse
+	if err := json.Unmarshal(rehearingBundleRec.Body.Bytes(), &rehearingBundleResp); err != nil {
+		t.Fatalf("unmarshal rehearing bundle response: %v", err)
+	}
+	if rehearingBundleResp.Result == nil || rehearingBundleResp.Result.AppealSummary.ParentAppealID != appealID || rehearingBundleResp.Result.AppealSummary.AppealGeneration != 2 {
+		t.Fatalf("expected rehearing bundle lineage, got %+v", rehearingBundleResp.Result)
 	}
 }
 

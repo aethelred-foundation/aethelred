@@ -58,6 +58,29 @@ func secureCellFederationIncidentDirectiveExtensionAppealRecordedVoterDIDs(appea
 	return uniqueTrimmedStrings(items)
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealRecusedReviewerDIDs(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) []string {
+	items := make([]string, 0, len(appeal.BoardRecusals))
+	for _, recusal := range appeal.BoardRecusals {
+		if actor := strings.TrimSpace(recusal.ActorDID); actor != "" {
+			items = append(items, actor)
+		}
+	}
+	return uniqueTrimmedStrings(items)
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealHasRecusal(appeal SecureCellFederationIncidentDirectiveExtensionAppeal, actorDID string) bool {
+	actorDID = strings.TrimSpace(actorDID)
+	if actorDID == "" {
+		return false
+	}
+	for _, recusal := range appeal.BoardRecusals {
+		if strings.EqualFold(strings.TrimSpace(recusal.ActorDID), actorDID) {
+			return true
+		}
+	}
+	return false
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealCommitteeMemberDIDs(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) []string {
 	items := append([]string(nil), uniqueTrimmedStrings(appeal.EligibleBoardReviewerDIDs)...)
 	for _, delegation := range appeal.BoardDelegations {
@@ -65,7 +88,18 @@ func secureCellFederationIncidentDirectiveExtensionAppealCommitteeMemberDIDs(app
 			items = append(items, target)
 		}
 	}
-	return uniqueTrimmedStrings(items)
+	members := uniqueTrimmedStrings(items)
+	recused := secureCellFederationIncidentDirectiveExtensionAppealRecusedReviewerDIDs(appeal)
+	if len(recused) == 0 {
+		return members
+	}
+	filtered := make([]string, 0, len(members))
+	for _, member := range members {
+		if !secureCellStringSliceContains(recused, member) {
+			filtered = append(filtered, member)
+		}
+	}
+	return uniqueTrimmedStrings(filtered)
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealCommitteeSnapshot(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) secureCellFederationIncidentDirectiveExtensionAppealCommitteeState {
@@ -101,6 +135,11 @@ func secureCellFederationIncidentDirectiveExtensionAppealVoteID(appealID string,
 	return fmt.Sprintf("%s-board-vote-%x", strings.TrimSpace(appealID), sha256.Sum256([]byte(seed)))
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealRecusalID(appealID string, actorDID string, ordinal int) string {
+	seed := fmt.Sprintf("%s|%s|%d", strings.TrimSpace(appealID), strings.TrimSpace(actorDID), ordinal+1)
+	return fmt.Sprintf("%s-board-recusal-%x", strings.TrimSpace(appealID), sha256.Sum256([]byte(seed)))
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealID(dispute SecureCellFederationIncidentDirectiveExtensionDispute, actorDID string, createdAt time.Time, ordinal int) string {
 	return fmt.Sprintf("%s-appeal-%x",
 		strings.TrimSpace(dispute.ID),
@@ -122,6 +161,9 @@ func secureCellFederationIncidentDirectiveExtensionAppealHasVote(appeal SecureCe
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealReviewerAllowed(appeal SecureCellFederationIncidentDirectiveExtensionAppeal, actorDID string) bool {
+	if secureCellFederationIncidentDirectiveExtensionAppealHasRecusal(appeal, actorDID) {
+		return false
+	}
 	if len(appeal.EligibleBoardReviewerDIDs) == 0 {
 		return true
 	}
@@ -204,6 +246,24 @@ func secureCellFederationIncidentDirectiveExtensionAppealEnforcementSummary(appe
 	}
 }
 
+func secureCellFederationIncidentDirectiveExtensionAppealRecusalSummary(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) string {
+	if strings.TrimSpace(appeal.ParentAppealID) != "" {
+		return "recuse from directive extension appeal rehearing board review"
+	}
+	return "recuse from directive extension appeal board review"
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealDefaultRehearingSummary(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) string {
+	switch secureCellNormalizedFederationIncidentDirectiveExtensionAppealRuling(appeal.Ruling) {
+	case SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn:
+		return "request rehearing of overturned directive extension appeal ruling"
+	case SecureCellFederationIncidentDirectiveExtensionAppealRulingRatify:
+		return "request rehearing of ratified directive extension appeal ruling"
+	default:
+		return "request rehearing of directive extension appeal ruling"
+	}
+}
+
 func secureCellFederationIncidentDirectiveExtensionAppealOpen(dispute SecureCellFederationIncidentDirectiveExtensionDispute) *SecureCellFederationIncidentDirectiveExtensionAppeal {
 	for idx := len(dispute.Appeals) - 1; idx >= 0; idx-- {
 		switch dispute.Appeals[idx].Status {
@@ -227,6 +287,13 @@ func secureCellLatestFederationIncidentDirectiveExtensionAppeal(dispute SecureCe
 		}
 	}
 	return latest
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealGeneration(appeal SecureCellFederationIncidentDirectiveExtensionAppeal) int {
+	if appeal.AppealGeneration > 0 {
+		return appeal.AppealGeneration
+	}
+	return 1
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealThresholdStatusForRuling(ruling SecureCellFederationIncidentDirectiveExtensionAppealRuling) SecureCellFederationIncidentDirectiveExtensionAppealStatus {
@@ -384,6 +451,7 @@ func (s *Service) AppealFederationIncidentDirectiveExtensionDispute(ctx context.
 		OrganizationID:                  response.OrganizationID,
 		SponsorOfRecord:                 response.SponsorOfRecord,
 		IncidentID:                      response.IncidentID,
+		AppealGeneration:                1,
 		AppealingParty:                  appealingParty,
 		BoardParty:                      boardParty,
 		EnforcementAcknowledgementParty: appealingParty,
@@ -443,12 +511,341 @@ func (s *Service) AppealFederationIncidentDirectiveExtensionDispute(ctx context.
 			"federation_incident_directive_extension_dispute_status_before":  string(dispute.Status),
 			"federation_incident_directive_extension_dispute_status_after":   string(updatedDispute.Status),
 			"federation_incident_directive_extension_appeal_id":              appeal.ID,
+			"federation_incident_directive_extension_appeal_generation":      fmt.Sprintf("%d", appeal.AppealGeneration),
 			"federation_incident_directive_extension_appeal_status_before":   "",
 			"federation_incident_directive_extension_appeal_status_after":    string(appeal.Status),
 			"federation_incident_directive_extension_appealing_party":        string(appeal.AppealingParty),
 			"federation_incident_directive_extension_appeal_board_party":     string(appeal.BoardParty),
 			"federation_incident_directive_extension_appeal_board_threshold": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(appeal)),
 			"federation_incident_directive_extension_appeal_board_members":   strings.Join(appeal.EligibleBoardReviewerDIDs, ","),
+			"federation_incident_directive_extension_appeal_pending_action":  "board_review",
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// RecuseFederationIncidentDirectiveExtensionAppealReview records one
+// evidence-bearing reviewer recusal for a pending appeal-board review.
+func (s *Service) RecuseFederationIncidentDirectiveExtensionAppealReview(ctx context.Context, cellID string, appealID string, req SecureCellFederationIncidentDirectiveExtensionAppealRecuseRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	responseIdx, directiveIdx, extensionIdx, disputeIdx, appealIdx, response, directive, extension, dispute, appeal := findSecureCellFederationIncidentDirectiveExtensionAppeal(run.result.FederationIncidentResponses, appealID)
+	if response == nil || directive == nil || extension == nil || dispute == nil || appeal == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: %q", ErrFederationIncidentDirectiveNotFound, appealID)
+	}
+	if appeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: appeal %q is not pending board review", ErrFederationIncidentDirectiveImmutable, appealID)
+	}
+	boardParty := secureCellNormalizedFederationIncidentResponseParty(req.BoardParty)
+	if boardParty == "" {
+		boardParty = appeal.BoardParty
+	}
+	if boardParty != appeal.BoardParty {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: appeal %q must be recused by %q", ErrPolicyDenied, appealID, appeal.BoardParty)
+	}
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, boardParty) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: actor %q is not permitted to recuse from appeal %q", ErrPolicyDenied, actorDID, appealID)
+	}
+	if !secureCellFederationIncidentDirectiveExtensionAppealReviewerAllowed(*appeal, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: actor %q is not an eligible board reviewer for appeal %q", ErrPolicyDenied, actorDID, appealID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealHasVote(*appeal, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: actor %q has already voted on appeal %q", ErrFederationIncidentDirectiveImmutable, actorDID, appealID)
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealHasRecusal(*appeal, actorDID) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: actor %q already recused from appeal %q", ErrFederationIncidentDirectiveImmutable, actorDID, appealID)
+	}
+	summary := strings.TrimSpace(req.Summary)
+	if summary == "" {
+		summary = secureCellFederationIncidentDirectiveExtensionAppealRecusalSummary(*appeal)
+	}
+	receipt, err := s.evaluateStage(ctx, run.request, "recuse_federation_incident_directive_extension_appeal_review", lastReceiptHash(run.result), map[string]string{
+		"federation_incident_response_id":                       response.ID,
+		"federation_organization_id":                            response.OrganizationID,
+		"federation_sponsor_of_record":                          response.SponsorOfRecord,
+		"federation_incident_id":                                response.IncidentID,
+		"federation_incident_directive_id":                      directive.ID,
+		"federation_incident_directive_extension_id":            extension.ID,
+		"federation_incident_directive_extension_dispute_id":    dispute.ID,
+		"federation_incident_directive_extension_appeal_id":     appeal.ID,
+		"federation_incident_directive_extension_appeal_status": string(appeal.Status),
+		"transition_reason":                                     firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w", ErrPolicyDenied)
+	}
+
+	now := time.Now().UTC()
+	updatedDirective := run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx]
+	updatedExtension := updatedDirective.Extensions[extensionIdx]
+	updatedDispute := updatedExtension.Disputes[disputeIdx]
+	updatedAppeal := updatedDispute.Appeals[appealIdx]
+	recusal := SecureCellFederationIncidentDirectiveExtensionAppealRecusal{
+		ID:                secureCellFederationIncidentDirectiveExtensionAppealRecusalID(updatedAppeal.ID, actorDID, len(updatedAppeal.BoardRecusals)),
+		AppealID:          updatedAppeal.ID,
+		ActorDID:          actorDID,
+		BoardParty:        updatedAppeal.BoardParty,
+		Summary:           summary,
+		Description:       strings.TrimSpace(req.Description),
+		EvidenceIDs:       append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		PolicyReceiptID:   receipt.ID,
+		PolicyReceiptHash: receipt.ContentHash,
+		CreatedAt:         now,
+		Metadata:          cloneStringMap(req.Metadata),
+	}
+	updatedAppeal.BoardRecusals = append(updatedAppeal.BoardRecusals, recusal)
+	if len(updatedAppeal.EligibleBoardReviewerDIDs) > 0 {
+		filtered := make([]string, 0, len(updatedAppeal.EligibleBoardReviewerDIDs))
+		for _, reviewer := range updatedAppeal.EligibleBoardReviewerDIDs {
+			if !strings.EqualFold(strings.TrimSpace(reviewer), actorDID) {
+				filtered = append(filtered, reviewer)
+			}
+		}
+		updatedAppeal.EligibleBoardReviewerDIDs = uniqueTrimmedStrings(filtered)
+	}
+	updatedAppeal.UpdatedAt = now
+	updatedAppeal.Metadata = mergeStringMaps(updatedAppeal.Metadata, req.Metadata)
+	updatedDispute.Appeals[appealIdx] = updatedAppeal
+	updatedDispute.UpdatedAt = now
+	updatedDispute.Metadata = mergeStringMaps(updatedDispute.Metadata, req.Metadata)
+	updatedExtension.Disputes[disputeIdx] = updatedDispute
+	updatedExtension.UpdatedAt = now
+	updatedExtension.Metadata = mergeStringMaps(updatedExtension.Metadata, req.Metadata)
+	updatedDirective.Extensions[extensionIdx] = updatedExtension
+	updatedDirective.UpdatedAt = now
+	updatedDirective.Metadata = mergeStringMaps(updatedDirective.Metadata, req.Metadata)
+	run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx] = updatedDirective
+	run.result.FederationIncidentResponses[responseIdx].UpdatedAt = now
+	run.result.FederationIncidentResponses[responseIdx].Metadata = mergeStringMaps(run.result.FederationIncidentResponses[responseIdx].Metadata, req.Metadata)
+	run.result.UpdatedAt = now
+
+	ratifyVotes, overturnVotes := secureCellFederationIncidentDirectiveExtensionAppealVoteCounts(updatedAppeal)
+	committeeState := secureCellFederationIncidentDirectiveExtensionAppealCommitteeSnapshot(updatedAppeal)
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_directive_extension_appeal_review_recused", recusal.ID),
+		Action:           "secure_cell.federation_incident_directive_extension_appeal_review_recused",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_directive_extension_appeal",
+		TargetDID:        updatedAppeal.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_incident_response_id":                                  response.ID,
+			"federation_organization_id":                                       response.OrganizationID,
+			"federation_sponsor_of_record":                                     response.SponsorOfRecord,
+			"federation_incident_id":                                           response.IncidentID,
+			"federation_incident_directive_id":                                 directive.ID,
+			"federation_incident_directive_title":                              directive.Title,
+			"federation_incident_directive_extension_id":                       updatedExtension.ID,
+			"federation_incident_directive_extension_status_before":            string(extension.Status),
+			"federation_incident_directive_extension_status_after":             string(updatedExtension.Status),
+			"federation_incident_directive_extension_dispute_id":               updatedDispute.ID,
+			"federation_incident_directive_extension_dispute_status_before":    string(dispute.Status),
+			"federation_incident_directive_extension_dispute_status_after":     string(updatedDispute.Status),
+			"federation_incident_directive_extension_appeal_id":                updatedAppeal.ID,
+			"federation_incident_directive_extension_appeal_status_before":     string(appeal.Status),
+			"federation_incident_directive_extension_appeal_status_after":      string(updatedAppeal.Status),
+			"federation_incident_directive_extension_appeal_recusal_id":        recusal.ID,
+			"federation_incident_directive_extension_appeal_recused_actor":     actorDID,
+			"federation_incident_directive_extension_appeal_board_party":       string(updatedAppeal.BoardParty),
+			"federation_incident_directive_extension_appeal_board_threshold":   fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(updatedAppeal)),
+			"federation_incident_directive_extension_appeal_ratify_votes":      fmt.Sprintf("%d", ratifyVotes),
+			"federation_incident_directive_extension_appeal_overturn_votes":    fmt.Sprintf("%d", overturnVotes),
+			"federation_incident_directive_extension_appeal_recusal_count":     fmt.Sprintf("%d", len(updatedAppeal.BoardRecusals)),
+			"federation_incident_directive_extension_appeal_delegation_count":  fmt.Sprintf("%d", committeeState.delegationCount),
+			"federation_incident_directive_extension_appeal_committee_members": fmt.Sprintf("%d", committeeState.memberCount),
+			"federation_incident_directive_extension_appeal_vote_count":        fmt.Sprintf("%d", committeeState.recordedVoteCount),
+			"federation_incident_directive_extension_appeal_missing_quorum":    fmt.Sprintf("%d", committeeState.missingQuorumCount),
+			"federation_incident_directive_extension_appeal_outstanding_votes": fmt.Sprintf("%d", committeeState.outstandingMemberCount),
+			"federation_incident_directive_extension_appeal_quorum_satisfied":  fmt.Sprintf("%t", committeeState.quorumSatisfied),
+			"federation_incident_directive_extension_appeal_pending_action":    "board_review",
+		}),
+		OccurredAt: receipt.EvaluatedAt.UTC(),
+	}
+	if err := s.rebuildArtifacts(ctx, run, receipt, transition); err != nil {
+		return nil, err
+	}
+	s.setRun(run)
+	return cloneResult(run.result)
+}
+
+// RehearFederationIncidentDirectiveExtensionAppeal opens one governed
+// rehearing over a previously ruled directive-exception appeal.
+func (s *Service) RehearFederationIncidentDirectiveExtensionAppeal(ctx context.Context, cellID string, appealID string, req SecureCellFederationIncidentDirectiveExtensionAppealRehearingRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	responseIdx, directiveIdx, extensionIdx, disputeIdx, _, response, directive, extension, dispute, appeal := findSecureCellFederationIncidentDirectiveExtensionAppeal(run.result.FederationIncidentResponses, appealID)
+	if response == nil || directive == nil || extension == nil || dispute == nil || appeal == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: %q", ErrFederationIncidentDirectiveNotFound, appealID)
+	}
+	if appeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusRatified &&
+		appeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusOverturned &&
+		appeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealStatusEnforcementAcknowledged {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: appeal %q is not eligible for rehearing", ErrFederationIncidentDirectiveImmutable, appealID)
+	}
+	if latest := secureCellLatestFederationIncidentDirectiveExtensionAppeal(*dispute); latest == nil || !strings.EqualFold(strings.TrimSpace(latest.ID), strings.TrimSpace(appeal.ID)) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: appeal %q is not the latest appeal for dispute %q", ErrFederationIncidentDirectiveImmutable, appealID, dispute.ID)
+	}
+	appealingParty := secureCellNormalizedFederationIncidentResponseParty(req.AppealingParty)
+	if appealingParty == "" {
+		if appeal.EnforcementAcknowledgementParty != "" {
+			appealingParty = appeal.EnforcementAcknowledgementParty
+		} else {
+			appealingParty = appeal.AppealingParty
+		}
+	}
+	if appealingParty != dispute.ChallengingParty && appealingParty != dispute.RespondingParty {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: invalid rehearing party %q", ErrPolicyDenied, appealingParty)
+	}
+	boardParty := secureCellFederationIncidentDirectiveExtensionAppealBoardParty(appealingParty, *dispute)
+	actorDID := firstNonEmpty(strings.TrimSpace(req.ActorDID), run.request.OwnerIdentity.AgentID())
+	if !secureCellFederationIncidentResponsePartyAllowed(run, *response, actorDID, appealingParty) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w: actor %q is not permitted to request rehearing for appeal %q", ErrPolicyDenied, actorDID, appealID)
+	}
+	summary := strings.TrimSpace(req.Summary)
+	if summary == "" {
+		summary = secureCellFederationIncidentDirectiveExtensionAppealDefaultRehearingSummary(*appeal)
+	}
+	eligibleReviewers := secureCellFederationIncidentDirectiveExtensionAppealEligibleReviewers(run, *response, boardParty, req.EligibleBoardReviewerDIDs)
+	effectiveResolution := secureCellFederationIncidentDirectiveExtensionAppealEffectiveResolution(*appeal)
+	effectiveStatus := secureCellFederationIncidentDirectiveExtensionAppealEffectiveStatus(*appeal)
+	receipt, err := s.evaluateStage(ctx, run.request, "rehear_federation_incident_directive_extension_appeal", lastReceiptHash(run.result), map[string]string{
+		"federation_incident_response_id":                              response.ID,
+		"federation_organization_id":                                   response.OrganizationID,
+		"federation_sponsor_of_record":                                 response.SponsorOfRecord,
+		"federation_incident_id":                                       response.IncidentID,
+		"federation_incident_directive_id":                             directive.ID,
+		"federation_incident_directive_extension_id":                   extension.ID,
+		"federation_incident_directive_extension_dispute_id":           dispute.ID,
+		"federation_incident_directive_extension_appeal_id":            appeal.ID,
+		"federation_incident_directive_extension_appeal_status":        string(appeal.Status),
+		"federation_incident_directive_extension_appeal_parent_id":     appeal.ID,
+		"federation_incident_directive_extension_appeal_generation":    fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealGeneration(*appeal)+1),
+		"federation_incident_directive_extension_appealing_party":      string(appealingParty),
+		"federation_incident_directive_extension_appeal_board_party":   string(boardParty),
+		"federation_incident_directive_extension_appeal_board_members": strings.Join(eligibleReviewers, ","),
+		"federation_incident_directive_extension_status_after":         string(effectiveStatus),
+		"federation_incident_directive_extension_dispute_resolution":   string(effectiveResolution),
+		"transition_reason":                                            firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+	}, actorDID)
+	if err != nil {
+		return nil, err
+	}
+	if receipt.Decision != policy.Allow.String() {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal: %w", ErrPolicyDenied)
+	}
+
+	now := time.Now().UTC()
+	updatedDirective := run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx]
+	updatedExtension := updatedDirective.Extensions[extensionIdx]
+	updatedDispute := updatedExtension.Disputes[disputeIdx]
+	rehearing := SecureCellFederationIncidentDirectiveExtensionAppeal{
+		ID:                              secureCellFederationIncidentDirectiveExtensionAppealID(updatedDispute, actorDID, now, len(updatedDispute.Appeals)),
+		ResponseID:                      response.ID,
+		DirectiveID:                     directive.ID,
+		ExtensionID:                     extension.ID,
+		DisputeID:                       dispute.ID,
+		OrganizationID:                  response.OrganizationID,
+		SponsorOfRecord:                 response.SponsorOfRecord,
+		IncidentID:                      response.IncidentID,
+		ParentAppealID:                  appeal.ID,
+		AppealGeneration:                secureCellFederationIncidentDirectiveExtensionAppealGeneration(*appeal) + 1,
+		AppealingParty:                  appealingParty,
+		BoardParty:                      boardParty,
+		EnforcementAcknowledgementParty: appealingParty,
+		ChallengedDisputeStatus:         dispute.Status,
+		ChallengedResolution:            effectiveResolution,
+		ChallengedExtensionStatus:       effectiveStatus,
+		AppealedBy:                      actorDID,
+		Summary:                         summary,
+		Description:                     strings.TrimSpace(req.Description),
+		EvidenceIDs:                     append([]string(nil), uniqueTrimmedStrings(req.EvidenceIDs)...),
+		BoardReviewThreshold:            normalizeSecureCellThreshold(req.BoardReviewThreshold),
+		EligibleBoardReviewerDIDs:       append([]string(nil), eligibleReviewers...),
+		Status:                          SecureCellFederationIncidentDirectiveExtensionAppealStatusPendingBoardReview,
+		RequestReceiptID:                receipt.ID,
+		RequestReceiptHash:              receipt.ContentHash,
+		CreatedAt:                       now,
+		UpdatedAt:                       now,
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"rehearing_of_appeal_id": appeal.ID,
+		}),
+	}
+	updatedDispute.Appeals = append(updatedDispute.Appeals, rehearing)
+	updatedDispute.UpdatedAt = now
+	updatedDispute.Metadata = mergeStringMaps(updatedDispute.Metadata, map[string]string{"latest_appeal_id": rehearing.ID})
+	updatedExtension.Disputes[disputeIdx] = updatedDispute
+	updatedExtension.UpdatedAt = now
+	updatedExtension.Metadata = mergeStringMaps(updatedExtension.Metadata, map[string]string{"latest_appeal_id": rehearing.ID})
+	updatedDirective.Extensions[extensionIdx] = updatedExtension
+	updatedDirective.UpdatedAt = now
+	updatedDirective.Metadata = mergeStringMaps(updatedDirective.Metadata, req.Metadata)
+	run.result.FederationIncidentResponses[responseIdx].IncidentDirectives[directiveIdx] = updatedDirective
+	run.result.FederationIncidentResponses[responseIdx].UpdatedAt = now
+	run.result.FederationIncidentResponses[responseIdx].Metadata = mergeStringMaps(run.result.FederationIncidentResponses[responseIdx].Metadata, req.Metadata)
+	run.result.UpdatedAt = now
+
+	transition := SecureCellTransition{
+		ID:               transitionID(run.request, "federation_incident_directive_extension_appeal_rehearing_requested", rehearing.ID),
+		Action:           "secure_cell.federation_incident_directive_extension_appeal_rehearing_requested",
+		Actor:            actorDID,
+		TargetType:       "federation_incident_directive_extension_appeal",
+		TargetDID:        rehearing.ID,
+		CellStatusBefore: run.result.Status,
+		CellStatusAfter:  run.result.Status,
+		PolicyReceipt:    cloneSignedPolicyReceipt(receipt),
+		Reason:           firstNonEmpty(strings.TrimSpace(req.Reason), summary),
+		Metadata: mergeStringMaps(req.Metadata, map[string]string{
+			"federation_incident_response_id":                                response.ID,
+			"federation_organization_id":                                     response.OrganizationID,
+			"federation_sponsor_of_record":                                   response.SponsorOfRecord,
+			"federation_incident_id":                                         response.IncidentID,
+			"federation_incident_directive_id":                               directive.ID,
+			"federation_incident_directive_title":                            directive.Title,
+			"federation_incident_directive_status_before":                    string(directive.Status),
+			"federation_incident_directive_status_after":                     string(directive.Status),
+			"federation_incident_directive_extension_id":                     updatedExtension.ID,
+			"federation_incident_directive_extension_status_before":          string(extension.Status),
+			"federation_incident_directive_extension_status_after":           string(updatedExtension.Status),
+			"federation_incident_directive_extension_dispute_id":             updatedDispute.ID,
+			"federation_incident_directive_extension_dispute_status_before":  string(dispute.Status),
+			"federation_incident_directive_extension_dispute_status_after":   string(updatedDispute.Status),
+			"federation_incident_directive_extension_appeal_id":              rehearing.ID,
+			"federation_incident_directive_extension_appeal_parent_id":       appeal.ID,
+			"federation_incident_directive_extension_appeal_generation":      fmt.Sprintf("%d", rehearing.AppealGeneration),
+			"federation_incident_directive_extension_appeal_status_before":   "",
+			"federation_incident_directive_extension_appeal_status_after":    string(rehearing.Status),
+			"federation_incident_directive_extension_appealing_party":        string(rehearing.AppealingParty),
+			"federation_incident_directive_extension_appeal_board_party":     string(rehearing.BoardParty),
+			"federation_incident_directive_extension_appeal_board_threshold": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(rehearing)),
+			"federation_incident_directive_extension_appeal_board_members":   strings.Join(rehearing.EligibleBoardReviewerDIDs, ","),
 			"federation_incident_directive_extension_appeal_pending_action":  "board_review",
 		}),
 		OccurredAt: receipt.EvaluatedAt.UTC(),
@@ -618,6 +1015,8 @@ func (s *Service) RuleFederationIncidentDirectiveExtensionAppeal(ctx context.Con
 			"federation_incident_directive_extension_dispute_status_before":      string(dispute.Status),
 			"federation_incident_directive_extension_dispute_status_after":       string(updatedDispute.Status),
 			"federation_incident_directive_extension_appeal_id":                  updatedAppeal.ID,
+			"federation_incident_directive_extension_appeal_parent_id":           updatedAppeal.ParentAppealID,
+			"federation_incident_directive_extension_appeal_generation":          fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealGeneration(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_status_before":       string(appeal.Status),
 			"federation_incident_directive_extension_appeal_status_after":        string(updatedAppeal.Status),
 			"federation_incident_directive_extension_appeal_vote_id":             vote.ID,
@@ -625,6 +1024,7 @@ func (s *Service) RuleFederationIncidentDirectiveExtensionAppeal(ctx context.Con
 			"federation_incident_directive_extension_appeal_board_threshold":     fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_ratify_votes":        fmt.Sprintf("%d", ratifyVotes),
 			"federation_incident_directive_extension_appeal_overturn_votes":      fmt.Sprintf("%d", overturnVotes),
+			"federation_incident_directive_extension_appeal_recusal_count":       fmt.Sprintf("%d", len(updatedAppeal.BoardRecusals)),
 			"federation_incident_directive_extension_appeal_threshold_satisfied": fmt.Sprintf("%t", thresholdSatisfied),
 			"federation_incident_directive_extension_appeal_ruling":              string(updatedAppeal.Ruling),
 			"federation_incident_directive_extension_appeal_board_party":         string(updatedAppeal.BoardParty),
@@ -760,6 +1160,8 @@ func (s *Service) DelegateFederationIncidentDirectiveExtensionAppealReview(ctx c
 			"federation_incident_directive_extension_id":                       updatedExtension.ID,
 			"federation_incident_directive_extension_dispute_id":               updatedDispute.ID,
 			"federation_incident_directive_extension_appeal_id":                updatedAppeal.ID,
+			"federation_incident_directive_extension_appeal_parent_id":         updatedAppeal.ParentAppealID,
+			"federation_incident_directive_extension_appeal_generation":        fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealGeneration(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_status_before":     string(appeal.Status),
 			"federation_incident_directive_extension_appeal_status_after":      string(updatedAppeal.Status),
 			"federation_incident_directive_extension_appeal_delegation_id":     delegation.ID,
@@ -767,6 +1169,7 @@ func (s *Service) DelegateFederationIncidentDirectiveExtensionAppealReview(ctx c
 			"federation_incident_directive_extension_appeal_board_threshold":   fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealThreshold(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_ratify_votes":      fmt.Sprintf("%d", ratifyVotes),
 			"federation_incident_directive_extension_appeal_overturn_votes":    fmt.Sprintf("%d", overturnVotes),
+			"federation_incident_directive_extension_appeal_recusal_count":     fmt.Sprintf("%d", len(updatedAppeal.BoardRecusals)),
 			"federation_incident_directive_extension_appeal_delegation_count":  fmt.Sprintf("%d", committeeState.delegationCount),
 			"federation_incident_directive_extension_appeal_committee_members": fmt.Sprintf("%d", committeeState.memberCount),
 			"federation_incident_directive_extension_appeal_vote_count":        fmt.Sprintf("%d", committeeState.recordedVoteCount),
@@ -888,9 +1291,12 @@ func (s *Service) AcknowledgeFederationIncidentDirectiveExtensionAppealEnforceme
 			"federation_incident_directive_extension_id":                    updatedExtension.ID,
 			"federation_incident_directive_extension_dispute_id":            updatedDispute.ID,
 			"federation_incident_directive_extension_appeal_id":             updatedAppeal.ID,
+			"federation_incident_directive_extension_appeal_parent_id":      updatedAppeal.ParentAppealID,
+			"federation_incident_directive_extension_appeal_generation":     fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealGeneration(updatedAppeal)),
 			"federation_incident_directive_extension_appeal_status_before":  string(beforeStatus),
 			"federation_incident_directive_extension_appeal_status_after":   string(updatedAppeal.Status),
 			"federation_incident_directive_extension_appeal_ruling":         string(updatedAppeal.Ruling),
+			"federation_incident_directive_extension_appeal_recusal_count":  fmt.Sprintf("%d", len(updatedAppeal.BoardRecusals)),
 			"federation_incident_directive_extension_appealing_party":       string(updatedAppeal.AppealingParty),
 			"federation_incident_directive_extension_appeal_board_party":    string(updatedAppeal.BoardParty),
 			"federation_incident_directive_extension_appeal_ack_party":      string(updatedAppeal.EnforcementAcknowledgementParty),
@@ -968,6 +1374,109 @@ func (s *Service) ListFederationIncidentDirectiveExtensionAppeals(_ context.Cont
 	return items, nil
 }
 
+// ListFederationIncidentDirectiveExtensionAppealRecusals returns reviewer-
+// conflict recusals for bilateral directive-exception appeal boards.
+func (s *Service) ListFederationIncidentDirectiveExtensionAppealRecusals(_ context.Context, filter SecureCellFederationIncidentDirectiveExtensionAppealRecusalFilter) ([]SecureCellFederationIncidentDirectiveExtensionAppealRecusalSummary, error) {
+	if s == nil {
+		return nil, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]SecureCellFederationIncidentDirectiveExtensionAppealRecusalSummary, 0)
+	for _, run := range s.runs {
+		if run == nil || run.result == nil {
+			continue
+		}
+		if !secureCellFederationRunMatchesCellFilter(run, strings.TrimSpace(filter.CellID)) {
+			continue
+		}
+		for _, response := range run.result.FederationIncidentResponses {
+			if filter.OrganizationID != "" && !strings.EqualFold(strings.TrimSpace(response.OrganizationID), strings.TrimSpace(filter.OrganizationID)) {
+				continue
+			}
+			if filter.IncidentID != "" && !strings.EqualFold(strings.TrimSpace(response.IncidentID), strings.TrimSpace(filter.IncidentID)) {
+				continue
+			}
+			if filter.ResponseID != "" && !strings.EqualFold(strings.TrimSpace(response.ID), strings.TrimSpace(filter.ResponseID)) {
+				continue
+			}
+			for _, directive := range response.IncidentDirectives {
+				if filter.DirectiveID != "" && !strings.EqualFold(strings.TrimSpace(directive.ID), strings.TrimSpace(filter.DirectiveID)) {
+					continue
+				}
+				for _, extension := range directive.Extensions {
+					if filter.ExtensionID != "" && !strings.EqualFold(strings.TrimSpace(extension.ID), strings.TrimSpace(filter.ExtensionID)) {
+						continue
+					}
+					for _, dispute := range extension.Disputes {
+						if filter.DisputeID != "" && !strings.EqualFold(strings.TrimSpace(dispute.ID), strings.TrimSpace(filter.DisputeID)) {
+							continue
+						}
+						for _, appeal := range dispute.Appeals {
+							if filter.AppealID != "" && !strings.EqualFold(strings.TrimSpace(appeal.ID), strings.TrimSpace(filter.AppealID)) {
+								continue
+							}
+							for _, recusal := range appeal.BoardRecusals {
+								if filter.ActorDID != "" && !strings.EqualFold(strings.TrimSpace(recusal.ActorDID), strings.TrimSpace(filter.ActorDID)) {
+									continue
+								}
+								if filter.Since != nil && recusal.CreatedAt.Before(filter.Since.UTC()) {
+									continue
+								}
+								if filter.Until != nil && recusal.CreatedAt.After(filter.Until.UTC()) {
+									continue
+								}
+								items = append(items, SecureCellFederationIncidentDirectiveExtensionAppealRecusalSummary{
+									CellID:           run.result.CellID,
+									CellName:         run.result.Name,
+									Jurisdiction:     run.request.Jurisdiction,
+									CellStatus:       run.result.Status,
+									ResponseID:       response.ID,
+									OrganizationID:   response.OrganizationID,
+									SponsorOfRecord:  response.SponsorOfRecord,
+									IncidentID:       response.IncidentID,
+									DirectiveID:      directive.ID,
+									DirectiveTitle:   directive.Title,
+									DirectiveStatus:  directive.Status,
+									ExtensionID:      extension.ID,
+									ExtensionStatus:  extension.Status,
+									DisputeID:        dispute.ID,
+									DisputeStatus:    dispute.Status,
+									AppealID:         appeal.ID,
+									AppealStatus:     appeal.Status,
+									ParentAppealID:   appeal.ParentAppealID,
+									AppealGeneration: secureCellFederationIncidentDirectiveExtensionAppealGeneration(appeal),
+									BoardParty:       appeal.BoardParty,
+									RecusalID:        recusal.ID,
+									ActorDID:         recusal.ActorDID,
+									Summary:          recusal.Summary,
+									Description:      recusal.Description,
+									CreatedAt:        recusal.CreatedAt,
+									Metadata:         cloneStringMap(recusal.Metadata),
+								})
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].CreatedAt.Equal(items[j].CreatedAt) {
+			if items[i].CellID == items[j].CellID {
+				return items[i].RecusalID < items[j].RecusalID
+			}
+			return items[i].CellID < items[j].CellID
+		}
+		return items[i].CreatedAt.After(items[j].CreatedAt)
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
 func findSecureCellFederationIncidentDirectiveExtensionAppeal(responses []SecureCellFederationIncidentResponse, appealID string) (int, int, int, int, int, *SecureCellFederationIncidentResponse, *SecureCellFederationIncidentDirective, *SecureCellFederationIncidentDirectiveExtension, *SecureCellFederationIncidentDirectiveExtensionDispute, *SecureCellFederationIncidentDirectiveExtensionAppeal) {
 	appealID = strings.TrimSpace(appealID)
 	for responseIdx := range responses {
@@ -1007,6 +1516,8 @@ func secureCellFederationIncidentDirectiveExtensionAppealSummaryFromRun(run *sec
 		DisputeID:                       dispute.ID,
 		DisputeStatus:                   dispute.Status,
 		AppealID:                        appeal.ID,
+		ParentAppealID:                  appeal.ParentAppealID,
+		AppealGeneration:                secureCellFederationIncidentDirectiveExtensionAppealGeneration(appeal),
 		AppealingParty:                  appeal.AppealingParty,
 		BoardParty:                      appeal.BoardParty,
 		EnforcementAcknowledgementParty: appeal.EnforcementAcknowledgementParty,
@@ -1019,6 +1530,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealSummaryFromRun(run *sec
 		BoardReviewThreshold:            secureCellFederationIncidentDirectiveExtensionAppealThreshold(appeal),
 		EligibleBoardReviewerCount:      len(appeal.EligibleBoardReviewerDIDs),
 		BoardDelegationCount:            len(appeal.BoardDelegations),
+		BoardRecusalCount:               len(appeal.BoardRecusals),
 		BoardCommitteeMemberCount:       committeeState.memberCount,
 		BoardRecordedVoteCount:          committeeState.recordedVoteCount,
 		BoardOutstandingVotes:           committeeState.outstandingMemberCount,
@@ -1040,6 +1552,9 @@ func secureCellFederationIncidentDirectiveExtensionAppealSummaryFromRun(run *sec
 
 func matchesSecureCellFederationIncidentDirectiveExtensionAppealFilter(item SecureCellFederationIncidentDirectiveExtensionAppealSummary, filter SecureCellFederationIncidentDirectiveExtensionAppealFilter) bool {
 	if filter.AppealID != "" && !strings.EqualFold(strings.TrimSpace(item.AppealID), strings.TrimSpace(filter.AppealID)) {
+		return false
+	}
+	if filter.ParentAppealID != "" && !strings.EqualFold(strings.TrimSpace(item.ParentAppealID), strings.TrimSpace(filter.ParentAppealID)) {
 		return false
 	}
 	if filter.Status != "" && item.Status != filter.Status {
@@ -1094,6 +1609,40 @@ func secureCellFederationIncidentDirectiveExtensionAppealStatusCount(responses [
 				for _, dispute := range extension.Disputes {
 					for _, appeal := range dispute.Appeals {
 						if appeal.Status == status {
+							total++
+						}
+					}
+				}
+			}
+		}
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealRecusalCount(responses []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, response := range responses {
+		for _, directive := range response.IncidentDirectives {
+			for _, extension := range directive.Extensions {
+				for _, dispute := range extension.Disputes {
+					for _, appeal := range dispute.Appeals {
+						total += len(appeal.BoardRecusals)
+					}
+				}
+			}
+		}
+	}
+	return total
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealRehearingCount(responses []SecureCellFederationIncidentResponse) int {
+	total := 0
+	for _, response := range responses {
+		for _, directive := range response.IncidentDirectives {
+			for _, extension := range directive.Extensions {
+				for _, dispute := range extension.Disputes {
+					for _, appeal := range dispute.Appeals {
+						if strings.TrimSpace(appeal.ParentAppealID) != "" {
 							total++
 						}
 					}
