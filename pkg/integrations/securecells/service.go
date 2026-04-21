@@ -43,110 +43,111 @@ const (
 )
 
 const (
-	secureCellTool                                                                       = "secure_cells"
-	secureCellCreateAction                                                               = "secure_cells.create"
-	secureCellActivateAction                                                             = "secure_cells.activate"
-	secureCellSessionStartAction                                                         = "secure_cells.session.start"
-	secureCellSessionThreadStartAction                                                   = "secure_cells.session.thread.start"
-	secureCellSessionThreadMessageAction                                                 = "secure_cells.session.thread.message"
-	secureCellSessionThreadDecisionCreateAction                                          = "secure_cells.session.thread.decision.create"
-	secureCellSessionThreadDecisionApproveAction                                         = "secure_cells.session.thread.decision.approve"
-	secureCellSessionThreadDecisionCommentAction                                         = "secure_cells.session.thread.decision.comment"
-	secureCellSessionThreadDecisionDelegateAction                                        = "secure_cells.session.thread.decision.delegate"
-	secureCellSessionThreadDecisionEscalateAction                                        = "secure_cells.session.thread.decision.escalate"
-	secureCellSessionThreadDecisionOutcomeAction                                         = "secure_cells.session.thread.decision.publish_outcome"
-	secureCellSessionThreadDecisionContainAction                                         = "secure_cells.session.thread.decision.contain_outputs"
-	secureCellSessionThreadDecisionQuarantineAction                                      = "secure_cells.session.thread.decision.quarantine"
-	secureCellSessionThreadDecisionReleaseAction                                         = "secure_cells.session.thread.decision.release_outputs"
-	secureCellSessionThreadDecisionResumeAction                                          = "secure_cells.session.thread.decision.resume"
-	secureCellSessionThreadDecisionCloseAction                                           = "secure_cells.session.thread.decision.close"
-	secureCellSessionShareAction                                                         = "secure_cells.session.share"
-	secureCellSessionExchangeAction                                                      = "secure_cells.session.exchange"
-	secureCellSessionCloseAction                                                         = "secure_cells.session.close"
-	secureCellSessionPauseAction                                                         = "secure_cells.session.pause"
-	secureCellSessionResumeAction                                                        = "secure_cells.session.resume"
-	secureCellSessionQuarantineAction                                                    = "secure_cells.session.quarantine"
-	secureCellSessionThreadCloseAction                                                   = "secure_cells.session.thread.close"
-	secureCellSessionThreadResumeAction                                                  = "secure_cells.session.thread.resume"
-	secureCellSessionThreadQuarantineAction                                              = "secure_cells.session.thread.quarantine"
-	secureCellSessionMemberAdmitAction                                                   = "secure_cells.session.member.admit"
-	secureCellSessionMemberRemoveAction                                                  = "secure_cells.session.member.remove"
-	secureCellMemberAdmitAction                                                          = "secure_cells.member.admit"
-	secureCellFederationInviteAction                                                     = "secure_cells.federation.invite"
-	secureCellFederationAcceptAction                                                     = "secure_cells.federation.accept"
-	secureCellFederationRevokeAction                                                     = "secure_cells.federation.revoke"
-	secureCellFederationCounterproposeAction                                             = "secure_cells.federation.counterproposal.submit"
-	secureCellFederationCounterproposalEscalateAction                                    = "secure_cells.federation.counterproposal.escalate"
-	secureCellFederationCounterproposalApproveAction                                     = "secure_cells.federation.counterproposal.approve"
-	secureCellFederationCounterproposalRejectAction                                      = "secure_cells.federation.counterproposal.reject"
-	secureCellFederationContractRenewAction                                              = "secure_cells.federation.contract.renew"
-	secureCellFederationContractSuspendAction                                            = "secure_cells.federation.contract.suspend"
-	secureCellFederationContractResumeAction                                             = "secure_cells.federation.contract.resume"
-	secureCellFederationContractRevokeAction                                             = "secure_cells.federation.contract.revoke"
-	secureCellFederationAssuranceIntakeAction                                            = "secure_cells.federation.assurance.intake"
-	secureCellFederationIncidentPublishAction                                            = "secure_cells.federation.incident.publish"
-	secureCellFederationIncidentResolveAction                                            = "secure_cells.federation.incident.resolve"
-	secureCellFederationIncidentIntakeAction                                             = "secure_cells.federation.incident.intake"
-	secureCellFederationIncidentContainAction                                            = "secure_cells.federation.incident.contain_artifacts"
-	secureCellFederationIncidentResponseAcknowledgeAction                                = "secure_cells.federation.incident.response.acknowledge"
-	secureCellFederationIncidentResponseEscalateAction                                   = "secure_cells.federation.incident.response.escalate"
-	secureCellFederationIncidentRemediationAttestAction                                  = "secure_cells.federation.incident.response.attest_remediation"
-	secureCellFederationIncidentRemediationVerifyAction                                  = "secure_cells.federation.incident.response.verify_remediation"
-	secureCellFederationIncidentClosureAttestAction                                      = "secure_cells.federation.incident.response.attest_closure"
-	secureCellFederationIncidentResponseDisputeAction                                    = "secure_cells.federation.incident.response.dispute"
-	secureCellFederationIncidentDirectiveIssueAction                                     = "secure_cells.federation.incident.response.directive.issue"
-	secureCellFederationIncidentDirectiveAcknowledgeAction                               = "secure_cells.federation.incident.directive.acknowledge"
-	secureCellFederationIncidentDirectiveCompleteAction                                  = "secure_cells.federation.incident.directive.complete"
-	secureCellFederationIncidentDirectiveVerifyAction                                    = "secure_cells.federation.incident.directive.verify"
-	secureCellFederationIncidentDirectiveExtensionRequestAction                          = "secure_cells.federation.incident.directive.extension.request"
-	secureCellFederationIncidentDirectiveExtensionApproveAction                          = "secure_cells.federation.incident.directive.extension.approve"
-	secureCellFederationIncidentDirectiveExtensionRejectAction                           = "secure_cells.federation.incident.directive.extension.reject"
-	secureCellFederationIncidentDirectiveExtensionDisputeAction                          = "secure_cells.federation.incident.directive.extension.dispute"
-	secureCellFederationIncidentDirectiveExtensionResolveAction                          = "secure_cells.federation.incident.directive.extension.resolve"
-	secureCellFederationIncidentDirectiveExtensionDelegateReviewAction                   = "secure_cells.federation.incident.directive.extension.delegate_review"
-	secureCellFederationIncidentDirectiveExtensionDelegateResolutionAction               = "secure_cells.federation.incident.directive.extension.delegate_resolution"
-	secureCellFederationIncidentDirectiveExtensionAppealAction                           = "secure_cells.federation.incident.directive.extension.appeal"
-	secureCellFederationIncidentDirectiveExtensionAppealRuleAction                       = "secure_cells.federation.incident.directive.extension.appeal.rule"
-	secureCellFederationIncidentDirectiveExtensionAppealDelegateReviewAction             = "secure_cells.federation.incident.directive.extension.appeal.delegate_review"
-	secureCellFederationIncidentDirectiveExtensionAppealRecuseAction                     = "secure_cells.federation.incident.directive.extension.appeal.recuse_review"
-	secureCellFederationIncidentDirectiveExtensionAppealRehearAction                     = "secure_cells.federation.incident.directive.extension.appeal.rehear"
-	secureCellFederationIncidentDirectiveExtensionAppealIntakeAction                     = "secure_cells.federation.incident.directive.extension.appeal.intake"
-	secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction                = "secure_cells.federation.incident.directive.extension.appeal.acknowledge_enforcement"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileAckAction               = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.acknowledge"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileDisputeAction           = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.dispute"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileResolveAction           = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.resolve"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileChallengeAction         = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileChallengeDelegateAction = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.delegate_review"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileRuleAction              = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.rule"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileCounterpartyAckAction   = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.acknowledge_dispute"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileCorrectionAttestAction  = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.attest_correction"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileResolutionAttestAction  = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.attest_resolution"
-	secureCellFederationIncidentDirectiveExtensionAppealReconcileEscalateAction          = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.escalate"
-	secureCellFederationIncidentReportPlanAction                                         = "secure_cells.federation.incident.response.report.plan"
-	secureCellFederationIncidentReportIntakeAction                                       = "secure_cells.federation.incident.report.intake"
-	secureCellFederationIncidentReportAmendAction                                        = "secure_cells.federation.incident.report.amend"
-	secureCellFederationIncidentReportSubmitAction                                       = "secure_cells.federation.incident.report.submit"
-	secureCellFederationIncidentReportAcknowledgeAction                                  = "secure_cells.federation.incident.report.acknowledge"
-	secureCellFederationIncidentReportAmendmentIntakeAction                              = "secure_cells.federation.incident.report.amendment.intake"
-	secureCellFederationIncidentReportAmendmentSubmitAction                              = "secure_cells.federation.incident.report.amendment.submit"
-	secureCellFederationIncidentReportAmendmentAckAction                                 = "secure_cells.federation.incident.report.amendment.acknowledge"
-	secureCellFederationIncidentReportReconcileAckAction                                 = "secure_cells.federation.incident.report.reconciliation.acknowledge"
-	secureCellFederationIncidentReportReconcileDisputeAction                             = "secure_cells.federation.incident.report.reconciliation.dispute"
-	secureCellFederationIncidentReportReconcileResolveAction                             = "secure_cells.federation.incident.report.reconciliation.resolve"
-	secureCellFederationIncidentReportAmendmentReconcileAckAction                        = "secure_cells.federation.incident.report.amendment.reconciliation.acknowledge"
-	secureCellFederationIncidentReportAmendmentReconcileDisputeAction                    = "secure_cells.federation.incident.report.amendment.reconciliation.dispute"
-	secureCellFederationIncidentReportAmendmentReconcileResolveAction                    = "secure_cells.federation.incident.report.amendment.reconciliation.resolve"
-	secureCellFederationIncidentReportAmendmentReconcileCounterpartyAckAction            = "secure_cells.federation.incident.report.amendment.reconciliation.counterparty_acknowledge"
-	secureCellFederationIncidentReportAmendmentReconcileCorrectionAttestAction           = "secure_cells.federation.incident.report.amendment.reconciliation.attest_correction"
-	secureCellFederationIncidentReportAmendmentReconcileResolutionAttestAction           = "secure_cells.federation.incident.report.amendment.reconciliation.attest_resolution"
-	secureCellFederationIncidentReportAmendmentReconcileEscalateAction                   = "secure_cells.federation.incident.report.amendment.reconciliation.escalate"
-	secureCellMemberReleaseAction                                                        = "secure_cells.member.release"
-	secureCellMemberQuarantineAction                                                     = "secure_cells.member.quarantine"
-	secureCellMemberRevokeAction                                                         = "secure_cells.member.revoke"
-	secureCellQuarantineExpireAction                                                     = "secure_cells.quarantine.expire"
-	secureCellPauseAction                                                                = "secure_cells.pause"
-	secureCellResumeAction                                                               = "secure_cells.resume"
-	secureCellTerminateAction                                                            = "secure_cells.terminate"
+	secureCellTool                                                                                = "secure_cells"
+	secureCellCreateAction                                                                        = "secure_cells.create"
+	secureCellActivateAction                                                                      = "secure_cells.activate"
+	secureCellSessionStartAction                                                                  = "secure_cells.session.start"
+	secureCellSessionThreadStartAction                                                            = "secure_cells.session.thread.start"
+	secureCellSessionThreadMessageAction                                                          = "secure_cells.session.thread.message"
+	secureCellSessionThreadDecisionCreateAction                                                   = "secure_cells.session.thread.decision.create"
+	secureCellSessionThreadDecisionApproveAction                                                  = "secure_cells.session.thread.decision.approve"
+	secureCellSessionThreadDecisionCommentAction                                                  = "secure_cells.session.thread.decision.comment"
+	secureCellSessionThreadDecisionDelegateAction                                                 = "secure_cells.session.thread.decision.delegate"
+	secureCellSessionThreadDecisionEscalateAction                                                 = "secure_cells.session.thread.decision.escalate"
+	secureCellSessionThreadDecisionOutcomeAction                                                  = "secure_cells.session.thread.decision.publish_outcome"
+	secureCellSessionThreadDecisionContainAction                                                  = "secure_cells.session.thread.decision.contain_outputs"
+	secureCellSessionThreadDecisionQuarantineAction                                               = "secure_cells.session.thread.decision.quarantine"
+	secureCellSessionThreadDecisionReleaseAction                                                  = "secure_cells.session.thread.decision.release_outputs"
+	secureCellSessionThreadDecisionResumeAction                                                   = "secure_cells.session.thread.decision.resume"
+	secureCellSessionThreadDecisionCloseAction                                                    = "secure_cells.session.thread.decision.close"
+	secureCellSessionShareAction                                                                  = "secure_cells.session.share"
+	secureCellSessionExchangeAction                                                               = "secure_cells.session.exchange"
+	secureCellSessionCloseAction                                                                  = "secure_cells.session.close"
+	secureCellSessionPauseAction                                                                  = "secure_cells.session.pause"
+	secureCellSessionResumeAction                                                                 = "secure_cells.session.resume"
+	secureCellSessionQuarantineAction                                                             = "secure_cells.session.quarantine"
+	secureCellSessionThreadCloseAction                                                            = "secure_cells.session.thread.close"
+	secureCellSessionThreadResumeAction                                                           = "secure_cells.session.thread.resume"
+	secureCellSessionThreadQuarantineAction                                                       = "secure_cells.session.thread.quarantine"
+	secureCellSessionMemberAdmitAction                                                            = "secure_cells.session.member.admit"
+	secureCellSessionMemberRemoveAction                                                           = "secure_cells.session.member.remove"
+	secureCellMemberAdmitAction                                                                   = "secure_cells.member.admit"
+	secureCellFederationInviteAction                                                              = "secure_cells.federation.invite"
+	secureCellFederationAcceptAction                                                              = "secure_cells.federation.accept"
+	secureCellFederationRevokeAction                                                              = "secure_cells.federation.revoke"
+	secureCellFederationCounterproposeAction                                                      = "secure_cells.federation.counterproposal.submit"
+	secureCellFederationCounterproposalEscalateAction                                             = "secure_cells.federation.counterproposal.escalate"
+	secureCellFederationCounterproposalApproveAction                                              = "secure_cells.federation.counterproposal.approve"
+	secureCellFederationCounterproposalRejectAction                                               = "secure_cells.federation.counterproposal.reject"
+	secureCellFederationContractRenewAction                                                       = "secure_cells.federation.contract.renew"
+	secureCellFederationContractSuspendAction                                                     = "secure_cells.federation.contract.suspend"
+	secureCellFederationContractResumeAction                                                      = "secure_cells.federation.contract.resume"
+	secureCellFederationContractRevokeAction                                                      = "secure_cells.federation.contract.revoke"
+	secureCellFederationAssuranceIntakeAction                                                     = "secure_cells.federation.assurance.intake"
+	secureCellFederationIncidentPublishAction                                                     = "secure_cells.federation.incident.publish"
+	secureCellFederationIncidentResolveAction                                                     = "secure_cells.federation.incident.resolve"
+	secureCellFederationIncidentIntakeAction                                                      = "secure_cells.federation.incident.intake"
+	secureCellFederationIncidentContainAction                                                     = "secure_cells.federation.incident.contain_artifacts"
+	secureCellFederationIncidentResponseAcknowledgeAction                                         = "secure_cells.federation.incident.response.acknowledge"
+	secureCellFederationIncidentResponseEscalateAction                                            = "secure_cells.federation.incident.response.escalate"
+	secureCellFederationIncidentRemediationAttestAction                                           = "secure_cells.federation.incident.response.attest_remediation"
+	secureCellFederationIncidentRemediationVerifyAction                                           = "secure_cells.federation.incident.response.verify_remediation"
+	secureCellFederationIncidentClosureAttestAction                                               = "secure_cells.federation.incident.response.attest_closure"
+	secureCellFederationIncidentResponseDisputeAction                                             = "secure_cells.federation.incident.response.dispute"
+	secureCellFederationIncidentDirectiveIssueAction                                              = "secure_cells.federation.incident.response.directive.issue"
+	secureCellFederationIncidentDirectiveAcknowledgeAction                                        = "secure_cells.federation.incident.directive.acknowledge"
+	secureCellFederationIncidentDirectiveCompleteAction                                           = "secure_cells.federation.incident.directive.complete"
+	secureCellFederationIncidentDirectiveVerifyAction                                             = "secure_cells.federation.incident.directive.verify"
+	secureCellFederationIncidentDirectiveExtensionRequestAction                                   = "secure_cells.federation.incident.directive.extension.request"
+	secureCellFederationIncidentDirectiveExtensionApproveAction                                   = "secure_cells.federation.incident.directive.extension.approve"
+	secureCellFederationIncidentDirectiveExtensionRejectAction                                    = "secure_cells.federation.incident.directive.extension.reject"
+	secureCellFederationIncidentDirectiveExtensionDisputeAction                                   = "secure_cells.federation.incident.directive.extension.dispute"
+	secureCellFederationIncidentDirectiveExtensionResolveAction                                   = "secure_cells.federation.incident.directive.extension.resolve"
+	secureCellFederationIncidentDirectiveExtensionDelegateReviewAction                            = "secure_cells.federation.incident.directive.extension.delegate_review"
+	secureCellFederationIncidentDirectiveExtensionDelegateResolutionAction                        = "secure_cells.federation.incident.directive.extension.delegate_resolution"
+	secureCellFederationIncidentDirectiveExtensionAppealAction                                    = "secure_cells.federation.incident.directive.extension.appeal"
+	secureCellFederationIncidentDirectiveExtensionAppealRuleAction                                = "secure_cells.federation.incident.directive.extension.appeal.rule"
+	secureCellFederationIncidentDirectiveExtensionAppealDelegateReviewAction                      = "secure_cells.federation.incident.directive.extension.appeal.delegate_review"
+	secureCellFederationIncidentDirectiveExtensionAppealRecuseAction                              = "secure_cells.federation.incident.directive.extension.appeal.recuse_review"
+	secureCellFederationIncidentDirectiveExtensionAppealRehearAction                              = "secure_cells.federation.incident.directive.extension.appeal.rehear"
+	secureCellFederationIncidentDirectiveExtensionAppealIntakeAction                              = "secure_cells.federation.incident.directive.extension.appeal.intake"
+	secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction                         = "secure_cells.federation.incident.directive.extension.appeal.acknowledge_enforcement"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileAckAction                        = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.acknowledge"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileDisputeAction                    = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.dispute"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileResolveAction                    = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.resolve"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileChallengeAction                  = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileChallengeDelegateAction          = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.delegate_review"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileRuleAction                       = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.rule"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileCounterpartyAckAction            = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.acknowledge_dispute"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileCorrectionAttestAction           = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.attest_correction"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileResolutionAttestAction           = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.attest_resolution"
+	secureCellFederationIncidentDirectiveExtensionAppealReconcileEscalateAction                   = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.escalate"
+	secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealIntakeAction = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge_appeal.intake"
+	secureCellFederationIncidentReportPlanAction                                                  = "secure_cells.federation.incident.response.report.plan"
+	secureCellFederationIncidentReportIntakeAction                                                = "secure_cells.federation.incident.report.intake"
+	secureCellFederationIncidentReportAmendAction                                                 = "secure_cells.federation.incident.report.amend"
+	secureCellFederationIncidentReportSubmitAction                                                = "secure_cells.federation.incident.report.submit"
+	secureCellFederationIncidentReportAcknowledgeAction                                           = "secure_cells.federation.incident.report.acknowledge"
+	secureCellFederationIncidentReportAmendmentIntakeAction                                       = "secure_cells.federation.incident.report.amendment.intake"
+	secureCellFederationIncidentReportAmendmentSubmitAction                                       = "secure_cells.federation.incident.report.amendment.submit"
+	secureCellFederationIncidentReportAmendmentAckAction                                          = "secure_cells.federation.incident.report.amendment.acknowledge"
+	secureCellFederationIncidentReportReconcileAckAction                                          = "secure_cells.federation.incident.report.reconciliation.acknowledge"
+	secureCellFederationIncidentReportReconcileDisputeAction                                      = "secure_cells.federation.incident.report.reconciliation.dispute"
+	secureCellFederationIncidentReportReconcileResolveAction                                      = "secure_cells.federation.incident.report.reconciliation.resolve"
+	secureCellFederationIncidentReportAmendmentReconcileAckAction                                 = "secure_cells.federation.incident.report.amendment.reconciliation.acknowledge"
+	secureCellFederationIncidentReportAmendmentReconcileDisputeAction                             = "secure_cells.federation.incident.report.amendment.reconciliation.dispute"
+	secureCellFederationIncidentReportAmendmentReconcileResolveAction                             = "secure_cells.federation.incident.report.amendment.reconciliation.resolve"
+	secureCellFederationIncidentReportAmendmentReconcileCounterpartyAckAction                     = "secure_cells.federation.incident.report.amendment.reconciliation.counterparty_acknowledge"
+	secureCellFederationIncidentReportAmendmentReconcileCorrectionAttestAction                    = "secure_cells.federation.incident.report.amendment.reconciliation.attest_correction"
+	secureCellFederationIncidentReportAmendmentReconcileResolutionAttestAction                    = "secure_cells.federation.incident.report.amendment.reconciliation.attest_resolution"
+	secureCellFederationIncidentReportAmendmentReconcileEscalateAction                            = "secure_cells.federation.incident.report.amendment.reconciliation.escalate"
+	secureCellMemberReleaseAction                                                                 = "secure_cells.member.release"
+	secureCellMemberQuarantineAction                                                              = "secure_cells.member.quarantine"
+	secureCellMemberRevokeAction                                                                  = "secure_cells.member.revoke"
+	secureCellQuarantineExpireAction                                                              = "secure_cells.quarantine.expire"
+	secureCellPauseAction                                                                         = "secure_cells.pause"
+	secureCellResumeAction                                                                        = "secure_cells.resume"
+	secureCellTerminateAction                                                                     = "secure_cells.terminate"
 )
 
 // SecureCellSessionStatus tracks one governed collaboration session inside a
@@ -241,6 +242,10 @@ type SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner func(ctx c
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
 // signs a portable bilateral directive-exception appeal reconciliation bundle.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundle) error
+
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
+// signs a portable bilateral reconciliation challenge-appeal bundle.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle) error
 
 // SecureCellFederationIncidentReportBundleSigner signs a portable
 // federation incident report bundle for auditor and regulator exchange.
@@ -568,43 +573,44 @@ type SecureCellRequest struct {
 
 // SecureCellResult is the portable buyer-facing outcome for a secure cell.
 type SecureCellResult struct {
-	CellID                                                  string                                                                     `json:"cell_id"`
-	Name                                                    string                                                                     `json:"name"`
-	Purpose                                                 string                                                                     `json:"purpose"`
-	Status                                                  SecureCellStatus                                                           `json:"status"`
-	PausedFromStatus                                        SecureCellStatus                                                           `json:"paused_from_status,omitempty"`
-	Policy                                                  SecureCellPolicy                                                           `json:"policy"`
-	Participants                                            []SecureCellParticipantState                                               `json:"participants,omitempty"`
-	FederationOrganizations                                 []SecureCellFederationOrganization                                         `json:"federation_organizations,omitempty"`
-	FederationInvitations                                   []SecureCellFederationInvitation                                           `json:"federation_invitations,omitempty"`
-	FederationCounterproposals                              []SecureCellFederationCounterproposal                                      `json:"federation_counterproposals,omitempty"`
-	FederationContracts                                     []SecureCellFederationContract                                             `json:"federation_contracts,omitempty"`
-	FederationCounterpartyAssurance                         []SecureCellFederationCounterpartyAssuranceSnapshot                        `json:"federation_counterparty_assurance,omitempty"`
-	FederationIncidents                                     []SecureCellFederationIncident                                             `json:"federation_incidents,omitempty"`
-	FederationCounterpartyIncidents                         []SecureCellFederationCounterpartyIncidentSnapshot                         `json:"federation_counterparty_incidents,omitempty"`
-	FederationCounterpartyIncidentReports                   []SecureCellFederationCounterpartyIncidentReportSnapshot                   `json:"federation_counterparty_incident_reports,omitempty"`
-	FederationCounterpartyIncidentReportAmendments          []SecureCellFederationCounterpartyIncidentReportAmendmentSnapshot          `json:"federation_counterparty_incident_report_amendments,omitempty"`
-	FederationCounterpartyIncidentDirectiveExtensionAppeals []SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSnapshot `json:"federation_counterparty_incident_directive_extension_appeals,omitempty"`
-	FederationIncidentResponses                             []SecureCellFederationIncidentResponse                                     `json:"federation_incident_responses,omitempty"`
-	Sessions                                                []SecureCellSession                                                        `json:"sessions,omitempty"`
-	Threads                                                 []SecureCellSessionThread                                                  `json:"threads,omitempty"`
-	Decisions                                               []SecureCellThreadDecision                                                 `json:"decisions,omitempty"`
-	DecisionOutcomes                                        []SecureCellThreadDecisionOutcome                                          `json:"decision_outcomes,omitempty"`
-	SharedOutputs                                           []SecureCellSharedOutput                                                   `json:"shared_outputs,omitempty"`
-	SessionExchanges                                        []SecureCellSessionExchange                                                `json:"session_exchanges,omitempty"`
-	CreationReceipt                                         *policy.SignedPolicyReceipt                                                `json:"creation_receipt,omitempty"`
-	ActivationReceipt                                       *policy.SignedPolicyReceipt                                                `json:"activation_receipt,omitempty"`
-	ReceiptChain                                            *policy.PolicyReceiptChain                                                 `json:"receipt_chain,omitempty"`
-	ConfidentialExecution                                   *confidential.VerificationSummary                                          `json:"confidential_execution,omitempty"`
-	ExecutionAttestations                                   []evidence.Attestation                                                     `json:"execution_attestations,omitempty"`
-	ExecutionSeal                                           *evidence.Seal                                                             `json:"execution_seal,omitempty"`
-	ControlLedger                                           *evidence.ControlLedger                                                    `json:"control_ledger,omitempty"`
-	PortablePackage                                         *evidence.PortableControlLedgerPackage                                     `json:"portable_package,omitempty"`
-	Transitions                                             []SecureCellTransition                                                     `json:"transitions,omitempty"`
-	RejectionReason                                         string                                                                     `json:"rejection_reason,omitempty"`
-	TerminatedAt                                            *time.Time                                                                 `json:"terminated_at,omitempty"`
-	CreatedAt                                               time.Time                                                                  `json:"created_at"`
-	UpdatedAt                                               time.Time                                                                  `json:"updated_at"`
+	CellID                                                                               string                                                                                                  `json:"cell_id"`
+	Name                                                                                 string                                                                                                  `json:"name"`
+	Purpose                                                                              string                                                                                                  `json:"purpose"`
+	Status                                                                               SecureCellStatus                                                                                        `json:"status"`
+	PausedFromStatus                                                                     SecureCellStatus                                                                                        `json:"paused_from_status,omitempty"`
+	Policy                                                                               SecureCellPolicy                                                                                        `json:"policy"`
+	Participants                                                                         []SecureCellParticipantState                                                                            `json:"participants,omitempty"`
+	FederationOrganizations                                                              []SecureCellFederationOrganization                                                                      `json:"federation_organizations,omitempty"`
+	FederationInvitations                                                                []SecureCellFederationInvitation                                                                        `json:"federation_invitations,omitempty"`
+	FederationCounterproposals                                                           []SecureCellFederationCounterproposal                                                                   `json:"federation_counterproposals,omitempty"`
+	FederationContracts                                                                  []SecureCellFederationContract                                                                          `json:"federation_contracts,omitempty"`
+	FederationCounterpartyAssurance                                                      []SecureCellFederationCounterpartyAssuranceSnapshot                                                     `json:"federation_counterparty_assurance,omitempty"`
+	FederationIncidents                                                                  []SecureCellFederationIncident                                                                          `json:"federation_incidents,omitempty"`
+	FederationCounterpartyIncidents                                                      []SecureCellFederationCounterpartyIncidentSnapshot                                                      `json:"federation_counterparty_incidents,omitempty"`
+	FederationCounterpartyIncidentReports                                                []SecureCellFederationCounterpartyIncidentReportSnapshot                                                `json:"federation_counterparty_incident_reports,omitempty"`
+	FederationCounterpartyIncidentReportAmendments                                       []SecureCellFederationCounterpartyIncidentReportAmendmentSnapshot                                       `json:"federation_counterparty_incident_report_amendments,omitempty"`
+	FederationCounterpartyIncidentDirectiveExtensionAppeals                              []SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealSnapshot                              `json:"federation_counterparty_incident_directive_extension_appeals,omitempty"`
+	FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals []SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealSnapshot `json:"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals,omitempty"`
+	FederationIncidentResponses                                                          []SecureCellFederationIncidentResponse                                                                  `json:"federation_incident_responses,omitempty"`
+	Sessions                                                                             []SecureCellSession                                                                                     `json:"sessions,omitempty"`
+	Threads                                                                              []SecureCellSessionThread                                                                               `json:"threads,omitempty"`
+	Decisions                                                                            []SecureCellThreadDecision                                                                              `json:"decisions,omitempty"`
+	DecisionOutcomes                                                                     []SecureCellThreadDecisionOutcome                                                                       `json:"decision_outcomes,omitempty"`
+	SharedOutputs                                                                        []SecureCellSharedOutput                                                                                `json:"shared_outputs,omitempty"`
+	SessionExchanges                                                                     []SecureCellSessionExchange                                                                             `json:"session_exchanges,omitempty"`
+	CreationReceipt                                                                      *policy.SignedPolicyReceipt                                                                             `json:"creation_receipt,omitempty"`
+	ActivationReceipt                                                                    *policy.SignedPolicyReceipt                                                                             `json:"activation_receipt,omitempty"`
+	ReceiptChain                                                                         *policy.PolicyReceiptChain                                                                              `json:"receipt_chain,omitempty"`
+	ConfidentialExecution                                                                *confidential.VerificationSummary                                                                       `json:"confidential_execution,omitempty"`
+	ExecutionAttestations                                                                []evidence.Attestation                                                                                  `json:"execution_attestations,omitempty"`
+	ExecutionSeal                                                                        *evidence.Seal                                                                                          `json:"execution_seal,omitempty"`
+	ControlLedger                                                                        *evidence.ControlLedger                                                                                 `json:"control_ledger,omitempty"`
+	PortablePackage                                                                      *evidence.PortableControlLedgerPackage                                                                  `json:"portable_package,omitempty"`
+	Transitions                                                                          []SecureCellTransition                                                                                  `json:"transitions,omitempty"`
+	RejectionReason                                                                      string                                                                                                  `json:"rejection_reason,omitempty"`
+	TerminatedAt                                                                         *time.Time                                                                                              `json:"terminated_at,omitempty"`
+	CreatedAt                                                                            time.Time                                                                                               `json:"created_at"`
+	UpdatedAt                                                                            time.Time                                                                                               `json:"updated_at"`
 }
 
 // SecureCellTransition captures one evidence-bearing lifecycle mutation after
@@ -1076,38 +1082,39 @@ type SecureCellQuarantineExpiry struct {
 
 // ServiceConfig configures Secure Cells v1.
 type ServiceConfig struct {
-	Negotiations                                                         *agent.NegotiationManager
-	PolicyEngine                                                         *policy.PolicyEngine
-	PolicySet                                                            *policy.PolicySet
-	PolicySignerKey                                                      *ecdsa.PrivateKey
-	PolicySigner                                                         string
-	CredentialIssuerKey                                                  *ecdsa.PrivateKey
-	CredentialIssuer                                                     string
-	Sealer                                                               SecureCellSealer
-	LedgerStore                                                          evidence.ControlLedgerStore
-	WorkflowStore                                                        SecureCellStore
-	Framework                                                            string
-	IncludeVerificationKeys                                              bool
-	PackageSigningKey                                                    ed25519.PrivateKey
-	PackageSigner                                                        string
-	PackageSignerFunc                                                    SecureCellPackageSigner
-	FederationAssuranceBundleSigner                                      SecureCellFederationAssuranceBundleSigner
-	FederationIncidentBulletinSigner                                     SecureCellFederationIncidentBulletinSigner
-	FederationIncidentResponseBundleSigner                               SecureCellFederationIncidentResponseBundleSigner
-	FederationIncidentDirectiveBundleSigner                              SecureCellFederationIncidentDirectiveBundleSigner
-	FederationIncidentDirectiveExtensionAppealBundleSigner               SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
-	FederationIncidentReportBundleSigner                                 SecureCellFederationIncidentReportBundleSigner
-	FederationIncidentReportAmendmentBundleSigner                        SecureCellFederationIncidentReportAmendmentBundleSigner
-	FederationIncidentReportReconciliationBundleSigner                   SecureCellFederationIncidentReportReconciliationBundleSigner
-	FederationIncidentReportAmendmentReconciliationBundleSigner          SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
-	FederationIncidentCasePackSigner                                     SecureCellFederationIncidentCasePackSigner
-	PackageAnchorer                                                      SecureCellPackageAnchorer
-	EventPublisher                                                       SecureCellEventPublisher
-	TrustAnchors                                                         []evidence.PlatformTrustAnchor
-	DecisionSLATemplates                                                 []SecureCellDecisionSLATemplate
-	ConfidentialAttestor                                                 confidential.Attestor
-	ConfidentialPolicy                                                   confidential.Policy
+	Negotiations                                                                        *agent.NegotiationManager
+	PolicyEngine                                                                        *policy.PolicyEngine
+	PolicySet                                                                           *policy.PolicySet
+	PolicySignerKey                                                                     *ecdsa.PrivateKey
+	PolicySigner                                                                        string
+	CredentialIssuerKey                                                                 *ecdsa.PrivateKey
+	CredentialIssuer                                                                    string
+	Sealer                                                                              SecureCellSealer
+	LedgerStore                                                                         evidence.ControlLedgerStore
+	WorkflowStore                                                                       SecureCellStore
+	Framework                                                                           string
+	IncludeVerificationKeys                                                             bool
+	PackageSigningKey                                                                   ed25519.PrivateKey
+	PackageSigner                                                                       string
+	PackageSignerFunc                                                                   SecureCellPackageSigner
+	FederationAssuranceBundleSigner                                                     SecureCellFederationAssuranceBundleSigner
+	FederationIncidentBulletinSigner                                                    SecureCellFederationIncidentBulletinSigner
+	FederationIncidentResponseBundleSigner                                              SecureCellFederationIncidentResponseBundleSigner
+	FederationIncidentDirectiveBundleSigner                                             SecureCellFederationIncidentDirectiveBundleSigner
+	FederationIncidentDirectiveExtensionAppealBundleSigner                              SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner                SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
+	FederationIncidentReportBundleSigner                                                SecureCellFederationIncidentReportBundleSigner
+	FederationIncidentReportAmendmentBundleSigner                                       SecureCellFederationIncidentReportAmendmentBundleSigner
+	FederationIncidentReportReconciliationBundleSigner                                  SecureCellFederationIncidentReportReconciliationBundleSigner
+	FederationIncidentReportAmendmentReconciliationBundleSigner                         SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
+	FederationIncidentCasePackSigner                                                    SecureCellFederationIncidentCasePackSigner
+	PackageAnchorer                                                                     SecureCellPackageAnchorer
+	EventPublisher                                                                      SecureCellEventPublisher
+	TrustAnchors                                                                        []evidence.PlatformTrustAnchor
+	DecisionSLATemplates                                                                []SecureCellDecisionSLATemplate
+	ConfidentialAttestor                                                                confidential.Attestor
+	ConfidentialPolicy                                                                  confidential.Policy
 }
 
 type secureCellRun struct {
@@ -4638,6 +4645,11 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeals_stale", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatusStale))))
 	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeals_expired", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatusExpired))))
 	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeals_invalid", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealStatusInvalid))))
+	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_total", fmt.Sprintf("%d", len(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals)))
+	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_verified", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusVerified))))
+	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_stale", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusStale))))
+	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_expired", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusExpired))))
+	ledger.WithMetadata("federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_invalid", fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusInvalid))))
 	ledger.WithMetadata("sessions_total", fmt.Sprintf("%d", len(run.result.Sessions)))
 	ledger.WithMetadata("sessions_active", fmt.Sprintf("%d", len(sessionsByStatus(run.result.Sessions, SecureCellSessionStatusActive))))
 	ledger.WithMetadata("threads_total", fmt.Sprintf("%d", len(run.result.Threads)))
@@ -4700,6 +4712,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationCounterpartyIncidentReportRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyIncidentReports))
 	federationCounterpartyIncidentReportAmendmentRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyIncidentReportAmendments))
 	federationCounterpartyIncidentDirectiveExtensionAppealRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyIncidentDirectiveExtensionAppeals))
+	federationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs := make([]string, 0, len(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals))
 	federationIncidentActionRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentResponseRecordIDs := make([]string, 0, len(run.result.FederationIncidentResponses))
 	federationIncidentResponseActionRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4924,6 +4937,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_bundle_ingested" {
+			federationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs = append(federationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appealed" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_delegated" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_vote_recorded" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_ruled" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_review_recused" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_rehearing_requested" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_acknowledged" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
@@ -6394,6 +6410,27 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			}
 		}
 	}
+	if len(federationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs) > 0 {
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-28",
+			ControlName: "Reciprocal Challenge Appeal Bundle Exchange",
+			Description: "Signed bilateral reconciliation challenge-appeal bundles are imported, verified, and aligned against the local appeal-board trail so final appeal-board rulings remain portable and replayable across organizations instead of being trapped inside one local case pack.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append(append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs...), federationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeals_total":                 fmt.Sprintf("%d", len(secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealsFromRun(run))),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_total":    fmt.Sprintf("%d", len(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_verified": fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusVerified))),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_stale":    fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusStale))),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_expired":  fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusExpired))),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeals_invalid":  fmt.Sprintf("%d", len(secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealsByStatus(run.result.FederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppeals, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealStatusInvalid))),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
 	if len(federationIncidentReportReconciliationRecordIDs) > 0 {
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-FED-08",
@@ -7438,6 +7475,8 @@ func transitionStageForAction(action string) string {
 		return "rule_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal"
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement_acknowledged":
 		return "acknowledge_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_enforcement"
+	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_bundle_ingested":
+		return "intake_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_bundle"
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_dispute_acknowledged":
 		return "acknowledge_federation_incident_directive_extension_appeal_reconciliation_dispute"
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_correction_attested":
@@ -9166,6 +9205,7 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationIncidentDirectiveExtensionAppealRecuseAction,
 				secureCellFederationIncidentDirectiveExtensionAppealRehearAction,
 				secureCellFederationIncidentDirectiveExtensionAppealIntakeAction,
+				secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealIntakeAction,
 				secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconcileAckAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconcileDisputeAction,
@@ -9626,6 +9666,15 @@ func newSecureCellPolicySet() *policy.PolicySet {
 			}),
 			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_appeal_intake_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "intake_federation_incident_directive_extension_appeal_bundle"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_intake_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "intake_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_bundle"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
 				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
 				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
@@ -10306,6 +10355,8 @@ func actionForStage(stage string) string {
 		return secureCellFederationIncidentDirectiveExtensionAppealRehearAction
 	case "intake_federation_incident_directive_extension_appeal_bundle":
 		return secureCellFederationIncidentDirectiveExtensionAppealIntakeAction
+	case "intake_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_bundle":
+		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealIntakeAction
 	case "acknowledge_federation_incident_directive_extension_appeal_enforcement":
 		return secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction
 	case "acknowledge_federation_incident_directive_extension_appeal_reconciliation":
