@@ -104,6 +104,9 @@ const (
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealRehearAction                       = "secure_cells.federation.incident.directive.extension.appeal.rehear"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealIntakeAction                       = "secure_cells.federation.incident.directive.extension.appeal.intake"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealAcknowledgeAction                  = "secure_cells.federation.incident.directive.extension.appeal.acknowledge_enforcement"
+	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationAcknowledgeAction    = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.acknowledge"
+	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationDisputeAction        = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.dispute"
+	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationResolveAction        = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.resolve"
 	secureCellsAuthReleaseAction                                                                = "secure_cells.member.release"
 	secureCellsAuthQuarantineAction                                                             = "secure_cells.member.quarantine"
 	secureCellsAuthRevokeAction                                                                 = "secure_cells.member.revoke"
@@ -218,6 +221,9 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationIncidentDirectiveExtensionAppealRecuse(r *http.Request, cellID string, appealID string, req *secureCellFederationIncidentDirectiveExtensionAppealRecuseRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealRehear(r *http.Request, cellID string, appealID string, req *secureCellFederationIncidentDirectiveExtensionAppealRehearingRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealAcknowledge(r *http.Request, cellID string, appealID string, req *secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationAcknowledge(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationAcknowledgeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationDispute(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationDisputeRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationResolve(r *http.Request, cellID string, comparisonKey string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationResolveRequest) (*secureCellAuthContext, error)
 	AuthorizeRelease(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeQuarantine(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
 	AuthorizeRevoke(r *http.Request, cellID string, req *secureCellMemberMutationRequest) (*secureCellAuthContext, error)
@@ -3934,6 +3940,28 @@ func resourceCandidatesForSecureCellFederationIncidentReportReconciliationAction
 		candidates = append(candidates,
 			secureCellsItemPrefix+cellID+"/federation/incident-report-reconciliations/"+comparisonKey+"/"+action,
 			"secure-cell:"+cellID+":federation:incident-report-reconciliation:"+comparisonKey+":"+action,
+		)
+	}
+	return candidates
+}
+
+func resourceCandidatesForSecureCellFederationIncidentDirectiveExtensionAppealReconciliationAction(cellID, comparisonKey, action string) []string {
+	cellID = strings.TrimSpace(cellID)
+	comparisonKey = strings.TrimSpace(comparisonKey)
+	action = strings.TrimSpace(action)
+	candidates := []string{
+		cellID,
+		"secure-cell:" + cellID,
+		"federation-incident-directive-extension-appeal-reconciliation:" + comparisonKey,
+		comparisonKey,
+	}
+	if comparisonKey != "" {
+		candidates = append(candidates, secureCellsItemPrefix+cellID+"/federation/incident-directive-extension-appeal-reconciliations/"+comparisonKey)
+	}
+	if comparisonKey != "" && action != "" {
+		candidates = append(candidates,
+			secureCellsItemPrefix+cellID+"/federation/incident-directive-extension-appeal-reconciliations/"+comparisonKey+"/"+action,
+			"secure-cell:"+cellID+":federation:incident-directive-extension-appeal-reconciliation:"+comparisonKey+":"+action,
 		)
 	}
 	return candidates

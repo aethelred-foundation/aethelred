@@ -8627,6 +8627,76 @@ func TestService_FederationIncidentDirectiveExtensionAppealRecusalAndRehearing(t
 		t.Fatalf("expected ingested control ledger to include CELL-FED-18, got %+v", ingested.ControlLedger.Controls)
 	}
 
+	comparisonKey := appealReconciliations[0].ComparisonKey
+	acknowledgedReconciliation, err := service.AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationAcknowledgeRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "reviewed and accepted reciprocal appeal alignment",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-ACK-01"},
+	})
+	if err != nil {
+		t.Fatalf("AcknowledgeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+	if !controlLedgerHasControl(acknowledgedReconciliation.ControlLedger, "CELL-FED-19") {
+		t.Fatalf("expected acknowledged reconciliation control ledger to include CELL-FED-19, got %+v", acknowledgedReconciliation.ControlLedger.Controls)
+	}
+
+	disputedReconciliation, err := service.DisputeFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationDisputeRequest{
+		ActorDID:    owner.AgentID(),
+		Reason:      "capture bilateral appeal review challenge for auditor traceability",
+		Divergences: []string{"counterparty appeal requires additional bilateral review notes"},
+		Metadata:    map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-DISPUTE-01"},
+	})
+	if err != nil {
+		t.Fatalf("DisputeFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	resolvedReconciliation, err := service.ResolveFederationIncidentDirectiveExtensionAppealReconciliation(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationResolveRequest{
+		ActorDID: owner.AgentID(),
+		Reason:   "bilateral appeal review completed and dispute closed",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-RESOLVE-01"},
+	})
+	if err != nil {
+		t.Fatalf("ResolveFederationIncidentDirectiveExtensionAppealReconciliation failed: %v", err)
+	}
+
+	reviewedAppealReconciliations, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliations(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+		ReviewStatus:  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliations after review failed: %v", err)
+	}
+	if len(reviewedAppealReconciliations) != 1 || reviewedAppealReconciliations[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || reviewedAppealReconciliations[0].ReviewActionCount != 3 {
+		t.Fatalf("expected one resolved appeal reconciliation with three actions, got %+v", reviewedAppealReconciliations)
+	}
+
+	reconciliationActions, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionFilter{
+		CellID:        created.CellID,
+		ComparisonKey: comparisonKey,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationActions failed: %v", err)
+	}
+	if len(reconciliationActions) != 3 || reconciliationActions[0].Action != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationActionResolve || reconciliationActions[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved {
+		t.Fatalf("expected three governed appeal reconciliation actions ending in resolve, got %+v", reconciliationActions)
+	}
+
+	reconciliationBundle, err := service.BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle(ctx, created.CellID, comparisonKey, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle(reconciliationBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationBundle failed: %v", err)
+	}
+	if reconciliationBundle.Reconciliation.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatusResolved || len(reconciliationBundle.Actions) != 3 {
+		t.Fatalf("expected resolved appeal reconciliation bundle with three actions, got %+v", reconciliationBundle.Reconciliation)
+	}
+
+	if !controlLedgerHasControl(disputedReconciliation.ControlLedger, "CELL-FED-19") || !controlLedgerHasControl(resolvedReconciliation.ControlLedger, "CELL-FED-19") {
+		t.Fatalf("expected disputed and resolved reconciliation control ledgers to include CELL-FED-19, disputed=%+v resolved=%+v", disputedReconciliation.ControlLedger.Controls, resolvedReconciliation.ControlLedger.Controls)
+	}
+
 	rehearingID := rehearings[0].AppealID
 	rehearingBundle, err := service.BuildFederationIncidentDirectiveExtensionAppealBundle(ctx, created.CellID, rehearingID, SecureCellFederationIncidentDirectiveExtensionAppealBundleOptions{})
 	if err != nil {

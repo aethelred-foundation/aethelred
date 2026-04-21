@@ -141,6 +141,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationFilter st
 	AppealID       string                                                                 `json:"appeal_id,omitempty"`
 	ComparisonKey  string                                                                 `json:"comparison_key,omitempty"`
 	Status         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationStatus `json:"status,omitempty"`
+	ReviewStatus   SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus `json:"review_status,omitempty"`
 	Limit          int                                                                    `json:"limit,omitempty"`
 }
 
@@ -181,6 +182,10 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationSummary s
 	CounterpartyRecusalCount        int                                                                    `json:"counterparty_recusal_count"`
 	CounterpartyGeneratedAt         *time.Time                                                             `json:"counterparty_generated_at,omitempty"`
 	CounterpartyReceivedAt          *time.Time                                                             `json:"counterparty_received_at,omitempty"`
+	ReviewStatus                    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewStatus `json:"review_status,omitempty"`
+	LastReviewedBy                  string                                                                 `json:"last_reviewed_by,omitempty"`
+	LastReviewedAt                  *time.Time                                                             `json:"last_reviewed_at,omitempty"`
+	ReviewActionCount               int                                                                    `json:"review_action_count"`
 	Divergences                     []string                                                               `json:"divergences,omitempty"`
 }
 
@@ -525,6 +530,9 @@ func matchesSecureCellFederationIncidentDirectiveExtensionAppealReconciliationFi
 	if filter.Status != "" && item.Status != filter.Status {
 		return false
 	}
+	if filter.ReviewStatus != "" && item.ReviewStatus != filter.ReviewStatus {
+		return false
+	}
 	return true
 }
 
@@ -618,6 +626,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationSummaryFr
 		item.CounterpartyReceivedAt = cloneTimePtr(&counterparty.ReceivedAt)
 	}
 	item.Status, item.Divergences = secureCellFederationIncidentDirectiveExtensionAppealReconciliationStatusAndDivergences(local, counterparty)
+	item.ReviewStatus, item.LastReviewedBy, item.LastReviewedAt, item.ReviewActionCount = secureCellFederationIncidentDirectiveExtensionAppealReconciliationReviewState(run, key)
 	return item
 }
 
