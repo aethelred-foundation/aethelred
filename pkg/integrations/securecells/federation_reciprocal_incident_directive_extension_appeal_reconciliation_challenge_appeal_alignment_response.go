@@ -33,6 +33,8 @@ const (
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusUnreviewed   SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus = "unreviewed"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusAcknowledged SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus = "acknowledged"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusDisputed     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus = "disputed"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusEscalated    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus = "escalated"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus = "resolved"
 )
 
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType
@@ -43,6 +45,8 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 const (
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionAcknowledge SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType = "acknowledge_counterparty_ruling"
 	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionDispute     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType = "dispute_counterparty_ruling"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate    SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType = "escalate_counterparty_ruling_dispute"
+	SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType = "resolve_counterparty_ruling_dispute"
 )
 
 // SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseSnapshot
@@ -1156,52 +1160,93 @@ func secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationCha
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionFromTransition(run *secureCellRun, transition SecureCellTransition) (SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionRecord, bool) {
-	actionType, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionTypeFromTransitionAction(transition.Action)
+	meta := cloneStringMap(transition.Metadata)
+	actionType, ok := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionTypeFromTransition(transition.Action, meta)
 	if !ok {
 		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionRecord{}, false
 	}
-	meta := cloneStringMap(transition.Metadata)
 	record := SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionRecord{
-		CellID:                           safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
-		CellName:                         safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
-		CellStatus:                       safeSecureCellStatus(run),
-		Jurisdiction:                     safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) }),
-		OrganizationID:                   strings.TrimSpace(meta["federation_organization_id"]),
-		SponsorOfRecord:                  strings.TrimSpace(meta["federation_sponsor_of_record"]),
-		OrganizationName:                 strings.TrimSpace(meta["federation_organization_name"]),
-		IncidentID:                       strings.TrimSpace(meta["federation_incident_id"]),
-		ResponseID:                       strings.TrimSpace(meta["federation_incident_response_id"]),
-		DirectiveID:                      strings.TrimSpace(meta["federation_incident_directive_id"]),
-		ExtensionID:                      strings.TrimSpace(meta["federation_incident_directive_extension_id"]),
-		DisputeID:                        strings.TrimSpace(meta["federation_incident_directive_extension_dispute_id"]),
-		AppealID:                         strings.TrimSpace(meta["federation_incident_directive_extension_appeal_id"]),
-		ChallengeID:                      strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_id"]),
-		ChallengeAppealID:                strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id"]),
-		ResponseAppealID:                 strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_id"]),
-		LocalResponseAppealStatus:        SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_status"])),
-		LocalResponseStatus:              SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_status"])),
-		LocalResponseAction:              SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_action"])),
-		LocalResponseTransitionID:        strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_transition_id"]),
-		LocalRuling:                      SecureCellFederationIncidentDirectiveExtensionAppealRuling(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_ruling"])),
-		CounterpartySnapshotID:           strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_snapshot_id"]),
-		CounterpartyBundleID:             strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_bundle_id"]),
-		CounterpartyResponseAppealID:     strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_appeal_id"]),
+		CellID:                    safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.CellID) }),
+		CellName:                  safeString(run.result, func(in *SecureCellResult) string { return strings.TrimSpace(in.Name) }),
+		CellStatus:                safeSecureCellStatus(run),
+		Jurisdiction:              safeString(run, func(in *secureCellRun) string { return strings.TrimSpace(in.request.Jurisdiction) }),
+		OrganizationID:            strings.TrimSpace(meta["federation_organization_id"]),
+		SponsorOfRecord:           strings.TrimSpace(meta["federation_sponsor_of_record"]),
+		OrganizationName:          strings.TrimSpace(meta["federation_organization_name"]),
+		IncidentID:                strings.TrimSpace(meta["federation_incident_id"]),
+		ResponseID:                strings.TrimSpace(meta["federation_incident_response_id"]),
+		DirectiveID:               strings.TrimSpace(meta["federation_incident_directive_id"]),
+		ExtensionID:               strings.TrimSpace(meta["federation_incident_directive_extension_id"]),
+		DisputeID:                 strings.TrimSpace(meta["federation_incident_directive_extension_dispute_id"]),
+		AppealID:                  strings.TrimSpace(meta["federation_incident_directive_extension_appeal_id"]),
+		ChallengeID:               strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_id"]),
+		ChallengeAppealID:         strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_id"]),
+		ResponseAppealID:          strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_id"]),
+		LocalResponseAppealStatus: SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_status"])),
+		LocalResponseStatus:       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_status"])),
+		LocalResponseAction:       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_action"])),
+		LocalResponseTransitionID: strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_transition_id"]),
+		LocalRuling:               SecureCellFederationIncidentDirectiveExtensionAppealRuling(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_appeal_ruling"])),
+		CounterpartySnapshotID: firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_snapshot_id"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_snapshot_id"]),
+		),
+		CounterpartyBundleID: firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_bundle_id"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_bundle_id"]),
+		),
+		CounterpartyResponseAppealID: firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_appeal_id"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_response_appeal_id"]),
+		),
 		CounterpartyResponseAppealStatus: SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_appeal_status"])),
 		CounterpartyResponseStatus:       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_status"])),
 		CounterpartyResponseAction:       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_action"])),
 		CounterpartyResponseTransitionID: strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_transition_id"]),
 		CounterpartyRuling:               SecureCellFederationIncidentDirectiveExtensionAppealRuling(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_response_appeal_ruling"])),
-		CounterpartyReference:            strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_reference"]),
-		AlignmentStatus:                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_alignment_status"])),
-		AlignmentDivergenceCount:         secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_alignment_count"),
-		ReviewStatus:                     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_status"])),
-		Action:                           actionType,
-		Divergences:                      uniqueTrimmedStrings(strings.Split(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_divergences"]), ",")),
-		TransitionID:                     strings.TrimSpace(transition.ID),
-		ActorDID:                         strings.TrimSpace(transition.Actor),
-		Reason:                           strings.TrimSpace(transition.Reason),
-		Metadata:                         meta,
-		OccurredAt:                       transition.OccurredAt.UTC(),
+		CounterpartyReference: firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_reference"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_reference"]),
+		),
+		AlignmentStatus:          SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_alignment_status"])),
+		AlignmentDivergenceCount: secureCellMetadataInt(meta, "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_alignment_count"),
+		ReviewStatus:             SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_status"])),
+		Action:                   actionType,
+		Divergences:              uniqueTrimmedStrings(strings.Split(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_divergences"]), ",")),
+		TransitionID:             strings.TrimSpace(transition.ID),
+		ActorDID:                 strings.TrimSpace(transition.Actor),
+		Reason:                   strings.TrimSpace(transition.Reason),
+		Metadata:                 meta,
+		OccurredAt:               transition.OccurredAt.UTC(),
+	}
+	if record.ResponseAppealID == "" && (actionType == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate || actionType == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve) {
+		record.ResponseAppealID = firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_parent_id"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_id"]),
+		)
+	}
+	if record.LocalResponseAppealStatus == "" {
+		record.LocalResponseAppealStatus = SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_status"]))
+	}
+	if record.LocalResponseStatus == "" {
+		record.LocalResponseStatus = SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_status"]))
+	}
+	if record.LocalResponseAction == "" {
+		record.LocalResponseAction = SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_action"]))
+	}
+	if record.LocalResponseTransitionID == "" {
+		record.LocalResponseTransitionID = firstNonEmpty(
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_local_response_transition_id"]),
+			strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_transition_id"]),
+		)
+	}
+	if record.LocalRuling == "" {
+		record.LocalRuling = SecureCellFederationIncidentDirectiveExtensionAppealRuling(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_ruling"]))
+	}
+	if actionType == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate || actionType == SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve {
+		record.ReviewStatus = secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusForAction(actionType)
+	} else if record.ReviewStatus == "" {
+		record.ReviewStatus = secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusForAction(actionType)
 	}
 	if transition.PolicyReceipt != nil {
 		record.PolicyReceiptID = strings.TrimSpace(transition.PolicyReceipt.ID)
@@ -1216,15 +1261,43 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	return record, true
 }
 
-func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionTypeFromTransitionAction(action string) (SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType, bool) {
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionTypeFromTransition(action string, meta map[string]string) (SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType, bool) {
 	switch strings.TrimSpace(action) {
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_acknowledged":
 		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionAcknowledge, true
 	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_disputed":
 		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionDispute, true
+	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_rehearing_requested":
+		if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationMeta(meta) {
+			return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate, true
+		}
+	case "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_ruled":
+		if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationMeta(meta) {
+			return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve, true
+		}
 	default:
 		return "", false
 	}
+	return "", false
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusForAction(action SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType) SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus {
+	switch action {
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionAcknowledge:
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusAcknowledged
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionDispute:
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusDisputed
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate:
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusEscalated
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve:
+		return SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved
+	default:
+		return ""
+	}
+}
+
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationMeta(meta map[string]string) bool {
+	return strings.EqualFold(strings.TrimSpace(meta["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true")
 }
 
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyTransitionSuffix(action SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionType) string {
@@ -1233,6 +1306,10 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_acknowledged"
 	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionDispute:
 		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_disputed"
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionEscalate:
+		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_escalated"
+	case SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve:
+		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_resolved"
 	default:
 		return "federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_reviewed"
 	}

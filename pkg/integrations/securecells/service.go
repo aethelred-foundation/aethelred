@@ -4758,6 +4758,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationAttestationRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4999,11 +5000,18 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true") {
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs, recordID)
 		}
-		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_disputed" {
+		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_acknowledged" ||
+			transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_disputed" ||
+			(transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_rehearing_requested" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true")) ||
+			(transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_ruled" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true")) {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyRecordIDs, recordID)
+		}
+		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_ruled" &&
+			strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true") {
+			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs, recordID)
 		}
 		if strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_sweep_mode"]), "automated") {
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs, recordID)
@@ -6619,7 +6627,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-FED-35",
 			ControlName: "Counterparty Correction Board Ruling Review",
-			Description: "Imported correction-board rulings must be explicitly acknowledged or disputed against the exact signed counterparty snapshot, preserving a replayable bilateral review trail over each cross-organization board outcome instead of trusting an implicit latest state.",
+			Description: "Imported correction-board rulings must be explicitly acknowledged, disputed, escalated, and resolved against the exact signed counterparty snapshot, preserving a replayable bilateral review trail over each cross-organization board outcome instead of trusting an implicit latest state.",
 			Status:      evidence.ControlSatisfied,
 			EvidenceRefs: evidence.ControlEvidenceRefs{
 				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyRecordIDs...),
@@ -6629,6 +6637,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_total":        fmt.Sprintf("%d", len(counterpartyResponseAppeals)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_acknowledged": fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseReviewStatusCount(counterpartyResponseAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusAcknowledged)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_disputed":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseReviewStatusCount(counterpartyResponseAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusDisputed)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_escalated":    fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseReviewStatusCount(counterpartyResponseAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusEscalated)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_resolved":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseReviewStatusCount(counterpartyResponseAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved)),
 			},
 		}); err != nil {
 			return nil, err
@@ -6680,6 +6690,25 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_escalations_total": fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs)),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_total":                  fmt.Sprintf("%d", len(responseAppeals)),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_escalated":              fmt.Sprintf("%d", escalatedCount),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs) > 0 {
+		counterpartyResponseAppeals := secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealsFromRun(run)
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-38",
+			ControlName: "Counterparty Ruling Dispute Resolution",
+			Description: "Escalated disputes over imported counterparty correction-board rulings are closed through a fresh ruled rehearing generation, preserving the linked bilateral resolution outcome inside the same signed review trail instead of leaving operators to infer closure from disconnected board state.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_resolutions_total": fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_total":     fmt.Sprintf("%d", len(counterpartyResponseAppeals)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_resolved":  fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseReviewStatusCount(counterpartyResponseAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved)),
 			},
 		}); err != nil {
 			return nil, err
