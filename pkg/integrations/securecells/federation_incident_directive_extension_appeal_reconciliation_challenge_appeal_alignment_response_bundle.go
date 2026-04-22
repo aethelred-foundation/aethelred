@@ -281,5 +281,13 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	clone.Signature = nil
 	clone.ContentHash = ""
 	payload, _ := json.Marshal(clone)
+
+	// Canonicalize through JSON once so omitted empty maps/slices in API
+	// round-trips do not change the signed content hash.
+	var canonical SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle
+	_ = json.Unmarshal(payload, &canonical)
+	canonical.Signature = nil
+	canonical.ContentHash = ""
+	payload, _ = json.Marshal(canonical)
 	return sha256.Sum256(payload)
 }
