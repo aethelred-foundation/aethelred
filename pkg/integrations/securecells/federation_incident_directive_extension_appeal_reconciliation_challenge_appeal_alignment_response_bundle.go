@@ -50,6 +50,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	ResponseActions                        []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord                 `json:"response_actions,omitempty"`
 	ResponseAppeals                        []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary                `json:"response_appeals,omitempty"`
 	ResponseAppealActions                  []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionRecord           `json:"response_appeal_actions,omitempty"`
+	ResponseAppealRecusals                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary         `json:"response_appeal_recusals,omitempty"`
 	ResponseAppealAutomationActions        []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionRecord `json:"response_appeal_automation_actions,omitempty"`
 	ChallengeAppealBundleHash              string                                                                                                                           `json:"challenge_appeal_bundle_hash,omitempty"`
 	Controls                               []SecureCellFederationTrustPackControl                                                                                           `json:"controls,omitempty"`
@@ -133,6 +134,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 	if err != nil {
 		return nil, err
 	}
+	responseAppealRecusals, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalFilter{
+		CellID:            cellID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	responseAppealAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionFilter{
 		CellID:            cellID,
 		ChallengeAppealID: challengeAppealID,
@@ -183,6 +191,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 		ResponseActions:                        append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord(nil), responseActions...),
 		ResponseAppeals:                        append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary(nil), responseAppeals...),
 		ResponseAppealActions:                  append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionRecord(nil), responseAppealActions...),
+		ResponseAppealRecusals:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary(nil), responseAppealRecusals...),
 		ResponseAppealAutomationActions:        append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionRecord(nil), responseAppealAutomationActions...),
 		ChallengeAppealBundleHash:              strings.TrimSpace(challengeAppealBundle.ContentHash),
 		Controls:                               secureCellFederationControlsFromLedger(run.result.ControlLedger),

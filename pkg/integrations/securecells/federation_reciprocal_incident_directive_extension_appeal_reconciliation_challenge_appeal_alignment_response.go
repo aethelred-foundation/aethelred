@@ -121,6 +121,8 @@ type SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 	ChallengeID                     string                                                                                                                           `json:"challenge_id,omitempty"`
 	ChallengeAppealID               string                                                                                                                           `json:"challenge_appeal_id,omitempty"`
 	ResponseAppealID                string                                                                                                                           `json:"response_appeal_id"`
+	ParentResponseAppealID          string                                                                                                                           `json:"parent_response_appeal_id,omitempty"`
+	ResponseAppealGeneration        int                                                                                                                              `json:"response_appeal_generation,omitempty"`
 	ResponseAppealStatus            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus                   `json:"response_appeal_status"`
 	ResponseStatus                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus                         `json:"response_status,omitempty"`
 	ResponseAction                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType                     `json:"response_action,omitempty"`
@@ -133,6 +135,7 @@ type SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 	Ruling                          SecureCellFederationIncidentDirectiveExtensionAppealRuling                                                                       `json:"ruling,omitempty"`
 	BoardReviewThreshold            int                                                                                                                              `json:"board_review_threshold,omitempty"`
 	BoardDelegationCount            int                                                                                                                              `json:"board_delegation_count,omitempty"`
+	BoardRecusalCount               int                                                                                                                              `json:"board_recusal_count,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                                                              `json:"board_committee_member_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                                                              `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                                                              `json:"board_outstanding_votes,omitempty"`
@@ -626,6 +629,8 @@ func secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 			ChallengeID:                     strings.TrimSpace(appeal.ChallengeID),
 			ChallengeAppealID:               strings.TrimSpace(appeal.ChallengeAppealID),
 			ResponseAppealID:                strings.TrimSpace(appeal.ResponseAppealID),
+			ParentResponseAppealID:          strings.TrimSpace(appeal.ParentResponseAppealID),
+			ResponseAppealGeneration:        secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(appeal),
 			ResponseAppealStatus:            appeal.Status,
 			ResponseStatus:                  appeal.ResponseStatus,
 			ResponseAction:                  appeal.ResponseAction,
@@ -638,6 +643,7 @@ func secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 			Ruling:                          appeal.Ruling,
 			BoardReviewThreshold:            appeal.BoardReviewThreshold,
 			BoardDelegationCount:            appeal.BoardDelegationCount,
+			BoardRecusalCount:               appeal.BoardRecusalCount,
 			BoardCommitteeMemberCount:       appeal.BoardCommitteeMemberCount,
 			BoardRecordedVoteCount:          appeal.BoardRecordedVoteCount,
 			BoardOutstandingVotes:           appeal.BoardOutstandingVotes,
@@ -888,6 +894,8 @@ func secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 		ChallengeID:                     strings.TrimSpace(appeal.ChallengeID),
 		ChallengeAppealID:               strings.TrimSpace(appeal.ChallengeAppealID),
 		ResponseAppealID:                strings.TrimSpace(appeal.ResponseAppealID),
+		ParentResponseAppealID:          strings.TrimSpace(appeal.ParentResponseAppealID),
+		ResponseAppealGeneration:        secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(appeal),
 		ResponseAppealStatus:            appeal.Status,
 		ResponseStatus:                  appeal.ResponseStatus,
 		ResponseAction:                  appeal.ResponseAction,
@@ -900,6 +908,7 @@ func secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliat
 		Ruling:                          appeal.Ruling,
 		BoardReviewThreshold:            appeal.BoardReviewThreshold,
 		BoardDelegationCount:            appeal.BoardDelegationCount,
+		BoardRecusalCount:               appeal.BoardRecusalCount,
 		BoardCommitteeMemberCount:       appeal.BoardCommitteeMemberCount,
 		BoardRecordedVoteCount:          appeal.BoardRecordedVoteCount,
 		BoardOutstandingVotes:           appeal.BoardOutstandingVotes,
@@ -940,7 +949,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStableKey(item SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary, run *secureCellRun) string {
 	return strings.ToLower(strings.Join([]string{
 		strings.TrimSpace(item.ChallengeAppealID),
-		fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(run, item.ResponseAppealID)),
+		fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGenerationForRun(run, item)),
 		string(item.AppealingParty),
 		string(item.CorrectionBoardParty),
 		string(item.EnforcementAcknowledgementParty),
@@ -950,14 +959,17 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStableKeyFromCounterparty(item SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary, bundle SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle) string {
 	return strings.ToLower(strings.Join([]string{
 		strings.TrimSpace(item.ChallengeAppealID),
-		fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyGeneration(bundle, item.ResponseAppealID)),
+		fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyGeneration(bundle, item)),
 		string(item.AppealingParty),
 		string(item.CorrectionBoardParty),
 		string(item.EnforcementAcknowledgementParty),
 	}, "|"))
 }
 
-func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(run *secureCellRun, responseAppealID string) int {
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGenerationForRun(run *secureCellRun, appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary) int {
+	if generation := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(appeal); generation > 0 {
+		return generation
+	}
 	items := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealsFromRun(run)
 	sorted := append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary(nil), items...)
 	sort.SliceStable(sorted, func(i, j int) bool {
@@ -968,7 +980,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	})
 	generation := 0
 	for _, item := range sorted {
-		if !strings.EqualFold(strings.TrimSpace(item.ResponseAppealID), strings.TrimSpace(responseAppealID)) {
+		if !strings.EqualFold(strings.TrimSpace(item.ResponseAppealID), strings.TrimSpace(appeal.ResponseAppealID)) {
 			continue
 		}
 		generation++
@@ -977,7 +989,10 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	return 0
 }
 
-func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyGeneration(bundle SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle, responseAppealID string) int {
+func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyGeneration(bundle SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle, appeal SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary) int {
+	if generation := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(appeal); generation > 0 {
+		return generation
+	}
 	sorted := append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary(nil), bundle.ResponseAppeals...)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		if sorted[i].CreatedAt.Equal(sorted[j].CreatedAt) {
@@ -987,7 +1002,7 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	})
 	generation := 0
 	for _, item := range sorted {
-		if !strings.EqualFold(strings.TrimSpace(item.ResponseAppealID), strings.TrimSpace(responseAppealID)) {
+		if !strings.EqualFold(strings.TrimSpace(item.ResponseAppealID), strings.TrimSpace(appeal.ResponseAppealID)) {
 			continue
 		}
 		generation++
@@ -999,6 +1014,12 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAlignmentForLocalAndCounterparty(local SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary, counterparty SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary) (SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus, int) {
 	divergenceCount := 0
 	if local.Status != counterparty.ResponseAppealStatus {
+		divergenceCount++
+	}
+	if strings.TrimSpace(local.ParentResponseAppealID) != strings.TrimSpace(counterparty.ParentResponseAppealID) {
+		divergenceCount++
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(local) != max(counterparty.ResponseAppealGeneration, 1) {
 		divergenceCount++
 	}
 	if local.ResponseStatus != counterparty.ResponseStatus {
@@ -1025,6 +1046,9 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	if local.BoardDelegationCount != counterparty.BoardDelegationCount {
 		divergenceCount++
 	}
+	if local.BoardRecusalCount != counterparty.BoardRecusalCount {
+		divergenceCount++
+	}
 	if local.BoardRecordedVoteCount != counterparty.BoardRecordedVoteCount {
 		divergenceCount++
 	}
@@ -1045,11 +1069,20 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	if local.Status != counterparty.ResponseAppealStatus {
 		divergences = append(divergences, "response appeal status diverged")
 	}
+	if strings.TrimSpace(local.ParentResponseAppealID) != strings.TrimSpace(counterparty.ParentResponseAppealID) {
+		divergences = append(divergences, "response appeal rehearing lineage diverged")
+	}
+	if secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealGeneration(local) != max(counterparty.ResponseAppealGeneration, 1) {
+		divergences = append(divergences, "response appeal generation diverged")
+	}
 	if local.Ruling != counterparty.Ruling {
 		divergences = append(divergences, "correction-board ruling diverged")
 	}
 	if local.BoardReviewThreshold != counterparty.BoardReviewThreshold {
 		divergences = append(divergences, "correction-board threshold diverged")
+	}
+	if local.BoardRecusalCount != counterparty.BoardRecusalCount {
+		divergences = append(divergences, "correction-board recusal count diverged")
 	}
 	if local.BoardRecordedVoteCount != counterparty.BoardRecordedVoteCount {
 		divergences = append(divergences, "correction-board vote count diverged")

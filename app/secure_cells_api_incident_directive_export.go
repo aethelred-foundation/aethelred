@@ -1051,9 +1051,9 @@ func writeSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconc
 		if err := cw.Write([]string{
 			"cell_id", "cell_name", "jurisdiction", "cell_status", "organization_id", "sponsor_of_record", "organization_name", "snapshot_id",
 			"bundle_id", "bundle_version", "bundle_name", "status", "verified", "signer", "key_id", "incident_id", "response_id", "directive_id",
-			"extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id", "response_appeal_id", "response_appeal_status",
+			"extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id", "response_appeal_id", "parent_response_appeal_id", "response_appeal_generation", "response_appeal_status",
 			"response_status", "response_action", "response_transition_id", "response_counterparty_reference", "response_counterparty_snapshot_id",
-			"appealing_party", "correction_board_party", "enforcement_acknowledgement_party", "ruling", "board_review_threshold", "board_delegation_count",
+			"appealing_party", "correction_board_party", "enforcement_acknowledgement_party", "ruling", "board_review_threshold", "board_delegation_count", "board_recusal_count",
 			"board_committee_member_count", "board_recorded_vote_count", "board_outstanding_votes", "board_missing_quorum_count", "board_threshold_satisfied",
 			"ratify_vote_count", "overturn_vote_count", "generated_at", "expires_at", "received_at", "control_ledger_id", "control_ledger_hash",
 			"portable_package_hash", "portable_package_signed", "portable_package_anchored", "verification_message", "matched_local_response_appeal_id",
@@ -1087,6 +1087,8 @@ func writeSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconc
 				item.ChallengeID,
 				item.ChallengeAppealID,
 				item.ResponseAppealID,
+				item.ParentResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
 				string(item.ResponseAppealStatus),
 				string(item.ResponseStatus),
 				string(item.ResponseAction),
@@ -1099,6 +1101,7 @@ func writeSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconc
 				string(item.Ruling),
 				strconv.Itoa(item.BoardReviewThreshold),
 				strconv.Itoa(item.BoardDelegationCount),
+				strconv.Itoa(item.BoardRecusalCount),
 				strconv.Itoa(item.BoardCommitteeMemberCount),
 				strconv.Itoa(item.BoardRecordedVoteCount),
 				strconv.Itoa(item.BoardOutstandingVotes),
@@ -1501,8 +1504,8 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		cw := csv.NewWriter(w)
 		if err := cw.Write([]string{
 			"cell_id", "organization_id", "incident_id", "response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id",
-			"response_appeal_id", "response_status", "response_action", "response_transition_id", "status", "appealing_party", "correction_board_party", "enforcement_acknowledgement_party",
-			"board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recorded_vote_count", "board_outstanding_votes", "board_missing_quorum_count",
+			"response_appeal_id", "parent_response_appeal_id", "response_appeal_generation", "response_status", "response_action", "response_transition_id", "status", "appealing_party", "correction_board_party", "enforcement_acknowledgement_party",
+			"board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recusal_count", "board_recorded_vote_count", "board_outstanding_votes", "board_missing_quorum_count",
 			"board_threshold_satisfied", "ratify_vote_count", "overturn_vote_count", "ruling", "summary", "created_by", "created_at", "updated_at",
 		}); err != nil {
 			return err
@@ -1520,6 +1523,8 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 				item.ChallengeID,
 				item.ChallengeAppealID,
 				item.ResponseAppealID,
+				item.ParentResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
 				string(item.ResponseStatus),
 				string(item.ResponseAction),
 				item.ResponseTransitionID,
@@ -1530,6 +1535,7 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 				strconv.Itoa(item.BoardReviewThreshold),
 				strconv.Itoa(item.BoardCommitteeMemberCount),
 				strconv.Itoa(item.BoardDelegationCount),
+				strconv.Itoa(item.BoardRecusalCount),
 				strconv.Itoa(item.BoardRecordedVoteCount),
 				strconv.Itoa(item.BoardOutstandingVotes),
 				strconv.Itoa(item.BoardMissingQuorumCount),
@@ -1564,8 +1570,8 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		cw := csv.NewWriter(w)
 		if err := cw.Write([]string{
 			"cell_id", "organization_id", "incident_id", "response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id",
-			"response_appeal_id", "response_status", "response_action", "status", "action", "correction_board_party", "delegated_to_did",
-			"board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recorded_vote_count", "ratify_vote_count", "overturn_vote_count",
+			"response_appeal_id", "parent_response_appeal_id", "response_appeal_generation", "response_status", "response_action", "status", "action", "correction_board_party", "delegated_to_did", "recusal_id",
+			"board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recusal_count", "board_recorded_vote_count", "ratify_vote_count", "overturn_vote_count",
 			"ruling", "actor_did", "reason", "policy_receipt_id", "seal_id", "trace_link_id", "transition_id", "occurred_at",
 		}); err != nil {
 			return err
@@ -1583,15 +1589,19 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 				item.ChallengeID,
 				item.ChallengeAppealID,
 				item.ResponseAppealID,
+				item.ParentResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
 				string(item.ResponseStatus),
 				string(item.ResponseAction),
 				string(item.Status),
 				string(item.Action),
 				string(item.CorrectionBoardParty),
 				item.DelegatedToDID,
+				item.RecusalID,
 				strconv.Itoa(item.BoardReviewThreshold),
 				strconv.Itoa(item.BoardCommitteeMemberCount),
 				strconv.Itoa(item.BoardDelegationCount),
+				strconv.Itoa(item.BoardRecusalCount),
 				strconv.Itoa(item.BoardRecordedVoteCount),
 				strconv.Itoa(item.RatifyVoteCount),
 				strconv.Itoa(item.OverturnVoteCount),
@@ -1626,8 +1636,8 @@ func writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliat
 		cw := csv.NewWriter(w)
 		if err := cw.Write([]string{
 			"cell_id", "organization_id", "incident_id", "response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id",
-			"response_appeal_id", "response_status", "response_action", "response_transition_id", "status", "appealing_party", "correction_board_party", "enforcement_acknowledgement_party",
-			"pending_action", "automation_action", "overdue_reason", "board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recorded_vote_count",
+			"response_appeal_id", "parent_response_appeal_id", "response_appeal_generation", "response_status", "response_action", "response_transition_id", "status", "appealing_party", "correction_board_party", "enforcement_acknowledgement_party",
+			"pending_action", "automation_action", "overdue_reason", "board_review_threshold", "board_committee_member_count", "board_delegation_count", "board_recusal_count", "board_recorded_vote_count",
 			"board_outstanding_votes", "board_missing_quorum_count", "board_threshold_satisfied", "ratify_vote_count", "overturn_vote_count", "ruling", "tier_id", "target_did", "due_at",
 			"overdue_seconds", "created_at", "ruled_at", "updated_at",
 		}); err != nil {
@@ -1646,6 +1656,8 @@ func writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliat
 				item.ChallengeID,
 				item.ChallengeAppealID,
 				item.ResponseAppealID,
+				item.ParentResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
 				string(item.ResponseStatus),
 				string(item.ResponseAction),
 				item.ResponseTransitionID,
@@ -1659,6 +1671,7 @@ func writeSecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliat
 				strconv.Itoa(item.BoardReviewThreshold),
 				strconv.Itoa(item.BoardCommitteeMemberCount),
 				strconv.Itoa(item.BoardDelegationCount),
+				strconv.Itoa(item.BoardRecusalCount),
 				strconv.Itoa(item.BoardRecordedVoteCount),
 				strconv.Itoa(item.BoardOutstandingVotes),
 				strconv.Itoa(item.BoardMissingQuorumCount),
@@ -3121,6 +3134,63 @@ func writeSecureCellFederationIncidentDirectiveBundleExport(w http.ResponseWrite
 			formatSecureCellStringMap(bundle.Metadata),
 		}); err != nil {
 			return err
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-recusals.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"cell_id", "cell_name", "jurisdiction", "cell_status", "organization_id", "sponsor_of_record", "organization_name",
+			"incident_id", "response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id",
+			"response_appeal_id", "parent_response_appeal_id", "response_appeal_generation", "response_status", "response_appeal_status",
+			"correction_board_party", "recusal_id", "actor_did", "summary", "description", "created_at",
+		}); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := cw.Write([]string{
+				item.CellID,
+				item.CellName,
+				item.Jurisdiction,
+				string(item.CellStatus),
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.IncidentID,
+				item.ResponseID,
+				item.DirectiveID,
+				item.ExtensionID,
+				item.DisputeID,
+				item.AppealID,
+				item.ChallengeID,
+				item.ChallengeAppealID,
+				item.ResponseAppealID,
+				item.ParentResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
+				string(item.ResponseStatus),
+				string(item.ResponseAppealStatus),
+				string(item.CorrectionBoardParty),
+				item.RecusalID,
+				item.ActorDID,
+				item.Summary,
+				item.Description,
+				item.CreatedAt.UTC().Format(timeCSVFormat),
+			}); err != nil {
+				return err
+			}
 		}
 		cw.Flush()
 		return cw.Error()

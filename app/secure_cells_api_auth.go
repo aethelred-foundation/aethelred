@@ -126,6 +126,8 @@ const (
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAction                        = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRuleAction                    = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.rule"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDelegateReviewAction          = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.delegate_review"
+	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuseAction                  = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.recuse_review"
+	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehearAction                  = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.rehear"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAcknowledgeAction             = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.acknowledge_enforcement"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAcknowledgeCounterpartyAction = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.acknowledge_counterparty_ruling"
 	secureCellsAuthFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDisputeCounterpartyAction     = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge.appeal.alignment.response.appeal.dispute_counterparty_ruling"
@@ -268,6 +270,8 @@ type secureCellRequestAuthorizer interface {
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeal(r *http.Request, cellID string, challengeAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRule(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRulingRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDelegateReview(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuse(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuseRequest) (*secureCellAuthContext, error)
+	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehear(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehearingRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAcknowledge(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAcknowledgeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAcknowledgeCounterparty(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyAcknowledgeRequest) (*secureCellAuthContext, error)
 	AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDisputeCounterparty(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeRequest) (*secureCellAuthContext, error)
@@ -1079,6 +1083,18 @@ func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveE
 func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDelegateReview(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionDelegationRequest) (*secureCellAuthContext, error) {
 	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
 		return strategy.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealDelegateReview(r, cellID, challengeAppealID, responseAppealID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuse(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuseRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecuse(r, cellID, challengeAppealID, responseAppealID, req)
+	})
+}
+
+func (a *secureCellAnyOfRequestAuthorizer) AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehear(r *http.Request, cellID string, challengeAppealID string, responseAppealID string, req *secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehearingRequest) (*secureCellAuthContext, error) {
+	return a.authorize(func(strategy secureCellRequestAuthorizer) (*secureCellAuthContext, error) {
+		return strategy.AuthorizeFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehear(r, cellID, challengeAppealID, responseAppealID, req)
 	})
 }
 

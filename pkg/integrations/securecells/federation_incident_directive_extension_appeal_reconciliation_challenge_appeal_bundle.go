@@ -49,6 +49,7 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	CounterpartyAlignmentResponseActions                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord                 `json:"counterparty_alignment_response_actions,omitempty"`
 	CounterpartyAlignmentResponseAppeals                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary                `json:"counterparty_alignment_response_appeals,omitempty"`
 	CounterpartyAlignmentResponseAppealActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionRecord           `json:"counterparty_alignment_response_appeal_actions,omitempty"`
+	CounterpartyAlignmentResponseAppealRecusals          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary         `json:"counterparty_alignment_response_appeal_recusals,omitempty"`
 	CounterpartyAlignmentResponseAppealAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionRecord `json:"counterparty_alignment_response_appeal_automation_actions,omitempty"`
 	Recusals                                             []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary                                `json:"recusals,omitempty"`
 	AutomationActions                                    []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord                        `json:"automation_actions,omitempty"`
@@ -148,6 +149,13 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 	if err != nil {
 		return nil, err
 	}
+	alignmentResponseAppealRecusals, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalFilter{
+		CellID:            cellID,
+		ChallengeAppealID: challengeAppealID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	alignmentResponseAppealAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionFilter{
 		CellID:            cellID,
 		ChallengeAppealID: challengeAppealID,
@@ -196,6 +204,7 @@ func (s *Service) BuildFederationIncidentDirectiveExtensionAppealReconciliationC
 		CounterpartyAlignmentResponseActions:   append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord(nil), alignmentResponseActions...),
 		CounterpartyAlignmentResponseAppeals:   append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary(nil), alignmentResponseAppeals...),
 		CounterpartyAlignmentResponseAppealActions:           append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionRecord(nil), alignmentResponseAppealActions...),
+		CounterpartyAlignmentResponseAppealRecusals:          append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary(nil), alignmentResponseAppealRecusals...),
 		CounterpartyAlignmentResponseAppealAutomationActions: append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionRecord(nil), alignmentResponseAppealAutomationActions...),
 		Recusals:                 append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealRecusalSummary(nil), recusals...),
 		AutomationActions:        append([]SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationActionRecord(nil), automationActions...),

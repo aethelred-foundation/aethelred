@@ -67,6 +67,8 @@ type SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationCh
 	ChallengeID                     string                                                                                                         `json:"challenge_id,omitempty"`
 	ChallengeAppealID               string                                                                                                         `json:"challenge_appeal_id,omitempty"`
 	ResponseAppealID                string                                                                                                         `json:"response_appeal_id"`
+	ParentResponseAppealID          string                                                                                                         `json:"parent_response_appeal_id,omitempty"`
+	ResponseAppealGeneration        int                                                                                                            `json:"response_appeal_generation,omitempty"`
 	ResponseStatus                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseStatus       `json:"response_status"`
 	ResponseAction                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionType   `json:"response_action"`
 	ResponseTransitionID            string                                                                                                         `json:"response_transition_id,omitempty"`
@@ -82,6 +84,7 @@ type SecureCellOverdueFederationIncidentDirectiveExtensionAppealReconciliationCh
 	BoardReviewThreshold            int                                                                                                            `json:"board_review_threshold,omitempty"`
 	BoardCommitteeMemberCount       int                                                                                                            `json:"board_committee_member_count,omitempty"`
 	BoardDelegationCount            int                                                                                                            `json:"board_delegation_count,omitempty"`
+	BoardRecusalCount               int                                                                                                            `json:"board_recusal_count,omitempty"`
 	BoardRecordedVoteCount          int                                                                                                            `json:"board_recorded_vote_count,omitempty"`
 	BoardOutstandingVotes           int                                                                                                            `json:"board_outstanding_votes,omitempty"`
 	BoardMissingQuorumCount         int                                                                                                            `json:"board_missing_quorum_count,omitempty"`
@@ -241,6 +244,8 @@ func (s *Service) ListOverdueFederationIncidentDirectiveExtensionAppealReconcili
 				ChallengeID:                     item.ChallengeID,
 				ChallengeAppealID:               item.ChallengeAppealID,
 				ResponseAppealID:                item.ResponseAppealID,
+				ParentResponseAppealID:          item.ParentResponseAppealID,
+				ResponseAppealGeneration:        item.ResponseAppealGeneration,
 				ResponseStatus:                  item.ResponseStatus,
 				ResponseAction:                  item.ResponseAction,
 				ResponseTransitionID:            item.ResponseTransitionID,
@@ -256,6 +261,7 @@ func (s *Service) ListOverdueFederationIncidentDirectiveExtensionAppealReconcili
 				BoardReviewThreshold:            item.BoardReviewThreshold,
 				BoardCommitteeMemberCount:       item.BoardCommitteeMemberCount,
 				BoardDelegationCount:            item.BoardDelegationCount,
+				BoardRecusalCount:               item.BoardRecusalCount,
 				BoardRecordedVoteCount:          item.BoardRecordedVoteCount,
 				BoardOutstandingVotes:           item.BoardOutstandingVotes,
 				BoardMissingQuorumCount:         item.BoardMissingQuorumCount,

@@ -65,6 +65,7 @@ type SecureCellFederationIncidentCasePack struct {
 	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActionRecord                 `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_actions,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals                 []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummary                `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActions           []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionRecord           `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_actions,omitempty"`
+	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals          []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalSummary         `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_recusals,omitempty"`
 	DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions []SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionRecord `json:"directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_automation_actions,omitempty"`
 	DirectiveExtensionAutomationActions                                                           []SecureCellFederationIncidentDirectiveExtensionAutomationActionRecord                                                           `json:"directive_extension_automation_actions,omitempty"`
 	Remediations                                                                                  []SecureCellFederationIncidentRemediationSummary                                                                                 `json:"remediations,omitempty"`
@@ -350,6 +351,13 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 	if err != nil {
 		return nil, err
 	}
+	directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusalFilter{
+		CellID:     cellID,
+		ResponseID: responseID,
+	})
+	if err != nil {
+		return nil, err
+	}
 	directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions, err := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActionFilter{
 		CellID:     cellID,
 		ResponseID: responseID,
@@ -451,6 +459,7 @@ func (s *Service) BuildFederationIncidentCasePack(ctx context.Context, cellID st
 		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions:                 directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseActions,
 		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals:                 directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals,
 		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActions:           directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActions,
+		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals:          directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals,
 		DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions: directiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationActions,
 		DirectiveExtensionAutomationActions:                                                           directiveExtensionAutomationActions,
 		Remediations:                                                                                  remediations,
