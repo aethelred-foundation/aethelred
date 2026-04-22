@@ -12318,6 +12318,52 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 		t.Fatalf("expected alignment response appeal counterparty action export to include response appeal id and dispute action, got %s", body)
 	}
 
+	counterpartyChallengeAppealAlignmentResponseAppealReviewListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-reviews?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&counterparty_snapshot_id="+url.QueryEscape(counterpartyChallengeAppealAlignmentResponseAppealListResp.Items[0].SnapshotID)+"&counterparty_response_appeal_id="+url.QueryEscape(counterpartyChallengeAppealAlignmentResponseAppealListResp.Items[0].ResponseAppealID), nil)
+	counterpartyChallengeAppealAlignmentResponseAppealReviewListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyChallengeAppealAlignmentResponseAppealReviewListRec, counterpartyChallengeAppealAlignmentResponseAppealReviewListReq)
+	if counterpartyChallengeAppealAlignmentResponseAppealReviewListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyChallengeAppealAlignmentResponseAppealReviewListRec.Code, counterpartyChallengeAppealAlignmentResponseAppealReviewListRec.Body.String())
+	}
+	var counterpartyChallengeAppealAlignmentResponseAppealReviewListResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewListResponse
+	if err := json.Unmarshal(counterpartyChallengeAppealAlignmentResponseAppealReviewListRec.Body.Bytes(), &counterpartyChallengeAppealAlignmentResponseAppealReviewListResp); err != nil {
+		t.Fatalf("unmarshal alignment response appeal counterparty review list response: %v", err)
+	}
+	if len(counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items) != 1 ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items[0].ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items[0].LatestReviewAction != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items[0].LocalRuling != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items[0].ResponseAppealStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed {
+		t.Fatalf("expected one resolved bilateral counterparty ruling review summary, got %+v", counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items)
+	}
+
+	counterpartyChallengeAppealAlignmentResponseAppealReviewExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-reviews/export?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&format=csv", nil)
+	counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec, counterpartyChallengeAppealAlignmentResponseAppealReviewExportReq)
+	if counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec.Code, counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec.Body.String())
+	}
+	if body := counterpartyChallengeAppealAlignmentResponseAppealReviewExportRec.Body.String(); !strings.Contains(body, responseAppealID) || !strings.Contains(body, "resolve_counterparty_ruling_dispute") {
+		t.Fatalf("expected alignment response appeal counterparty review export to include response appeal id and resolution action, got %s", body)
+	}
+
+	counterpartyChallengeAppealAlignmentResponseAppealReviewBundleReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-reviews/"+url.PathEscape(counterpartyChallengeAppealAlignmentResponseAppealReviewListResp.Items[0].ReviewID)+"/bundle", nil)
+	counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec, counterpartyChallengeAppealAlignmentResponseAppealReviewBundleReq)
+	if counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec.Code, counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec.Body.String())
+	}
+	var counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleResponse
+	if err := json.Unmarshal(counterpartyChallengeAppealAlignmentResponseAppealReviewBundleRec.Body.Bytes(), &counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp); err != nil {
+		t.Fatalf("unmarshal alignment response appeal counterparty review bundle response: %v", err)
+	}
+	if counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result == nil ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result.Review.ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result.LocalResponseAppeal == nil ||
+		counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result.LocalResponseAppeal.Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed ||
+		len(counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result.CounterpartyActions) != 3 {
+		t.Fatalf("expected resolved bilateral counterparty ruling review bundle, got %+v", counterpartyChallengeAppealAlignmentResponseAppealReviewBundleResp.Result)
+	}
+
 	automatedRealignedChallengeAppealBundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(ctx, created.CellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleOptions{})
 	if err != nil {
 		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle for automated response appeal failed: %v", err)

@@ -10809,6 +10809,42 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 		t.Fatalf("expected reciprocal correction-board ruling posture to move to resolved with three review actions, got %+v", counterpartyAlignmentResponseAppeals)
 	}
 
+	counterpartyReviewSummaries, err := service.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviews(ctx, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewFilter{
+		CellID:                       created.CellID,
+		ChallengeAppealID:            challengeAppealID,
+		ResponseAppealID:             responseAppealID,
+		CounterpartySnapshotID:       counterpartyAlignmentResponseAppeals[0].SnapshotID,
+		CounterpartyResponseAppealID: counterpartyAlignmentResponseAppeals[0].ResponseAppealID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviews failed: %v", err)
+	}
+	if len(counterpartyReviewSummaries) != 1 ||
+		counterpartyReviewSummaries[0].ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved ||
+		counterpartyReviewSummaries[0].LatestReviewAction != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve ||
+		counterpartyReviewSummaries[0].LocalRuling != SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn ||
+		counterpartyReviewSummaries[0].ResponseAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed ||
+		counterpartyReviewSummaries[0].ReviewActionCount != 3 {
+		t.Fatalf("expected one resolved bilateral counterparty ruling review summary, got %+v", counterpartyReviewSummaries)
+	}
+
+	counterpartyReviewBundle, err := service.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundle(ctx, created.CellID, counterpartyReviewSummaries[0].ReviewID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundle(counterpartyReviewBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundle failed: %v", err)
+	}
+	if counterpartyReviewBundle.Review.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusResolved ||
+		counterpartyReviewBundle.Review.LatestReviewAction != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionResolve ||
+		len(counterpartyReviewBundle.CounterpartyActions) != 3 ||
+		counterpartyReviewBundle.LocalResponseAppeal == nil ||
+		counterpartyReviewBundle.LocalResponseAppeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed ||
+		len(counterpartyReviewBundle.LocalResponseAppealActions) == 0 ||
+		strings.TrimSpace(counterpartyReviewBundle.AlignmentResponseBundleHash) == "" {
+		t.Fatalf("expected resolved bilateral counterparty ruling review bundle with local appeal evidence, got %+v", counterpartyReviewBundle)
+	}
+
 	if !controlLedgerHasControl(appealedAlignmentResponse.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(delegatedAlignmentResponseAppeal.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(firstAlignmentResponseAppealRuling.ControlLedger, "CELL-FED-32") ||

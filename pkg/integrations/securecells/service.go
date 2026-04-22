@@ -266,6 +266,10 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 // signs a portable bilateral challenge-appeal alignment response bundle.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundle) error
 
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner
+// signs a portable bilateral imported-ruling review bundle.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundle) error
+
 // SecureCellFederationIncidentReportBundleSigner signs a portable
 // federation incident report bundle for auditor and regulator exchange.
 type SecureCellFederationIncidentReportBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentReportBundle) error
@@ -1102,40 +1106,41 @@ type SecureCellQuarantineExpiry struct {
 
 // ServiceConfig configures Secure Cells v1.
 type ServiceConfig struct {
-	Negotiations                                                                                         *agent.NegotiationManager
-	PolicyEngine                                                                                         *policy.PolicyEngine
-	PolicySet                                                                                            *policy.PolicySet
-	PolicySignerKey                                                                                      *ecdsa.PrivateKey
-	PolicySigner                                                                                         string
-	CredentialIssuerKey                                                                                  *ecdsa.PrivateKey
-	CredentialIssuer                                                                                     string
-	Sealer                                                                                               SecureCellSealer
-	LedgerStore                                                                                          evidence.ControlLedgerStore
-	WorkflowStore                                                                                        SecureCellStore
-	Framework                                                                                            string
-	IncludeVerificationKeys                                                                              bool
-	PackageSigningKey                                                                                    ed25519.PrivateKey
-	PackageSigner                                                                                        string
-	PackageSignerFunc                                                                                    SecureCellPackageSigner
-	FederationAssuranceBundleSigner                                                                      SecureCellFederationAssuranceBundleSigner
-	FederationIncidentBulletinSigner                                                                     SecureCellFederationIncidentBulletinSigner
-	FederationIncidentResponseBundleSigner                                                               SecureCellFederationIncidentResponseBundleSigner
-	FederationIncidentDirectiveBundleSigner                                                              SecureCellFederationIncidentDirectiveBundleSigner
-	FederationIncidentDirectiveExtensionAppealBundleSigner                                               SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner                                 SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner                  SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner
-	FederationIncidentReportBundleSigner                                                                 SecureCellFederationIncidentReportBundleSigner
-	FederationIncidentReportAmendmentBundleSigner                                                        SecureCellFederationIncidentReportAmendmentBundleSigner
-	FederationIncidentReportReconciliationBundleSigner                                                   SecureCellFederationIncidentReportReconciliationBundleSigner
-	FederationIncidentReportAmendmentReconciliationBundleSigner                                          SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
-	FederationIncidentCasePackSigner                                                                     SecureCellFederationIncidentCasePackSigner
-	PackageAnchorer                                                                                      SecureCellPackageAnchorer
-	EventPublisher                                                                                       SecureCellEventPublisher
-	TrustAnchors                                                                                         []evidence.PlatformTrustAnchor
-	DecisionSLATemplates                                                                                 []SecureCellDecisionSLATemplate
-	ConfidentialAttestor                                                                                 confidential.Attestor
-	ConfidentialPolicy                                                                                   confidential.Policy
+	Negotiations                                                                                                                 *agent.NegotiationManager
+	PolicyEngine                                                                                                                 *policy.PolicyEngine
+	PolicySet                                                                                                                    *policy.PolicySet
+	PolicySignerKey                                                                                                              *ecdsa.PrivateKey
+	PolicySigner                                                                                                                 string
+	CredentialIssuerKey                                                                                                          *ecdsa.PrivateKey
+	CredentialIssuer                                                                                                             string
+	Sealer                                                                                                                       SecureCellSealer
+	LedgerStore                                                                                                                  evidence.ControlLedgerStore
+	WorkflowStore                                                                                                                SecureCellStore
+	Framework                                                                                                                    string
+	IncludeVerificationKeys                                                                                                      bool
+	PackageSigningKey                                                                                                            ed25519.PrivateKey
+	PackageSigner                                                                                                                string
+	PackageSignerFunc                                                                                                            SecureCellPackageSigner
+	FederationAssuranceBundleSigner                                                                                              SecureCellFederationAssuranceBundleSigner
+	FederationIncidentBulletinSigner                                                                                             SecureCellFederationIncidentBulletinSigner
+	FederationIncidentResponseBundleSigner                                                                                       SecureCellFederationIncidentResponseBundleSigner
+	FederationIncidentDirectiveBundleSigner                                                                                      SecureCellFederationIncidentDirectiveBundleSigner
+	FederationIncidentDirectiveExtensionAppealBundleSigner                                                                       SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner                                                         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner                                          SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner                         SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner
+	FederationIncidentReportBundleSigner                                                                                         SecureCellFederationIncidentReportBundleSigner
+	FederationIncidentReportAmendmentBundleSigner                                                                                SecureCellFederationIncidentReportAmendmentBundleSigner
+	FederationIncidentReportReconciliationBundleSigner                                                                           SecureCellFederationIncidentReportReconciliationBundleSigner
+	FederationIncidentReportAmendmentReconciliationBundleSigner                                                                  SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
+	FederationIncidentCasePackSigner                                                                                             SecureCellFederationIncidentCasePackSigner
+	PackageAnchorer                                                                                                              SecureCellPackageAnchorer
+	EventPublisher                                                                                                               SecureCellEventPublisher
+	TrustAnchors                                                                                                                 []evidence.PlatformTrustAnchor
+	DecisionSLATemplates                                                                                                         []SecureCellDecisionSLATemplate
+	ConfidentialAttestor                                                                                                         confidential.Attestor
+	ConfidentialPolicy                                                                                                           confidential.Policy
 }
 
 type secureCellRun struct {
