@@ -184,6 +184,27 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Metadata                     map[string]string `json:"metadata,omitempty"`
 }
 
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest
+// opens a fresh local rehearing generation after a disputed imported
+// counterparty correction-board ruling.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest struct {
+	ActorDID                            string                                    `json:"actor_did,omitempty"`
+	CounterpartySnapshotID              string                                    `json:"counterparty_snapshot_id,omitempty"`
+	CounterpartyResponseAppealID        string                                    `json:"counterparty_response_appeal_id,omitempty"`
+	CounterpartyReference               string                                    `json:"counterparty_reference,omitempty"`
+	AppealingParty                      SecureCellFederationIncidentResponseParty `json:"appealing_party,omitempty"`
+	CorrectionBoardParty                SecureCellFederationIncidentResponseParty `json:"correction_board_party,omitempty"`
+	EnforcementAcknowledgementParty     SecureCellFederationIncidentResponseParty `json:"enforcement_acknowledgement_party,omitempty"`
+	Summary                             string                                    `json:"summary,omitempty"`
+	Description                         string                                    `json:"description,omitempty"`
+	EvidenceIDs                         []string                                  `json:"evidence_ids,omitempty"`
+	Divergences                         []string                                  `json:"divergences,omitempty"`
+	CorrectionBoardReviewThreshold      int                                       `json:"correction_board_review_threshold,omitempty"`
+	EligibleCorrectionBoardReviewerDIDs []string                                  `json:"eligible_correction_board_reviewer_dids,omitempty"`
+	Reason                              string                                    `json:"reason,omitempty"`
+	Metadata                            map[string]string                         `json:"metadata,omitempty"`
+}
+
 // SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyActionFilter
 // narrows operator queries across bilateral review actions over imported
 // correction-board rulings.

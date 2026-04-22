@@ -4757,6 +4757,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationAttestationRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -4994,6 +4995,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecordIDs, recordID)
+		}
+		if strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true") {
+			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_acknowledged" || transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_ruling_disputed" {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
@@ -6651,6 +6655,31 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_total":           fmt.Sprintf("%d", len(responseAppeals)),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_rehearings_total": fmt.Sprintf("%d", rehearingCount),
 				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_recusals_total":   fmt.Sprintf("%d", len(responseAppealRecusals)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs) > 0 {
+		responseAppeals := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealsFromRun(run)
+		escalatedCount := 0
+		for _, appeal := range responseAppeals {
+			if strings.EqualFold(strings.TrimSpace(appeal.Metadata["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated"]), "true") {
+				escalatedCount++
+			}
+		}
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-37",
+			ControlName: "Counterparty Ruling Dispute Escalation",
+			Description: "A disputed imported counterparty correction-board ruling can be escalated directly into a fresh signed rehearing generation, preserving the exact reviewed snapshot, ruling reference, and divergence trail inside the local bilateral correction-board lineage.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_escalations_total": fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs)),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_total":                  fmt.Sprintf("%d", len(responseAppeals)),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeals_escalated":              fmt.Sprintf("%d", escalatedCount),
 			},
 		}); err != nil {
 			return nil, err

@@ -689,6 +689,69 @@ func (s *Service) RehearFederationIncidentDirectiveExtensionAppealReconciliation
 	return cloneResult(run.result)
 }
 
+// EscalateFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDispute
+// opens a fresh rehearing generation after a disputed imported counterparty
+// correction-board ruling, preserving a direct evidence link back to the exact
+// counterparty snapshot, ruling, and dispute action that triggered escalation.
+func (s *Service) EscalateFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDispute(ctx context.Context, cellID string, responseAppealID string, req SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest) (*SecureCellResult, error) {
+	if s == nil {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal: service is required")
+	}
+	run, err := s.getRun(cellID)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureCellMutable(run.result); err != nil {
+		return nil, err
+	}
+	localAppeal, err := secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealByID(run, responseAppealID)
+	if err != nil {
+		return nil, err
+	}
+	if latest := secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealForChallengeAppeal(run, localAppeal.ChallengeAppealID); latest == nil || !strings.EqualFold(strings.TrimSpace(latest.ResponseAppealID), strings.TrimSpace(localAppeal.ResponseAppealID)) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal: %w: response appeal %q is not the latest appeal for challenge appeal %q", ErrFederationIncidentDirectiveImmutable, responseAppealID, localAppeal.ChallengeAppealID)
+	}
+	counterpartySummary, err := secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealSummaryBySnapshotAndAppeal(run, strings.TrimSpace(req.CounterpartySnapshotID), strings.TrimSpace(req.CounterpartyResponseAppealID))
+	if err != nil {
+		return nil, err
+	}
+	if !strings.EqualFold(strings.TrimSpace(counterpartySummary.ChallengeAppealID), strings.TrimSpace(localAppeal.ChallengeAppealID)) {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal: counterparty ruling %q does not belong to challenge appeal %q", counterpartySummary.ResponseAppealID, localAppeal.ChallengeAppealID)
+	}
+	latestReview := secureCellLatestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAction(run, responseAppealID, counterpartySummary.SnapshotID, counterpartySummary.ResponseAppealID)
+	if latestReview == nil || latestReview.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatusDisputed {
+		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal: %w: disputed counterparty ruling review is required before escalation for response appeal %q", ErrFederationIncidentDirectiveImmutable, responseAppealID)
+	}
+	divergences := uniqueTrimmedStrings(append(append([]string(nil), latestReview.Divergences...), req.Divergences...))
+	summary := firstNonEmpty(strings.TrimSpace(req.Summary), fmt.Sprintf("Escalate disputed counterparty correction-board ruling %s into governed rehearing", counterpartySummary.ResponseAppealID))
+	description := firstNonEmpty(strings.TrimSpace(req.Description), "The local organization escalated the disputed imported counterparty correction-board ruling into a fresh signed rehearing generation.")
+	reason := firstNonEmpty(strings.TrimSpace(req.Reason), "escalate disputed counterparty correction-board ruling into rehearing")
+	metadata := mergeStringMaps(req.Metadata, map[string]string{
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_escalated":          "true",
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_snapshot_id":        counterpartySummary.SnapshotID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_bundle_id":          counterpartySummary.BundleID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_response_appeal_id": counterpartySummary.ResponseAppealID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_transition_id":      latestReview.TransitionID,
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_reference":          firstNonEmpty(strings.TrimSpace(req.CounterpartyReference), strings.TrimSpace(latestReview.CounterpartyReference)),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_status":             string(latestReview.ReviewStatus),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_action":             string(latestReview.Action),
+		"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_counterparty_review_divergences":        strings.Join(divergences, ","),
+	})
+	return s.RehearFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeal(ctx, cellID, responseAppealID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRehearingRequest{
+		ActorDID:                            req.ActorDID,
+		AppealingParty:                      req.AppealingParty,
+		CorrectionBoardParty:                req.CorrectionBoardParty,
+		EnforcementAcknowledgementParty:     req.EnforcementAcknowledgementParty,
+		Summary:                             summary,
+		Description:                         description,
+		EvidenceIDs:                         uniqueTrimmedStrings(append(append([]string(nil), req.EvidenceIDs...), localAppeal.ResponseAppealID, counterpartySummary.ResponseAppealID, counterpartySummary.SnapshotID)),
+		CorrectionBoardReviewThreshold:      req.CorrectionBoardReviewThreshold,
+		EligibleCorrectionBoardReviewerDIDs: append([]string(nil), req.EligibleCorrectionBoardReviewerDIDs...),
+		Reason:                              reason,
+		Metadata:                            metadata,
+	})
+}
+
 func (s *Service) DelegateFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealReview(ctx context.Context, cellID string, responseAppealID string, req SecureCellFederationIncidentDirectiveExtensionDelegationRequest) (*SecureCellResult, error) {
 	if s == nil {
 		return nil, fmt.Errorf("securecells/federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal: service is required")
