@@ -512,6 +512,24 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Metadata              map[string]string           `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealDisputeEscalationRequest struct {
+	ActorIdentity                       json.RawMessage                                                  `json:"actor_identity,omitempty"`
+	PolicyReceipt                       *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
+	SnapshotID                          string                                                           `json:"snapshot_id,omitempty"`
+	CounterpartyReference               string                                                           `json:"counterparty_reference,omitempty"`
+	AppealingParty                      securecellsintegration.SecureCellFederationIncidentResponseParty `json:"appealing_party,omitempty"`
+	CorrectionBoardParty                securecellsintegration.SecureCellFederationIncidentResponseParty `json:"correction_board_party,omitempty"`
+	EnforcementAcknowledgementParty     securecellsintegration.SecureCellFederationIncidentResponseParty `json:"enforcement_acknowledgement_party,omitempty"`
+	Summary                             string                                                           `json:"summary,omitempty"`
+	Description                         string                                                           `json:"description,omitempty"`
+	EvidenceIDs                         []string                                                         `json:"evidence_ids,omitempty"`
+	Divergences                         []string                                                         `json:"divergences,omitempty"`
+	CorrectionBoardReviewThreshold      int                                                              `json:"correction_board_review_threshold,omitempty"`
+	EligibleCorrectionBoardReviewerDIDs []string                                                         `json:"eligible_correction_board_reviewer_dids,omitempty"`
+	Reason                              string                                                           `json:"reason,omitempty"`
+	Metadata                            map[string]string                                                `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest struct {
 	ActorIdentity                       json.RawMessage                                                  `json:"actor_identity,omitempty"`
 	PolicyReceipt                       *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
