@@ -774,6 +774,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Result *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle `json:"result,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleResponse struct {
+	Result *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle `json:"result,omitempty"`
+}
+
 type secureCellFederationIncidentCasePackResponse struct {
 	Result *securecellsintegration.SecureCellFederationIncidentCasePack `json:"result,omitempty"`
 }
@@ -1048,6 +1052,13 @@ func (app *AethelredApp) initSecureCellsInfrastructure(appOpts servertypes.AppOp
 				return nil
 			}
 			return securecellsintegration.SignFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleEd25519(bundle, privateKey, signer, true)
+		},
+		FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle) error {
+			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
+			if !ok {
+				return nil
+			}
+			return securecellsintegration.SignFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleEd25519(bundle, privateKey, signer, true)
 		},
 		FederationIncidentReportBundleSigner: func(ctx context.Context, bundle *securecellsintegration.SecureCellFederationIncidentReportBundle) error {
 			signer, privateKey, ok := resolvePouwTrustCompliancePackageSigner(app)
@@ -4188,7 +4199,31 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 		}
 
 		if strings.Contains(r.URL.Path, "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals/") {
-			cellID, snapshotID, err := parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealPath(r.URL.Path, "/bundle/export")
+			cellID, snapshotID, err := parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealPath(r.URL.Path, "/review-bundle/export")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle(r.Context(), cellID, snapshotID, secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions(cellID, snapshotID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				if err := writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleExport(w, r, bundle); err != nil {
+					writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				}
+				return
+			}
+
+			cellID, snapshotID, err = parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealPath(r.URL.Path, "/review-bundle")
+			if err == nil {
+				bundle, err := app.secureCellService.BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle(r.Context(), cellID, snapshotID, secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions(cellID, snapshotID))
+				if err != nil {
+					writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+					return
+				}
+				writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleResponse{Result: bundle})
+				return
+			}
+
+			cellID, snapshotID, err = parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealPath(r.URL.Path, "/bundle/export")
 			if err == nil {
 				bundle, err := app.secureCellService.GetFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle(r.Context(), cellID, snapshotID)
 				if err != nil {
@@ -10618,6 +10653,44 @@ func secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 				Method:      http.MethodGet,
 				Path:        secureCellsItemPrefix + cellID + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals/" + pathResponseAppealID + "/bundle/export?format=csv",
 				Description: "Export the signed bilateral rehearing-board bundle opened from this imported reciprocal appeal-board review trail.",
+				Formats:     []string{"json", "csv"},
+			},
+		},
+	}
+}
+
+func secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions(cellID string, snapshotID string) securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions {
+	cellID = strings.TrimSpace(cellID)
+	querySnapshotID := url.QueryEscape(strings.TrimSpace(snapshotID))
+	pathSnapshotID := url.PathEscape(strings.TrimSpace(snapshotID))
+	return securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions{
+		OperatorSurfaces: []securecellsintegration.SecureCellFederationOperatorSurface{
+			{
+				ID:          "counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals?cell_id=" + cellID + "&snapshot_id=" + querySnapshotID,
+				Description: "List imported reciprocal rehearing-board bundles for this governed review trail.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeal-review-actions",
+				Method:      http.MethodGet,
+				Path:        secureCellsCollectionRoute + "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeal-review-actions?cell_id=" + cellID + "&snapshot_id=" + querySnapshotID,
+				Description: "List governed review actions over this imported reciprocal rehearing-board bundle.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeal-review-bundle",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals/" + pathSnapshotID + "/review-bundle",
+				Description: "Retrieve the signed bilateral review bundle for this imported reciprocal rehearing-board bundle.",
+				Formats:     []string{"json"},
+			},
+			{
+				ID:          "counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeal-review-bundle-export",
+				Method:      http.MethodGet,
+				Path:        secureCellsItemPrefix + cellID + "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals/" + pathSnapshotID + "/review-bundle/export?format=csv",
+				Description: "Export the signed bilateral review bundle for this imported reciprocal rehearing-board bundle.",
 				Formats:     []string{"json", "csv"},
 			},
 		},

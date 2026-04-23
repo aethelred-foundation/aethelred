@@ -11315,6 +11315,18 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 		t.Fatalf("expected reciprocal imported-ruling review rehearing board local review trail with resolve, escalate, dispute, acknowledge lineage, got %+v", counterpartyReviewAppealReviewAppealReviewActions)
 	}
 
+	counterpartyReviewAppealReviewAppealReviewBundle, err := service.BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle(ctx, created.CellID, counterpartyReviewAppealReviewAppealSnapshots[0].SnapshotID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewBundle failed: %v", err)
+	}
+	if len(counterpartyReviewAppealReviewAppealReviewBundle.ReviewActions) != 4 ||
+		counterpartyReviewAppealReviewAppealReviewBundle.LocalBoardResponseAppeal == nil ||
+		!strings.EqualFold(strings.TrimSpace(counterpartyReviewAppealReviewAppealReviewBundle.LocalBoardResponseAppeal.ResponseAppealID), strings.TrimSpace(escalatedCounterpartyReviewAppealReviewBoardAppeal.ResponseAppealID)) ||
+		!strings.EqualFold(strings.TrimSpace(counterpartyReviewAppealReviewAppealReviewBundle.LocalBoardResponseAppeal.ParentResponseAppealID), strings.TrimSpace(counterpartyReviewAppealReviewAppealSnapshots[0].ResponseAppealID)) ||
+		strings.TrimSpace(counterpartyReviewAppealReviewAppealReviewBundle.CounterpartyReviewAppealReviewAppealBundleHash) == "" {
+		t.Fatalf("expected reciprocal rehearing review bundle to include resolved review actions, escalated local rehearing, and imported bundle lineage, got %+v", counterpartyReviewAppealReviewAppealReviewBundle)
+	}
+
 	if !controlLedgerHasControl(appealedAlignmentResponse.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(delegatedAlignmentResponseAppeal.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(firstAlignmentResponseAppealRuling.ControlLedger, "CELL-FED-32") ||
