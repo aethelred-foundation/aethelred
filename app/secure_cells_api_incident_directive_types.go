@@ -448,6 +448,14 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Metadata      map[string]string                                                                                                                                              `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleIntakeRequest struct {
+	ActorIdentity json.RawMessage                                                                                                                                                            `json:"actor_identity,omitempty"`
+	PolicyReceipt *policy.SignedPolicyReceipt                                                                                                                                                `json:"policy_receipt,omitempty"`
+	Bundle        *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle `json:"bundle,omitempty"`
+	Reason        string                                                                                                                                                                     `json:"reason,omitempty"`
+	Metadata      map[string]string                                                                                                                                                          `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealAcknowledgeRequest struct {
 	ActorIdentity         json.RawMessage             `json:"actor_identity,omitempty"`
 	PolicyReceipt         *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
@@ -659,6 +667,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealSummary `json:"items"`
+}
+
+type secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealListResponse struct {
+	Items []securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealSummary `json:"items"`
 }
 
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionListResponse struct {
@@ -1657,6 +1669,35 @@ func parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconc
 		CounterpartyBoardResponseAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_board_response_appeal_id")),
 		Status:                            securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
 		ReviewStatus:                      securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter(r *http.Request) (securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter, error) {
+	filter := securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter{
+		CellID:                     strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:             strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:                 strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:                 strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:                strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:                strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:                  strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:                   strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ChallengeID:                strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID:          strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		ResponseAppealID:           strings.TrimSpace(r.URL.Query().Get("response_appeal_id")),
+		SnapshotID:                 strings.TrimSpace(r.URL.Query().Get("snapshot_id")),
+		ReviewSnapshotID:           strings.TrimSpace(r.URL.Query().Get("review_snapshot_id")),
+		CounterpartyReviewID:       strings.TrimSpace(r.URL.Query().Get("counterparty_review_id")),
+		CounterpartyReviewAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_review_appeal_id")),
+		Status:                     securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealStatus(strings.TrimSpace(r.URL.Query().Get("status"))),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)

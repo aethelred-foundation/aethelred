@@ -11142,6 +11142,50 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 		t.Fatalf("expected signed imported-ruling review rehearing board bundle with preserved prior-board lineage, got %+v", counterpartyReviewAppealReviewAppealBundle)
 	}
 
+	counterpartyReviewAppealReviewAppealIngested, err := service.IngestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle(ctx, created.CellID, organizationID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleIntakeRequest{
+		ActorDID: owner.AgentID(),
+		Bundle:   counterpartyReviewAppealReviewAppealBundle,
+		Reason:   "ingest reciprocal imported-ruling review rehearing board bundle",
+		Metadata: map[string]string{"ticket": "FED-DIRECTIVE-EXT-APPEAL-RECON-CHALLENGE-APPEAL-ALIGN-RESP-APPEAL-COUNTERPARTY-REVIEW-APPEAL-REVIEW-APPEAL-INTAKE-01"},
+	})
+	if err != nil {
+		t.Fatalf("IngestFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle failed: %v", err)
+	}
+	if !controlLedgerHasControl(counterpartyReviewAppealReviewAppealIngested.ControlLedger, "CELL-FED-42") {
+		t.Fatalf("expected ingested reciprocal imported-ruling review rehearing board control ledger to include CELL-FED-42, got %+v", counterpartyReviewAppealReviewAppealIngested.ControlLedger.Controls)
+	}
+
+	counterpartyReviewAppealReviewAppealSnapshots, err := service.ListFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppeals(ctx, SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter{
+		CellID:            created.CellID,
+		OrganizationID:    organizationID,
+		ChallengeAppealID: challengeAppealID,
+		ResponseAppealID:  escalatedCounterpartyReviewBoardAppeal.ResponseAppealID,
+		ReviewSnapshotID:  counterpartyReviewAppealSnapshots[0].SnapshotID,
+	})
+	if err != nil {
+		t.Fatalf("ListFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppeals failed: %v", err)
+	}
+	if len(counterpartyReviewAppealReviewAppealSnapshots) != 1 ||
+		counterpartyReviewAppealReviewAppealSnapshots[0].ReviewSnapshotID != counterpartyReviewAppealSnapshots[0].SnapshotID ||
+		counterpartyReviewAppealReviewAppealSnapshots[0].ReviewBundleID != counterpartyReviewAppealReviewBundle.Review.BundleID ||
+		counterpartyReviewAppealReviewAppealSnapshots[0].Status != SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealStatusVerified ||
+		counterpartyReviewAppealReviewAppealSnapshots[0].ResponseAppealStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed {
+		t.Fatalf("expected one verified reciprocal imported-ruling review rehearing board snapshot, got %+v", counterpartyReviewAppealReviewAppealSnapshots)
+	}
+
+	storedCounterpartyReviewAppealReviewAppealBundle, err := service.GetFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle(ctx, created.CellID, counterpartyReviewAppealReviewAppealSnapshots[0].SnapshotID)
+	if err != nil {
+		t.Fatalf("GetFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle(storedCounterpartyReviewAppealReviewAppealBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle failed: %v", err)
+	}
+	if storedCounterpartyReviewAppealReviewAppealBundle.ReviewAppeal.ResponseAppealID != escalatedCounterpartyReviewBoardAppeal.ResponseAppealID ||
+		storedCounterpartyReviewAppealReviewAppealBundle.ReviewAppeal.ReviewSnapshotID != counterpartyReviewAppealSnapshots[0].SnapshotID ||
+		strings.TrimSpace(storedCounterpartyReviewAppealReviewAppealBundle.CounterpartyReviewAppealReviewBundleHash) == "" {
+		t.Fatalf("expected stored reciprocal imported-ruling review rehearing board bundle with preserved lineage hashes, got %+v", storedCounterpartyReviewAppealReviewAppealBundle)
+	}
+
 	if !controlLedgerHasControl(appealedAlignmentResponse.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(delegatedAlignmentResponseAppeal.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(firstAlignmentResponseAppealRuling.ControlLedger, "CELL-FED-32") ||
