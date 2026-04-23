@@ -493,6 +493,25 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Metadata                            map[string]string                                                `json:"metadata,omitempty"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealAcknowledgeRequest struct {
+	ActorIdentity         json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt         *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	SnapshotID            string                      `json:"snapshot_id,omitempty"`
+	CounterpartyReference string                      `json:"counterparty_reference,omitempty"`
+	Reason                string                      `json:"reason,omitempty"`
+	Metadata              map[string]string           `json:"metadata,omitempty"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealDisputeRequest struct {
+	ActorIdentity         json.RawMessage             `json:"actor_identity,omitempty"`
+	PolicyReceipt         *policy.SignedPolicyReceipt `json:"policy_receipt,omitempty"`
+	SnapshotID            string                      `json:"snapshot_id,omitempty"`
+	CounterpartyReference string                      `json:"counterparty_reference,omitempty"`
+	Reason                string                      `json:"reason,omitempty"`
+	Divergences           []string                    `json:"divergences,omitempty"`
+	Metadata              map[string]string           `json:"metadata,omitempty"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest struct {
 	ActorIdentity                       json.RawMessage                                                  `json:"actor_identity,omitempty"`
 	PolicyReceipt                       *policy.SignedPolicyReceipt                                      `json:"policy_receipt,omitempty"`
@@ -671,6 +690,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 
 type secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealListResponse struct {
 	Items []securecellsintegration.SecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealSummary `json:"items"`
+}
+
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewActionListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewRecord `json:"items"`
 }
 
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionListResponse struct {
@@ -1758,6 +1781,34 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		CounterpartyReviewAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_review_appeal_id")),
 		ReviewStatus:               securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
 		ResponseAppealStatus:       securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(r.URL.Query().Get("response_appeal_status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewFilter{
+		CellID:            strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:    strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:        strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:        strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:       strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:       strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:         strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:          strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ChallengeID:       strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID: strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		ResponseAppealID:  strings.TrimSpace(r.URL.Query().Get("response_appeal_id")),
+		SnapshotID:        strings.TrimSpace(r.URL.Query().Get("snapshot_id")),
+		Action:            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewActionType(strings.TrimSpace(r.URL.Query().Get("action"))),
+		LocalReviewStatus: securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealReviewStatus(strings.TrimSpace(r.URL.Query().Get("local_review_status"))),
+		ActorDID:          strings.TrimSpace(r.URL.Query().Get("actor_did")),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)
