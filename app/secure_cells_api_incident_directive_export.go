@@ -3425,6 +3425,207 @@ func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 	}
 }
 
+func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealExport(w http.ResponseWriter, r *http.Request, items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealSummary) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealListResponse{Items: items})
+		return nil
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeals.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"response_appeal_id", "response_appeal_generation", "response_appeal_status", "response_status", "response_action", "ruling",
+			"cell_id", "cell_name", "cell_status", "jurisdiction", "organization_id", "sponsor_of_record", "organization_name",
+			"incident_id", "response_id", "directive_id", "extension_id", "dispute_id", "appeal_id", "challenge_id", "challenge_appeal_id",
+			"review_snapshot_id", "review_bundle_id", "review_bundle_status", "review_bundle_verified", "review_signer",
+			"counterparty_review_id", "counterparty_review_appeal_id", "review_status", "latest_review_action", "review_action_count", "review_last_reviewed_at",
+			"prior_board_response_appeal_id", "prior_board_response_appeal_status", "prior_board_response_status", "prior_board_response_action", "prior_board_ruling",
+			"board_review_threshold", "board_recorded_vote_count", "board_missing_quorum_count", "board_threshold_satisfied",
+			"action_count", "automation_action_count", "control_ledger_id", "control_ledger_hash", "portable_package_hash", "portable_package_signed", "portable_package_anchored", "created_at", "updated_at",
+		}); err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := cw.Write([]string{
+				item.ResponseAppealID,
+				strconv.Itoa(item.ResponseAppealGeneration),
+				string(item.ResponseAppealStatus),
+				string(item.ResponseStatus),
+				string(item.ResponseAction),
+				string(item.Ruling),
+				item.CellID,
+				item.CellName,
+				string(item.CellStatus),
+				item.Jurisdiction,
+				item.OrganizationID,
+				item.SponsorOfRecord,
+				item.OrganizationName,
+				item.IncidentID,
+				item.ResponseID,
+				item.DirectiveID,
+				item.ExtensionID,
+				item.DisputeID,
+				item.AppealID,
+				item.ChallengeID,
+				item.ChallengeAppealID,
+				item.ReviewSnapshotID,
+				item.ReviewBundleID,
+				string(item.ReviewBundleStatus),
+				strconv.FormatBool(item.ReviewBundleVerified),
+				item.ReviewSigner,
+				item.CounterpartyReviewID,
+				item.CounterpartyReviewAppealID,
+				string(item.ReviewStatus),
+				string(item.LatestReviewAction),
+				strconv.Itoa(item.ReviewActionCount),
+				secureCellCSVTime(item.ReviewLastReviewedAt),
+				item.PriorBoardResponseAppealID,
+				string(item.PriorBoardResponseAppealStatus),
+				string(item.PriorBoardResponseStatus),
+				string(item.PriorBoardResponseAction),
+				string(item.PriorBoardRuling),
+				strconv.Itoa(item.BoardReviewThreshold),
+				strconv.Itoa(item.BoardRecordedVoteCount),
+				strconv.Itoa(item.BoardMissingQuorumCount),
+				strconv.FormatBool(item.BoardThresholdSatisfied),
+				strconv.Itoa(item.ActionCount),
+				strconv.Itoa(item.AutomationActionCount),
+				item.ControlLedgerID,
+				item.ControlLedgerHash,
+				item.PortablePackageHash,
+				strconv.FormatBool(item.PortablePackageSigned),
+				strconv.FormatBool(item.PortablePackageAnchored),
+				item.CreatedAt.UTC().Format(timeCSVFormat),
+				item.UpdatedAt.UTC().Format(timeCSVFormat),
+			}); err != nil {
+				return err
+			}
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
+func writeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle) error {
+	format := secureCellExportFormat(r)
+	switch format {
+	case "json":
+		writeSecureCellJSON(w, http.StatusOK, secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleResponse{Result: bundle})
+		return nil
+	case "csv":
+		if bundle == nil {
+			return fmt.Errorf("federation incident directive extension appeal reconciliation challenge appeal alignment response appeal counterparty review appeal review appeal bundle is required")
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="secure-cell-federation-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-appeal-bundle.csv"`)
+		cw := csv.NewWriter(w)
+		if err := cw.Write([]string{
+			"id", "version", "name", "generated_at", "expires_at", "cell_id", "cell_name", "cell_status", "jurisdiction", "framework",
+			"organization_id", "sponsor_of_record", "organization_name", "organization_status",
+			"review_snapshot_id", "review_bundle_id", "review_bundle_status", "review_status", "latest_review_action", "review_action_count",
+			"prior_board_response_appeal_id", "prior_board_response_appeal_status", "prior_board_response_status", "prior_board_response_action", "prior_board_ruling",
+			"response_appeal_id", "response_appeal_generation", "response_appeal_status", "response_status", "response_action", "ruling",
+			"review_actions_count", "prior_board_response_actions_count", "prior_board_response_recusals_count", "prior_board_response_automation_action_count",
+			"review_appeal_actions_count", "review_appeal_recusals_count", "review_appeal_automation_action_count",
+			"counterparty_review_appeal_review_bundle_hash", "counterparty_review_appeal_bundle_hash", "counterparty_review_bundle_hash", "alignment_response_bundle_hash", "challenge_appeal_bundle_hash",
+			"control_ids", "operator_surface_ids", "operator_surface_paths", "control_ledger_id", "control_ledger_hash",
+			"portable_package_hash", "portable_package_signed", "portable_package_anchored", "content_hash",
+			"signature_algorithm", "signature_signer", "signature_key_id", "signature_signed_at", "metadata",
+		}); err != nil {
+			return err
+		}
+		signatureAlgorithm := ""
+		signatureSigner := ""
+		signatureKeyID := ""
+		signatureSignedAt := ""
+		if bundle.Signature != nil {
+			signatureAlgorithm = bundle.Signature.Algorithm
+			signatureSigner = bundle.Signature.Signer
+			signatureKeyID = bundle.Signature.KeyID
+			signatureSignedAt = bundle.Signature.SignedAt.UTC().Format(timeCSVFormat)
+		}
+		priorBoardResponseAppealID := ""
+		priorBoardResponseStatus := ""
+		priorBoardResponseAction := ""
+		priorBoardResponseRuling := ""
+		if bundle.PriorBoardResponseAppeal != nil {
+			priorBoardResponseAppealID = bundle.PriorBoardResponseAppeal.ResponseAppealID
+			priorBoardResponseStatus = string(bundle.PriorBoardResponseAppeal.Status)
+			priorBoardResponseAction = string(bundle.PriorBoardResponseAppeal.ResponseAction)
+			priorBoardResponseRuling = string(bundle.PriorBoardResponseAppeal.Ruling)
+		}
+		if err := cw.Write([]string{
+			bundle.ID,
+			bundle.Version,
+			bundle.Name,
+			bundle.GeneratedAt.UTC().Format(timeCSVFormat),
+			secureCellCSVTime(bundle.ExpiresAt),
+			bundle.CellID,
+			bundle.CellName,
+			string(bundle.CellStatus),
+			bundle.Jurisdiction,
+			bundle.Framework,
+			bundle.Organization.OrganizationID,
+			bundle.Organization.SponsorOfRecord,
+			bundle.Organization.OrganizationName,
+			string(bundle.Organization.Status),
+			bundle.ReviewAppeal.ReviewSnapshotID,
+			bundle.ReviewAppeal.ReviewBundleID,
+			string(bundle.ReviewAppeal.ReviewBundleStatus),
+			string(bundle.ReviewAppeal.ReviewStatus),
+			string(bundle.ReviewAppeal.LatestReviewAction),
+			strconv.Itoa(bundle.ReviewAppeal.ReviewActionCount),
+			priorBoardResponseAppealID,
+			string(bundle.ReviewAppeal.PriorBoardResponseAppealStatus),
+			priorBoardResponseStatus,
+			priorBoardResponseAction,
+			priorBoardResponseRuling,
+			bundle.ReviewAppeal.ResponseAppealID,
+			strconv.Itoa(bundle.ReviewAppeal.ResponseAppealGeneration),
+			string(bundle.ReviewAppeal.ResponseAppealStatus),
+			string(bundle.ReviewAppeal.ResponseStatus),
+			string(bundle.ReviewAppeal.ResponseAction),
+			string(bundle.ReviewAppeal.Ruling),
+			strconv.Itoa(len(bundle.ReviewActions)),
+			strconv.Itoa(len(bundle.PriorBoardResponseActions)),
+			strconv.Itoa(len(bundle.PriorBoardResponseRecusals)),
+			strconv.Itoa(len(bundle.PriorBoardResponseAutomation)),
+			strconv.Itoa(len(bundle.ReviewAppealActions)),
+			strconv.Itoa(len(bundle.ReviewAppealRecusals)),
+			strconv.Itoa(len(bundle.ReviewAppealAutomation)),
+			bundle.CounterpartyReviewAppealReviewBundleHash,
+			bundle.CounterpartyReviewAppealBundleHash,
+			bundle.CounterpartyReviewBundleHash,
+			bundle.AlignmentResponseBundleHash,
+			bundle.ChallengeAppealBundleHash,
+			joinSecureCellFederationControlIDs(bundle.Controls),
+			joinSecureCellFederationOperatorSurfaceIDs(bundle.OperatorSurfaces),
+			joinSecureCellFederationOperatorSurfacePaths(bundle.OperatorSurfaces),
+			bundle.ControlLedgerID,
+			bundle.ControlLedgerHash,
+			bundle.PortablePackageHash,
+			strconv.FormatBool(bundle.PortablePackageSigned),
+			strconv.FormatBool(bundle.PortablePackageAnchored),
+			bundle.ContentHash,
+			signatureAlgorithm,
+			signatureSigner,
+			signatureKeyID,
+			signatureSignedAt,
+			formatSecureCellStringMap(bundle.Metadata),
+		}); err != nil {
+			return err
+		}
+		cw.Flush()
+		return cw.Error()
+	default:
+		return fmt.Errorf("unsupported export format %q", format)
+	}
+}
+
 func writeSecureCellFederationIncidentDirectiveExtensionAppealBundleExport(w http.ResponseWriter, r *http.Request, bundle *securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealBundle) error {
 	format := secureCellExportFormat(r)
 	switch format {

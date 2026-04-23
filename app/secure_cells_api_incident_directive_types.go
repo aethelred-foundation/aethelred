@@ -657,6 +657,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewRecord `json:"items"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealSummary `json:"items"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord `json:"items"`
 }
@@ -1684,6 +1688,35 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		ReviewStatus:                      securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
 		Action:                            securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewActionType(strings.TrimSpace(r.URL.Query().Get("action"))),
 		ActorDID:                          strings.TrimSpace(r.URL.Query().Get("actor_did")),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter{
+		CellID:                     strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		OrganizationID:             strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:                 strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:                 strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:                strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:                strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:                  strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:                   strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ChallengeID:                strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID:          strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		ResponseAppealID:           strings.TrimSpace(r.URL.Query().Get("response_appeal_id")),
+		SnapshotID:                 strings.TrimSpace(r.URL.Query().Get("snapshot_id")),
+		CounterpartyReviewID:       strings.TrimSpace(r.URL.Query().Get("counterparty_review_id")),
+		CounterpartyReviewAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_review_appeal_id")),
+		ReviewStatus:               securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+		ResponseAppealStatus:       securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(r.URL.Query().Get("response_appeal_status"))),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)

@@ -282,6 +282,11 @@ type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 // signs a portable bilateral review bundle for imported appeal-board rulings.
 type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundle) error
 
+// SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleSigner
+// signs a portable bilateral rehearing-board bundle opened from imported
+// appeal-board review disputes.
+type SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundle) error
+
 // SecureCellFederationIncidentReportBundleSigner signs a portable
 // federation incident report bundle for auditor and regulator exchange.
 type SecureCellFederationIncidentReportBundleSigner func(ctx context.Context, bundle *SecureCellFederationIncidentReportBundle) error
@@ -1119,43 +1124,44 @@ type SecureCellQuarantineExpiry struct {
 
 // ServiceConfig configures Secure Cells v1.
 type ServiceConfig struct {
-	Negotiations                                                                                                                             *agent.NegotiationManager
-	PolicyEngine                                                                                                                             *policy.PolicyEngine
-	PolicySet                                                                                                                                *policy.PolicySet
-	PolicySignerKey                                                                                                                          *ecdsa.PrivateKey
-	PolicySigner                                                                                                                             string
-	CredentialIssuerKey                                                                                                                      *ecdsa.PrivateKey
-	CredentialIssuer                                                                                                                         string
-	Sealer                                                                                                                                   SecureCellSealer
-	LedgerStore                                                                                                                              evidence.ControlLedgerStore
-	WorkflowStore                                                                                                                            SecureCellStore
-	Framework                                                                                                                                string
-	IncludeVerificationKeys                                                                                                                  bool
-	PackageSigningKey                                                                                                                        ed25519.PrivateKey
-	PackageSigner                                                                                                                            string
-	PackageSignerFunc                                                                                                                        SecureCellPackageSigner
-	FederationAssuranceBundleSigner                                                                                                          SecureCellFederationAssuranceBundleSigner
-	FederationIncidentBulletinSigner                                                                                                         SecureCellFederationIncidentBulletinSigner
-	FederationIncidentResponseBundleSigner                                                                                                   SecureCellFederationIncidentResponseBundleSigner
-	FederationIncidentDirectiveBundleSigner                                                                                                  SecureCellFederationIncidentDirectiveBundleSigner
-	FederationIncidentDirectiveExtensionAppealBundleSigner                                                                                   SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner                                                                     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner                                                      SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner                                     SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner             SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealBundleSigner       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealBundleSigner
-	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleSigner
-	FederationIncidentReportBundleSigner                                                                                                     SecureCellFederationIncidentReportBundleSigner
-	FederationIncidentReportAmendmentBundleSigner                                                                                            SecureCellFederationIncidentReportAmendmentBundleSigner
-	FederationIncidentReportReconciliationBundleSigner                                                                                       SecureCellFederationIncidentReportReconciliationBundleSigner
-	FederationIncidentReportAmendmentReconciliationBundleSigner                                                                              SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
-	FederationIncidentCasePackSigner                                                                                                         SecureCellFederationIncidentCasePackSigner
-	PackageAnchorer                                                                                                                          SecureCellPackageAnchorer
-	EventPublisher                                                                                                                           SecureCellEventPublisher
-	TrustAnchors                                                                                                                             []evidence.PlatformTrustAnchor
-	DecisionSLATemplates                                                                                                                     []SecureCellDecisionSLATemplate
-	ConfidentialAttestor                                                                                                                     confidential.Attestor
-	ConfidentialPolicy                                                                                                                       confidential.Policy
+	Negotiations                                                                                                                                   *agent.NegotiationManager
+	PolicyEngine                                                                                                                                   *policy.PolicyEngine
+	PolicySet                                                                                                                                      *policy.PolicySet
+	PolicySignerKey                                                                                                                                *ecdsa.PrivateKey
+	PolicySigner                                                                                                                                   string
+	CredentialIssuerKey                                                                                                                            *ecdsa.PrivateKey
+	CredentialIssuer                                                                                                                               string
+	Sealer                                                                                                                                         SecureCellSealer
+	LedgerStore                                                                                                                                    evidence.ControlLedgerStore
+	WorkflowStore                                                                                                                                  SecureCellStore
+	Framework                                                                                                                                      string
+	IncludeVerificationKeys                                                                                                                        bool
+	PackageSigningKey                                                                                                                              ed25519.PrivateKey
+	PackageSigner                                                                                                                                  string
+	PackageSignerFunc                                                                                                                              SecureCellPackageSigner
+	FederationAssuranceBundleSigner                                                                                                                SecureCellFederationAssuranceBundleSigner
+	FederationIncidentBulletinSigner                                                                                                               SecureCellFederationIncidentBulletinSigner
+	FederationIncidentResponseBundleSigner                                                                                                         SecureCellFederationIncidentResponseBundleSigner
+	FederationIncidentDirectiveBundleSigner                                                                                                        SecureCellFederationIncidentDirectiveBundleSigner
+	FederationIncidentDirectiveExtensionAppealBundleSigner                                                                                         SecureCellFederationIncidentDirectiveExtensionAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationBundleSigner                                                                           SecureCellFederationIncidentDirectiveExtensionAppealReconciliationBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner                                                            SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner                                           SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner                   SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealBundleSigner             SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleSigner       SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleSigner
+	FederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleSigner SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealBundleSigner
+	FederationIncidentReportBundleSigner                                                                                                           SecureCellFederationIncidentReportBundleSigner
+	FederationIncidentReportAmendmentBundleSigner                                                                                                  SecureCellFederationIncidentReportAmendmentBundleSigner
+	FederationIncidentReportReconciliationBundleSigner                                                                                             SecureCellFederationIncidentReportReconciliationBundleSigner
+	FederationIncidentReportAmendmentReconciliationBundleSigner                                                                                    SecureCellFederationIncidentReportAmendmentReconciliationBundleSigner
+	FederationIncidentCasePackSigner                                                                                                               SecureCellFederationIncidentCasePackSigner
+	PackageAnchorer                                                                                                                                SecureCellPackageAnchorer
+	EventPublisher                                                                                                                                 SecureCellEventPublisher
+	TrustAnchors                                                                                                                                   []evidence.PlatformTrustAnchor
+	DecisionSLATemplates                                                                                                                           []SecureCellDecisionSLATemplate
+	ConfidentialAttestor                                                                                                                           confidential.Attestor
+	ConfidentialPolicy                                                                                                                             confidential.Policy
 }
 
 type secureCellRun struct {
@@ -4786,6 +4792,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyEscalationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewRecordIDs := make([]string, 0, len(run.result.Transitions))
+	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAutomationRecordIDs := make([]string, 0, len(run.result.Transitions))
 	federationIncidentDirectiveExtensionAppealReconciliationAttestationRecordIDs := make([]string, 0, len(run.result.Transitions))
@@ -5051,6 +5058,10 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewRecordIDs, recordID)
+		}
+		if strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_id"]) != "" &&
+			strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_escalated"]), "true") {
+			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs, recordID)
 		}
 		if strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_id"]) != "" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_sweep_mode"]), "automated") {
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealAutomationRecordIDs, recordID)
@@ -6790,6 +6801,26 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_disputed":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusDisputed)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_escalated":    fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusEscalated)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_resolved":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusResolved)),
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs) > 0 {
+		reviewAppeals, _ := s.ListFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppeals(context.Background(), SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealFilter{CellID: run.result.CellID})
+		if err := ledger.AddControl(evidence.LedgerControl{
+			ControlID:   "CELL-FED-41",
+			ControlName: "Imported Appeal Review Rehearing Governance",
+			Description: "Disputed imported reciprocal appeal-board review trails are promoted into first-class local rehearing boards with preserved parent-board lineage, portable bundle evidence, and explicit action history, so bilateral correction-board governance remains replayable beyond the initial imported review closure.",
+			Status:      evidence.ControlSatisfied,
+			EvidenceRefs: evidence.ControlEvidenceRefs{
+				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs...),
+			},
+			Metadata: map[string]string{
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_review_appeals_total":                fmt.Sprintf("%d", len(reviewAppeals)),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_review_appeal_actions_total":         fmt.Sprintf("%d", len(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewAppealRecordIDs)),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_review_appeals_pending_board_review": fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealReviewAppealStatusCount(reviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusPendingCorrectionBoardReview)),
+				"federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_review_appeals_reversed":             fmt.Sprintf("%d", secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealReviewAppealStatusCount(reviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed)),
 			},
 		}); err != nil {
 			return nil, err
