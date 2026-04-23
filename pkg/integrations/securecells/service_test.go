@@ -11083,6 +11083,25 @@ func TestService_FederationIncidentDirectiveExtensionAppealReconciliationChallen
 		t.Fatalf("expected reciprocal imported-ruling rehearing board review trail with dispute, escalation, and resolution, got %+v", counterpartyReviewAppealActions)
 	}
 
+	counterpartyReviewAppealReviewBundle, err := service.BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundle(ctx, created.CellID, counterpartyReviewAppealSnapshots[0].SnapshotID, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundleOptions{})
+	if err != nil {
+		t.Fatalf("BuildFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundle failed: %v", err)
+	}
+	if err := VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundle(counterpartyReviewAppealReviewBundle); err != nil {
+		t.Fatalf("VerifyFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewBundle failed: %v", err)
+	}
+	if counterpartyReviewAppealReviewBundle.Review.ReviewStatus != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusResolved ||
+		len(counterpartyReviewAppealReviewBundle.ReviewActions) != 3 ||
+		counterpartyReviewAppealReviewBundle.LocalBoardResponseAppeal == nil ||
+		counterpartyReviewAppealReviewBundle.LocalBoardResponseAppeal.Status != SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusReversed ||
+		len(counterpartyReviewAppealReviewBundle.LocalBoardResponseActions) == 0 ||
+		strings.TrimSpace(counterpartyReviewAppealReviewBundle.CounterpartyReviewAppealBundleHash) == "" ||
+		strings.TrimSpace(counterpartyReviewAppealReviewBundle.CounterpartyReviewBundleHash) == "" ||
+		strings.TrimSpace(counterpartyReviewAppealReviewBundle.AlignmentResponseBundleHash) == "" ||
+		strings.TrimSpace(counterpartyReviewAppealReviewBundle.ChallengeAppealBundleHash) == "" {
+		t.Fatalf("expected signed reciprocal imported-ruling rehearing board review bundle with local appeal evidence, got %+v", counterpartyReviewAppealReviewBundle)
+	}
+
 	if !controlLedgerHasControl(appealedAlignmentResponse.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(delegatedAlignmentResponseAppeal.ControlLedger, "CELL-FED-32") ||
 		!controlLedgerHasControl(firstAlignmentResponseAppealRuling.ControlLedger, "CELL-FED-32") ||
