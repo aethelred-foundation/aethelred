@@ -600,6 +600,10 @@ type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallenge
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewSummary `json:"items"`
 }
 
+type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealListResponse struct {
+	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealSummary `json:"items"`
+}
+
 type secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionListResponse struct {
 	Items []securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealActionRecord `json:"items"`
 }
@@ -1535,6 +1539,37 @@ func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChal
 		CounterpartyResponseAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_response_appeal_id")),
 		AlignmentStatus:              securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentStatus(strings.TrimSpace(r.URL.Query().Get("alignment_status"))),
 		ReviewStatus:                 securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
+		limit, err := strconv.Atoi(raw)
+		if err != nil {
+			return filter, err
+		}
+		filter.Limit = limit
+	}
+	return filter, nil
+}
+
+func parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealFilter(r *http.Request) (securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealFilter, error) {
+	filter := securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealFilter{
+		CellID:                       strings.TrimSpace(r.URL.Query().Get("cell_id")),
+		AppealReviewID:               strings.TrimSpace(r.URL.Query().Get("appeal_review_id")),
+		ReviewID:                     strings.TrimSpace(r.URL.Query().Get("review_id")),
+		OrganizationID:               strings.TrimSpace(r.URL.Query().Get("organization_id")),
+		IncidentID:                   strings.TrimSpace(r.URL.Query().Get("incident_id")),
+		ResponseID:                   strings.TrimSpace(r.URL.Query().Get("response_id")),
+		DirectiveID:                  strings.TrimSpace(r.URL.Query().Get("directive_id")),
+		ExtensionID:                  strings.TrimSpace(r.URL.Query().Get("extension_id")),
+		DisputeID:                    strings.TrimSpace(r.URL.Query().Get("dispute_id")),
+		AppealID:                     strings.TrimSpace(r.URL.Query().Get("appeal_id")),
+		ChallengeID:                  strings.TrimSpace(r.URL.Query().Get("challenge_id")),
+		ChallengeAppealID:            strings.TrimSpace(r.URL.Query().Get("challenge_appeal_id")),
+		ResponseAppealID:             strings.TrimSpace(r.URL.Query().Get("response_appeal_id")),
+		BoardResponseAppealID:        strings.TrimSpace(r.URL.Query().Get("board_response_appeal_id")),
+		CounterpartySnapshotID:       strings.TrimSpace(r.URL.Query().Get("counterparty_snapshot_id")),
+		CounterpartyResponseAppealID: strings.TrimSpace(r.URL.Query().Get("counterparty_response_appeal_id")),
+		ReviewStatus:                 securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewStatus(strings.TrimSpace(r.URL.Query().Get("review_status"))),
+		BoardResponseAppealStatus:    securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatus(strings.TrimSpace(r.URL.Query().Get("board_response_appeal_status"))),
 	}
 	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
 		limit, err := strconv.Atoi(raw)
