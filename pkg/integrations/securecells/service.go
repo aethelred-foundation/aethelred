@@ -141,6 +141,7 @@ const (
 	secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealIntakeAction      = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge_appeal.alignment.response.appeal.counterparty_review_appeal.intake"
 	secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealAcknowledgeAction = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge_appeal.alignment.response.appeal.counterparty_review_appeal.acknowledge_counterparty_ruling"
 	secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeAction     = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge_appeal.alignment.response.appeal.counterparty_review_appeal.dispute_counterparty_ruling"
+	secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealEscalateAction    = "secure_cells.federation.incident.directive.extension.appeal.reconciliation.challenge_appeal.alignment.response.appeal.counterparty_review_appeal.escalate_counterparty_dispute"
 	secureCellFederationIncidentReportPlanAction                                                                                                      = "secure_cells.federation.incident.response.report.plan"
 	secureCellFederationIncidentReportIntakeAction                                                                                                    = "secure_cells.federation.incident.report.intake"
 	secureCellFederationIncidentReportAmendAction                                                                                                     = "secure_cells.federation.incident.report.amend"
@@ -5038,7 +5039,9 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 			federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs = append(federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyResolutionRecordIDs, recordID)
 		}
 		if transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_ruling_acknowledged" ||
-			transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_ruling_disputed" {
+			transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_ruling_disputed" ||
+			(transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_rehearing_requested" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_escalated"]), "true")) ||
+			(transition.Action == "secure_cell.federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_ruled" && strings.EqualFold(strings.TrimSpace(data["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_escalated"]), "true")) {
 			federationLifecycleRecordIDs = append(federationLifecycleRecordIDs, recordID)
 			federationIncidentDirectiveRecordIDs = append(federationIncidentDirectiveRecordIDs, recordID)
 			federationIncidentDirectiveExtensionRecordIDs = append(federationIncidentDirectiveExtensionRecordIDs, recordID)
@@ -6770,7 +6773,7 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 		if err := ledger.AddControl(evidence.LedgerControl{
 			ControlID:   "CELL-FED-40",
 			ControlName: "Reciprocal Imported-Ruling Appeal Board Review",
-			Description: "Imported bilateral appeal-board outcomes are explicitly acknowledged or disputed against the exact signed snapshot, preserving a governed local review trail over reciprocal correction-board rulings instead of treating those cross-organization outcomes as implicitly trusted.",
+			Description: "Imported bilateral appeal-board outcomes are explicitly acknowledged, disputed, escalated into governed rehearing, and resolved against the exact signed snapshot, preserving a replayable local review trail over reciprocal correction-board rulings instead of treating those cross-organization outcomes as implicitly trusted.",
 			Status:      evidence.ControlSatisfied,
 			EvidenceRefs: evidence.ControlEvidenceRefs{
 				RecordIDs: append([]string(nil), federationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewRecordIDs...),
@@ -6780,6 +6783,8 @@ func (s *Service) buildControlLedger(run *secureCellRun, receiptChain *policy.Po
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_total":        fmt.Sprintf("%d", len(counterpartyReviewAppeals)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_acknowledged": fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusAcknowledged)),
 				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_disputed":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusDisputed)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_escalated":    fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusEscalated)),
+				"federation_counterparty_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeals_resolved":     fmt.Sprintf("%d", secureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusCount(counterpartyReviewAppeals, SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusResolved)),
 			},
 		}); err != nil {
 			return nil, err
@@ -9614,6 +9619,7 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealIntakeAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealAcknowledgeAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeAction,
+				secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealEscalateAction,
 				secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconcileAckAction,
 				secureCellFederationIncidentDirectiveExtensionAppealReconcileDisputeAction,
@@ -10369,6 +10375,15 @@ func newSecureCellPolicySet() *policy.PolicySet {
 				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
 				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
 			}),
+			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_escalate_allow", []policy.Condition{
+				{Field: "cell_stage", Operator: policy.Equals, Value: "escalate_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_dispute"},
+				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "capability_present", Operator: policy.Equals, Value: "true"},
+				{Field: "liability_profile_present", Operator: policy.Equals, Value: "true"},
+				{Field: "jurisdiction_allowed", Operator: policy.Equals, Value: "true"},
+				{Field: "sponsor_of_record_present", Operator: policy.Equals, Value: "true"},
+				{Field: "confidential_compute", Operator: policy.Equals, Value: "true"},
+			}),
 			policy.NewAllowRule("secure_cell_federation_incident_directive_extension_appeal_reconciliation_acknowledge_dispute_allow", []policy.Condition{
 				{Field: "cell_stage", Operator: policy.Equals, Value: "acknowledge_federation_incident_directive_extension_appeal_reconciliation_dispute"},
 				{Field: "tool_allowed", Operator: policy.Equals, Value: "true"},
@@ -10963,6 +10978,8 @@ func actionForStage(stage string) string {
 		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealAcknowledgeAction
 	case "dispute_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_ruling":
 		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeAction
+	case "escalate_federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_dispute":
+		return secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealEscalateAction
 	case "acknowledge_federation_incident_directive_extension_appeal_enforcement":
 		return secureCellFederationIncidentDirectiveExtensionAppealAcknowledgeAction
 	case "acknowledge_federation_incident_directive_extension_appeal_reconciliation":

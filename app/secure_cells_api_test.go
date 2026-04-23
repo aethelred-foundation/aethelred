@@ -6352,6 +6352,30 @@ func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliati
 	return body
 }
 
+func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeEscalationRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, snapshotID string, reference string, reviewerDID string) []byte {
+	t.Helper()
+	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeEscalationRequest{
+		ActorIdentity:                       mustOptionalJSONRawMessage(t, actor),
+		PolicyReceipt:                       receipt,
+		SnapshotID:                          snapshotID,
+		CounterpartyReference:               reference,
+		AppealingParty:                      securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		CorrectionBoardParty:                securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg,
+		EnforcementAcknowledgementParty:     securecellsintegration.SecureCellFederationIncidentResponsePartyCounterpartyOrg,
+		Summary:                             "Escalate disputed imported reciprocal appeal-board ruling into governed rehearing",
+		Description:                         "The local organization escalated the disputed imported reciprocal appeal-board ruling into a fresh signed rehearing generation.",
+		EvidenceIDs:                         []string{"counterparty-review-appeal-escalation"},
+		CorrectionBoardReviewThreshold:      1,
+		EligibleCorrectionBoardReviewerDIDs: []string{reviewerDID},
+		Reason:                              "escalate disputed imported reciprocal appeal-board ruling into rehearing",
+		Metadata:                            map[string]string{"source": "test"},
+	})
+	if err != nil {
+		t.Fatalf("marshal secure cell federation incident directive extension appeal reconciliation challenge appeal alignment response appeal counterparty review appeal dispute escalation request: %v", err)
+	}
+	return body
+}
+
 func mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest(t *testing.T, actor *agent.AgentIdentity, receipt *policy.SignedPolicyReceipt, snapshotID string, counterpartyResponseAppealID string, reference string, reviewerDID string) []byte {
 	t.Helper()
 	body, err := json.Marshal(secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyDisputeEscalationRequest{
@@ -12577,14 +12601,83 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 		t.Fatalf("expected reciprocal imported-ruling rehearing board review action trail with dispute then acknowledge, got %+v", counterpartyReviewAppealActionListResp.Items)
 	}
 
-	counterpartyReviewAppealActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&format=csv", nil)
+	counterpartyReviewAppealSnapshotID := counterpartyReviewAppealSnapshotListResp.Items[0].SnapshotID
+
+	counterpartyReviewAppealEscalateReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeals/"+url.PathEscape(counterpartyReviewAppealSnapshotID)+"/escalate-counterparty-dispute", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeEscalationRequest(t, owner, nil, counterpartyReviewAppealSnapshotID, "counterparty-review-appeal-ruling-escalate-0001", owner.AgentID())))
+	counterpartyReviewAppealEscalateReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	counterpartyReviewAppealEscalateRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(counterpartyReviewAppealEscalateRec, counterpartyReviewAppealEscalateReq)
+	if counterpartyReviewAppealEscalateRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealEscalateRec.Code, counterpartyReviewAppealEscalateRec.Body.String())
+	}
+
+	counterpartyReviewAppealEscalatedResponseAppealListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeals?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&parent_response_appeal_id="+url.QueryEscape(counterpartyReviewAppealSnapshotListResp.Items[0].CounterpartyBoardResponseAppealID), nil)
+	counterpartyReviewAppealEscalatedResponseAppealListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyReviewAppealEscalatedResponseAppealListRec, counterpartyReviewAppealEscalatedResponseAppealListReq)
+	if counterpartyReviewAppealEscalatedResponseAppealListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealEscalatedResponseAppealListRec.Code, counterpartyReviewAppealEscalatedResponseAppealListRec.Body.String())
+	}
+	var counterpartyReviewAppealEscalatedResponseAppealListResp secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealListResponse
+	if err := json.Unmarshal(counterpartyReviewAppealEscalatedResponseAppealListRec.Body.Bytes(), &counterpartyReviewAppealEscalatedResponseAppealListResp); err != nil {
+		t.Fatalf("unmarshal escalated reciprocal imported-ruling rehearing board response appeal list response: %v", err)
+	}
+	if len(counterpartyReviewAppealEscalatedResponseAppealListResp.Items) != 1 ||
+		counterpartyReviewAppealEscalatedResponseAppealListResp.Items[0].ParentResponseAppealID != counterpartyReviewAppealSnapshotListResp.Items[0].CounterpartyBoardResponseAppealID ||
+		counterpartyReviewAppealEscalatedResponseAppealListResp.Items[0].Status != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealStatusPendingCorrectionBoardReview ||
+		!strings.EqualFold(strings.TrimSpace(counterpartyReviewAppealEscalatedResponseAppealListResp.Items[0].Metadata["federation_incident_directive_extension_appeal_reconciliation_challenge_appeal_alignment_response_appeal_counterparty_review_appeal_escalated"]), "true") {
+		t.Fatalf("expected one pending escalated reciprocal imported-ruling rehearing board appeal, got %+v", counterpartyReviewAppealEscalatedResponseAppealListResp.Items)
+	}
+
+	counterpartyReviewAppealEscalatedResponseAppealRuleReq := httptest.NewRequest(http.MethodPost, secureCellsItemPrefix+created.CellID+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"+url.PathEscape(challengeAppealID)+"/alignment-response-appeals/"+url.PathEscape(counterpartyReviewAppealEscalatedResponseAppealListResp.Items[0].ResponseAppealID)+"/rule", bytes.NewReader(mustMarshalSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRulingRequest(t, owner, nil, securecellsintegration.SecureCellFederationIncidentResponsePartyLocalOrg, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealRulingOverturn, "Resolve disputed imported reciprocal appeal-board ruling via governed rehearing", "The fresh correction-board rehearing overturned the prior imported reciprocal appeal-board ruling.")))
+	counterpartyReviewAppealEscalatedResponseAppealRuleReq.Header.Set("Authorization", "Bearer secure-cells-secret")
+	counterpartyReviewAppealEscalatedResponseAppealRuleRec := httptest.NewRecorder()
+	app.SecureCellsMutateHandler().ServeHTTP(counterpartyReviewAppealEscalatedResponseAppealRuleRec, counterpartyReviewAppealEscalatedResponseAppealRuleReq)
+	if counterpartyReviewAppealEscalatedResponseAppealRuleRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealEscalatedResponseAppealRuleRec.Code, counterpartyReviewAppealEscalatedResponseAppealRuleRec.Body.String())
+	}
+
+	counterpartyReviewAppealSnapshotListReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeals?cell_id="+url.QueryEscape(created.CellID)+"&organization_id="+url.QueryEscape(organizationID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&snapshot_id="+url.QueryEscape(counterpartyReviewAppealSnapshotID), nil)
+	counterpartyReviewAppealSnapshotListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyReviewAppealSnapshotListRec, counterpartyReviewAppealSnapshotListReq)
+	if counterpartyReviewAppealSnapshotListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealSnapshotListRec.Code, counterpartyReviewAppealSnapshotListRec.Body.String())
+	}
+	if err := json.Unmarshal(counterpartyReviewAppealSnapshotListRec.Body.Bytes(), &counterpartyReviewAppealSnapshotListResp); err != nil {
+		t.Fatalf("unmarshal reciprocal imported-ruling rehearing board snapshot list response after escalation: %v", err)
+	}
+	if len(counterpartyReviewAppealSnapshotListResp.Items) != 1 ||
+		counterpartyReviewAppealSnapshotListResp.Items[0].ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusResolved ||
+		counterpartyReviewAppealSnapshotListResp.Items[0].ReviewActionCount != 3 {
+		t.Fatalf("expected reciprocal imported-ruling rehearing board snapshot to move to resolved with three review actions, got %+v", counterpartyReviewAppealSnapshotListResp.Items)
+	}
+
+	counterpartyReviewAppealActionListReq = httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-actions?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&snapshot_id="+url.QueryEscape(counterpartyReviewAppealSnapshotID), nil)
+	counterpartyReviewAppealActionListRec = httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(counterpartyReviewAppealActionListRec, counterpartyReviewAppealActionListReq)
+	if counterpartyReviewAppealActionListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealActionListRec.Code, counterpartyReviewAppealActionListRec.Body.String())
+	}
+	if err := json.Unmarshal(counterpartyReviewAppealActionListRec.Body.Bytes(), &counterpartyReviewAppealActionListResp); err != nil {
+		t.Fatalf("unmarshal reciprocal imported-ruling rehearing board review action list response after escalation: %v", err)
+	}
+	if len(counterpartyReviewAppealActionListResp.Items) != 3 ||
+		counterpartyReviewAppealActionListResp.Items[0].Action != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewActionResolve ||
+		counterpartyReviewAppealActionListResp.Items[0].ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusResolved ||
+		counterpartyReviewAppealActionListResp.Items[1].Action != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewActionEscalate ||
+		counterpartyReviewAppealActionListResp.Items[1].ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusEscalated ||
+		counterpartyReviewAppealActionListResp.Items[2].Action != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewActionDispute ||
+		counterpartyReviewAppealActionListResp.Items[2].ReviewStatus != securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealReviewStatusDisputed {
+		t.Fatalf("expected reciprocal imported-ruling rehearing board review action trail with dispute, escalation, and resolution, got %+v", counterpartyReviewAppealActionListResp.Items)
+	}
+
+	counterpartyReviewAppealActionExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/federation/incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeal-review-actions/export?cell_id="+url.QueryEscape(created.CellID)+"&challenge_appeal_id="+url.QueryEscape(challengeAppealID)+"&response_appeal_id="+url.QueryEscape(responseAppealID)+"&snapshot_id="+url.QueryEscape(counterpartyReviewAppealSnapshotID)+"&format=csv", nil)
 	counterpartyReviewAppealActionExportRec := httptest.NewRecorder()
 	app.SecureCellsGetHandler().ServeHTTP(counterpartyReviewAppealActionExportRec, counterpartyReviewAppealActionExportReq)
 	if counterpartyReviewAppealActionExportRec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, counterpartyReviewAppealActionExportRec.Code, counterpartyReviewAppealActionExportRec.Body.String())
 	}
-	if body := counterpartyReviewAppealActionExportRec.Body.String(); !strings.Contains(body, "dispute_counterparty_appeal_ruling") || !strings.Contains(body, "acknowledge_counterparty_appeal_ruling") || !strings.Contains(body, responseAppealID) {
-		t.Fatalf("expected reciprocal imported-ruling rehearing board review action export to include dispute, acknowledge, and response appeal id, got %s", body)
+	if body := counterpartyReviewAppealActionExportRec.Body.String(); !strings.Contains(body, "dispute_counterparty_appeal_ruling") || !strings.Contains(body, "escalate_counterparty_appeal_ruling_dispute") || !strings.Contains(body, "resolve_counterparty_appeal_ruling_dispute") || !strings.Contains(body, responseAppealID) {
+		t.Fatalf("expected reciprocal imported-ruling rehearing board review action export to include dispute, escalation, resolution, and response appeal id, got %s", body)
 	}
 
 	automatedRealignedChallengeAppealBundle, err := app.secureCellService.BuildFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundle(ctx, created.CellID, challengeAppealID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealBundleOptions{})
@@ -12934,7 +13027,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 	if err := json.Unmarshal(challengeAppealAlignmentResponseBundleRec.Body.Bytes(), &challengeAppealAlignmentResponseBundleResp); err != nil {
 		t.Fatalf("unmarshal response-appeal rehearing bundle response: %v", err)
 	}
-	if challengeAppealAlignmentResponseBundleResp.Result == nil || len(challengeAppealAlignmentResponseBundleResp.Result.ResponseAppeals) != 4 || len(challengeAppealAlignmentResponseBundleResp.Result.ResponseAppealRecusals) != 1 {
+	if challengeAppealAlignmentResponseBundleResp.Result == nil || len(challengeAppealAlignmentResponseBundleResp.Result.ResponseAppeals) != 5 || len(challengeAppealAlignmentResponseBundleResp.Result.ResponseAppealRecusals) != 1 {
 		t.Fatalf("expected alignment response bundle to include response-appeal rehearing lineage and recusal evidence, got %+v", challengeAppealAlignmentResponseBundleResp.Result)
 	}
 
@@ -12947,7 +13040,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 	if err := json.Unmarshal(challengeAppealBundleRec.Body.Bytes(), &challengeAppealBundleResp); err != nil {
 		t.Fatalf("unmarshal challenge appeal bundle response after response-appeal rehearing: %v", err)
 	}
-	if challengeAppealBundleResp.Result == nil || len(challengeAppealBundleResp.Result.CounterpartyAlignmentResponseAppeals) != 4 || len(challengeAppealBundleResp.Result.CounterpartyAlignmentResponseAppealRecusals) != 1 {
+	if challengeAppealBundleResp.Result == nil || len(challengeAppealBundleResp.Result.CounterpartyAlignmentResponseAppeals) != 5 || len(challengeAppealBundleResp.Result.CounterpartyAlignmentResponseAppealRecusals) != 1 {
 		t.Fatalf("expected challenge appeal bundle to include response-appeal rehearing lineage and recusal evidence, got %+v", challengeAppealBundleResp.Result)
 	}
 
@@ -12960,7 +13053,7 @@ func TestSecureCellsHandlers_FederationIncidentDirectiveExtensionAppealReconcili
 	if err := json.Unmarshal(casePackRec.Body.Bytes(), &casePackResp); err != nil {
 		t.Fatalf("unmarshal response-appeal rehearing case pack response: %v", err)
 	}
-	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals) != 4 || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals) != 1 {
+	if casePackResp.Result == nil || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppeals) != 5 || len(casePackResp.Result.DirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealRecusals) != 1 {
 		t.Fatalf("expected case pack to include response-appeal rehearing lineage and recusal evidence, got %+v", casePackResp.Result)
 	}
 

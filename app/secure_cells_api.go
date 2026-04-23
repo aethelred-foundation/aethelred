@@ -6372,6 +6372,48 @@ func (app *AethelredApp) SecureCellsMutateHandler() http.Handler {
 			}
 			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
 			return
+		case strings.HasSuffix(r.URL.Path, "/escalate-counterparty-dispute") && strings.Contains(r.URL.Path, "/federation/counterparty-incident-directive-extension-appeal-reconciliation-challenge-appeal-alignment-response-appeal-counterparty-review-appeals/"):
+			cellID, snapshotID, err := parseSecureCellFederationCounterpartyIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealPath(r.URL.Path, "/escalate-counterparty-dispute")
+			if err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			var req secureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeEscalationRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeSecureCellAPIError(w, http.StatusBadRequest, "invalid secure cell federation incident directive extension appeal reconciliation challenge appeal alignment response appeal counterparty review appeal dispute escalation request: "+err.Error())
+				return
+			}
+			if strings.TrimSpace(req.SnapshotID) == "" {
+				req.SnapshotID = snapshotID
+			}
+			authCtx, err := app.authorizeSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealEscalate(r, cellID, snapshotID, &req)
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellAuthorizationStatus(err, http.StatusForbidden), err.Error())
+				return
+			}
+			req.Metadata = secureCellRequestMetadataWithAuthContext(req.Metadata, authCtx)
+			result, err := app.secureCellService.EscalateFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDispute(r.Context(), cellID, securecellsintegration.SecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealCounterpartyReviewAppealDisputeEscalationRequest{
+				ActorDID:                            safeSecureCellActorDID(authCtx),
+				SnapshotID:                          req.SnapshotID,
+				CounterpartyReference:               req.CounterpartyReference,
+				AppealingParty:                      req.AppealingParty,
+				CorrectionBoardParty:                req.CorrectionBoardParty,
+				EnforcementAcknowledgementParty:     req.EnforcementAcknowledgementParty,
+				Summary:                             req.Summary,
+				Description:                         req.Description,
+				EvidenceIDs:                         append([]string(nil), req.EvidenceIDs...),
+				Divergences:                         append([]string(nil), req.Divergences...),
+				CorrectionBoardReviewThreshold:      req.CorrectionBoardReviewThreshold,
+				EligibleCorrectionBoardReviewerDIDs: append([]string(nil), req.EligibleCorrectionBoardReviewerDIDs...),
+				Reason:                              req.Reason,
+				Metadata:                            req.Metadata,
+			})
+			if err != nil {
+				writeSecureCellAPIError(w, secureCellErrorStatus(err, http.StatusInternalServerError), err.Error())
+				return
+			}
+			writeSecureCellJSON(w, http.StatusOK, secureCellResponse{Result: result})
+			return
 		case strings.HasSuffix(r.URL.Path, "/escalate-counterparty-dispute") && strings.Contains(r.URL.Path, "/alignment-response-appeals/") && strings.Contains(r.URL.Path, "/federation/incident-directive-extension-appeal-reconciliation-challenge-appeals/"):
 			cellID, challengeAppealID, responseAppealID, err := parseSecureCellFederationIncidentDirectiveExtensionAppealReconciliationChallengeAppealAlignmentResponseAppealActionPath(r.URL.Path, "/escalate-counterparty-dispute")
 			if err != nil {
