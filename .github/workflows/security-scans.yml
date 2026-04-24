@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install contract dependencies
         run: npm install --no-fund --no-audit
       - name: Slither scan
@@ -75,7 +75,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: NPM dependency audit (contracts)
         continue-on-error: ${{ env.STRICT_SECURITY_GATES != 'true' }}
         working-directory: contracts

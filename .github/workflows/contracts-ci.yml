@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install dependencies
         run: npm ci --no-fund --no-audit
       - name: Run npm audit
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install dependencies
         run: npm ci --no-fund --no-audit
       - uses: foundry-rs/foundry-toolchain@v1
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install dependencies
         run: npm ci --no-fund --no-audit
       - uses: foundry-rs/foundry-toolchain@v1
