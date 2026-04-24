@@ -278,6 +278,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(programExportRec.Body.String(), "legibility_rate") || !strings.Contains(programExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent program csv export, got %s", programExportRec.Body.String())
 	}
+
+	carryPackListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-carry-packs?jurisdiction=UAE", nil)
+	carryPackListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(carryPackListRec, carryPackListReq)
+	if carryPackListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, carryPackListRec.Code, carryPackListRec.Body.String())
+	}
+	var carryPackListResp secureCellGovernmentAgentCarryPackListResponse
+	if err := json.Unmarshal(carryPackListRec.Body.Bytes(), &carryPackListResp); err != nil {
+		t.Fatalf("unmarshal government-agent carry-pack list response: %v", err)
+	}
+	if len(carryPackListResp.Items) != 1 || carryPackListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent carry-pack list response: %+v", carryPackListResp.Items)
+	}
+	if carryPackListResp.Items[0].CarryPackDigest == "" || carryPackListResp.Items[0].StepCount == 0 {
+		t.Fatalf("expected digest-bound carry-pack steps, got %+v", carryPackListResp.Items[0])
+	}
+
+	carryPackDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-carry-pack", nil)
+	carryPackDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(carryPackDetailRec, carryPackDetailReq)
+	if carryPackDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, carryPackDetailRec.Code, carryPackDetailRec.Body.String())
+	}
+	var carryPackDetailResp secureCellGovernmentAgentCarryPackResponse
+	if err := json.Unmarshal(carryPackDetailRec.Body.Bytes(), &carryPackDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent carry-pack detail response: %v", err)
+	}
+	if carryPackDetailResp.CarryPack == nil || carryPackDetailResp.CarryPack.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent carry-pack detail response: %+v", carryPackDetailResp.CarryPack)
+	}
+
+	carryPackExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-carry-packs/export?format=csv&jurisdiction=UAE", nil)
+	carryPackExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(carryPackExportRec, carryPackExportReq)
+	if carryPackExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, carryPackExportRec.Code, carryPackExportRec.Body.String())
+	}
+	if !strings.Contains(carryPackExportRec.Body.String(), "carry_mode") || !strings.Contains(carryPackExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent carry-pack csv export, got %s", carryPackExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

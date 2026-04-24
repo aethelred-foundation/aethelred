@@ -366,19 +366,29 @@ func secureCellGovernmentAgentProgramStage(
 }
 
 func secureCellGovernmentAgentProgramTopBlockerCodes(findings []SecureCellGovernmentAgentReadinessFinding) []string {
-	codes := make([]string, 0, len(findings))
+	candidates := make([]SecureCellGovernmentAgentReadinessFinding, 0, len(findings))
 	for _, finding := range findings {
-		if finding.Severity == SecureCellGovernmentAgentReadinessSeverityInfo {
+		if finding.Severity == SecureCellGovernmentAgentReadinessSeverityInfo || strings.TrimSpace(finding.Code) == "" {
 			continue
 		}
-		if strings.TrimSpace(finding.Code) != "" {
-			codes = append(codes, finding.Code)
-		}
+		candidates = append(candidates, finding)
 	}
-	codes = uniqueTrimmedStrings(codes)
-	sort.SliceStable(codes, func(i, j int) bool {
-		return codes[i] < codes[j]
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].Severity == candidates[j].Severity {
+			return candidates[i].Code < candidates[j].Code
+		}
+		return secureCellGovernmentAgentReadinessSeverityRank(candidates[i].Severity) < secureCellGovernmentAgentReadinessSeverityRank(candidates[j].Severity)
 	})
+	seen := map[string]struct{}{}
+	codes := make([]string, 0, len(candidates))
+	for _, finding := range candidates {
+		code := strings.TrimSpace(finding.Code)
+		if _, ok := seen[code]; ok {
+			continue
+		}
+		seen[code] = struct{}{}
+		codes = append(codes, code)
+	}
 	if len(codes) > 5 {
 		return codes[:5]
 	}

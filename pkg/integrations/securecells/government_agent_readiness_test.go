@@ -177,6 +177,26 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if program.ProgramDigest == "" || !strings.Contains(program.ProgramID, program.ProgramDigest[:12]) {
 		t.Fatalf("expected digest-bound program ID, got %+v", program)
 	}
+
+	carryPack, err := service.GetGovernmentAgentCarryPack(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentCarryPack failed: %v", err)
+	}
+	if carryPack.CarryMode == SecureCellGovernmentAgentCarryModeBlocked || !carryPack.ReadyForAgentCarry {
+		t.Fatalf("expected carry-ready supervised pack, got %+v", carryPack)
+	}
+	if carryPack.StepCount == 0 || carryPack.HumanApprovalStepCount == 0 || carryPack.AutomatableStepCount == 0 {
+		t.Fatalf("expected executable carry-pack steps, got %+v", carryPack)
+	}
+	if !hasGovernmentAgentCarryPackStepLane(carryPack.Steps, SecureCellGovernmentAgentCarryLaneHumanApproval) {
+		t.Fatalf("expected human approval lane in carry pack, got %+v", carryPack.Steps)
+	}
+	if !hasString(carryPack.RequiredEvidence, "policy_receipt_chain") || !hasString(carryPack.Preconditions, "approval_boundary") {
+		t.Fatalf("expected evidence and approval preconditions, got %+v", carryPack)
+	}
+	if carryPack.CarryPackDigest == "" || !strings.Contains(carryPack.CarryPackID, carryPack.CarryPackDigest[:12]) {
+		t.Fatalf("expected digest-bound carry pack, got %+v", carryPack)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -257,6 +277,17 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if len(program.Services) != 1 || program.Services[0].RecommendedStage != SecureCellGovernmentAgentProgramStageEvidenceHardening {
 		t.Fatalf("expected evidence-hardening stage for tacit workflow with artifacts, got %+v", program.Services)
 	}
+
+	carryPack, err := service.GetGovernmentAgentCarryPack(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentCarryPack failed: %v", err)
+	}
+	if carryPack.CarryMode != SecureCellGovernmentAgentCarryModeBlocked || carryPack.ReadyForAgentCarry {
+		t.Fatalf("expected blocked carry pack for tacit workflow, got %+v", carryPack)
+	}
+	if !hasString(carryPack.TopBlockerCodes, "GOVAGENT_NO_GOVERNED_DECISIONS") || !hasString(carryPack.Preconditions, "missing:governed_decisions") {
+		t.Fatalf("expected governed-decision blocker and missing precondition, got %+v", carryPack)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -289,6 +320,24 @@ func hasGovernmentAgentBlueprintStepKind(steps []SecureCellGovernmentAgentWorkfl
 func hasGovernmentAgentProgramBlocker(blockers []SecureCellGovernmentAgentProgramBlocker, code string) bool {
 	for _, blocker := range blockers {
 		if blocker.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentCarryPackStepLane(steps []SecureCellGovernmentAgentCarryPackStep, lane SecureCellGovernmentAgentCarryLane) bool {
+	for _, step := range steps {
+		if step.Lane == lane {
+			return true
+		}
+	}
+	return false
+}
+
+func hasString(items []string, expected string) bool {
+	for _, item := range items {
+		if item == expected {
 			return true
 		}
 	}
