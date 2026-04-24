@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776599089478,
+  "lastUpdate": 1777046244531,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -1049,6 +1049,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2652,
             "range": "± 3",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "distinct": true,
+          "id": "0fbdb1cf846a58244eeeeafe8863e8f5a787d55a",
+          "message": "Stabilize contracts dependency CI",
+          "timestamp": "2026-04-24T19:55:55+04:00",
+          "tree_id": "eaffe714508849147092f5b861498840d2815315",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/0fbdb1cf846a58244eeeeafe8863e8f5a787d55a"
+        },
+        "date": 1777046243498,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2653,
+            "range": "± 2",
             "unit": "ns/iter"
           }
         ]
