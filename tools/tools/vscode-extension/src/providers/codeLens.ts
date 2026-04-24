@@ -11,11 +11,70 @@ import {
     CostEstimate,
     HardwareType,
     Jurisdiction,
+    Regulation,
 } from '../types';
 import { ComplianceLinter } from '../diagnostics/linter';
-import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
+
+const SUPPORTED_HARDWARE: ReadonlySet<string> = new Set<HardwareType>([
+    'generic',
+    'intel-sgx',
+    'intel-sgx-dcap',
+    'intel-tdx',
+    'amd-sev',
+    'amd-sev-snp',
+    'arm-trustzone',
+    'arm-cca',
+    'aws-nitro',
+    'azure-confidential',
+    'gcp-confidential',
+    'nvidia-h100',
+    'nvidia-a100',
+]);
+
+const SUPPORTED_JURISDICTIONS: ReadonlySet<string> = new Set<Jurisdiction>([
+    'Global',
+    'UAE',
+    'UAE-ADGM',
+    'UAE-DIFC',
+    'Saudi-Arabia',
+    'EU',
+    'EU-Germany',
+    'EU-France',
+    'UK',
+    'US',
+    'US-California',
+    'US-NewYork',
+    'Singapore',
+    'China',
+    'Japan',
+    'Australia',
+    'India',
+    'Brazil',
+    'Canada',
+]);
+
+const SUPPORTED_REGULATIONS: ReadonlySet<string> = new Set<Regulation>([
+    'GDPR',
+    'HIPAA',
+    'CCPA',
+    'UAE-DPL',
+    'PIPL',
+    'PDPA',
+    'UK-GDPR',
+    'PDPL-SA',
+    'PCI-DSS',
+    'SOX',
+    'GLBA',
+    'EU-AI-Act',
+    'HITECH',
+    'APPI',
+    'PIPA',
+    'LGPD',
+    'DPDP',
+    'PIPEDA',
+]);
 
 /**
  * Code lens data for a sovereign function.
@@ -26,6 +85,11 @@ interface SovereignCodeLensData {
     violationCount: number;
     costEstimate?: CostEstimate;
 }
+
+type FunctionSpanInfo = Omit<
+    SovereignFunctionInfo,
+    'decoratorLine' | 'hardware' | 'jurisdiction' | 'compliance' | 'parameters' | 'costEstimate'
+>;
 
 /**
  * Code lens provider for Aethelred sovereign functions.
@@ -60,6 +124,7 @@ export class AethelredCodeLensProvider implements vscode.CodeLensProvider {
 
         // Find all sovereign functions
         const functions = this.findSovereignFunctions(document);
+        this.log.debug(`Found ${functions.length} sovereign function(s) in ${document.fileName}`);
 
         for (const func of functions) {
             if (token.isCancellationRequested) {
@@ -159,9 +224,9 @@ export class AethelredCodeLensProvider implements vscode.CodeLensProvider {
                 functions.push({
                     ...funcInfo,
                     decoratorLine: decoratorLine + 1,
-                    hardware: params.hardware as HardwareType | undefined,
-                    jurisdiction: params.jurisdiction as Jurisdiction | undefined,
-                    compliance: params.compliance?.split(',').map((s: string) => s.trim()),
+                    hardware: this.parseHardware(params.hardware),
+                    jurisdiction: this.parseJurisdiction(params.jurisdiction),
+                    compliance: this.parseRegulations(params.compliance),
                 });
             }
         }
@@ -175,7 +240,7 @@ export class AethelredCodeLensProvider implements vscode.CodeLensProvider {
     private findFunctionAfterLine(
         document: vscode.TextDocument,
         startLine: number
-    ): Partial<SovereignFunctionInfo> | null {
+    ): FunctionSpanInfo | null {
         for (let i = startLine; i < Math.min(document.lineCount, startLine + 5); i++) {
             const line = document.lineAt(i).text;
 
@@ -210,7 +275,7 @@ export class AethelredCodeLensProvider implements vscode.CodeLensProvider {
         line: number,
         name: string,
         column: number
-    ): Partial<SovereignFunctionInfo> {
+    ): FunctionSpanInfo {
         // Find function end (simple heuristic)
         let endLine = line;
         let braceCount = 0;
@@ -267,6 +332,27 @@ export class AethelredCodeLensProvider implements vscode.CodeLensProvider {
         }
 
         return params;
+    }
+
+    private parseHardware(value?: string): HardwareType | undefined {
+        return value && SUPPORTED_HARDWARE.has(value) ? value as HardwareType : undefined;
+    }
+
+    private parseJurisdiction(value?: string): Jurisdiction | undefined {
+        return value && SUPPORTED_JURISDICTIONS.has(value) ? value as Jurisdiction : undefined;
+    }
+
+    private parseRegulations(value?: string): Regulation[] | undefined {
+        if (!value) {
+            return undefined;
+        }
+
+        const regulations = value
+            .split(',')
+            .map((raw) => raw.trim().replace(/^Regulation\./, ''))
+            .filter((item): item is Regulation => SUPPORTED_REGULATIONS.has(item));
+
+        return regulations.length > 0 ? regulations : undefined;
     }
 
     /**

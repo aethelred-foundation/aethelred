@@ -10,7 +10,7 @@ import { ComplianceLinter } from '../diagnostics/linter';
 import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
 import { logger, CategoryLogger } from '../utils/logger';
-import { ExtensionStatus, Jurisdiction, ComplianceSummary } from '../types';
+import { ExtensionStatus, Jurisdiction } from '../types';
 
 /**
  * Status bar manager for Aethelred extension.

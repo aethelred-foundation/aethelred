@@ -11,10 +11,7 @@ import {
     ComplianceViolation,
     ComplianceReport,
     ViolationSeverity,
-    ViolationFix,
     AethelredDiagnostic,
-    Jurisdiction,
-    Regulation,
 } from '../types';
 import { aethelCli } from '../services/cli';
 import { configManager } from '../utils/config';
@@ -23,13 +20,13 @@ import { logger, CategoryLogger } from '../utils/logger';
 /**
  * Debounce function for limiting lint frequency.
  */
-function debounce<T extends (...args: unknown[]) => void>(
-    fn: T,
+function debounce<Args extends unknown[]>(
+    fn: (...args: Args) => unknown,
     delay: number
-): (...args: Parameters<T>) => void {
+): (...args: Args) => void {
     let timeoutId: NodeJS.Timeout | null = null;
 
-    return (...args: Parameters<T>) => {
+    return (...args: Args) => {
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
@@ -291,6 +288,7 @@ export class ComplianceLinter {
         progress?: vscode.Progress<{ message?: string; increment?: number }>
     ): Promise<ComplianceReport | undefined> {
         this.log.info('Linting workspace...');
+        progress?.report({ message: 'Collecting compliance scope...' });
 
         const jurisdiction = configManager.getJurisdiction();
         const regulations = configManager.getRegulations();
