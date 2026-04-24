@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777049370698,
+  "lastUpdate": 1777050717421,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -1108,6 +1108,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "sha256_4kb",
             "value": 2652,
+            "range": "± 5",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "distinct": true,
+          "id": "28707a9a388bd71a179d6c064fac7c5f7f1ddf85",
+          "message": "Patch rustls webpki dependency alerts",
+          "timestamp": "2026-04-24T21:10:29+04:00",
+          "tree_id": "24ca986f62a7eeac84cccf9c64f435ca327a1a06",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/28707a9a388bd71a179d6c064fac7c5f7f1ddf85"
+        },
+        "date": 1777050716796,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2651,
             "range": "± 5",
             "unit": "ns/iter"
           }
