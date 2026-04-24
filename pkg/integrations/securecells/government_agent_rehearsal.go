@@ -50,6 +50,7 @@ type SecureCellGovernmentAgentRehearsalStep struct {
 	RequiresOperator  bool                                      `json:"requires_operator"`
 	RequiresApproval  bool                                      `json:"requires_approval"`
 	RequiredEvidence  []string                                  `json:"required_evidence,omitempty"`
+	AllowedTools      []string                                  `json:"allowed_tools,omitempty"`
 	Preconditions     []string                                  `json:"preconditions,omitempty"`
 	BlockerCodes      []string                                  `json:"blocker_codes,omitempty"`
 	Checks            []SecureCellGovernmentAgentRehearsalCheck `json:"checks,omitempty"`
@@ -258,6 +259,7 @@ func secureCellGovernmentAgentRehearsalStep(step SecureCellGovernmentAgentCarryP
 		RequiresOperator:  step.Lane == SecureCellGovernmentAgentCarryLaneOperatorControl || step.Lane == SecureCellGovernmentAgentCarryLaneEvidenceFinalize,
 		RequiresApproval:  step.RequiresHumanApproval,
 		RequiredEvidence:  append([]string(nil), step.RequiredEvidence...),
+		AllowedTools:      append([]string(nil), step.AllowedTools...),
 		Preconditions:     append([]string(nil), step.Preconditions...),
 		BlockerCodes:      append([]string(nil), step.BlockerCodes...),
 		Checks:            checks,

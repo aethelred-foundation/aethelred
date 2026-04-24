@@ -360,6 +360,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(rehearsalExportRec.Body.String(), "rehearsal_score") || !strings.Contains(rehearsalExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent rehearsal csv export, got %s", rehearsalExportRec.Body.String())
 	}
+
+	witnessListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-witnesses?jurisdiction=UAE", nil)
+	witnessListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(witnessListRec, witnessListReq)
+	if witnessListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, witnessListRec.Code, witnessListRec.Body.String())
+	}
+	var witnessListResp secureCellGovernmentAgentExecutionWitnessListResponse
+	if err := json.Unmarshal(witnessListRec.Body.Bytes(), &witnessListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution witness list response: %v", err)
+	}
+	if len(witnessListResp.Items) != 1 || witnessListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution witness list response: %+v", witnessListResp.Items)
+	}
+	if witnessListResp.Items[0].WitnessDigest == "" || witnessListResp.Items[0].StepCount == 0 || witnessListResp.Items[0].ExpectedReturnReceiptCount == 0 {
+		t.Fatalf("expected digest-bound execution witness with return obligations, got %+v", witnessListResp.Items[0])
+	}
+
+	witnessDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-witness", nil)
+	witnessDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(witnessDetailRec, witnessDetailReq)
+	if witnessDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, witnessDetailRec.Code, witnessDetailRec.Body.String())
+	}
+	var witnessDetailResp secureCellGovernmentAgentExecutionWitnessResponse
+	if err := json.Unmarshal(witnessDetailRec.Body.Bytes(), &witnessDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution witness detail response: %v", err)
+	}
+	if witnessDetailResp.Witness == nil || witnessDetailResp.Witness.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution witness detail response: %+v", witnessDetailResp.Witness)
+	}
+
+	witnessExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-witnesses/export?format=csv&jurisdiction=UAE", nil)
+	witnessExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(witnessExportRec, witnessExportReq)
+	if witnessExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, witnessExportRec.Code, witnessExportRec.Body.String())
+	}
+	if !strings.Contains(witnessExportRec.Body.String(), "execution_witness_score") || !strings.Contains(witnessExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution witness csv export, got %s", witnessExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

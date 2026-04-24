@@ -214,6 +214,26 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !hasGovernmentAgentRehearsalStepOutcome(rehearsal.Steps, SecureCellGovernmentAgentRehearsalOutcomePass) {
 		t.Fatalf("expected at least one passing rehearsal step, got %+v", rehearsal.Steps)
 	}
+
+	witness, err := service.GetGovernmentAgentExecutionWitness(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionWitness failed: %v", err)
+	}
+	if witness.Status == SecureCellGovernmentAgentExecutionWitnessBlocked {
+		t.Fatalf("expected non-blocked execution witness, got %+v", witness)
+	}
+	if witness.ExecutionWitnessScore <= 0 || witness.WitnessDigest == "" || !strings.Contains(witness.WitnessID, witness.WitnessDigest[:12]) {
+		t.Fatalf("expected scored digest-bound execution witness, got %+v", witness)
+	}
+	if witness.StepCount == 0 || witness.ExpectedReturnReceiptCount == 0 || len(witness.EgressReceipts) == 0 {
+		t.Fatalf("expected evidence-return witness steps, got %+v", witness)
+	}
+	if !hasGovernmentAgentExecutionWitnessStepReceipt(witness.Steps, "human_approval_receipt") {
+		t.Fatalf("expected human approval receipt obligation in execution witness, got %+v", witness.Steps)
+	}
+	if !hasGovernmentAgentExecutionWitnessReleaseGate(witness.Steps, "human_approval_required") {
+		t.Fatalf("expected human approval release gate in execution witness, got %+v", witness.Steps)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -319,6 +339,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if len(rehearsal.OperatorInstructions) == 0 || rehearsal.RehearsalDigest == "" {
 		t.Fatalf("expected actionable digest-bound rehearsal, got %+v", rehearsal)
 	}
+
+	witness, err := service.GetGovernmentAgentExecutionWitness(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionWitness failed: %v", err)
+	}
+	if witness.Status != SecureCellGovernmentAgentExecutionWitnessBlocked || witness.ReadyForExecutionHandoff {
+		t.Fatalf("expected blocked execution witness for tacit workflow, got %+v", witness)
+	}
+	if witness.HandoffBlockerCount == 0 || !hasString(witness.MissingPreconditions, "missing:governed_decisions") {
+		t.Fatalf("expected blocker-counted witness with missing governed decisions, got %+v", witness)
+	}
+	if len(witness.OperatorAttestations) == 0 || !hasString(witness.EgressReceipts, "blocker_resolution_receipt") {
+		t.Fatalf("expected operator attestations and blocker-resolution receipts, got %+v", witness)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -369,6 +403,24 @@ func hasGovernmentAgentCarryPackStepLane(steps []SecureCellGovernmentAgentCarryP
 func hasGovernmentAgentRehearsalStepOutcome(steps []SecureCellGovernmentAgentRehearsalStep, outcome SecureCellGovernmentAgentRehearsalOutcome) bool {
 	for _, step := range steps {
 		if step.Outcome == outcome {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionWitnessStepReceipt(steps []SecureCellGovernmentAgentExecutionWitnessStep, receipt string) bool {
+	for _, step := range steps {
+		if hasString(step.ExpectedReturnReceipts, receipt) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionWitnessReleaseGate(steps []SecureCellGovernmentAgentExecutionWitnessStep, reason string) bool {
+	for _, step := range steps {
+		if hasString(step.ReleaseGateReasons, reason) {
 			return true
 		}
 	}
