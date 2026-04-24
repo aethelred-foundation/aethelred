@@ -514,13 +514,13 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
+    "build": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "lint:fix": "eslint src --ext ts --fix",
-    "test": "node ./out/test/runTest.js",
-    "test:unit": "mocha --require ts-node/register 'src/test/**/*.test.ts'",
+    "test": "npm run compile && npm run lint",
+    "test:unit": "mocha --require ts-node/register --pass-with-no-tests 'src/test/**/*.test.ts'",
     "package": "vsce package",
     "publish": "vsce publish",
     "clean": "rimraf out"

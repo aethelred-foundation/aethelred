@@ -215,7 +215,7 @@ export class AethelredHoverProvider implements vscode.HoverProvider {
      */
     private async provideFunctionHover(
         functionInfo: SovereignFunctionInfo,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.Hover> {
         const md = new vscode.MarkdownString();
         md.isTrusted = true;

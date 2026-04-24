@@ -219,6 +219,7 @@ export class AethelCli {
         };
 
         this.log.debug(`Executing: ${this.cliPath} ${args.join(' ')}`, { cwd, timeout });
+        this.log.trace('Execution context', context);
 
         return new Promise((resolve) => {
             const commandId = this.generateCommandId();
@@ -446,7 +447,7 @@ export class AethelCli {
      */
     async estimateCost(
         modelPath: string,
-        hardware?: HardwareType,
+        hardware?: HardwareType | 'auto',
         options: CliOptions = {}
     ): Promise<CliResult<CostEstimate>> {
         const args = ['hardware', 'estimate', '--model', modelPath, '--json'];
@@ -622,7 +623,7 @@ export class AethelCli {
 
         // Extract error message from output
         const errorMatch = output.match(/error(?:\[E\d+\])?:\s*(.+)/i);
-        const message = errorMatch?.[1] ?? output.trim() || `Command failed with exit code ${exitCode}`;
+        const message = (errorMatch?.[1] ?? output.trim()) || `Command failed with exit code ${exitCode}`;
 
         return {
             code: `EXIT_${exitCode}`,

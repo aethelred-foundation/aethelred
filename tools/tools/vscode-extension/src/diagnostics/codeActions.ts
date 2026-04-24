@@ -11,8 +11,6 @@ import {
     ViolationFix,
     AethelredDiagnostic,
 } from '../types';
-import { ComplianceLinter } from './linter';
-import { logger, CategoryLogger } from '../utils/logger';
 
 /**
  * Code action kinds provided by this extension.
@@ -24,8 +22,6 @@ const AETHELRED_REFACTOR = vscode.CodeActionKind.Refactor.append('aethelred');
  * Code action provider for Aethelred compliance fixes.
  */
 export class AethelredCodeActionProvider implements vscode.CodeActionProvider {
-    private readonly log: CategoryLogger;
-
     static readonly providedCodeActionKinds = [
         vscode.CodeActionKind.QuickFix,
         AETHELRED_FIX,
@@ -35,10 +31,6 @@ export class AethelredCodeActionProvider implements vscode.CodeActionProvider {
     static readonly metadata: vscode.CodeActionProviderMetadata = {
         providedCodeActionKinds: AethelredCodeActionProvider.providedCodeActionKinds,
     };
-
-    constructor(private readonly linter: ComplianceLinter) {
-        this.log = logger.createChild('CodeActions');
-    }
 
     /**
      * Provide code actions for the given document and range.
@@ -53,7 +45,7 @@ export class AethelredCodeActionProvider implements vscode.CodeActionProvider {
 
         // Get Aethelred diagnostics in the range
         const diagnostics = context.diagnostics.filter(
-            (d) => d.source === 'Aethelred'
+            (d) => d.source === 'Aethelred' && d.range.intersection(range)
         ) as AethelredDiagnostic[];
 
         if (diagnostics.length === 0) {
@@ -266,10 +258,9 @@ export class AethelredCodeActionProvider implements vscode.CodeActionProvider {
  * Register code action providers.
  */
 export function registerCodeActionProviders(
-    context: vscode.ExtensionContext,
-    linter: ComplianceLinter
+    context: vscode.ExtensionContext
 ): void {
-    const provider = new AethelredCodeActionProvider(linter);
+    const provider = new AethelredCodeActionProvider();
 
     const languages = ['python', 'rust', 'typescript', 'javascript', 'helix'];
 

@@ -249,6 +249,7 @@ export class ConfigManager {
 
         logger.debug('Configuration changed', {
             affected: this.configSection,
+            changed: e.affectsConfiguration(this.configSection),
         });
 
         // Detect specific changes and emit events

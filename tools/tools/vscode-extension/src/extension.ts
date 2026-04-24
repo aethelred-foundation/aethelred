@@ -22,7 +22,7 @@
 import * as vscode from 'vscode';
 
 // Services
-import { aethelCli, AethelCli } from './services/cli';
+import { aethelCli } from './services/cli';
 
 // Diagnostics
 import { ComplianceLinter } from './diagnostics/linter';
@@ -36,16 +36,11 @@ import { registerCodeLensProviders, AethelredCodeLensProvider } from './provider
 import { StatusBarManager } from './views/statusBar';
 
 // Utils
-import { Logger, logger, LogLevel } from './utils/logger';
+import { Logger, logger } from './utils/logger';
 import { ConfigManager, configManager } from './utils/config';
 
 // Types
 import { Jurisdiction, ComplianceReport } from './types';
-
-/**
- * Extension context holder for global access.
- */
-let extensionContext: vscode.ExtensionContext;
 
 /**
  * Core components.
@@ -58,8 +53,6 @@ let codeLensProvider: AethelredCodeLensProvider;
  * Activate the extension.
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    extensionContext = context;
-
     logger.info('Activating Aethelred Sovereign Copilot...');
 
     // Set log level from configuration
@@ -92,7 +85,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Register providers
         registerHoverProviders(context);
         codeLensProvider = registerCodeLensProviders(context, linter);
-        registerCodeActionProviders(context, linter);
+        registerCodeActionProviders(context);
 
         // Register commands
         registerCommands(context);
@@ -317,17 +310,15 @@ async function setJurisdiction(): Promise<void> {
         'Singapore', 'China', 'Japan', 'Australia', 'India', 'Brazil', 'Canada',
     ];
 
+    const current = configManager.getJurisdiction();
     const items = jurisdictions.map((j) => {
         const info = configManager.getJurisdictionInfo(j);
         return {
             label: `${info.flag} ${j}`,
-            description: info.name,
+            description: j === current ? `${info.name} (current)` : info.name,
             jurisdiction: j,
         };
     });
-
-    const current = configManager.getJurisdiction();
-    const currentIndex = jurisdictions.indexOf(current);
 
     const selected = await vscode.window.showQuickPick(items, {
         placeHolder: 'Select jurisdiction for compliance checks',
