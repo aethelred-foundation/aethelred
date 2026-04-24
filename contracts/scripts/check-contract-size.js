@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const CONTRACT_SOURCE = process.env.CONTRACT_SOURCE || "InstitutionalStablecoinBridge.sol";
 const CONTRACT_NAME = process.env.CONTRACT_NAME || "InstitutionalStablecoinBridge";
 const MAX_DEPLOYED_CODE_BYTES = Number(process.env.MAX_DEPLOYED_CODE_BYTES || "24576");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function hexByteLen(hex) {
   if (!hex || hex === "0x") return 0;
