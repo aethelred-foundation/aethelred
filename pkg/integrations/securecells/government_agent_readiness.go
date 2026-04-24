@@ -108,28 +108,32 @@ type SecureCellGovernmentAgentEvidenceState struct {
 // SecureCellGovernmentAgentReadinessAssessment is a live operator projection
 // for national-scale agentic workflow adoption.
 type SecureCellGovernmentAgentReadinessAssessment struct {
-	AssessmentID          string                                         `json:"assessment_id"`
-	CellID                string                                         `json:"cell_id"`
-	Name                  string                                         `json:"name"`
-	Purpose               string                                         `json:"purpose"`
-	Resource              string                                         `json:"resource,omitempty"`
-	Jurisdiction          string                                         `json:"jurisdiction,omitempty"`
-	CellStatus            SecureCellStatus                               `json:"cell_status"`
-	ReadinessLevel        SecureCellGovernmentAgentReadinessLevel        `json:"readiness_level"`
-	ReadyForSupervisedRun bool                                           `json:"ready_for_supervised_run"`
-	ReadyForAutonomousRun bool                                           `json:"ready_for_autonomous_run"`
-	ServiceCode           string                                         `json:"service_code,omitempty"`
-	ServiceTier           string                                         `json:"service_tier,omitempty"`
-	IdentityProviders     []string                                       `json:"identity_providers,omitempty"`
-	Languages             []string                                       `json:"languages,omitempty"`
-	Scorecard             SecureCellGovernmentAgentReadinessScorecard    `json:"scorecard"`
-	Signals               SecureCellGovernmentAgentWorkflowSignals       `json:"signals"`
-	Evidence              SecureCellGovernmentAgentEvidenceState         `json:"evidence"`
-	Findings              []SecureCellGovernmentAgentReadinessFinding    `json:"findings,omitempty"`
-	NextActions           []SecureCellGovernmentAgentReadinessNextAction `json:"next_actions,omitempty"`
-	WorkflowDigest        string                                         `json:"workflow_digest"`
-	AssessedAt            time.Time                                      `json:"assessed_at"`
-	UpdatedAt             time.Time                                      `json:"updated_at"`
+	AssessmentID           string                                         `json:"assessment_id"`
+	CellID                 string                                         `json:"cell_id"`
+	Name                   string                                         `json:"name"`
+	Purpose                string                                         `json:"purpose"`
+	Resource               string                                         `json:"resource,omitempty"`
+	Jurisdiction           string                                         `json:"jurisdiction,omitempty"`
+	CellStatus             SecureCellStatus                               `json:"cell_status"`
+	ReadinessLevel         SecureCellGovernmentAgentReadinessLevel        `json:"readiness_level"`
+	ReadyForSupervisedRun  bool                                           `json:"ready_for_supervised_run"`
+	ReadyForAutonomousRun  bool                                           `json:"ready_for_autonomous_run"`
+	ServiceCode            string                                         `json:"service_code,omitempty"`
+	ServiceTier            string                                         `json:"service_tier,omitempty"`
+	IdentityProviders      []string                                       `json:"identity_providers,omitempty"`
+	Languages              []string                                       `json:"languages,omitempty"`
+	Scorecard              SecureCellGovernmentAgentReadinessScorecard    `json:"scorecard"`
+	Signals                SecureCellGovernmentAgentWorkflowSignals       `json:"signals"`
+	Evidence               SecureCellGovernmentAgentEvidenceState         `json:"evidence"`
+	WorkflowBlueprintID    string                                         `json:"workflow_blueprint_id,omitempty"`
+	BlueprintCoverageScore int                                            `json:"blueprint_coverage_score,omitempty"`
+	BlueprintStepCount     int                                            `json:"blueprint_step_count,omitempty"`
+	BlueprintCriticalGaps  int                                            `json:"blueprint_critical_gaps,omitempty"`
+	Findings               []SecureCellGovernmentAgentReadinessFinding    `json:"findings,omitempty"`
+	NextActions            []SecureCellGovernmentAgentReadinessNextAction `json:"next_actions,omitempty"`
+	WorkflowDigest         string                                         `json:"workflow_digest"`
+	AssessedAt             time.Time                                      `json:"assessed_at"`
+	UpdatedAt              time.Time                                      `json:"updated_at"`
 }
 
 // GetGovernmentAgentReadinessAssessment returns the live readiness projection
@@ -215,6 +219,7 @@ func secureCellGovernmentAgentReadinessAssessment(run *secureCellRun, configured
 	languages := normalizedMetadataList(metadata, "languages", "supported_languages", "locales", "locale")
 	signals := secureCellGovernmentAgentWorkflowSignals(result)
 	evidenceState := secureCellGovernmentAgentEvidenceState(result)
+	blueprint := secureCellGovernmentAgentWorkflowBlueprint(run, configuredSLATemplateCount)
 
 	scorecard := SecureCellGovernmentAgentReadinessScorecard{
 		WorkflowLegibility:    secureCellGovernmentAgentWorkflowLegibilityScore(run, signals, serviceCode),
@@ -239,6 +244,7 @@ func secureCellGovernmentAgentReadinessAssessment(run *secureCellRun, configured
 		Scorecard         SecureCellGovernmentAgentReadinessScorecard `json:"scorecard"`
 		Signals           SecureCellGovernmentAgentWorkflowSignals    `json:"signals"`
 		Evidence          SecureCellGovernmentAgentEvidenceState      `json:"evidence"`
+		WorkflowBlueprint string                                      `json:"workflow_blueprint,omitempty"`
 	}{
 		CellID:            result.CellID,
 		UpdatedAt:         result.UpdatedAt.UTC(),
@@ -249,31 +255,36 @@ func secureCellGovernmentAgentReadinessAssessment(run *secureCellRun, configured
 		Scorecard:         scorecard,
 		Signals:           signals,
 		Evidence:          evidenceState,
+		WorkflowBlueprint: blueprint.WorkflowDigest,
 	}
 	workflowDigest := EvidenceHash(assessmentCore)
 	return SecureCellGovernmentAgentReadinessAssessment{
-		AssessmentID:          "government-agent-readiness:" + result.CellID + ":" + workflowDigest[:12],
-		CellID:                result.CellID,
-		Name:                  result.Name,
-		Purpose:               result.Purpose,
-		Resource:              run.request.Resource,
-		Jurisdiction:          run.request.Jurisdiction,
-		CellStatus:            result.Status,
-		ReadinessLevel:        level,
-		ReadyForSupervisedRun: level == SecureCellGovernmentAgentReadinessSupervisedReady || level == SecureCellGovernmentAgentReadinessAutonomyReady,
-		ReadyForAutonomousRun: level == SecureCellGovernmentAgentReadinessAutonomyReady,
-		ServiceCode:           serviceCode,
-		ServiceTier:           serviceTier,
-		IdentityProviders:     identityProviders,
-		Languages:             languages,
-		Scorecard:             scorecard,
-		Signals:               signals,
-		Evidence:              evidenceState,
-		Findings:              findings,
-		NextActions:           secureCellGovernmentAgentNextActions(findings),
-		WorkflowDigest:        workflowDigest,
-		AssessedAt:            now,
-		UpdatedAt:             result.UpdatedAt.UTC(),
+		AssessmentID:           "government-agent-readiness:" + result.CellID + ":" + workflowDigest[:12],
+		CellID:                 result.CellID,
+		Name:                   result.Name,
+		Purpose:                result.Purpose,
+		Resource:               run.request.Resource,
+		Jurisdiction:           run.request.Jurisdiction,
+		CellStatus:             result.Status,
+		ReadinessLevel:         level,
+		ReadyForSupervisedRun:  level == SecureCellGovernmentAgentReadinessSupervisedReady || level == SecureCellGovernmentAgentReadinessAutonomyReady,
+		ReadyForAutonomousRun:  level == SecureCellGovernmentAgentReadinessAutonomyReady,
+		ServiceCode:            serviceCode,
+		ServiceTier:            serviceTier,
+		IdentityProviders:      identityProviders,
+		Languages:              languages,
+		Scorecard:              scorecard,
+		Signals:                signals,
+		Evidence:               evidenceState,
+		WorkflowBlueprintID:    blueprint.BlueprintID,
+		BlueprintCoverageScore: blueprint.CoverageScore,
+		BlueprintStepCount:     blueprint.StepCount,
+		BlueprintCriticalGaps:  blueprint.CriticalGapCount,
+		Findings:               findings,
+		NextActions:            secureCellGovernmentAgentNextActions(findings),
+		WorkflowDigest:         workflowDigest,
+		AssessedAt:             now,
+		UpdatedAt:              result.UpdatedAt.UTC(),
 	}
 }
 

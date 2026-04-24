@@ -210,6 +210,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(exportRec.Body.String(), "readiness_level") || !strings.Contains(exportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected readiness csv export, got %s", exportRec.Body.String())
 	}
+
+	blueprintListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-blueprints?cell_id="+url.QueryEscape(createResp.Result.CellID), nil)
+	blueprintListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(blueprintListRec, blueprintListReq)
+	if blueprintListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, blueprintListRec.Code, blueprintListRec.Body.String())
+	}
+	var blueprintListResp secureCellGovernmentAgentWorkflowBlueprintListResponse
+	if err := json.Unmarshal(blueprintListRec.Body.Bytes(), &blueprintListResp); err != nil {
+		t.Fatalf("unmarshal blueprint list response: %v", err)
+	}
+	if len(blueprintListResp.Items) != 1 || blueprintListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected blueprint list response: %+v", blueprintListResp.Items)
+	}
+	if blueprintListResp.Items[0].StepCount == 0 || blueprintListResp.Items[0].WorkflowDigest == "" {
+		t.Fatalf("expected executable blueprint steps and digest, got %+v", blueprintListResp.Items[0])
+	}
+
+	blueprintDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-blueprint", nil)
+	blueprintDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(blueprintDetailRec, blueprintDetailReq)
+	if blueprintDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, blueprintDetailRec.Code, blueprintDetailRec.Body.String())
+	}
+	var blueprintDetailResp secureCellGovernmentAgentWorkflowBlueprintResponse
+	if err := json.Unmarshal(blueprintDetailRec.Body.Bytes(), &blueprintDetailResp); err != nil {
+		t.Fatalf("unmarshal blueprint detail response: %v", err)
+	}
+	if blueprintDetailResp.Blueprint == nil || blueprintDetailResp.Blueprint.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected blueprint detail response: %+v", blueprintDetailResp.Blueprint)
+	}
+
+	blueprintExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-blueprints/export?format=csv&cell_id="+url.QueryEscape(createResp.Result.CellID), nil)
+	blueprintExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(blueprintExportRec, blueprintExportReq)
+	if blueprintExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, blueprintExportRec.Code, blueprintExportRec.Body.String())
+	}
+	if !strings.Contains(blueprintExportRec.Body.String(), "coverage_score") || !strings.Contains(blueprintExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected blueprint csv export, got %s", blueprintExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

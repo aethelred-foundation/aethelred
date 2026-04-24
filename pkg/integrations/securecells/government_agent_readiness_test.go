@@ -39,6 +39,7 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 			"data_sharing_policy":     "collect_once",
 			"system_of_record":        "federal-permit-registry",
 			"human_override":          "enabled",
+			"workflow_steps":          "identity intake > eligibility evaluation > governed approval > bilingual notice",
 			"cell_id":                 "gov-agent-readiness-uae",
 		},
 	})
@@ -127,8 +128,34 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !assessment.Evidence.PortablePackageSigned || !assessment.Evidence.PortablePackageAnchored || assessment.Evidence.PolicyReceiptChainHash == "" {
 		t.Fatalf("expected signed anchored evidence state, got %+v", assessment.Evidence)
 	}
+	if assessment.WorkflowBlueprintID == "" || assessment.BlueprintCoverageScore < 75 || assessment.BlueprintStepCount == 0 {
+		t.Fatalf("expected readiness to reference an executable workflow blueprint, got %+v", assessment)
+	}
 	if hasGovernmentAgentReadinessFinding(assessment.Findings, "GOVAGENT_NO_GOVERNED_DECISIONS") {
 		t.Fatalf("did not expect governed-decision blocker, got %+v", assessment.Findings)
+	}
+
+	blueprint, err := service.GetGovernmentAgentWorkflowBlueprint(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentWorkflowBlueprint failed: %v", err)
+	}
+	if blueprint.OperatorDeclaredSteps != 4 {
+		t.Fatalf("expected four operator-declared workflow steps, got %+v", blueprint)
+	}
+	if blueprint.CoverageScore < 75 || blueprint.ReadinessLevel == SecureCellGovernmentAgentReadinessBlocked {
+		t.Fatalf("expected executable blueprint coverage, got %+v", blueprint)
+	}
+	if blueprint.CriticalGapCount != 0 {
+		t.Fatalf("expected no critical blueprint gaps, got %+v", blueprint.Gaps)
+	}
+	if blueprint.HumanApprovalGateCount == 0 || blueprint.EscalationStepCount == 0 || blueprint.EvidenceBoundSteps == 0 {
+		t.Fatalf("expected approval, escalation, and evidence-bound blueprint steps, got %+v", blueprint)
+	}
+	if !hasGovernmentAgentBlueprintStepKind(blueprint.Steps, SecureCellGovernmentAgentWorkflowStepDecisionGate) {
+		t.Fatalf("expected governed decision gate step, got %+v", blueprint.Steps)
+	}
+	if blueprint.WorkflowDigest == "" || !strings.Contains(blueprint.BlueprintID, blueprint.WorkflowDigest[:12]) {
+		t.Fatalf("expected digest-bound blueprint ID, got %+v", blueprint)
 	}
 }
 
@@ -180,11 +207,43 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 			t.Fatalf("expected actionable recommendation, got %+v", assessment.NextActions)
 		}
 	}
+
+	blueprint, err := service.GetGovernmentAgentWorkflowBlueprint(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentWorkflowBlueprint failed: %v", err)
+	}
+	if blueprint.ReadinessLevel != SecureCellGovernmentAgentReadinessBlocked || blueprint.CriticalGapCount == 0 {
+		t.Fatalf("expected blocked blueprint with critical gaps, got %+v", blueprint)
+	}
+	if !hasGovernmentAgentBlueprintGap(blueprint.Gaps, "GOVAGENT_BLUEPRINT_DECISION_GATES_MISSING") {
+		t.Fatalf("expected missing decision-gate blueprint gap, got %+v", blueprint.Gaps)
+	}
+	if !hasGovernmentAgentBlueprintGap(blueprint.Gaps, "GOVAGENT_BLUEPRINT_UAE_PASS_MISSING") {
+		t.Fatalf("expected UAE Pass blueprint gap, got %+v", blueprint.Gaps)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
 	for _, finding := range findings {
 		if finding.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentBlueprintGap(gaps []SecureCellGovernmentAgentWorkflowGap, code string) bool {
+	for _, gap := range gaps {
+		if gap.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentBlueprintStepKind(steps []SecureCellGovernmentAgentWorkflowStep, kind SecureCellGovernmentAgentWorkflowStepKind) bool {
+	for _, step := range steps {
+		if step.Kind == kind {
 			return true
 		}
 	}
