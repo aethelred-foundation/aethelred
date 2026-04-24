@@ -142,6 +142,76 @@ func TestSecureCellsHandlers_BearerCreateGetArtifactsFlow(t *testing.T) {
 	}
 }
 
+func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
+	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
+		"aethelred.pqc.mode":                     "simulated",
+		"aethelred.secure_cells.api.write_token": "secure-cells-secret",
+		flags.FlagHome:                           t.TempDir(),
+	})
+	if err := app.SetValidatorPrivateKey(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{6}, ed25519.SeedSize))); err != nil {
+		t.Fatalf("SetValidatorPrivateKey failed: %v", err)
+	}
+
+	owner := mustSecureCellAppIdentity(t, "owner", []string{"UAE", "UK"})
+	participantA := mustSecureCellAppIdentity(t, "reviewer-a", []string{"UAE", "UK"})
+	body := mustMarshalSecureCellCreateRequest(t, owner, []*agent.AgentIdentity{participantA}, nil)
+	req := httptest.NewRequest(http.MethodPost, secureCellsCollectionRoute, bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer secure-cells-secret")
+	rec := httptest.NewRecorder()
+	app.SecureCellsCreateHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusCreated, rec.Code, rec.Body.String())
+	}
+	var createResp secureCellResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &createResp); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	if createResp.Result == nil || createResp.Result.CellID == "" {
+		t.Fatal("expected created secure cell")
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-readiness?cell_id="+url.QueryEscape(createResp.Result.CellID), nil)
+	listRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, listRec.Code, listRec.Body.String())
+	}
+	var listResp secureCellGovernmentAgentReadinessListResponse
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listResp); err != nil {
+		t.Fatalf("unmarshal readiness list response: %v", err)
+	}
+	if len(listResp.Items) != 1 || listResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected readiness list response: %+v", listResp.Items)
+	}
+	if listResp.Items[0].Evidence.PortablePackageHash == "" || listResp.Items[0].WorkflowDigest == "" {
+		t.Fatalf("expected evidence-backed readiness item, got %+v", listResp.Items[0])
+	}
+
+	detailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-readiness", nil)
+	detailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(detailRec, detailReq)
+	if detailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, detailRec.Code, detailRec.Body.String())
+	}
+	var detailResp secureCellGovernmentAgentReadinessResponse
+	if err := json.Unmarshal(detailRec.Body.Bytes(), &detailResp); err != nil {
+		t.Fatalf("unmarshal readiness detail response: %v", err)
+	}
+	if detailResp.Assessment == nil || detailResp.Assessment.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected readiness detail response: %+v", detailResp.Assessment)
+	}
+
+	exportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-readiness/export?format=csv&cell_id="+url.QueryEscape(createResp.Result.CellID), nil)
+	exportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(exportRec, exportReq)
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, exportRec.Code, exportRec.Body.String())
+	}
+	if !strings.Contains(exportRec.Body.String(), "readiness_level") || !strings.Contains(exportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected readiness csv export, got %s", exportRec.Body.String())
+	}
+}
+
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
 	app := newAuditEnabledTestApp(t, sims.AppOptionsMap{
 		"aethelred.pqc.mode":                     "simulated",

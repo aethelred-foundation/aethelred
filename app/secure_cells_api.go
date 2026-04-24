@@ -1262,6 +1262,10 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if app.handleSecureCellGovernmentAgentReadinessGet(w, r) {
+			return
+		}
+
 		if r.URL.Path == secureCellsCollectionRoute+"/decision-sla-templates" {
 			filter := parseSecureCellDecisionSLATemplateFilter(r)
 			items, err := app.secureCellService.ListDecisionSLATemplates(r.Context(), filter)
