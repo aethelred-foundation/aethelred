@@ -60,6 +60,62 @@ const ALLOW_UNLIMITED_CONTRACT_SIZE =
 const DEVNET_RPC_URL = process.env.DEVNET_RPC_URL ||
   "http://localhost:8545";
 
+const DEFAULT_SOLIDITY_COMPILER = {
+  version: "0.8.20",
+  settings: {
+    optimizer: {
+      enabled: true,
+      runs: 200, // Optimized for frequent function calls
+      details: {
+        yul: true,
+        yulDetails: {
+          stackAllocation: true,
+        },
+      },
+    },
+    viaIR: true, // Preserve IR-based code generation in every build profile.
+    evmVersion: "paris",
+    metadata: {
+      bytecodeHash: "ipfs",
+      useLiteralContent: true,
+    },
+  },
+};
+
+const SIZE_OPTIMIZED_SOLIDITY_COMPILER = {
+  version: "0.8.20",
+  settings: {
+    optimizer: {
+      enabled: true,
+      runs: 1,
+      details: {
+        yul: true,
+        yulDetails: {
+          stackAllocation: true,
+        },
+      },
+    },
+    viaIR: true,
+    evmVersion: "paris",
+    metadata: {
+      bytecodeHash: "none",
+      useLiteralContent: false,
+      appendCBOR: false,
+    },
+  },
+};
+
+const SIZE_OPTIMIZED_SOLIDITY_OVERRIDES = {
+  // Size-optimized override for the institutional bridge to stay under EIP-170
+  // without altering runtime behavior or ABI.
+  "contracts/InstitutionalStablecoinBridge.sol": SIZE_OPTIMIZED_SOLIDITY_COMPILER,
+  // Size-optimized override for Cruzible to stay under EIP-170 without
+  // changing runtime behavior or ABI. This contract concentrates multiple
+  // staking and attestation flows, so we optimize deployment size rather
+  // than risk a late-stage logic split.
+  "contracts/vault/Cruzible.sol": SIZE_OPTIMIZED_SOLIDITY_COMPILER,
+};
+
 // ============================================================================
 // Hardhat Configuration
 // ============================================================================
@@ -79,79 +135,14 @@ const config = defineConfig({
       "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol",
       "@openzeppelin/contracts/governance/TimelockController.sol",
     ],
-    compilers: [
-      {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200, // Optimized for frequent function calls
-            details: {
-              yul: true,
-              yulDetails: {
-                stackAllocation: true,
-              },
-            },
-          },
-          viaIR: true, // Enable IR-based code generation for better optimization
-          evmVersion: "paris", // Latest stable EVM version
-          metadata: {
-            bytecodeHash: "ipfs", // Use IPFS for metadata hash
-            useLiteralContent: true,
-          },
-        },
+    profiles: {
+      default: {
+        compilers: [DEFAULT_SOLIDITY_COMPILER],
+        overrides: SIZE_OPTIMIZED_SOLIDITY_OVERRIDES,
       },
-    ],
-    overrides: {
-      // Size-optimized override for the institutional bridge to stay under EIP-170
-      // without altering runtime behavior or ABI.
-      "contracts/InstitutionalStablecoinBridge.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1,
-            details: {
-              yul: true,
-              yulDetails: {
-                stackAllocation: true,
-              },
-            },
-          },
-          viaIR: true,
-          evmVersion: "paris",
-          metadata: {
-            bytecodeHash: "none",
-            useLiteralContent: false,
-            appendCBOR: false,
-          },
-        },
-      },
-      // Size-optimized override for Cruzible to stay under EIP-170 without
-      // changing runtime behavior or ABI. This contract concentrates multiple
-      // staking and attestation flows, so we optimize deployment size rather
-      // than risk a late-stage logic split.
-      "contracts/vault/Cruzible.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1,
-            details: {
-              yul: true,
-              yulDetails: {
-                stackAllocation: true,
-              },
-            },
-          },
-          viaIR: true,
-          evmVersion: "paris",
-          metadata: {
-            bytecodeHash: "none",
-            useLiteralContent: false,
-            appendCBOR: false,
-          },
-        },
+      production: {
+        compilers: [DEFAULT_SOLIDITY_COMPILER],
+        overrides: SIZE_OPTIMIZED_SOLIDITY_OVERRIDES,
       },
     },
   },
