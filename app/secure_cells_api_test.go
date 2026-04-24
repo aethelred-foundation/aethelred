@@ -251,6 +251,33 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(blueprintExportRec.Body.String(), "coverage_score") || !strings.Contains(blueprintExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected blueprint csv export, got %s", blueprintExportRec.Body.String())
 	}
+
+	programReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-program?jurisdiction=UAE", nil)
+	programRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(programRec, programReq)
+	if programRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, programRec.Code, programRec.Body.String())
+	}
+	var programResp secureCellGovernmentAgentProgramResponse
+	if err := json.Unmarshal(programRec.Body.Bytes(), &programResp); err != nil {
+		t.Fatalf("unmarshal government-agent program response: %v", err)
+	}
+	if programResp.Summary == nil || programResp.Summary.ServiceCount != 1 || len(programResp.Summary.Services) != 1 {
+		t.Fatalf("unexpected government-agent program response: %+v", programResp.Summary)
+	}
+	if programResp.Summary.ProgramDigest == "" || programResp.Summary.Services[0].CellID != createResp.Result.CellID {
+		t.Fatalf("expected digest-bound service program row, got %+v", programResp.Summary)
+	}
+
+	programExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-program/export?format=csv&jurisdiction=UAE", nil)
+	programExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(programExportRec, programExportReq)
+	if programExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, programExportRec.Code, programExportRec.Body.String())
+	}
+	if !strings.Contains(programExportRec.Body.String(), "legibility_rate") || !strings.Contains(programExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent program csv export, got %s", programExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

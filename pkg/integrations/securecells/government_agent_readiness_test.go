@@ -157,6 +157,26 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if blueprint.WorkflowDigest == "" || !strings.Contains(blueprint.BlueprintID, blueprint.WorkflowDigest[:12]) {
 		t.Fatalf("expected digest-bound blueprint ID, got %+v", blueprint)
 	}
+
+	program, err := service.GetGovernmentAgentProgramSummary(ctx, SecureCellGovernmentAgentProgramFilter{
+		Jurisdiction: "UAE",
+		ServiceTier:  "tier_1",
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentProgramSummary failed: %v", err)
+	}
+	if program.ServiceCount != 1 || program.LegibleServiceCount != 1 || program.EvidenceReadyServiceCount != 1 {
+		t.Fatalf("expected one legible evidence-ready service, got %+v", program)
+	}
+	if program.SupervisedReadyCount+program.AutonomyReadyCount != 1 || program.SupervisedReadyRate != 100 {
+		t.Fatalf("expected supervised-ready program rollup, got %+v", program)
+	}
+	if len(program.Services) != 1 || program.Services[0].RecommendedStage == SecureCellGovernmentAgentProgramStageMapTacitWork {
+		t.Fatalf("expected service rollout stage beyond tacit mapping, got %+v", program.Services)
+	}
+	if program.ProgramDigest == "" || !strings.Contains(program.ProgramID, program.ProgramDigest[:12]) {
+		t.Fatalf("expected digest-bound program ID, got %+v", program)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -221,6 +241,22 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentBlueprintGap(blueprint.Gaps, "GOVAGENT_BLUEPRINT_UAE_PASS_MISSING") {
 		t.Fatalf("expected UAE Pass blueprint gap, got %+v", blueprint.Gaps)
 	}
+
+	program, err := service.GetGovernmentAgentProgramSummary(ctx, SecureCellGovernmentAgentProgramFilter{
+		Jurisdiction: "UAE",
+	})
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentProgramSummary failed: %v", err)
+	}
+	if program.ServiceCount != 1 || program.BlockedCount != 1 || program.LegibleServiceCount != 0 {
+		t.Fatalf("expected blocked non-legible program rollup, got %+v", program)
+	}
+	if len(program.TopBlockers) == 0 || !hasGovernmentAgentProgramBlocker(program.TopBlockers, "GOVAGENT_NO_GOVERNED_DECISIONS") {
+		t.Fatalf("expected governed-decision blocker in program rollup, got %+v", program.TopBlockers)
+	}
+	if len(program.Services) != 1 || program.Services[0].RecommendedStage != SecureCellGovernmentAgentProgramStageEvidenceHardening {
+		t.Fatalf("expected evidence-hardening stage for tacit workflow with artifacts, got %+v", program.Services)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -244,6 +280,15 @@ func hasGovernmentAgentBlueprintGap(gaps []SecureCellGovernmentAgentWorkflowGap,
 func hasGovernmentAgentBlueprintStepKind(steps []SecureCellGovernmentAgentWorkflowStep, kind SecureCellGovernmentAgentWorkflowStepKind) bool {
 	for _, step := range steps {
 		if step.Kind == kind {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentProgramBlocker(blockers []SecureCellGovernmentAgentProgramBlocker, code string) bool {
+	for _, blocker := range blockers {
+		if blocker.Code == code {
 			return true
 		}
 	}
