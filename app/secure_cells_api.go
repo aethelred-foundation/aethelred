@@ -1262,6 +1262,10 @@ func (app *AethelredApp) SecureCellsGetHandler() http.Handler {
 			return
 		}
 
+		if app.handleSecureCellGovernmentAgentExecutionActionQueueGet(w, r) {
+			return
+		}
+
 		if app.handleSecureCellGovernmentAgentExecutionReceiptLedgerGet(w, r) {
 			return
 		}

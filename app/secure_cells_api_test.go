@@ -442,6 +442,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(receiptLedgerExportRec.Body.String(), "receipt_obligation_count") || !strings.Contains(receiptLedgerExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution receipt ledger csv export, got %s", receiptLedgerExportRec.Body.String())
 	}
+
+	actionQueueListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-action-queues?jurisdiction=UAE", nil)
+	actionQueueListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionQueueListRec, actionQueueListReq)
+	if actionQueueListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionQueueListRec.Code, actionQueueListRec.Body.String())
+	}
+	var actionQueueListResp secureCellGovernmentAgentExecutionActionQueueListResponse
+	if err := json.Unmarshal(actionQueueListRec.Body.Bytes(), &actionQueueListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution action queue list response: %v", err)
+	}
+	if len(actionQueueListResp.Items) != 1 || actionQueueListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution action queue list response: %+v", actionQueueListResp.Items)
+	}
+	if actionQueueListResp.Items[0].QueueDigest == "" || actionQueueListResp.Items[0].ActionCount == 0 || len(actionQueueListResp.Items[0].Actions) == 0 {
+		t.Fatalf("expected digest-bound execution action queue, got %+v", actionQueueListResp.Items[0])
+	}
+
+	actionQueueDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-action-queue", nil)
+	actionQueueDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionQueueDetailRec, actionQueueDetailReq)
+	if actionQueueDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionQueueDetailRec.Code, actionQueueDetailRec.Body.String())
+	}
+	var actionQueueDetailResp secureCellGovernmentAgentExecutionActionQueueResponse
+	if err := json.Unmarshal(actionQueueDetailRec.Body.Bytes(), &actionQueueDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution action queue detail response: %v", err)
+	}
+	if actionQueueDetailResp.Queue == nil || actionQueueDetailResp.Queue.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution action queue detail response: %+v", actionQueueDetailResp.Queue)
+	}
+
+	actionQueueExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-action-queues/export?format=csv&jurisdiction=UAE", nil)
+	actionQueueExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(actionQueueExportRec, actionQueueExportReq)
+	if actionQueueExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, actionQueueExportRec.Code, actionQueueExportRec.Body.String())
+	}
+	if !strings.Contains(actionQueueExportRec.Body.String(), "action_count") || !strings.Contains(actionQueueExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution action queue csv export, got %s", actionQueueExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
