@@ -234,6 +234,23 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !hasGovernmentAgentExecutionWitnessReleaseGate(witness.Steps, "human_approval_required") {
 		t.Fatalf("expected human approval release gate in execution witness, got %+v", witness.Steps)
 	}
+
+	receiptLedger, err := service.GetGovernmentAgentExecutionReceiptLedger(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionReceiptLedger failed: %v", err)
+	}
+	if receiptLedger.Status == SecureCellGovernmentAgentExecutionReceiptLedgerBlocked || receiptLedger.LedgerDigest == "" || !strings.Contains(receiptLedger.LedgerID, receiptLedger.LedgerDigest[:12]) {
+		t.Fatalf("expected digest-bound non-blocked receipt ledger, got %+v", receiptLedger)
+	}
+	if receiptLedger.WitnessID != witness.WitnessID || receiptLedger.ReceiptObligationCount == 0 || len(receiptLedger.Obligations) == 0 {
+		t.Fatalf("expected receipt ledger tied to execution witness obligations, got %+v", receiptLedger)
+	}
+	if !hasGovernmentAgentExecutionReceiptObligation(receiptLedger.Obligations, "human_approval_receipt") || !hasGovernmentAgentExecutionReceiptObligation(receiptLedger.Obligations, "tool_invocation_receipt") {
+		t.Fatalf("expected approval and tool receipt obligations, got %+v", receiptLedger.Obligations)
+	}
+	if !hasGovernmentAgentExecutionReceiptObligationStatus(receiptLedger.Obligations, "human_approval_receipt", SecureCellGovernmentAgentExecutionReceiptObligationReleaseGateDue) {
+		t.Fatalf("expected human approval receipt to wait on a release gate, got %+v", receiptLedger.Obligations)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -353,6 +370,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if len(witness.OperatorAttestations) == 0 || !hasString(witness.EgressReceipts, "blocker_resolution_receipt") {
 		t.Fatalf("expected operator attestations and blocker-resolution receipts, got %+v", witness)
 	}
+
+	receiptLedger, err := service.GetGovernmentAgentExecutionReceiptLedger(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionReceiptLedger failed: %v", err)
+	}
+	if receiptLedger.Status != SecureCellGovernmentAgentExecutionReceiptLedgerBlocked || receiptLedger.BlockedReceiptCount == 0 {
+		t.Fatalf("expected blocked receipt ledger for tacit workflow, got %+v", receiptLedger)
+	}
+	if !hasGovernmentAgentExecutionReceiptObligation(receiptLedger.Obligations, "blocker_resolution_receipt") || !hasString(receiptLedger.MissingPreconditions, "missing:governed_decisions") {
+		t.Fatalf("expected blocker-resolution receipt obligation with missing governed decisions, got %+v", receiptLedger)
+	}
+	if receiptLedger.LedgerDigest == "" || receiptLedger.WitnessID != witness.WitnessID {
+		t.Fatalf("expected digest-bound receipt ledger tied to witness, got %+v", receiptLedger)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -421,6 +452,28 @@ func hasGovernmentAgentExecutionWitnessStepReceipt(steps []SecureCellGovernmentA
 func hasGovernmentAgentExecutionWitnessReleaseGate(steps []SecureCellGovernmentAgentExecutionWitnessStep, reason string) bool {
 	for _, step := range steps {
 		if hasString(step.ReleaseGateReasons, reason) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionReceiptObligation(obligations []SecureCellGovernmentAgentExecutionReceiptObligation, receiptType string) bool {
+	for _, obligation := range obligations {
+		if obligation.ReceiptType == receiptType {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionReceiptObligationStatus(
+	obligations []SecureCellGovernmentAgentExecutionReceiptObligation,
+	receiptType string,
+	status SecureCellGovernmentAgentExecutionReceiptObligationStatus,
+) bool {
+	for _, obligation := range obligations {
+		if obligation.ReceiptType == receiptType && obligation.Status == status {
 			return true
 		}
 	}

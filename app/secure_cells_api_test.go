@@ -401,6 +401,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(witnessExportRec.Body.String(), "execution_witness_score") || !strings.Contains(witnessExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution witness csv export, got %s", witnessExportRec.Body.String())
 	}
+
+	receiptLedgerListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-receipt-ledgers?jurisdiction=UAE", nil)
+	receiptLedgerListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(receiptLedgerListRec, receiptLedgerListReq)
+	if receiptLedgerListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, receiptLedgerListRec.Code, receiptLedgerListRec.Body.String())
+	}
+	var receiptLedgerListResp secureCellGovernmentAgentExecutionReceiptLedgerListResponse
+	if err := json.Unmarshal(receiptLedgerListRec.Body.Bytes(), &receiptLedgerListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution receipt ledger list response: %v", err)
+	}
+	if len(receiptLedgerListResp.Items) != 1 || receiptLedgerListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution receipt ledger list response: %+v", receiptLedgerListResp.Items)
+	}
+	if receiptLedgerListResp.Items[0].LedgerDigest == "" || receiptLedgerListResp.Items[0].ReceiptObligationCount == 0 || len(receiptLedgerListResp.Items[0].Obligations) == 0 {
+		t.Fatalf("expected digest-bound execution receipt ledger obligations, got %+v", receiptLedgerListResp.Items[0])
+	}
+
+	receiptLedgerDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-receipt-ledger", nil)
+	receiptLedgerDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(receiptLedgerDetailRec, receiptLedgerDetailReq)
+	if receiptLedgerDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, receiptLedgerDetailRec.Code, receiptLedgerDetailRec.Body.String())
+	}
+	var receiptLedgerDetailResp secureCellGovernmentAgentExecutionReceiptLedgerResponse
+	if err := json.Unmarshal(receiptLedgerDetailRec.Body.Bytes(), &receiptLedgerDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution receipt ledger detail response: %v", err)
+	}
+	if receiptLedgerDetailResp.Ledger == nil || receiptLedgerDetailResp.Ledger.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution receipt ledger detail response: %+v", receiptLedgerDetailResp.Ledger)
+	}
+
+	receiptLedgerExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-receipt-ledgers/export?format=csv&jurisdiction=UAE", nil)
+	receiptLedgerExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(receiptLedgerExportRec, receiptLedgerExportReq)
+	if receiptLedgerExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, receiptLedgerExportRec.Code, receiptLedgerExportRec.Body.String())
+	}
+	if !strings.Contains(receiptLedgerExportRec.Body.String(), "receipt_obligation_count") || !strings.Contains(receiptLedgerExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution receipt ledger csv export, got %s", receiptLedgerExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
