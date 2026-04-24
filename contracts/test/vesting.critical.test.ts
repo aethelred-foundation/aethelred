@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { ethers, time, upgrades } from "./helpers/hardhat.js";
 
 async function deployVestingFixture() {
   const [admin, beneficiary] = await ethers.getSigners();

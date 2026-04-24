@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { ethers, time, upgrades } from "./helpers/hardhat.js";
 
 const ASSET_USDU = ethers.id("USDU");
 const ASSET_USDC = ethers.id("USDC");

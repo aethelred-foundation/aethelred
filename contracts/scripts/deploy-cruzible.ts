@@ -16,7 +16,7 @@
  *   AETHEL_TOKEN_ADDRESS  — AETHEL token contract address
  */
 
-import { ethers, network, upgrades } from "hardhat";
+import { ethers, network, upgrades } from "./lib/hardhat-runtime.js";
 import {
   isLocalDeploymentNetwork,
   resolveDeploymentAddress,

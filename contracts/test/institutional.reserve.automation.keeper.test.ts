@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers } from "./helpers/hardhat.js";
 
 describe("InstitutionalReserveAutomationKeeper", function () {
   it("performUpkeep calls monitorReserve on the configured bridge for enabled assets", async function () {

@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { ethers, time, upgrades } from "./helpers/hardhat.js";
 
 async function deployBridgeFixture(relayerCount = 3) {
   const signers = await ethers.getSigners();
@@ -96,7 +95,7 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
 
     await expect(
       token.connect(bridgeOperator).bridgeBurn(user.address, burnAmount),
-    ).to.be.reverted;
+    ).to.be.revert(ethers);
 
     await token.connect(user).approve(bridgeOperator.address, burnAmount);
     await expect(
@@ -185,7 +184,7 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
           ethers.parseEther("0.1"),
           admin.address,
         ),
-    ).to.be.reverted;
+    ).to.be.revert(ethers);
 
     await bridge.connect(admin).unpause();
     const queueTx = await bridge
@@ -207,7 +206,7 @@ describe("High Findings Regression Coverage (H-01..H-12)", function () {
     await bridge.connect(admin).pause();
 
     await expect(bridge.connect(admin).executeEmergencyWithdrawal(operationId))
-      .to.be.reverted;
+      .to.be.revert(ethers);
   });
 
   it("H-06: timelock does not self-grant PROPOSER_ROLE or EXECUTOR_ROLE", async function () {
