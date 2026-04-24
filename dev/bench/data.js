@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777046244531,
+  "lastUpdate": 1777049370698,
   "repoUrl": "https://github.com/aethelred-foundation/aethelred",
   "entries": {
     "Benchmark": [
@@ -1079,6 +1079,36 @@ window.BENCHMARK_DATA = {
             "name": "sha256_4kb",
             "value": 2653,
             "range": "± 2",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "committer": {
+            "email": "rameshtamilselvan@gmail.com",
+            "name": "Ramesh Tamilselvan",
+            "username": "ramtamilselvan"
+          },
+          "distinct": true,
+          "id": "f39e4a79993bc2b0e6f7ad4b8f9797d7348996b6",
+          "message": "Stabilize VS Code extension dependency CI",
+          "timestamp": "2026-04-24T20:47:57+04:00",
+          "tree_id": "0f7a3807542f2989169c1be87dee3bd2705534e5",
+          "url": "https://github.com/aethelred-foundation/aethelred/commit/f39e4a79993bc2b0e6f7ad4b8f9797d7348996b6"
+        },
+        "date": 1777049369397,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "sha256_4kb",
+            "value": 2652,
+            "range": "± 5",
             "unit": "ns/iter"
           }
         ]
