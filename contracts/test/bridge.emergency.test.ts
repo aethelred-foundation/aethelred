@@ -1,6 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
-import { mine, time } from "@nomicfoundation/hardhat-network-helpers";
+import { ethers, mine, time, upgrades } from "./helpers/hardhat.js";
 
 async function deployBridgeFixture() {
   const [admin, relayer1, relayer2, user] = await ethers.getSigners();

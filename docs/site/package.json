@@ -15,7 +15,7 @@
     "prebuild": "npm run generate:all"
   },
   "devDependencies": {
-    "vitepress": "^1.5.0"
+    "vitepress": "^2.0.0-alpha.17"
   },
   "overrides": {
     "handlebars": "^4.7.9",

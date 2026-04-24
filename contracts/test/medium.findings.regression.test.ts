@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades } from "./helpers/hardhat.js";
 
 async function deployTokenFixture() {
   const [admin, , user] = await ethers.getSigners();
@@ -68,7 +68,7 @@ describe("Medium Findings Regression Coverage (M-03, M-06)", function () {
 
     await expect(
       token.connect(admin).adminBurn(user.address, burnAmount)
-    ).to.be.reverted;
+    ).to.be.revert(ethers);
 
     await token.connect(user).approve(admin.address, burnAmount);
     await token.connect(admin).adminBurn(user.address, burnAmount);

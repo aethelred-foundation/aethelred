@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades } from "./helpers/hardhat.js";
 
 describe("SovereignGovernanceTimelock", function () {
   it("rotates institutional keys only after 7-day timelock with issuer+foundation consent", async function () {
@@ -93,7 +93,7 @@ describe("SovereignGovernanceTimelock", function () {
       salt
     );
 
-    await expect(timelock.executeKeyRotation(operationId)).to.be.reverted;
+    await expect(timelock.executeKeyRotation(operationId)).to.be.revert(ethers);
 
     await ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60 + 1]);
     await ethers.provider.send("evm_mine", []);

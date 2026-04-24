@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers } from "./helpers/hardhat.js";
 
 function units(amount: number, decimals = 6): bigint {
   return BigInt(amount) * (10n ** BigInt(decimals));

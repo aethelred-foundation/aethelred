@@ -13,13 +13,12 @@
  * @license Apache-2.0
  */
 
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-chai-matchers";
-import "@nomicfoundation/hardhat-ethers";
-import "@nomicfoundation/hardhat-network-helpers";
-import "@openzeppelin/hardhat-upgrades";
-import "hardhat-contract-sizer";
-import "solidity-coverage";
+import { defineConfig } from "hardhat/config";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
+import hardhatMocha from "@nomicfoundation/hardhat-mocha";
+import hardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
+import hardhatTypechain from "@nomicfoundation/hardhat-typechain";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -54,8 +53,6 @@ const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL ||
 const MAINNET_RPC_URL = process.env.MAINNET_RPC_URL ||
   "https://eth-mainnet.g.alchemy.com/v2/demo";
 
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
-
 const ALLOW_UNLIMITED_CONTRACT_SIZE =
   process.env.ALLOW_UNLIMITED_CONTRACT_SIZE === "true";
 
@@ -67,9 +64,21 @@ const DEVNET_RPC_URL = process.env.DEVNET_RPC_URL ||
 // Hardhat Configuration
 // ============================================================================
 
-const config: HardhatUserConfig = {
+const config = defineConfig({
+  plugins: [
+    hardhatEthers,
+    hardhatChaiMatchers,
+    hardhatMocha,
+    hardhatNetworkHelpers,
+    hardhatTypechain,
+  ],
+
   // Solidity Compiler Configuration
   solidity: {
+    npmFilesToBuild: [
+      "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol",
+      "@openzeppelin/contracts/governance/TimelockController.sol",
+    ],
     compilers: [
       {
         version: "0.8.20",
@@ -151,12 +160,15 @@ const config: HardhatUserConfig = {
   networks: {
     // Local Hardhat Network
     hardhat: {
+      type: "edr-simulated",
+      chainType: "l1",
       chainId: 31337,
       forking: process.env.FORK_MAINNET === "true" ? {
         url: MAINNET_RPC_URL,
         blockNumber: 18800000, // Pin to specific block for deterministic tests
       } : undefined,
       allowUnlimitedContractSize: ALLOW_UNLIMITED_CONTRACT_SIZE,
+      allowBlocksWithSameTimestamp: true,
       mining: {
         auto: true,
         interval: 0,
@@ -165,6 +177,8 @@ const config: HardhatUserConfig = {
 
     // Local DevNet (Anvil in Docker)
     devnet: {
+      type: "http",
+      chainType: "l1",
       url: DEVNET_RPC_URL,
       chainId: 31337,
       accounts: getAccounts("devnet"),
@@ -175,6 +189,8 @@ const config: HardhatUserConfig = {
 
     // Sepolia Testnet
     sepolia: {
+      type: "http",
+      chainType: "l1",
       url: SEPOLIA_RPC_URL,
       chainId: 11155111,
       accounts: getAccounts("sepolia"),
@@ -187,46 +203,15 @@ const config: HardhatUserConfig = {
 
     // Ethereum Mainnet (Production)
     mainnet: {
+      type: "http",
+      chainType: "l1",
       url: MAINNET_RPC_URL,
       chainId: 1,
       accounts: getAccounts("mainnet"),
       timeout: 180000,
       gas: "auto",
       gasPrice: "auto",
-      // Production safeguards
-      verify: {
-        etherscan: {
-          apiKey: ETHERSCAN_API_KEY,
-        },
-      },
     },
-  },
-
-  // Etherscan Verification
-  etherscan: {
-    apiKey: {
-      mainnet: ETHERSCAN_API_KEY,
-      sepolia: ETHERSCAN_API_KEY,
-    },
-    customChains: [
-      {
-        network: "devnet",
-        chainId: 31337,
-        urls: {
-          apiURL: "http://localhost:4000/api",
-          browserURL: "http://localhost:4000",
-        },
-      },
-    ],
-  },
-
-  // Contract Sizer Configuration
-  contractSizer: {
-    alphaSort: true,
-    disambiguatePaths: false,
-    runOnCompile: false,
-    strict: true,
-    only: ["InstitutionalStablecoinBridge", "Cruzible"],
   },
 
   // TypeChain Configuration
@@ -241,17 +226,21 @@ const config: HardhatUserConfig = {
   // Paths Configuration
   paths: {
     sources: "./contracts",
-    tests: "./test",
+    tests: {
+      mocha: "./test",
+    },
     cache: "./cache",
     artifacts: "./artifacts",
   },
 
   // Mocha Test Configuration
-  mocha: {
-    timeout: 120000, // 2 minutes for complex tests
-    parallel: false, // Disable parallel for state-dependent tests
-    retries: process.env.CI ? 2 : 0,
+  test: {
+    mocha: {
+      timeout: 120000, // 2 minutes for complex tests
+      parallel: false, // Disable parallel for state-dependent tests
+      retries: process.env.CI ? 2 : 0,
+    },
   },
-};
+});
 
 export default config;

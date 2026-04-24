@@ -18,7 +18,7 @@
  * @license Apache-2.0
  */
 
-import { ethers, upgrades, network } from "hardhat";
+import { ethers, network, upgrades } from "./lib/hardhat-runtime.js";
 import { AethelredBridge } from "../typechain-types";
 import * as fs from "fs";
 import * as path from "path";

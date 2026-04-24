@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat";
+import { ethers, network } from "./lib/hardhat-runtime.js";
 import {
   isLocalDeploymentNetwork,
   resolveDeploymentAddress,
