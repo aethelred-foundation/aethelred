@@ -268,6 +268,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !hasGovernmentAgentExecutionActionReceipt(actionQueue.Actions, "human_approval_receipt") {
 		t.Fatalf("expected human approval receipt action, got %+v", actionQueue.Actions)
 	}
+
+	handoffBundle, err := service.GetGovernmentAgentExecutionHandoffBundle(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionHandoffBundle failed: %v", err)
+	}
+	if handoffBundle.Status == SecureCellGovernmentAgentExecutionHandoffBundleBlocked || handoffBundle.BundleDigest == "" || !strings.Contains(handoffBundle.BundleID, handoffBundle.BundleDigest[:12]) {
+		t.Fatalf("expected digest-bound non-blocked handoff bundle, got %+v", handoffBundle)
+	}
+	if handoffBundle.Witness.WitnessID != witness.WitnessID || handoffBundle.ReceiptLedger.LedgerID != receiptLedger.LedgerID || handoffBundle.ActionQueue.QueueID != actionQueue.QueueID {
+		t.Fatalf("expected handoff bundle to bind witness, ledger, and queue, got %+v", handoffBundle)
+	}
+	if len(handoffBundle.OperatorInstructions) == 0 || !hasString(handoffBundle.RequiredReceiptTypes, "human_approval_receipt") {
+		t.Fatalf("expected handoff instructions and required receipt types, got %+v", handoffBundle)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -414,6 +428,17 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	}
 	if !hasGovernmentAgentExecutionActionKind(actionQueue.Actions, SecureCellGovernmentAgentExecutionActionResolveBlocker) || !hasGovernmentAgentExecutionActionReceipt(actionQueue.Actions, "blocker_resolution_receipt") {
 		t.Fatalf("expected blocker-resolution action, got %+v", actionQueue.Actions)
+	}
+
+	handoffBundle, err := service.GetGovernmentAgentExecutionHandoffBundle(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionHandoffBundle failed: %v", err)
+	}
+	if handoffBundle.Status != SecureCellGovernmentAgentExecutionHandoffBundleBlocked || handoffBundle.CanHandoff {
+		t.Fatalf("expected blocked handoff bundle for tacit workflow, got %+v", handoffBundle)
+	}
+	if handoffBundle.BundleDigest == "" || handoffBundle.ActionQueue.QueueID != actionQueue.QueueID || !hasString(handoffBundle.MissingPreconditions, "missing:governed_decisions") {
+		t.Fatalf("expected digest-bound handoff bundle tied to blocked action queue, got %+v", handoffBundle)
 	}
 }
 

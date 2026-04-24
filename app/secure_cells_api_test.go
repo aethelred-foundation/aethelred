@@ -483,6 +483,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(actionQueueExportRec.Body.String(), "action_count") || !strings.Contains(actionQueueExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution action queue csv export, got %s", actionQueueExportRec.Body.String())
 	}
+
+	handoffBundleListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-handoff-bundles?jurisdiction=UAE", nil)
+	handoffBundleListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffBundleListRec, handoffBundleListReq)
+	if handoffBundleListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffBundleListRec.Code, handoffBundleListRec.Body.String())
+	}
+	var handoffBundleListResp secureCellGovernmentAgentExecutionHandoffBundleListResponse
+	if err := json.Unmarshal(handoffBundleListRec.Body.Bytes(), &handoffBundleListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution handoff bundle list response: %v", err)
+	}
+	if len(handoffBundleListResp.Items) != 1 || handoffBundleListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution handoff bundle list response: %+v", handoffBundleListResp.Items)
+	}
+	if handoffBundleListResp.Items[0].BundleDigest == "" || handoffBundleListResp.Items[0].ActionQueue.QueueID == "" || handoffBundleListResp.Items[0].ReceiptLedger.LedgerID == "" {
+		t.Fatalf("expected digest-bound execution handoff bundle, got %+v", handoffBundleListResp.Items[0])
+	}
+
+	handoffBundleDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-handoff-bundle", nil)
+	handoffBundleDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffBundleDetailRec, handoffBundleDetailReq)
+	if handoffBundleDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffBundleDetailRec.Code, handoffBundleDetailRec.Body.String())
+	}
+	var handoffBundleDetailResp secureCellGovernmentAgentExecutionHandoffBundleResponse
+	if err := json.Unmarshal(handoffBundleDetailRec.Body.Bytes(), &handoffBundleDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution handoff bundle detail response: %v", err)
+	}
+	if handoffBundleDetailResp.Bundle == nil || handoffBundleDetailResp.Bundle.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution handoff bundle detail response: %+v", handoffBundleDetailResp.Bundle)
+	}
+
+	handoffBundleExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-handoff-bundles/export?format=csv&jurisdiction=UAE", nil)
+	handoffBundleExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffBundleExportRec, handoffBundleExportReq)
+	if handoffBundleExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffBundleExportRec.Code, handoffBundleExportRec.Body.String())
+	}
+	if !strings.Contains(handoffBundleExportRec.Body.String(), "bundle_digest") || !strings.Contains(handoffBundleExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution handoff bundle csv export, got %s", handoffBundleExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
