@@ -197,6 +197,23 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if carryPack.CarryPackDigest == "" || !strings.Contains(carryPack.CarryPackID, carryPack.CarryPackDigest[:12]) {
 		t.Fatalf("expected digest-bound carry pack, got %+v", carryPack)
 	}
+
+	rehearsal, err := service.GetGovernmentAgentRehearsalReport(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentRehearsalReport failed: %v", err)
+	}
+	if rehearsal.Status == SecureCellGovernmentAgentRehearsalStatusBlocked || !rehearsal.ReadyForAgentCarry {
+		t.Fatalf("expected non-blocked rehearsal for carry-ready workflow, got %+v", rehearsal)
+	}
+	if rehearsal.StepCount == 0 || rehearsal.PassStepCount == 0 || rehearsal.BlockStepCount != 0 {
+		t.Fatalf("expected passing rehearsal steps without blocks, got %+v", rehearsal)
+	}
+	if rehearsal.RehearsalScore <= 0 || rehearsal.RehearsalDigest == "" || !strings.Contains(rehearsal.RehearsalID, rehearsal.RehearsalDigest[:12]) {
+		t.Fatalf("expected scored digest-bound rehearsal, got %+v", rehearsal)
+	}
+	if !hasGovernmentAgentRehearsalStepOutcome(rehearsal.Steps, SecureCellGovernmentAgentRehearsalOutcomePass) {
+		t.Fatalf("expected at least one passing rehearsal step, got %+v", rehearsal.Steps)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -288,6 +305,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasString(carryPack.TopBlockerCodes, "GOVAGENT_NO_GOVERNED_DECISIONS") || !hasString(carryPack.Preconditions, "missing:governed_decisions") {
 		t.Fatalf("expected governed-decision blocker and missing precondition, got %+v", carryPack)
 	}
+
+	rehearsal, err := service.GetGovernmentAgentRehearsalReport(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentRehearsalReport failed: %v", err)
+	}
+	if rehearsal.Status != SecureCellGovernmentAgentRehearsalStatusBlocked || rehearsal.ReadyForAgentCarry {
+		t.Fatalf("expected blocked rehearsal for tacit workflow, got %+v", rehearsal)
+	}
+	if !hasString(rehearsal.MissingPreconditions, "missing:governed_decisions") || !hasString(rehearsal.TopBlockerCodes, "GOVAGENT_NO_GOVERNED_DECISIONS") {
+		t.Fatalf("expected governed-decision rehearsal blockers, got %+v", rehearsal)
+	}
+	if len(rehearsal.OperatorInstructions) == 0 || rehearsal.RehearsalDigest == "" {
+		t.Fatalf("expected actionable digest-bound rehearsal, got %+v", rehearsal)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -329,6 +360,15 @@ func hasGovernmentAgentProgramBlocker(blockers []SecureCellGovernmentAgentProgra
 func hasGovernmentAgentCarryPackStepLane(steps []SecureCellGovernmentAgentCarryPackStep, lane SecureCellGovernmentAgentCarryLane) bool {
 	for _, step := range steps {
 		if step.Lane == lane {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentRehearsalStepOutcome(steps []SecureCellGovernmentAgentRehearsalStep, outcome SecureCellGovernmentAgentRehearsalOutcome) bool {
+	for _, step := range steps {
+		if step.Outcome == outcome {
 			return true
 		}
 	}

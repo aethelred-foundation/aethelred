@@ -319,6 +319,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(carryPackExportRec.Body.String(), "carry_mode") || !strings.Contains(carryPackExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent carry-pack csv export, got %s", carryPackExportRec.Body.String())
 	}
+
+	rehearsalListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-rehearsals?jurisdiction=UAE", nil)
+	rehearsalListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(rehearsalListRec, rehearsalListReq)
+	if rehearsalListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearsalListRec.Code, rehearsalListRec.Body.String())
+	}
+	var rehearsalListResp secureCellGovernmentAgentRehearsalListResponse
+	if err := json.Unmarshal(rehearsalListRec.Body.Bytes(), &rehearsalListResp); err != nil {
+		t.Fatalf("unmarshal government-agent rehearsal list response: %v", err)
+	}
+	if len(rehearsalListResp.Items) != 1 || rehearsalListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent rehearsal list response: %+v", rehearsalListResp.Items)
+	}
+	if rehearsalListResp.Items[0].RehearsalDigest == "" || rehearsalListResp.Items[0].StepCount == 0 {
+		t.Fatalf("expected digest-bound rehearsal steps, got %+v", rehearsalListResp.Items[0])
+	}
+
+	rehearsalDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-rehearsal", nil)
+	rehearsalDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(rehearsalDetailRec, rehearsalDetailReq)
+	if rehearsalDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearsalDetailRec.Code, rehearsalDetailRec.Body.String())
+	}
+	var rehearsalDetailResp secureCellGovernmentAgentRehearsalResponse
+	if err := json.Unmarshal(rehearsalDetailRec.Body.Bytes(), &rehearsalDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent rehearsal detail response: %v", err)
+	}
+	if rehearsalDetailResp.Report == nil || rehearsalDetailResp.Report.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent rehearsal detail response: %+v", rehearsalDetailResp.Report)
+	}
+
+	rehearsalExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-rehearsals/export?format=csv&jurisdiction=UAE", nil)
+	rehearsalExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(rehearsalExportRec, rehearsalExportReq)
+	if rehearsalExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, rehearsalExportRec.Code, rehearsalExportRec.Body.String())
+	}
+	if !strings.Contains(rehearsalExportRec.Body.String(), "rehearsal_score") || !strings.Contains(rehearsalExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent rehearsal csv export, got %s", rehearsalExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
