@@ -524,6 +524,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(handoffBundleExportRec.Body.String(), "bundle_digest") || !strings.Contains(handoffBundleExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution handoff bundle csv export, got %s", handoffBundleExportRec.Body.String())
 	}
+
+	handoffVerificationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-handoff-verifications?jurisdiction=UAE", nil)
+	handoffVerificationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffVerificationListRec, handoffVerificationListReq)
+	if handoffVerificationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffVerificationListRec.Code, handoffVerificationListRec.Body.String())
+	}
+	var handoffVerificationListResp secureCellGovernmentAgentExecutionHandoffVerificationListResponse
+	if err := json.Unmarshal(handoffVerificationListRec.Body.Bytes(), &handoffVerificationListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution handoff verification list response: %v", err)
+	}
+	if len(handoffVerificationListResp.Items) != 1 || handoffVerificationListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution handoff verification list response: %+v", handoffVerificationListResp.Items)
+	}
+	if handoffVerificationListResp.Items[0].VerificationDigest == "" || handoffVerificationListResp.Items[0].FailCount != 0 || handoffVerificationListResp.Items[0].CheckCount == 0 {
+		t.Fatalf("expected digest-bound execution handoff verification, got %+v", handoffVerificationListResp.Items[0])
+	}
+
+	handoffVerificationDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-handoff-verification", nil)
+	handoffVerificationDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffVerificationDetailRec, handoffVerificationDetailReq)
+	if handoffVerificationDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffVerificationDetailRec.Code, handoffVerificationDetailRec.Body.String())
+	}
+	var handoffVerificationDetailResp secureCellGovernmentAgentExecutionHandoffVerificationResponse
+	if err := json.Unmarshal(handoffVerificationDetailRec.Body.Bytes(), &handoffVerificationDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution handoff verification detail response: %v", err)
+	}
+	if handoffVerificationDetailResp.Verification == nil || handoffVerificationDetailResp.Verification.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution handoff verification detail response: %+v", handoffVerificationDetailResp.Verification)
+	}
+
+	handoffVerificationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-handoff-verifications/export?format=csv&jurisdiction=UAE", nil)
+	handoffVerificationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(handoffVerificationExportRec, handoffVerificationExportReq)
+	if handoffVerificationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, handoffVerificationExportRec.Code, handoffVerificationExportRec.Body.String())
+	}
+	if !strings.Contains(handoffVerificationExportRec.Body.String(), "verification_digest") || !strings.Contains(handoffVerificationExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution handoff verification csv export, got %s", handoffVerificationExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

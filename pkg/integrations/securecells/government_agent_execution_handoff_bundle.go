@@ -153,42 +153,7 @@ func secureCellGovernmentAgentExecutionHandoffBundle(
 	bundle.CanHandoff = queue.BlockedActionCount == 0 && queue.OverdueActionCount == 0
 	bundle.Status = secureCellGovernmentAgentExecutionHandoffBundleStatus(bundle)
 	bundle.OperatorInstructions = secureCellGovernmentAgentExecutionHandoffInstructions(bundle)
-	core := struct {
-		BundleVersion              string                                                `json:"bundle_version"`
-		CellID                     string                                                `json:"cell_id"`
-		Status                     SecureCellGovernmentAgentExecutionHandoffBundleStatus `json:"status"`
-		CanHandoff                 bool                                                  `json:"can_handoff"`
-		CanAutonomousHandoff       bool                                                  `json:"can_autonomous_handoff"`
-		BlockedActionCount         int                                                   `json:"blocked_action_count"`
-		ReleaseGateActionCount     int                                                   `json:"release_gate_action_count"`
-		ReceiptCollectionCount     int                                                   `json:"receipt_collection_count"`
-		EscalationRecommendedCount int                                                   `json:"escalation_recommended_count"`
-		RequiredReceiptTypes       []string                                              `json:"required_receipt_types,omitempty"`
-		TopBlockerCodes            []string                                              `json:"top_blocker_codes,omitempty"`
-		MissingPreconditions       []string                                              `json:"missing_preconditions,omitempty"`
-		OperatorInstructions       []string                                              `json:"operator_instructions,omitempty"`
-		WitnessDigest              string                                                `json:"witness_digest"`
-		LedgerDigest               string                                                `json:"ledger_digest"`
-		QueueDigest                string                                                `json:"queue_digest"`
-	}{
-		BundleVersion:              bundle.BundleVersion,
-		CellID:                     bundle.CellID,
-		Status:                     bundle.Status,
-		CanHandoff:                 bundle.CanHandoff,
-		CanAutonomousHandoff:       bundle.CanAutonomousHandoff,
-		BlockedActionCount:         bundle.BlockedActionCount,
-		ReleaseGateActionCount:     bundle.ReleaseGateActionCount,
-		ReceiptCollectionCount:     bundle.ReceiptCollectionCount,
-		EscalationRecommendedCount: bundle.EscalationRecommendedCount,
-		RequiredReceiptTypes:       bundle.RequiredReceiptTypes,
-		TopBlockerCodes:            bundle.TopBlockerCodes,
-		MissingPreconditions:       bundle.MissingPreconditions,
-		OperatorInstructions:       bundle.OperatorInstructions,
-		WitnessDigest:              bundle.WitnessDigest,
-		LedgerDigest:               bundle.LedgerDigest,
-		QueueDigest:                bundle.QueueDigest,
-	}
-	bundle.BundleDigest = EvidenceHash(core)
+	bundle.BundleDigest = secureCellGovernmentAgentExecutionHandoffBundleDigest(bundle)
 	bundle.BundleID = "government-agent-execution-handoff:" + bundle.CellID + ":" + bundle.BundleDigest[:12]
 	return bundle
 }

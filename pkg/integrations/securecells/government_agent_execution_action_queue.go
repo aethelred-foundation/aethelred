@@ -204,28 +204,7 @@ func secureCellGovernmentAgentExecutionActionQueue(
 		}
 	}
 	queue.Status = secureCellGovernmentAgentExecutionActionQueueStatus(queue)
-	actionDigests := make([]string, 0, len(queue.Actions))
-	for _, action := range queue.Actions {
-		actionDigests = append(actionDigests, action.ActionDigest)
-	}
-	core := struct {
-		CellID               string                                              `json:"cell_id"`
-		LedgerID             string                                              `json:"ledger_id"`
-		Status               SecureCellGovernmentAgentExecutionActionQueueStatus `json:"status"`
-		TopBlockerCodes      []string                                            `json:"top_blocker_codes,omitempty"`
-		MissingPreconditions []string                                            `json:"missing_preconditions,omitempty"`
-		ActionDigests        []string                                            `json:"action_digests"`
-		LedgerDigest         string                                              `json:"ledger_digest"`
-	}{
-		CellID:               queue.CellID,
-		LedgerID:             queue.LedgerID,
-		Status:               queue.Status,
-		TopBlockerCodes:      queue.TopBlockerCodes,
-		MissingPreconditions: queue.MissingPreconditions,
-		ActionDigests:        actionDigests,
-		LedgerDigest:         queue.LedgerDigest,
-	}
-	queue.QueueDigest = EvidenceHash(core)
+	queue.QueueDigest = secureCellGovernmentAgentExecutionActionQueueDigest(queue)
 	queue.QueueID = "government-agent-execution-actions:" + queue.CellID + ":" + queue.QueueDigest[:12]
 	return queue
 }

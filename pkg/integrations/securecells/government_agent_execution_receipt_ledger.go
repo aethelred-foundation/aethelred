@@ -204,30 +204,7 @@ func secureCellGovernmentAgentExecutionReceiptLedger(
 	}
 	ledger.ReceiptTypes = uniqueSortedStrings(receiptTypes)
 	ledger.Status = secureCellGovernmentAgentExecutionReceiptLedgerStatus(ledger)
-	obligationDigests := make([]string, 0, len(ledger.Obligations))
-	for _, obligation := range ledger.Obligations {
-		obligationDigests = append(obligationDigests, obligation.ObligationDigest)
-	}
-	core := struct {
-		CellID               string                                                `json:"cell_id"`
-		WitnessID            string                                                `json:"witness_id"`
-		Status               SecureCellGovernmentAgentExecutionReceiptLedgerStatus `json:"status"`
-		ReceiptTypes         []string                                              `json:"receipt_types,omitempty"`
-		TopBlockerCodes      []string                                              `json:"top_blocker_codes,omitempty"`
-		MissingPreconditions []string                                              `json:"missing_preconditions,omitempty"`
-		ObligationDigests    []string                                              `json:"obligation_digests"`
-		WitnessDigest        string                                                `json:"witness_digest"`
-	}{
-		CellID:               ledger.CellID,
-		WitnessID:            ledger.WitnessID,
-		Status:               ledger.Status,
-		ReceiptTypes:         ledger.ReceiptTypes,
-		TopBlockerCodes:      ledger.TopBlockerCodes,
-		MissingPreconditions: ledger.MissingPreconditions,
-		ObligationDigests:    obligationDigests,
-		WitnessDigest:        ledger.WitnessDigest,
-	}
-	ledger.LedgerDigest = EvidenceHash(core)
+	ledger.LedgerDigest = secureCellGovernmentAgentExecutionReceiptLedgerDigest(ledger)
 	ledger.LedgerID = "government-agent-execution-receipts:" + ledger.CellID + ":" + ledger.LedgerDigest[:12]
 	return ledger
 }

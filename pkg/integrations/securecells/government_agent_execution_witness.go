@@ -196,36 +196,7 @@ func secureCellGovernmentAgentExecutionWitness(report SecureCellGovernmentAgentR
 	}
 	witness.HandoffBlockerCount = witness.BlockedStepCount + witness.MissingPreconditionCount + len(witness.TopBlockerCodes)
 	witness.ExecutionWitnessScore = secureCellGovernmentAgentExecutionWitnessScore(report.RehearsalScore, witness)
-	core := struct {
-		CellID                 string                                          `json:"cell_id"`
-		CarryPackID            string                                          `json:"carry_pack_id"`
-		RehearsalID            string                                          `json:"rehearsal_id"`
-		Status                 SecureCellGovernmentAgentExecutionWitnessStatus `json:"status"`
-		ExecutionWitnessScore  int                                             `json:"execution_witness_score"`
-		RequiredInputEvidence  []string                                        `json:"required_input_evidence,omitempty"`
-		ExpectedReturnReceipts []string                                        `json:"expected_return_receipts,omitempty"`
-		OperatorAttestations   []string                                        `json:"operator_attestations,omitempty"`
-		TopBlockerCodes        []string                                        `json:"top_blocker_codes,omitempty"`
-		MissingPreconditions   []string                                        `json:"missing_preconditions,omitempty"`
-		Steps                  []SecureCellGovernmentAgentExecutionWitnessStep `json:"steps"`
-		CarryPackDigest        string                                          `json:"carry_pack_digest"`
-		RehearsalDigest        string                                          `json:"rehearsal_digest"`
-	}{
-		CellID:                 witness.CellID,
-		CarryPackID:            witness.CarryPackID,
-		RehearsalID:            witness.RehearsalID,
-		Status:                 witness.Status,
-		ExecutionWitnessScore:  witness.ExecutionWitnessScore,
-		RequiredInputEvidence:  witness.RequiredInputEvidence,
-		ExpectedReturnReceipts: witness.ExpectedReturnReceipts,
-		OperatorAttestations:   witness.OperatorAttestations,
-		TopBlockerCodes:        witness.TopBlockerCodes,
-		MissingPreconditions:   witness.MissingPreconditions,
-		Steps:                  witness.Steps,
-		CarryPackDigest:        witness.CarryPackDigest,
-		RehearsalDigest:        witness.RehearsalDigest,
-	}
-	witness.WitnessDigest = EvidenceHash(core)
+	witness.WitnessDigest = secureCellGovernmentAgentExecutionWitnessDigest(witness)
 	witness.WitnessID = "government-agent-execution-witness:" + witness.CellID + ":" + witness.WitnessDigest[:12]
 	return witness
 }

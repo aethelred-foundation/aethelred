@@ -282,6 +282,23 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if len(handoffBundle.OperatorInstructions) == 0 || !hasString(handoffBundle.RequiredReceiptTypes, "human_approval_receipt") {
 		t.Fatalf("expected handoff instructions and required receipt types, got %+v", handoffBundle)
 	}
+
+	verification, err := service.GetGovernmentAgentExecutionHandoffVerification(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionHandoffVerification failed: %v", err)
+	}
+	if verification.Status != SecureCellGovernmentAgentExecutionHandoffVerificationVerified || verification.FailCount != 0 {
+		t.Fatalf("expected verified handoff verification without failures, got %+v", verification)
+	}
+	if verification.VerificationDigest == "" || !strings.Contains(verification.VerificationID, verification.VerificationDigest[:12]) {
+		t.Fatalf("expected digest-bound handoff verification, got %+v", verification)
+	}
+	if verification.BundleID != handoffBundle.BundleID || verification.ExpectedBundleDigest != handoffBundle.BundleDigest || verification.ExpectedQueueDigest != actionQueue.QueueDigest {
+		t.Fatalf("expected handoff verification to recompute bundle and queue digests, got %+v", verification)
+	}
+	if !hasGovernmentAgentExecutionHandoffVerificationCheck(verification.Checks, "BUNDLE_DIGEST_BOUND", SecureCellGovernmentAgentExecutionHandoffVerificationPass) {
+		t.Fatalf("expected passing bundle digest verification check, got %+v", verification.Checks)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -440,6 +457,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if handoffBundle.BundleDigest == "" || handoffBundle.ActionQueue.QueueID != actionQueue.QueueID || !hasString(handoffBundle.MissingPreconditions, "missing:governed_decisions") {
 		t.Fatalf("expected digest-bound handoff bundle tied to blocked action queue, got %+v", handoffBundle)
 	}
+
+	verification, err := service.GetGovernmentAgentExecutionHandoffVerification(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionHandoffVerification failed: %v", err)
+	}
+	if verification.Status != SecureCellGovernmentAgentExecutionHandoffVerificationWithBlockers || verification.FailCount != 0 || verification.BlockedActionCount == 0 {
+		t.Fatalf("expected blocker-marked handoff verification without digest failures, got %+v", verification)
+	}
+	if verification.BundleID != handoffBundle.BundleID || verification.ExpectedBundleDigest != handoffBundle.BundleDigest {
+		t.Fatalf("expected handoff verification to bind blocked bundle digest, got %+v", verification)
+	}
+	if !hasGovernmentAgentExecutionHandoffVerificationCheck(verification.Checks, "BLOCKER_STATUS_CONSISTENCY", SecureCellGovernmentAgentExecutionHandoffVerificationPass) {
+		t.Fatalf("expected passing blocker consistency verification check, got %+v", verification.Checks)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -548,6 +579,19 @@ func hasGovernmentAgentExecutionActionKind(actions []SecureCellGovernmentAgentEx
 func hasGovernmentAgentExecutionActionReceipt(actions []SecureCellGovernmentAgentExecutionAction, receiptType string) bool {
 	for _, action := range actions {
 		if action.ReceiptType == receiptType {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionHandoffVerificationCheck(
+	checks []SecureCellGovernmentAgentExecutionHandoffVerificationCheck,
+	code string,
+	outcome SecureCellGovernmentAgentExecutionHandoffVerificationOutcome,
+) bool {
+	for _, check := range checks {
+		if check.Code == code && check.Outcome == outcome {
 			return true
 		}
 	}
