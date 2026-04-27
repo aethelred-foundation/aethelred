@@ -565,6 +565,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(handoffVerificationExportRec.Body.String(), "verification_digest") || !strings.Contains(handoffVerificationExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution handoff verification csv export, got %s", handoffVerificationExportRec.Body.String())
 	}
+
+	launchAuthorizationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-authorizations?jurisdiction=UAE", nil)
+	launchAuthorizationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchAuthorizationListRec, launchAuthorizationListReq)
+	if launchAuthorizationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchAuthorizationListRec.Code, launchAuthorizationListRec.Body.String())
+	}
+	var launchAuthorizationListResp secureCellGovernmentAgentExecutionLaunchAuthorizationListResponse
+	if err := json.Unmarshal(launchAuthorizationListRec.Body.Bytes(), &launchAuthorizationListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch authorization list response: %v", err)
+	}
+	if len(launchAuthorizationListResp.Items) != 1 || launchAuthorizationListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch authorization list response: %+v", launchAuthorizationListResp.Items)
+	}
+	if launchAuthorizationListResp.Items[0].LaunchDigest == "" || launchAuthorizationListResp.Items[0].GateCount == 0 || launchAuthorizationListResp.Items[0].VerificationID == "" {
+		t.Fatalf("expected digest-bound execution launch authorization, got %+v", launchAuthorizationListResp.Items[0])
+	}
+
+	launchAuthorizationDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-authorization", nil)
+	launchAuthorizationDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchAuthorizationDetailRec, launchAuthorizationDetailReq)
+	if launchAuthorizationDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchAuthorizationDetailRec.Code, launchAuthorizationDetailRec.Body.String())
+	}
+	var launchAuthorizationDetailResp secureCellGovernmentAgentExecutionLaunchAuthorizationResponse
+	if err := json.Unmarshal(launchAuthorizationDetailRec.Body.Bytes(), &launchAuthorizationDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch authorization detail response: %v", err)
+	}
+	if launchAuthorizationDetailResp.Authorization == nil || launchAuthorizationDetailResp.Authorization.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch authorization detail response: %+v", launchAuthorizationDetailResp.Authorization)
+	}
+
+	launchAuthorizationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-authorizations/export?format=csv&jurisdiction=UAE", nil)
+	launchAuthorizationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchAuthorizationExportRec, launchAuthorizationExportReq)
+	if launchAuthorizationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchAuthorizationExportRec.Code, launchAuthorizationExportRec.Body.String())
+	}
+	if !strings.Contains(launchAuthorizationExportRec.Body.String(), "launch_digest") || !strings.Contains(launchAuthorizationExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch authorization csv export, got %s", launchAuthorizationExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

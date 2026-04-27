@@ -299,6 +299,23 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if !hasGovernmentAgentExecutionHandoffVerificationCheck(verification.Checks, "BUNDLE_DIGEST_BOUND", SecureCellGovernmentAgentExecutionHandoffVerificationPass) {
 		t.Fatalf("expected passing bundle digest verification check, got %+v", verification.Checks)
 	}
+
+	authorization, err := service.GetGovernmentAgentExecutionLaunchAuthorization(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchAuthorization failed: %v", err)
+	}
+	if authorization.Status != SecureCellGovernmentAgentExecutionLaunchAuthorizationOperatorReviewRequired || authorization.CanLaunchNow {
+		t.Fatalf("expected operator-review launch hold, got %+v", authorization)
+	}
+	if !authorization.CanLaunchAfterOperatorReview || authorization.RequiredOperatorAcknowledgementCount == 0 {
+		t.Fatalf("expected launch after operator acknowledgement, got %+v", authorization)
+	}
+	if authorization.BlockGateCount != 0 || authorization.HoldGateCount == 0 || authorization.LaunchDigest == "" || !strings.Contains(authorization.AuthorizationID, authorization.LaunchDigest[:12]) {
+		t.Fatalf("expected digest-bound launch authorization with review hold, got %+v", authorization)
+	}
+	if authorization.VerificationID != verification.VerificationID || !hasGovernmentAgentExecutionLaunchGate(authorization.Gates, "OPERATOR_REVIEW_COMPLETE", SecureCellGovernmentAgentExecutionLaunchGateHold) {
+		t.Fatalf("expected launch authorization to bind verification and review gate, got %+v", authorization)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -471,6 +488,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionHandoffVerificationCheck(verification.Checks, "BLOCKER_STATUS_CONSISTENCY", SecureCellGovernmentAgentExecutionHandoffVerificationPass) {
 		t.Fatalf("expected passing blocker consistency verification check, got %+v", verification.Checks)
 	}
+
+	authorization, err := service.GetGovernmentAgentExecutionLaunchAuthorization(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchAuthorization failed: %v", err)
+	}
+	if authorization.Status != SecureCellGovernmentAgentExecutionLaunchAuthorizationBlocked || authorization.CanLaunchNow || authorization.CanLaunchAfterOperatorReview {
+		t.Fatalf("expected blocked launch authorization for tacit workflow, got %+v", authorization)
+	}
+	if authorization.BlockGateCount == 0 || authorization.LaunchDigest == "" || authorization.VerificationID != verification.VerificationID {
+		t.Fatalf("expected digest-bound launch authorization tied to blocked verification, got %+v", authorization)
+	}
+	if !hasGovernmentAgentExecutionLaunchGate(authorization.Gates, "BLOCKERS_CLEARED", SecureCellGovernmentAgentExecutionLaunchGateBlock) {
+		t.Fatalf("expected blocker launch gate, got %+v", authorization.Gates)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -592,6 +623,19 @@ func hasGovernmentAgentExecutionHandoffVerificationCheck(
 ) bool {
 	for _, check := range checks {
 		if check.Code == code && check.Outcome == outcome {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchGate(
+	gates []SecureCellGovernmentAgentExecutionLaunchGate,
+	code string,
+	status SecureCellGovernmentAgentExecutionLaunchGateStatus,
+) bool {
+	for _, gate := range gates {
+		if gate.Code == code && gate.Status == status {
 			return true
 		}
 	}
