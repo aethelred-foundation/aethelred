@@ -688,6 +688,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchReceiptManifestExportRec.Body.String(), "manifest_digest") || !strings.Contains(launchReceiptManifestExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch receipt manifest csv export, got %s", launchReceiptManifestExportRec.Body.String())
 	}
+
+	launchReceiptValidationListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-receipt-validations?jurisdiction=UAE", nil)
+	launchReceiptValidationListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptValidationListRec, launchReceiptValidationListReq)
+	if launchReceiptValidationListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptValidationListRec.Code, launchReceiptValidationListRec.Body.String())
+	}
+	var launchReceiptValidationListResp secureCellGovernmentAgentExecutionLaunchReceiptValidationListResponse
+	if err := json.Unmarshal(launchReceiptValidationListRec.Body.Bytes(), &launchReceiptValidationListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch receipt validation list response: %v", err)
+	}
+	if len(launchReceiptValidationListResp.Items) != 1 || launchReceiptValidationListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch receipt validation list response: %+v", launchReceiptValidationListResp.Items)
+	}
+	if launchReceiptValidationListResp.Items[0].ValidationDigest == "" || launchReceiptValidationListResp.Items[0].CheckCount == 0 || launchReceiptValidationListResp.Items[0].ManifestID == "" {
+		t.Fatalf("expected digest-bound execution launch receipt validation, got %+v", launchReceiptValidationListResp.Items[0])
+	}
+
+	launchReceiptValidationDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-receipt-validation", nil)
+	launchReceiptValidationDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptValidationDetailRec, launchReceiptValidationDetailReq)
+	if launchReceiptValidationDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptValidationDetailRec.Code, launchReceiptValidationDetailRec.Body.String())
+	}
+	var launchReceiptValidationDetailResp secureCellGovernmentAgentExecutionLaunchReceiptValidationResponse
+	if err := json.Unmarshal(launchReceiptValidationDetailRec.Body.Bytes(), &launchReceiptValidationDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch receipt validation detail response: %v", err)
+	}
+	if launchReceiptValidationDetailResp.Validation == nil || launchReceiptValidationDetailResp.Validation.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch receipt validation detail response: %+v", launchReceiptValidationDetailResp.Validation)
+	}
+
+	launchReceiptValidationExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-receipt-validations/export?format=csv&jurisdiction=UAE", nil)
+	launchReceiptValidationExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptValidationExportRec, launchReceiptValidationExportReq)
+	if launchReceiptValidationExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptValidationExportRec.Code, launchReceiptValidationExportRec.Body.String())
+	}
+	if !strings.Contains(launchReceiptValidationExportRec.Body.String(), "validation_digest") || !strings.Contains(launchReceiptValidationExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch receipt validation csv export, got %s", launchReceiptValidationExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {

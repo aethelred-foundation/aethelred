@@ -344,6 +344,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if launchReceiptManifest.RegisterID != clearance.RegisterID || !hasGovernmentAgentExecutionLaunchReceiptRequirement(launchReceiptManifest.Requirements, "operator_acknowledgement_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptRequirementPendingAcknowledgement) {
 		t.Fatalf("expected launch receipt manifest to bind clearance and acknowledgement receipt, got %+v", launchReceiptManifest)
 	}
+
+	launchReceiptValidation, err := service.GetGovernmentAgentExecutionLaunchReceiptValidation(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchReceiptValidation failed: %v", err)
+	}
+	if launchReceiptValidation.Status != SecureCellGovernmentAgentExecutionLaunchReceiptValidationReady || launchReceiptValidation.FailCount != 0 {
+		t.Fatalf("expected launch receipt validation ready without failures, got %+v", launchReceiptValidation)
+	}
+	if launchReceiptValidation.ValidationDigest == "" || !strings.Contains(launchReceiptValidation.ValidationID, launchReceiptValidation.ValidationDigest[:12]) {
+		t.Fatalf("expected digest-bound launch receipt validation, got %+v", launchReceiptValidation)
+	}
+	if launchReceiptValidation.ManifestID != launchReceiptManifest.ManifestID || !hasGovernmentAgentExecutionLaunchReceiptValidationCheck(launchReceiptValidation.Checks, "REQUIREMENT_DIGEST_BOUND", SecureCellGovernmentAgentExecutionLaunchReceiptValidationPass) {
+		t.Fatalf("expected receipt validation to bind manifest and requirement digest checks, got %+v", launchReceiptValidation)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -558,6 +572,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchReceiptRequirement(launchReceiptManifest.Requirements, "remediation_receipt", SecureCellGovernmentAgentExecutionLaunchReceiptRequirementBlocked) {
 		t.Fatalf("expected remediation receipt requirement, got %+v", launchReceiptManifest.Requirements)
 	}
+
+	launchReceiptValidation, err := service.GetGovernmentAgentExecutionLaunchReceiptValidation(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchReceiptValidation failed: %v", err)
+	}
+	if launchReceiptValidation.Status != SecureCellGovernmentAgentExecutionLaunchReceiptValidationBlocked || launchReceiptValidation.FailCount != 0 || launchReceiptValidation.BlockedReceiptCount == 0 {
+		t.Fatalf("expected blocked launch receipt validation without contract failures, got %+v", launchReceiptValidation)
+	}
+	if launchReceiptValidation.ManifestID != launchReceiptManifest.ManifestID || launchReceiptValidation.ValidationDigest == "" {
+		t.Fatalf("expected digest-bound receipt validation tied to manifest, got %+v", launchReceiptValidation)
+	}
+	if !hasGovernmentAgentExecutionLaunchReceiptValidationCheck(launchReceiptValidation.Checks, "MANIFEST_REQUIREMENTS_PRESENT", SecureCellGovernmentAgentExecutionLaunchReceiptValidationPass) {
+		t.Fatalf("expected manifest requirement presence check, got %+v", launchReceiptValidation.Checks)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -718,6 +746,19 @@ func hasGovernmentAgentExecutionLaunchReceiptRequirement(
 ) bool {
 	for _, requirement := range requirements {
 		if requirement.ReceiptType == receiptType && requirement.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchReceiptValidationCheck(
+	checks []SecureCellGovernmentAgentExecutionLaunchReceiptValidationCheck,
+	code string,
+	outcome SecureCellGovernmentAgentExecutionLaunchReceiptValidationOutcome,
+) bool {
+	for _, check := range checks {
+		if check.Code == code && check.Outcome == outcome {
 			return true
 		}
 	}
