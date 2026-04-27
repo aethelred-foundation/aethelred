@@ -647,6 +647,47 @@ func TestSecureCellsHandlers_GovernmentAgentReadinessSurfaces(t *testing.T) {
 	if !strings.Contains(launchClearanceExportRec.Body.String(), "register_digest") || !strings.Contains(launchClearanceExportRec.Body.String(), createResp.Result.CellID) {
 		t.Fatalf("expected government-agent execution launch clearance csv export, got %s", launchClearanceExportRec.Body.String())
 	}
+
+	launchReceiptManifestListReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-receipt-manifests?jurisdiction=UAE", nil)
+	launchReceiptManifestListRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptManifestListRec, launchReceiptManifestListReq)
+	if launchReceiptManifestListRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptManifestListRec.Code, launchReceiptManifestListRec.Body.String())
+	}
+	var launchReceiptManifestListResp secureCellGovernmentAgentExecutionLaunchReceiptManifestListResponse
+	if err := json.Unmarshal(launchReceiptManifestListRec.Body.Bytes(), &launchReceiptManifestListResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch receipt manifest list response: %v", err)
+	}
+	if len(launchReceiptManifestListResp.Items) != 1 || launchReceiptManifestListResp.Items[0].CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch receipt manifest list response: %+v", launchReceiptManifestListResp.Items)
+	}
+	if launchReceiptManifestListResp.Items[0].ManifestDigest == "" || launchReceiptManifestListResp.Items[0].ReceiptRequirementCount == 0 || launchReceiptManifestListResp.Items[0].RegisterID == "" {
+		t.Fatalf("expected digest-bound execution launch receipt manifest, got %+v", launchReceiptManifestListResp.Items[0])
+	}
+
+	launchReceiptManifestDetailReq := httptest.NewRequest(http.MethodGet, secureCellsItemPrefix+createResp.Result.CellID+"/government-agent-execution-launch-receipt-manifest", nil)
+	launchReceiptManifestDetailRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptManifestDetailRec, launchReceiptManifestDetailReq)
+	if launchReceiptManifestDetailRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptManifestDetailRec.Code, launchReceiptManifestDetailRec.Body.String())
+	}
+	var launchReceiptManifestDetailResp secureCellGovernmentAgentExecutionLaunchReceiptManifestResponse
+	if err := json.Unmarshal(launchReceiptManifestDetailRec.Body.Bytes(), &launchReceiptManifestDetailResp); err != nil {
+		t.Fatalf("unmarshal government-agent execution launch receipt manifest detail response: %v", err)
+	}
+	if launchReceiptManifestDetailResp.Manifest == nil || launchReceiptManifestDetailResp.Manifest.CellID != createResp.Result.CellID {
+		t.Fatalf("unexpected government-agent execution launch receipt manifest detail response: %+v", launchReceiptManifestDetailResp.Manifest)
+	}
+
+	launchReceiptManifestExportReq := httptest.NewRequest(http.MethodGet, secureCellsCollectionRoute+"/government-agent-execution-launch-receipt-manifests/export?format=csv&jurisdiction=UAE", nil)
+	launchReceiptManifestExportRec := httptest.NewRecorder()
+	app.SecureCellsGetHandler().ServeHTTP(launchReceiptManifestExportRec, launchReceiptManifestExportReq)
+	if launchReceiptManifestExportRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d body=%s", http.StatusOK, launchReceiptManifestExportRec.Code, launchReceiptManifestExportRec.Body.String())
+	}
+	if !strings.Contains(launchReceiptManifestExportRec.Body.String(), "manifest_digest") || !strings.Contains(launchReceiptManifestExportRec.Body.String(), createResp.Result.CellID) {
+		t.Fatalf("expected government-agent execution launch receipt manifest csv export, got %s", launchReceiptManifestExportRec.Body.String())
+	}
 }
 
 func TestSecureCellsHandlers_BearerFederationLifecycleFlow(t *testing.T) {
