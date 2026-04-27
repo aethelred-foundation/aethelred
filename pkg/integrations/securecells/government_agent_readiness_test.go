@@ -316,6 +316,20 @@ func TestService_GovernmentAgentReadinessScoresUAEWorkflowCell(t *testing.T) {
 	if authorization.VerificationID != verification.VerificationID || !hasGovernmentAgentExecutionLaunchGate(authorization.Gates, "OPERATOR_REVIEW_COMPLETE", SecureCellGovernmentAgentExecutionLaunchGateHold) {
 		t.Fatalf("expected launch authorization to bind verification and review gate, got %+v", authorization)
 	}
+
+	clearance, err := service.GetGovernmentAgentExecutionLaunchClearance(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClearance failed: %v", err)
+	}
+	if clearance.Status != SecureCellGovernmentAgentExecutionLaunchClearanceHeldForReview || clearance.CanLaunchNow {
+		t.Fatalf("expected held launch clearance register, got %+v", clearance)
+	}
+	if clearance.AcknowledgementItemCount == 0 || clearance.RemediationItemCount != 0 || clearance.RegisterDigest == "" || !strings.Contains(clearance.RegisterID, clearance.RegisterDigest[:12]) {
+		t.Fatalf("expected digest-bound launch clearance register with acknowledgement items, got %+v", clearance)
+	}
+	if clearance.AuthorizationID != authorization.AuthorizationID || !hasGovernmentAgentExecutionLaunchClearanceItem(clearance.Items, "OPERATOR_REVIEW_COMPLETE", SecureCellGovernmentAgentExecutionLaunchClearanceItemAcknowledgementRequired) {
+		t.Fatalf("expected launch clearance to bind authorization and review acknowledgement item, got %+v", clearance)
+	}
 }
 
 func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
@@ -502,6 +516,20 @@ func TestService_GovernmentAgentReadinessFindsTacitWorkflowGaps(t *testing.T) {
 	if !hasGovernmentAgentExecutionLaunchGate(authorization.Gates, "BLOCKERS_CLEARED", SecureCellGovernmentAgentExecutionLaunchGateBlock) {
 		t.Fatalf("expected blocker launch gate, got %+v", authorization.Gates)
 	}
+
+	clearance, err := service.GetGovernmentAgentExecutionLaunchClearance(ctx, created.CellID)
+	if err != nil {
+		t.Fatalf("GetGovernmentAgentExecutionLaunchClearance failed: %v", err)
+	}
+	if clearance.Status != SecureCellGovernmentAgentExecutionLaunchClearanceBlocked || clearance.CanLaunchNow || clearance.CanLaunchAfterOperatorReview {
+		t.Fatalf("expected blocked launch clearance register, got %+v", clearance)
+	}
+	if clearance.RemediationItemCount == 0 || clearance.CriticalItemCount == 0 || clearance.RegisterDigest == "" || clearance.AuthorizationID != authorization.AuthorizationID {
+		t.Fatalf("expected digest-bound launch clearance register with remediation items, got %+v", clearance)
+	}
+	if !hasGovernmentAgentExecutionLaunchClearanceItem(clearance.Items, "BLOCKERS_CLEARED", SecureCellGovernmentAgentExecutionLaunchClearanceItemRemediationRequired) {
+		t.Fatalf("expected blocker remediation clearance item, got %+v", clearance.Items)
+	}
 }
 
 func hasGovernmentAgentReadinessFinding(findings []SecureCellGovernmentAgentReadinessFinding, code string) bool {
@@ -636,6 +664,19 @@ func hasGovernmentAgentExecutionLaunchGate(
 ) bool {
 	for _, gate := range gates {
 		if gate.Code == code && gate.Status == status {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGovernmentAgentExecutionLaunchClearanceItem(
+	items []SecureCellGovernmentAgentExecutionLaunchClearanceItem,
+	gateCode string,
+	status SecureCellGovernmentAgentExecutionLaunchClearanceItemStatus,
+) bool {
+	for _, item := range items {
+		if item.GateCode == gateCode && item.Status == status {
 			return true
 		}
 	}
